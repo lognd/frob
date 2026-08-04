@@ -409,9 +409,7 @@ def _cluster_open_blockers_of(t: Ticket, by_id: dict) -> tuple[str, ...]:
 # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_dependency_order_respects_intra_cluster_blocked_by  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_excludes_leaf_blocked_from_outside_the_cluster  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_unknown_cluster_returns_empty  # noqa: E501
-def cluster_descendants(
-    queue: TicketQueue, cluster_id: str
-) -> tuple[Ticket, ...]:
+def cluster_descendants(queue: TicketQueue, cluster_id: str) -> tuple[Ticket, ...]:
     """Dependency-ordered, currently-dispatchable LEAF descendants of the
     epic/story `cluster_id` (T-1243): every `TicketTier.TICKET` descendant
     (`epic_rollup`'s parent-chain walk, any depth) still in {queued,
@@ -515,9 +513,7 @@ def compose_cluster_brief(
         if ticket.acceptance:
             lines.append("### Acceptance")
             for idx, item in enumerate(ticket.acceptance):
-                status = (
-                    f"bound({list(item.evidence)})" if item.evidence else "UNBOUND"
-                )
+                status = f"bound({list(item.evidence)})" if item.evidence else "UNBOUND"
                 lines.append(f"- [{idx}] {status}: {item.text}")
             lines.append("")
         lines.append("### Scope")

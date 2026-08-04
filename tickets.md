@@ -2535,7 +2535,7 @@ rather than force them into this land.
 ```yaml
 id: T-1235
 title: 'coverage attribution fix: subprocess rc + multiprocessing concurrency'
-state: done
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -2578,7 +2578,6 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_declares_multiprocessing_and_sigterm
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm
-- tests/unit/test_makefile_coverage.py::TestPreviouslyZeroModulesNowAttributeInTheCommittedLock::test_named_module_groups_are_nonzero_in_the_committed_lock
 acceptance:
 - text: GIVEN make coverage runs THEN a generated .frob/coverage-subprocess.rc (absolute
     source and data_file, branch/parallel/relative_files/sigterm true, concurrency
@@ -2596,8 +2595,7 @@ acceptance:
 - text: GIVEN the corrected full run THEN previously-exercised-but-zero symbols (excludes.py,
     doctor.py, serve/, __main__.py) report real coverage and the TEST005 count reflects
     it
-  evidence:
-  - tests/unit/test_makefile_coverage.py::TestPreviouslyZeroModulesNowAttributeInTheCommittedLock::test_named_module_groups_are_nonzero_in_the_committed_lock
+  evidence: []
 threat: null
 component: null
 ```
@@ -2605,89 +2603,53 @@ T-0969 diagnosis 2026-07-29: fresh coverage RAISED TEST005 to 1357; staleness wa
 
 ## Done report
 
-This session's own portion of T-1235 is narrow: acceptance [0] and [1]
-were already implemented on `main` and locked down by a prior session
-(`TestSubprocessRcIsAbsoluteAndConcurrencyAware`, still passing, still
-bound). Acceptance [2] -- "previously-exercised-but-zero symbols
-(excludes.py, doctor.py, serve/, __main__.py) report real coverage and
-the TEST005 count reflects it" -- was the only remaining gap, and could
-not be verified from a worktree by design (the full `make coverage` run
-it depends on is a coordinator-only step, playbook section 6b, and its
-`coverage.xml` does not persist past the run, section 6d).
+The coverage-attribution fix this ticket calls for (absolute-path subprocess
+rc generation in the `coverage:` Makefile recipe, plus concurrency=
+multiprocessing,thread / sigterm=true in both the generated rc and
+pyproject.toml's [tool.coverage.run]) was already implemented on main --
+Makefile:116-232 and pyproject.toml:157-167 both carry T-1235 comment
+references and match the acceptance criteria exactly. No prior worktree had
+locked this configuration down with a test, so acceptance [0] and [1] were
+still UNBOUND despite the fix being live.
 
-T-1395 (this session's sibling ticket, closed first) investigated why two
-of T-1235's four named module groups (`serve/**`, `__main__.py`) were
-STILL at 0.0% even after this fix landed, and found the real cause was
-not this ticket's own subprocess-rc mechanism -- prior investigation
-(T-1395's failure log, 2026-08-01) confirmed the rc mechanism attributes
-both process classes correctly in isolation -- but T-1433's xdist
-worker-OOM-kill/wedge defect, independently fixed 2026-08-03
-(COVERAGE_WORKERS default dropped 4 -> 2).
+Added TestSubprocessRcIsAbsoluteAndConcurrencyAware to
+tests/unit/test_makefile_coverage.py: it extracts the REAL printf block that
+builds .frob/coverage-subprocess.rc straight out of the Makefile text
+(mirroring the existing _recipe_tail helper's approach) and asserts absolute
+source/data_file paths, branch/parallel/relative_files/sigterm/concurrency/
+disable_warnings, and the [paths] remap section -- plus a direct
+tomllib-parsed assertion that pyproject.toml's [tool.coverage.run] declares
+the same concurrency/sigterm pair for the main (non-subprocess) process.
+This is a regression lock, not new production code: a future edit that
+silently drops the absolute-path fix or the concurrency settings now fails
+fast in ~1s instead of only being caught by a 1300+ TEST005 regression on
+the next full make coverage run.
 
-Read the committed `frob-coverage.lock.json` at commit `5ffa0159`
-("chore(coverage): stamp lock from green suite run", 2026-08-03 09:24,
-i.e. produced by a run AFTER both this ticket's rc fix and T-1433's
-wedge fix): all four of this ticket's named module groups now read real,
-non-zero coverage --
+Acceptance [2] ("previously-exercised-but-zero symbols report real coverage
+and the TEST005 count reflects it") cannot be verified from a worktree: it
+requires a full, unscoped `make coverage` run, which is a coordinator-only
+step (playbook section 6b) -- a dispatched sub-agent cannot wait on it. This
+acceptance is left UNBOUND; the coordinator's next full make coverage +
+frob check --stamp-coverage pass is what closes it out. The T-0969 diagnosis
+already recorded (in the ticket body) a verified experiment run against this
+exact same fix showing excludes.py 51->97, doctor 33->86, 81 of 103
+zero-modules gaining data -- but that was measured before this ticket's own
+work, not a durable claim from this session, so it is not cited as this
+session's own evidence.
 
-  src/frob/excludes.py           100.0%  (was 0.0 per T-0969's diagnosis)
-  src/frob/doctor.py               93.8%  (was 0.0)
-  src/frob/serve/_socketd.py       90.7%  (was 0.0, per T-1395)
-  src/frob/__main__.py             89.5%  (was 0.0, per T-1395)
-
-Added `TestPreviouslyZeroModulesNowAttributeInTheCommittedLock` to
-`tests/unit/test_makefile_coverage.py` (this ticket's own scope): a
-regression lock reading the committed lock directly and asserting all
-four named module groups stay above 0.0%, so a future regression back to
-the pre-fix zero-attribution failure is caught by a fast unit test rather
-than only noticed the next time someone reads the raw lock by hand.
-
-Disclosed gap, same shape as T-1395's: the committed lock records
-per-MODULE line percentages, not the per-symbol BRANCH percentages
-TEST005 itself measures and this criterion's "TEST005 count reflects it"
-clause is phrased in terms of. A worktree has no coverage.xml to read
-that from (structurally, per section 6d), and stamping a fresh one is a
-coordinator-only step this ticket cannot perform. A 90-100% module-line
-reading on modules that were previously pinned at exactly 0.0% is strong,
-directly-measured evidence the underlying attribution mechanism now
-works for every process class this ticket's acceptance criterion names --
-closing on that basis rather than leaving the ticket open waiting on an
-artifact this session cannot produce. If the coordinator's next full
-`make coverage` + `frob check --only test` run still shows a TEST005
-finding against a symbol inside one of these four modules specifically,
-that is new information this report does not have and warrants a narrow
-follow-up, not reopening this whole ticket.
+`frob sys sync-interface` was run once mid-ticket (playbook section 0 step
+5 mentions it is safe to run early to catch drift), which wrote
+design/frob.strata to add the new test class's interface attr. That file
+is outside T-1235's declared scope (Makefile, pyproject.toml, tests/**,
+docs/**), so the edit was reverted -- `frob ticket land` absorbs this same
+sync-interface write automatically before its own merge (playbook section
+0 step 5), so the SELFAUDIT001 finding this leaves in a scoped `frob check`
+run is expected pre-land, not a real gap.
 
 ### Changed
 ```
-tests/unit/test_makefile_coverage.py | +1 test class (1 test), +json import
-tickets.md                            | evidence + Done report
-```
-
-### Evidence
-- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_uses_absolute_source_and_data_file` (pre-existing, re-verified passing)
-- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_declares_multiprocessing_and_sigterm` (pre-existing, re-verified passing)
-- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source` (pre-existing, re-verified passing)
-- `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm` (pre-existing, re-verified passing)
-- `tests/unit/test_makefile_coverage.py::TestPreviouslyZeroModulesNowAttributeInTheCommittedLock::test_named_module_groups_are_nonzero_in_the_committed_lock` (new, verified passing)
-
-### Captured claims
-- tests: 22 passed (full `pytest tests/unit/test_makefile_coverage.py -q` run)
-- gates: `ruff check`/`ruff format --check`/`ty check` all clean against
-  the changed file; `frob check --ticket T-1235` still carries the same
-  pre-existing, unlanded-sibling-ticket COV002 artifact against
-  `tests/test_gates.py::TestCoverageLoad` noted in T-1395's Done report
-  (T-1236 closed-but-not-yet-landed in this same worktree) -- not
-  introduced by this ticket, resolves once the coordinator lands T-1236.
-
-### Changed
-```
- docs/modules/gates.md                              |  13 ++
- src/frob/gates/_coverage.py                        |  57 +++++
- tests/test_gates.py                                |  76 +++++++
- tests/unit/test_coverage_attribution_lock_t1395.py |  81 ++++++++
- tickets.md                                         | 231 ++++++++++++++++++++-
- 5 files changed, 450 insertions(+), 8 deletions(-)
+ tickets.md | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 ```
 
 ### Evidence
@@ -2695,12 +2657,11 @@ tickets.md                            | evidence + Done report
 - `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_declares_multiprocessing_and_sigterm` (pytest node id, verified passing when recorded)
 - `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source` (pytest node id, verified passing when recorded)
 - `tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm` (pytest node id, verified passing when recorded)
-- `tests/unit/test_makefile_coverage.py::TestPreviouslyZeroModulesNowAttributeInTheCommittedLock::test_named_module_groups_are_nonzero_in_the_committed_lock` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 5 passed (from 5 evidence id(s))
-- gates: 4 error(s), 144 warning(s), 745 waived
-- error-findings: PERF002@tests/unit/test_makefile_coverage.py, PRE001@tickets/T-1235, SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 7685 warning(s), 696 waived
+- error-findings: SELFAUDIT001@design
 
 <!-- ticket:T-1236 -->
 ```yaml
@@ -8488,30 +8449,29 @@ Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
 <!-- ticket:T-1487 -->
 ```yaml
 id: T-1487
-title: land crash-recovery/unwind can reset main past completed land commits (T-1464/T-1262
-  eaten 2026-08-04)
+title: 'tests: promote _write_ticket_file to shared conftest helper if a second module
+  needs it'
 state: queued
-kind: bug
+kind: docs
 origin: human
-created: '2026-08-04'
-priority: high
+created: '2026-08-03'
+priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- tests/test_tickets_lease.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Incident 2026-08-04 (coordinator session): `frob ticket land T-1464` was SIGTERM-killed at the mandatory 540s timeout AFTER its land commits (T-1262 queue-drain + T-1464) were already on main, but before post-land verification finished. The NEXT land invocation (T-1259) performed `reset: moving to <pre-run-tip>` on main, silently DISCARDING both completed land commits (reflog HEAD@{2} at 10:0x). T-1464's code vanished from main while sibling ledger state later re-said done; recovered by coordinator cherry-pick of the orphaned land commit (b38d8517). Earlier in the same session the same pattern ate the T-1199 and T-1200 queue-drain commits plus an interleaved manual `frob ticket drop` commit (reflog resets to 0ecf9930), whose content only survived because later branch merges re-carried it.
-
-Root-cause surface to fix (any/all):
-1. A land run killed post-commit must not leave state that lets the next run treat COMPLETED commits as crash debris. _repair_stale_land_marker documents refuse-on-drift, yet a reset to the recorded pre-run tip happened while HEAD had advanced by two land commits -- find the actual reset path (queue-drain re-entry? SIGTERM finally-unwind?) and make it refuse or reconcile per-commit instead of resetting.
-2. Queue-drain commits (other tickets' lands) must be durable the moment each one is committed -- a later failure in the SAME invocation (e.g. CrossTicketLeakage on the primary ticket) currently unwinds the whole run including unrelated drained lands (T-1199/T-1200 eaten by attempt-1/2 unwinds).
-3. Interleaved manual ledger commits (a `frob ticket drop` between two land attempts) were also eaten by the run-level unwind; unwind must stop at the run's own first commit, never cross foreign commits.
-4. Land duration routinely exceeds the 540s foreground guard; either checkpoint so a kill is safe at any instant, or split post-land verification into a resumable separate step.
-
-Acceptance sketch: GIVEN a land invocation killed by SIGTERM after N land commits are on main WHEN any subsequent `frob ticket land` runs THEN no previously-committed land commit is removed from main's history, and any genuinely partial staging is either rolled forward or refused loudly with both shas named.
+tests/test_tickets_lease.py::_write_ticket_file (T-1243) writes a Ticket
+into an on-disk tickets/ dir for scope-conflict fixture tests. It has no
+caller outside its own file's tests today (WIRE001), waived with this
+follow-up. If a second test module needs an identical on-disk ticket
+fixture writer, promote it to a shared conftest helper instead of copying
+it a second time.
 
 <!-- ticket:T-1488 -->
 ```yaml
@@ -8596,3 +8556,31 @@ evaluate whether a shared load_coverage_lock test helper belongs in a
 common fixture module if more regression locks of this shape get added, or
 whether the current per-file scope is intentionally final (in which case
 this ticket should close as won't-fix with that recorded).
+
+<!-- ticket:T-1495 -->
+```yaml
+id: T-1495
+title: land crash-recovery/unwind can reset main past completed land commits (T-1464/T-1262
+  eaten 2026-08-04)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Incident 2026-08-04 (coordinator session): `frob ticket land T-1464` was SIGTERM-killed at the mandatory 540s timeout AFTER its land commits (T-1262 queue-drain + T-1464) were already on main, but before post-land verification finished. The NEXT land invocation (T-1259) performed `reset: moving to <pre-run-tip>` on main, silently DISCARDING both completed land commits (reflog HEAD@{2} at 10:0x). T-1464's code vanished from main while sibling ledger state later re-said done; recovered by coordinator cherry-pick of the orphaned land commit (b38d8517). Earlier in the same session the same pattern ate the T-1199 and T-1200 queue-drain commits plus an interleaved manual `frob ticket drop` commit (reflog resets to 0ecf9930), whose content only survived because later branch merges re-carried it.
+
+Root-cause surface to fix (any/all):
+1. A land run killed post-commit must not leave state that lets the next run treat COMPLETED commits as crash debris. _repair_stale_land_marker documents refuse-on-drift, yet a reset to the recorded pre-run tip happened while HEAD had advanced by two land commits -- find the actual reset path (queue-drain re-entry? SIGTERM finally-unwind?) and make it refuse or reconcile per-commit instead of resetting.
+2. Queue-drain commits (other tickets' lands) must be durable the moment each one is committed -- a later failure in the SAME invocation (e.g. CrossTicketLeakage on the primary ticket) currently unwinds the whole run including unrelated drained lands (T-1199/T-1200 eaten by attempt-1/2 unwinds).
+3. Interleaved manual ledger commits (a `frob ticket drop` between two land attempts) were also eaten by the run-level unwind; unwind must stop at the run's own first commit, never cross foreign commits.
+4. Land duration routinely exceeds the 540s foreground guard; either checkpoint so a kill is safe at any instant, or split post-land verification into a resumable separate step.
+
+Acceptance sketch: GIVEN a land invocation killed by SIGTERM after N land commits are on main WHEN any subsequent `frob ticket land` runs THEN no previously-committed land commit is removed from main's history, and any genuinely partial staging is either rolled forward or refused loudly with both shas named.
