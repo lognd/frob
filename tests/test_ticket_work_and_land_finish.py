@@ -552,18 +552,44 @@ class TestPreCommitUnscopedSweepFn:
 
     # frob:ticket T-1524
     # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_chec\
+    # kpoint_artifact_rules_are_exempt
+    def test_checkpoint_artifact_rules_are_exempt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1524: PRE001/SCOPE001 structurally false-positive at the
+        staged-uncommitted checkpoint (the landing ticket is already
+        finalized done, so its own staged diff reads as unlicensed) --
+        exempt by RULE regardless of which file they name."""
+        baseline: frozenset[tuple[str, str]] = frozenset()
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: frozenset(
+                {
+                    ("PRE001", "src/frob/app/ticket_runner/_land_cmd.py"),
+                    ("SCOPE001", "src/frob/app/ticket_runner/_land_cmd.py"),
+                }
+            ),
+        )
+        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        assert result is True
+
+    # frob:ticket T-1524
+    # frob:tests \
     # tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn.test_nest\
     # ed_land_owned_name_is_not_exempt
     def test_nested_land_owned_name_is_not_exempt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """T-1524 boundary: a NESTED pyproject.toml (fixture tree, not the
-        repo root's) is a real finding and still refuses."""
+        repo root's) is a real finding and still refuses -- using a rule
+        outside _PRE_COMMIT_SWEEP_EXEMPT_RULES so only the file-level
+        land-owned matching is under test."""
         baseline: frozenset[tuple[str, str]] = frozenset()
         monkeypatch.setattr(
             "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
             lambda root, ticket_id, **kw: frozenset(
-                {("SCOPE001", "tests/fixtures/proj/pyproject.toml")}
+                {("E501", "tests/fixtures/proj/pyproject.toml")}
             ),
         )
         monkeypatch.setattr(

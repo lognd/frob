@@ -629,6 +629,16 @@ _LAND_OWNED_SWEEP_EXEMPT = frozenset(
     {".frob-release.json", "CHANGELOG.md", "pyproject.toml", "uv.lock"}
 )
 
+# frob:ticket T-1524
+#: Ticket-hygiene rules that structurally false-positive at the T-1514
+#: staged-uncommitted checkpoint: the landing ticket is already
+#: finalized done in the staged ledger, so SCOPE001/PRE001 see its own
+#: staged diff as unlicensed-by-any-open-ticket. Both obligations were
+#: already enforced against the REAL open ticket by land's pre-merge
+#: covers_scope/prework verification; re-evaluating them against the
+#: staged tree can only produce artifacts of the checkpoint itself.
+_PRE_COMMIT_SWEEP_EXEMPT_RULES = frozenset({"PRE001", "SCOPE001"})
+
 
 # frob:ticket T-1524
 def _is_land_owned_finding(root: Path, file_field: str) -> bool:
@@ -695,7 +705,10 @@ def _pre_commit_unscoped_error_sweep(
 
     new_findings = fresh - baseline_findings
     exempt = frozenset(
-        f for f in new_findings if _is_land_owned_finding(root, f[1])
+        f
+        for f in new_findings
+        if _is_land_owned_finding(root, f[1])
+        or f[0] in _PRE_COMMIT_SWEEP_EXEMPT_RULES
     )
     if exempt:
         # T-1524: findings against land-owned artifacts at this checkpoint
@@ -731,7 +744,10 @@ def _pre_commit_unscoped_error_sweep(
     reverify = _unscoped_error_findings(root, ticket_id) if fixed_paths else fresh
     still_new = (reverify - baseline_findings) if reverify is not None else new_findings
     still_new = frozenset(
-        f for f in still_new if not _is_land_owned_finding(root, f[1])
+        f
+        for f in still_new
+        if not _is_land_owned_finding(root, f[1])
+        and f[0] not in _PRE_COMMIT_SWEEP_EXEMPT_RULES
     )
     if not still_new:
         _log.info(
