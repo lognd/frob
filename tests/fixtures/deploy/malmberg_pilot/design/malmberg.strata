@@ -1,0 +1,101 @@
+// malmberg.strata -- T-0260 fixture-based pilot: a std.host model shaped
+// after malmberg's real service list (server_api, ingest, cloudsync,
+// faces, backup, display, media_store), used to prove the FULL deploy
+// chain (T-0255 manifest -> T-0256 movement proofs -> T-0257 generate ->
+// T-0258 conformance) together end to end, in this repo, without needing
+// network access to the real malmberg checkout (not present in this
+// worktree -- docs/design/language-adapter-tier-decision.md:33 already
+// records malmberg as "not present in this checkout").
+//
+// This is a STAND-IN, not the real malmberg design: component names and
+// shape are drawn from T-0260's own ticket text, but paths/ports/ownership
+// are illustrative, not malmberg's actual production configuration. It
+// exists so the deploy epic's full chain has at least one multi-service,
+// named-after-a-real-product proof, closing the honest gap that every
+// existing litmus fixture (tests/unit/strata/litmus/host_*.strata) is
+// exactly 1-2 abstractly-named nodes. See tickets.md T-0260's Done report
+// for the re-scope reasoning and the follow-up ticket that applies this
+// same recipe to the real malmberg repo once an agent/coordinator has
+// access to it.
+//
+// tested end to end by tests/integration/test_deploy_malmberg_pilot.py.
+
+module malmberg_pilot
+
+node media_store : trusted {
+    clearance Internal;
+    runs_as "svc-media-store";
+    unit;
+    owns "/var/lib/malmberg/media_store" "0750";
+    group "media-store-grp";
+}
+
+node server_api : trusted {
+    clearance Internal;
+    runs_as "svc-server-api";
+    unit;
+    owns "/etc/malmberg/server_api" "0640";
+    listens 8443;
+    group "server-api-grp";
+}
+
+node ingest : trusted {
+    clearance Internal;
+    runs_as "svc-ingest";
+    unit;
+    owns "/etc/malmberg/ingest" "0640";
+    listens 8081;
+    group "ingest-grp";
+}
+
+node cloudsync : trusted {
+    clearance Internal;
+    runs_as "svc-cloudsync";
+    unit;
+    owns "/etc/malmberg/cloudsync" "0640";
+    listens 8082;
+    group "cloudsync-grp";
+}
+
+node faces : trusted {
+    clearance Internal;
+    runs_as "svc-faces";
+    unit;
+    owns "/etc/malmberg/faces" "0640";
+    listens 8083;
+    group "faces-grp";
+}
+
+node backup : trusted {
+    clearance Internal;
+    runs_as "svc-backup";
+    unit;
+    owns "/etc/malmberg/backup" "0640";
+    group "backup-grp";
+}
+
+node display : trusted {
+    clearance Internal;
+    runs_as "svc-display";
+    unit;
+    owns "/etc/malmberg/display" "0640";
+    listens 8084;
+    group "display-grp";
+}
+
+// Every component that needs media_store's data reaches it over a
+// declared Flow rather than sharing a writable filesystem path with it --
+// the isolated shape HOST001's `_declared_flow_between` escape hatch
+// exists for (docs/strata/host.md#movement-impossibility-proofs). No two
+// service users here share an owned path, a listening port, or an OS
+// group, so HOST001/HOST002 discharge with NO waivers needed, mirroring
+// tests/unit/strata/litmus/host_isolation_hardened.strata's hardened
+// precedent.
+flow f_server_api_media : server_api -> media_store { label Internal; }
+flow f_ingest_media : ingest -> media_store { label Internal; }
+flow f_cloudsync_media : cloudsync -> media_store { label Internal; }
+flow f_faces_media : faces -> media_store { label Internal; }
+flow f_backup_media : backup -> media_store { label Internal; }
+flow f_display_media : display -> media_store { label Internal; }
+
+// frob:waive REF002 reason="pilot fixture read by exactly one dedicated test module by design (tests/integration/test_deploy_malmberg_pilot.py), same posture as the host_*.strata litmus fixtures"
