@@ -1,9 +1,5 @@
 // Node/secret grammar productions: `node { ... }` blocks, `on_deploy`
 // canary stages, and `secret { ... }` constructs (docs/strata/surface.md#parser).
-// frob:waive REF002 reason="a T-1099 grammar-family split fragment of parse.rs, \
-// imported only by parse/mod.rs's `mod` declaration by design -- the same package \
-// structure every sibling parse/grammar_*.rs module has, a second consumer would not \
-// be genuine"
 // frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: T-1099 split \
 // strata-core/src/parse.rs (whose single INV006 calibration-batch waiver, T-0585, is \
 // preserved verbatim in parse/mod.rs) into grammar-family fragments; this file \

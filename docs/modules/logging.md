@@ -30,7 +30,9 @@ _log.info("did the thing: %s", detail)
 <!-- frob:describes src/frob/logging/quiet.py::quiet_stdout_logs -->
 <!-- frob:describes src/frob/logging/quiet.py::stdout_log_level -->
 <!-- frob:describes src/frob/logging/handler.py::_LazyStdoutHandler -->
+<!-- frob:describes src/frob/logging/handler.py::_LazyStdoutHandler.stream -->
 <!-- frob:describes src/frob/logging/handler.py::_LazyStderrHandler -->
+<!-- frob:describes src/frob/logging/handler.py::_LazyStderrHandler.stream -->
 
 ```python
 # frob/logging/logger.py

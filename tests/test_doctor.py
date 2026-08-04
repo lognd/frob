@@ -73,6 +73,53 @@ def test_run_diagnosis_reports_frob_version():
     assert report.frob_version != ""
 
 
+# frob:ticket T-1218
+# frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it \
+# exercises; repository self-check machinery, no person-related data anywhere in the \
+# test"
+def test_run_diagnosis_reports_stale_binary_floor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # frob:tests src/frob/doctor.py::run_diagnosis
+    """T-1218: a `frob.toml` `min_frob_version` floor above the invoked
+    version makes `healthy` False, populates `DoctorReport.stale_binary`,
+    and folds the warning into `remediation` -- the bare-frob-0.9.0
+    incident this check exists for."""
+
+    class _Fake:
+        __version__ = "9.9.9"
+
+    monkeypatch.setattr(importlib, "import_module", lambda name: _Fake())
+    monkeypatch.setattr(
+        doctor,
+        "stale_binary_warning",
+        lambda root: (
+            "frob: WARNING -- invoked frob 0.9.0 is older than "
+            "this repo's declared floor 0.277.0"
+        ),
+    )
+
+    report = doctor.run_diagnosis(root=tmp_path)
+
+    assert report.healthy is False
+    assert report.stale_binary is not None
+    assert "0.9.0" in report.stale_binary
+    assert report.remediation is not None
+    assert "0.277.0" in report.remediation
+
+
+# frob:ticket T-1218
+# frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it \
+# exercises; repository self-check machinery, no person-related data anywhere in the \
+# test"
+def test_run_diagnosis_stale_binary_none_when_no_floor(tmp_path: Path) -> None:
+    # frob:tests src/frob/doctor.py::run_diagnosis
+    """No `frob.toml` `min_frob_version` in a fresh directory leaves
+    `stale_binary` `None` and does not affect `healthy` on its own."""
+    report = doctor.run_diagnosis(root=tmp_path)
+    assert report.stale_binary is None
+
+
 @pytest.mark.parametrize("name", list(doctor.NATIVE_EXTENSIONS))
 def test_native_extensions_are_the_expected_set(name):
     # frob:tests src/frob/doctor.py::NATIVE_EXTENSIONS

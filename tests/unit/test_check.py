@@ -179,6 +179,41 @@ class TestRunCheckRust:
         assert calls == [tmp_path]
         assert any(r.tool == "gates" for r in result.results)
 
+    # frob:ticket T-1309
+    def test_check_clippy_fmt_test_stages_all_run_and_append(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::run_check_rust kind="unit"
+        # Covers the branch pair (call + non-None append) for EACH of
+        # `_run_cargo` (twice: "check" and "clippy"), `_run_cargo_fmt_check`,
+        # and `_run_cargo_test`, none of which any prior test exercised
+        # (they were only ever run with skip_*=True).
+        cargo_calls: list[tuple[str, Path]] = []
+
+        def _fake_run_cargo(subcommand: str, root: Path, **kw: object) -> ToolResult:
+            cargo_calls.append((subcommand, root))
+            return ToolResult(tool=f"cargo-{subcommand}")
+
+        monkeypatch.setattr(check_mod, "_run_cargo", _fake_run_cargo)
+        monkeypatch.setattr(
+            check_mod,
+            "_run_cargo_fmt_check",
+            lambda root: ToolResult(tool="cargo-fmt"),
+        )
+        monkeypatch.setattr(
+            check_mod,
+            "_run_cargo_test",
+            lambda root, **kw: ToolResult(tool="cargo-test"),
+        )
+        monkeypatch.setattr(
+            check_mod, "_run_gates", lambda root, **kw: ToolResult(tool="gates")
+        )
+
+        result = run_check_rust(tmp_path)
+        tools = {r.tool for r in result.results}
+        assert cargo_calls == [("check", tmp_path), ("clippy", tmp_path)]
+        assert {"cargo-check", "cargo-clippy", "cargo-fmt", "cargo-test"} <= tools
+
 
 # frob:ticket T-0554
 class TestRunCheckTs:
@@ -219,6 +254,32 @@ class TestRunCheckTs:
         )
         assert calls == [tmp_path]
         assert any(r.tool == "gates" for r in result.results)
+
+    # frob:ticket T-1309
+    def test_tsc_eslint_prettier_vitest_stages_all_run_and_append(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::run_check_ts kind="unit"
+        # Covers the branch pair (call + non-None append) for EACH of the
+        # 4 non-gates task lambdas, none of which any prior test
+        # exercised (they were only ever run with skip_*=True).
+        monkeypatch.setattr(
+            check_mod, "_run_tsc", lambda root: ToolResult(tool="tsc")
+        )
+        monkeypatch.setattr(
+            check_mod, "_run_eslint", lambda root: ToolResult(tool="eslint")
+        )
+        monkeypatch.setattr(
+            check_mod, "_run_prettier", lambda root: ToolResult(tool="prettier")
+        )
+        monkeypatch.setattr(
+            check_mod, "_run_vitest", lambda root: ToolResult(tool="vitest")
+        )
+        monkeypatch.setattr(check_mod, "_run_gates", lambda root, **kw: None)
+
+        result = run_check_ts(tmp_path)
+        tools = {r.tool for r in result.results}
+        assert {"tsc", "eslint", "prettier", "vitest"} <= tools
 
 
 # frob:ticket T-0608

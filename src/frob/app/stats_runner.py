@@ -169,11 +169,6 @@ def run(cfg: AppConfig) -> None:
 # IS the runner's job, same as this module's sibling `frob.app.*_runner`s (waiver \
 # moved from `run` onto `_run_body`, T-1392: `run` is now a thin quiet_stdout_logs \
 # wrapper, `_run_body` carries the branching logic the waiver's reason describes)"
-# frob:waive COV005 reason="T-1392: this IS the deliberate rebind COV005 flags, not an \
-# accidental one -- `run` (public) was split into a thin quiet_stdout_logs wrapper \
-# plus `_run_body` (private), and the ARCH103 waiver correctly followed the branching \
-# logic it was written about onto the new private helper rather than staying on the \
-# wrapper that no longer has that shape"
 def _run_body(cfg: AppConfig) -> None:
     """The actual `frob stats` rendering logic, run under `run`'s
     `quiet_stdout_logs()` wrapper when `--json` is set."""

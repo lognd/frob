@@ -49,6 +49,13 @@ from frob.refactor._repointer import (
 )
 from frob.refactor._resolve import module_to_path, resolve_symbol
 from frob.refactor._scan import find_python_files, scan_references
+from frob.refactor._split import (
+    ChunkReport,
+    SplitReport,
+    build_reexport_shim_op,
+    chunk_symbols,
+    run_split,
+)
 from frob.refactor._transaction import build_plan, run_refactor
 from frob.refactor._verify import (
     verify_check_delta,
@@ -58,23 +65,28 @@ from frob.refactor._verify import (
 
 __all__ = [
     "AliasRecord",
+    "ChunkReport",
     "RefactorError",
     "RefactorKind",
     "RefactorPlan",
     "RefactorReport",
     "ResolvedSymbol",
     "RewriteOp",
+    "SplitReport",
     "SymbolRef",
     "VerifyOutcome",
     "apply_plan",
     "build_plan",
+    "build_reexport_shim_op",
     "carry_lock_acks",
+    "chunk_symbols",
     "extend_span_for_attached_directives",
     "find_python_files",
     "module_to_path",
     "resolve_rename_dest_collision",
     "resolve_symbol",
     "run_refactor",
+    "run_split",
     "scan_directive_carriers",
     "scan_doc_anchor_carriers",
     "scan_docs_prose_mentions",

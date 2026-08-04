@@ -12,11 +12,14 @@ from frob.refactor import (
     SymbolRef,
     apply_plan,
     build_plan,
+    build_reexport_shim_op,
     carry_lock_acks,
+    chunk_symbols,
     extend_span_for_attached_directives,
     resolve_rename_dest_collision,
     resolve_symbol,
     run_refactor,
+    run_split,
     scan_directive_carriers,
     scan_doc_anchor_carriers,
     scan_docs_prose_mentions,
@@ -720,6 +723,49 @@ class TestFindPythonFiles:
         assert not any(".venv" in p.parts for p in found)
 
 
+class TestGitOps:
+    def test_working_tree_clean_true_when_no_changes(self, tmp_path):
+        # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_true_when_no_changes  # noqa: E501
+        from frob.refactor._gitops import working_tree_clean
+
+        root = _repo(tmp_path)
+        _write(root, "a.py", "x = 1\n")
+        _commit_all(root, "init")
+        result = working_tree_clean(root)
+        assert result.is_ok
+        assert result.danger_ok is True
+
+    def test_working_tree_clean_false_when_dirty(self, tmp_path):
+        # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_false_when_dirty  # noqa: E501
+        from frob.refactor._gitops import working_tree_clean
+
+        root = _repo(tmp_path)
+        _write(root, "a.py", "x = 1\n")
+        _commit_all(root, "init")
+        _write(root, "a.py", "x = 2\n")
+        result = working_tree_clean(root)
+        assert result.is_ok
+        assert result.danger_ok is False
+
+    def test_current_sha_matches_head(self, tmp_path):
+        # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_matches_head  # noqa: E501
+        from frob.refactor._gitops import current_sha
+
+        root = _repo(tmp_path)
+        _write(root, "a.py", "x = 1\n")
+        _commit_all(root, "init")
+        result = current_sha(root)
+        assert result.is_ok
+        expected = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        assert result.danger_ok == expected
+
+
 class TestModuleToPath:
     def test_maps_dotted_module_under_src(self, tmp_path):
         # frob:tests tests/test_refactor.py::TestModuleToPath.test_maps_dotted_module_under_src  # noqa: E501
@@ -810,6 +856,113 @@ class TestCli:
                 skip_check_delta=True,
                 full_repo_collect=False,
             )
+            code = run_refactor_command(args)
+        finally:
+            os.chdir(cwd)
+        assert code == 1
+
+    def test_add_refactor_parser_registers_split(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestCli.test_add_refactor_parser_registers_split
+        import argparse
+
+        from frob.refactor._cli import add_refactor_parser
+
+        parser = argparse.ArgumentParser()
+        sub = parser.add_subparsers(dest="command")
+        add_refactor_parser(sub)
+        args = parser.parse_args(
+            [
+                "refactor",
+                "split",
+                "pkg.mod",
+                "--symbols",
+                "alpha,beta",
+                "--into",
+                "pkg.newmod",
+            ]
+        )
+        assert args.refactor_subcommand == "split"
+        assert args.source == "pkg.mod"
+        assert args.symbols == "alpha,beta"
+        assert args.destination_module == "pkg.newmod"
+
+    def test_run_refactor_command_dispatches_split_end_to_end(self, tmp_path, capsys):
+        # frob:tests \
+        # tests/test_refactor.py::TestCli.test_run_refactor_command_dispatches_split_en\
+        # d_to_end
+        import argparse
+        import os
+
+        from frob.refactor._cli import add_refactor_parser, run_refactor_command
+
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def alpha():\n    return 'a'\n")
+        _commit_all(root, "initial")
+
+        parser = argparse.ArgumentParser()
+        sub = parser.add_subparsers(dest="command")
+        add_refactor_parser(sub)
+        args = parser.parse_args(
+            [
+                "refactor",
+                "split",
+                "pkg.mod",
+                "--symbols",
+                "alpha",
+                "--into",
+                "pkg.newmod",
+                "--skip-pytest-collect",
+                "--skip-check-delta",
+            ]
+        )
+
+        cwd = os.getcwd()
+        os.chdir(root)
+        try:
+            code = run_refactor_command(args)
+        finally:
+            os.chdir(cwd)
+
+        assert code == 0
+        out = capsys.readouterr().out
+        assert "success=True" in out
+        assert "moved: alpha" in out
+        assert (root / "src/pkg/newmod.py").read_text(encoding="utf-8").find(
+            "def alpha"
+        ) != -1
+
+    def test_run_refactor_command_split_refusal_exit_code(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestCli.test_run_refactor_command_split_refusal_exit_\
+        # code
+        import argparse
+        import os
+
+        from frob.refactor._cli import add_refactor_parser, run_refactor_command
+
+        root = _repo(tmp_path)
+        _write(root, "placeholder.txt", "x\n")
+        _commit_all(root, "initial")
+
+        parser = argparse.ArgumentParser()
+        sub = parser.add_subparsers(dest="command")
+        add_refactor_parser(sub)
+        args = parser.parse_args(
+            [
+                "refactor",
+                "split",
+                "pkg.absent",
+                "--symbols",
+                "alpha",
+                "--into",
+                "pkg.newmod",
+            ]
+        )
+
+        cwd = os.getcwd()
+        os.chdir(root)
+        try:
             code = run_refactor_command(args)
         finally:
             os.chdir(cwd)
@@ -1112,7 +1265,9 @@ class TestProseCarrier:
         assert unresolved == []
         heading_ops = [op for op in ops if str(root / "docs/guide.md") == op.file_path]
         assert any("# hello" in op.new_text for op in heading_ops)
-        anchor_ops = [op for op in ops if str(root / "src/pkg/other.py") == op.file_path]
+        anchor_ops = [
+            op for op in ops if str(root / "src/pkg/other.py") == op.file_path
+        ]
         assert any("docs/guide.md#hello" in op.new_text for op in anchor_ops)
 
     def test_unrelated_heading_not_touched(self, tmp_path):
@@ -1234,3 +1389,160 @@ class TestAliasPolicy:
         assert plan.aliases[0].original_name == "hello"
         assert plan.aliases[0].alias_name == "hello_existing"
         assert any("def hello_existing" in op.new_text for op in plan.reference_ops)
+
+
+class TestSplitChunking:
+    """T-1201: `chunk_symbols` grouping, standalone from any git/filesystem
+    fixture -- pure list-splitting behavior."""
+
+    def test_chunk_symbols_preserves_order_and_size(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestSplitChunking.test_chunk_symbols_preserves_order_\
+        # and_size
+        groups = chunk_symbols(["a", "b", "c", "d", "e"], 2)
+        assert groups == [["a", "b"], ["c", "d"], ["e"]]
+
+    def test_chunk_symbols_clamps_nonpositive_size_to_one(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestSplitChunking.test_chunk_symbols_clamps_nonpositi\
+        # ve_size_to_one
+        groups = chunk_symbols(["a", "b"], 0)
+        assert groups == [["a"], ["b"]]
+
+
+class TestSplitReexport:
+    """T-1201: the re-export shim op's own shape, independent of a full
+    split run."""
+
+    def test_shim_op_imports_every_moved_name(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestSplitReexport.test_shim_op_imports_every_moved_na\
+        # me
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "x = 1\n")
+        op = build_reexport_shim_op(root, "pkg.mod", "pkg.newmod", ["b", "a"])
+        assert "from pkg.newmod import (" in op.new_text
+        assert "    a," in op.new_text
+        assert "    b," in op.new_text
+        assert "noqa: F401" in op.new_text
+        assert op.start_line == -1
+
+
+class TestRunSplit:
+    """T-1201: the split verb's own chunked apply-verify-rollback
+    pipeline, built on the T-1197/T-1199/T-1200/T-1267 carriers already
+    wired into `build_plan`."""
+
+    def test_split_moves_symbols_and_leaves_reexport_shim(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunSplit.test_split_moves_symbols_and_leaves_reex\
+        # port_shim
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def alpha():\n    return 'a'\n\n\ndef beta():\n    return 'b'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "from pkg.mod import alpha, beta\n\n\ndef use():\n    return alpha() + beta()\n",
+        )
+        _commit_all(root, "initial")
+
+        result = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["alpha", "beta"],
+            destination_module="pkg.newmod",
+            chunk_size=5,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is True
+        assert report.moved_symbols == ("alpha", "beta")
+
+        newmod_text = (root / "src/pkg/newmod.py").read_text(encoding="utf-8")
+        assert "def alpha" in newmod_text
+        assert "def beta" in newmod_text
+
+        mod_text = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
+        assert "from pkg.newmod import (" in mod_text
+        assert "alpha" in mod_text
+        assert "beta" in mod_text
+
+        # scan_references already rewrites every repo-local call site it
+        # finds directly at the new module -- the re-export shim's own
+        # value is for a call site this scan does NOT reach (a caller
+        # outside this repo, or a dynamic import); a repo-local caller
+        # simply gets its import statement rewritten in place.
+        caller_text = (root / "src/pkg/caller.py").read_text(encoding="utf-8")
+        assert "from pkg.newmod import" in caller_text
+        assert "alpha" in caller_text
+        assert "beta" in caller_text
+
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        assert status.strip() == ""
+
+    def test_split_chunk_failure_does_not_touch_later_chunks(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunSplit.test_split_chunk_failure_does_not_touch_\
+        # later_chunks
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def alpha():\n    return 'a'\n\n\ndef beta():\n    return 'b'\n",
+        )
+        _commit_all(root, "initial")
+
+        result = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["alpha", "absent", "beta"],
+            destination_module="pkg.newmod",
+            chunk_size=1,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is False
+        # first chunk (alpha) committed; second (absent) failed to plan;
+        # third (beta) was never attempted.
+        assert len(report.chunks) == 2
+        assert report.chunks[0].success is True
+        assert report.chunks[0].symbols == ("alpha",)
+        assert report.chunks[1].success is False
+        assert report.chunks[1].symbols == ("absent",)
+        assert report.moved_symbols == ("alpha",)
+
+        newmod_text = (root / "src/pkg/newmod.py").read_text(encoding="utf-8")
+        assert "def alpha" in newmod_text
+        mod_text = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
+        assert "def beta" in mod_text
+
+    def test_dirty_working_tree_refuses(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunSplit.test_dirty_working_tree_refuses
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def alpha():\n    return 'a'\n")
+        _commit_all(root, "initial")
+        _write(root, "src/pkg/mod.py", "def alpha():\n    return 'changed'\n")
+
+        result = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["alpha"],
+            destination_module="pkg.newmod",
+        )
+        assert result.is_err
+        assert result.danger_err == RefactorError.DirtyWorkingTree

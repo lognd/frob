@@ -12,6 +12,10 @@ _log = get_logger(__name__)
 
 
 # frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-1238" reason="sunset rescinded 2026-07-29: regroups under frob explore instead of removal"  # noqa: E501
+# frob:waive DEPR003 reason="sunset genuinely rescinded (T-1238 supersedes the \
+# 2026-10-01 date); T-1238's own acceptance criterion is to remove this \
+# frob:deprecated marker entirely once the frob explore regroup lands -- DEPR003 stays \
+# accepted debt until that epic closes, not a live migration deadline"
 def _run_search(cfg: AppConfig, path: Path) -> None:
     """Handle `frob docs --search`: print heading/excerpt matches or JSON.
     T-0580: DEPRECATED, sunset 2026-10-01 -- navigation is owned by

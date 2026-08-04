@@ -16,6 +16,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from frob.excludes import walk_pruned
 from frob.logging import get_logger
 from frob.refactor._models import AliasRecord, ResolvedSymbol, RewriteOp, SymbolRef
 
@@ -23,38 +24,20 @@ _log = get_logger(__name__)
 
 __all__ = ["find_python_files", "scan_references"]
 
-#: Directories never worth walking for reference scanning -- generated,
-#: vendored, or VCS-internal; matches the exclusion set every other
-#: repo-wide walker in this codebase already uses (`frob.lang`'s own file
-#: discovery, `frob.check`'s tool runners).
-_SKIP_DIRS = frozenset(
-    {
-        ".git",
-        ".venv",
-        "__pycache__",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".mypy_cache",
-        "build",
-        "dist",
-        "node_modules",
-        ".frob",
-    }
-)
-
 
 # frob:doc docs/commands/refactor.md#find_python_files
 # frob:tests tests/test_refactor.py::TestFindPythonFiles.test_finds_py_files_and_skips_venv  # noqa: E501
+# frob:ticket T-1504
 def find_python_files(repo_root: Path) -> list[Path]:
     """Every `.py` file under `repo_root`, skipping VCS/build/venv
     directories -- the repo-wide walk both the scan and the Verify
-    phase's import-resolution check reuse."""
-    out: list[Path] = []
-    for path in repo_root.rglob("*.py"):
-        if any(part in _SKIP_DIRS for part in path.parts):
-            continue
-        out.append(path)
-    return out
+    phase's import-resolution check reuse. Routed through
+    `frob.excludes.walk_pruned` (T-1478, WALK001) so pruning happens
+    before descent instead of after a full unpruned `rglob` -- deliberately
+    NOT `frob.excludes.iter_files`, whose `git ls-files` fast path would
+    silently skip untracked `.py` files a refactor is actively creating or
+    has not yet `git add`ed."""
+    return sorted(p for p in walk_pruned(repo_root) if p.suffix == ".py")
 
 
 def _existing_bound_names(tree: ast.Module) -> set[str]:

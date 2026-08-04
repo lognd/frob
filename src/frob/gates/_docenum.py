@@ -127,6 +127,7 @@ def _resolved_names(nodes: list[ast.AST]) -> frozenset[str] | None:
     return frozenset(resolved) if resolved else None
 
 
+# frob:ticket T-1504
 def _extract_members(tree: ast.Module, qualname: str) -> frozenset[str] | None:
     """The real member-name set for `qualname`'s collection literal/class,
     or `None` if the shape is not one of the supported kinds (dict/set/
@@ -168,7 +169,7 @@ def _extract_members(tree: ast.Module, qualname: str) -> frozenset[str] | None:
         if func_name != "frozenset" or len(node.args) != 1:
             return None
         return _extract_members_from_container(node.args[0])
-    # frob:todo T-draft-323551f5
+    # frob:todo T-1506
     # Punt, disclosed: argparse `choices=[...]` lists (cycle.md/xref.md
     # --lang, parse.md tool table) are not resolved here -- a
     # `parser.add_argument(..., choices=[...])` call site has no bare

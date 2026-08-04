@@ -46,7 +46,7 @@ from frob._cli_parsers import (
     _add_xref_parser,
 )
 from frob.app import App, AppConfig
-from frob.app.config import stale_install_warning
+from frob.app.config import stale_binary_warning, stale_install_warning
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -267,6 +267,7 @@ def main() -> None:
 
 
 # frob:ticket T-0355
+# frob:ticket T-1218
 def _dispatch(argv: list[str]) -> None:
     """`main`'s actual argv-to-`App` dispatch, split out so `main` can wrap
     only this in the `KeyboardInterrupt` handler (T-0355) without also
@@ -297,6 +298,12 @@ def _dispatch(argv: list[str]) -> None:
         warning = stale_install_warning(pyproject.parent.resolve())
         if warning is not None:
             print(warning, file=_sys.stderr)
+        # T-1218: floor check, distinct from the exact-match check above --
+        # applies to any repo declaring frob.toml's min_frob_version, not
+        # just frob's own checkout.
+        floor_warning = stale_binary_warning(pyproject.parent.resolve())
+        if floor_warning is not None:
+            print(floor_warning, file=_sys.stderr)
         cfg = AppConfig.from_external(args, pyproject)
         App(cfg)()
 

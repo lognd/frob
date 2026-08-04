@@ -707,6 +707,55 @@ def load_all(conn: sqlite3.Connection, *, stats=None) -> GraphSnapshot
     # Reassembles the full GraphSnapshot from every row currently in the db.
 ```
 
+### Persistent parse-artifact cache (T-1464)
+
+<!-- frob:describes src/frob/graph/cache.py::store_parsed_artifact -->
+<!-- frob:describes src/frob/graph/cache.py::load_parsed_artifact -->
+
+```python
+def store_parsed_artifact(conn, *, content_hash: str, fingerprint: str, payload: str) -> None
+    # Persists one frob.lang.ParsedFile's own model_dump_json() payload,
+    # keyed by (content_hash, fingerprint).
+def load_parsed_artifact(conn, *, content_hash: str, fingerprint: str) -> str | None
+    # The stored payload for that key, or None on a miss.
+```
+
+A `parsed_artifacts` table (schema 4) shares this same `connect`/schema/
+fingerprint machinery, but is written under its OWN db file
+(`.frob/parse-artifacts.db`, `frob.gates._PARSE_ARTIFACT_CACHE_REL`) rather
+than `.frob/cache.db` -- see that constant's comment for why (N
+`ProcessPoolExecutor` gate workers racing this table's own schema-ensure
+work at once measurably perturbed `.frob/cache.db`'s own concurrent-write
+timing enough to newly expose a latent contention incident there,
+unrelated to this table's own rows).
+
+Rows are keyed by `(content_hash, fingerprint)`, never by path -- the same
+file content parses to the same `ParsedFile` regardless of which of
+several identically-content-hashed paths asks for it, and `fingerprint`
+(`_compute_fingerprint()`, T-0243's existing version string) folds the
+parser/grammar/frob version into the key itself so a version upgrade can
+never serve a stale row even before `_check_fingerprint`'s wholesale sweep
+runs. `frob.lang._parse_file_with_artifact_cache` is the consumer: it
+computes `content_hash` before parsing, checks this table first, and on a
+miss stores the fresh `ParsedFile` after `_parse_file_uncached` finishes --
+transparent when `frob.lang.PARSE_ARTIFACT_CACHE_ENV` is unset (the
+default, single-process case), opt-in only inside a `ProcessPoolExecutor`
+gate worker (`frob.gates._stamp_worker_parse_artifact_cache_env` stamps
+the env var once, in the pool owner, before any worker starts, and
+pre-creates/migrates the db file there too -- workers only ever open an
+already-valid file). This is what lets `perf`/`clones`/`dead_symbols`/
+`arch`/`sys` (each an independent `ProcessPoolExecutor` job that used to
+re-parse + re-extract the whole repo from scratch, T-1217's root-cause
+finding) share already-derived artifacts across worker processes and
+across `frob check` invocations, instead of paying the tree-sitter parse +
+`extract()` walk cost once per gate family.
+
+A locked db past `_with_lock_retry`'s own retry budget degrades to "did
+not read/write the cache this time" (a plain parse, or a skipped store) --
+never escapes and crashes the whole `frob check` run, since this cache
+exists purely to make things faster, never to add a new failure mode a
+plain uncached parse never had.
+
 ### Lock contention (T-1423)
 
 Concurrent `frob` processes sharing the same `.frob/cache.db` can hit

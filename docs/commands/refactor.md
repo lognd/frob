@@ -26,6 +26,37 @@ over the whole repository instead of just the files this transaction
 touched (see "Open design question" below). `--skip-check-delta` skips
 the `frob check --delta` post-condition for fast local iteration.
 
+## Split verb (T-1201)
+
+```
+frob refactor split SOURCE_MODULE --symbols a,b,c --into DEST_MODULE [--alias-conflict {error,rename-dest}] [--chunk-size N]
+```
+
+Moves every named symbol out of `SOURCE_MODULE` into a new sibling
+module `DEST_MODULE`, built directly on the T-1072/T-1077 manual
+family-extraction pattern used repeatedly across this drive: the source
+module keeps a re-export shim (`from DEST_MODULE import (a, b, c, ...)
+# noqa: F401`) so any external `from SOURCE_MODULE import symbol` call
+site this engine's own scan does not reach still resolves; every
+repo-local call site `scan_references` DOES reach is rewritten in place,
+same as a single `move` would.
+
+`--symbols` names go in one `chunk-size`-sized group (default 5) at a
+time; each group is its own apply-verify-rollback transaction (`git`
+commit or `git reset --hard`), reusing `build_plan`/`apply_plan` per
+symbol in the group (so every T-1199/T-1200/T-1267 carrier already wired
+into `build_plan` applies to a split exactly as it does to a single
+move) plus one combined re-export-shim op. A chunk's own transaction
+failing stops the whole split from attempting any LATER chunk, but never
+touches an EARLIER chunk's own already-committed symbols -- each chunk
+stands on its own, per the design's "individually refuse-and-rollback
+safe" requirement. Two symbols moved out of the same source module in
+the same chunk each independently plan a full rewrite of the shared
+`from source import a, b` statement; `_dedupe_equivalent_import_ops`
+recognizes the two rewrites as equivalent (same resulting name set, just
+possibly reordered) and collapses them to one op rather than tripping
+`apply_plan`'s overlapping-rewrite refusal.
+
 ## Transaction model
 
 1. **Resolve** -- `frob.refactor.resolve_symbol` parses the source
@@ -392,3 +423,53 @@ see "Alias-conflict policy" above. Renames the existing symbol occupying
 a destination-namespace collision out of the way and rewrites its own
 call sites, returning the rename op, caller ops, and the `AliasRecord`
 `build_plan` folds in when `--alias-conflict rename-dest` is passed.
+
+<a id="git"></a>
+<!-- frob:describes src/frob/refactor/_gitops.py::git -->
+**`git`**: one `git` invocation inside a repo root, routed through the
+package's shared exec kill-switch -- the primitive every transaction
+(single move/rename or a split chunk) commits and rolls back through.
+
+<a id="working_tree_clean"></a>
+<!-- frob:describes src/frob/refactor/_gitops.py::working_tree_clean -->
+**`working_tree_clean`**: `True` iff `git status --porcelain` is empty --
+the precondition every transaction checks before it starts writing.
+
+<a id="current_sha"></a>
+<!-- frob:describes src/frob/refactor/_gitops.py::current_sha -->
+**`current_sha`**: the `HEAD` sha a transaction rolls back to on
+failure.
+
+<a id="chunk_symbols"></a>
+<!-- frob:describes src/frob/refactor/_split.py::chunk_symbols -->
+**`chunk_symbols`**: T-1201's split verb -- splits a symbol-name list
+into ordered groups of at most `chunk_size`, preserving input order.
+
+<a id="build_reexport_shim_op"></a>
+<!-- frob:describes src/frob/refactor/_split.py::build_reexport_shim_op -->
+**`build_reexport_shim_op`**: T-1201's split verb -- builds the source
+module's own `from DEST_MODULE import (...)  # noqa: F401` re-export
+append op, matching the T-1072/T-1077 family-extraction precedent's own
+shape.
+
+<a id="chunkreport"></a>
+<!-- frob:describes src/frob/refactor/_split.py::ChunkReport -->
+**`ChunkReport`**: one chunk's outcome -- the symbols it attempted,
+whether its own transaction committed or rolled back, and every verify
+outcome; `RefactorReport`'s shape at chunk granularity.
+
+<a id="splitreport"></a>
+<!-- frob:describes src/frob/refactor/_split.py::SplitReport -->
+<!-- frob:describes src/frob/refactor/_split.py::SplitReport.success -->
+<!-- frob:describes src/frob/refactor/_split.py::SplitReport.moved_symbols -->
+**`SplitReport`**: the whole split's disclosed report -- one
+`ChunkReport` per chunk attempted, in order; `.success` is true only
+when every chunk committed; `.moved_symbols` is every symbol name whose
+own chunk actually committed, in order.
+
+<a id="run_split"></a>
+<!-- frob:describes src/frob/refactor/_split.py::run_split -->
+**`run_split`**: T-1201's split verb entry point -- see "Split verb"
+above. Chunks `symbols`, then plans/applies/verifies/commits-or-rolls-
+back each chunk in order as its own transaction, stopping the moment one
+chunk fails.

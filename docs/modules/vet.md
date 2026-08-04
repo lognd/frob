@@ -733,10 +733,10 @@ uses table `nvd_cache` and a 7d TTL; `_registry.py` still uses table
 <!-- frob:describes src/frob/vet/_lockfile.py::_parse_lockfile -->
 <!-- frob:describes src/frob/vet/_capability.py::language_for -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_file_capabilities -->
-<!-- frob:describes src/frob/vet/_capability.py::_scan_file_fingerprints -->
-<!-- frob:describes src/frob/vet/_capability.py::_decode_to_exec_signal -->
-<!-- frob:describes src/frob/vet/_capability.py::_scan_directory_capabilities -->
-<!-- frob:describes src/frob/vet/_capability.py::_scan_directory_fingerprints -->
+<!-- frob:describes src/frob/vet/_capability_scan.py::_scan_file_fingerprints -->
+<!-- frob:describes src/frob/vet/_capability_scan.py::_decode_to_exec_signal -->
+<!-- frob:describes src/frob/vet/_capability_scan.py::_scan_directory_capabilities -->
+<!-- frob:describes src/frob/vet/_capability_scan.py::_scan_directory_fingerprints -->
 <!-- frob:describes src/frob/vet/_capability.py::non_executable_line_numbers -->
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
 <!-- frob:describes src/frob/vet/_lifecycle.py::_scan_lifecycle_scripts -->

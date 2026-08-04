@@ -18,6 +18,8 @@ crate-type = ["cdylib", "rlib"]
 # features list) at wheel-build time; plain `cargo build`/`cargo test`
 # leave it off.
 pyo3 = { version = "0.22", features = ["abi3-py311"] }
+tree-sitter = "0.25.0"
+tree-sitter-python = "0.25.0"
 
 [features]
 extension-module = ["pyo3/extension-module"]

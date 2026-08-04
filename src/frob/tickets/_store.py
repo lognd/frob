@@ -46,7 +46,12 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.tickets._models import Ticket, TicketError
+from frob.tickets._models import (
+    Ticket,
+    TicketError,
+    _done_report_section_end,
+    _find_done_report_heading,
+)
 
 # T-0458: `fcntl` is posix-only; `ledger_lock` degrades to a documented
 # no-op (see its docstring) on a platform without it, rather than failing
@@ -442,6 +447,7 @@ _V2_TICKET_GLOB = "T-*/ticket.md"
 
 
 # frob:ticket T-1254
+# frob:ticket T-1504
 # frob:tests tests/unit/test_ticket_store.py::TestV2StoreMode.test_v2_tree_present_is_v2
 def _v2_glob(root: Path) -> list[Path]:
     """Every v2-mode `tickets/T-####/ticket.md` path, sorted (ledger v2
@@ -449,6 +455,10 @@ def _v2_glob(root: Path) -> list[Path]:
     d = tickets_dir(root)
     if not d.exists():
         return []
+    # frob:waive WALK001 reason="d is the tickets/ dir and the glob pattern is a fixed \
+    # one-level-deep 'T-*/ticket.md' shape -- a small, bounded-scope walk with no \
+    # nested .git/.venv/node_modules/build/dist/target to prune, matching the gate's \
+    # own small-bounded-walk escape hatch"
     return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
 
 
@@ -464,6 +474,7 @@ def v2_archive_dir(root: Path, ticket_id: str) -> Path:
 
 
 # frob:ticket T-1256
+# frob:ticket T-1504
 def _v2_archive_glob(root: Path) -> list[Path]:
     """Every archived v2-mode `tickets/archive/T-####/ticket.md` path,
     sorted (design section 4.3) -- `load_archive`'s v2-mode source, the
@@ -471,6 +482,10 @@ def _v2_archive_glob(root: Path) -> list[Path]:
     d = tickets_dir(root) / "archive"
     if not d.exists():
         return []
+    # frob:waive WALK001 reason="d is the tickets/archive/ dir and the glob pattern is \
+    # a fixed one-level-deep 'T-*/ticket.md' shape -- a small, bounded-scope walk with \
+    # no nested .git/.venv/node_modules/build/dist/target to prune, matching the \
+    # gate's own small-bounded-walk escape hatch"
     return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
 
 
@@ -1531,6 +1546,130 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
             _log.warning("tickets: could not remove migrated %s: %s", path, exc)
     _log.info("tickets: migrated %d ticket(s) into %s", len(tickets), ledger_path(root))
     return Ok(len(tickets))
+
+
+# frob:ticket T-1259
+# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+def _split_done_report(body: str) -> tuple[str, str | None]:
+    """Split a v1-mode ticket `body` into (body_without_done_report,
+    done_report_text_or_None), the mechanical inverse of `_models.
+    replace_done_report_section`'s splice: v1 embeds the '## Done report'
+    section inside the same body block `_render_ledger` writes; v2 stores
+    it in its own `done-report.md` (design section 1). Reuses `_models`'s
+    own heading/section-boundary scan (`_find_done_report_heading`/
+    `_done_report_section_end`) rather than re-deriving the same T-0493/
+    T-0848 boundary logic a second time -- the section runs from a genuine
+    `## Done report` heading through the next structural heading or EOF,
+    exactly what `replace_done_report_section` itself treats as
+    replaceable. Returns `(body, None)` unchanged if `body` carries no Done
+    report section at all (a queued/in-progress ticket)."""
+    lines = body.splitlines()
+    heading_idx = _find_done_report_heading(lines)
+    if heading_idx is None:
+        return body, None
+    end_idx = _done_report_section_end(lines, heading_idx)
+    report_lines = lines[heading_idx:end_idx]
+    remaining = lines[:heading_idx] + lines[end_idx:]
+    while remaining and remaining[-1] == "":
+        remaining.pop()
+    report_text = "\n".join(report_lines).strip("\n") + "\n"
+    new_body = "\n".join(remaining)
+    return new_body, report_text
+
+
+# frob:ticket T-1259
+# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_migrates_one_active_ticket_with_done_report  # noqa: E501
+def _migrate_one_v2(
+    root: Path, ticket: Ticket, dest_dir: Path
+) -> Result[None, TicketError]:
+    """Write one v1-mode `ticket` into a v2-mode `dest_dir` (an active
+    `tickets/T-####/` or archived `tickets/archive/T-####/` directory,
+    caller's choice): splits the embedded Done report out of `ticket.body`
+    into `dest_dir/done-report.md` (`_split_done_report`), writes the
+    remaining frontmatter+body to `dest_dir/ticket.md`, and `git mv`s any
+    legacy `tickets/attachments/<id>/` directory to `dest_dir/attachments/`
+    (design section 7's "moved attachments" deliverable) via the same
+    `git_mv_dir` primitive `archive_v2` already uses."""
+    new_body, report_text = _split_done_report(ticket.body)
+    migrated = ticket.model_copy(update={"body": new_body})
+    written = atomic_write(dest_dir / "ticket.md", _serialize_ticket(migrated))
+    if written.is_err:
+        return Err(written.danger_err)
+    if report_text is not None:
+        report_written = atomic_write(dest_dir / "done-report.md", report_text)
+        if report_written.is_err:
+            return Err(report_written.danger_err)
+    legacy_attachments = attachments_dir(root, ticket.id)
+    if legacy_attachments.is_dir() and any(legacy_attachments.iterdir()):
+        moved = git_mv_dir(root, legacy_attachments, dest_dir / "attachments")
+        if moved.is_err:
+            return Err(moved.danger_err)
+    return Ok(None)
+
+
+# frob:ticket T-1259
+# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_golden_round_trip_semantic_equality  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_idempotent_no_v1_state_is_a_no_op  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_draft_id_ticket_migrates_like_any_other  # noqa: E501
+# frob:waive WIRE001 reason="T-1259's own scope (src/frob/tickets/_store.py, \
+# src/frob/gates/**, docs/modules/tickets.md, .gitattributes, \
+# tests/fixtures/tickets/**, tests/test_tickets_migration.py) does not cover the CLI \
+# parser (_cli_parsers/_ticket/_progress.py) or ticket_runner dispatch \
+# (app/ticket_runner/_query.py, __init__.py) a real `frob ticket migrate --to v2` flag \
+# needs -- this function is the migration engine itself, golden-round-trip tested \
+# directly; the CLI flag that calls it is the follow-up's whole job" follow_up="T-1492"
+def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
+    """One-shot, reversible migrator (ledger v2 design section 7,
+    deliverable 1): reads today's `tickets.md`/`tickets-archive.md` via
+    `_parse_ledger`, writes each ticket into a v2-mode `tickets/T-####/
+    ticket.md` (+ `done-report.md`, + a moved `attachments/`), WITHOUT
+    deleting the monofile ledgers in the same call -- rolling back is
+    `rm -rf tickets/T-*/ tickets/archive/` while `tickets.md`/`tickets-
+    archive.md` are still exactly as they were (nothing here ever writes
+    to either path).
+
+    A no-op (`Ok(0)`) if the repo is already v2-mode (`_store_mode`) --
+    migrate is safe to invoke repeatedly. Returns the number of tickets
+    migrated (active + archived), mirroring `migrate_to_ledger`'s own
+    return-count convention."""
+    if _store_mode(root) == "v2":
+        _log.info("tickets: already v2-mode, nothing to migrate")
+        return Ok(0)
+    active: dict[str, Ticket] = {}
+    active_path = ledger_path(root)
+    if active_path.exists():
+        parsed = _parse_ledger(active_path.read_text(encoding="utf-8"))
+        if parsed.is_err:
+            return Err(parsed.danger_err)
+        active = parsed.danger_ok
+    archived: dict[str, Ticket] = {}
+    archive_p = archive_path(root)
+    if archive_p.exists():
+        parsed = _parse_ledger(archive_p.read_text(encoding="utf-8"))
+        if parsed.is_err:
+            return Err(parsed.danger_err)
+        archived = parsed.danger_ok
+    for ticket_id, ticket in active.items():
+        result = _migrate_one_v2(root, ticket, v2_ticket_dir(root, ticket_id))
+        if result.is_err:
+            return Err(result.danger_err)
+    for ticket_id, ticket in archived.items():
+        result = _migrate_one_v2(root, ticket, v2_archive_dir(root, ticket_id))
+        if result.is_err:
+            return Err(result.danger_err)
+    total = len(active) + len(archived)
+    _log.info(
+        "tickets: migrated %d ticket(s) to v2 layout (%d active, %d archived); "
+        "tickets.md/tickets-archive.md left in place -- delete tickets/T-*/ "
+        "tickets/archive/ to roll back",
+        total,
+        len(active),
+        len(archived),
+    )
+    return Ok(total)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals

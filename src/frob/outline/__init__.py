@@ -298,10 +298,6 @@ def _return_annotation(tail: tuple[str, ...]) -> str:
 # paren/_spaced/_return_annotation, plain tuple/str token-walk helpers the resolver \
 # cannot see through; the one real raise path (tuple.index) is caught below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above"
-# frob:waive PII012 reason="T-1062: 'token' here means a parsed leaf-token from \
-# frob.graph's normalized token stream (sig_tokens), not a credential/auth token -- a \
-# name-signature false positive, same class as frob.gates._docptr's existing PII012 \
-# waiver for its own unrelated lexical-token vocabulary"
 def _signature_from_tokens(name: str, sig_tokens: tuple[str, ...]) -> str:
     """Reconstruct `name(params) -> ret` from the leaf-token stream.
 

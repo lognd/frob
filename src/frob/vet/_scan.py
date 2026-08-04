@@ -505,12 +505,6 @@ def _open_single_worker_pool() -> ThreadPoolExecutor:
 # trade-off as `_scan_dependencies`' docstring, made concrete here.
 
 
-# frob:waive EXHAUST001 reason="fut.result()'s only special-cased outcome is \
-# FutureTimeoutError (this function's own docstring: 'rather than raising or silently \
-# dropping the package') -- any OTHER exception is _process_dependency's own genuine \
-# processing failure and must propagate to its real caller/traceback, not be \
-# reclassified as a false TIMEOUT verdict or silently swallowed; a catch-all here \
-# would hide real dependency-scan bugs behind a misleading timeout report, T-1371"
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
 # _open_single_worker_pool/pool.submit/fut.result, cross-module and stdlib \
 # concurrent.futures calls the resolver cannot see through; the one deliberately \

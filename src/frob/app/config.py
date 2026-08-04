@@ -21,6 +21,7 @@ from frob.app._config_meta import (
     ARCH_DEFAULT_MAX_NESTING_DEPTH,
     ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS,
     load_arch_config,
+    stale_binary_warning,
     stale_install_warning,
 )
 from frob.gitlog import GranularityLevel
@@ -47,6 +48,7 @@ __all__ = [
     "AppConfig",
     "Subcommand",
     "load_arch_config",
+    "stale_binary_warning",
     "stale_install_warning",
 ]
 
@@ -663,12 +665,6 @@ class AppConfig(BaseModel):
     natives_path: Path | None = None
 
     @classmethod
-    # frob:waive OPAQUE001 reason="T-1038: every getattr(args, field, None)/ \
-    # getattr(args, flag, False) call in this function ranges over a closed, \
-    # statically-declared tuple/string literal of known AppConfig/argparse field names \
-    # defined right above each loop -- not attacker- or externally-controlled input; \
-    # this is the standard argparse-Namespace-to-model field-copy idiom, not an \
-    # evasion surface"
     # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_missing_file_falls_back_to_defaults kind="unit"  # noqa: E501
     # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_reads_and_merges_tool_frob_table kind="unit"  # noqa: E501
     # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_subcommand_is_resolved_to_the_enum kind="unit"  # noqa: E501

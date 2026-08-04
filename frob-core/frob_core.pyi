@@ -54,3 +54,16 @@ def unresolved_exempt_names(body_tokens: list[str]) -> list[str]: ...
 # T-0953: frob.arch._python's near-duplicate body-similarity clustering --
 # see docs/modules/dup.md#rust-core.
 def near_duplicate_indices(bodies: list[str], threshold: float) -> list[int]: ...
+
+# T-1220: python-only tree-extraction kernel -- see
+# docs/modules/lang.md#extraction-api. Returns (comment_spans,
+# docstring_spans, identifiers, tokens); never raises (source that fails to
+# parse yields four empty lists rather than a PyErr).
+def extract_tree_python(
+    source: bytes,
+) -> tuple[
+    list[tuple[int, int]],
+    list[tuple[int, int]],
+    list[tuple[str, int]],
+    list[str],
+]: ...

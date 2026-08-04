@@ -5,7 +5,10 @@
 # --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
 # src/frob/gates/** for the whole package, so this ticket cannot formally register the \
 # file in its own declared scope until T-1279 closes or narrows; see this ticket's \
-# Done report for the full disclosure"
+# Done report for the full disclosure (reviewed 2026-08-03, drain-to-zero WAIVE004 \
+# sweep: left in place -- SCOPE001 is a scope/lease-dependent rule \
+# (frob.gates._waive.SCOPED_RUN_FLAKY_RULE_IDS), not a stale finding a full unscoped \
+# run can prove dead the way WIRE001/REF002/etc can"
 """frob.gates._waive -- WAIVE001-005/DSL001 directive validation plus the
 shared `_match_waiver`/`_apply_waivers` matching spine.
 
@@ -217,6 +220,10 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0755: a ticket's bound evidence killed zero mutants of a
         # diff-touched file it claims to cover -- confirmatory-only.
         "TEST016",
+        # T-1489: coverage.xml joins far fewer known modules than the
+        # snapshot has -- deflation, split out of TEST011 as its own
+        # blocking rule (see `frob.gates._test017_deflation`).
+        "TEST017",
         # T-1421/T-1427: a bug/security ticket's designated evidence test
         # must have genuinely FAILED at its parent commit (the mechanical
         # "the defect no longer reproduces" check); see
@@ -391,6 +398,13 @@ _KNOWN_GATE_RULES = frozenset(
         # resolving nearby and no explicit no-ticket-needed reason. WARN,
         # first turn-on.
         "TICK011",
+        # T-1259: LEDGERV1001 (frob.gates._tickets_gate's
+        # _ledgerv1001_violations) -- a repo still on ledger v1 (monofile
+        # tickets.md/tickets-archive.md) after ledger v2's migration path
+        # shipped, mirroring the DEPR00x family's warn-in-window/error-
+        # past-expiry shape at the whole-backend granularity. `frob
+        # ticket migrate --to v2` is the recorded remedy.
+        "LEDGERV1001",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left

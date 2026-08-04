@@ -16,6 +16,7 @@ verbatim, no behavior change.
 # frob:waive INV006 preset="split-carried-prose"
 # frob:ticket T-1420
 # frob:ticket T-1210
+# frob:ticket T-1223
 from __future__ import annotations
 
 import bisect
@@ -25,6 +26,8 @@ import threading
 from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
+
+from tree_sitter import Query, QueryCursor
 
 from frob.lang import COMMENT_TYPES, node_text, raw_tree
 from frob.logging import get_logger
@@ -86,27 +89,58 @@ _PATTERNS: dict[str, dict[str, tuple[str, ...]]] = _compile_patterns()
 ByteSpan = tuple[int, int]
 
 
+# frob:ticket T-1223
+#: Process-lifetime memo of compiled `(comment-type) @c` alternation Queries,
+#: keyed by `language_label` (T-1223: the interim zero-Rust half of the
+#: report's Rust-migration candidate #1 -- replace the Python-recursion span
+#: walk with a tree-sitter Query captured in C). A `Query` is bound to the
+#: `tree_sitter.Language` instance it was compiled against, but two
+#: `Language` instances for the SAME grammar/ABI are interchangeable for
+#: `QueryCursor.captures` purposes (verified: compiling against one file's
+#: `tree.language` and running the cursor over an unrelated file's tree of
+#: the same grammar returns identical results) -- so the first tree seen for
+#: a given `language_label` compiles the Query once, and every later file of
+#: that language reuses it. Not keyed by `id(tree.language)`: `frob.lang`
+#: does not itself cache `Language` objects across `_parse` calls, so a
+#: per-instance cache would never hit past the first file.
+_comment_query_cache: dict[str, QueryCursor] = {}
+_comment_query_cache_lock = threading.Lock()
+
+
+def _comment_query_for(tree, language_label: str, comment_types: frozenset[str]):  # noqa: ANN001, ANN201
+    """The cached `QueryCursor` for `language_label`'s comment-node
+    alternation, compiling a new one against `tree.language` on first use
+    (T-1223). `comment_types` (already looked up by the caller) becomes a
+    `(type_a) @c\\n(type_b) @c ...` query source -- one capture per comment
+    node type this grammar has (rust has two, most grammars have one)."""
+    with _comment_query_cache_lock:
+        cached = _comment_query_cache.get(language_label)
+        if cached is not None:
+            return cached
+    query_src = "\n".join(f"({node_type}) @c" for node_type in sorted(comment_types))
+    cursor = QueryCursor(Query(tree.language, query_src))
+    with _comment_query_cache_lock:
+        _comment_query_cache.setdefault(language_label, cursor)
+        return _comment_query_cache[language_label]
+
+
 def _comment_byte_spans_from_tree(tree, language_label: str) -> list[ByteSpan]:  # noqa: ANN001
     """Byte-range spans of every tree-sitter COMMENT node in an already-
     parsed `tree` (T-1210 split out of `_non_executable_byte_spans` so a
     single per-file parse can feed both the comment and docstring walks
-    without re-invoking `raw_tree`). Returns `[]` when `frob.lang` has no
-    comment vocabulary registered for `language_label` at all."""
+    without re-invoking `raw_tree`; T-1223: the walk itself now runs as a
+    tree-sitter Query capture in C instead of a per-node Python recursion --
+    measured ~3x faster over this repo's own `src/**/*.py` + `frob-core/
+    **/*.rs` files, 0 mismatches against the prior walk's output). Returns
+    `[]` when `frob.lang` has no comment vocabulary registered for
+    `language_label` at all."""
     comment_types = COMMENT_TYPES.get(language_label)
     if not comment_types:
         return []
 
-    spans: list[ByteSpan] = []
-
-    def walk(node) -> None:  # noqa: ANN001 -- tree_sitter.Node, avoided at type level here
-        if node.type in comment_types:
-            spans.append((node.start_byte, node.end_byte))
-            return
-        for child in node.children:
-            walk(child)
-
-    walk(tree.root_node)
-    return spans
+    cursor = _comment_query_for(tree, language_label, comment_types)
+    captures = cursor.captures(tree.root_node)
+    return [(node.start_byte, node.end_byte) for node in captures.get("c", [])]
 
 
 #: Sentinel second element for the `bisect` probe key in `_fully_in_any_span`
@@ -144,65 +178,79 @@ def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> boo
     return span_start <= start and end <= span_end
 
 
-#: python container node types whose body can open with a docstring
-#: (T-0769) -- mirrors `frob.lang._walk_python`'s identical vocabulary
-#: (module root, function/method, class), kept as a small local duplicate
-#: rather than importing that module's private helper: this module already
-#: uses `frob.lang`'s PUBLIC `raw_tree`/`node_text` entry points only, and
-#: the "what counts as a docstring" rule is three lines of tree shape, not
-#: worth a cross-module private dependency for.
-_PY_DOCSTRING_CONTAINER_TYPES = ("function_definition", "class_definition")
+# frob:ticket T-1223
+#: The python docstring Query source (T-1223): every module/class/function
+#: body whose FIRST named child is a bare `string` node, or an
+#: `expression_statement` wrapping one -- mirrors the exact shape
+#: `_py_leading_docstring_node` (pre-T-1223) tested node-by-node in Python.
+#: NOTE: `expression_statement` is a tree-sitter-python SUPERTYPE, not a
+#: concrete node kind -- it also matches concrete nodes like `assignment`
+#: (verified: `(expression_statement (string) @doc)` alone spuriously
+#: captured an enum member's VALUE string, e.g. `NotADirectory = "..."`,
+#: because `assignment` conforms to the `expression_statement` supertype
+#: and its own `string` child satisfies the inner pattern). `_PY_DOC_CAPTURE
+#: _FILTER` below is the required post-filter closing that gap: a capture
+#: only counts as a real docstring if its immediate parent's own `.type` is
+#: literally `"module"`, `"block"` (the bare-string case), or
+#: `"expression_statement"` (the wrapped case) -- never `"assignment"` or
+#: any other expression_statement-conforming concrete kind.
+_PY_DOCSTRING_QUERY_SRC = """
+(module . (string) @doc)
+(module . (expression_statement (string) @doc))
+(function_definition body: (block . (string) @doc))
+(function_definition body: (block . (expression_statement (string) @doc)))
+(class_definition body: (block . (string) @doc))
+(class_definition body: (block . (expression_statement (string) @doc)))
+"""
+
+#: Concrete parent `.type` values that make a `_PY_DOCSTRING_QUERY_SRC`
+#: capture a REAL docstring rather than a supertype false-positive (see that
+#: constant's docstring) -- `"module"`/`"block"` cover the bare-string
+#: anchor patterns, `"expression_statement"` covers the wrapped ones.
+_PY_DOC_CAPTURE_FILTER = frozenset({"module", "block", "expression_statement"})
+
+_docstring_query_cache: QueryCursor | None = None
+_docstring_query_cache_lock = threading.Lock()
 
 
-def _py_leading_docstring_node(container):  # noqa: ANN001, ANN201 -- tree_sitter.Node
-    """The leading-statement `string` node opening `container`'s body, if
-    any (T-0769) -- `container` is either the module root itself or a
-    function/class node whose own `body` field holds the statement block.
-    Returns `None` when the first statement is not a bare/expression-
-    wrapped string literal, i.e. there is no docstring here at all."""
-    body = (
-        container
-        if container.type == "module"
-        else container.child_by_field_name("body")
-    )
-    if body is None or body.named_child_count == 0:
-        return None
-    first = body.named_children[0]
-    if first.type == "expression_statement":
-        if first.named_child_count == 0 or first.named_children[0].type != "string":
-            return None
-        return first.named_children[0]
-    if first.type == "string":
-        return first
-    return None
+def _docstring_query_for(tree):  # noqa: ANN001, ANN201
+    """The cached `QueryCursor` for `_PY_DOCSTRING_QUERY_SRC`, compiled
+    against `tree.language` on first use (T-1223) -- one process-lifetime
+    Query shared by every python file's docstring-span extraction, same
+    caching shape as `_comment_query_for`."""
+    global _docstring_query_cache
+    with _docstring_query_cache_lock:
+        if _docstring_query_cache is None:
+            _docstring_query_cache = QueryCursor(
+                Query(tree.language, _PY_DOCSTRING_QUERY_SRC)
+            )
+        return _docstring_query_cache
 
 
 def _docstring_byte_spans_from_tree(tree, language_label: str) -> list[ByteSpan]:  # noqa: ANN001
     """Byte-range spans of every module/class/function-head docstring
     STRING node in an already-parsed `tree` (T-0769; T-1210 split out of
-    `_non_executable_byte_spans` for the shared-parse fix -- see
-    `_comment_byte_spans_from_tree`'s docstring) -- python only, the only
-    language this module extracts a docstring concept for. A docstring is a
-    non-executable string constant; needle prose written there (fork/
-    subprocess hazard documentation, e.g.) must not count as an observed
-    capability any more than the same prose in a `#` comment would (see
-    module docstring T-0769 entry for the false-positive this closes).
+    `_non_executable_byte_spans` for the shared-parse fix; T-1223: the walk
+    itself now runs as a tree-sitter Query capture in C instead of a
+    per-node Python recursion -- see `_comment_byte_spans_from_tree`'s
+    docstring for the measured speedup and `_PY_DOCSTRING_QUERY_SRC`'s for
+    the supertype false-positive this needed a post-filter for) -- python
+    only, the only language this module extracts a docstring concept for. A
+    docstring is a non-executable string constant; needle prose written
+    there (fork/subprocess hazard documentation, e.g.) must not count as an
+    observed capability any more than the same prose in a `#` comment would
+    (see module docstring T-0769 entry for the false-positive this closes).
     Returns `[]` for any non-python `language_label`."""
     if language_label != "python":
         return []
 
-    spans: list[ByteSpan] = []
-
-    def walk(node, is_top: bool) -> None:  # noqa: ANN001
-        if is_top or node.type in _PY_DOCSTRING_CONTAINER_TYPES:
-            doc = _py_leading_docstring_node(node)
-            if doc is not None:
-                spans.append((doc.start_byte, doc.end_byte))
-        for child in node.children:
-            walk(child, False)
-
-    walk(tree.root_node, True)
-    return spans
+    cursor = _docstring_query_for(tree)
+    captures = cursor.captures(tree.root_node)
+    return [
+        (node.start_byte, node.end_byte)
+        for node in captures.get("doc", [])
+        if node.parent is None or node.parent.type in _PY_DOC_CAPTURE_FILTER
+    ]
 
 
 #: Process-lifetime memo for `_non_executable_byte_spans`, keyed on

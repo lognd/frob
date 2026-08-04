@@ -78,6 +78,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from frob.app._config_meta import stale_binary_warning
 from frob.logging import get_logger
 from frob.mutate._journal import StaleJournal, list_stale_journals
 from frob.process._lock import derived_state_lock
@@ -627,6 +628,7 @@ def _mutate_journal_remediation(stale: tuple[StaleJournal, ...]) -> str:
 
 
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
+# frob:ticket T-1501
 class DoctorReport(BaseModel):
     """Full `frob doctor` diagnosis: per-extension status, derived-artifact
     integrity manifest (T-0570), cross-run content drift (T-0604),
@@ -648,7 +650,11 @@ class DoctorReport(BaseModel):
     incident) is a real stuck ticket, not disposable state. `venv_shims`
     (T-1161) is the same class once more: a `.venv/bin/` entrypoint
     shebang pointing outside this venv is a real, silently broken
-    interpreter binding, not disposable cache churn."""
+    interpreter binding, not disposable cache churn. `stale_binary`
+    (T-1218) is the same class again: the invoked `frob` reading BELOW
+    this repo's own `frob.toml` `min_frob_version` floor means every gate
+    number and ledger splice this run produced may already be wrong --
+    see `stale_binary_warning`'s docstring for the motivating incident."""
 
     model_config = {}
 
@@ -661,6 +667,7 @@ class DoctorReport(BaseModel):
     malformed_ticket_edges: list[MalformedTicketEdge] = []
     stale_ticket_leases: list[str] = []
     venv_shims: list[VenvShimDrift] = []
+    stale_binary: str | None = None
     healthy: bool
     remediation: str | None = None
 
@@ -692,6 +699,7 @@ def _frob_version() -> str:
         return "unknown"
 
 
+# frob:ticket T-1501
 def _combined_remediation(
     natives_healthy: bool,
     corrupt: tuple[DerivedArtifactStatus, ...],
@@ -700,12 +708,14 @@ def _combined_remediation(
     malformed_ticket_edges: tuple[MalformedTicketEdge, ...] = (),
     stale_ticket_leases: tuple[str, ...] = (),
     venv_shims: tuple[VenvShimDrift, ...] = (),
+    stale_binary: str | None = None,
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
     journal hint (T-0857), malformed-ticket-edge hint (T-1132), stale-
-    ticket-lease hint (T-1131), venv-shim hint (T-1161), or all joined --
-    `None` only when every part is clean."""
+    ticket-lease hint (T-1131), venv-shim hint (T-1161), stale-binary-
+    floor hint (T-1218), or all joined -- `None` only when every part is
+    clean."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
@@ -721,6 +731,8 @@ def _combined_remediation(
         parts.append(_stale_ticket_leases_remediation(stale_ticket_leases))
     if venv_shims:
         parts.append(_venv_shim_remediation(venv_shims))
+    if stale_binary:
+        parts.append(stale_binary)
     return " | ".join(parts) if parts else None
 
 
@@ -768,6 +780,7 @@ def _collect_doctor_scans(resolved_root: Path):
 
 
 # frob:ticket T-1162
+# frob:ticket T-1501
 # frob:waive PII012 reason="'diagnosis' here is repository-health machinery (frob \
 # doctor's own DoctorReport summary log), not a medical/health record about a person \
 # -- a name-signature false positive, same class as run_diagnosis's own existing PII \
@@ -782,15 +795,18 @@ def _log_doctor_diagnosis(
     malformed_ticket_edges,
     stale_ticket_leases,
     venv_shims=(),
+    stale_binary=None,
 ) -> None:
     """T-1162: pure I/O -- emit `run_diagnosis`'s single summary log line.
     Extracted verbatim so the report-building logic above it stays
     decision/formatting only. `venv_shims` (T-1161) defaults to `()` so
-    existing positional callers are unaffected."""
+    existing positional callers are unaffected. `stale_binary` (T-1218)
+    defaults to `None` for the same reason."""
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
         "scaffold_needs_apply=%s stale_mutate_journals=%s "
-        "malformed_ticket_edges=%s stale_ticket_leases=%s venv_shims=%s",
+        "malformed_ticket_edges=%s stale_ticket_leases=%s venv_shims=%s "
+        "stale_binary=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
@@ -800,67 +816,111 @@ def _log_doctor_diagnosis(
         [f"{e.ticket_id}.{e.field}" for e in malformed_ticket_edges],
         stale_ticket_leases,
         [d.script for d in venv_shims],
+        bool(stale_binary),
+    )
+
+
+# frob:ticket T-1501
+def _assemble_doctor_report(
+    resolved_root: Path,
+    extensions: list,
+    natives_healthy: bool,
+    derived_state,
+    corrupt,
+    drift,
+    scaffold_blocks,
+    scaffold_needs_apply,
+    stale_mutate_journals,
+    malformed_ticket_edges,
+    stale_ticket_leases,
+    venv_shims,
+    stale_binary,
+) -> DoctorReport:
+    """`run_diagnosis`'s own `healthy`/`DoctorReport` decision and build,
+    extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
+    60-line threshold now that its docstring has grown with each health
+    check it documents. `healthy` is False if natives fail to import, the
+    derived-state manifest is corrupt, or any of the scaffold/mutate-
+    journal/ticket-edge/ticket-lease/venv-shim/stale-binary scans found
+    something -- see `DoctorReport`'s own docstring for the per-field
+    contract each of those checks documents."""
+    healthy = (
+        natives_healthy
+        and not corrupt
+        and not scaffold_needs_apply
+        and not stale_mutate_journals
+        and not malformed_ticket_edges
+        and not stale_ticket_leases
+        and not venv_shims
+        and not stale_binary
+    )
+    return DoctorReport(
+        frob_version=_frob_version(),
+        extensions=extensions,
+        derived_state=list(derived_state),
+        drift=list(drift),
+        scaffold_blocks=list(scaffold_blocks),
+        mutate_journals=list(stale_mutate_journals),
+        malformed_ticket_edges=list(malformed_ticket_edges),
+        stale_ticket_leases=list(stale_ticket_leases),
+        venv_shims=list(venv_shims),
+        stale_binary=stale_binary,
+        healthy=healthy,
+        remediation=_combined_remediation(
+            natives_healthy,
+            corrupt,
+            scaffold_needs_apply,
+            stale_mutate_journals,
+            malformed_ticket_edges,
+            stale_ticket_leases,
+            venv_shims,
+            stale_binary,
+        ),
     )
 
 
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:tests tests/system/test_cli_doctor.py kind="integration"
-# frob:waive AFFECT001 reason="T-1162 is a pure internal extraction (I/O/scan/log \
-# helpers pulled out to cut the function under the 60-line ARCH threshold); behavior, \
-# inputs, outputs, and the documented contract are all unchanged, so \
-# docs/guides/install.md's own content needs no edit"
+# frob:ticket T-1501
+# frob:waive AFFECT001 reason="T-1162/T-1501 are pure internal extractions \
+# (I/O/scan/log/assembly helpers pulled out to cut the function under the 60-line ARCH \
+# threshold); behavior, inputs, outputs, and the documented contract are all \
+# unchanged, so docs/guides/install.md's own content needs no edit"
 def run_diagnosis(root: Path | None = None) -> DoctorReport:
     """Check every entry in `NATIVE_EXTENSIONS` for importability and
-    fingerprint every entry in `DERIVED_ARTIFACTS` under `root` (T-0570),
-    building the full `DoctorReport`. `healthy` is True only when every
-    native extension imports cleanly AND no present derived artifact fails
-    its integrity check; `remediation` names whichever failed. `root`
-    defaults to the current working directory, matching every other
-    `frob` command's implicit-root convention -- passing it explicitly is
-    for tests and non-CLI callers.
+    fingerprint every entry in `DERIVED_ARTIFACTS` under `root`, building
+    the full `DoctorReport`. `healthy` is True only when every native
+    extension imports cleanly, no present derived artifact fails its
+    integrity check, and none of the scan-based checks below found
+    anything; `remediation` names whichever failed. `root` defaults to the
+    current working directory, matching every other `frob` command's
+    implicit-root convention -- passing it explicitly is for tests and
+    non-CLI callers.
 
-    T-0604: also compares this run's fingerprints against the manifest the
-    PREVIOUS `frob doctor` run persisted (`_detect_derived_state_drift`)
-    and stamps a fresh manifest for the NEXT run before returning --
-    `report.drift` is informational only and does not affect `healthy`,
-    see that function's docstring for why.
-
-    T-0857: also reports every stale `frob mutate` backup journal under
-    `.frob/mutate-backup/` (`list_stale_journals`) -- UNLIKE `drift`, a
-    present journal DOES make `healthy` False (see `DoctorReport`'s
-    docstring).
-
-    T-1132: also scans `tickets.md`/`tickets-archive.md` for existing
-    malformed `blocked_by`/`parent` entries (`scan_malformed_ticket_edges`,
-    the T-0380 incident) -- any finding DOES make `healthy` False.
-
-    T-1131: also reports any ticket stuck `IN_PROGRESS` with no live
-    cross-worktree lease (`scan_stale_ticket_leases`, the T-1050
-    incident) -- any finding DOES make `healthy` False.
+    Beyond the native/derived-state check, this also: compares fingerprints
+    against the previous run's manifest (`drift`, informational only, does
+    not affect `healthy`); reports stale `frob mutate` backup journals;
+    scans `tickets.md`/`tickets-archive.md` for malformed `blocked_by`/
+    `parent` entries and for tickets stuck `IN_PROGRESS` with no live
+    lease; scans `.venv/bin/` for shebangs pointing outside this venv; and
+    checks the invoked `frob`'s own version against `frob.toml`'s
+    `min_frob_version` floor. Each of these DOES make `healthy` False when
+    it finds something -- see `_assemble_doctor_report` and the individual
+    scan functions' own docstrings for the per-check detail and originating
+    incidents (T-0570/T-0604/T-0857/T-1132/T-1131/T-1161/T-1218).
 
     T-0879: the fingerprint-read + manifest-write sequence
     (`verify_derived_state` through `_write_drift_manifest`) holds
     `derived_state_lock(resolved_root, exclusive=True)` for its whole
-    span -- this is `run_diagnosis`'s own rebuild/write path over
-    `.frob`'s derived-state manifest, and `frob doctor` is always a
-    standalone invocation (never nested inside an already-locked `frob
-    check` run), so the EXCLUSIVE acquisition here cannot self-deadlock
-    against a SHARED holder in the same process. See
-    `derived_state_lock`'s docstring for the shared/exclusive contract.
+    span; `frob doctor` is always a standalone invocation (never nested
+    inside an already-locked `frob check` run), so this cannot self-
+    deadlock against a SHARED holder in the same process.
 
     T-1162 split the locked derived-state pass into `_diagnose_derived_state`,
     the unlocked scans into `_collect_doctor_scans`, and the summary log
-    line into `_log_doctor_diagnosis` -- this function is now their
-    composition plus the `healthy`/`DoctorReport` decision and build.
-
-    T-1161: also scans `.venv/bin/` for entrypoint scripts whose shebang
-    points at a python interpreter outside THIS venv (`scan_venv_shims`,
-    the 2026-07-28 incident: a cross-worktree `uv` operation rewrote the
-    root venv's `pytest` shim shebang, and once the other worktree was
-    removed every `uv run pytest` broke with no direct diagnostic --
-    `collect_python_tests` only ever saw an opaque collection failure).
-    Any finding DOES make `healthy` False, same class as `mutate_journals`/
-    `malformed_ticket_edges`/`stale_ticket_leases` above.
+    line into `_log_doctor_diagnosis`; T-1501 further split the report
+    assembly into `_assemble_doctor_report` -- this function is now just
+    their composition.
     """
     resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
@@ -875,39 +935,25 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         stale_ticket_leases,
         venv_shims,
     ) = _collect_doctor_scans(resolved_root)
+    stale_binary = stale_binary_warning(resolved_root)
 
-    healthy = (
-        natives_healthy
-        and not corrupt
-        and not scaffold_needs_apply
-        and not stale_mutate_journals
-        and not malformed_ticket_edges
-        and not stale_ticket_leases
-        and not venv_shims
-    )
-    report = DoctorReport(
-        frob_version=_frob_version(),
-        extensions=extensions,
-        derived_state=list(derived_state),
-        drift=list(drift),
-        scaffold_blocks=list(scaffold_blocks),
-        mutate_journals=list(stale_mutate_journals),
-        malformed_ticket_edges=list(malformed_ticket_edges),
-        stale_ticket_leases=list(stale_ticket_leases),
-        venv_shims=list(venv_shims),
-        healthy=healthy,
-        remediation=_combined_remediation(
-            natives_healthy,
-            corrupt,
-            scaffold_needs_apply,
-            stale_mutate_journals,
-            malformed_ticket_edges,
-            stale_ticket_leases,
-            venv_shims,
-        ),
+    report = _assemble_doctor_report(
+        resolved_root,
+        extensions,
+        natives_healthy,
+        derived_state,
+        corrupt,
+        drift,
+        scaffold_blocks,
+        scaffold_needs_apply,
+        stale_mutate_journals,
+        malformed_ticket_edges,
+        stale_ticket_leases,
+        venv_shims,
+        stale_binary,
     )
     _log_doctor_diagnosis(
-        healthy,
+        report.healthy,
         extensions,
         corrupt,
         drift,
@@ -916,5 +962,6 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         malformed_ticket_edges,
         stale_ticket_leases,
         venv_shims,
+        stale_binary,
     )
     return report

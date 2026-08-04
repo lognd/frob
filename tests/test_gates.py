@@ -7,7 +7,9 @@
 # frob:waive SCOPE001 reason="T-1398's declared scope is src/frob/gates/_coverage.py \
 # only; its own regression test necessarily lives in this file (the existing home for \
 # every other _coverage.py test), and T-1398 could not extend scope to add \
-# tests/test_gates.py -- T-1235 (in-progress) already holds a tests/** lease"
+# tests/test_gates.py -- T-1235 (in-progress) already holds a tests/** lease (reviewed \
+# 2026-08-03, drain-to-zero WAIVE004 sweep: left in place -- SCOPE001 is a \
+# scope/lease-dependent rule, not a stale finding a full unscoped run can prove dead)"
 
 from __future__ import annotations
 
@@ -7225,8 +7227,8 @@ class TestTestGate:
         assert test011[0].severity == Severity.WARN
         assert "predates" in test011[0].message
 
-    def test_test011_fires_on_low_join_fraction(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::_test011_freshness
+    def test_test017_fires_on_low_join_fraction(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test017_deflation
         from typani.option import Some
 
         from frob.gates import CoverageData
@@ -7242,9 +7244,11 @@ class TestTestGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         test011 = [v for v in violations if v.rule == "TEST011"]
-        assert len(test011) == 1
-        assert test011[0].severity == Severity.WARN
-        assert "deflated" in test011[0].message
+        assert len(test011) == 0
+        test017 = [v for v in violations if v.rule == "TEST017"]
+        assert len(test017) == 1
+        assert test017[0].severity == Severity.ERROR
+        assert "deflated" in test017[0].message
 
     def test_test011_silent_when_fresh_and_fully_joined(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::_test011_freshness
@@ -7263,6 +7267,7 @@ class TestTestGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         assert not any(v.rule == "TEST011" for v in violations)
+        assert not any(v.rule == "TEST017" for v in violations)
 
     # frob:ticket T-0545
     def test_test012_missing_lock_warns(self, tmp_path: Path) -> None:
@@ -8280,6 +8285,75 @@ class TestCoverageLoad:
         from frob.gates._coverage import load_lock_audit_log
 
         assert load_lock_audit_log(tmp_path) == ()
+
+    # frob:ticket T-1279
+    def test_load_lock_audit_log_skips_malformed_line(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_lock_audit_log
+        # A malformed line (not valid JSON) is skipped, not raised -- the
+        # rest of a genuinely-append-only file must still parse.
+        from frob.gates._coverage import load_lock_audit_log
+
+        audit_path = tmp_path / ".frob" / "coverage-lock-audit.log"
+        audit_path.parent.mkdir(parents=True)
+        audit_path.write_text(
+            '{"source_sha": "good-1", "module_count": 1}\n'
+            "not-json-at-all\n"
+            '{"source_sha": "good-2", "module_count": 2}\n'
+        )
+        entries = load_lock_audit_log(tmp_path)
+        assert [e["source_sha"] for e in entries] == ["good-1", "good-2"]
+
+    def test_write_coverage_lock_refuses_under_lease_violation(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::write_coverage_lock
+        # A worktree-lease mismatch refuses the write outright (via
+        # enforce_worktree_lease), never a partial/silent write.
+        from frob.gates import CoverageData, GateError, write_coverage_lock
+
+        _git_init(tmp_path)
+        monkeypatch.setenv("FROB_WORKTREE", str(tmp_path / "somewhere-else"))
+        data = CoverageData(
+            source_sha="sha",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 10.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        result = write_coverage_lock(tmp_path, data)
+        assert result.is_err
+        assert result.danger_err == GateError.WorktreeLeaseViolation
+        assert not (tmp_path / "frob-coverage.lock.json").exists()
+
+    def test_load_coverage_lock_malformed_json_returns_none(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage_lock
+        from frob.gates._coverage import load_coverage_lock
+
+        (tmp_path / "frob-coverage.lock.json").write_text("not valid json {")
+        assert load_coverage_lock(tmp_path) is None
+
+    def test_load_coverage_lock_missing_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage_lock
+        from frob.gates._coverage import load_coverage_lock
+
+        assert load_coverage_lock(tmp_path) is None
+
+    def test_load_stamp_missing_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_stamp
+        from frob.gates._coverage import load_stamp
+
+        assert load_stamp(tmp_path) is None
+
+    def test_load_stamp_malformed_json_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_stamp
+        from frob.gates._coverage import load_stamp
+
+        stamp_path = tmp_path / ".frob" / "coverage-stamp"
+        stamp_path.parent.mkdir(parents=True)
+        stamp_path.write_text("not valid json {")
+        assert load_stamp(tmp_path) is None
 
     # frob:ticket T-1180
     def test_stamp_coverage_refuses_below_deflation_floor(self, tmp_path: Path) -> None:
@@ -14727,3 +14801,307 @@ class TestNewGateRuleDynamicResolution:
         self._git(tmp_path, "commit", "-q", "-m", "init")
 
         assert new_gate_rule_ids(tmp_path, base_ref="main") == ()
+
+
+class TestFixEngineTierB:
+    """`frob.gates._fix_engine_tier_b`'s Tier-B apply-verify-rollback
+    transaction engine (T-1262): each test is a GIVEN/WHEN/THEN
+    acceptance criterion off this ticket's own body. `gate_runner`/
+    `test_runner` are injected fakes throughout -- this suite proves the
+    engine's own commit/rollback DECISION LOGIC, not any real gate's
+    behavior (the real defaults are exercised end-to-end by the module's
+    own synthetic `TIERBDEMO001` handler against an actual, un-injected
+    `run_gates`/pytest pair would be slow and gate-composition-fragile;
+    injection is the same "default preserves real behavior, override is
+    test-only" shape `fix_fmt001_directive_wrap`'s `only_paths` already
+    established in `_fix_engine.py`)."""
+
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    def _demo_file(self, root: Path, marker_replacement: str) -> Path:
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        path = root / "src" / "demo.py"
+        path.write_text(
+            f"# frob:tierbdemo {marker_replacement}\ndef f():\n    pass\n",
+            encoding="utf-8",
+        )
+        return path
+
+    # -- acceptance [0]: a clean Tier-B fix commits ------------------------
+
+    def test_clean_fix_commits_and_is_reported_fixed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_b.py::apply_tier_b_fixes \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_b import apply_tier_b_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        self._demo_file(root, "# fixed")
+        snapshot = self._snap(root)
+
+        def always_clean(_root: Path, _gates: frozenset[str]):
+            from frob.gates._models import GateReport, GateStats
+
+            return GateReport(violations=(), waived=(), stats=GateStats())
+
+        def always_pass(_root: Path, _bound_tests: tuple[str, ...]):
+            return True, ""
+
+        committed, rolled_back = apply_tier_b_fixes(
+            root,
+            snapshot,
+            TicketQueue(tickets={}),
+            gate_runner=always_clean,
+            test_runner=always_pass,
+        )
+        assert rolled_back == []
+        assert len(committed) == 1
+        assert committed[0].rule == "TIERBDEMO001"
+        rewritten = (root / "src" / "demo.py").read_text(encoding="utf-8")
+        assert rewritten.splitlines()[0] == "# fixed"
+
+    # -- acceptance [1]: a regressing Tier-B fix rolls back ----------------
+
+    def test_regressing_fix_is_rolled_back_byte_for_byte(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_b.py::apply_tier_b_fixes \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_b import apply_tier_b_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        path = self._demo_file(root, "# fixed")
+        original = path.read_text(encoding="utf-8")
+        snapshot = self._snap(root)
+
+        def always_pass(_root: Path, _bound_tests: tuple[str, ...]):
+            return False, "TestX::test_y FAILED"
+
+        def always_clean(_root: Path, _gates: frozenset[str]):
+            from frob.gates._models import GateReport, GateStats
+
+            return GateReport(violations=(), waived=(), stats=GateStats())
+
+        committed, rolled_back = apply_tier_b_fixes(
+            root,
+            snapshot,
+            TicketQueue(tickets={}),
+            gate_runner=always_clean,
+            test_runner=always_pass,
+        )
+        assert committed == []
+        assert len(rolled_back) == 1
+        assert rolled_back[0].rule == "TIERBDEMO001"
+        assert "TestX::test_y FAILED" in rolled_back[0].regression_detail
+        assert path.read_text(encoding="utf-8") == original
+
+    def test_new_error_violation_after_fix_rolls_back(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_b.py::apply_tier_b_fixes \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_b import apply_tier_b_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        path = self._demo_file(root, "# fixed")
+        original = path.read_text(encoding="utf-8")
+        snapshot = self._snap(root)
+
+        from frob.gates._models import GateReport, GateStats, Severity, Violation
+
+        calls: list[int] = []
+
+        def flaky(_root: Path, _gates: frozenset[str]):
+            calls.append(1)
+            if len(calls) == 1:
+                return GateReport(violations=(), waived=(), stats=GateStats())
+            return GateReport(
+                violations=(
+                    Violation(
+                        rule="ARCH001",
+                        severity=Severity.ERROR,
+                        file="src/demo.py",
+                        line=1,
+                        message="ARCH001: new regression",
+                    ),
+                ),
+                waived=(),
+                stats=GateStats(),
+            )
+
+        def always_pass(_root: Path, _bound_tests: tuple[str, ...]):
+            return True, ""
+
+        committed, rolled_back = apply_tier_b_fixes(
+            root,
+            snapshot,
+            TicketQueue(tickets={}),
+            gate_runner=flaky,
+            test_runner=always_pass,
+        )
+        assert committed == []
+        assert len(rolled_back) == 1
+        assert "ARCH001" in rolled_back[0].regression_detail
+        assert path.read_text(encoding="utf-8") == original
+
+    # -- acceptance [2]: N fixes verified sequentially, one at a time -----
+
+    def test_multiple_fixes_verified_sequentially_not_batched(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_b.py::apply_tier_b_fixes \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_b import apply_tier_b_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "a.py").write_text(
+            "# frob:tierbdemo # a-fixed\n", encoding="utf-8"
+        )
+        (root / "src" / "b.py").write_text(
+            "# frob:tierbdemo # b-fixed\n", encoding="utf-8"
+        )
+        snapshot = self._snap(root)
+
+        gate_call_order: list[frozenset[str]] = []
+
+        def always_clean(_root: Path, gates: frozenset[str]):
+            from frob.gates._models import GateReport, GateStats
+
+            gate_call_order.append(gates)
+            return GateReport(violations=(), waived=(), stats=GateStats())
+
+        def always_pass(_root: Path, _bound_tests: tuple[str, ...]):
+            return True, ""
+
+        committed, rolled_back = apply_tier_b_fixes(
+            root,
+            snapshot,
+            TicketQueue(tickets={}),
+            gate_runner=always_clean,
+            test_runner=always_pass,
+        )
+        assert rolled_back == []
+        assert len(committed) == 2
+        # Two gate_runner calls (before + after) PER fix, never one shared
+        # batched call across both fixes.
+        assert len(gate_call_order) == 4
+        assert (root / "src" / "a.py").read_text(encoding="utf-8") == "# a-fixed\n"
+        assert (root / "src" / "b.py").read_text(encoding="utf-8") == "# b-fixed\n"
+
+    def test_no_marker_files_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_b.py::apply_tier_b_fixes \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_b import apply_tier_b_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "plain.py").write_text("def f():\n    pass\n", encoding="utf-8")
+        snapshot = self._snap(root)
+
+        committed, rolled_back = apply_tier_b_fixes(
+            root, snapshot, TicketQueue(tickets={})
+        )
+        assert committed == []
+        assert rolled_back == []
+
+
+class TestFixEngineTierC:
+    """`frob.gates._fix_engine_tier_c`'s Tier-C fix-it emission (T-1263):
+    each test is a GIVEN/WHEN/THEN acceptance criterion off this ticket's
+    own body."""
+
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    # -- acceptance [0]/[2]: a content-required finding emits a FixIt,
+    #    message verbatim, no file edited -----------------------------
+
+    def test_todo001_emits_a_fixit_with_no_proposed_patch(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_c.py::emit_todo001_fixit \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_c import apply_tier_c_fixits
+        from frob.gates._models import Severity, Violation
+
+        root = tmp_path / "repo"
+        root.mkdir(parents=True)
+        snapshot = self._snap(root)
+        message = "TODO001: bare TODO/FIXME at src/x.py:3; bind it: frob:todo T-####"
+        violation = Violation(
+            rule="TODO001",
+            severity=Severity.ERROR,
+            file="src/x.py",
+            line=3,
+            message=message,
+        )
+        fixits = apply_tier_c_fixits(root, snapshot, (violation,))
+        assert len(fixits) == 1
+        fixit = fixits[0]
+        assert fixit.rule == "TODO001"
+        assert fixit.file == "src/x.py"
+        assert fixit.line == 3
+        # acceptance [2]: message is the original violation's message VERBATIM.
+        assert fixit.message == message
+        assert fixit.proposed_patch is None
+        assert fixit.reason_unfixable
+
+    def test_todo001_emitter_never_touches_any_file(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_c.py::emit_todo001_fixit \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_c import apply_tier_c_fixits
+        from frob.gates._models import Severity, Violation
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        path = root / "src" / "x.py"
+        original = "# TODO: fix this\ndef f():\n    pass\n"
+        path.write_text(original, encoding="utf-8")
+        snapshot = self._snap(root)
+        violation = Violation(
+            rule="TODO001",
+            severity=Severity.ERROR,
+            file="src/x.py",
+            line=1,
+            message="TODO001: bare TODO/FIXME at src/x.py:1; bind it: frob:todo T-####",
+        )
+
+        apply_tier_c_fixits(root, snapshot, (violation,))
+        assert path.read_text(encoding="utf-8") == original
+
+    # -- acceptance [1]: fixits array is empty (never a missing key --
+    #    a plain list, always returned) when nothing is Tier-C-eligible --
+
+    def test_no_eligible_findings_returns_an_empty_list(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_c.py::apply_tier_c_fixits \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_c import apply_tier_c_fixits
+        from frob.gates._models import Severity, Violation
+
+        root = tmp_path / "repo"
+        root.mkdir(parents=True)
+        snapshot = self._snap(root)
+        violation = Violation(
+            rule="ARCH001",
+            severity=Severity.ERROR,
+            file="src/x.py",
+            line=1,
+            message="ARCH001: function too long",
+        )
+
+        fixits = apply_tier_c_fixits(root, snapshot, (violation,))
+        assert fixits == []
+
+    def test_no_violations_at_all_returns_an_empty_list(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_tier_c.py::apply_tier_c_fixits \
+        # kind="unit"
+        from frob.gates._fix_engine_tier_c import apply_tier_c_fixits
+
+        root = tmp_path / "repo"
+        root.mkdir(parents=True)
+        snapshot = self._snap(root)
+        assert apply_tier_c_fixits(root, snapshot, ()) == []

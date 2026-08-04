@@ -37,6 +37,8 @@ boundary) lives here.
 from __future__ import annotations
 
 import hashlib
+import os
+import sqlite3
 import threading
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -600,6 +602,240 @@ def _parse_strata_file(path: Path) -> Result[ParsedFile, LangError]:
     return Ok(parsed)
 
 
+# frob:ticket T-1464
+# frob:doc docs/modules/graph.md#persistent-parse-artifact-cache-t-1464
+# T-1464: env var a pool OWNER stamps (mirrors `frob.gates.
+# _WORKER_STDOUT_LOG_LEVEL_ENV`/`_stamp_worker_stdout_log_level_env`, T-0806)
+# with the resolved `.frob/parse-artifacts.db` path BEFORE spawning a
+# `ProcessPoolExecutor`, so every worker process this module's own
+# `_parse_file_uncached` runs in can open the SAME persistent
+# content-hash-keyed artifact table instead of each worker independently
+# re-parsing + re-extracting the whole repo (T-1217's root-cause finding).
+# Unset in any process that never opts in (plain `frob check` today, most
+# tests) -- `_artifact_cache_connection` degrades to `None` and every call
+# below is a transparent passthrough to the pre-T-1464 uncached path.
+PARSE_ARTIFACT_CACHE_ENV = "FROB_PARSE_ARTIFACT_CACHE"
+
+#: Process-lifetime connection to the path `PARSE_ARTIFACT_CACHE_ENV` names,
+#: opened at most once per process (T-1464) -- same one-open-per-process-
+#: lifetime shape as `frob.dup._cache`'s `_conn_cache`, just a single path
+#: instead of a dict since exactly one artifact-cache db can be active per
+#: process (the env var is stamped once, before pool construction).
+_artifact_conn: object | None = None
+_artifact_conn_path: str | None = None
+_artifact_conn_lock = threading.Lock()
+
+
+def _artifact_cache_connection():  # noqa: ANN202
+    """The process-lifetime `sqlite3.Connection` to the persistent parse-
+    artifact cache, or `None` if `PARSE_ARTIFACT_CACHE_ENV` is unset or the
+    db could not be opened (T-1464).
+
+    Opens its OWN `check_same_thread=False` connection (T-1464 incident:
+    `_stamp_worker_parse_artifact_cache_env` stamps the env var in the pool
+    OWNER process too -- not just its workers -- so `frob.check`'s own
+    `ThreadPoolExecutor` gate threads, running concurrently with the
+    process pool per T-0581's ordering, see the SAME env var and call in
+    from a different thread than whichever one first opened the
+    connection; a plain `frob.graph.cache.connect()` connection defaults
+    to `check_same_thread=True` and raises `ProgrammingError` on that
+    second thread). Does NOT call `frob.graph.cache.connect()` itself --
+    the schema/fingerprint ensure-work happens exactly ONCE, in the pool
+    OWNER process, via `frob.gates._stamp_worker_parse_artifact_cache_env`,
+    before any worker exists; every worker here just opens the
+    already-valid file directly. `N` workers each separately re-running
+    that ensure-work (this function's ORIGINAL T-1464 shape) measurably
+    perturbed process-pool startup timing enough to newly expose an
+    unrelated latent race in `build_graph`'s own concurrent-first-open
+    path against `.frob/cache.db` -- see
+    `_stamp_worker_parse_artifact_cache_env`'s docstring for the incident.
+    `_artifact_conn_lock` only guards THIS dict's create-or-reuse race, not
+    every subsequent query -- see `_load_cached_artifact_payload`'s
+    docstring.
+
+    Switches the connection to WAL journal mode (T-1464): every
+    `ProcessPoolExecutor` gate worker (perf/clones/dead_symbols/arch/sys)
+    opens its OWN connection to the SAME file concurrently, all wanting to
+    write (a cache miss stores its result) while siblings are still
+    reading/writing -- the default rollback-journal mode serializes ALL
+    writers AND blocks readers behind a writer, which measurably exhausted
+    `_with_lock_retry`'s 30s budget under this module's real worker count
+    and crashed `frob check` outright (T-1464 incident: `database is
+    locked` propagating past every retry). WAL lets readers proceed
+    without blocking on a concurrent writer and only serializes the
+    (fast, single-row) writes themselves, which is the same fix
+    `frob.graph.cache`'s own `.frob/cache.db` would want under this same
+    access pattern -- scoped to this connection only, never forced
+    globally onto a caller that only ever opens the plain `connect()` path.
+
+    Never raises: a broken/unreadable artifact cache degrades to "no
+    persistent cache" (every caller falls back to a real parse), the same
+    resilience posture `frob.dup._cache._connect` takes for its own db --
+    losing the speedup is acceptable, crashing `frob check` over a derived,
+    always-rebuildable cache file is not.
+    """
+    global _artifact_conn, _artifact_conn_path
+    # frob:waive SEC110 reason="a resolved .frob/parse-artifacts.db filesystem path a \
+    # pool-owner process stamps for its own workers (frob.gates. \
+    # _stamp_worker_parse_artifact_cache_env), not a secret"
+    env_path = os.environ.get(PARSE_ARTIFACT_CACHE_ENV)
+    if not env_path:
+        return None
+    with _artifact_conn_lock:
+        if _artifact_conn is not None and _artifact_conn_path == env_path:
+            return _artifact_conn
+        try:
+            conn = sqlite3.connect(env_path, check_same_thread=False, timeout=30.0)
+            conn.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            _log.warning(
+                "parse-artifact cache at %s unreadable, falling back to uncached parse",
+                env_path,
+                exc_info=True,
+            )
+            return None
+        _artifact_conn = conn
+        _artifact_conn_path = env_path
+        return conn
+
+
+def _artifact_fingerprint() -> str:
+    """`frob.graph.cache._compute_fingerprint()`, lazily imported (T-1464)
+    to dodge the same `frob.lang`/`frob.graph` circular-import trap
+    `parse_file`'s own lazy `frob.check._memo` import documents --
+    `frob.graph.cache` imports `frob.lang` at module level, so this module
+    cannot import it back at module level."""
+    from frob.graph.cache import _compute_fingerprint
+
+    return _compute_fingerprint()
+
+
+# frob:ticket T-1464
+# frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_hit_skips_extract  # noqa: E501
+# frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_miss_populates_cache  # noqa: E501
+# frob:waive WIRE001 reason="genuinely wired in production via \
+# memoize_per_run(_parse_file_with_artifact_cache) below (parse_file's real body) -- \
+# WIRE001's own text scan (frob.gates._wire._is_reached_outside_diff_tests) requires a \
+# name(' call-shaped occurrence and has no allowance for the bare-name-argument-to-a- \
+# wrapper shape frob.graph.callgraph._called_names already special-cases for \
+# DEAD001/call-graph purposes (_WRAPPER_MARKER_NAMES, T-0583) -- the exact same shape \
+# _parse_file_uncached itself used before this ticket, which never tripped WIRE001 \
+# only because this ticket's own new helpers also call it directly with parens" \
+# follow_up="T-1502"
+def _parse_file_with_artifact_cache(path: Path) -> Result[ParsedFile, LangError]:
+    """`_parse_file_uncached`, wrapped with a persistent, content-hash-keyed
+    artifact lookup (T-1464) -- the actual body `parse_file` wraps in
+    `@memoize_per_run`.
+
+    When no persistent cache is configured (`_artifact_cache_connection`
+    returns `None`, the common single-process case), this is a transparent
+    passthrough straight to `_parse_file_uncached` -- one extra read to
+    compute `content_hash` is the only overhead, and that read already
+    happens again inside `_parse`/`_parse_strata_file` regardless (T-0410's
+    own docstring: the expensive step is `extract()`'s tree walk, not the
+    read). When a cache IS configured (a `ProcessPoolExecutor` gate worker,
+    stamped via `PARSE_ARTIFACT_CACHE_ENV`), a hit skips straight to
+    deserializing the payload -- no tree-sitter parse, no `extract()` walk
+    -- and a miss stores the freshly computed `ParsedFile` before returning
+    it, so the NEXT worker (or gate) to touch this same file's content
+    hits.
+    """
+    conn = _artifact_cache_connection()
+    if conn is None:
+        return _parse_file_uncached(path)
+
+    read_result = _read_source_under_cap(path)
+    if read_result.is_err:
+        # Same failure `_parse_file_uncached` would hit -- let it produce
+        # the canonical Err rather than duplicating that error mapping here.
+        return _parse_file_uncached(path)
+    content_hash = hashlib.sha256(read_result.danger_ok).hexdigest()
+    fingerprint = _artifact_fingerprint()
+
+    cached_payload = _load_cached_artifact_payload(conn, content_hash, fingerprint)
+    if cached_payload is not None:
+        try:
+            parsed = ParsedFile.model_validate_json(cached_payload)
+        except Exception:
+            _log.warning(
+                "parse-artifact cache: corrupt payload for %s, re-parsing", path
+            )
+        else:
+            # A cache hit's stored `path` reflects whichever caller wrote
+            # it first (content-addressed, not path-addressed) -- rebind
+            # to THIS caller's own `_display_path(path)` so identical-
+            # content files at different paths each see their own path.
+            _log.debug(
+                "parse-artifact cache hit path=%s hash=%s", path, content_hash[:12]
+            )
+            return Ok(parsed.model_copy(update={"path": _display_path(path)}))
+
+    return _parse_and_populate_artifact_cache(path, conn, content_hash, fingerprint)
+
+
+# frob:ticket T-1464
+def _load_cached_artifact_payload(
+    conn: sqlite3.Connection, content_hash: str, fingerprint: str
+) -> str | None:
+    """`load_parsed_artifact` against the shared artifact-cache connection
+    (T-1464), treating a still-locked db (`CacheLocked`, past
+    `_with_lock_retry`'s own 30s budget) as a plain miss rather than
+    letting it escape -- a real parse is always a safe fallback, and this
+    cache exists to make `frob check` FASTER, never to make it able to
+    fail in a new way a plain uncached parse never could (the T-1464
+    incident this guards: heavy concurrent `ProcessPoolExecutor` worker
+    contention over one sqlite file exhausted the retry budget and
+    crashed the whole run with `database is locked`). No lock around the
+    query itself -- same precedent `frob.dup._cache.get_fingerprint`/
+    `put_fingerprint` already set for a `check_same_thread=False`
+    connection shared across threads: `_artifact_conn_lock` (in
+    `_artifact_cache_connection`) only protects the one-time connection-
+    open race, not every subsequent query."""
+    from frob.graph.cache import CacheLocked, load_parsed_artifact
+
+    try:
+        return load_parsed_artifact(
+            conn, content_hash=content_hash, fingerprint=fingerprint
+        )
+    except (CacheLocked, sqlite3.OperationalError):
+        _log.warning(
+            "parse-artifact cache read for %s locked past budget, treating as a miss",
+            content_hash[:12],
+        )
+        return None
+
+
+# frob:ticket T-1464
+def _parse_and_populate_artifact_cache(
+    path: Path, conn: sqlite3.Connection, content_hash: str, fingerprint: str
+) -> Result[ParsedFile, LangError]:
+    """Cache-miss tail of `_parse_file_with_artifact_cache` (T-1464): run
+    the real `_parse_file_uncached`, then persist a successful result
+    under `(content_hash, fingerprint)` -- see
+    `_load_cached_artifact_payload`'s docstring for why no per-query lock
+    is needed, and why a still-locked db degrades to "did not cache" (this
+    file's `ParsedFile` is simply re-derived by the next worker that wants
+    it) rather than crashing the whole `frob check` run over a failed
+    OPPORTUNISTIC write."""
+    result = _parse_file_uncached(path)
+    if result.is_ok:
+        from frob.graph.cache import CacheLocked, store_parsed_artifact
+
+        try:
+            store_parsed_artifact(
+                conn,
+                content_hash=content_hash,
+                fingerprint=fingerprint,
+                payload=result.danger_ok.model_dump_json(),
+            )
+        except (CacheLocked, sqlite3.OperationalError):
+            _log.warning(
+                "parse-artifact cache write for %s locked past budget, skipping",
+                content_hash[:12],
+            )
+    return result
+
+
 # frob:ticket T-0410
 def _parse_file_uncached(path: Path) -> Result[ParsedFile, LangError]:
     """`parse_file`'s real body, unwrapped -- see `parse_file` (below) for
@@ -661,7 +897,7 @@ def parse_file(path: Path) -> Result[ParsedFile, LangError]:
     if _parse_file_memoized is None:
         from frob.check._memo import memoize_per_run
 
-        _parse_file_memoized = memoize_per_run(_parse_file_uncached)
+        _parse_file_memoized = memoize_per_run(_parse_file_with_artifact_cache)
     return _parse_file_memoized(path)
 
 

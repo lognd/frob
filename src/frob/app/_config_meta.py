@@ -207,3 +207,107 @@ def stale_install_warning(repo_root: Path) -> str | None:
         f"'uv run frob' or 'make check'/'make' instead of the bare "
         f"installed binary."
     )
+
+
+# frob:ticket T-1218
+def _parse_version_tuple(raw: str) -> tuple[int, ...] | None:
+    """Parse a dotted-numeric version string (`"0.277.0"`) into a tuple for
+    ordering comparison, or `None` when any component is non-numeric (e.g.
+    `"unknown"`, a pre-release suffix) -- callers treat `None` as
+    unparseable and skip the comparison rather than guess."""
+    parts = raw.strip().split(".")
+    try:
+        return tuple(int(p) for p in parts)
+    except ValueError:
+        return None
+
+
+# frob:ticket T-1218
+# frob:doc docs/modules/app.md#entry-point
+# frob:tests tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor  # noqa: E501
+def declared_min_frob_version(repo_root: Path) -> str | None:
+    """`repo_root`'s own `frob.toml` top-level `min_frob_version` string
+    (T-1218), or `None` when the file is absent, unparseable, or declares
+    no such key -- the version-floor twin of `check_base`'s top-level
+    read in `frob.app.check_runner._toml_top_level_updates`, kept here
+    instead since this module already owns every other frob.toml-driven
+    version/threshold reader."""
+    toml_path = repo_root / "frob.toml"
+    if not toml_path.exists():
+        return None
+    try:
+        with toml_path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
+        _log.debug("declared_min_frob_version: unreadable frob.toml: %s", exc)
+        return None
+    floor = data.get("min_frob_version")
+    return floor if isinstance(floor, str) else None
+
+
+# frob:ticket T-1218
+# frob:doc docs/modules/app.md#entry-point
+# frob:tests tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor  # noqa: E501
+# frob:tests tests/unit/test_config.py::test_stale_binary_warning_none_when_no_floor_declared  # noqa: E501
+# frob:tests tests/unit/test_config.py::test_stale_binary_warning_none_when_version_meets_floor  # noqa: E501
+def stale_binary_warning(
+    repo_root: Path, running_version: str | None = None
+) -> str | None:
+    """A loud, one-line warning when the INVOKED `frob`'s own version is
+    older than `repo_root`'s declared `frob.toml` `min_frob_version` floor
+    (T-1218) -- the 2026-08-02 incident this exists for: a `git` merge-
+    driver invoked a stale globally `uv tool install`ed `frob` (0.9.0)
+    against a repo whose in-tree code had advanced to 0.277.0, and spliced
+    `tickets.md` using stale merge-driver logic with no warning at all.
+
+    Distinct from `stale_install_warning` above: that check compares the
+    running binary against THIS repo's OWN declared `pyproject.toml`
+    version (frob's own checkout, exact-match semantics) -- it says
+    nothing for a repo that merely USES frob and never ships a
+    `pyproject.toml` naming the `frob` project itself. This check instead
+    reads a floor a repo's OWNER declares in their own `frob.toml`
+    (`min_frob_version`, any repo, no dependency on `[project] name =
+    "frob"`), and warns on ANY invoked version strictly below that floor
+    -- ordering, not equality.
+
+    `running_version` is injectable for tests; defaults to the installed
+    `frob` distribution's own metadata version. Returns `None` (no
+    warning) when: `repo_root` has no `frob.toml`, it declares no
+    `min_frob_version`, either version string fails to parse as dotted
+    integers (a malformed floor is not this check's problem to diagnose),
+    or the invoked version already meets or exceeds the floor."""
+    import importlib.metadata
+
+    floor = declared_min_frob_version(repo_root)
+    if not floor:
+        return None
+    floor_tuple = _parse_version_tuple(floor)
+    if floor_tuple is None:
+        return None
+
+    if running_version is None:
+        try:
+            running_version = importlib.metadata.version("frob")
+        except importlib.metadata.PackageNotFoundError:
+            return None
+        except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
+            _log.debug(
+                "stale_binary_warning: unresolvable metadata lookup failed: %s", exc
+            )
+            return None
+
+    running_tuple = _parse_version_tuple(running_version)
+    if running_tuple is None:
+        return None
+    if running_tuple >= floor_tuple:
+        return None
+
+    return (
+        f"frob: WARNING -- invoked frob {running_version} is older than "
+        f"this repo's declared floor {floor} (frob.toml min_frob_version). "
+        f"Gate logic and ticket-ledger splicing can differ between "
+        f"versions and produce silently wrong results -- run "
+        f"'uv tool upgrade frob' (or use 'uv run frob' / 'make check' "
+        f"from a checkout at or above the floor) before trusting this "
+        f"invocation's output."
+    )

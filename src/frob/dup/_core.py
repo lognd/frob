@@ -26,6 +26,7 @@ INSTALL_HINT = (
 
 
 # frob:doc docs/modules/dup.md#rust-core
+# frob:tests tests/test_dup.py::TestCoreAvailable.test_import_error_returns_false_and_logs  # noqa: E501
 @lru_cache(maxsize=1)
 def core_available() -> bool:
     """Whether the compiled `frob_core` extension is importable, cached once."""

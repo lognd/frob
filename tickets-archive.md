@@ -115445,7 +115445,8 @@ and disposed of every one:
    graph-indexed as a symbol -- filed as T-draft-208a291f (out of this
    ticket's scope: src/frob/graph/**) rather than fixed here.
 
-Residue: DOC006 measures 4 remaining findings, all inside CHANGELOG.md,
+Residue (no ticket needed: CHANGELOG.md is permanently land-owned, never
+fixable in any worktree): DOC006 measures 4 remaining findings, all inside CHANGELOG.md,
 which a worktree agent cannot touch (land-owned per the agent playbook
 section 4b) -- honest, ticketed-by-disclosure residue, not silently
 dropped. In-scope (docs/**, src/frob/gates/_docptr.py,
@@ -118509,7 +118510,7 @@ from this ticket lands. Verified after the merge:
 Nothing further from the ticket body (a dedicated --only alias beyond
 group membership, a docs/modules command-table entry) was asked for
 beyond bare stage-group membership, so there is no residual work to do
-here.
+here (no ticket needed).
 
 ### Changed
 ```
@@ -119320,7 +119321,8 @@ and complete; my work was to verify, land-prep, and land:
 - Rebuilt natives (make core) and re-ran tests/test_vet.py + frob test
   --base main against the merged tree: both pass.
 
-Disclosed residue (13 rows, not addressed here, per predecessor's
+Disclosed residue (13 rows, not addressed here, follow-up filed and
+landed as T-1051, per predecessor's
 done-report): python/typescript container-dynamic-key and
 computed-member shapes, C/C++ array-index/integer-cast/void*-backcast
 shapes need a generalized subscript-or-cast detector the current
@@ -119328,7 +119330,9 @@ needle architecture cannot express safely; rust struct-field,
 macro_rules! expansion, cpp pointer-to-member, kotlin destructuring/
 default-param/operator-invoke need real alias tracking in the ordinary
 resolvers, not a registry entry. T-0339's epic acceptance criterion
-therefore does not fully hold yet; a residual ticket names this gap.
+therefore does not fully hold yet; a residual ticket names this gap
+(follow-up filed and landed as T-1051, itself further followed up by
+T-1063 for the remaining structural points-to gaps).
 
 ### Changed
 ```
@@ -120110,7 +120114,8 @@ own resolver-precision follow-up:
    nearest enclosing `for` loop's own bound variable (`_nearest_for_loop_var`),
    e.g. `for line in lines: line.count(x)`. Locked by
    `tests/test_perf.py::test_perf002_does_not_fire_on_the_loops_own_per_iteration_element`.
-   Scope cut, documented: a `while`-loop subscript receiver
+   Scope cut, documented (no ticket needed: the existing waiver is the
+   permanent disposition, not a deferred cut): a `while`-loop subscript receiver
    (`lines[k].count("{")`, the real `_cpp_mayraise.py` specimen) has no
    bound identifier to compare against and is NOT covered by this
    positional heuristic -- its existing waiver stays (verified: this is
@@ -120552,7 +120557,8 @@ just muting it:
   ValueError branch already does for a malformed ceiling attribute. This
   closed its EXHAUST002 (TypeError) finding for real; its residual
   EXHAUST001 (Unknown, traced to plain dict.get access) got a reasoned
-  waiver alongside the new catch.
+  waiver alongside the new catch (no follow-up ticket needed: already
+  fully disposed via the waiver, not a deferred cut).
 
 The remaining 11 sites across decisions_gate, _tick005_merge_state_
 regression, _tick010_stale_lease_report (both codes), compliance_gate,
@@ -120576,7 +120582,7 @@ waived) EXHAUST001/002 diagnostics left in src/frob/gates/__init__.py
 (0/16), gate-wide active count dropped 183 -> 167, and gate:TEST/gate:COV
 both stay clean (no new obligations from the two small code changes).
 
-Disclosed residue: the ticket's remaining ~150 sites across ~39 other
+Disclosed residue (follow-up filed and landed as T-1062): the ticket's remaining ~150 sites across ~39 other
 files (gates/_coverage.py 8, dup/_pipeline.py 6, tickets/_leases.py 6,
 deploy/_conform.py 5, mutate/__init__.py 5, outline/__init__.py 5,
 strata/_claims.py 5, tickets/__init__.py 5, app/check_runner.py 4,
@@ -120584,7 +120590,8 @@ check/_python.py 4, gates/_docptr.py 4, gates/_secrets.py 4,
 mutate/_journal.py 4, strata/_host_isolation.py 4,
 strata/_native_staleness.py 4, testing/_collect.py 4, and the rest spread
 1-3 per file) were not attempted this pass -- budget cut, not a scope
-carve-out. A follow-up ticket is filed for them.
+carve-out. A follow-up ticket is filed for them (T-1062, "EXHAUST001/002
+residual burn-down continuation (post T-1056)").
 
 Per the coordination constraint, this pass did not touch or count
 src/frob/perf/** (T-1053: _collectors.py 2, _redundancy.py 2, _rules.py 2,
@@ -122078,7 +122085,8 @@ OPAQUE_SOURCE_INVISIBLE excuse instead, per T-1051's own Done report.
 ## Done report
 
 Closed 3 of the 6 tracked structural points-to gaps; the other 3 are
-genuinely residual, not attempted-and-abandoned.
+genuinely residual, not attempted-and-abandoned (follow-up filed as
+T-1505, renumbers at land).
 
 Closed:
 1. rust struct-update field rebinding: added `_record_rust_field_alias` /
@@ -127682,8 +127690,10 @@ Budget discipline: only one family fit in this session's remaining budget
 alongside the full land lifecycle, so extraction stops here and the
 remaining ~8 families (doable/leases/scope-breadth, scope mutation, field
 setters/sprint, evidence/transition, done-report/review/drop/attach) are
-left as residue for a follow-up dispatch. _land.py (4762 lines) was not
-touched.
+left as residue for a follow-up dispatch (filed as T-1108, later dropped
+as superseded and re-picked-up by T-1151 -> T-1152 -> T-1171 -> T-1186 ->
+T-1189, the same extraction lineage completing the split this residue
+disclosed). _land.py (4762 lines) was not touched.
 
 Incident note: a `git stash`/`git stash pop` was mistakenly run mid-session
 (forbidden by playbook 1b); the push itself was correctly refused by the
@@ -129181,7 +129191,8 @@ frob ticket scope --add):
   symbol now fires, not stays silent).
 - New test_node_with_empty_real_surface_stays_exempt: a node with zero
   real public symbols and nothing declared stays silent (the surviving
-  half of the old opt-in scope cut).
+  half of the old opt-in scope cut; no follow-up ticket needed -- this is
+  the correct permanent behavior for an empty surface, not a deferred gap).
 - TestUnmodeledCodeMissingPackageRoot.test_missing_package_root_
   produces_no_warning: fixture module-level assignment renamed from a
   public `x = 1` to a private `_x = 1` so this SYS102-focused test does
@@ -132169,7 +132180,7 @@ ticket body, not the full split). Requeuing the remaining families
 (SCOPE/PREWORK, INV00x, TEST00x, DECISIONS, COMPLIANCE00x, SYS00x/
 DOC00x, DUP00x, REL00x, FUZZ00x, DOCLINK/DOCANCHOR, PERF, run_gates
 spine, COV00x) as residue -- this round's budget covered exactly the
-TICK00x family.
+TICK00x family (follow-up filed and landed as T-1159).
 
 Verification: ruff check clean on both files (both `ruff` and
 `uv run ruff`). All TICK-family tests pass (tests/test_gates_tick005.py,
@@ -132789,7 +132800,8 @@ genuinely package-wide (a redesign, migration, or multi-family residue
 sweep) may use the bare glob, and SCOPE002's resulting WARN volume for
 THAT ticket is accepted debt, not something to chase to zero (SCOPE002
 is already WARN-severity, "a nudge, not a hard block" per
-docs/modules/gates.md).
+docs/modules/gates.md; no ticket needed -- this is a doctrine statement,
+not a disclosed cut).
 
 Applied it to the actual queue: the two open tickets currently declaring
 the bare `src/frob/tickets/**` glob (T-1136's ledger-v2 design/migration,
@@ -133924,7 +133936,7 @@ render_changed_block.
 
 src/frob/tickets/__init__.py: 2333 -> ~1250 lines (well below the <2000
 acceptance target). _land.py (4866 lines) was NOT touched this dispatch --
-requeued as residue, see below.
+requeued as residue, see below (follow-up filed and landed as T-1171).
 
 _load_ticket_and_queue and _load_one stay in __init__.py (both are shared by
 non-evidence families still there -- mutate_labels, add_acceptance,
@@ -137021,12 +137033,14 @@ a standalone repro script before landing. The shipped version reads
 main_root's ledger WITHOUT holding its lock (same lock footprint as plain
 finalize_draft -- only worktree's lock), closing the staleness gap that
 caused the incident while leaving zero new regression surface. The narrow
-residual race this leaves (a new_ticket landing on main in the tiny window
+residual race this leaves (no ticket needed -- closed in this same Done
+report, not a deferred cut; a new_ticket landing on main in the tiny window
 between this unlocked read and the eventual squash-apply) is closed by
 Guard 2 below, which runs under a REAL lock at the point that actually
 commits to main -- the two guards are deliberately complementary, not each
 independently sufficient, matching the ticket's own "defense in depth"
-framing.
+framing (no ticket needed -- Guard 2, in the same Done report, is the
+closure, not a deferred cut).
 
 Guard 2 (acceptance [1], defense in depth): _land._overlay_landed_ticket
 (split out of _splice_only_ticket to stay under the ARCH001 line budget)
@@ -137871,7 +137885,8 @@ T-1171, per this ticket's own lineage note:
   preflight validators, importing the split-out families back in
   explicitly. 4973 -> ~1170 lines; the other three modules are
   ~1720/~515/~1730 lines respectively (still over LARGE001's 800-line
-  threshold individually -- filed as residue, see below).
+  threshold individually -- filed as residue, see below; follow-up
+  filed and landed as T-1189).
 
 Every moved function keeps its original body, docstring, and
 frob:ticket/frob:tests directives verbatim (zero caller-visible behavior
@@ -138604,7 +138619,7 @@ Successor to the T-0397 audit epic for the concern-family rows NOT yet closed by
 
 ## Done report
 
-Investigated all six audit-residue rows with per-row file:line evidence (planner agent, worktree land 603a2857) and adversarially re-verified the four already-handled claims (reviewer APPROVE, all four CONFIRMED non-vacuous with regression tests). Registry re-dispositioned accordingly (commit on main): CHK-THEME-PYTHON-ONLY and CHK-SUBSYS-LANG-CHECK-DOCS -> handled_by:COV001 (T-0554 wires _run_gates into cpp/rust/ts pipelines); CHK-THEME-FAIL-OPEN -> handled_by:PARSE001 (T-0400 all-lockfiles scan, T-0402 disclosed non-UTF-8 skip); CHK-SUBSYS-GRAPH-EDGES -> handled_by:PARSE001 (T-0402 new-file CacheStale incl docs); CHK-SUBSYS-GATES-ACCOUNTING DRIFT001 clause handled (T-0556 body-facet union), residual c/cpp frob:tests clause repointed to child T-1266; CHK-THEME-GITIGNORED-TRUST confirmed real and repointed to child T-1265. No row silently dropped; the two real residues live on as dedicated security children. Evidence: registry concern-family test + exhaustiveness-gate test bound; frob check --only registry passes 0 errors.
+No follow-up ticket needed for this disposition pass itself (the two real residues it found are already tracked as child tickets T-1265/T-1266, cited below). Investigated all six audit-residue rows with per-row file:line evidence (planner agent, worktree land 603a2857) and adversarially re-verified the four already-handled claims (reviewer APPROVE, all four CONFIRMED non-vacuous with regression tests). Registry re-dispositioned accordingly (commit on main): CHK-THEME-PYTHON-ONLY and CHK-SUBSYS-LANG-CHECK-DOCS -> handled_by:COV001 (T-0554 wires _run_gates into cpp/rust/ts pipelines); CHK-THEME-FAIL-OPEN -> handled_by:PARSE001 (T-0400 all-lockfiles scan, T-0402 disclosed non-UTF-8 skip); CHK-SUBSYS-GRAPH-EDGES -> handled_by:PARSE001 (T-0402 new-file CacheStale incl docs); CHK-SUBSYS-GATES-ACCOUNTING DRIFT001 clause handled (T-0556 body-facet union), residual c/cpp frob:tests clause repointed to child T-1266; CHK-THEME-GITIGNORED-TRUST confirmed real and repointed to child T-1265. No row silently dropped; the two real residues live on as dedicated security children. Evidence: registry concern-family test + exhaustiveness-gate test bound; frob check --only registry passes 0 errors.
 
 ### Changed
 (no changed files detected)
@@ -140104,7 +140119,8 @@ comparison):
   import site was `frob/app/__init__.py`'s top-level `from frob.app import
   (... deploy_runner ...)` block, now gone.
 
-Residual cost NOT covered by this ticket's scope: `frob.app.telemetry.
+Residual cost NOT covered by this ticket's scope (filed as T-1318, see
+below): `frob.app.telemetry.
 record_cli_event` (called from every `timed_call`, i.e. after every CLI
 invocation regardless of subcommand) calls `redact_command`, which imports
 `frob.gates._secrets` for its `_redact`/`_scan_line` helpers -- and that
@@ -144117,8 +144133,9 @@ engine.md.
   calls `apply_tier_a_fixes` once, then re-runs the full gates stage once
   in the same invocation (this v1's chosen granularity for "the union of
   affected gates" -- Tier-A rules span several different gate families
-  and there is no cheaper reliable per-rule-id gate subset yet), folding
-  a residual per-fixed-rule violation count into the returned
+  and there is no cheaper reliable per-rule-id gate subset yet; no-ticket-needed
+  -- this describes a report data field, not a deferred cut),
+  folding a residual per-fixed-rule violation count into the returned
   `fix_report`. `run()` was split (`_run_stages_and_report` extracted) to
   stay under ARCH001's function-length ceiling once the --fix branch was
   added.
@@ -150359,7 +150376,7 @@ requires, rather than accidentally exercising the new mismatch path.
 `record_journal_progress` symbol and the three new test node ids; no
 other drift.
 
-Residue: none filed -- the fix is fully contained inside
+Residue: none filed, no ticket needed -- the fix is fully contained inside
 `src/frob/mutate/_journal.py` and `src/frob/mutate/__init__.py`, and no
 new gap was found outside this ticket's scope during the work.
 
@@ -151409,7 +151426,7 @@ Scope was widened by one file
 (tests/unit/gates/test_deprecated_baseline.py) via `frob ticket scope
 --add` to cover the new test.
 
-No residue filed -- the two out-of-scope ARCH001 findings already
+No residue filed, no ticket needed -- the two out-of-scope ARCH001 findings already
 present in this file (large-file, abstraction-opportunity) are
 pre-existing, not co-located with this ticket's three named findings,
 and not touched by this change.
@@ -151609,7 +151626,7 @@ and the symmetric ty-suppressed/mypy-unsuppressed) fire correctly, the
 both-dialects-present and no-suppression-at-all cases report nothing, and
 the no-available-oracle case (monkeypatched registry) reports nothing.
 
-Residue: SUPPRESS001, once wired into frob check, immediately found a
+Residue (filed as T-1357): SUPPRESS001, once wired into frob check, immediately found a
 REAL pre-existing mismatch on main outside this ticket's scope --
 src/frob/gates/_debt_deprecated.py:663 carries only a mypy
 type:ignore[attr-defined] while ty reports an unsuppressed
@@ -162153,7 +162170,7 @@ Also ran (not bound as evidence, sanity checks that pass):
   test_app.py, test_release_stamp_guard.py, test_ticket_runner_land_cmd_flags.py,
   test_app_lazy_dispatch.py, test_app_lazy_exports.py, test_arch.py) -- all pass.
 
-Filed: none -- everything named in the ticket body was in scope for this fix;
+Filed: none, no ticket needed -- everything named in the ticket body was in scope for this fix;
 no residue found outside it.
 
 Gates (UNSCOPED, per playbook 6c -- a --ticket-scoped zero was explicitly
@@ -166131,7 +166148,9 @@ still hold," never about "did this land's actual squash-apply commit
 introduce residue somewhere unscoped." Every wave of this drive's own
 history (INV006/PII012 waivers not traveling with relocated prose, format
 drift, a stale registry denominator, SELFAUDIT interface attrs) is exactly
-that second, uncaught class.
+that second, uncaught class (no ticket needed -- this is the problem
+statement this very ticket's Fix section below closes, not a deferred
+cut).
 
 Fix: `_land` (the CLI layer, `_land_cmd.py`) now brackets the real
 `land()` call with an UNSCOPED, `--budget`-bounded (default 90s)
