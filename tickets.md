@@ -10105,3 +10105,23 @@ two full re-runs. git diff main --diff-filter=D --stat is empty.
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 2 error(s), 223 warning(s), 762 waived
 - error-findings: PRE001@tickets/T-1501, WIRE001@tests/test_natives.py
+
+<!-- ticket:T-1502 -->
+```yaml
+id: T-1502
+title: WIRE001 text-scan misses memoize_per_run(_target)-shaped wiring (false positive
+  on wrapper-bare-name callees)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+WIRE001's _is_reached_outside_diff_tests requires a name( call-shaped occurrence and has no allowance for the bare-name-argument-to-a-wrapper shape frob.graph.callgraph._called_names already special-cases for DEAD001 (_WRAPPER_MARKER_NAMES, T-0583). Teach the WIRE001 text scan the same wrapper shapes so genuinely-wired functions like frob.lang._parse_file_with_artifact_cache (wrapped via memoize_per_run) stop needing frob:waive WIRE001 false-positive waivers. Refiled from w18p-artifacts draft T-draft-bbdfffa7, which died when that worktree was removed.
