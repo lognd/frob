@@ -638,17 +638,17 @@ denominator_manifest:
       checkability: static
     - id: FROB-CATALOG-ENTRIES
       framework: frob-std.compliance
-      count: 6
+      count: 7
       checkability: mixed
   TOTAL_UNITS: 27
-  TOTAL_LEAF_CONTROLS_ENUMERATED: 599
+  TOTAL_LEAF_CONTROLS_ENUMERATED: 600
 ```
 
 `TOTAL_LEAF_CONTROLS_ENUMERATED` sums the leaf-level counts actually
 pinned to a number above (PCI 12 + HIPAA 17 + GDPR 99 + CCPA 7 +
 NIST-800-53 20 + CSF 6 + SSDF 4 + ISO 93 + CIS 18+153 + ASVS 14+286 +
-SAMM 5+15 + SLSA 4 + SOC2 5+9 + frob-existing 6 + FedRAMP tiers 3 +
-800-63 volumes 3 = 599); it intentionally excludes counts explicitly
+SAMM 5+15 + SLSA 4 + SOC2 5+9 + frob-existing 7 + FedRAMP tiers 3 +
+800-63 volumes 3 = 600); it intentionally excludes counts explicitly
 left unpinned above (SOC2 ~300 points of focus, FedRAMP per-baseline
 control totals, PCI/ISO/HIPAA sub-control text) so the manifest total
 never mixes a verified figure with a guessed one.

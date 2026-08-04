@@ -5,10 +5,16 @@ from __future__ import annotations
 import io
 import logging
 import sys
+from pathlib import Path
 
+from frob.gates import coverage_gate
+from frob.gitio import Diff
+from frob.graph import build_graph
 from frob.logging import get_logger, quiet_stdout_logs
 from frob.logging.color import paint, should_color
 from frob.logging.filter import _BelowLevelFilter
+from frob.testing import CollectedTests
+from frob.tickets import TicketQueue
 
 
 def test_get_logger_returns_named_logger():
@@ -90,3 +96,33 @@ def test_quiet_stdout_logs_raises_and_restores_level():
         assert handler.level == logging.DEBUG
     finally:
         root.removeHandler(handler)
+
+
+def test_lazy_handler_stream_properties_have_a_doc_edge(tmp_path):
+    # frob:tests src/frob/gates/__init__.py::coverage_gate kind="unit"
+    # frob:ticket T-1394
+    # T-1394: _LazyStdoutHandler.stream/_LazyStderrHandler.stream each carry
+    # a `frob:doc docs/modules/logging.md#public-api` comment already, but
+    # the anchor's own describes list never named the `.stream` property
+    # itself -- only the enclosing class -- so COV001 fired on both
+    # properties despite the anchor "looking" present. Copies the real
+    # repo's handler.py + logging.md verbatim (not a synthetic stand-in) so
+    # this genuinely regresses if the describes entries are ever dropped.
+    repo_root = Path(__file__).resolve().parents[2]
+    handler_src = (repo_root / "src/frob/logging/handler.py").read_text()
+    logging_doc = (repo_root / "docs/modules/logging.md").read_text()
+    (tmp_path / "src" / "frob" / "logging").mkdir(parents=True)
+    (tmp_path / "src" / "frob" / "logging" / "handler.py").write_text(handler_src)
+    (tmp_path / "docs" / "modules").mkdir(parents=True)
+    (tmp_path / "docs" / "modules" / "logging.md").write_text(logging_doc)
+    snap = build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+    queue = TicketQueue(tickets={})
+    diff = Diff(base="x", hunks=())
+    tests = CollectedTests(node_ids=frozenset())
+    violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+    stream_cov001 = [
+        v
+        for v in violations
+        if v.rule == "COV001" and "Handler.stream" in v.message
+    ]
+    assert stream_cov001 == []
