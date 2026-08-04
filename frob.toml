@@ -217,6 +217,18 @@ reason = "CVE mirror-layout fixture consumed by a single dedicated test module b
 path = "tests/unit/cve/fixtures/vet_mirror/cves/2024/1xxx/CVE-2024-1001.json"
 reason = "CVE vet-mirror fixture consumed by a single dedicated test module by design"
 
+[[refs.entrypoint]]
+path = "tickets/attachments/T-1433/01-untitled.txt"
+reason = "ticket attachment referenced only via tickets-archive.md's own YAML attachments: path: field (T-1433), a syntactic position REF001's auto-scan does not treat as a reference"
+
+[[refs.entrypoint]]
+path = "tickets/attachments/T-1433/02-untitled.txt"
+reason = "ticket attachment referenced only via tickets-archive.md's own YAML attachments: path: field (T-1433), a syntactic position REF001's auto-scan does not treat as a reference"
+
+[[refs.entrypoint]]
+path = "tickets/attachments/T-1433/03-untitled.txt"
+reason = "ticket attachment referenced only via tickets-archive.md's own YAML attachments: path: field (T-1433), a syntactic position REF001's auto-scan does not treat as a reference"
+
 [gates.severity]
 # frob-zone-start gates.severity T-1002
 # COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public

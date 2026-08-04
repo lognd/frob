@@ -65,6 +65,7 @@ def _rewrite_v2_id_field(text: str, new_id: str) -> str:
     return _V2_ID_FRONTMATTER_RE.sub(f"id: {new_id}", text, count=1)
 
 
+# frob:ticket T-1504
 def _v2_reference_files(root: Path) -> list[Path]:
     """Every `ticket.md`/`done-report.md` under `tickets/` (active or
     archived), sorted -- the multi-file glob design section 4.1 step 4 scans
@@ -74,6 +75,10 @@ def _v2_reference_files(root: Path) -> list[Path]:
     d = tickets_dir(root)
     if not d.exists():
         return []
+    # frob:waive WALK001 reason="d is the tickets/ dir alone -- a small, bounded-scope \
+    # subtree (ticket.md/done-report.md files only) with no nested \
+    # .git/.venv/node_modules/build/dist/target to prune, matching the gate's own \
+    # small-bounded-walk escape hatch"
     return sorted(p for p in d.rglob("*.md") if p.is_file())
 
 

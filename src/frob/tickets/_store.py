@@ -447,6 +447,7 @@ _V2_TICKET_GLOB = "T-*/ticket.md"
 
 
 # frob:ticket T-1254
+# frob:ticket T-1504
 # frob:tests tests/unit/test_ticket_store.py::TestV2StoreMode.test_v2_tree_present_is_v2
 def _v2_glob(root: Path) -> list[Path]:
     """Every v2-mode `tickets/T-####/ticket.md` path, sorted (ledger v2
@@ -454,6 +455,10 @@ def _v2_glob(root: Path) -> list[Path]:
     d = tickets_dir(root)
     if not d.exists():
         return []
+    # frob:waive WALK001 reason="d is the tickets/ dir and the glob pattern is a fixed \
+    # one-level-deep 'T-*/ticket.md' shape -- a small, bounded-scope walk with no \
+    # nested .git/.venv/node_modules/build/dist/target to prune, matching the gate's \
+    # own small-bounded-walk escape hatch"
     return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
 
 
@@ -469,6 +474,7 @@ def v2_archive_dir(root: Path, ticket_id: str) -> Path:
 
 
 # frob:ticket T-1256
+# frob:ticket T-1504
 def _v2_archive_glob(root: Path) -> list[Path]:
     """Every archived v2-mode `tickets/archive/T-####/ticket.md` path,
     sorted (design section 4.3) -- `load_archive`'s v2-mode source, the
@@ -476,6 +482,10 @@ def _v2_archive_glob(root: Path) -> list[Path]:
     d = tickets_dir(root) / "archive"
     if not d.exists():
         return []
+    # frob:waive WALK001 reason="d is the tickets/archive/ dir and the glob pattern is \
+    # a fixed one-level-deep 'T-*/ticket.md' shape -- a small, bounded-scope walk with \
+    # no nested .git/.venv/node_modules/build/dist/target to prune, matching the \
+    # gate's own small-bounded-walk escape hatch"
     return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
 
 

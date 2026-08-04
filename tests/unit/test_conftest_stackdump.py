@@ -20,10 +20,6 @@ if sys.platform == "win32":  # pragma: no cover - POSIX-only feature
 _CONFTEST_PATH = Path(__file__).resolve().parent.parent / "conftest.py"
 
 
-# frob:waive WIRE001 reason="a private test-fixture helper used only by \
-# TestStackdumpHandler's own methods below, in this same file -- there is no \
-# production caller to wire it to by design, it exists solely to load \
-# tests/conftest.py as a standalone module for direct unit testing" follow_up="T-1466"
 def _load_conftest():
     """Import `tests/conftest.py` as a standalone module (not via pytest's
     own plugin machinery, which already has it loaded once as a fixture

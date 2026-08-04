@@ -7,7 +7,9 @@
 # frob:waive SCOPE001 reason="T-1398's declared scope is src/frob/gates/_coverage.py \
 # only; its own regression test necessarily lives in this file (the existing home for \
 # every other _coverage.py test), and T-1398 could not extend scope to add \
-# tests/test_gates.py -- T-1235 (in-progress) already holds a tests/** lease"
+# tests/test_gates.py -- T-1235 (in-progress) already holds a tests/** lease (reviewed \
+# 2026-08-03, drain-to-zero WAIVE004 sweep: left in place -- SCOPE001 is a \
+# scope/lease-dependent rule, not a stale finding a full unscoped run can prove dead)"
 
 from __future__ import annotations
 

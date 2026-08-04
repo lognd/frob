@@ -5,7 +5,10 @@
 # --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
 # src/frob/gates/** for the whole package, so this ticket cannot formally register the \
 # file in its own declared scope until T-1279 closes or narrows; see this ticket's \
-# Done report for the full disclosure"
+# Done report for the full disclosure (reviewed 2026-08-03, drain-to-zero WAIVE004 \
+# sweep: left in place -- SCOPE001 is a scope/lease-dependent rule \
+# (frob.gates._waive.SCOPED_RUN_FLAKY_RULE_IDS), not a stale finding a full unscoped \
+# run can prove dead the way WIRE001/REF002/etc can"
 """frob.gates._tickets_gate -- TICK00x ledger-hygiene/invariant family (T-1140).
 
 Split out of `frob.gates.__init__` (T-1115/T-1140 residue, one-family-per-

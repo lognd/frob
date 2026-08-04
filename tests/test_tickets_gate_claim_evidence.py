@@ -23,7 +23,9 @@ naming no rule id and no glob behaves exactly as it did before)."""
 # actively in-progress on main), so `frob ticket scope T-1399 --add` refuses with \
 # ScopeLeaseConflict; the file is committed under T-1399's own commits (SCOPE001's own \
 # `root`/`queue` same-branch-ownership exemption would otherwise cover this once the \
-# lease clears) and is real, evidence-bound test content, not an unaccounted-for touch"
+# lease clears) and is real, evidence-bound test content, not an unaccounted-for touch \
+# (reviewed 2026-08-03, drain-to-zero WAIVE004 sweep: left in place -- SCOPE001 is a \
+# scope/lease-dependent rule, not a stale finding a full unscoped run can prove dead)"
 
 from __future__ import annotations
 

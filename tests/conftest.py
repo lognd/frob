@@ -25,11 +25,6 @@ recipe sets this for exactly the two phases T-1433's incidents wedged in
 
 
 # frob:ticket T-1433
-# frob:waive WIRE001 reason="registered as tests/conftest.py's SIGUSR1 signal handler \
-# by _install_stackdump_handler (same module, called from pytest_configure below) -- \
-# the call-graph analysis does not resolve a signal.signal(...) registration as a call \
-# edge, so this reads as uncalled even though it is the live handler for every pytest \
-# process this recipe spawns once FROB_COVERAGE_STACKDUMP=1 is set" follow_up="T-1466"
 def _dump_all_thread_stacks(_signum: int, _frame: object) -> None:
     """`SIGUSR1` handler (T-1433): write every live thread's stack in
     THIS process to a per-pid file under `.frob/stackdumps/` so a wedge
@@ -51,12 +46,6 @@ def _dump_all_thread_stacks(_signum: int, _frame: object) -> None:
 # frob:ticket T-1433
 # frob:tests tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
 # frob:tests tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
-# frob:waive WIRE001 reason="called from pytest_configure below (same module) -- \
-# WIRE001 reads that as having no caller OUTSIDE tests because pytest_configure is \
-# itself only ever invoked by pytest's own hook machinery, never by frob's production \
-# entrypoints; this is test-infrastructure code by design (tests/conftest.py), the \
-# same shape as every other pytest_configure-only helper in this file" \
-# follow_up="T-1466"
 def _install_stackdump_handler() -> None:
     """Install `_dump_all_thread_stacks` as the `SIGUSR1` handler for THIS
     process (T-1433), gated on `_STACKDUMP_ENV` -- called from
