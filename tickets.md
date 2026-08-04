@@ -4428,3 +4428,23 @@ threat: null
 component: null
 ```
 The T-1456 post-land unscoped sweep currently verifies AFTER the land commit exists on main, so a refusal requires reset --hard -- which is exactly what destroyed foreign interleaved commits on 2026-08-04 (see T-1495). Land already builds the merge result before committing; run the sweep against that merge preview in a scratch worktree (same mechanism as _spawn_baseline_snapshot_worktree) BEFORE any commit lands on main. A refusal then costs nothing and reverts nothing; the post-land sweep can remain as a cheap assertion.
+
+<!-- ticket:T-1515 -->
+```yaml
+id: T-1515
+title: 'orphan-writer guard: land refuses/warns when another land process from a different
+  session is live'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+2026-08-04 incident (see T-1495): an orphaned background script from a dead conversation was serially landing the roster while a new coordinator session also wrote to main; the two writers' unwinds destroyed each other's commits. The advisory fcntl land.lock serializes lock-holders but cannot tell the second session that a foreign driver is mid-roster. Add: (1) land records pid+session-id+start-time in the lock file; (2) a fresh land invocation logs WHO holds it and refuses after timeout instead of queueing silently; (3) frob doctor reports live land processes for the repo so a session-start check is one command.
