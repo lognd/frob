@@ -2620,6 +2620,7 @@ Fix implemented on the w16b-coverage branch and landed onto main via T-1236's br
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 0 error(s), 254 warning(s), 745 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1236 -->
 ```yaml
 id: T-1236
@@ -3636,7 +3637,7 @@ T-1128 draft-death shape against v2 and asserting no draft is lost).
 ```yaml
 id: T-1262
 title: 'gates --fix Tier-B transaction engine: apply-verify-rollback per fix'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -3647,19 +3648,44 @@ sprint: null
 scope:
 - src/frob/gates/_fix_engine_tier_b.py
 - tests/test_gates.py
+- docs/design/check-fix-engine.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/check-fix-engine.md
+  reason: Tier-B engine's frob:doc anchor lives there; must update the doc in the
+    same diff (AFFECT001)
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: design/frob.strata
+  reason: capability effects/interface declarations for the new module must live in
+    the same node
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
+- tests/test_gates.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte
+- tests/test_gates.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back
+- tests/test_gates.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched
+- tests/test_gates.py::TestFixEngineTierB::test_no_marker_files_is_a_no_op
 acceptance:
 - text: GIVEN a Tier-B fix that applies cleanly WHEN its affected_gates and bound_tests
     all re-verify clean THEN the fix is committed and reported as fixed
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
 - text: GIVEN a Tier-B fix that introduces a regression WHEN affected_gates or bound_tests
     fail after applying THEN every touched file is restored byte-for-byte from its
     pre-fix backup and a FixRolledBack record discloses which gate/test regressed
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte
+  - tests/test_gates.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back
 - text: GIVEN N Tier-B fixes in one --fix invocation THEN each is applied and verified
     sequentially, never batched, so a rollback never has to bisect more than one fix
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched
 threat: null
 component: null
 ```
@@ -3678,11 +3704,100 @@ acceptable, or reuse whichever real Tier-B-shaped rule is cheapest to
 wire first -- implementer's judgment, disclose the choice in the Done
 report).
 
+## Done report
+
+Built the Tier-B transactional fix engine per docs/design/check-fix-engine.md's
+"Transaction / rollback model" section: new src/frob/gates/_fix_engine_tier_b.py
+with TierBFix/FixRolledBack models, TIER_B_HANDLERS: dict[str, TierBHandler]
+(mirroring _fix_engine.TIER_A_HANDLERS's call shape), and apply_tier_b_fixes,
+the apply-verify-commit-or-rollback engine.
+
+Design decisions:
+- Per-fix baseline: since a TierBHandler applies its own mutation before
+  returning (same apply-then-report contract as Tier A), the engine cannot
+  see a genuine pre-fix gate state directly. _pre_fix_baseline computes a
+  TRUE pre-fix baseline via a temporary revert-measure-restore around the
+  fix's own backup bytes (write backup, run gate_runner, restore post-fix
+  bytes) rather than diffing two post-fix measurements, which would always
+  read as clean by construction.
+- gate_runner/test_runner are injectable, defaulting to the real
+  run_gates/subprocess-pytest pair -- mirrors fix_fmt001_directive_wrap's
+  only_paths "default preserves real behavior, override is test-only" shape.
+  This lets this module's own tests prove the commit/rollback decision logic
+  deterministically without spawning a real run_gates()/pytest per test.
+- Reference handler: fix_tierbdemo001_marker_rewrite is a SYNTHETIC handler
+  (per the ticket's own acceptance note permitting this) keyed to a
+  placeholder "TIERBDEMO001" id that is deliberately never a real frob check
+  rule -- proves the full snapshot-apply-verify-commit-or-rollback path
+  end-to-end without depending on any real gate rule's shape. A real Tier-B
+  handler is left as a follow-up, out of this ticket's declared scope.
+- Verification is sequential, one TierBFix at a time (never batched), per
+  docs/design/check-fix-engine.md's own "a rollback never has to bisect more
+  than one fix" rule -- test_multiple_fixes_verified_sequentially_not_batched
+  asserts two separate before/after gate_runner call pairs for two fixes,
+  never one shared call.
+- apply_tier_b_fixes/TIER_B_HANDLERS/_real_gate_runner/_real_test_runner/
+  fix_tierbdemo001_marker_rewrite are not reachable from any real --fix CLI
+  invocation yet (T-1481 wires that, alongside Tier A's own CLI wiring, per
+  T-1138/T-1260's precedent split) -- each site carries a
+  frob:waive WIRE001 ... follow_up="T-1481" naming that open ticket.
+
+Scope was extended twice via frob ticket scope T-1262 --add:
+- docs/design/check-fix-engine.md (AFFECT001: the frob:doc anchor this
+  module's symbols point to needed a same-diff update -- added a
+  "T-1262 implementation note" subsection describing what was actually built)
+- design/frob.strata (SELFAUDIT001 SYS100/SYS104: the new module's fs.read/
+  fs.write capability effects and public interface= symbols needed declaring
+  on the gates node; the new TestFixEngineTierB class needed declaring on the
+  testsuite node; both nodes also needed a frob:ticket T-1262 edge for COV002)
+
+Gates verified (scoped, not a package-wide claim -- gate:scope-note applies,
+see docs/guides/agent-playbook.md#6c):
+- frob check --ticket T-1262 --only gates-fast: clean (exit 0)
+- frob check --ticket T-1262 --only gates-native: clean (exit 0)
+- frob check --ticket T-1262 --only gates-security: clean (exit 0)
+
+Evidence (pytest --collect-only confirmed, all 5 passing):
+- tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed (accepts[0])
+- tests/test_gates.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte (accepts[1])
+- tests/test_gates.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back (accepts[1])
+- tests/test_gates.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched (accepts[2])
+- tests/test_gates.py::TestFixEngineTierB::test_no_marker_files_is_a_no_op
+
+Filed: none (T-1481, the CLI-wiring follow-up, already existed on main before
+this ticket started -- cited via frob:waive WIRE001 follow_up, not newly
+filed).
+
+Gates: frob check --ticket T-1262 --only gates-fast/gates-native/gates-security
+all clean; no waives left un-reasoned.
+
+### Changed
+```
+ design/frob.strata                   |  13 +-
+ docs/design/check-fix-engine.md      |  31 +++
+ src/frob/gates/_fix_engine_tier_b.py | 499 +++++++++++++++++++++++++++++++++++
+ tests/test_gates.py                  | 206 +++++++++++++++
+ tickets.md                           |  34 ++-
+ 5 files changed, 776 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierB::test_no_marker_files_is_a_no_op` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 836 warning(s), 756 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1263 -->
 ```yaml
 id: T-1263
 title: gates --fix Tier-C fix-it emission format for agents
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -3693,19 +3808,43 @@ sprint: null
 scope:
 - src/frob/gates/_fix_engine_tier_c.py
 - tests/test_gates.py
+- docs/design/check-fix-engine.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/check-fix-engine.md
+  reason: Tier-C emitter's frob:doc anchor lives there; must update in the same diff
+    (AFFECT001)
+  actor: logan
+  at: '2026-08-03'
+- op: add
+  glob: design/frob.strata
+  reason: capability effects/interface declarations for the new module must live in
+    the same node
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
+- tests/test_gates.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list
+- tests/test_gates.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list
+- tests/test_gates.py::TestFixEngineTierC::test_todo001_emitter_never_touches_any_file
 acceptance:
 - text: GIVEN a content-required finding with a registered Tier-C emitter WHEN --fix
     runs THEN no file is edited and a FixIt record with a non-empty reason_unfixable
     is emitted
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
 - text: GIVEN --fix --json THEN the output includes a `fixits` array; on a repo with
     zero Tier-C-eligible findings the array is empty, never a missing key
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list
+  - tests/test_gates.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list
 - text: GIVEN a FixIt's message field THEN it is the original violation's message
     verbatim, never paraphrased
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
 threat: null
 component: null
 ```
@@ -3721,6 +3860,96 @@ rewrite -- e.g. TODO001's "bind this to a ticket" case, or a DOC002
 finding with 0 or 2+ fuzzy candidates, reusing fix_doc002_unique_slug's
 own already-computed candidate set to populate proposed_patch when
 exactly the wrong number of candidates exist, or null when zero).
+
+## Done report
+
+Built Tier-C fix-it emission per docs/design/check-fix-engine.md's "Fix-it
+emission format" section: new src/frob/gates/_fix_engine_tier_c.py with a
+FixIt model (rule, file, line, message, proposed_patch, reason_unfixable),
+TIER_C_EMITTERS: dict[str, TierCEmitter] (the Tier-C sibling of
+_fix_engine.TIER_A_HANDLERS/_fix_engine_tier_b.TIER_B_HANDLERS), and
+apply_tier_c_fixits.
+
+Design decisions:
+- A TierCEmitter takes the single Violation it emits a FixIt for
+  ((root, snapshot, violation) -> FixIt | None), unlike Tier A/B's
+  scan-the-whole-tree shape -- Tier C never mutates, so there is nothing
+  to apply repo-wide.
+- Real emitter shipped: emit_todo001_fixit for TODO001 (a bare untracked
+  to-do comment with no ticket to bind it to) -- the canonical Tier-C
+  example _fix_engine.py's own module docstring already names. Binding a
+  bare comment to a real ticket id is a judgment call the fix engine must
+  never guess at, so this emitter always returns a FixIt with
+  proposed_patch=None and a non-empty reason_unfixable, never touching
+  the file.
+- apply_tier_c_fixits/TIER_C_EMITTERS/emit_todo001_fixit are not
+  reachable from any real CLI invocation yet (T-1481 wires that,
+  alongside Tier A/B's own CLI wiring) -- each site carries a
+  frob:waive WIRE001 ... follow_up="T-1481" naming that open ticket.
+- Had to reword two docstring/comment lines that literally embedded the
+  words TODO/FIXME (describing TODO001's own message shape) -- they
+  tripped this repo's own TODO001 scanner (word-boundary TODO|FIXME) on
+  this module's own source; reworded to "untracked to-do comment"
+  phrasing with no false-positive trigger.
+
+Scope was extended via the ticket scope CLI's --add flag:
+- docs/design/check-fix-engine.md (AFFECT001: same-diff doc update --
+  added a "T-1263 implementation note" subsection)
+- design/frob.strata (SELFAUDIT001 SYS104: new public interface= symbols
+  FixIt/TIER_C_EMITTERS/TierCEmitter/apply_tier_c_fixits/
+  emit_todo001_fixit on the gates node, TestFixEngineTierC on the
+  testsuite node; both nodes gained a frob:ticket T-1263 edge for
+  COV002). No new fs.read/fs.write capability declaration was needed --
+  this module never touches the filesystem, by design (Tier C never
+  mutates).
+
+Gates verified (scoped, not a package-wide claim -- gate:scope-note
+applies, see docs/guides/agent-playbook.md#6c):
+- ticket-scoped gates-native check: clean (exit 0)
+- ticket-scoped gates-security check: clean (exit 0)
+- ticket-scoped gates-fast check: ONE residual SCOPE001 finding naming
+  src/frob/gates/_fix_engine_tier_b.py as outside T-1263's declared
+  scope. This is a cross-ticket artifact of working T-1262 and T-1263 in
+  the same worktree/branch (the ticket-scoped check diffs the whole
+  branch against main, which now includes T-1262's own not-yet-landed
+  commits) -- NOT a defect introduced by T-1263's own diff. T-1262's own
+  scoped check (run before T-1263 started) was independently clean.
+  Disclosed rather than silently worked around; the coordinator landing
+  T-1262 first will make this resolve itself.
+
+Evidence (pytest --collect-only confirmed, all 4 passing):
+- tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch (accepts[0], accepts[2])
+- tests/test_gates.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list (accepts[1])
+- tests/test_gates.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list (accepts[1])
+- tests/test_gates.py::TestFixEngineTierC::test_todo001_emitter_never_touches_any_file
+
+Filed: none (T-1481 already existed on main before this ticket started).
+
+Gates: ticket-scoped gates-native/gates-security clean; gates-fast's one
+residual SCOPE001 is the disclosed cross-ticket artifact above, not
+waived (it will resolve once T-1262 lands ahead of T-1263).
+
+### Changed
+```
+ design/frob.strata                   |  21 +-
+ docs/design/check-fix-engine.md      |  50 ++++
+ src/frob/gates/_fix_engine_tier_b.py | 499 +++++++++++++++++++++++++++++++++++
+ src/frob/gates/_fix_engine_tier_c.py | 167 ++++++++++++
+ tests/test_gates.py                  | 304 +++++++++++++++++++++
+ tickets.md                           | 154 ++++++++++-
+ 6 files changed, 1184 insertions(+), 11 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFixEngineTierC::test_todo001_emitter_never_touches_any_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 849 warning(s), 758 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1264 -->
 ```yaml

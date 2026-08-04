@@ -223,6 +223,37 @@ fixed (Tier A applied + Tier B committed), rolled-back (Tier B reverted,
 with reasons), and fix-its emitted (Tier C, unresolved) -- never a bare
 "N fixed" that hides a same-run rollback.
 
+**T-1262 implementation note:** the Tier-B transaction engine itself is
+built -- `src/frob/gates/_fix_engine_tier_b.py`'s `TierBFix`/
+`FixRolledBack` models, `TIER_B_HANDLERS: dict[str, TierBHandler]` (the
+Tier-B sibling of `_fix_engine.TIER_A_HANDLERS`, same uniform `(root,
+snapshot, queue) -> list[...]` call shape), and `apply_tier_b_fixes`, the
+apply-verify-commit-or-rollback engine described above. Per fix,
+`apply_tier_b_fixes` re-runs the fix's own declared `affected_gates`
+TWICE (a temporary revert-measure-restore around the fix's own `backup`
+bytes gives a true pre-fix baseline, since the handler has already
+applied the mutation by the time the engine sees the returned
+`TierBFix`) plus the fix's `bound_tests` via a subprocess `pytest`
+invocation, and commits or rolls back byte-for-byte based on whether any
+NEW error-severity violation or test failure appears -- sequentially,
+one `TierBFix` at a time, never batched, exactly as this section
+prescribes. `gate_runner`/`test_runner` are injectable (default: the
+real `run_gates`/subprocess-`pytest` pair) so the module's own tests can
+prove the commit/rollback decision logic deterministically.
+
+No concrete production Tier-B handler exists yet: per this ticket's own
+acceptance note, `fix_tierbdemo001_marker_rewrite` is a SYNTHETIC
+reference handler (a `# frob:tierbdemo <replacement>` marker-comment
+rewrite, keyed to a placeholder `TIERBDEMO001` id that is deliberately
+never a real `frob check` rule) proving the full snapshot-apply-verify-
+commit-or-rollback path end-to-end without depending on any real gate
+rule's shape. A real Tier-B handler is a follow-up. Wiring `--fix` to
+call `apply_tier_b_fixes` at all is T-1481, alongside the same ticket's
+Tier-A CLI wiring -- `TIER_B_HANDLERS`/`apply_tier_b_fixes` are not yet
+reachable from any `frob check --fix` invocation, only from this
+module's own tests (`frob:waive WIRE001 ... follow_up="T-1481"` marks
+every such site).
+
 ## `frob doctor` fold-vs-delegate decision
 
 **Delegate, do not fold.** `frob doctor` and `frob check --fix` solve
@@ -364,6 +395,25 @@ on. Emission format, both as an in-process return value and as `--fix
   array `frob check --json` already emits) -- no new top-level command,
   no new output mode; `--fix` is additive to `frob check`'s existing
   reporting shape, not a parallel one.
+
+**T-1263 implementation note:** the `FixIt` model, `TIER_C_EMITTERS: dict[
+str, TierCEmitter]` (the Tier-C sibling of `_fix_engine.TIER_A_HANDLERS`/
+`_fix_engine_tier_b.TIER_B_HANDLERS`), and `apply_tier_c_fixits` are built
+in `src/frob/gates/_fix_engine_tier_c.py`. Unlike Tier A/B's `(root,
+snapshot, queue) -> list[...]` scan-the-whole-tree shape, a `TierCEmitter`
+takes the single `Violation` it emits a `FixIt` for (`(root, snapshot,
+violation) -> FixIt | None`) -- Tier C never mutates, so there is nothing
+to apply repo-wide the way Tier A/B's handlers do; `apply_tier_c_fixits`
+dispatches each violation to its rule's registered emitter (if any) and
+collects the results into the plain list that becomes `--fix --json`'s
+future `fixits` array. The one real emitter shipped: `emit_todo001_fixit`
+for TODO001 (a bare todo/fixme comment with no ticket to bind it to --
+the canonical Tier-C example `_fix_engine.py`'s own module docstring
+already names). Wiring `--fix --json`'s output to include `fixits` at
+all is T-1481, alongside the Tier-A/B CLI wiring -- `TIER_C_EMITTERS`/
+`apply_tier_c_fixits` are not yet reachable from any `frob check --fix`
+invocation, only from this module's own tests (`frob:waive WIRE001 ...
+follow_up="T-1481"` marks the site).
 
 ## The two anti-goals, as enforced invariants
 

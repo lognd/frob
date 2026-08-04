@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.322.0] - unreleased
+
+- T-1262: gates --fix Tier-B transaction engine: apply-verify-rollback per fix
+
 ## [0.321.0] - unreleased
 
 - T-1269: ticket land --plan: atomic design-phase land with automatic draft finalization
