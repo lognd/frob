@@ -170,19 +170,41 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
         ),
     ),
     BenignCapability(
-        kind="env",
+        kind="process-control",
         reason=(
             "process-lifecycle/signal-handling registry entries (sys.exit/"
-            "os._exit, signal.signal) that share the bare 'env' capability "
-            "kind despite not being an actual environment-variable read or "
-            "write (frob.strata._selfconform's own T-1075 disambiguation "
-            "comment); no CWE_CATALOG entry targets process termination or "
-            "signal-handler installation as a sink on their own"
+            "os._exit, signal.signal), reclassified out of the bare 'env' "
+            "capability kind by T-1439 -- they were never an actual "
+            "environment-variable read or write; no CWE_CATALOG entry "
+            "targets process termination or signal-handler installation "
+            "as a sink on their own"
         ),
         caught_by=(
             "none -- no CWE_CATALOG entry targets process termination or "
             "signal-handler installation as a sink on their own; not "
             "compensated elsewhere"
+        ),
+    ),
+    # T-1439: bare `env` keeps ITS OWN excuse even after the process-
+    # control reclassification above -- `env` is still a legal coarse
+    # `may "env"` declaration spelling on real design nodes (cli, core,
+    # gates, mutate, natives, testsuite, tickets_ledger, vet), discharged
+    # via `expand_declared_kind` by either the env-read or env-write
+    # observed kind (T-1075's `WIRED_MODE_FAMILIES` wiring). THREAT002
+    # still needs a taxonomy answer for the coarse spelling itself.
+    BenignCapability(
+        kind="env",
+        reason=(
+            'coarse `may "env"` is a legal, backward-compatible '
+            "declaration spelling discharged by either the env-read or "
+            "env-write observed kind (T-1075); no CWE_CATALOG entry "
+            "targets a bare, unqualified environment-variable capability "
+            "as a sink on their own"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets a bare environment-"
+            "variable capability as a sink on its own; not compensated "
+            "elsewhere"
         ),
     ),
     # T-1075: `env` joined `frob.vet._capability_modes.WIRED_MODE_FAMILIES`

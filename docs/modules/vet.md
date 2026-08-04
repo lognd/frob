@@ -31,6 +31,7 @@ immediately.
 | fs-write | writes outside the package's own tree/tempdirs |
 | fs-read | reads local filesystem state (config loads, no mutation) -- T-0018, graphite adoption, docs/strata/selfconform.md#fs-read-fs-write |
 | env | os.environ/process.env/std::env reads |
+| process-control | sys.exit/os._exit/signal.signal -- process-lifecycle/signal-handling operations (T-1439: reclassified out of `env`, which they only ever shared by a kind-naming mismatch, not real environment-variable access) |
 | ffi | ctypes/cffi/NAPI/unsafe extern/`importlib.machinery.ExtensionFileLoader` (T-0222: explicit compiled/native extension module loading -- a bare `import <native-module>` is scanner-invisible, so this stdlib literal is the narrow, unambiguous signal) |
 | native | compiled artifacts in the wheel/crate (opaque to scanning) |
 | install-hook | setup.py/build.rs/postinstall scripts containing any of the above |
@@ -39,13 +40,14 @@ immediately.
 
 `CAPABILITY_KINDS` (`src/frob/vet/_capability_registry/_kinds.py`, part of
 the `_capability_registry` package since T-1420) has grown
-beyond this table's 11 rows to ~24 entries: precise connect-vs-listen and
+beyond this table's rows to ~25 entries: precise connect-vs-listen and
 read-vs-write variants of `net`/`env` (`net-connect`/`net-listen`/
 `net.connect`/`net.listen`, `env-read`/`env-write`/`env.read`/
-`env.write`), the normalized `fs` spelling of `fs-write`, and the
-c-cpp-excused-kind vocabulary (`sql`, `html_render`, `fetch_url`,
-`deserialize`, `client_storage`) also live there -- see
-`docs/guides/extending/capability-registry.md` for the full current list.
+`env.write`), the normalized `fs` spelling of `fs-write`, `process-control`
+(T-1439, split out of `env`), and the c-cpp-excused-kind vocabulary
+(`sql`, `html_render`, `fetch_url`, `deserialize`, `client_storage`) also
+live there -- see `docs/guides/extending/capability-registry.md` for the
+full current list.
 
 `native` and `obfuscation` are capabilities in their own right: compiled
 code cannot be vetted statically and is therefore trusted only by explicit

@@ -312,13 +312,23 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
         language="kotlin",
         reason="see the python/net.connect excuse above, listen-side",
     ),
-    # T-0771: the bare `env` kind keeps ONE real remaining python entry
-    # (sys.exit/os._exit and signal.signal are pre-existing bare-`env`
-    # process-control entries this ticket left untouched -- they are not
-    # actually about reading/writing an environment variable, a pre-
-    # existing kind-naming mismatch out of this ticket's scope, filed as
-    # follow-up in the Done report) but every OTHER language's env entries
-    # were fully reclassified to env-read/env-write, same as net above.
+    # T-0771: bare `env` was fully reclassified to env-read/env-write for
+    # every language. T-1439: the last two python entries that still
+    # emitted bare `env` (sys.exit/os._exit, signal.signal -- never
+    # actually environment-variable access, a pre-existing kind-naming
+    # mismatch T-0771's own Done report flagged unfixed) moved to the new
+    # `process-control` kind below, so `env` is now excused for EVERY
+    # language including python -- it survives only as a legal coarse
+    # `may "env"` declaration spelling, discharged by either env-read or
+    # env-write per `expand_declared_kind`.
+    _MatrixExcuse(
+        capability_kind="env",
+        language="python",
+        reason="the last two bare-env registry entries (sys.exit/os._exit, "
+        "signal.signal) were reclassified to `process-control` (T-1439) -- "
+        "they were never real environment-variable access; `env` survives "
+        'only as a legal coarse `may "env"` declaration spelling',
+    ),
     _MatrixExcuse(
         capability_kind="env",
         language="typescript",
@@ -340,6 +350,40 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
         "System.getenv() entry (T-0771) is precise env-read from the "
         "start, so this cell was never a reclassification, just never "
         "patterned coarse",
+    ),
+    # T-1439: `process-control` is a NEW kind -- python patterns it
+    # (sys.exit/os._exit, signal.signal, reclassified out of bare env
+    # above); no per-language survey of the equivalent idioms (process.
+    # exit/kill in TS, std::process::exit/signal crates in rust, exit(3)/
+    # signal(2) in C/C++, System.exit/Runtime.exit in kotlin) has been
+    # done yet, so every other language cell is excused as a tracked gap
+    # rather than guessed at, same shape as the kotlin/env excuse above.
+    _MatrixExcuse(
+        capability_kind="process-control",
+        language="typescript",
+        reason="no per-language survey of process.exit/kill-equivalent "
+        "idioms has been done yet (T-1439 introduced the kind reclassifying "
+        "python-only entries); tracked as a follow-up rather than guessed "
+        "at here",
+    ),
+    _MatrixExcuse(
+        capability_kind="process-control",
+        language="rust",
+        reason="see the typescript/process-control excuse above -- same "
+        "un-surveyed gap, std::process::exit/signal-crate idioms",
+    ),
+    _MatrixExcuse(
+        capability_kind="process-control",
+        language="c-cpp",
+        reason="see the typescript/process-control excuse above -- same "
+        "un-surveyed gap, exit(3)/_exit(2)/signal(2) idioms",
+    ),
+    _MatrixExcuse(
+        capability_kind="process-control",
+        language="kotlin",
+        reason="see the typescript/process-control excuse above -- same "
+        "un-surveyed gap, System.exit/Runtime.exit/JVM signal-handling "
+        "idioms",
     ),
     # T-1075: `env.read`/`env.write` (dotted, the tier-2 `_KIND_MAP`-
     # normalized spelling `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES`

@@ -24,12 +24,13 @@ SYS100 undeclared interface -- a capability OBSERVED in a node's
     (THREAT004) verbatim, just relabeled SYS100 -- that function already
     computes exactly this join at file:line granularity via `_effects.py`'s
     `_KIND_MAP`/`_line_effects`, zero new detection.
-  - eval/env/ffi/install-hook: NEW code (`_extended_kind_violations`).
-    GAP STATEMENT: `_effects.py::_KIND_MAP` is scoped (by its own
-    docstring, T-0079) to net/fs-write/exec only -- "eval/env/ffi/
-    install-hook are vet-specific dependency-vetting signals with no
-    `may`-capability analog yet" -- so THREAT004 structurally cannot see
-    these four kinds no matter what `may` declares. `scan_file_
+  - eval/process-control/ffi/install-hook: NEW code
+    (`_extended_kind_violations`). GAP STATEMENT: `_effects.py::
+    _KIND_MAP` is scoped (by its own docstring, T-0079) to net/
+    fs-write/exec only -- "eval/process-control/ffi/install-hook are
+    vet-specific dependency-vetting signals with no `may`-capability
+    analog yet" -- so THREAT004 structurally cannot see these four
+    kinds no matter what `may` declares. `scan_file_
     capabilities` (vet's own per-file scanner, already imported
     READ-ONLY by `_effects.py` for the other three kinds) is reused
     directly for these four, at file granularity, joined against
@@ -283,18 +284,23 @@ _EXTENDED_KINDS = frozenset(
         #: `fs-read`/`fs-write`/`net`/`exec` already do -- double-scanning
         #: them here too would be the same mistake `fs-read`'s own T-0717
         #: promotion comment warns against just above.
-        "env",
-        #: Bare `env` is UNRELATED to the env-read/env-write split just
-        #: above despite the shared string: it is a handful of registry
-        #: entries (`sys.exit`/`os._exit`, `signal.signal`) tagging
-        #: process-lifecycle/signal-handling operations, never an actual
-        #: environment-variable read or write -- `_capability_registry.py`
-        #: never promoted these to `env-read`/`env-write` because they are
-        #: not that. Removing bare `env` here (only `env-read`/`env-write`)
-        #: would leave these registry entries with NO extended-kinds home
-        #: at all, silently dropping SYS100 coverage for them -- confirmed
-        #: by `TestDeployServeMutateNodeSplitConformance`'s own real-code
-        #: fixture failing the drift-lock union check when this was tried.
+        #: T-1439: bare `env` is REMOVED from here. It used to stay only
+        #: because a handful of registry entries (`sys.exit`/`os._exit`,
+        #: `signal.signal`) tagged process-lifecycle/signal-handling
+        #: operations under the `env` kind despite never touching an
+        #: actual environment variable -- a pre-existing kind-naming
+        #: mismatch (T-0771's own Done report flagged it, unfixed at the
+        #: time). Those registry entries now emit `process-control`
+        #: instead (see `_dangerous_ops_python.py`), so bare `env` has no
+        #: remaining emitter anywhere in `DANGEROUS_OPERATIONS` and is
+        #: dropped here the same way `fs-read` was dropped below once its
+        #: own tier-2 analog landed.
+        "process-control",
+        #: `process-control` covers process-lifecycle/signal-handling
+        #: operations (`sys.exit`/`os._exit`, `signal.signal`) that are
+        #: not an environment-variable read or write and have no tier-2/
+        #: `_effects.py::_KIND_MAP` analog -- same "no real mode
+        #: vocabulary yet" shape `ffi`/`install-hook` already have below.
         "ffi",
         "install-hook",
         "sql",
@@ -628,8 +634,8 @@ def _observed_all_kinds_by_node(
 def _extended_kind_violations(
     model: KernelModel, observed_by_node: dict[str, frozenset[str]]
 ) -> list[SelfConformViolation]:
-    """SYS100 for eval/env/ffi/install-hook/sql/deserialize/html_render/
-    fetch_url/client_storage -- the slice `check_capability_conformance`
+    """SYS100 for eval/process-control/ffi/install-hook/sql/deserialize/
+    html_render/fetch_url/client_storage -- the slice `check_capability_conformance`
     structurally cannot see (module docstring's SYS100 gap statement).
     T-0717: `fs-read` moved OUT of `_EXTENDED_KINDS` into `_effects.py::
     _KIND_MAP` (it now has a real tier-2/THREAT004 analog as `fs.read`),
@@ -1697,8 +1703,9 @@ def _dedupe_sys100_extended_against_core(
     (one coarse node-level finding per capability kind, module docstring's
     SYS100 gap statement) are two INDEPENDENT SYS100 producers joined
     against the same `(node, capability)` space -- today's `_KIND_MAP`
-    (net/fs/exec) and `_EXTENDED_KINDS` (eval/env/ffi/install-hook/sql/
-    deserialize/html_render/fetch_url/client_storage/fs-read) vocabularies
+    (net/fs/exec) and `_EXTENDED_KINDS` (eval/process-control/ffi/
+    install-hook/sql/deserialize/html_render/fetch_url/client_storage/
+    fs-read) vocabularies
     happen not to overlap, but nothing enforces that split staying true as
     either registry grows (T-0158/T-0304 already moved capability strings
     between the two more than once), so a future/config-drift kind landing

@@ -1657,7 +1657,7 @@
     "src/frob/strata/_threat.py::check_effect_completeness": "3ce5ec2473e15c7544796284e377a0a5b3a04c9802d2fd9dad4f8a13d0e2a3d3",
     "src/frob/strata/_threat.py::evaluate_threats": "401a0fe24dca165e7994364cddca92ff81f7eebbef0abe4a0090305b32c47fb1",
     "src/frob/strata/_threat.py::load_repo_benign_capabilities": "cee9e3f37de442eef03b83b26403d37492033358655803037d32dd3d4f3f5990",
-    "src/frob/strata/_threat_catalog_benign.py::DEFAULT_BENIGN_CAPABILITIES": "fb45d6f9306a1e5f085533041408795a2e5fc7e586b2b0993fa56cc2d4927471",
+    "src/frob/strata/_threat_catalog_benign.py::DEFAULT_BENIGN_CAPABILITIES": "184f3449c94ab3b0717de11ae05250e4e1474b56c7df2750929c19ae3b9b01ef",
     "src/frob/strata/_threat_catalog_cwe.py::CWE_CATALOG": "b96c326b23cc49fa88f20f74bae77fc162c6b8e0d03f00eb223278773d96fb8b",
     "src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_CATALOG": "548c172f23f15314e0d8d2356d755652440441bd6b33fc05eacc4e94fd837672",
     "src/frob/strata/_threat_catalog_cwe.py::CWE_TOP_25_OUT_OF_SCOPE": "7124e10332a43e9ccd2d60046f6e91e1a6d012224d48b0154685f558a2b31bc8",
@@ -1941,9 +1941,9 @@
     "src/frob/vet/_capability_modes.py::canonical_declared_kind": "32d14c39fe3abd5bc55bcaa3aebc69bea9c3442e2e70f49186e039f3f46e6477",
     "src/frob/vet/_capability_modes.py::expand_declared_kind": "12ee475857378ef1c8cad2b8385c6af8e6c084af8bbb94421211e17bd2f1f624",
     "src/frob/vet/_capability_modes.py::resolve_capability_kind": "f604dec2a89c2bfe5f1d2e1029ac8fd3b7e2a725c0de28606ed8d0bfb1523625",
-    "src/frob/vet/_capability_registry/_kinds.py::CAPABILITY_KINDS": "72b7e46164e91dd5f24964c36289fb15ddcf77e0d0b6db4e828d0a3c943679d1",
+    "src/frob/vet/_capability_registry/_kinds.py::CAPABILITY_KINDS": "646d0be72fc6dde556c379297aabe8ca3f7b7b247954783cb0ca293a22760131",
     "src/frob/vet/_capability_registry/_kinds.py::LANGUAGES": "bae7f28f4eaab757fde26a3937c7a3ff6b9391f5d6bfbb8200c915096fd72bf8",
-    "src/frob/vet/_capability_registry/_matrix.py::CAPABILITY_MATRIX_EXCUSES": "159bc2283045ccb7836a5915c21135c15bf61e5886617a3637d9feecd35c3f51",
+    "src/frob/vet/_capability_registry/_matrix.py::CAPABILITY_MATRIX_EXCUSES": "3b4d24559229e7e9981a7f95e402b70ecb36f467e608e21a60a632b0c12e3b4d",
     "src/frob/vet/_capability_registry/_matrix.py::DANGEROUS_OPERATIONS": "b74aa2e16112d44059033c8737d515f6a5e217e4d70d89f778fdfac848233c9e",
     "src/frob/vet/_capability_registry/_matrix.py::NO_CAPABILITY_MODULES": "b93b45d24b5739b682a3dfc3dbc9a6dc711125180679c498aefc64fd5df28b9f",
     "src/frob/vet/_capability_registry/_matrix.py::capability_matrix": "d0244e8f83ed43ed86ca3aa06f44b035eaab10dfca158e091469eb7eb97224ec",
@@ -2014,5 +2014,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.328.0"
+  "version": "0.329.0"
 }

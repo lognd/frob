@@ -103,6 +103,16 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     #: own T-0771 dual-registration just above.
     "env.read",
     "env.write",
+    #: T-1439: process-lifecycle/signal-handling operations (`sys.exit`/
+    #: `os._exit`, `signal.signal`) reclassified OUT of bare `env` -- they
+    #: never read or wrote an environment variable, they shared the `env`
+    #: string only by a pre-existing kind-naming mismatch (T-0771's own
+    #: Done report flagged it, left unfixed at the time). Considered and
+    #: rejected reusing `install-hook` for this: that kind is specifically
+    #: packaging-lifecycle code (setuptools cmdclass, npm postinstall), a
+    #: different semantic surface from a running process exiting or
+    #: handling a signal.
+    "process-control",
     "ffi",
     "install-hook",
     "html_render",

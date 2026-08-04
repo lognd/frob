@@ -501,6 +501,25 @@ class TestNegativeFixtures:
         assert "eval" not in scan_file_capabilities(path)
 
     # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_signal_signal_is_process_control_not_bare_env(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1439: `signal.signal` installs a process-wide signal handler,
+        not environment-variable access -- it must observe as the
+        declarable "process-control" kind, never bare "env" (which
+        WIRED_MODE_FAMILIES explodes to env.read/env.write, making a
+        coarse `may "env"` undischargeable for this call). Hardcodes the
+        expected kind string rather than reading it back off the registry
+        entry, so this fails against the pre-T-1439 mislabeling (bare
+        "env") and only passes once the registry entry is genuinely
+        reclassified."""
+        path = tmp_path / "m.py"
+        path.write_text("import signal\nsignal.signal(signal.SIGTERM, lambda *_: None)\n")
+        observed = scan_file_capabilities(path)
+        assert "process-control" in observed
+        assert "env" not in observed
+
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
     def test_c_socket_header_alone_is_not_net(self, tmp_path: Path) -> None:
         path = tmp_path / "m.c"
         path.write_text("#include <sys/socket.h>\n")

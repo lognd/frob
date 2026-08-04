@@ -478,11 +478,19 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ("os.putenv(", "os.environ["),
         (),
     ),
+    # T-1439: reclassified from bare "env" -- neither of these two entries
+    # reads or writes an environment variable; they are process-lifecycle/
+    # signal-handling operations that only ever shared the "env" string by
+    # a pre-existing kind-naming mismatch (T-0771's Done report flagged it
+    # unfixed). "process-control" is the accurate kind; "install-hook" was
+    # considered and rejected -- that kind is specifically packaging-
+    # lifecycle code (setuptools cmdclass, npm postinstall), a different
+    # semantic surface from a running process exiting or handling a signal.
     _op(
         "python",
         "sys",
         "sys.exit / os._exit",
-        "env",
+        "process-control",
         "terminates the process; low-severity but part of the exhaustive "
         "process-control surface",
         "prefer raising and letting the entry point decide the exit code",
@@ -494,7 +502,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "python",
         "signal",
         "signal.signal",
-        "env",
+        "process-control",
         "installs a process-wide signal handler",
         "keep signal handlers minimal and audited",
         "low",
