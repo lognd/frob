@@ -8564,9 +8564,9 @@ component: null
 ```
 T-1205 acceptance[1]'s second half (the first half -- TEST005 stale-and-disclosed marking -- landed in T-1205's own session). TEST011 currently WARNs on stale_by_mtime/deflated join fraction; this ticket makes staleness a genuine blocking contract (ERROR-severity, or a dedicated new rule) once the disclosure half has had time to be adopted without breaking every existing checkout at once. Needs its own investigation into rollout sequencing (a same-session flip to ERROR would gate the whole repo on every slightly-stale coverage.xml, which is common in normal dev flow) -- do not just flip severity without that review.
 
-<!-- ticket:T-draft-dfc6abe7 -->
+<!-- ticket:T-1490 -->
 ```yaml
-id: T-draft-dfc6abe7
+id: T-1490
 title: WIRE001 on test_coverage_attribution_lock_t1395.py's _load_committed_lock helper
 state: queued
 kind: docs
