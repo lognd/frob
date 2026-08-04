@@ -641,15 +641,27 @@ def _sprint_show(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0568
+# frob:ticket T-1243
 def _brief(root: Path, cfg: AppConfig) -> None:
     """`frob ticket brief <id>` (T-0568): print `frob.tickets.brief_ticket`'s
     full mission briefing text -- the entire point is a single command a
     coordinator can paste into a dispatch prompt instead of hand-typing
-    the same ~400 words of playbook/scope/verify boilerplate every time."""
-    from frob.tickets import brief_ticket
+    the same ~400 words of playbook/scope/verify boilerplate every time.
+    `--cluster <epic-or-story-id>` (T-1243) instead prints `frob.tickets.
+    brief_cluster`'s one briefing covering every dispatchable descendant of
+    that epic/story, dependency-ordered."""
+    from frob.tickets import brief_cluster, brief_ticket
+
+    if cfg.ticket_cluster is not None:
+        cluster_result = brief_cluster(root, cfg.ticket_cluster)
+        if cluster_result.is_err:
+            _log.error("ticket brief --cluster failed: %s", cluster_result.danger_err)
+            sys.exit(1)
+        _log.info("%s", cluster_result.danger_ok)
+        return
 
     if cfg.ticket_id is None:
-        _log.error("frob ticket brief requires <id>")
+        _log.error("frob ticket brief requires <id> or --cluster <epic-or-story-id>")
         sys.exit(1)
     result = brief_ticket(root, cfg.ticket_id)
     if result.is_err:

@@ -73,9 +73,11 @@ from frob.tickets._land_verify import (
 )
 from frob.tickets._models import (
     LandError,
+    LandPlanReport,
     LandReport,
     Ticket,
 )
+from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _store_mode
 
 # T-0577: same posix-only degradation as `frob.tickets._store`'s
@@ -584,6 +586,254 @@ def land(
             skip_mutation_evidence=skip_mutation_evidence,
             allow_cross_ticket=allow_cross_ticket,
         )
+
+
+# frob:ticket T-1269
+# frob:doc docs/modules/tickets.md#frob-ticket-land---plan-t-1269
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_everything  # noqa: E501
+def land_plan(
+    root: Path,
+    worktree: Path,
+    *,
+    dry_run: bool = False,
+    check_ticks: Callable[[], bool | None] | None = None,
+) -> Result[LandPlanReport, LandError]:
+    """`frob ticket land --plan --worktree PATH` (T-1269): land a DESIGN-
+    PHASE worktree -- docs plus ledger changes, no closeable worked ticket
+    -- atomically, instead of the pre-T-1269 manual chain (a guarded plain
+    `git merge` plus hand-assigned `frob ticket renumber` calls per draft,
+    observed costing 15 hand-assigned renumbers across 4 batches landing
+    four planner worktrees in one drive).
+
+    The whole chain -- merge `worktree`'s branch onto `root`'s current
+    branch (the registered `tickets.md` merge driver, if any, splices any
+    ledger conflict the same way an ordinary `git merge`/`pull` already
+    would -- this function performs no ledger surgery of its own), finalize
+    EVERY incoming draft id now on `root` to the next free real id in one
+    `finalize_draft` call each (T-0162's existing allocator, never a hand-
+    assigned id), then an optional `check_ticks()` TICK-gate re-check --
+    runs under `root`'s `_land_lock` (T-0577, the same cross-process lock
+    `land()` uses) for atomicity against a concurrent `land()`/`land_plan()`
+    call against the SAME `root`.
+
+    On ANY failure after the merge (a finalize error, or `check_ticks()`
+    returning `False`), `root` is `git reset --hard`ed back to its pre-
+    merge tip -- no half-merged ledger, no partially-renumbered drafts
+    survive. A merge CONFLICT (before any commit exists) is resolved via
+    `git merge --abort` instead, since nothing was committed yet.
+
+    `check_ticks` (default `None`, skip -- matching `land`'s own `check_
+    gates`/`covers_scope`/etc. cycle-avoidance posture, docs/rework.md:
+    `frob.tickets` cannot import `frob.gates` directly) lets a caller with
+    a fresh `frob check --only tickets` oracle refuse the plan-land on a
+    non-clean TICK gate; `frob ticket land --plan`'s CLI supplies it.
+    `dry_run=True` runs the merge and finalize exactly as a real call
+    would, then `git reset --hard`s back to the pre-merge tip regardless
+    of outcome, returning the report of what WOULD have happened."""
+    root, worktree = root.resolve(), worktree.resolve()
+    same_path = _refuse_if_root_is_worktree(root, worktree, "<plan>")
+    if same_path.is_err:
+        return Err(same_path.danger_err)
+    dirty = _refuse_if_main_dirty(root, worktree, "<plan>")
+    if dirty.is_err:
+        return Err(dirty.danger_err)
+
+    with _land_lock(root):
+        return _land_plan_locked(
+            root, worktree, dry_run=dry_run, check_ticks=check_ticks
+        )
+
+
+# frob:ticket T-1269
+def _land_plan_pre_merge_sha(root: Path) -> Result[str, LandError]:
+    """`root`'s current `HEAD` sha, resolved BEFORE `land_plan` merges
+    anything (T-1269) -- the exact point a failed merge/finalize/TICK-
+    check `git reset --hard`s back to."""
+    return _rev_parse(root, "HEAD")
+
+
+# frob:ticket T-1269
+def _land_plan_merge_worktree(root: Path, worktree: Path) -> Result[str, LandError]:
+    """Merge `worktree`'s current branch onto `root`'s current branch
+    (T-1269): a plain `git merge --no-ff` (never a squash -- there is no
+    single worked ticket to squash under, unlike `land`'s own per-ticket
+    path), relying on the registered `tickets.md` git merge driver
+    (docs/modules/tickets.md#git-merge-driver) for any ledger conflict the
+    same way an ordinary `git merge`/`pull` already would. `Err
+    (MergeConflict)` (after `git merge --abort`, since nothing is
+    committed yet) on a real conflict; `Err(GitFailed)` on any other git
+    failure. Returns the resulting merge commit sha on success."""
+    branch = _rev_parse(worktree, "HEAD")
+    if branch.is_err:
+        return Err(branch.danger_err)
+    worktree_sha = branch.danger_ok
+    merged = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "merge",
+            "--no-ff",
+            "-m",
+            "chore(tickets): land --plan",
+            worktree_sha,
+        ]
+    )
+    if merged.is_err or merged.danger_ok.returncode != 0:
+        _abort_merge(root)
+        _log.error(
+            "land --plan: merging %s (%s) into %s produced a real "
+            "conflict -- register the tickets.md merge driver "
+            "(docs/modules/tickets.md#git-merge-driver) if this is a "
+            "ledger-only conflict, or resolve by hand and retry",
+            worktree,
+            worktree_sha,
+            root,
+        )
+        return Err(LandError.MergeConflict)
+    return _rev_parse(root, "HEAD")
+
+
+# frob:ticket T-1269
+def _land_plan_finalize_drafts(
+    root: Path,
+) -> Result[tuple[tuple[str, str], ...], LandError]:
+    """Finalize EVERY draft id now present in `root`'s merged ledger
+    (T-1269), one `finalize_draft` call each (T-0162's existing allocator
+    -- never a hand-assigned id), in a stable (sorted) order so a retry
+    after an unwind is deterministic. `Err(NotFound)` (propagated from
+    `finalize_draft`) on the first failure -- the caller resets `root`
+    back to its pre-merge tip, so a partial finalize never survives."""
+    from frob.tickets import finalize_draft, load_all
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        _log.error("land --plan: could not load %s's ledger after merge", root)
+        return Err(LandError.GitFailed)
+    draft_ids = sorted(tid for tid in loaded.danger_ok if is_draft_id(tid))
+    finalized: list[tuple[str, str]] = []
+    for draft_id in draft_ids:
+        result = finalize_draft(root, draft_id)
+        if result.is_err:
+            _log.error(
+                "land --plan: finalizing draft %s failed (%s) -- unwinding",
+                draft_id,
+                result.danger_err,
+            )
+            return Err(LandError.NotFound)
+        finalized.append((draft_id, result.danger_ok))
+    return Ok(tuple(finalized))
+
+
+# frob:ticket T-1269
+def _land_plan_commit_finalize(
+    root: Path, finalized: tuple[tuple[str, str], ...]
+) -> Result[None, LandError]:
+    """Commit `finalize_draft`'s ledger (and any code-reference) rewrites
+    (T-1269) -- `finalize_draft`/`renumber_one` write the tree but do not
+    commit it themselves (the same "write, caller commits" convention
+    `_wip_commit` already applies elsewhere in this package); a no-op
+    (`Ok(None)`, nothing to commit) when `finalized` is empty, so a plan-
+    land with no incoming draft ids stays a single (merge-only) commit."""
+    if not finalized:
+        return Ok(None)
+    added = run_argv(["git", "-C", str(root), "add", "-A"])
+    if added.is_err or added.danger_ok.returncode != 0:
+        _log.error("land --plan: git add -A failed in %s", root)
+        return Err(LandError.GitFailed)
+    message = "chore(tickets): land --plan finalize " + ", ".join(
+        f"{old} -> {new}" for old, new in finalized
+    )
+    committed = run_argv(["git", "-C", str(root), "commit", "-q", "-m", message])
+    if committed.is_err or committed.danger_ok.returncode != 0:
+        _log.error("land --plan: finalize commit failed in %s", root)
+        return Err(LandError.CommitFailed)
+    return Ok(None)
+
+
+# frob:ticket T-1269
+def _land_plan_reset_hard(root: Path, sha: str) -> None:
+    """`git reset --hard sha` in `root` (T-1269) -- the unwind primitive
+    every `land_plan` failure path after a successful merge uses, so a
+    finalize error or a dirty `check_ticks()` result never leaves a half-
+    merged ledger or a partially-renumbered draft committed."""
+    reset = run_argv(["git", "-C", str(root), "reset", "--hard", sha])
+    if reset.is_err or reset.danger_ok.returncode != 0:
+        _log.error(
+            "land --plan: git reset --hard %s in %s FAILED -- manual "
+            "recovery required (check `git status`/`git log` in %s)",
+            sha,
+            root,
+            root,
+        )
+
+
+# frob:ticket T-1269
+def _land_plan_locked(
+    root: Path,
+    worktree: Path,
+    *,
+    dry_run: bool,
+    check_ticks: Callable[[], bool | None] | None,
+) -> Result[LandPlanReport, LandError]:
+    """`land_plan`'s body (T-1269), run by the caller already holding
+    `root`'s `_land_lock`: merge, finalize every draft, optionally re-check
+    TICK-gate cleanliness, and -- for a real (non-dry-run) call -- leave
+    the merge commit as `root`'s new tip; a `dry_run` or any failure resets
+    `root` back to its pre-merge tip instead."""
+    pre_merge = _land_plan_pre_merge_sha(root)
+    if pre_merge.is_err:
+        return Err(pre_merge.danger_err)
+    pre_merge_sha = pre_merge.danger_ok
+
+    merged = _land_plan_merge_worktree(root, worktree)
+    if merged.is_err:
+        return Err(merged.danger_err)
+    merge_commit = merged.danger_ok
+
+    finalized = _land_plan_finalize_drafts(root)
+    if finalized.is_err:
+        _land_plan_reset_hard(root, pre_merge_sha)
+        return Err(finalized.danger_err)
+
+    committed = _land_plan_commit_finalize(root, finalized.danger_ok)
+    if committed.is_err:
+        _land_plan_reset_hard(root, pre_merge_sha)
+        return Err(committed.danger_err)
+
+    if check_ticks is not None:
+        clean = check_ticks()
+        if clean is False:
+            _log.error(
+                "land --plan: post-merge TICK gate re-check reported "
+                "non-clean -- unwinding to %s",
+                pre_merge_sha,
+            )
+            _land_plan_reset_hard(root, pre_merge_sha)
+            return Err(LandError.PlanTickGateDirty)
+
+    if dry_run:
+        report = LandPlanReport(
+            dry_run=True,
+            merge_commit=merge_commit,
+            finalized=finalized.danger_ok,
+            commit_sha=None,
+        )
+        _land_plan_reset_hard(root, pre_merge_sha)
+        return Ok(report)
+
+    final_sha = _rev_parse(root, "HEAD")
+    return Ok(
+        LandPlanReport(
+            dry_run=False,
+            merge_commit=merge_commit,
+            finalized=finalized.danger_ok,
+            commit_sha=final_sha.danger_ok if final_sha.is_ok else merge_commit,
+        )
+    )
 
 
 # frob:waive ARCH001 reason="already the decomposed orchestrator (T-0577): delegates to _land_precheck/_land_merge_stage/_reverify_evidence_post_merge/_land_finalize_and_close/_land_squash_apply; remaining length is the try/finally intent-marker sequencing plus the D-05/T-0456 ordering-rationale comments themselves, not undecomposed logic"  # noqa: E501

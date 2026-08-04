@@ -15,6 +15,7 @@ dispatch, tests that monkeypatch these names) keeps working."""
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -1270,6 +1271,93 @@ def _run_post_land_sweep_or_exit(
         sys.exit(1)
 
 
+# frob:ticket T-1269
+def _land_plan_check_ticks_fn(root: Path):  # noqa: ANN201
+    """Build a zero-arg `check_ticks` closure for `land_plan` (T-1269):
+    spawns `frob check --only tickets` in `root` (post-merge) and returns
+    whether `gate:TICK`'s own line reports 0 errors -- `None` (unmeasurable,
+    `land_plan` treats this as "skip", never as "dirty") if the spawn is
+    refused/fails or the line cannot be found, matching the same
+    unmeasured-is-not-a-value posture `_check_gates_summary_fn` already
+    uses for the identical failure mode."""
+    tick_line_re = re.compile(r"gate:TICK\s+(\d+)\s+errors?")
+
+    def check_ticks() -> bool | None:
+        from frob.app import ticket_runner as _ticket_runner
+
+        guarded = _ticket_runner.guarded_subprocess_run(
+            [_python_for_tree(root), "-m", "frob", "check", "--only", "tickets"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+        if guarded.is_err:
+            _log.warning(
+                "ticket land --plan: `frob check --only tickets` refused to "
+                "spawn (%s) -- TICK-gate re-check skipped",
+                ProcessGuardError.ExecDisabled,
+            )
+            return None
+        match = tick_line_re.search(guarded.danger_ok.stdout)
+        if match is None:
+            _log.warning(
+                "ticket land --plan: could not parse a gate:TICK line from "
+                "`frob check --only tickets` output -- TICK-gate re-check "
+                "skipped"
+            )
+            return None
+        return int(match.group(1)) == 0
+
+    return check_ticks
+
+
+# frob:ticket T-1269
+def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket land --plan --worktree PATH [--dry-run]` (T-1269): land
+    a design-phase worktree via `frob.tickets.land_plan` -- merge, finalize
+    every incoming draft id, TICK-gate re-check, atomic commit -- reporting
+    every field of the resulting `LandPlanReport` (or the `Err` + remedy
+    already logged by `land_plan` itself) before exiting non-zero on
+    failure."""
+    from frob.tickets._land import land_plan
+
+    if cfg.ticket_worktree is None:
+        _log.error("frob ticket land --plan requires --worktree <path>")
+        sys.exit(1)
+    worktree = cfg.ticket_worktree
+
+    result = land_plan(
+        root,
+        worktree,
+        dry_run=cfg.ticket_dry_run,
+        check_ticks=_land_plan_check_ticks_fn(root),
+    )
+    if result.is_err:
+        _log.error("ticket land --plan failed: %s", result.danger_err)
+        sys.exit(1)
+
+    report = result.danger_ok
+    if report.dry_run:
+        _log.info(
+            "land --plan: DRY RUN clean -- merge_commit=%s finalized=%s "
+            "(would commit onto %s)",
+            report.merge_commit,
+            list(report.finalized),
+            root,
+        )
+        return
+    _log.info(
+        "land --plan: landed onto %s -- merge_commit=%s finalized=%s "
+        "commit=%s",
+        root,
+        report.merge_commit,
+        list(report.finalized),
+        report.commit_sha,
+    )
+
+
 # frob:ticket T-1463
 # frob:waive ARCH103 reason="T-0977 precedent: this IS the `frob ticket land` CLI \
 # orchestration entrypoint -- resolve root, run the pre-land fix absorption, kick off \
@@ -1324,6 +1412,10 @@ def _land(root: Path, cfg: AppConfig) -> None:
     import threading
 
     from frob.tickets import land
+
+    if cfg.ticket_land_plan:
+        _land_plan_cmd(root, cfg)
+        return
 
     _require_land_args(cfg)
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above

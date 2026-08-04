@@ -68,6 +68,8 @@ _STRING_FIELDS = (
     "pool_reason",
     "ticket_command",
     "ticket_id",
+    # frob:ticket T-1243
+    "ticket_cluster",
     "ticket_title",
     "ticket_kind",
     "ticket_origin",
@@ -323,6 +325,8 @@ _BOOL_FLAGS = (
     "ticket_land_push",
     # frob:ticket T-1175
     "ticket_land_finish",
+    # frob:ticket T-1269
+    "ticket_land_plan",
     "ticket_close_strict",
     "ticket_foreground",
     "ticket_steal",

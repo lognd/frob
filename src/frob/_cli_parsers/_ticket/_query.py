@@ -111,7 +111,18 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "body+acceptance, scope+leases, playbook hard rules, targeted "
         "verify commands, gate baseline, REL/land rules",
     )
-    ticket_brief_p.add_argument("ticket_id", metavar="id")
+    ticket_brief_p.add_argument("ticket_id", metavar="id", nargs="?", default=None)
+    # frob:ticket T-1243
+    ticket_brief_p.add_argument(
+        "--cluster",
+        dest="ticket_cluster",
+        metavar="EPIC-OR-STORY-ID",
+        default=None,
+        help="brief every dispatchable descendant of this epic/story as "
+        "ONE mission (T-1243): shared playbook rules once, per-ticket "
+        "body+acceptance+scope, the union scope lease, and the expected "
+        "land cadence -- instead of the single-ticket id positional",
+    )
 
     # frob:ticket T-1100
     ticket_flow_p = ticket_sub.add_parser(

@@ -1719,7 +1719,10 @@
     "src/frob/tickets/_archive.py::load_active": "446f07ba9f26e876683bf7928a7eae79e67a9206e08fc520b061415d03c9f7ad",
     "src/frob/tickets/_archive.py::load_queue": "e44b20c7734cc812f5ab85900637ecc72ebb3d0a34af85eeb17cd97c1aca2d0a",
     "src/frob/tickets/_archive.py::migrate": "659f43aa7f3c95f496f583b8a437963e342095a4d101271583935f279a81d2a8",
+    "src/frob/tickets/_brief.py::cluster_descendants": "eac78f51e4606dca3498ab8c5933aa7555dc41ab25fcabea20682fb61372dc33",
+    "src/frob/tickets/_brief.py::cluster_union_scope": "370383f6e741f9fd997bd809185ed930f21574d8689da85c0025d4d52f8bf597",
     "src/frob/tickets/_brief.py::compose_brief": "129ae47735ba0fb584b0bcab1a5b796a0114f7295a9d628daee96b0c78ddcaa0",
+    "src/frob/tickets/_brief.py::compose_cluster_brief": "040c2320f5752f103568a47098e264cfe01c71aa2e35ddb95112a604c552b254",
     "src/frob/tickets/_doable.py::dispatch_stale_hours": "a8d2c8e2d13eb84d7e3d1bce1ea0a05d720e573951d538a7cdfd42f56e25b2cd",
     "src/frob/tickets/_doable.py::display_state": "71464869fb4b50f80e1b23db14927076e0ccc7f6c0528dc175b4898c5d7b38e4",
     "src/frob/tickets/_doable.py::doable": "88b38e4a26838495917ffeab8ecb54339efd974c3106729cb7278de8d1994825",
@@ -1744,6 +1747,7 @@
     "src/frob/tickets/_evidence.py::transition": "4be34329f13f0df3b75eef24b7e7f855fd98d853c169aeb841c4c632712be963",
     "src/frob/tickets/_journal.py::JOURNAL_DIRNAME": "baac871bdabdf7bf8c896cdc00f538ab0ce46750cb788f5c75966ce1a7a59c8a",
     "src/frob/tickets/_land.py::land": "0af624dcfe49e8f987c369479a79ae413609297769427b876168417ac4c38e30",
+    "src/frob/tickets/_land.py::land_plan": "1efd40c6ee9c060a5c5a0a726464e988fad0a6b6cc1d06dfb309cf62347e1217",
     "src/frob/tickets/_land_ledger_merge.py::splice_ledger": "e2d903a8d8049db7a1732853c334ed4e4029511926df136cffffc0a68f71175c",
     "src/frob/tickets/_land_queue.py::QueueEntry": "b57c492343391571459630c8488801ac16a2d4f4be22b87f9b5eebe47a514714",
     "src/frob/tickets/_land_queue.py::QueueError": "4fe343aef4d46c8c57c399778cf80ffb440cb9d31bbdea796f153398e0619ae0",
@@ -1785,6 +1789,7 @@
     "src/frob/tickets/_models.py::FailureEntry": "64bf31f9c426ea915ff3ad8a81da174d2fb331b4ef7f015b9d99b877eb117b53",
     "src/frob/tickets/_models.py::LEDGER_PATH": "c64eb96ce5a7f3cf520cd9bd9c96bc273bce2405f195fa187026152103a13665",
     "src/frob/tickets/_models.py::LandError": "046e146b71801d4058343d14139e840579046287ecb3cfc38bf9f804cb4d2603",
+    "src/frob/tickets/_models.py::LandPlanReport": "483276786eec34a784b5081ee22769b9721cc799f283bbd4da9b4b7b60693e90",
     "src/frob/tickets/_models.py::LandReport": "25a17fa03fc9d104d7e3b44fa6af0e1886394e5c99319f89ae7f28c6944afb7e",
     "src/frob/tickets/_models.py::OVER_BROAD_LITERAL_GLOBS": "17ea3ab620f4c72d712b06d483e2696d8e4d35d40f81c409778d099f12337a50",
     "src/frob/tickets/_models.py::Origin": "b2043e10095b8d2eadef4048e13dac6c80ee2db18de7d5f7815a86e5fbd4d17d",
@@ -1838,6 +1843,7 @@
     "src/frob/tickets/_reconcile.py::ReconcileReport": "6fcf1082746b1f61aaafacf99f15a9fbd20c963a30da6fdaea42e00fe8eacb0f",
     "src/frob/tickets/_reconcile.py::reconcile": "58835d71ad4e6042338e50dd303c4f966ed5023eaab07bd4c0831773d5073f2f",
     "src/frob/tickets/_renumber_v2.py::renumber_one_v2": "de0ec5d1dcbd4f437c561d872305b857291be602765f562cb5d99eab951f1d4c",
+    "src/frob/tickets/_reporting.py::brief_cluster": "a17f7c6eebf39c40a39b872afe5a641c6223ddf74c36b18d8eb8c324d8fcc0e8",
     "src/frob/tickets/_reporting.py::brief_ticket": "56fe4788cff649f6af1962cc379f1103f50003a1454b5aaee63299e87e1c9e52",
     "src/frob/tickets/_reporting.py::compose_done_report": "d464b803df4208fc92ba2353874ea6a5cc05cb312c3fb60f274cfae0d3fd2e51",
     "src/frob/tickets/_reporting.py::drop_ticket": "24f39c4e6fe2d59a9debea717775383b9f635e0847e2b6e25d6f1ba124963276",
@@ -1980,5 +1986,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.320.0"
+  "version": "0.321.0"
 }
