@@ -5283,7 +5283,7 @@ Same disposition as T-1514 in this same worktree/session.
 ```yaml
 id: T-1516
 title: 'coverage: frob-native auto-refresh command replacing Makefile orchestration'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
