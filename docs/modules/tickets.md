@@ -2278,8 +2278,22 @@ registrations):
 
 ```
 git config merge.frob-ledger.name "frob ticket ledger splice"
-git config merge.frob-ledger.driver "frob ticket merge-driver %O %A %B"
+git config merge.frob-ledger.driver "uv run frob ticket merge-driver %O %A %B"
 ```
+
+**Use `uv run frob`, never a bare `frob`** (T-1443): a bare, globally-
+installed `frob` binary can be stale relative to this checkout's own
+`pyproject.toml` version -- exactly the hazard
+`docs/guides/agent-playbook.md` section 2 warns about for every OTHER
+`frob` invocation, but sharper here because git invokes this command
+implicitly on every `git merge`/`pull`/`rebase` that touches
+`tickets.md`, with no per-invocation chance to notice or override it.
+Confirmed live during T-1371's resume (2026-08-02): a stale global
+`frob` (0.184.0) registered as the driver silently ran the pre-T-1437
+ledger-splice logic against a checkout whose own source was already at
+0.293.0, reintroducing a defect T-1437 had already fixed. `uv run frob`
+(editable install) always resolves against the invoking checkout's own
+source, the same way every other command in this doc already does.
 
 `.gitattributes` (tracked, already in the repo) then routes `tickets.md`
 through it:

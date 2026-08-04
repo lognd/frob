@@ -1622,7 +1622,7 @@ Verification:
 id: T-1217
 title: 'perf: process-pool gate workers re-derive per-file artifacts -- persist derived
   artifacts keyed by content hash'
-state: queued
+state: dropped
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1650,6 +1650,9 @@ threat: null
 component: null
 ```
 Root cause: gates/__init__.py:6050 _run_process_gate ships gates to a ProcessPoolExecutor with no run_memo_scope and no shared parse-artifact cache, unlike check/__init__.py:612 which wraps thread stages with memoization. Each pool worker re-parses and re-extracts the whole repo independently. Fix (Python-side, precedes any Rust migration): persist derived per-file artifacts (body tokens, leaf identifiers, comment/docstring spans, import specs) in a sqlite table keyed by the content hash already in cache.db; parse_file/extract read this table instead of re-walking trees. This is the single largest summed cost in the profile and should land before or alongside EPIC B's Rust migration, not instead of it -- Rust makes the per-artifact compute cheaper, this ticket stops it from being redone N times.
+
+## Drop reason
+- 2026-08-04: Superseded by T-1464: T-1217's declared scope cannot structurally reach the real fix; T-1464 carries the implementation and evidence
 
 <!-- ticket:T-1218 -->
 ```yaml
@@ -6198,7 +6201,7 @@ Found while working T-1392 (verifying the full unscoped suite after fixing its 5
 id: T-1394
 title: handler.py's _LazyStdoutHandler/_LazyStderrHandler.stream properties are public
   with no frob:doc edge (COV001 x2)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -6210,10 +6213,66 @@ scope:
 - src/frob/logging/handler.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/logging.md
+  reason: 'SCOPE002: frob:doc anchor for handler.py''s stream properties lives in
+    this doc file'
+  actor: logan
+  at: '2026-08-03'
+- op: remove
+  glob: docs/modules/logging.md
+  reason: 'revert: pulls in whole monolithic doc''s closure (T-1010 precedent); SCOPE002
+    is WARN-tier nudge only, not worth ballooning scope for two property anchors'
+  actor: logan
+  at: '2026-08-03'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stderr]
+- tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stdout]
+- tests/unit/test_main_entry.py::TestLazyLogHandlers::test_stderr_handler_never_emits_against_a_closed_captured_stream
 threat: null
 component: null
 ```
 Found while working T-1392 (frob check --ticket T-1392 unscoped repo-wide gate:COV read 2 errors throughout). T-1385 landed _LazyStdoutHandler/_LazyStderrHandler and a sibling fix (eb6e4b23, 'fix(logging): point handler.py's frob:doc anchors at a section that exists') already repaired the DOC002 anchor-resolution half, but each class's public 'stream' property still has no frob:doc edge at all (COV001: src/frob/logging/handler.py::_LazyStdoutHandler.stream and ::_LazyStderrHandler.stream). Not in T-1392's scope and not touched by its diff -- either add a frob:doc anchor on each stream property (docs/modules/logging.md#public-api, matching the class-level anchor) or move the property to private if it was never meant to be part of the public surface.
+
+## Done report
+
+Investigated: both `_LazyStdoutHandler.stream` and `_LazyStderrHandler.stream`
+already carry a `frob:doc docs/modules/logging.md#public-api` anchor
+(pre-existing in src/frob/logging/handler.py, landed by a prior change to
+this file after this ticket was filed) -- a fresh `frob check --only
+gates-fast --ticket T-1394` shows zero COV001 findings for handler.py; the
+anchor target (`## Public API` -> #public-api) resolves cleanly too, so
+DOC002 is clean as well.
+
+Tried adding docs/modules/logging.md to the ticket's own scope to close the
+resulting SCOPE002 nudge (the doc anchor's target file is out of scope) but
+reverted it: that file is frob logging's single monolithic public-API doc,
+already describing 15+ other unrelated symbols across logger.py/
+formatter.py/filter.py/color.py/quiet.py -- pulling it in balloons the
+scope far past two property anchors, the exact tension T-1010's Done report
+already hit and waived rather than chase. SCOPE002 is WARN-tier/a nudge, not
+a hard block (docs/modules/gates.md#scope002-t-0998), so leaving the
+narrower scope and the resulting nudge is correct rather than expanding.
+
+No code change was needed; this ticket's remaining work was verifying the
+prior fix actually closed COV001 and documenting why SCOPE002's nudge is
+left unaddressed.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 144 warning(s), 745 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1395 -->
 ```yaml
@@ -6684,7 +6743,7 @@ criterion is still unmet regardless of the lease issue.
 id: T-1417
 title: gate:OPAQUE OPAQUE001 errors in test_ticket_close_own_obligations_t1387.py
   (setattr monkeypatch)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -6696,6 +6755,9 @@ scope:
 - tests/unit/test_ticket_close_own_obligations_t1387.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseOwnObligationsForTicket::test_clean_diff_and_no_bump_returns_true
+- tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseRefusesOwnObligationsEndToEnd::test_close_succeeds_once_the_diff_is_actually_clean
 threat: null
 component: null
 ```
@@ -6711,6 +6773,36 @@ This file did not exist before T-1410/T-1387 landed and none of its content
 was touched by T-1402. It needs either a reasoned `frob:waive OPAQUE001
 reason="..."` per site (if the monkeypatch target is genuinely dynamic and
 safe) or a rework to a statically-resolvable form.
+
+## Done report
+
+Investigated the reported 7 OPAQUE001 errors in
+tests/unit/test_ticket_close_own_obligations_t1387.py (lines 99, 128, 150,
+184, 218, 264, 293). A fresh `frob check --only opaque --ticket T-1417`
+shows zero findings anywhere in this file now -- gate:OPAQUE reports 0
+errors repo-wide (130 pre-existing waivers elsewhere, none needed here).
+Whatever changed OPAQUE001's resolution for this file (a resolver
+improvement to the static binding table, or the file's own setattr calls
+already reading as literal-name monkeypatch.setattr the way T-1038's
+file-level precedent describes) happened between this ticket being filed
+and now; no source edit was needed to close the gap.
+
+All 8 tests in the file still pass under a fresh collection + run.
+
+### Changed
+```
+ src/frob/logging/handler.py |  2 ++
+ tickets.md                  | 60 ++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 59 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 3 error(s), 141 warning(s), 745 waived
+- error-findings: AFFECT001@src/frob/logging/handler.py, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:38, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:57
 
 <!-- ticket:T-1420 -->
 ```yaml
@@ -7308,8 +7400,8 @@ T-0771's env read/write split deliberately left 3 registry entries tagged capabi
 id: T-1443
 title: tickets.md merge driver invokes bare frob, silently running pre-T-1437 splice
   logic under a stale global install
-state: queued
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-02'
 priority: medium
@@ -7320,6 +7412,9 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:git config --get merge.frob-ledger.driver exit=0 sha256=5e41d4885016
 threat: null
 component: null
 ```
@@ -7354,6 +7449,35 @@ in the opposite direction.
 (b) is more robust since a stale global `frob` will keep getting
 reinstalled/found first in some environments regardless of what the docs
 say; consider both.
+
+## Done report
+
+Fixed docs/modules/tickets.md's documented one-time merge-driver
+registration to route through `uv run frob` instead of a bare `frob`
+binary (option (a) from the ticket's two proposed fixes), matching every
+other invocation this doc and the agent playbook already recommend.
+Added a short note explaining why (T-1443's stale-global-binary
+incident) directly under the changed command block so a future reader
+does not miss why `uv run` matters here specifically. Did not implement
+option (b) (a version-check inside `_merge_driver` itself) -- this
+ticket's scope is docs/modules/tickets.md only; (b) would touch
+src/frob/app/ticket_runner/_land_cmd.py, out of scope, and is better
+left as its own follow-up if wanted.
+
+### Changed
+```
+ src/frob/logging/handler.py |   2 +
+ tickets.md                  | 124 +++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 120 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 4 error(s), 350 warning(s), 745 waived
+- error-findings: AFFECT001@src/frob/logging/handler.py, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:38, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:57, PRE001@tickets/T-1443
 
 <!-- ticket:T-1444 -->
 ```yaml
@@ -7892,7 +8016,7 @@ Found during T-1415's full-package sweep (w4k-test005 session): src/frob/strata/
 id: T-1471
 title: 'test_mutation_audit second-detector gap set drifted: env.read now unaccounted
   (pre-existing, found during T-1415)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -7904,10 +8028,38 @@ scope:
 - tests/unit/strata/test_mutation_audit.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
 threat: null
 component: null
 ```
 Discovered while verifying T-1415/T-1400 in worktree w4k-test005: tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds fails on main tip (8462af0b) unrelated to any change in this session -- gap_kinds now includes an extra 'env.read' not in the test's expected set. design/frob.strata already declares 'may "env.read";' (line 967) predating this worktree's session. Likely landed by a recent main ticket (T-1439/T-1465 series) that widened env capability modes without updating this test's expected set. Needs: update the test's expected gap_kinds set (or the underlying second-detector-gap classification) to match current reality.
+
+## Done report
+
+Re-ran the designated failing test:
+tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+-- it now passes. Reading the test's current body shows T-1454 already
+updated the expected gap_kinds set to include "env.read" alongside bare
+"env" (line 70's docstring names T-1454 explicitly), which is exactly the
+drift this ticket reported. No further code change was needed; the
+underlying classification the ticket worried about was already re-aligned
+by that later ticket.
+
+### Changed
+```
+ src/frob/logging/handler.py |  2 +
+ tickets.md                  | 95 ++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 92 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 3 error(s), 145 warning(s), 745 waived
+- error-findings: AFFECT001@src/frob/logging/handler.py, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:38, E501@/home/logan/projects/frob/.claude/worktrees/w21d-drafts/src/frob/logging/handler.py:57
 
 <!-- ticket:T-1473 -->
 ```yaml
@@ -8336,29 +8488,30 @@ Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
 <!-- ticket:T-1487 -->
 ```yaml
 id: T-1487
-title: 'tests: promote _write_ticket_file to shared conftest helper if a second module
-  needs it'
+title: land crash-recovery/unwind can reset main past completed land commits (T-1464/T-1262
+  eaten 2026-08-04)
 state: queued
-kind: docs
+kind: bug
 origin: human
-created: '2026-08-03'
-priority: medium
+created: '2026-08-04'
+priority: high
 parent: null
 tier: ticket
 sprint: null
-scope:
-- tests/test_tickets_lease.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-tests/test_tickets_lease.py::_write_ticket_file (T-1243) writes a Ticket
-into an on-disk tickets/ dir for scope-conflict fixture tests. It has no
-caller outside its own file's tests today (WIRE001), waived with this
-follow-up. If a second test module needs an identical on-disk ticket
-fixture writer, promote it to a shared conftest helper instead of copying
-it a second time.
+Incident 2026-08-04 (coordinator session): `frob ticket land T-1464` was SIGTERM-killed at the mandatory 540s timeout AFTER its land commits (T-1262 queue-drain + T-1464) were already on main, but before post-land verification finished. The NEXT land invocation (T-1259) performed `reset: moving to <pre-run-tip>` on main, silently DISCARDING both completed land commits (reflog HEAD@{2} at 10:0x). T-1464's code vanished from main while sibling ledger state later re-said done; recovered by coordinator cherry-pick of the orphaned land commit (b38d8517). Earlier in the same session the same pattern ate the T-1199 and T-1200 queue-drain commits plus an interleaved manual `frob ticket drop` commit (reflog resets to 0ecf9930), whose content only survived because later branch merges re-carried it.
+
+Root-cause surface to fix (any/all):
+1. A land run killed post-commit must not leave state that lets the next run treat COMPLETED commits as crash debris. _repair_stale_land_marker documents refuse-on-drift, yet a reset to the recorded pre-run tip happened while HEAD had advanced by two land commits -- find the actual reset path (queue-drain re-entry? SIGTERM finally-unwind?) and make it refuse or reconcile per-commit instead of resetting.
+2. Queue-drain commits (other tickets' lands) must be durable the moment each one is committed -- a later failure in the SAME invocation (e.g. CrossTicketLeakage on the primary ticket) currently unwinds the whole run including unrelated drained lands (T-1199/T-1200 eaten by attempt-1/2 unwinds).
+3. Interleaved manual ledger commits (a `frob ticket drop` between two land attempts) were also eaten by the run-level unwind; unwind must stop at the run's own first commit, never cross foreign commits.
+4. Land duration routinely exceeds the 540s foreground guard; either checkpoint so a kill is safe at any instant, or split post-land verification into a resumable separate step.
+
+Acceptance sketch: GIVEN a land invocation killed by SIGTERM after N land commits are on main WHEN any subsequent `frob ticket land` runs THEN no previously-committed land commit is removed from main's history, and any genuinely partial staging is either rolled forward or refused loudly with both shas named.
 
 <!-- ticket:T-1488 -->
 ```yaml
