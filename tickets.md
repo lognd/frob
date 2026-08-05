@@ -4639,7 +4639,7 @@ Filed: none.
 ```yaml
 id: T-1444
 title: Wire merge-queue enqueue/drain into frob ticket land CLI
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -4898,6 +4898,9 @@ baseline+sweep per drain batch" -- the sublinear-verification half of
 this ticket's acceptance criterion, deferred per the ticket's own
 escape hatch.
 
+
+Waiver deletions in branch history (intentional, sibling T-1445's already-landed work, commit 9d6d2da4): src/frob/gates/__init__.py:ARCH001 (x2) and src/frob/gates/__init__.py:PERF004 -- removed by T-1445's gate-cache refactor of _run_process_gate, which made the waived shapes obsolete. Declared here because gates/__init__.py is outside T-1444's scope and the history scan attributes the whole branch to the landing ticket.
+
 ### Changed
 ```
  design/frob.strata                              | 823 ++++++++++++------------
@@ -4908,14 +4911,14 @@ escape hatch.
  src/frob/app/_config_external.py                |   6 +
  src/frob/app/check_runner.py                    |   8 +
  src/frob/app/config.py                          |  18 +
- src/frob/app/ticket_runner/_land_cmd.py         | 234 ++++++-
+ src/frob/app/ticket_runner/_land_cmd.py         | 238 ++++++-
  src/frob/gates/__init__.py                      | 449 ++++++++++---
  src/frob/gates/_gate_cache.py                   | 184 +++++-
  src/frob/tickets/_models.py                     |  12 +
  tests/test_gate_cache.py                        | 330 ++++++++++
  tests/unit/test_ticket_runner_land_cmd_flags.py | 266 ++++++++
  tickets.md                                      | 496 +++++++++++++-
- 15 files changed, 2445 insertions(+), 526 deletions(-)
+ 15 files changed, 2449 insertions(+), 526 deletions(-)
 ```
 
 ### Evidence
