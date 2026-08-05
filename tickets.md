@@ -4633,3 +4633,22 @@ threat: null
 component: null
 ```
 Refiled from T-draft-48c9ced6 (T-1238 taxonomy slice; the draft died in the land-splice draft-loss class before T-1271's land). Group the quality-facing verbs under one frob quality namespace following the frob explore precedent (T-1271/T-1238, src/frob/_cli_parsers/_explore.py + explore_runner.py).
+
+<!-- ticket:T-1568 -->
+```yaml
+id: T-1568
+title: 'cli regrouping: frob design verb group (sys/registry/docs/graph/exports)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: T-1238
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Refiled from T-draft-ea75efc3 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
