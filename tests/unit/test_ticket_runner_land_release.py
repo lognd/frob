@@ -19,7 +19,7 @@ from typani.result import Err, Ok
 
 from frob.app import ticket_runner
 from frob.process import _guard
-from frob.release import BumpClass, ReleaseManifest
+from frob.release import BumpClass, ReleaseError, ReleaseManifest
 from frob.tickets._models import LandError
 
 
@@ -161,6 +161,50 @@ class TestApplyReleaseBumpForLand:
         )
         assert result.is_err
         assert result.danger_err == LandError.ReleaseBumpFailed
+
+    # frob:ticket T-1368
+    def test_stamp_failure_propagates_instead_of_staging_stale_manifest(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1368: `stamp`'s Result used to be discarded -- a write
+        failure fell through to `git add .frob-release.json` regardless,
+        staging whatever (possibly stale) content already happened to be
+        on disk. It must now propagate as `Err(ReleaseBumpFailed)` and
+        never reach the `git add` staging step at all."""
+        # frob:tests \
+        # tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.te\
+        # st_stamp_failure_propagates_instead_of_staging_stale_manifest
+        _write_repo_files(tmp_path)
+        manifest = ReleaseManifest(version="0.1.0", api={})
+        staged_calls: list[list[str]] = []
+        monkeypatch.setattr(
+            ticket_runner, "_root_release_manifest", lambda root: manifest
+        )
+        monkeypatch.setattr(
+            "frob.release.diff_class", lambda manifest, snapshot: BumpClass.MINOR
+        )
+        monkeypatch.setattr(
+            "frob.release.required_version",
+            lambda previous, bump: Ok("0.2.0"),
+        )
+        monkeypatch.setattr(
+            "frob.release.stamp",
+            lambda root, snapshot, version: Err(ReleaseError.WriteFailed),
+        )
+        monkeypatch.setattr(ticket_runner, "_graph_snapshot", lambda root: Ok(object()))
+
+        def _fake_run_argv(argv, **kw):  # noqa: ANN001, ANN202
+            staged_calls.append(argv)
+            return Ok(_FakeProc(0))
+
+        monkeypatch.setattr("frob.gitio.run_argv", _fake_run_argv)
+
+        result = ticket_runner._apply_release_bump_for_land(
+            tmp_path, _FakeTicket(), "T-0001"
+        )
+        assert result.is_err
+        assert result.danger_err == LandError.ReleaseBumpFailed
+        assert staged_calls == []
 
 
 # frob:ticket T-1007

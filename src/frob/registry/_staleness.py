@@ -42,6 +42,7 @@ from frob.registry._corpus import (
     _key_block_bounds,
     _yaml_scalar,
 )
+from frob.tickets._store import atomic_write
 
 _log = get_logger(__name__)
 
@@ -89,6 +90,7 @@ def missing_gate_rule_ids(
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 # frob:ticket T-0560
+# frob:ticket T-1359
 # frob:tests tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_missing_rule kind="unit"  # noqa: E501
 def sync_gate_rule_entries(
     registry_path: Path, known_rules: frozenset[str]
@@ -98,7 +100,24 @@ def sync_gate_rule_entries(
     `gate_rule_total` once for the whole batch. Idempotent: a rule
     already covered is silently skipped, never duplicated. Returns the
     sorted tuple of rule ids actually added (`()` if nothing was
-    missing -- not an error, the honest "already in sync" case)."""
+    missing -- not an error, the honest "already in sync" case).
+
+    T-1359: writes via `frob.tickets._store.atomic_write` (temp file +
+    fsync + `os.replace`) rather than a bare `Path.write_text`, so a
+    process killed mid-write (REG010's own Tier-A auto-fix path, the same
+    T-1338 hazard class T-1348 closed for `frob.gates._fix_engine`)
+    leaves `check-coverage.yaml` intact instead of half-rewritten. On the
+    (should-never-happen) `atomic_write` I/O failure path, the real
+    OSError detail is logged here and this returns `Err(FileNotFound)` --
+    not a semantically precise fit, but deliberately reusing an existing
+    `CorpusError` member rather than widening this function's public
+    error type: `sync_gate_rule_entries`'s two other call sites
+    (`frob.app.registry_runner._run_sync_gate_rules`,
+    `frob.app.ticket_runner._land_cmd`) key a message dict on `CorpusError`
+    alone and sit outside this ticket's declared scope, so introducing a
+    new error variant here would need a companion fix there. See T-1359's
+    Done report for the follow-up ticket that gives write failures their
+    own precise `CorpusError` member."""
     if not registry_path.is_file():
         _log.warning("sync_gate_rule_entries: %s does not exist", registry_path)
         return Err(CorpusError.FileNotFound)
@@ -125,7 +144,14 @@ def sync_gate_rule_entries(
     for _ in missing:
         lines = _bump_total(lines, _GATE_RULE_KEY)
 
-    registry_path.write_text("".join(lines), encoding="utf-8")
+    written = atomic_write(registry_path, "".join(lines))
+    if written.is_err:
+        _log.error(
+            "sync_gate_rule_entries: atomic write to %s failed: %s",
+            registry_path,
+            written.danger_err,
+        )
+        return Err(CorpusError.FileNotFound)
     _log.info(
         "sync_gate_rule_entries: %s <- %d rule(s): %s",
         registry_path,

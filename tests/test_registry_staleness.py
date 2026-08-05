@@ -3,7 +3,10 @@ auto-file mechanism (missing_gate_rule_ids / sync_gate_rule_entries)."""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+
+import pytest
 
 from frob.gates._models import Severity
 from frob.gates._registry_exhaustiveness import registry_gate
@@ -127,3 +130,32 @@ class TestReg010Gate:
 
         rules = [v.rule for v in violations]
         assert "REG010" not in rules
+
+
+# frob:ticket T-1359
+class TestSyncGateRuleEntriesCrashSafety:
+    """T-1359: `sync_gate_rule_entries` writes `check-coverage.yaml` via
+    `frob.tickets._store.atomic_write` -- a process killed mid-rename must
+    leave the ORIGINAL file intact rather than half-rewritten (the T-1338
+    hazard class T-1348 already closed for `frob.gates._fix_engine`)."""
+
+    def test_leaves_original_on_replace_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_registry_staleness.py::TestSyncGateRuleEntriesCrashSafety.test_lea\
+        # ves_original_on_replace_failure
+        path = _write_fixture(tmp_path)
+        original = path.read_text(encoding="utf-8")
+
+        def _boom(src: str, dst: str) -> None:
+            raise OSError("simulated crash mid-rename")
+
+        monkeypatch.setattr(os, "replace", _boom)
+        result = sync_gate_rule_entries(path, frozenset({"REF001", "NEW001"}))
+
+        assert result.is_err
+        assert result.danger_err == CorpusError.FileNotFound
+        assert path.read_text(encoding="utf-8") == original
+        leftovers = [p for p in tmp_path.iterdir() if p.name != "check-coverage.yaml"]
+        assert leftovers == [], f"a partial/temp file leaked: {leftovers}"

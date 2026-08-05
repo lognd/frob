@@ -97,13 +97,28 @@ precedent): a repo that has actually run `sync` has zero disagreements.
 MAJOR`). `ReleaseManifest` is the pydantic model persisted to
 `.frob-release.json` (`version` + `api` symref-to-digest map).
 `ReleaseError` is the `ErrorSet` of fallible outcomes (`NoManifest`,
-`Malformed`, `BadVersion`). `manifest_path` resolves the tracked manifest
-path under a repo root. `set_manifest_version` (T-1078) rewrites ONLY the
-manifest's `version` field in place, preserving its recorded `api` map --
-`frob.tickets._land`'s write-side guarantee that a REL001 bump's
-`.frob-release.json` stays coherent with `pyproject.toml`/`CHANGELOG.md`
-in the same land step, regardless of what a `bump_version` callback did
-or forgot to do.
+`Malformed`, `BadVersion`, `WriteFailed`). `manifest_path` resolves the
+tracked manifest path under a repo root. `set_manifest_version` (T-1078)
+rewrites ONLY the manifest's `version` field in place, preserving its
+recorded `api` map -- `frob.tickets._land`'s write-side guarantee that a
+REL001 bump's `.frob-release.json` stays coherent with
+`pyproject.toml`/`CHANGELOG.md` in the same land step, regardless of what
+a `bump_version` callback did or forgot to do.
+
+**Every write this module performs is crash-safe (T-1359).** `stamp`,
+`set_manifest_version`, and `rewrite_pyproject_version` all route their
+disk write through a shared `_atomic_write_release` helper that delegates
+to `frob.tickets._store.atomic_write` (temp file + `fsync` + `os.replace`)
+-- the same half-written-file hazard class T-1348 already closed for
+`frob.gates._fix_engine`'s direct writes. A write failure surfaces as
+`Err(ReleaseError.WriteFailed)` with the original file left intact,
+instead of a bare `Path.write_text` that could leave a truncated
+`pyproject.toml`/`.frob-release.json` if the process died mid-write.
+`changelog_skeleton_entry` uses the same primitive but keeps its existing
+`bool` contract (no error channel) -- a write failure there logs and
+reports `False` ("nothing changed"), matching
+`frob.gates._fix_engine._write_text`'s T-1348 posture rather than
+widening every caller's signature.
 
 ```python
 class BumpClass(IntEnum):        # NONE = 0, PATCH = 1, MINOR = 2, MAJOR = 3
@@ -117,6 +132,7 @@ class ReleaseError(ErrorSet):
     NoManifest
     Malformed
     BadVersion
+    WriteFailed          # T-1359: crash-safe write to a release-owned file failed
 
 def manifest_path(root) -> Path
 def load_manifest(root) -> Result[ReleaseManifest, ReleaseError]
@@ -125,6 +141,8 @@ def set_manifest_version(root, version) -> Result[str, ReleaseError]
 def diff_class(manifest, snapshot) -> BumpClass         # NONE|PATCH|MINOR|MAJOR
 def required_version(previous, bump) -> Result[str, ReleaseError]
 def satisfies(current, minimum) -> bool
+def rewrite_pyproject_version(root, version) -> Result[bool, ReleaseError]
+def changelog_skeleton_entry(root, version, note=None) -> bool
 ```
 
 ## Stamp refuses an un-bumped API change (T-1381)
@@ -144,6 +162,11 @@ Two cases deliberately pass through: a first-ever stamp (no manifest to be
 short of) and an already-adequate version. `--allow-unbumped`
 (`stamp(..., allow_unbumped=True)`) is the explicit, justification-required
 override, matching `--skip-mutation-evidence` and `--allow-cross-ticket`.
+
+The write itself (once the un-bumped check clears) goes through the same
+crash-safe `_atomic_write_release` primitive as every other write in this
+module (T-1359, see Public API above) -- `Err(ReleaseError.WriteFailed)`
+on the should-never-happen I/O failure path, original manifest untouched.
 
 ## Design notes
 

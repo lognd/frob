@@ -27,7 +27,9 @@ line -- this module's only new logic is CHOOSING the physical-line layout
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 import tomllib
 from pathlib import Path
 
@@ -418,13 +420,39 @@ def _read_source_for_format(path: Path) -> str | None:
 
 
 # frob:ticket T-0979
+# frob:ticket T-1359
 def _write_formatted(path: Path, rewritten: str) -> None:
     """`_format_one_path`'s write half: rewrite `path` in place with
     `rewritten`'s content, `newline=""` preserving whatever CRLF/LF
     convention the caller already decided on (see `format_paths`'s
-    docstring for the full rationale)."""
-    with open(path, "w", encoding="utf-8", newline="") as fh:
-        fh.write(rewritten)
+    docstring for the full rationale).
+
+    T-1359: crash-safe (temp file in the same directory + `fsync` +
+    `os.replace`), the same house pattern
+    `frob.tickets._store.atomic_write` uses -- but that primitive cannot
+    be reused directly here since it has no `newline=""` opt-out, and
+    losing it would silently re-translate a CRLF-authored file's line
+    endings on every `frob fmt` run (the exact T-0441 regression
+    `format_paths`'s docstring already documents). A process killed
+    mid-write now leaves the ORIGINAL file intact rather than truncated
+    or garbled, matching T-1348's FMT001-adjacent Tier-A handlers."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as fh:
+            fh.write(rewritten)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name, path)
+    except OSError:
+        _log.error("format_paths: atomic write to %s failed", path, exc_info=True)
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 # frob:ticket T-0979

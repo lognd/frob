@@ -10,15 +10,18 @@ math that a correct implementation must catch (TEST016).
 
 from __future__ import annotations
 
+import os
 import string
 from pathlib import Path
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
 from frob.excludes import iter_files
 from frob.gates._fmt_directives import (
     _canonical_lines,
+    _write_formatted,
     canonicalize_text,
     format_paths,
     marker_for,
@@ -453,6 +456,45 @@ class TestFormatPaths:
         target.write_text("# frob:ticket T-0441\n")
         report = format_paths(tmp_path, check_only=True, limit=88)
         assert report.changes == ()
+
+
+# frob:ticket T-1359
+class TestWriteFormattedCrashSafety:
+    """T-1359: `_write_formatted` (FMT001's write half) rewrites via a temp
+    file + fsync + `os.replace` instead of a bare in-place `open(..., "w")`
+    -- a process killed mid-rename must leave the ORIGINAL file intact
+    rather than truncated (the T-1338 hazard class T-1348 already closed
+    for `frob.gates._fix_engine`)."""
+
+    def test_leaves_original_on_replace_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestWriteFormattedCrashSafety.test_leaves\
+        # _original_on_replace_failure
+        target = tmp_path / "a.py"
+        original = "original\n"
+        target.write_text(original, encoding="utf-8")
+
+        def _boom(src: str, dst: str) -> None:
+            raise OSError("simulated crash mid-rename")
+
+        monkeypatch.setattr(os, "replace", _boom)
+        with pytest.raises(OSError, match="simulated crash mid-rename"):
+            _write_formatted(target, "rewritten\n")
+
+        assert target.read_text(encoding="utf-8") == original
+        leftovers = [p for p in tmp_path.iterdir() if p.name != "a.py"]
+        assert leftovers == [], f"a partial/temp file leaked: {leftovers}"
+
+    def test_preserves_crlf_newline(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestWriteFormattedCrashSafety.test_preser\
+        # ves_crlf_newline
+        target = tmp_path / "a.py"
+        _write_formatted(target, "line one\r\nline two\r\n")
+        with open(target, encoding="utf-8", newline="") as fh:
+            assert fh.read() == "line one\r\nline two\r\n"
 
 
 class TestCanonicalLinesMutantKiller:

@@ -106,6 +106,13 @@ the verification, not a claim needing later review) and keeps
 `gate_rule_total` in lockstep, so a human or a CI step can clear REG010's
 finding with one command whenever it fires.
 
+`sync_gate_rule_entries`'s own `check-coverage.yaml` rewrite is crash-safe
+(T-1359): it now writes via `frob.tickets._store.atomic_write` (temp file
++ `fsync` + `os.replace`) instead of a bare `Path.write_text`, so a land
+killed mid-REG010-autofix leaves the previous `check-coverage.yaml`
+intact rather than half-written -- the same hazard class T-1348 already
+closed for `frob.gates._fix_engine`'s direct writes.
+
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_sync_gate_rules_for_land -->
 
 T-1011: `frob ticket land` now runs this same sync AUTOMATICALLY, not just

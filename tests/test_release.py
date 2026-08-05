@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+
+import pytest
 
 from frob.graph import build_graph
 from frob.release import (
@@ -321,3 +324,97 @@ class TestReleaseGateCoherence:
         rel002 = [v for v in violations if v.rule == "REL002"]
         assert len(rel002) == 1
         assert "uv.lock" in rel002[0].message
+
+
+# frob:ticket T-1359
+class TestCrashSafeReleaseWrites:
+    """T-1359: `stamp`/`rewrite_pyproject_version`/`changelog_skeleton_entry`/
+    `set_manifest_version` all route their disk writes through
+    `_atomic_write_release` (temp file + fsync + `os.replace`) instead of a
+    bare `Path.write_text` -- a process killed mid-rename must leave the
+    ORIGINAL file intact, never a torn/partial write (the T-1338 hazard
+    class T-1348 already closed for `frob.gates._fix_engine`)."""
+
+    def test_stamp_leaves_original_manifest_on_replace_failure(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ):
+        # frob:tests \
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_stamp_leaves_original_\
+        # manifest_on_replace_failure
+        _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
+        stamp(tmp_path, _snap(tmp_path), "1.0.0")
+        original = manifest_path(tmp_path).read_text(encoding="utf-8")
+
+        def _boom(src: str, dst: str) -> None:
+            raise OSError("simulated crash mid-rename")
+
+        monkeypatch.setattr(os, "replace", _boom)
+        result = stamp(tmp_path, _snap(tmp_path), "2.0.0")
+
+        assert result.is_err
+        assert result.danger_err == ReleaseError.WriteFailed
+        assert manifest_path(tmp_path).read_text(encoding="utf-8") == original
+        leftovers = list(manifest_path(tmp_path).parent.glob(".*.tmp"))
+        assert leftovers == [], f"a partial/temp file leaked: {leftovers}"
+
+    def test_rewrite_pyproject_version_leaves_original_on_replace_failure(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ):
+        # frob:tests \
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_rewrite_pyproject_vers\
+        # ion_leaves_original_on_replace_failure
+        path = tmp_path / "pyproject.toml"
+        path.write_text('[project]\nname = "p"\nversion = "1.0.0"\n', encoding="utf-8")
+
+        def _boom(src: str, dst: str) -> None:
+            raise OSError("simulated crash mid-rename")
+
+        monkeypatch.setattr(os, "replace", _boom)
+        result = rewrite_pyproject_version(tmp_path, "2.0.0")
+
+        assert result.is_err
+        assert result.danger_err == ReleaseError.WriteFailed
+        assert 'version = "1.0.0"' in path.read_text(encoding="utf-8")
+        leftovers = [p for p in tmp_path.iterdir() if p.name != "pyproject.toml"]
+        assert leftovers == [], f"a partial/temp file leaked: {leftovers}"
+
+    def test_changelog_skeleton_entry_leaves_original_on_replace_failure(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ):
+        # frob:tests \
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_changelog_skeleton_ent\
+        # ry_leaves_original_on_replace_failure
+        path = tmp_path / "CHANGELOG.md"
+        original = "# Changelog\n\n## [1.0.0] - unreleased\n"
+        path.write_text(original, encoding="utf-8")
+
+        def _boom(src: str, dst: str) -> None:
+            raise OSError("simulated crash mid-rename")
+
+        monkeypatch.setattr(os, "replace", _boom)
+        wrote = changelog_skeleton_entry(tmp_path, "2.0.0")
+
+        assert wrote is False
+        assert path.read_text(encoding="utf-8") == original
+        leftovers = [p for p in tmp_path.iterdir() if p.name != "CHANGELOG.md"]
+        assert leftovers == [], f"a partial/temp file leaked: {leftovers}"
+
+    def test_set_manifest_version_leaves_original_on_replace_failure(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ):
+        # frob:tests \
+        # tests/test_release.py::TestCrashSafeReleaseWrites.test_set_manifest_version_l\
+        # eaves_original_on_replace_failure
+        _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
+        stamp(tmp_path, _snap(tmp_path), "1.0.0")
+        original = manifest_path(tmp_path).read_text(encoding="utf-8")
+
+        def _boom(src: str, dst: str) -> None:
+            raise OSError("simulated crash mid-rename")
+
+        monkeypatch.setattr(os, "replace", _boom)
+        result = set_manifest_version(tmp_path, "2.0.0")
+
+        assert result.is_err
+        assert result.danger_err == ReleaseError.WriteFailed
+        assert manifest_path(tmp_path).read_text(encoding="utf-8") == original

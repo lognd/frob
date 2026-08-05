@@ -36,6 +36,7 @@ from typani.result import Err, Ok, Result
 
 from frob.graph import GraphSnapshot
 from frob.logging import get_logger
+from frob.tickets._store import atomic_write
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
@@ -80,6 +81,31 @@ class ReleaseError(ErrorSet):
         "would rebaseline the API at the OLD version and silence REL001 without "
         "the release ever happening"
     )
+    # frob:ticket T-1359
+    WriteFailed = (
+        "the crash-safe write of a release-owned file failed (see logs for the "
+        "underlying OSError)"
+    )
+
+
+# frob:ticket T-1359
+def _atomic_write_release(path: Path, content: str) -> Result[None, ReleaseError]:
+    """Crash-safe write for every release-owned file this module rewrites
+    (`.frob-release.json`, `pyproject.toml`'s version line, CHANGELOG.md's
+    skeleton entry -- T-1359: these used to be bare `Path.write_text`
+    calls, the same half-written-file hazard T-1348 already closed for
+    `frob.gates._fix_engine`'s own direct writes). Delegates to
+    `frob.tickets._store.atomic_write` (temp file + fsync + `os.replace`)
+    rather than a second copy of that primitive, translating its
+    `TicketError` into this module's own `ReleaseError.WriteFailed` so
+    callers keep a single error vocabulary."""
+    written = atomic_write(path, content)
+    if written.is_err:
+        _log.error(
+            "release: atomic write to %s failed: %s", path, written.danger_err
+        )
+        return Err(ReleaseError.WriteFailed)
+    return Ok(None)
 
 
 def _public_api(snapshot: GraphSnapshot) -> dict[str, str]:
@@ -160,7 +186,9 @@ def stamp(
     """Write the current public API + `version` to the tracked manifest
     (T-0507: refuses with `Err(WorktreeLeaseViolation)` if `FROB_WORKTREE`
     names a different worktree than `root`, same guard as `frob check
-    --stamp-baseline`/`--stamp-coverage` (T-0431))."""
+    --stamp-baseline`/`--stamp-coverage` (T-0431)). Writes via
+    `atomic_write` (T-1359): `Err(WriteFailed)` on the (should-never-
+    happen) I/O failure path, original file left intact."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(ReleaseError.WorktreeLeaseViolation)
@@ -178,10 +206,11 @@ def stamp(
             return Err(ReleaseError.UnbumpedApiChange)
     manifest = ReleaseManifest(version=version, api=_public_api(snapshot))
     path = manifest_path(root)
-    path.write_text(
-        json.dumps(manifest.model_dump(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    written = _atomic_write_release(
+        path, json.dumps(manifest.model_dump(), indent=2, sort_keys=True) + "\n"
     )
+    if written.is_err:
+        return Err(written.danger_err)
     _log.info("release: stamped %d public symbol(s) at %s", len(manifest.api), version)
     return Ok(version)
 
@@ -210,7 +239,8 @@ def rewrite_pyproject_version(root: Path, version: str) -> Result[bool, ReleaseE
     """Rewrite `root/pyproject.toml`'s `version = "..."` line to `version`
     (T-1009). Returns `Ok(True)` if the file changed, `Ok(False)` if it
     already matched, `Err(BadVersion)` if no `version = "..."` line was
-    found to rewrite."""
+    found to rewrite, `Err(WriteFailed)` (T-1359) on the (should-never-
+    happen) atomic-write I/O failure path -- original file left intact."""
     path = root / "pyproject.toml"
     if not path.exists():
         return Err(ReleaseError.BadVersion)
@@ -222,7 +252,9 @@ def rewrite_pyproject_version(root: Path, version: str) -> Result[bool, ReleaseE
         return Err(ReleaseError.BadVersion)
     if new_text == text:
         return Ok(False)
-    path.write_text(new_text, encoding="utf-8")
+    written = _atomic_write_release(path, new_text)
+    if written.is_err:
+        return Err(written.danger_err)
     return Ok(True)
 
 
@@ -234,7 +266,11 @@ def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) 
     already exists (mirrors `_changelog_mentions`'s heading-anchored match
     in `frob.gates`, kept independent to avoid a gates<->release import
     cycle). Returns `True` if it wrote a new entry, `False` if one already
-    existed or CHANGELOG.md is absent (nothing to skeleton into)."""
+    existed, CHANGELOG.md is absent (nothing to skeleton into), or the
+    write itself failed (T-1359: `atomic_write`'s I/O failure path,
+    logged, original left intact -- this function's bool contract has no
+    error channel, matching `frob.gates._fix_engine._write_text`'s same
+    posture, T-1348)."""
     path = root / "CHANGELOG.md"
     if not path.exists():
         return False
@@ -249,7 +285,14 @@ def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) 
         (i for i, line in enumerate(lines) if line.startswith("## ")), len(lines)
     )
     lines[insert_at:insert_at] = [entry]
-    path.write_text("".join(lines), encoding="utf-8")
+    written = _atomic_write_release(path, "".join(lines))
+    if written.is_err:
+        # T-1359: matches `frob.gates._fix_engine._write_text`'s posture
+        # (T-1348) -- a write failure logs and reports "nothing changed"
+        # rather than raising, since this function's bool contract has no
+        # error channel to carry a `Result` through to its existing
+        # callers without widening THEIR scope too.
+        return False
     return True
 
 
@@ -271,16 +314,18 @@ def set_manifest_version(root: Path, version: str) -> Result[str, ReleaseError]:
     reconciled, commit b7fa63d9). Returns `Err(NoManifest)` if no manifest
     exists yet -- a repo that never adopted `frob release stamp` has
     nothing here to keep coherent -- or `Err(Malformed)` if the existing
-    file is not valid JSON."""
+    file is not valid JSON. Writes via `atomic_write` (T-1359):
+    `Err(WriteFailed)` on the (should-never-happen) I/O failure path."""
     loaded = load_manifest(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
     manifest = ReleaseManifest(version=version, api=loaded.danger_ok.api)
     path = manifest_path(root)
-    path.write_text(
-        json.dumps(manifest.model_dump(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    written = _atomic_write_release(
+        path, json.dumps(manifest.model_dump(), indent=2, sort_keys=True) + "\n"
     )
+    if written.is_err:
+        return Err(written.danger_err)
     _log.info("release: manifest version resynced to %s at %s", version, path)
     return Ok(version)
 

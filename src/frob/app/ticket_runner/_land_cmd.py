@@ -1201,6 +1201,7 @@ def _required_release_bump(root: Path, final_id: str):  # noqa: ANN201
 
 # frob:ticket T-0338
 # frob:ticket T-1007
+# frob:ticket T-1368
 def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN201
     """Compute the REL001 bump class for `root`'s just-squashed public API
     against its release manifest -- read from ROOT's OWN git HEAD via
@@ -1218,9 +1219,11 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
     repo has never opted into `frob release stamp`) or when the diff class
     is `BumpClass.NONE`; `Ok(new_version)` after a successful bump+stamp;
     `Err(LandError.ReleaseBumpFailed)` on any failure along the way (an
-    unreadable manifest, an unparsable `pyproject.toml` version, or a
-    graph build failure) -- fail-closed, since a silently-skipped bump
-    would let a landed API change slip past REL001 undetected."""
+    unreadable manifest, an unparsable `pyproject.toml` version, a graph
+    build failure, or -- T-1368 -- `stamp`'s own write failing, e.g. its
+    `enforce_worktree_lease` refusal) -- fail-closed, since a silently-
+    skipped bump would let a landed API change slip past REL001
+    undetected."""
     from frob.gitio import run_argv
     from frob.release import stamp
     from frob.tickets._land import LandError
@@ -1246,7 +1249,22 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
             fresh_snapshot.danger_err,
         )
         return Err(LandError.ReleaseBumpFailed)
-    stamp(root, fresh_snapshot.danger_ok, new_version)
+    stamped = stamp(root, fresh_snapshot.danger_ok, new_version)
+    if stamped.is_err:
+        # T-1368: `stamp`'s Result used to be discarded here -- a write
+        # failure (its own `enforce_worktree_lease` refusal, or any future
+        # failure mode `stamp` grows) silently fell through to `git add
+        # .frob-release.json` below, staging whatever (possibly stale)
+        # content already happened to be on disk instead of the fresh
+        # bump. Propagate it the same fail-closed way every other error
+        # path in this function already does.
+        _log.error(
+            "land: %s failed to stamp release manifest at %s (%s)",
+            final_id,
+            new_version,
+            stamped.danger_err,
+        )
+        return Err(LandError.ReleaseBumpFailed)
 
     staged = run_argv(
         [

@@ -1436,6 +1436,7 @@ class TestUncommittedWaiveDeletionRefusal:
 
 
 # frob:ticket T-1468
+# frob:ticket T-1332
 class TestWaiveRewrapNotDeletion:
     """T-1468: a `frob fmt` re-wrap of a multi-line `frob:waive` comment's
     `reason="..."` continuation (changing how many physical lines it spans
@@ -1509,7 +1510,58 @@ class TestWaiveRewrapNotDeletion:
         assert result.is_err
         assert result.danger_err == LandError.OutOfScopeWaiveDeletion
 
+    # frob:ticket T-1388
+    def test_real_fmt001_fixer_rewrap_does_not_trip_the_guard(
+        self, repo: Path
+    ) -> None:
+        """T-1388: the incident this ticket reports is land's OWN pre-land
+        Tier-A auto-fix pass (FMT001, `frob.gates._fmt_directives.
+        format_paths`) rewrapping an out-of-scope file's `frob:waive`
+        comment and then self-refusing on the very edit it just made.
+        `TestWaiveRewrapNotDeletion`'s other tests prove the underlying
+        `_uncommitted_out_of_scope_waive_deletions` mechanism (T-1468) is
+        rewrap-insensitive against a HAND-WRITTEN rewrap; this test drives
+        the same guard against the REAL fixer's OWN output instead, to
+        pin the exact mechanism the ticket names rather than a synthetic
+        stand-in for it."""
+        # frob:tests \
+        # tests/test_ticket_land.py::TestWaiveRewrapNotDeletion.test_real_fmt001_fixer_\
+        # rewrap_does_not_trip_the_guard
+        from frob.gates._fmt_directives import format_paths
 
+        (repo / "src" / "other.py").write_text(
+            "# frob:waive PERF001 reason=\"some very long reason that used to fit on "
+            "a single physical line under the default 88-col limit ok\"\n"
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with an over-long single-line PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-fmt001-real-rewrap", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # This is what land's own pre-land Tier-A/FMT001 pass does: run
+        # the real fixer against the whole tree (the pre-T-1404 unscoped
+        # shape, still the fallback path when a touched-set cannot be
+        # computed), rewrapping `other.py`'s over-long waiver line even
+        # though `other.py` is entirely outside this ticket's scope.
+        report = format_paths(wt, check_only=False, limit=88)
+        assert any(c.path == "src/other.py" for c in report.changes)
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+
+# frob:ticket T-1326
+# frob:ticket T-1332
 class TestCommittedWaiveDeletionRefusal:
     """T-1326: extends the T-1323 guard from the worktree's UNCOMMITTED
     state to its COMMITTED branch history (`merge-base..HEAD`) -- the
@@ -1642,6 +1694,176 @@ class TestCommittedWaiveDeletionRefusal:
         # the branch's own committed history.
         (repo / "src" / "other.py").write_text("def g():\n    pass\n")
         _commit_all(repo, "main-side: drop the PERF001 waiver, unrelated to the ticket")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    # frob:ticket T-1332
+    def test_branch_merges_main_after_main_deletes_a_waiver_still_allowed(
+        self, repo: Path
+    ) -> None:
+        """T-1332 acceptance [0]: unlike `test_merge_base_drift_deletion_
+        on_main_side_not_counted` above (main deletes the waiver but the
+        branch never re-syncs with main at all), this scenario has the
+        landing branch run a real `git merge main` AFTER main's deletion
+        commit -- the shape every agent worktree actually goes through
+        (playbook section 1's mandatory warm-up merge, and any mid-ticket
+        `git merge main`). The merge commit's own diff against the branch's
+        PRE-merge tip textually contains the deletion (that is what a merge
+        commit IS), so a naive `merge_base..HEAD` computed against a STALE
+        merge-base would wrongly see it as the branch's own doing. `_true_
+        merge_base` is computed FRESH at land time, so after the merge the
+        true common ancestor advances to (at least) main's deletion commit
+        itself, and the deletion drops out of `merge_base..HEAD` entirely --
+        this test locks that in with a REAL `git merge main`, not just an
+        unmerged branch-point scenario."""
+        # frob:tests \
+        # tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_branch_merg\
+        # es_main_after_main_deletes_a_waiver_still_allowed
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="genuinely needed, unrelated"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a live PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-waive-merge-main", str(wt)], repo
+        )
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # main legitimately deletes the waiver AFTER the branch point.
+        (repo / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(repo, "main-side: drop the PERF001 waiver, unrelated to the ticket")
+
+        # The branch pulls that deletion in via a real merge -- the exact
+        # mid-flight sync every worktree agent performs.
+        _run(["git", "fetch", str(repo), "main:refs/remotes/origin/main"], wt)
+        _run(["git", "merge", "refs/remotes/origin/main", "--no-edit"], wt)
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+
+# frob:ticket T-1332
+class TestRenameAwareWaiveDeletionAttribution:
+    """T-1332 acceptance [1]: `_waive_deletions_in_diff` reads the
+    pre-image path off the hunk's file header (`--- a/<path>`), which for
+    a pure rename+edit is the file's OLD name, not the new one a scope
+    glob would actually match -- untested on both the uncommitted (T-1323)
+    and committed (T-1326) checks before this ticket."""
+
+    # frob:ticket T-1332
+    def test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path(
+        self, repo: Path
+    ) -> None:
+        """A `frob:waive` deleted in the SAME commit that renames its file
+        (`git mv old new` + edit) must be attributed to a real path this
+        guard can evaluate scope-ownership against -- proving WHICH path
+        (old or new) `_committed_out_of_scope_waive_deletions` actually
+        uses, per the ticket's own "test proves which" acceptance wording.
+        Declaring the OLD path in scope must suffice to allow the land
+        (this is the behavior as implemented: the hunk's pre-image path is
+        what `git diff --no-color -U0` reports as the file the `-` line
+        belongs to)."""
+        # frob:tests \
+        # tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution.test_commi\
+        # tted_waiver_deleted_inside_a_rename_attributes_to_old_path
+        (repo / "src" / "old.py").write_text(
+            '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add old.py with a stale PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-rename-1", str(wt)], repo)
+
+        created = new_ticket(
+            wt, _spec("Retire stale waiver via rename", scope=("src/old.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        _run(["git", "mv", "src/old.py", "src/new.py"], wt)
+        (wt / "src" / "new.py").write_text("def g():\n    pass\n")
+        _commit_all(wt, "rename old.py to new.py, dropping the stale waiver")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    # frob:ticket T-1332
+    def test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses(
+        self, repo: Path
+    ) -> None:
+        """The mirror of the test above: when NEITHER the old nor the new
+        path is in the landing ticket's scope, a waiver dropped inside a
+        rename must still refuse -- proving the rename does not
+        accidentally become a laundering vector (a rename any agent could
+        perform to dodge the guard) on top of proving which path is
+        checked."""
+        # frob:tests \
+        # tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution.test_commi\
+        # tted_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+        (repo / "src" / "old.py").write_text(
+            '# frob:waive PERF001 reason="genuinely needed, not this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add old.py with a live PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-rename-2", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        _run(["git", "mv", "src/old.py", "src/new.py"], wt)
+        (wt / "src" / "new.py").write_text("def g():\n    pass\n")
+        _commit_all(wt, "unrelated rename that happens to drop a waiver")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_err
+        assert result.danger_err == LandError.OutOfScopeWaiveDeletion
+
+    # frob:ticket T-1332
+    def test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path(
+        self, repo: Path
+    ) -> None:
+        """The UNCOMMITTED (T-1323) mirror of the committed-history rename
+        test above: `git mv` + edit left dirty (not yet committed) must
+        still be attributed correctly when the OLD path is in scope."""
+        # frob:tests \
+        # tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution.test_uncom\
+        # mitted_waiver_deleted_inside_a_rename_attributes_to_old_path
+        (repo / "src" / "old.py").write_text(
+            '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add old.py with a stale PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waive-rename-3", str(wt)], repo)
+
+        created = new_ticket(
+            wt, _spec("Retire stale waiver via rename", scope=("src/old.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        _run(["git", "mv", "src/old.py", "src/new.py"], wt)
+        (wt / "src" / "new.py").write_text("def g():\n    pass\n")
+        # Left uncommitted, unlike the committed-history test above.
 
         result = land(repo, tid, wt, dry_run=True)
 

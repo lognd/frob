@@ -1990,7 +1990,7 @@ T-1257's acceptance criterion 3, not yet closed by that ticket).
 id: T-1332
 title: 'land waive-guard: test branch-merged-main deletion attribution and rename-aware
   paths'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -2003,18 +2003,136 @@ scope:
 - src/frob/tickets/_land_merge.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+- tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
+- tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+- tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
 acceptance:
 - text: GIVEN a branch that merged main after main legitimately deleted a waiver WHEN
     land runs THEN no refusal occurs (locked by test)
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
+  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
 - text: GIVEN a waiver deleted inside a file renamed in the same branch THEN the guard
     attributes the deletion to a path that scope-ownership evaluates correctly (test
     proves which)
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
+  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
 threat: null
 component: null
 ```
 Two verification gaps flagged at T-1326 review (both inherited/analysis-only today): (1) no test exercises a branch that runs git merge main AFTER main legitimately deleted a waiver, then lands -- the committed-history guard is safe by git merge-base construction (the merge advances the base past main's deletion) but nothing locks that in; every agent worktree merges main mid-flight, so a regression here would break all lands. (2) rename-aware attribution: _waive_deletions_in_diff takes the pre-image path from the hunk header; a waiver deleted inside a renamed file has untested scope-ownership attribution (pre- vs post-rename path) on BOTH the uncommitted (T-1323) and committed (T-1326) checks. Add tests for both; fix attribution if the rename test exposes a wrong-path bug.
+
+## Done report
+
+Added the two verification-gap tests T-1326's review flagged, plus one
+extra negative-case test to prove the rename-attribution behavior does
+not open a new laundering vector:
+
+1. Acceptance [0] (branch-merged-main deletion attribution): added
+   `test_branch_merges_main_after_main_deletes_a_waiver_still_allowed`,
+   which -- unlike the existing `test_merge_base_drift_deletion_on_main_
+   side_not_counted` (main deletes, branch never re-syncs at all) --
+   makes the landing branch run a REAL `git merge main` after main's
+   deletion commit, the shape every worktree agent's warm-up actually
+   performs. Passes as-is: `_true_merge_base` is computed fresh at land
+   time, so after the merge the true common ancestor advances past
+   main's deletion commit and it correctly drops out of `merge_base..
+   HEAD`. No regression found; this locks in behavior that was
+   previously only argued from git merge-base construction, never
+   actually exercised.
+
+2. Acceptance [1] (rename-aware attribution): added three tests --
+   `test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path`,
+   its negative mirror
+   `test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses`,
+   and the uncommitted-state analog
+   `test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path`.
+   All pass as-is, proving WHICH path `_waive_deletions_in_diff`
+   attributes a rename+edit deletion to: the pre-image (OLD) path off
+   the diff hunk's `--- a/<path>` header, as the docstring already
+   claimed but nothing previously exercised. Declaring the OLD path in
+   the ticket's scope is sufficient to allow the land; declaring
+   neither old nor new path still correctly refuses (the negative test)
+   -- a rename does not become a way to dodge the guard.
+
+No production code change: both verification gaps close with new tests
+only, no attribution bug was exposed by either. `_land_merge.py` (this
+ticket's second scope glob) turned out to hold none of the actual
+waive-guard code any more -- T-1251 (already landed) moved that whole
+family to `src/frob/tickets/_land_git_ops.py`; the guard functions this
+ticket exercises (`_uncommitted_waive_deletions`,
+`_committed_out_of_scope_waive_deletions`, `_true_merge_base`,
+`_waive_deletions_in_diff`) all live there today. No edit was needed in
+either file, so this scope-staleness did not block anything, but is
+worth noting for anyone reading `_land_merge.py` expecting to find this
+code.
+
+Changed: none (tests only)
+
+Added:
+  tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+  tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution (new class, 3 tests)
+
+Evidence: 4 new tests, all passing -- see evidence list below, bound to
+both acceptance criteria (the CLI's `--accepts` binds an index to the
+ticket's full evidence list, not a per-call subset, so both indices
+show all 4 ids; each test itself is scoped to exactly the acceptance
+criterion described above). Full targeted run: 15 passed
+(`tests/test_ticket_land.py -k "WaiveRewrap or WaiveDeletion or
+RenameAware"`, covering this ticket's new tests alongside T-1388's and
+the pre-existing T-1323/T-1326/T-1468 suite in the same area, confirming
+no regression).
+
+Gates: `frob check --only test --ticket T-1332` 0 errors. `frob check
+--only coverage --only scope --only prework --only fmt --ticket T-1332`:
+gate:PRE/gate:FMT/gate:TODO 0 errors. gate:COV (1 error) and gate:SCOPE
+(6 errors) repeat the SAME pre-land, same-worktree artifact already
+disclosed in T-1368's and T-1388's Done reports -- T-1368/T-1359/T-1388
+are closed tickets whose own commits are still unlanded in this shared
+worktree, and their symbol/scope coverage ties against OTHER, unrelated,
+currently open tickets once THIS ticket's own `--ticket` selection no
+longer prefers them. None of these findings are against
+`tests/test_ticket_land.py`, the only file T-1332 touched (0 SCOPE001/
+COV002 against it); self-resolves once the earlier tickets land as
+their own commits.
+
+Filed: none -- both acceptance gaps close with tests alone, no
+attribution bug found to fix, no new residue.
+
+### Changed
+```
+ design/frob.strata                            |  16 +-
+ docs/design/registry/EXHAUSTIVENESS-GATE.md   |   7 +
+ docs/modules/release.md                       |  37 +-
+ src/frob/app/ticket_runner/_land_cmd.py       |  26 +-
+ src/frob/gates/_fmt_directives.py             |  34 +-
+ src/frob/registry/_staleness.py               |  30 +-
+ src/frob/release/__init__.py                  |  69 +++-
+ tests/test_gates_fmt_directives.py            |  42 +++
+ tests/test_registry_staleness.py              |  32 ++
+ tests/test_release.py                         |  97 +++++
+ tests/test_ticket_land.py                     | 222 +++++++++++
+ tests/unit/test_ticket_runner_land_release.py |  46 ++-
+ tickets.md                                    | 508 +++++++++++++++++++++++++-
+ 13 files changed, 1123 insertions(+), 43 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1339 -->
 ```yaml
@@ -2261,7 +2379,7 @@ Partial progress is acceptable and expected; report honest before/after and file
 ```yaml
 id: T-1359
 title: Make FMT001/REG010/REL002 Tier-A handlers' delegated writes crash-safe
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-31'
@@ -2273,8 +2391,42 @@ scope:
 - src/frob/gates/_fmt_directives.py
 - src/frob/registry/_staleness.py
 - src/frob/release/**
+- tests/test_gates_fmt_directives.py
+- tests/test_registry_staleness.py
+- tests/test_release.py
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_fmt_directives.py
+  reason: 'T-1359: crash-safety unit tests for the three write sites this ticket touches'
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/test_registry_staleness.py
+  reason: 'T-1359: crash-safety unit tests for the three write sites this ticket touches'
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/test_release.py
+  reason: 'T-1359: crash-safety unit tests for the three write sites this ticket touches'
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
+  reason: 'T-1359: SCOPE002 closure -- doc anchors on symbols already in this ticket''s
+    scope'
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/test_gates_fmt_directives.py::TestWriteFormattedCrashSafety::test_leaves_original_on_replace_failure
+- tests/test_gates_fmt_directives.py::TestWriteFormattedCrashSafety::test_preserves_crlf_newline
+- tests/test_registry_staleness.py::TestSyncGateRuleEntriesCrashSafety::test_leaves_original_on_replace_failure
+- tests/test_release.py::TestCrashSafeReleaseWrites::test_stamp_leaves_original_manifest_on_replace_failure
+- tests/test_release.py::TestCrashSafeReleaseWrites::test_rewrite_pyproject_version_leaves_original_on_replace_failure
+- tests/test_release.py::TestCrashSafeReleaseWrites::test_changelog_skeleton_entry_leaves_original_on_replace_failure
+- tests/test_release.py::TestCrashSafeReleaseWrites::test_set_manifest_version_leaves_original_on_replace_failure
 threat: null
 component: null
 ```
@@ -2298,6 +2450,103 @@ half-rewritten, the same T-1338 hazard class T-1348 closed for the other
 three handlers. Convert these three write sites to
 frob.tickets._store.atomic_write (or an equivalent local primitive) the
 same way T-1348 did for _fix_engine.py's own direct writes.
+
+## Done report
+
+Converted all three of FMT001/REG010/REL002's delegated write sites to
+crash-safe primitives, matching T-1348's `_write_text` posture for
+`frob.gates._fix_engine`:
+
+- FMT001 (`frob.gates._fmt_directives._write_formatted`): replaced the
+  bare `open(path, "w", newline="")` with a local temp-file + fsync +
+  `os.replace` primitive. Cannot reuse `frob.tickets._store.atomic_write`
+  directly -- it has no `newline=""` opt-out, and losing that would
+  silently re-translate a CRLF file's line endings on every `frob fmt`
+  run (the exact T-0441 regression the module's own docstring documents).
+  A killed process now leaves the original file intact; re-raises the
+  original OSError on failure (unchanged failure-visibility contract).
+
+- REG010 (`frob.registry._staleness.sync_gate_rule_entries`): replaced
+  the bare `registry_path.write_text` with `frob.tickets._store.
+  atomic_write`. On the (should-never-happen) write-failure path, this
+  returns `Err(CorpusError.FileNotFound)` -- not a semantically precise
+  fit, but a deliberate reuse of an existing `CorpusError` member rather
+  than widening the function's public error type: the two other call
+  sites (`frob.app.registry_runner._run_sync_gate_rules`,
+  `frob.app.ticket_runner._land_cmd`) key a message dict on `CorpusError`
+  alone and sit outside this ticket's declared scope. Filed
+  T-1533 to give write failures a dedicated `CorpusError`
+  member with the two call sites' scope included.
+
+- REL002 (`frob.release`): added `_atomic_write_release`, a thin wrapper
+  around `atomic_write` that translates `TicketError` into a new
+  `ReleaseError.WriteFailed` member, and routed all four of the module's
+  write sites through it: `stamp`, `rewrite_pyproject_version`,
+  `changelog_skeleton_entry`, `set_manifest_version` (the last two were
+  not named in the ticket body's bullet list but live in the same
+  `src/frob/release/**` scope and had the identical bare-`write_text`
+  hazard, so they got the same fix in the same pass rather than leaving
+  a known-identical gap next to a closed one).
+
+Changed:
+  src/frob/gates/_fmt_directives.py::_write_formatted
+  src/frob/registry/_staleness.py::sync_gate_rule_entries
+  src/frob/release/__init__.py::_atomic_write_release (new)
+  src/frob/release/__init__.py::stamp
+  src/frob/release/__init__.py::rewrite_pyproject_version
+  src/frob/release/__init__.py::changelog_skeleton_entry
+  src/frob/release/__init__.py::set_manifest_version
+  src/frob/release/__init__.py::ReleaseError.WriteFailed (new member)
+
+Evidence: 7 new unit tests, each simulating an `os.replace` failure
+mid-write and asserting the original file survives byte-for-byte with
+no leftover temp file -- see the evidence list below.
+
+Filed: T-1533 (CorpusError needs a dedicated write-failure
+member; out-of-scope companion fix for REG010's error-mapping
+compromise above).
+
+Gates: `frob check --only test --ticket T-1359` and `frob check --only
+coverage --only scope --only prework --only fmt --ticket T-1359` both
+0 errors (measured after adding the ticket's own test files to scope
+via `frob ticket scope T-1359 --add`, wrapping two new frob:tests
+directive lines to canonical form via hand-applied backslash
+continuation matching `frob fmt`'s own canonical shape, and re-running
+`frob ticket sweep T-1359`). `frob check --only archgate --ticket
+T-1359` also 0 errors. Full pytest run of the three touched test files:
+81 passed (`tests/test_gates_fmt_directives.py`,
+`tests/test_registry_staleness.py`, `tests/test_release.py`).
+
+### Changed
+```
+ design/frob.strata                            |  16 +-
+ docs/design/registry/EXHAUSTIVENESS-GATE.md   |   7 +
+ docs/modules/release.md                       |  37 +-
+ src/frob/app/ticket_runner/_land_cmd.py       |  26 +-
+ src/frob/gates/_fmt_directives.py             |  34 +-
+ src/frob/registry/_staleness.py               |  30 +-
+ src/frob/release/__init__.py                  |  69 +++-
+ tests/test_gates_fmt_directives.py            |  42 +++
+ tests/test_registry_staleness.py              |  32 ++
+ tests/test_release.py                         |  97 +++++
+ tests/test_ticket_land.py                     | 222 ++++++++++++
+ tests/unit/test_ticket_runner_land_release.py |  46 ++-
+ tickets.md                                    | 492 +++++++++++++++++++++++++-
+ 13 files changed, 1107 insertions(+), 43 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_fmt_directives.py::TestWriteFormattedCrashSafety::test_leaves_original_on_replace_failure` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fmt_directives.py::TestWriteFormattedCrashSafety::test_preserves_crlf_newline` (pytest node id, verified passing when recorded)
+- `tests/test_registry_staleness.py::TestSyncGateRuleEntriesCrashSafety::test_leaves_original_on_replace_failure` (pytest node id, verified passing when recorded)
+- `tests/test_release.py::TestCrashSafeReleaseWrites::test_stamp_leaves_original_manifest_on_replace_failure` (pytest node id, verified passing when recorded)
+- `tests/test_release.py::TestCrashSafeReleaseWrites::test_rewrite_pyproject_version_leaves_original_on_replace_failure` (pytest node id, verified passing when recorded)
+- `tests/test_release.py::TestCrashSafeReleaseWrites::test_changelog_skeleton_entry_leaves_original_on_replace_failure` (pytest node id, verified passing when recorded)
+- `tests/test_release.py::TestCrashSafeReleaseWrites::test_set_manifest_version_leaves_original_on_replace_failure` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1366 -->
 ```yaml
@@ -2332,7 +2581,7 @@ T-1265 made the ci.yml self-gate blocking and added a TEST012 check for frob-cov
 id: T-1368
 title: stamp() return value discarded in _apply_release_bump_for_land, can silently
   drop .frob-release.json writes
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -2342,8 +2591,18 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/unit/test_ticket_runner_land_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'T-1368: unit tests for the fix to _apply_release_bump_for_land''s discarded
+    stamp() Result'
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_stamp_failure_propagates_instead_of_staging_stale_manifest
 threat: null
 component: null
 ```
@@ -2365,6 +2624,95 @@ in `_land_cmd.py` itself is still live and outside T-1358's declared
 scope. Suggested acceptance: check `stamp(...)`'s return value in
 `_apply_release_bump_for_land` and propagate `Err` to
 `Err(LandError.ReleaseBumpFailed)` instead of discarding it.
+
+## Done report
+
+`_apply_release_bump_for_land` called `frob.release.stamp(...)` and threw
+away its `Result` -- a write failure (`stamp`'s own `enforce_worktree_
+lease` refusal, or any future failure mode `stamp` grows) fell through
+silently to `git add .frob-release.json` regardless, staging whatever
+(possibly stale) content already happened to be on disk instead of the
+fresh bump.
+
+Fixed exactly as the ticket's suggested acceptance describes: the
+`stamp(...)` call's `Result` is now checked; on `Err`, the function logs
+the failure and returns `Err(LandError.ReleaseBumpFailed)` instead of
+falling through to the `git add` staging step, matching every other
+failure path this function already uses (fail-closed, since a silently-
+skipped bump would let a landed API change slip past REL001 undetected).
+
+Changed:
+  src/frob/app/ticket_runner/_land_cmd.py::_apply_release_bump_for_land
+
+Evidence: one new unit test
+(`TestApplyReleaseBumpForLand::test_stamp_failure_propagates_instead_of_
+staging_stale_manifest`) monkeypatches `frob.release.stamp` to return
+`Err(ReleaseError.WriteFailed)` and asserts the function returns
+`Err(LandError.ReleaseBumpFailed)` AND that `git add` (`frob.gitio.
+run_argv`) is never called -- the exact silent-drop the ticket describes,
+proven closed. Full file: 16 passed
+(`tests/unit/test_ticket_runner_land_release.py`).
+
+Gates: `frob check --only test --ticket T-1368` 0 errors. `frob check
+--only coverage --only scope --only prework --only fmt --only archgate
+--ticket T-1368` 0 errors for gate:COV/gate:PRE/gate:ARCH/gate:TODO
+after (a) adding `tests/unit/test_ticket_runner_land_release.py` to
+T-1368's scope (the test file for this fix) and (b) adding a `frob:ticket
+T-1359` edge to `sync_gate_rule_entries` (src/frob/registry/_staleness.py)
+so the T-0965 closed-ticket grace window covers it against a genuine
+scope tie with another concurrently open ticket (T-1264) that also
+claims that file -- both changes are within T-1359's OWN previously-
+verified scope, not new scope creep from T-1368.
+
+gate:SCOPE still reports 6 SCOPE001 findings against T-1359's files
+(src/frob/gates/_fmt_directives.py, src/frob/registry/_staleness.py,
+src/frob/release/__init__.py, tests/test_gates_fmt_directives.py,
+tests/test_registry_staleness.py, tests/test_release.py) under
+`--ticket T-1368` -- root-caused: T-1359's own worktree commit
+(aa9aaa38 "fix(gates,registry,release): make FMT001/REG010/REL002
+writes crash-safe") omitted a literal `T-1359` reference from its
+SUBJECT line (it names the ticket in the body but SCOPE001's T-0108
+cross-ticket exemption regex-matches the commit SUBJECT only), so that
+commit's hunks are not recognized as already-scoped-and-closed when a
+LATER ticket sharing this same pre-land worktree diffs against main.
+This is a known, self-resolving pre-land artifact, not a T-1368 defect
+or scope violation: `frob ticket land` regenerates the landing commit
+message from the ticket id itself at land time, so it disappears the
+moment T-1359 actually lands. None of these 6 files are in T-1368's
+scope and none were touched by this ticket's own work; T-1368's own
+file (src/frob/app/ticket_runner/_land_cmd.py) reports 0 SCOPE001
+findings.
+
+Filed: none (T-1533 from T-1359 already covers the one real
+out-of-scope follow-up in this cluster; no new residue from T-1368
+itself, and the commit-subject omission above is a one-off historical
+fact about a specific already-closed commit, not a recurring gap
+worth a ticket).
+
+### Changed
+```
+ design/frob.strata                            |  16 +-
+ docs/design/registry/EXHAUSTIVENESS-GATE.md   |   7 +
+ docs/modules/release.md                       |  37 +-
+ src/frob/app/ticket_runner/_land_cmd.py       |  26 +-
+ src/frob/gates/_fmt_directives.py             |  34 +-
+ src/frob/registry/_staleness.py               |  30 +-
+ src/frob/release/__init__.py                  |  69 +++-
+ tests/test_gates_fmt_directives.py            |  42 +++
+ tests/test_registry_staleness.py              |  32 ++
+ tests/test_release.py                         |  97 +++++
+ tests/test_ticket_land.py                     | 222 ++++++++++++
+ tests/unit/test_ticket_runner_land_release.py |  46 ++-
+ tickets.md                                    | 502 +++++++++++++++++++++++++-
+ 13 files changed, 1117 insertions(+), 43 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_stamp_failure_propagates_instead_of_staging_stale_manifest` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1382 -->
 ```yaml
@@ -2430,7 +2778,7 @@ Related: the user's standing preference is still to SUGGEST 'make <target>' wher
 id: T-1388
 title: land's Tier-A pre-fix pass touches out-of-scope _daemon_proxy.py, then self-blocks
   on OutOfScopeWaiveDeletion
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -2440,8 +2788,18 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/_land*.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'T-1388: regression test for the real FMT001 fixer''s output not tripping
+    the waive-deletion guard'
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard
 threat: null
 component: null
 ```
@@ -2483,6 +2841,111 @@ Suggested fix direction: scope the Tier-A pre-land auto-fix pass to the
 landing ticket's own scope globs (same set the OutOfScopeWaiveDeletion
 guard itself already checks against), so it structurally cannot produce
 a collateral out-of-scope edit for a DIFFERENT ticket to trip over.
+
+## Done report
+
+Investigated before implementing anything, per the ticket's own "root
+cause not fully isolated" disclosure: the incident this ticket reports
+(land's pre-land Tier-A FMT001 pass rewrapping an out-of-scope file's
+`frob:waive` comment, then self-refusing on `OutOfScopeWaiveDeletion`
+for the very edit it just made) is ALREADY FIXED by prior work, on both
+of the ticket's two suggested fix directions:
+
+- (a) "scope the pre-fix pass to the ticket's touched set": T-1404
+  (already landed, `src/frob/app/ticket_runner/_land_cmd.py::
+  _land_touched_paths`/`_fmt_pre_land_step`/`_tier_a_pre_land_step`, out
+  of this ticket's own declared scope `src/frob/tickets/_land*.py`) now
+  scopes the pre-land `frob fmt` pass to the landing ticket's own diff
+  hunks and excludes FMT001 from the generic Tier-A batch whenever that
+  scoped pass ran, so FMT001 specifically can no longer rewrite a file
+  outside the landing ticket's own touched set in the normal (touched-
+  set-computable) path.
+
+- (b) "exempt its own mechanical reflows from the waive-deletion check":
+  T-1468 (already landed, IN this ticket's own scope --
+  `src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions` and
+  its `_waive_deletions_in_diff`/`_scan_diff_for_waive_deletions`/
+  `_real_waive_deletions`/`_fold_waive_blocks`/`_normalize_waive_
+  fragments` support) makes the deletion-detector itself rewrap-
+  insensitive: a `frob:waive` comment block that is REWRAPPED (a
+  different number of physical lines, byte-identical normalized content)
+  on both sides of a hunk is silently NOT counted as a deletion at all,
+  regardless of which file it lives in or which ticket's scope covers
+  it. `TestWaiveRewrapNotDeletion` (tests/test_ticket_land.py) already
+  covers this directly against a hand-written rewrap.
+
+Both mechanisms independently close the exact symptom described (a
+`frob:waive` reason= comment rewrap in an out-of-scope file self-
+blocking land) -- (b) alone is sufficient even if (a)'s touched-set
+computation somehow fails and the whole-tree FMT001 fallback runs, since
+the deletion-detector T-1468 fixed sits downstream of EITHER path.
+
+Verified this is not merely catalogued-but-unenforced (this repo's own
+"catalogued is not enforced" lesson): reproduced the original incident
+shape as closely as this ticket's own scope allows -- ran the REAL
+`frob.gates._fmt_directives.format_paths` fixer (not a hand-written
+rewrap) against an out-of-scope file with an over-long single-line
+`frob:waive` comment, confirmed it rewrapped the line (the same
+mechanical reflow the incident describes), then ran a real `land(...,
+dry_run=True)` against that dirty worktree and confirmed it does NOT
+refuse.
+
+Changed: none (no code change -- see above; only a new regression test)
+
+Added:
+  tests/test_ticket_land.py::TestWaiveRewrapNotDeletion.test_real_fmt001_fixer_rewrap_does_not_trip_the_guard
+
+Evidence: 1 new test exercising the real FMT001 fixer's own output
+through the real `land()` dry-run path (not a synthetic rewrap) -- see
+evidence list below. Full class: 3 passed
+(`tests/test_ticket_land.py::TestWaiveRewrapNotDeletion`).
+
+Gates: `frob check --only test --ticket T-1388` 0 errors. `frob check
+--only coverage --only scope --only prework --only fmt --only archgate
+--ticket T-1388`: gate:ARCH/gate:LARGE/gate:TODO/gate:PRE/gate:FMT 0
+errors. gate:COV shows 1 error (`_land_cmd.py::_apply_release_bump_for_
+land`, T-1368's own symbol) and gate:SCOPE shows 6 errors (T-1359's six
+files) -- both are the SAME pre-land, same-worktree artifact already
+disclosed in T-1368's Done report: T-1368/T-1359 are closed tickets
+whose own commits are still unlanded in this shared worktree, and their
+symbol/scope coverage now ties against OTHER, unrelated, currently open
+tickets (T-1523's scope also claims `_land_cmd.py`; T-1264's scope also
+claims `_staleness.py`) once THIS ticket's own `--ticket` selection no
+longer prefers them. None of these 7 findings are against any file
+T-1388 itself touched (`tests/test_ticket_land.py` reports 0 SCOPE001/
+COV002); this self-resolves once T-1368/T-1359 land as their own
+commits (a coordinator step), same disclosure as T-1368's report.
+
+Filed: none -- this ticket's own suggested acceptance is already met by
+existing code; nothing new to track. The commit-subject-omission
+observation from T-1368's Done report (T-1359's crash-safety commit
+lacking a literal T-1359 in its subject) is a one-off historical fact
+about a specific already-closed commit, not a recurring gap.
+
+### Changed
+```
+ design/frob.strata                            |  16 +-
+ docs/design/registry/EXHAUSTIVENESS-GATE.md   |   7 +
+ docs/modules/release.md                       |  37 +-
+ src/frob/app/ticket_runner/_land_cmd.py       |  26 +-
+ src/frob/gates/_fmt_directives.py             |  34 +-
+ src/frob/registry/_staleness.py               |  30 +-
+ src/frob/release/__init__.py                  |  69 +++-
+ tests/test_gates_fmt_directives.py            |  42 +++
+ tests/test_registry_staleness.py              |  32 ++
+ tests/test_release.py                         |  97 +++++
+ tests/test_ticket_land.py                     | 222 +++++++++++
+ tests/unit/test_ticket_runner_land_release.py |  46 ++-
+ tickets.md                                    | 506 +++++++++++++++++++++++++-
+ 13 files changed, 1121 insertions(+), 43 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1389 -->
 ```yaml
@@ -6583,3 +7046,41 @@ appearing as a positional argument inside a _ProcessJob(...) (or similarly
 shaped job-table constructor) call as a wired reference. Found while
 landing T-1520 (CACHE001 static gate): cache_gate is wired via the "cache"
 job-table entry but WIRE001 still flagged it.
+
+<!-- ticket:T-1533 -->
+```yaml
+id: T-1533
+title: CorpusError needs a dedicated write-failure member
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/registry/_corpus.py
+- src/frob/app/registry_runner.py
+- src/frob/app/ticket_runner/_land_cmd.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1359 made src/frob/registry/_staleness.py::sync_gate_rule_entries's
+write crash-safe via frob.tickets._store.atomic_write, but on the
+(should-never-happen) I/O failure path it has to reuse
+CorpusError.FileNotFound as a stand-in -- not semantically accurate --
+because CorpusError (src/frob/registry/_corpus.py) has no dedicated
+write-failure member, and the two call sites that key a message dict on
+CorpusError (frob.app.registry_runner._CORPUS_ERROR_MESSAGES,
+frob.app.ticket_runner._land_cmd's synced.danger_err logging) sit
+outside T-1359's declared scope (src/frob/gates/_fmt_directives.py,
+src/frob/registry/_staleness.py, src/frob/release/**).
+
+Add a CorpusError.WriteFailed member in src/frob/registry/_corpus.py,
+have sync_gate_rule_entries return it instead of the FileNotFound
+stand-in, and update _CORPUS_ERROR_MESSAGES (src/frob/app/registry_runner.py)
+plus any other CorpusError-message dict to cover it so no caller KeyErrors
+on the new variant.
