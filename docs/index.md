@@ -130,7 +130,8 @@ Support modules underneath the above:
 - `docs/modules/app.md` -- `frob.app`: the App/AppConfig runtime wiring and CLI
   entry (`__main__`).
 - `docs/modules/cli.md` -- CLI command tier ledger: which subcommands are
-  plumbing, kept as-is, versus deprecated navigation porcelain (T-0580).
+  plumbing kept as-is, versus regrouped under `frob explore` (T-1238,
+  supersedes the T-0580 navigation-porcelain deprecation).
 - `docs/modules/bind.md` -- `frob.bind`: verifies `// BIND:` declarations in
   pybind11/PyO3 glue match a real native-side function, so a Python-facing
   binding never drifts from the C++/Rust signature it wraps.
@@ -170,16 +171,18 @@ obligation graph. Charter and component designs:
 ## Per-command references
 
 Each with usage, real output, and a "why it exists" section (`map`,
-`outline`, `xref` are DEPRECATED, sunset 2026-10-01, T-0580/T-0802 -- still
-documented since they still run until sunset):
+`outline`, `xref` were DEPRECATED under T-0580/T-0802; T-1238 rescinded
+that sunset and regrouped all three, plus `frob docs --search`, under
+`frob explore` -- see `docs/design/cli-regrouping.md` and
+`docs/modules/cli.md`):
 
 | Doc | Command |
 |---|---|
 | `docs/commands/scaffold.md` | `frob scaffold` |
 | `docs/commands/cycle.md` | `frob cycle` |
-| `docs/commands/outline.md` | `frob outline` (deprecated) |
-| `docs/commands/map.md` | `frob map` (deprecated) |
-| `docs/commands/xref.md` | `frob xref` (deprecated) |
+| `docs/commands/outline.md` | `frob outline` / `frob explore outline` |
+| `docs/commands/map.md` | `frob map` / `frob explore map` |
+| `docs/commands/xref.md` | `frob xref` / `frob explore xref` |
 | `docs/commands/exports.md` | `frob exports` |
 | `docs/commands/parse.md` | `frob parse` |
 | `docs/commands/gitlog.md` | `frob gitlog` |

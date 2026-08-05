@@ -1,5 +1,8 @@
 # frob xref
 
+Also available as `frob explore xref` (T-1238) -- identical behavior, same
+underlying runner.
+
 Find where a symbol is defined and every file that references it.
 
 ## Usage

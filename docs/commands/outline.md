@@ -1,5 +1,8 @@
 # frob outline
 
+Also available as `frob explore outline` (T-1238) -- identical behavior,
+same underlying runner.
+
 Emit a compact structural skeleton of a source file or directory: classes,
 functions, signatures, line numbers, and first-sentence docstrings. No bodies.
 

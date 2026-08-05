@@ -6,7 +6,7 @@ import enum
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from frob.app._config_external import _build_external_config_kwargs
 from frob.app._config_meta import (
@@ -26,8 +26,37 @@ from frob.app._config_meta import (
 )
 from frob.gitlog import GranularityLevel
 from frob.logging import get_logger
+from frob.tickets._models import (
+    Origin,
+    Priority,
+    ReviewVerdict,
+    TicketKind,
+    TicketState,
+    TicketTier,
+)
 
 _log = get_logger(__name__)
+
+
+# frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values kind="unit"  # noqa: E501
+def _validate_enum_choice(
+    value: str | None, enum_cls: type[enum.Enum], field_label: str
+) -> str | None:
+    """Validate `value` is a legal member of `enum_cls`, raising a `ValueError`
+    that lists every valid value inline (T-1271: replaces the bare
+    `'open' is not a valid TicketState` `ValueError` a raw `TicketState(...)`
+    call raises downstream, with no indication of what WOULD have been
+    valid). `None` passes through unchanged -- these fields are all
+    optional filters/inputs, not required."""
+    if value is None:
+        return value
+    valid = [member.value for member in enum_cls]
+    if value not in valid:
+        raise ValueError(
+            f"{value!r} is not a valid {field_label}; valid values are: "
+            + ", ".join(valid)
+        )
+    return value
 
 #: T-1270: `load_arch_config`/`stale_install_warning` and the ARCH_DEFAULT_*
 #: constants live in `frob.app._config_meta` now (a real seam distinct from
@@ -58,6 +87,8 @@ class Subcommand(str, enum.Enum):
     # frob:ticket T-0021
     scaffold = "scaffold"
     cycle = "cycle"
+    # T-1238: `frob explore` groups map/outline/xref/docs-search.
+    explore = "explore"
     outline = "outline"
     map = "map"
     xref = "xref"
@@ -137,6 +168,10 @@ class AppConfig(BaseModel):
     cycle_path: Path | None = None
     cycle_lang: str | None = None
     cycle_suggest: bool = False
+
+    # explore (T-1238): dispatches by explore_command onto the same
+    # map/outline/xref/docs_* dests its standalone counterparts use.
+    explore_command: str | None = None
 
     # outline
     outline_file: Path | None = None
@@ -696,6 +731,75 @@ class AppConfig(BaseModel):
     # frob natives (T-0864): frob-owned maturin-develop-per-crate build.
     natives_command: str | None = None  # build
     natives_path: Path | None = None
+
+    # frob:ticket T-1271
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_valid_ticket_state_passes_through kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_none_ticket_state_passes_through kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_kind_lists_valid_values kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_kind_value_lists_valid_values kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_tier_lists_valid_values kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_tier_value_lists_valid_values kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_priority_level_lists_valid_values kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_origin_lists_valid_values kind="unit"  # noqa: E501
+    # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_review_verdict_lists_valid_values kind="unit"  # noqa: E501
+    @field_validator("ticket_state")
+    @classmethod
+    def _check_ticket_state(cls, v: str | None) -> str | None:
+        """`frob ticket list --state/--status VALUE` (T-0578 alias): reject
+        an unrecognized state with every legal value named inline, instead
+        of the bare `ValueError` a raw `TicketState(v)` call downstream
+        would raise (T-1271 acceptance criterion 0)."""
+        return _validate_enum_choice(v, TicketState, "ticket state")
+
+    @field_validator("ticket_kind")
+    @classmethod
+    def _check_ticket_kind(cls, v: str | None) -> str | None:
+        """`frob ticket new --kind VALUE`: same inline-valid-values
+        treatment as `_check_ticket_state` (T-1271)."""
+        return _validate_enum_choice(v, TicketKind, "ticket kind")
+
+    @field_validator("ticket_kind_value")
+    @classmethod
+    def _check_ticket_kind_value(cls, v: str | None) -> str | None:
+        """`frob ticket kind <id> VALUE`: same inline-valid-values
+        treatment as `_check_ticket_state` (T-1271)."""
+        return _validate_enum_choice(v, TicketKind, "ticket kind")
+
+    @field_validator("ticket_tier")
+    @classmethod
+    def _check_ticket_tier(cls, v: str | None) -> str | None:
+        """`frob ticket new --tier VALUE`: same inline-valid-values
+        treatment as `_check_ticket_state` (T-1271)."""
+        return _validate_enum_choice(v, TicketTier, "ticket tier")
+
+    @field_validator("ticket_tier_value")
+    @classmethod
+    def _check_ticket_tier_value(cls, v: str | None) -> str | None:
+        """`frob ticket tier <id> VALUE`: same inline-valid-values
+        treatment as `_check_ticket_state` (T-1271)."""
+        return _validate_enum_choice(v, TicketTier, "ticket tier")
+
+    @field_validator("ticket_priority_level")
+    @classmethod
+    def _check_ticket_priority_level(cls, v: str | None) -> str | None:
+        """`frob ticket priority <id> VALUE`: same inline-valid-values
+        treatment as `_check_ticket_state` (T-1271)."""
+        return _validate_enum_choice(v, Priority, "ticket priority")
+
+    @field_validator("ticket_origin")
+    @classmethod
+    def _check_ticket_origin(cls, v: str | None) -> str | None:
+        """`frob ticket new --origin VALUE`: same inline-valid-values
+        treatment as `_check_ticket_state` (T-1271)."""
+        return _validate_enum_choice(v, Origin, "ticket origin")
+
+    @field_validator("ticket_review_verdict")
+    @classmethod
+    def _check_ticket_review_verdict(cls, v: str | None) -> str | None:
+        """`frob ticket review <id> --verdict VALUE`: same inline-valid-
+        values treatment as `_check_ticket_state` (T-1271)."""
+        return _validate_enum_choice(v, ReviewVerdict, "ticket review verdict")
 
     @classmethod
     # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_missing_file_falls_back_to_defaults kind="unit"  # noqa: E501

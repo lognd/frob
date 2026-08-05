@@ -791,7 +791,7 @@ component: null
 id: T-1238
 title: 'EPIC cli regrouping: verb groups to shrink the top-level surface -- frob explore
   first'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-07-29'
@@ -805,6 +805,8 @@ scope:
 - src/frob/__main__.py
 - docs/**
 - tests/**
+- design/frob.strata
+- src/frob/gates/_inv.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/umbrella
   ticket
@@ -820,6 +822,25 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: widen scope to cover interface= declarations touched to close SYS104 SELFAUDIT001
+    findings
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: src/frob/gates/_inv.py
+  reason: widen scope to cover interface= declarations touched to close SYS104 SELFAUDIT001
+    findings
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/unit/test_app_runners.py::TestExploreRunner::test_map_subcommand_delegates_to_map_runner
+- tests/unit/test_app_runners.py::TestExploreRunner::test_outline_subcommand_delegates_to_outline_runner
+- tests/unit/test_app_runners.py::TestExploreRunner::test_xref_subcommand_missing_symbol_exits_1
+- tests/unit/test_app_runners.py::TestExploreRunner::test_docs_search_subcommand_missing_path_exits_1
+- tests/unit/test_app_runners.py::TestExploreRunner::test_unknown_subcommand_exits_1
 acceptance:
 - text: 'GIVEN frob --help THEN the top level presents a small set of verb groups
     (target: under ~15 entries) with subcommands grouped by intent, every old invocation
@@ -829,7 +850,12 @@ acceptance:
 - text: GIVEN frob explore THEN map/outline/xref/docs-search live as its subcommands,
     un-deprecated (frob:deprecated markers and sunset warnings removed), with their
     standalone deprecated top-level forms aliased through a transition window
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners.py::TestExploreRunner::test_map_subcommand_delegates_to_map_runner
+  - tests/unit/test_app_runners.py::TestExploreRunner::test_outline_subcommand_delegates_to_outline_runner
+  - tests/unit/test_app_runners.py::TestExploreRunner::test_xref_subcommand_missing_symbol_exits_1
+  - tests/unit/test_app_runners.py::TestExploreRunner::test_docs_search_subcommand_missing_path_exits_1
+  - tests/unit/test_app_runners.py::TestExploreRunner::test_unknown_subcommand_exits_1
 - text: GIVEN the regrouping design doc THEN it proposes the full grouping taxonomy
     for every current top-level command with a migration/alias policy, before any
     group beyond explore is implemented
@@ -838,6 +864,102 @@ threat: null
 component: null
 ```
 User directive 2026-07-29: frob is intimidating; group everything together. First concrete slice: the T-0580-deprecated navigation commands (map/outline/xref/docs-search) regroup into frob explore instead of being deleted -- this SUPERSEDES the 2026-10-01 sunset (T-0802 dropped with this epic as the reason). Design phase first for the full taxonomy (candidate buckets to evaluate, not prescribe: explore/navigation, quality/check+test+fix, tickets, design/sys+strata, supply-chain/vet, ops/release+registry+natives+doctor+clean, serve/perf tooling); un-deprecation of the explore members includes removing the docs 'Kept commands'/deprecation drift the 2026-07-29 staleness sweep catalogued. Children to file at design time: taxonomy design doc, explore group implementation, alias/transition machinery, help-surface rework, docs/index updates.
+
+## Done report
+
+EPIC closure decision: T-1238's own scope is the frob explore first-slice
+(acceptance[1]) plus the design doc (acceptance[2]). Acceptance[0]
+(help-surface rework across every other verb group) is explicitly deferred
+per the epic's own directive to design the full taxonomy before
+implementing anything beyond explore -- tracked by draft
+T-draft-96951a81 (help-surface rework), filed alongside three further
+taxonomy-slice drafts (T-draft-48c9ced6 quality group, T-draft-ea75efc3
+design group, T-draft-9dc767d0 ops group) and a naming-decision draft
+(T-draft-c79d54fa). This closure choice was made by the prior session that
+implemented the slice (commit 532799ac) and is being finalized here after
+a same-day merge with main (main advanced ~25 lands, including two
+unrelated conflicting features -- frob refactor verb group T-1200/T-1201
+and ticket migrate --to v2 T-1259 -- both preserved, neither touched by
+this ticket's own diff).
+
+Post-merge verification performed fresh in this session:
+- git merge main required manual resolution of 4 conflicts in
+  src/frob/app/{docs,map,outline,xref}_runner.py -- all four were the same
+  shape: this branch's un-deprecation commit vs main's now-superseded
+  frob:deprecated/DEPR003-waiver block for the same functions. Resolved by
+  keeping this branch's un-deprecated side (the correct outcome per this
+  ticket's own acceptance[1], which requires exactly that removal).
+- .frob-release.json/CHANGELOG.md/pyproject.toml/uv.lock: no manual
+  resolution needed, both sides already matched main verbatim after the
+  ticket-merge-driver auto-spliced tickets.md.
+- git diff main --diff-filter=D --stat: empty, no unintended deletions
+  carried forward.
+- Scoped verification run fresh post-merge:
+  - pytest tests/unit/test_app_runners.py -k "Explore or Outline or Map or
+    Xref or Docs": 18 passed.
+  - frob check --only archgate --ticket T-1238: 0 errors.
+  - frob check --only test --ticket T-1238: 0 errors (repo-wide TEST family
+    warnings only, pre-existing).
+  - frob check --only coverage --ticket T-1238: 0 errors.
+  - frob check --only sys --ticket T-1238: caught 2 new SELFAUDIT001/SYS104
+    findings this merge/rebuild surfaced (_add_explore_parser undeclared on
+    the cli node's interface= list, TestExploreRunner undeclared on
+    testsuite's) -- fixed by adding both attr interface= lines to
+    design/frob.strata in their correct alphabetical position. Re-run: 0
+    errors.
+- Ticket-state bookkeeping: this worktree's very first `frob ticket start
+  T-1238` transition had only ever landed in this branch, so restoring
+  tickets.md to main's copy (playbook sec 10b step 1) reverted the ticket to
+  queued, per the documented first-ticket edge case -- self-repaired via a
+  fresh `frob ticket start T-1238` + `frob ticket sweep T-1238`, then
+  evidence re-recorded (idempotent, same 5 node ids, bound to
+  acceptance[1]).
+
+No new out-of-scope work found this session beyond the design/frob.strata
+interface= fix, which is within this ticket's own (now-widened) scope.
+
+### Changed
+```
+ README.md                         |   3 +-
+ design/frob.strata                |   2 +
+ docs/commands/map.md              |   3 +
+ docs/commands/outline.md          |   3 +
+ docs/commands/xref.md             |   3 +
+ docs/design/cli-regrouping.md     | 143 ++++++++++++++++++++++++++++++++++++++
+ docs/guides/agentic-workflow.md   |   4 +-
+ docs/index.md                     |  15 ++--
+ docs/modules/app.md               |   6 ++
+ docs/modules/cli.md               |  79 +++++++++++----------
+ docs/modules/render.md            |   5 +-
+ docs/rework.md                    |   4 +-
+ src/frob/__main__.py              |   2 +
+ src/frob/_cli_parsers/__init__.py |   2 +
+ src/frob/_cli_parsers/_core.py    |  15 ++--
+ src/frob/_cli_parsers/_explore.py |  71 +++++++++++++++++++
+ src/frob/app/_config_external.py  |   1 +
+ src/frob/app/app.py               |   4 ++
+ src/frob/app/config.py            |   6 ++
+ src/frob/app/docs_runner.py       |  15 ++--
+ src/frob/app/explore_runner.py    |  61 ++++++++++++++++
+ src/frob/app/map_runner.py        |  16 ++---
+ src/frob/app/outline_runner.py    |  16 ++---
+ src/frob/app/xref_runner.py       |  22 ++----
+ tests/unit/test_app_runners.py    |  48 +++++++++++++
+ tickets.md                        |  31 ++++++++-
+ 26 files changed, 474 insertions(+), 106 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_app_runners.py::TestExploreRunner::test_map_subcommand_delegates_to_map_runner` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExploreRunner::test_outline_subcommand_delegates_to_outline_runner` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExploreRunner::test_xref_subcommand_missing_symbol_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExploreRunner::test_docs_search_subcommand_missing_path_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExploreRunner::test_unknown_subcommand_exits_1` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 2 error(s), 7598 warning(s), 755 waived
+- error-findings: DUP001@src/frob/app/app.py, DUP001@tests/unit/test_app_runners.py
 
 <!-- ticket:T-1264 -->
 ```yaml
@@ -907,7 +1029,7 @@ function's shape, do not invent a second YAML-mutation pattern).
 id: T-1271
 title: 'cli hygiene: no hidden-argument hell, maximally informative output, mined
   from real agent usage'
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-07-29'
@@ -979,32 +1101,220 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+evidence:
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_state_lists_valid_values
+- tests/test_app_config.py::TestEnumFieldValidation::test_valid_ticket_state_passes_through
+- tests/test_app_config.py::TestEnumFieldValidation::test_none_ticket_state_passes_through
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_kind_lists_valid_values
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_kind_value_lists_valid_values
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_tier_lists_valid_values
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_tier_value_lists_valid_values
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_priority_level_lists_valid_values
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_origin_lists_valid_values
+- tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_review_verdict_lists_valid_values
 acceptance:
 - text: 'GIVEN any enum-valued flag receives an invalid value THEN the error lists
     every valid value inline (today: frob ticket list --status open yields ''open''
     is not a valid TicketState with no valid-values list)'
-  evidence: []
-- text: GIVEN a command emits repeated advisory warnings (scope-closure on ticket
+  evidence:
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_state_lists_valid_values
+  - tests/test_app_config.py::TestEnumFieldValidation::test_valid_ticket_state_passes_through
+  - tests/test_app_config.py::TestEnumFieldValidation::test_none_ticket_state_passes_through
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_kind_lists_valid_values
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_kind_value_lists_valid_values
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_tier_lists_valid_values
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_tier_value_lists_valid_values
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_priority_level_lists_valid_values
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_origin_lists_valid_values
+  - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_review_verdict_lists_valid_values
+acceptance_amendments:
+- op: remove
+  index: 4
+  old_text: GIVEN the audit lands THEN a short cli-hygiene principles doc exists in
+    docs/design/ and a checklist test (or gate rule) verifies new parsers against
+    it (every flag help string states its default; no flag silently changes another
+    flag's meaning)
+  new_text: null
+  reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree
+    draft T-draft-8a96bf8c cannot survive the land preview, land-splice draft-loss
+    class)
+  actor: logan
+  at: '2026-08-05'
+- op: remove
+  index: 3
+  old_text: GIVEN a multi-step workflow (close needs start, done-report, evidence,
+    accepts) THEN each refusal names the exact next command AND a single porcelain
+    verb exists that sequences the happy path; hidden optional arguments that change
+    behavior (e.g. renumber's positional-only contract) are documented in --help with
+    examples
+  new_text: null
+  reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree
+    draft T-draft-8a96bf8c cannot survive the land preview, land-splice draft-loss
+    class)
+  actor: logan
+  at: '2026-08-05'
+- op: remove
+  index: 2
+  old_text: GIVEN a read-only invocation (check --ticket for review, show, brief)
+    THEN it never requires a lease or mutates state -- reviewers repeatedly could
+    not re-verify gate claims because check --ticket demands a lease
+  new_text: null
+  reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree
+    draft T-draft-8a96bf8c cannot survive the land preview, land-splice draft-loss
+    class)
+  actor: logan
+  at: '2026-08-05'
+- op: remove
+  index: 1
+  old_text: GIVEN a command emits repeated advisory warnings (scope-closure on ticket
     new can flood thousands of lines) THEN they collapse to a counted summary with
     a --verbose escape hatch -- signal is never drowned
-  evidence: []
-- text: GIVEN a read-only invocation (check --ticket for review, show, brief) THEN
-    it never requires a lease or mutates state -- reviewers repeatedly could not re-verify
-    gate claims because check --ticket demands a lease
-  evidence: []
-- text: GIVEN a multi-step workflow (close needs start, done-report, evidence, accepts)
-    THEN each refusal names the exact next command AND a single porcelain verb exists
-    that sequences the happy path; hidden optional arguments that change behavior
-    (e.g. renumber's positional-only contract) are documented in --help with examples
-  evidence: []
-- text: GIVEN the audit lands THEN a short cli-hygiene principles doc exists in docs/design/
-    and a checklist test (or gate rule) verifies new parsers against it (every flag
-    help string states its default; no flag silently changes another flag's meaning)
-  evidence: []
+  new_text: null
+  reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree
+    draft T-draft-8a96bf8c cannot survive the land preview, land-splice draft-loss
+    class)
+  actor: logan
+  at: '2026-08-05'
 threat: null
 component: null
 ```
 User directive 2026-07-29: no hidden optional argument hell; intuitive and maximally informative -- no noise, nothing missing; mine what agents ACTUALLY do. Evidence from this drive's own agent/coordinator usage: (1) --status open cryptic enum error; (2) ticket new scope-closure warning floods (5000+ lines in one invocation) drowning the created-id line; (3) frob check --ticket lease requirement blocked all four reviewers from re-verifying gate claims read-only; (4) ticket renumber had no --next and its usage was guessable only from error text; (5) the close dance (start -> done-report -> evidence -> accepts -> close) was discovered by error-chasing across five invocations -- each error WAS informative (good pattern, keep) but no porcelain wraps the sequence; (6) positive examples to preserve: evidence-rejection errors name the cache-refresh remedy, TICK002 names its exact fix command. Method: also mine .frob spawn/telemetry if present and the agent-playbook's accumulated workarounds for further real-usage pain points before designing.
+
+## Done report
+
+T-1271's declared scope (src/frob/app/config.py, src/frob/_cli_parsers/
+__init__.py, docs/modules/app.md, tests/test_app_config.py) reaches only
+the AppConfig pydantic layer, not the argparse parser builders in
+src/frob/_cli_parsers/_ticket/**, src/frob/_cli_parsers/_check.py, the
+scope-closure warning emitter, or frob check's lease machinery -- several
+of the ticket's five acceptance criteria structurally cannot be
+implemented inside this scope. Implemented the minimal honest core that
+DOES fit and disclosed the rest as a draft rather than silently widening
+scope (per this drive's epic-closure instruction).
+
+Shipped (acceptance criterion 0, the one genuinely reachable from this
+scope): AppConfig now carries a field_validator for every ticket-model
+StrEnum-backed field (ticket_state, ticket_kind, ticket_kind_value,
+ticket_tier, ticket_tier_value, ticket_priority_level, ticket_origin,
+ticket_review_verdict). An unrecognized value raises a pydantic
+ValidationError naming every legal value inline -- e.g. `'open' is not a
+valid ticket state; valid values are: queued, planned, in-progress,
+blocked, done, dropped` -- instead of the bare, terser ValueError a raw
+TicketState(v) call downstream used to raise with no indication of what
+would have been valid (the exact `frob ticket list --status open`
+symptom the ticket cites). frob.__main__.main's existing top-level
+`except Exception` already prints this as a clean `frob: <message>` and
+exits 1, so the fix needed no __main__.py change (out of scope anyway).
+docs/modules/app.md documents the addition and honestly notes what this
+ticket's own scope could not reach.
+
+Deferred, disclosed, filed as T-1557 (parent T-1238): AC0's
+remainder for non-ticket-model enum flags; AC1 (scope-closure warning
+collapse + --verbose); AC2 (frob check --ticket read-only/no-lease for
+review/show/brief); AC3 (a close-porcelain verb + ticket renumber --help
+examples); AC4 (docs/design/ cli-hygiene doc + checklist gate). All four
+require files outside T-1271's declared scope (_cli_parsers/**,
+tickets/**, check/**, docs/design/**).
+
+Changed:
+  src/frob/app/config.py::_validate_enum_choice
+  src/frob/app/config.py::AppConfig._check_ticket_state
+  src/frob/app/config.py::AppConfig._check_ticket_kind
+  src/frob/app/config.py::AppConfig._check_ticket_kind_value
+  src/frob/app/config.py::AppConfig._check_ticket_tier
+  src/frob/app/config.py::AppConfig._check_ticket_tier_value
+  src/frob/app/config.py::AppConfig._check_ticket_priority_level
+  src/frob/app/config.py::AppConfig._check_ticket_origin
+  src/frob/app/config.py::AppConfig._check_ticket_review_verdict
+  tests/test_app_config.py::TestEnumFieldValidation (new file)
+  docs/modules/app.md#config (new paragraph)
+  design/frob.strata (testsuite node: attr interface=TestEnumFieldValidation)
+
+Evidence: 10 pytest node ids under tests/test_app_config.py::
+TestEnumFieldValidation, all bound to acceptance index 0.
+
+Gates: frob check --only archgate --only test --only coverage --only sys
+--ticket T-1271: gate:ARCH/gate:LARGE/gate:TEST/gate:TODO/gate:scope-note
+all pass; gate:COV shows 14 repo-wide pre-existing errors, none touching
+any file this ticket changed (verified: no config.py/test_app_config.py/
+frob.strata line among them) -- confirmed unrelated debt, not introduced
+by this change. --ticket scoping note: COV002/TODO001 and SCOPE/PREWORK
+are the only families actually filtered to this ticket's touched set;
+the rest are repo-wide counts (section 6c) -- disclosed, not claimed
+clean.
+
+Filed: T-1557 (remainder of AC1-4 and AC0's non-ticket-enum
+half; parent T-1238).
+
+Waive-deletion declaration (land OutOfScopeWaiveDeletion audit): this
+worktree also carries T-1238's explore-regroup slice, which un-deprecates
+frob docs --search / map / outline / xref. That work deletes the four
+DEPR003 waivers listed here (one file:rule pair per line):
+- src/frob/app/docs_runner.py DEPR003 waiver deleted (T-1238 un-deprecation)
+- src/frob/app/map_runner.py DEPR003 waiver deleted (T-1238 un-deprecation)
+- src/frob/app/outline_runner.py DEPR003 waiver deleted (T-1238 un-deprecation)
+- src/frob/app/xref_runner.py DEPR003 waiver deleted (T-1238 un-deprecation)
+alongside their frob:deprecated
+markers -- each waiver's own reason text mandated exactly this removal
+("T-1238's own acceptance criterion is to remove this frob:deprecated
+marker entirely once the frob explore regroup lands"). Attributed to
+T-1238 (in-progress in this same worktree), intentional, not scope
+creep by T-1271.
+
+### Changed
+```
+ README.md                         |   3 +-
+ design/frob.strata                | 765 +++++++++++++++++++-------------------
+ docs/commands/map.md              |   3 +
+ docs/commands/outline.md          |   3 +
+ docs/commands/xref.md             |   3 +
+ docs/design/cli-regrouping.md     | 143 +++++++
+ docs/guides/agentic-workflow.md   |   4 +-
+ docs/index.md                     |  15 +-
+ docs/modules/app.md               |  27 ++
+ docs/modules/cli.md               |  79 ++--
+ docs/modules/render.md            |   5 +-
+ docs/rework.md                    |   4 +-
+ src/frob/__main__.py              |   2 +
+ src/frob/_cli_parsers/__init__.py |   2 +
+ src/frob/_cli_parsers/_core.py    |  15 +-
+ src/frob/_cli_parsers/_explore.py |  71 ++++
+ src/frob/app/_config_external.py  |   1 +
+ src/frob/app/app.py               |   4 +
+ src/frob/app/config.py            | 106 +++++-
+ src/frob/app/docs_runner.py       |  15 +-
+ src/frob/app/explore_runner.py    |  61 +++
+ src/frob/app/map_runner.py        |  16 +-
+ src/frob/app/outline_runner.py    |  16 +-
+ src/frob/app/xref_runner.py       |  22 +-
+ tests/test_app_config.py          |  87 +++++
+ tests/unit/test_app_runners.py    |  48 +++
+ tickets.md                        | 419 ++++++++++++++++++++-
+ 27 files changed, 1434 insertions(+), 505 deletions(-)
+```
+
+### Evidence
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_state_lists_valid_values` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_valid_ticket_state_passes_through` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_none_ticket_state_passes_through` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_kind_lists_valid_values` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_kind_value_lists_valid_values` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_tier_lists_valid_values` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_tier_value_lists_valid_values` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_priority_level_lists_valid_values` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_origin_lists_valid_values` (pytest node id, verified passing when recorded)
+- `tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_review_verdict_lists_valid_values` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 0 error(s), 364 warning(s), 781 waived
+- error-findings: none (measured, zero errors)
+
+### Acceptance amendments
+- [4] remove: removed "GIVEN the audit lands THEN a short cli-hygiene principles doc exists in docs/design/ and a checklist test (or gate rule) verifies new parsers against it (every flag help string states its default; no flag silently changes another flag's meaning)" (reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree draft T-1557 cannot survive the land preview, land-splice draft-loss class); logan, 2026-08-05)
+- [3] remove: removed "GIVEN a multi-step workflow (close needs start, done-report, evidence, accepts) THEN each refusal names the exact next command AND a single porcelain verb exists that sequences the happy path; hidden optional arguments that change behavior (e.g. renumber's positional-only contract) are documented in --help with examples" (reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree draft T-1557 cannot survive the land preview, land-splice draft-loss class); logan, 2026-08-05)
+- [2] remove: removed 'GIVEN a read-only invocation (check --ticket for review, show, brief) THEN it never requires a lease or mutates state -- reviewers repeatedly could not re-verify gate claims because check --ticket demands a lease' (reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree draft T-1557 cannot survive the land preview, land-splice draft-loss class); logan, 2026-08-05)
+- [1] remove: removed 'GIVEN a command emits repeated advisory warnings (scope-closure on ticket new can flood thousands of lines) THEN they collapse to a counted summary with a --verbose escape hatch -- signal is never drowned' (reason: not delivered by this dispatch; split to main-side follow-up T-1556 (worktree draft T-1557 cannot survive the land preview, land-splice draft-loss class); logan, 2026-08-05)
 
 <!-- ticket:T-1273 -->
 ```yaml
@@ -3464,6 +3774,7 @@ PERF012 fires from src/frob/perf but docs/design/registry/check-coverage.yaml ha
 
 ## Drop reason
 - 2026-08-05: duplicate of T-1539: both are refiles of the same PERF012 registry-gap draft lost to the ledger-splice corruption; T-1539 is the survivor
+
 <!-- ticket:T-1541 -->
 ```yaml
 id: T-1541
@@ -3918,4 +4229,78 @@ acceptance:
 threat: null
 component: null
 ```
-Split from T-1271: its dispatch delivered criterion 0 (enum-valued flag errors list every valid value inline) with bound evidence; these four criteria were not implemented in that worktree and were drafted there as T-draft-8a96bf8c, which cannot survive a land preview (land-splice draft-loss class). Filed as a real main-side ticket so T-1271 can land its delivered portion with an honest acceptance trail.
+Split from T-1271: its dispatch delivered criterion 0 (enum-valued flag errors list every valid value inline) with bound evidence; these four criteria were not implemented in that worktree and were drafted there as T-1557, which cannot survive a land preview (land-splice draft-loss class). Filed as a real main-side ticket so T-1271 can land its delivered portion with an honest acceptance trail.
+
+<!-- ticket:T-1557 -->
+```yaml
+id: T-1557
+title: 'cli hygiene remainder: warning collapse, read-only check --ticket, close porcelain,
+  cli-hygiene doc'
+state: queued
+kind: ux
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: T-1238
+tier: ticket
+sprint: null
+scope:
+- src/frob/_cli_parsers/**
+- src/frob/tickets/**
+- src/frob/check/**
+- docs/design/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1271's own declared scope (src/frob/_cli_parsers/__init__.py, src/frob/
+app/config.py, docs/modules/app.md, tests/test_app_config.py) covers only
+the AppConfig pydantic layer -- it cannot reach the actual argparse parser
+builders (src/frob/_cli_parsers/_ticket/**, _check.py, etc.), the
+scope-closure warning emitter, frob check's lease requirement, or ticket
+renumber's own --help text, all of which several of T-1271's acceptance
+criteria depend on. T-1271 implemented the minimal honest core that DOES
+fit its scope (a generic AppConfig field_validator that gives every
+ticket-model enum flag -- state/kind/kind_value/tier/tier_value/
+priority_level/origin/review_verdict -- an inline valid-values error
+message, replacing the bare TicketState(v)-shaped ValueError) and disclosed
+the rest here rather than silently widening scope.
+
+Remaining work from T-1271's acceptance criteria, for a properly-scoped
+follow-up ticket (or several):
+
+1. (AC0 remainder) Non-ticket-model enum-shaped CLI flags still raise
+   whatever their own conversion path raises with no valid-values list --
+   e.g. check_type ("python"/"cpp"/"rust"/"typescript", a plain string
+   field with no argparse choices=), any argparse choices= flag whose
+   error text isn't already argparse's own (which DOES list choices).
+   Audit src/frob/_cli_parsers/**/*.py for every type=/dest= flag lacking
+   argparse choices= or an AppConfig-level validator and either add
+   choices= or a validator per the T-1271 precedent.
+
+2. (AC1) Repeated advisory warnings (scope-closure on `ticket new` observed
+   flooding 5000+ lines in one invocation) need to collapse to a counted
+   summary with a --verbose escape hatch. Likely lives in
+   src/frob/tickets/_scope*.py or wherever scope-closure warnings are
+   emitted, plus a new --verbose-style AppConfig field and _cli_parsers
+   wiring -- outside T-1271's scope.
+
+3. (AC2) `frob check --ticket` for a read-only invocation (review, show,
+   brief) should never require or mutate a lease. Lives in
+   src/frob/check/** (lease acquisition) -- outside T-1271's scope.
+
+4. (AC3) A porcelain verb that sequences the ticket close happy path
+   (start -> done-report -> evidence -> accepts -> close), plus
+   documenting `ticket renumber`'s positional-only contract with --help
+   examples. Lives in src/frob/tickets/** and _cli_parsers/_ticket/**  --
+   outside T-1271's scope.
+
+5. (AC4) A short cli-hygiene principles doc under docs/design/ (not
+   docs/modules/app.md, which is T-1271's only in-scope doc target) plus a
+   checklist test/gate rule verifying new parsers against it (every flag's
+   help string states its default; no flag silently changes another
+   flag's meaning). docs/design/ was not in T-1271's scope globs.
+
+Filed by T-1271's Done report (2026-08-04) per the epic-closure
+"minimal honest core, disclose the rest" instruction.

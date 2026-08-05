@@ -51,7 +51,7 @@ concerned.
 <!-- frob:describes src/frob/_cli_parsers/_core.py::_add_map_parser -->
 <!-- frob:describes src/frob/_cli_parsers/_ticket/_query.py::_add_ticket_query_parsers -->
 ```bash
-frob map src/
+frob map src/                     # also `frob explore map src/` (T-1238)
 frob ticket list                 # don't replan what's already queued
 ```
 
@@ -111,7 +111,7 @@ for the full six-point checklist. The reviewer never fixes and never calls
 <!-- frob:describes src/frob/_cli_parsers/_core.py::_add_map_parser -->
 <!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->
 ```bash
-frob map src/                     # enumerate package boundaries
+frob map src/                     # enumerate package boundaries; also `frob explore map src/` (T-1238)
 frob check --only test             # TEST003 already flags known interfaces
 ```
 

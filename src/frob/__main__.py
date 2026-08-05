@@ -21,6 +21,7 @@ from frob._cli_parsers import (
     _add_docs_parser,
     _add_doctor_parser,
     _add_dup_parser,
+    _add_explore_parser,
     _add_exports_parser,
     _add_fleet_parser,
     _add_fmt_parser,
@@ -200,6 +201,7 @@ def _add_analysis_subparsers(sub) -> None:
     """Register the code-analysis subcommand group: scaffold through bind."""
     _add_scaffold_parser(sub)
     _add_cycle_parser(sub)
+    _add_explore_parser(sub)
     _add_outline_parser(sub)
     _add_map_parser(sub)
     _add_xref_parser(sub)

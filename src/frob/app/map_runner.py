@@ -13,23 +13,15 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-0448
+# frob:ticket T-1238
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/modules/render.md#exemplar-frob-map
-# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-1238" reason="sunset rescinded 2026-07-29: regroups under frob explore instead of removal"  # noqa: E501
-# frob:waive DEPR003 reason="sunset genuinely rescinded (T-1238 supersedes the \
-# 2026-10-01 date); T-1238's own acceptance criterion is to remove this \
-# frob:deprecated marker entirely once the frob explore regroup lands -- DEPR003 stays \
-# accepted debt until that epic closes, not a live migration deadline"
 def run(cfg: AppConfig) -> None:
     """Render the `frob map` project structure summary; T-0448: migrated
     to `frob.render.Renderer` as the second FOUNDATION exemplar -- `--json`
-    stays a bare structured print, unchanged. T-0580: DEPRECATED, sunset
-    2026-10-01 -- navigation is owned by Serena/native tools in agentic
-    use; zero organic invocation observed."""
-    _log.warning(
-        "frob map is deprecated, sunset 2026-10-01, use Serena/native "
-        "navigation; see T-0580"
-    )
+    stays a bare structured print, unchanged. T-1238: un-deprecated --
+    regrouped under `frob explore map` (`explore_runner.run`), this
+    top-level form stays as a permanent alias, not a sunsetting shim."""
     root = cfg.map_path or Path(".")
     ctx = quiet_stdout_logs() if cfg.map_json else contextlib.nullcontext()
     with ctx:

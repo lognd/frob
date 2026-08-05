@@ -13,6 +13,7 @@ import pytest
 
 from frob.app.arch_runner import run as arch_run
 from frob.app.config import AppConfig
+from frob.app.explore_runner import run as explore_run
 from frob.app.exports_runner import run as exports_run
 from frob.app.gitlog_runner import run as gitlog_run
 from frob.app.map_runner import run as map_run
@@ -59,6 +60,53 @@ class TestMapRunner:
         with caplog.at_level("INFO"):
             map_run(cfg)
         assert caplog.records
+
+
+# frob:ticket T-1238
+class TestExploreRunner:
+    """`frob explore <map|outline|xref|docs-search>`: T-1238's verb-group
+    front door delegates straight into the standalone runners."""
+
+    def test_map_subcommand_delegates_to_map_runner(self, tmp_path, caplog):
+        """`explore_command="map"` produces the same output as `frob map`."""
+        _make_py_project(tmp_path)
+        cfg = AppConfig(explore_command="map", map_path=tmp_path, map_json=True)
+        with caplog.at_level("INFO"):
+            explore_run(cfg)
+        assert any("{" in r.message for r in caplog.records)
+
+    def test_outline_subcommand_delegates_to_outline_runner(self, tmp_path, caplog):
+        """`explore_command="outline"` produces the same output as `frob
+        outline`."""
+        _make_py_project(tmp_path)
+        target = tmp_path / "pkg" / "mod.py"
+        cfg = AppConfig(explore_command="outline", outline_file=target)
+        with caplog.at_level("INFO"):
+            explore_run(cfg)
+        assert any("hello" in r.message for r in caplog.records)
+
+    def test_xref_subcommand_missing_symbol_exits_1(self, caplog):
+        """`explore_command="xref"` with no symbol still errors like the
+        standalone `frob xref`."""
+        cfg = AppConfig(explore_command="xref", xref_symbol=None)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            explore_run(cfg)
+        assert exc.value.code == 1
+
+    def test_docs_search_subcommand_missing_path_exits_1(self, caplog):
+        """`explore_command="docs-search"` with no path errors cleanly."""
+        cfg = AppConfig(explore_command="docs-search", docs_path=None)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            explore_run(cfg)
+        assert exc.value.code == 1
+
+    def test_unknown_subcommand_exits_1(self, caplog):
+        """No `explore_command` at all (bare `frob explore`) errors cleanly
+        instead of silently no-op'ing."""
+        cfg = AppConfig(explore_command=None)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            explore_run(cfg)
+        assert exc.value.code == 1
 
 
 # frob:ticket T-0563

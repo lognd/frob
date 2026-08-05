@@ -12,25 +12,15 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-1238" reason="sunset rescinded 2026-07-29: regroups under frob explore instead of removal"  # noqa: E501
-# frob:waive DEPR003 reason="sunset genuinely rescinded (T-1238 supersedes the \
-# 2026-10-01 date); T-1238's own acceptance criterion is to remove this \
-# frob:deprecated marker entirely once the frob explore regroup lands -- DEPR003 stays \
-# accepted debt until that epic closes, not a live migration deadline"
 # frob:ticket T-0588
+# frob:ticket T-1238
 # frob:tests tests/unit/test_app_runners.py::TestXrefRunner.test_found_symbol_json_mode
 def run(cfg: AppConfig) -> None:
-    """T-0580: DEPRECATED, sunset 2026-10-01 -- navigation is owned by
-    Serena/native tools in agentic use; zero organic invocation observed.
-    T-0858 reevaluated the sunset and kept it: the "who imports this
-    symbol" question the standalone command answers is recurring and
-    gate-driven, but it now lives in `frob.exports.exports_consumers`
-    instead of this porcelain."""
-    _log.warning(
-        "frob xref is deprecated, sunset 2026-10-01, use Serena/native "
-        "navigation or frob.exports.exports_consumers for import-consumer "
-        "lookups; see T-0580/T-0858"
-    )
+    """`frob xref`: find where a symbol is defined and every file that uses
+    it. T-1238: un-deprecated -- regrouped under `frob explore xref`
+    (`explore_runner.run`), this top-level form stays as a permanent alias.
+    `frob.exports.exports_consumers` remains the narrower "just import
+    consumers" answer to the same underlying question (T-0858)."""
     if cfg.xref_symbol is None:
         _log.error("frob xref requires <symbol>")
         sys.exit(1)

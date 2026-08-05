@@ -25,20 +25,14 @@ def _fall_back_to_map(cfg: AppConfig, target) -> None:  # noqa: ANN001
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-1238" reason="sunset rescinded 2026-07-29: regroups under frob explore instead of removal"  # noqa: E501
-# frob:waive DEPR003 reason="sunset genuinely rescinded (T-1238 supersedes the \
-# 2026-10-01 date); T-1238's own acceptance criterion is to remove this \
-# frob:deprecated marker entirely once the frob explore regroup lands -- DEPR003 stays \
-# accepted debt until that epic closes, not a live migration deadline"
 # frob:ticket T-0588
+# frob:ticket T-1238
 # frob:tests tests/unit/test_app_runners.py::TestOutlineRunner.test_file_target_json_mode  # noqa: E501
 def run(cfg: AppConfig) -> None:
-    """T-0580: DEPRECATED, sunset 2026-10-01 -- navigation is owned by
-    Serena/native tools in agentic use; zero organic invocation observed."""
-    _log.warning(
-        "frob outline is deprecated, sunset 2026-10-01, use Serena/native "
-        "navigation; see T-0580"
-    )
+    """`frob outline`: show a file's structural skeleton (classes,
+    functions, line numbers). T-1238: un-deprecated -- regrouped under
+    `frob explore outline` (`explore_runner.run`), this top-level form
+    stays as a permanent alias, not a sunsetting shim."""
     if cfg.outline_file is None:
         _log.error("frob outline requires <file>")
         sys.exit(1)

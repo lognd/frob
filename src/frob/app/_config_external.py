@@ -33,6 +33,7 @@ from pathlib import Path
 # frob:ticket T-1150
 _STRING_FIELDS = (
     "color",
+    "explore_command",
     "scaffold_command",
     "scaffold_type",
     "scaffold_name",

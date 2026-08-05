@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-36 total commands, statically bound to the live subcommand registry
+37 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -79,6 +79,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 | Command | Description |
 |---------|-------------|
+| `frob explore` | Navigation verb group: `map`/`outline`/`xref`/`docs-search` (T-1238); each also stays available as its own standalone command below |
 | `frob map` | Recursive directory tree with file sizes and line counts |
 | `frob outline` | Structural skeleton of a file: classes, functions, signatures, line numbers |
 | `frob xref` | Find where a symbol is defined and every file that references it |

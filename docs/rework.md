@@ -78,7 +78,9 @@ Kept (still earn their place; re-platform onto `frob.lang` opportunistically,
 never as a blocker): `scaffold`, `map`, `outline`, `xref`, `parse`, `dup`,
 `cycle`, `arch`, `bind`, `exports`, `docs`, `gitlog`, `check`. (Historical
 snapshot: `map`/`outline`/`xref` were later deprecated, sunset 2026-10-01,
-T-0580/T-0802 -- see docs/modules/cli.md.)
+T-0580/T-0802; T-1238 (2026-08) rescinded that sunset and regrouped all
+three, plus `frob docs --search`, under `frob explore` instead -- see
+docs/design/cli-regrouping.md and docs/modules/cli.md.)
 
 New commands: `frob graph`, `frob ack`, `frob ticket`, `frob test`
 (touched-set cross-language test execution; see docs/modules/testing.md). Deferred

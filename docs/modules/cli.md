@@ -6,42 +6,49 @@ maintenance tax. Full per-runner docs stay in docs/modules/app.md#runners
 and each command's own docs/commands/*.md page; this page is the tier
 ledger, not a duplicate of flag semantics.
 
-## Navigation commands -- DEPRECATED (T-0580 decision, T-0802 tracking ticket)
+## Navigation commands -- regrouped under `frob explore` (T-1238, supersedes T-0580/T-0802)
 
-`frob map`, `frob outline`, `frob xref`, and `frob docs --search` are
-deprecated as of 2026-07-23, sunset 2026-10-01 (`frob:deprecated` on each
-runner's `run`/`_run_search`, bound to T-0802 -- the CLI's own `--help`
-text still cites T-0580, the original decision ticket, a citation
-mismatch not yet reconciled in code). Rationale: across 1035 CLI
-events in this session, map/outline/xref invocations were virtually all
-their own test suites (pytest tmp paths) -- zero organic use by the
-coordinator or the ~30 agents working this repo. Navigation is owned by
-Serena and native editor tools in agentic use, not by frob's own CLI.
+`frob map`, `frob outline`, `frob xref`, and `frob docs --search` were
+deprecated 2026-07-23 (T-0580 decision, T-0802 tracking ticket) on the
+theory that navigation is owned by Serena/native editor tools in agentic
+use, not frob's own CLI. The 2026-07-29 user directive rescinded that
+sunset: `frob` is intimidating with a flat ~35-entry top-level surface,
+and the fix is grouping related verbs together, not deleting the ones
+telemetry showed low top-level use for. T-1238 is the CLI regrouping
+epic this section now tracks; `docs/design/cli-regrouping.md` is its
+taxonomy design doc.
 
-Each deprecated command keeps working, unchanged, until its sunset date;
-every invocation now logs a WARNING naming the sunset date and pointing at
-Serena/native navigation and T-0580. `frob check`'s DEPR003/DEPR004 gates
-track the sunset window and escalate to an error once it passes
-(docs/modules/gates.md).
+All four navigation members now also live as `frob explore` subcommands
+(`frob explore map`/`outline`/`xref`/`docs-search`) -- un-deprecated, no
+`frob:deprecated` directive, no sunset warning. Their standalone
+top-level forms (`frob map`, `frob outline`, `frob xref`, `frob docs
+--search`) are kept as PERMANENT aliases onto the identical runner code,
+not a time-boxed transition shim -- every old invocation keeps working
+unchanged, indefinitely.
 
-- `frob map` -- src/frob/app/map_runner.py (docs/commands/map.md)
-- `frob outline` -- src/frob/app/outline_runner.py (docs/commands/outline.md)
-- `frob xref` -- src/frob/app/xref_runner.py (docs/commands/xref.md)
-- `frob docs --search` -- src/frob/app/docs_runner.py's `_run_search`;
-  the bare `frob docs <path>` extract path and `--overview` stay as they
-  are -- this decision covers `--search` specifically
+- `frob map` / `frob explore map` -- src/frob/app/map_runner.py (docs/commands/map.md)
+- `frob outline` / `frob explore outline` -- src/frob/app/outline_runner.py (docs/commands/outline.md)
+- `frob xref` / `frob explore xref` -- src/frob/app/xref_runner.py (docs/commands/xref.md)
+- `frob docs --search` / `frob explore docs-search` -- src/frob/app/docs_runner.py's
+  `_run_search`, reused directly by `frob.app.explore_runner._run_docs_search`;
+  the bare `frob docs <path>` extract path and `--overview` are unaffected
+  by this regrouping -- `frob explore` covers `--search` specifically
 
 ## Exports-consumers surface (T-0858)
 
 2026-07-23 reevaluation of the navigation-command sunset above, before
-T-0802 executes it: telemetry backs deprecating the standalone `frob xref`
-porcelain (zero organic invocation), but the underlying question it
+T-0802 executed it: telemetry backed deprecating the standalone `frob
+xref` porcelain (zero organic invocation), but the underlying question it
 answers -- "who imports this symbol" -- is recurring, gate-driven work
 (T-0600/T-0601/T-0588 all leaned on it), and grep/ad-hoc search answers it
 wrong in both directions (misses real references, false-positives on
-comment/prose mentions). Decision: keep `frob xref` deprecated per its
-existing sunset, and fold the surviving capability into the `exports`
-library surface instead of deleting it with the porcelain.
+comment/prose mentions). Decision at the time: keep `frob xref`
+deprecated per its existing sunset, and fold the surviving capability
+into the `exports` library surface instead of deleting it with the
+porcelain. T-1238 (2026-08) superseded that sunset -- `frob xref` is
+un-deprecated and regrouped under `frob explore xref` (previous section)
+-- but `exports_consumers` remains the narrower, gate-driven answer for
+"import consumers only" and is unaffected by this reversal.
 
 <!-- frob:describes src/frob/exports/__init__.py::ConsumerRef -->
 <!-- frob:describes src/frob/exports/__init__.py::ConsumersResult -->
@@ -174,15 +181,16 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob docs` | extract docstrings or search docs/ for a file/symbol |
 | `frob doctor` | verify native extensions (frob_core, strata_core) are installed |
 | `frob dup` | detect duplicate/clone code segments (Type 1 exact, Type 2 renamed) |
+| `frob explore` | navigation: map/outline/xref/docs-search grouped under one verb (T-1238) |
 | `frob exports` | generate __init__.py from public symbols in a package directory |
 | `frob fleet` | cross-repo status, gate rollup, and ticket routing over a fleet.toml manifest of sibling repos (T-0573) |
 | `frob fmt` | canonicalize frob: directive comment line-wrapping (T-0441) |
 | `frob gitlog` | summarize git history by type/granularity (conventional commits) |
 | `frob graph` | obligation graph: build cache, query symbols, explain drift |
-| `frob map` | [DEPRECATED, sunset 2026-10-01, see T-0580] show whole-project structural map (symbols + line counts) |
+| `frob map` | show whole-project structural map (symbols + line counts) -- also available as `frob explore map` (T-1238) |
 | `frob mutate` | mutation testing: perturb a file, see which mutants survive |
 | `frob natives` | build declared [[native]] crates (T-0864: frob-owned maturin develop, shared CARGO_TARGET_DIR) |
-| `frob outline` | [DEPRECATED, sunset 2026-10-01, see T-0580] show structural skeleton of a file (classes, functions, line numbers) |
+| `frob outline` | show structural skeleton of a file (classes, functions, line numbers) -- also available as `frob explore outline` (T-1238) |
 | `frob parse` | parse tool output (pytest/ruff/ty/clang/junit) into compact summary |
 | `frob perf` | profile a command/test suite and inspect its heat-map |
 | `frob pool` | ratchet-pool baseline management (T-0569): warn-rule findings frozen as a tracked baseline, new findings error |
@@ -196,9 +204,10 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob ticket` | the statically-checkable ticket queue |
 | `frob vet` | dependency-vetting: lockfile allow conformance, quarantine, typosquat, lifecycle scripts, osv advisories |
 | `frob worktree` | manage dispatched-agent git worktrees (T-0836) |
-| `frob xref` | [DEPRECATED, sunset 2026-10-01, see T-0580] find where a symbol is defined and every file that uses it |
+| `frob xref` | find where a symbol is defined and every file that uses it -- also available as `frob explore xref` (T-1238) |
 
 <!-- frob:generated-end cli-commands T-1011 -->
-All four (`map_runner.py`, `outline_runner.py`, `xref_runner.py`,
-`docs_runner.py`) carry a `frob:deprecated 2026-07-23 sunset="2026-10-01"
-ticket="T-0802"` directive.
+None of the four (`map_runner.py`, `outline_runner.py`, `xref_runner.py`,
+`docs_runner.py`) carry a `frob:deprecated` directive any more -- T-1238
+removed it from all four when they regrouped under `frob explore`
+(section above).

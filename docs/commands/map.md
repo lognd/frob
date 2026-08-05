@@ -1,5 +1,8 @@
 # frob map
 
+Also available as `frob explore map` (T-1238) -- identical behavior, same
+underlying runner.
+
 Emit a whole-project structural map: every file, its line count, and its
 top-level symbols. Fits an entire medium-sized codebase in ~200 tokens.
 

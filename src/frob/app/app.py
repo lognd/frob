@@ -21,6 +21,7 @@ _RUNNER_MODULE_NAMES = (
     "doctor_runner",
     "docs_runner",
     "dup_runner",
+    "explore_runner",
     "exports_runner",
     "fleet_runner",
     "fmt_runner",
@@ -59,6 +60,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.xref: "xref_runner",
     Subcommand.parse: "parse_runner",
     Subcommand.dup: "dup_runner",
+    Subcommand.explore: "explore_runner",
     Subcommand.arch: "arch_runner",
     Subcommand.docs: "docs_runner",
     Subcommand.exports: "exports_runner",
@@ -131,6 +133,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.docs_runner as module
     elif name == "dup_runner":
         import frob.app.dup_runner as module
+    elif name == "explore_runner":
+        import frob.app.explore_runner as module
     elif name == "exports_runner":
         import frob.app.exports_runner as module
     elif name == "fleet_runner":

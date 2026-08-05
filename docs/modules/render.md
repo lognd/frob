@@ -165,4 +165,7 @@ disclosed here and in the T-0448 Done report.
 through `Renderer` in the human channel while its `--json` branch is
 untouched. The golden tests assert that `frob map`'s color-forced and
 plain-forced outputs share the same ANSI-stripped shape -- proving color only
-paints and never restructures the plain form.
+paints and never restructures the plain form. T-1238 regrouped `frob map`
+under `frob explore map` too (`explore_runner.run` dispatches straight into
+this same `map_runner.run`) -- the `Renderer` wiring described here is
+unaffected either way.

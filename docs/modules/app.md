@@ -103,6 +103,27 @@ AppConfig.from_args(args: argparse.Namespace) -> AppConfig
     # `main()` actually calls.
 ```
 
+T-1271: every `AppConfig` field that carries a ticket-model `StrEnum` value
+(`ticket_state`, `ticket_kind`, `ticket_kind_value`, `ticket_tier`,
+`ticket_tier_value`, `ticket_priority_level`, `ticket_origin`,
+`ticket_review_verdict`) has a `field_validator` that rejects an
+unrecognized value with EVERY legal value named inline -- e.g. `'open' is
+not a valid ticket state; valid values are: queued, planned, in-progress,
+blocked, done, dropped` -- instead of letting a bare `TicketState(v)` call
+downstream raise its own terser `ValueError` with no indication of what
+would have been valid. This was mined from real agent usage: `frob ticket
+list --status open` used to surface exactly that terser message with
+nothing to correct it from. `None` always passes through unchanged (these
+are all optional filters/inputs); an already-legal value is returned as-is.
+The CLI's top-level `except Exception` in `frob.__main__.main` prints the
+resulting `pydantic.ValidationError` as `frob: <message>` and exits 1 --
+still one command's worth of noise, not a raw traceback, but see the
+`--verbose`/warning-collapse and porcelain-verb halves of T-1271's
+acceptance criteria (mining a broader "hidden-argument hell" sweep) for
+what this ticket's own narrow scope (`app/config.py` plus this doc; not
+`_cli_parsers/**`) could NOT reach -- tracked separately, see this
+section's cli-hygiene draft-ticket note in `tickets.md`.
+
 T-0628: `graph_max_depth`/`graph_max_nodes` (both `int | None`, default
 `None`) are `frob graph affects`'s optional `--max-depth`/`--max-nodes`
 overrides for `frob.graph.affects.affects`'s own bounds -- collected via
@@ -170,6 +191,7 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 <!-- frob:describes src/frob/app/arch_runner.py::run -->
 <!-- frob:describes src/frob/app/perf_runner.py::run -->
 <!-- frob:describes src/frob/app/dup_runner.py::run -->
+<!-- frob:describes src/frob/app/explore_runner.py::run -->
 <!-- frob:describes src/frob/app/xref_runner.py::run -->
 <!-- frob:describes src/frob/app/parse_runner.py::run -->
 <!-- frob:describes src/frob/app/scaffold_runner.py::run -->
@@ -211,6 +233,11 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   classes) over `cfg.arch_path`.
 - `perf_runner.run` -- dispatches `frob perf profile|heat` (docs/modules/perf.md).
 - `dup_runner.run` -- runs `frob.dup.find_duplicates` over `cfg.dup_path`.
+- `explore_runner.run` -- dispatches `frob explore <map|outline|xref|
+  docs-search>` (T-1238, `cfg.explore_command`) straight into
+  `map_runner`/`outline_runner`/`xref_runner`/`docs_runner._run_search`,
+  the same code the standalone top-level commands run
+  (docs/design/cli-regrouping.md, docs/modules/cli.md).
 - `xref_runner.run` -- runs `frob.xref.xref` for `cfg.xref_symbol`
   (docs/commands/xref.md).
 - `parse_runner.run` -- reads a tool's raw output (pytest/ruff/ty/clang/...)

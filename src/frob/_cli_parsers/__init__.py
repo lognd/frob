@@ -35,6 +35,7 @@ from ._core import (
     _add_worktree_parser,
     _add_xref_parser,
 )
+from ._explore import _add_explore_parser
 from ._misc import (
     _add_clean_parser,
     _add_deploy_audit_parser,
@@ -123,6 +124,7 @@ __all__ = [
     "_add_doctor_parser",
     "_add_dup_parser",
     "_add_dup_probe_argument",
+    "_add_explore_parser",
     "_add_exports_parser",
     "_add_fleet_parser",
     "_add_fmt_parser",
