@@ -3067,7 +3067,7 @@ grammar-generation delta documentation).
 id: T-1488
 title: 'tests: promote _make_design_worktree to shared conftest helper if a second
   module needs it'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-03'
@@ -3079,6 +3079,8 @@ scope:
 - tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
 threat: null
 component: null
 ```
@@ -3089,11 +3091,39 @@ caller outside its own file's tests today (WIRE001), waived with this
 follow-up. Promote to a shared conftest helper if a second test module
 needs an identical design-phase worktree fixture.
 
+## Done report
+
+Checked for a second consumer of tests/test_ticket_land.py's
+_make_design_worktree helper across the whole test tree
+(grep "_make_design_worktree" tests/ --include="*.py"): the only matches
+are its own definition and TestLandPlan's five call sites, all in
+tests/test_ticket_land.py itself. No second module needs this fixture.
+
+Disposition: won't-fix at this ticket's scope -- the existing per-file
+WIRE001 waiver on _make_design_worktree stays in place; there is nothing
+to promote to a shared conftest helper today. Revisit if/when a second
+test module genuinely needs an identical design-phase worktree fixture
+(the condition the ticket's own follow-up names). No code change made.
+
+### Changed
+```
+ tickets.md | 104 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 97 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 365 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1490 -->
 ```yaml
 id: T-1490
 title: WIRE001 on test_coverage_attribution_lock_t1395.py's _load_committed_lock helper
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-03'
@@ -3105,6 +3135,10 @@ scope:
 - tests/unit/test_coverage_attribution_lock_t1395.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
 threat: null
 component: null
 ```
@@ -3121,6 +3155,39 @@ evaluate whether a shared load_coverage_lock test helper belongs in a
 common fixture module if more regression locks of this shape get added, or
 whether the current per-file scope is intentionally final (in which case
 this ticket should close as won't-fix with that recorded).
+
+## Done report
+
+Evaluated promoting tests/unit/test_coverage_attribution_lock_t1395.py's
+_load_committed_lock to a shared test-support helper. Found a second,
+independently-written occurrence of the same pattern in
+tests/unit/test_makefile_coverage.py (TestCommittedLockCoverageFloor.
+_load_committed_lock, a class method), but T-1490's own declared scope
+does not include that file, so unifying both is out of scope here --
+filed T-1551 to track the unification separately rather than
+silently widening this ticket.
+
+Disposition: the per-file WIRE001 waiver on
+tests/unit/test_coverage_attribution_lock_t1395.py::_load_committed_lock
+stays in place (won't-fix at this ticket's scope) -- it correctly follows
+the tests/unit/test_conftest_stackdump.py::_load_conftest (T-1466)
+precedent for a private per-file regression-lock fixture helper with no
+production caller by design. No code change made in this ticket beyond
+this evaluation and the follow-up filing.
+
+### Changed
+```
+ tickets.md | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 60 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 215 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1491 -->
 ```yaml
@@ -3430,7 +3497,7 @@ scanner correctness.
 ```yaml
 id: T-1510
 title: WIRE001 static caller search cannot see autouse pytest fixtures (test_check_ts_runners.py::_npx_available)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -3440,8 +3507,30 @@ tier: ticket
 sprint: null
 scope:
 - tests/unit/test_check_ts_runners.py
+- src/frob/gates/_wire.py
+- tests/unit/test_wire_autouse_fixture.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: WIRE001's autouse-fixture fix lives in the gate module; new dedicated unit
+    test file for positive/negative coverage since tests/test_gates.py is leased by
+    T-1205
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_wire_autouse_fixture.py
+  reason: WIRE001's autouse-fixture fix lives in the gate module; new dedicated unit
+    test file for positive/negative coverage since tests/test_gates.py is leased by
+    T-1205
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_autouse_fixture_is_not_flagged
+- tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_plain_test_helper_with_no_caller_is_still_flagged
+- tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_non_autouse_fixture_with_no_caller_is_still_flagged
+- tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output
 threat: null
 component: null
 ```
@@ -3454,12 +3543,62 @@ an autouse fixture's implicit per-test invocation (pytest.fixture(autouse=True))
 as a reached use, so files relying on this idiom stop needing a per-fixture
 frob:waive WIRE001 waiver.
 
+## Done report
+
+Taught WIRE001's static caller search to recognize an
+@pytest.fixture(autouse=True) (or pytest_asyncio.fixture) decorated
+symbol as reached: `_is_autouse_pytest_fixture` (src/frob/gates/_wire.py)
+scans the symbol's own span for the decorator (the parser already
+includes the decorator line in a record's span, verified directly), and
+`_new_callable_records` now excludes any such symbol from candidacy
+alongside the existing dunder/test-symbol exemptions -- pytest's own
+fixture-injection machinery reaches an autouse fixture implicitly for
+every test in scope, never via a direct call token this gate's text scan
+can see.
+
+Removed the per-fixture WIRE001 waiver this fix makes unnecessary from
+tests/unit/test_check_ts_runners.py::_npx_available (the ticket's own
+motivating instance) and confirmed no other file in the tree carries a
+follow_up="T-1510" waiver (grep -rl was empty).
+
+Added tests/unit/test_wire_autouse_fixture.py with one positive case
+(new autouse fixture: not flagged) and two negative controls (an
+ordinary new private test helper with no caller: still flagged; a
+non-autouse @pytest.fixture with no caller: still flagged, since that
+shape is out of this ticket's scope). Placed in a new file rather than
+tests/test_gates.py::TestWireGate (that file's tests/** lease was held
+by concurrent in-progress T-1205 at scope-add time).
+
+
+Waiver deletion in branch history (intentional, sibling T-1511's work on this same branch): tests/unit/test_check_native_cargo_runners.py:WIRE001 -- removed because T-1511 promoted _FakeCompletedProcess to the shared tests/unit/conftest.py, making the fixture-stand-in waiver obsolete. Declared here because that file is in T-1511's scope, not T-1510's, and the history scan attributes the whole branch to the landing ticket (T-1550 tracks the structural fix).
+
+### Changed
+```
+ src/frob/gates/_wire.py                       |  47 +++++-
+ tests/unit/conftest.py                        |  24 +++
+ tests/unit/test_check_native_cargo_runners.py |  14 +-
+ tests/unit/test_check_ts_runners.py           |  18 +--
+ tests/unit/test_wire_autouse_fixture.py       | 129 ++++++++++++++++
+ tickets.md                                    | 208 +++++++++++++++++++++++++-
+ 6 files changed, 400 insertions(+), 40 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_autouse_fixture_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_plain_test_helper_with_no_caller_is_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_non_autouse_fixture_with_no_caller_is_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1511 -->
 ```yaml
 id: T-1511
 title: WIRE001 on _FakeCompletedProcess test-fixture stand-in (check native/ts runner
   tests)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-04'
@@ -3470,8 +3609,19 @@ sprint: null
 scope:
 - tests/unit/test_check_native_cargo_runners.py
 - tests/unit/test_check_ts_runners.py
+- tests/unit/conftest.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/conftest.py
+  reason: promoting the duplicated _FakeCompletedProcess stand-in (now confirmed used
+    by 2 files) to a shared tests/unit conftest per the ticket's own follow-up criterion
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_success_parses_cargo_json
+- tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output
 threat: null
 component: null
 ```
@@ -3485,6 +3635,38 @@ precedent. Follow-up: evaluate whether this stub should move to a shared
 test-support module (frob.testing or a conftest fixture) if more runner tests want
 the same stub, or whether the current per-file scope is intentionally final (in
 which case this ticket should close as won't-fix with that recorded).
+
+## Done report
+
+_FakeCompletedProcess was independently duplicated verbatim in both
+tests/unit/test_check_ts_runners.py and
+tests/unit/test_check_native_cargo_runners.py, satisfying the ticket's
+own promotion criterion ("if more runner tests want the same stub").
+Promoted it to a new tests/unit/conftest.py (plain class, imported
+explicitly via `from tests.unit.conftest import _FakeCompletedProcess`
+-- tests/ is a real package, this is a normal absolute import, not
+pytest's fixture-function auto-injection) and removed both per-file
+copies and their WIRE001 waivers. wire_gate --ticket T-1511 now reports
+0 errors: the shared class has a real, direct-call-shaped caller in each
+of its two consuming files, so WIRE001's text scan reaches it without
+needing an exemption.
+
+Confirmed no remaining follow_up="T-1511" waiver in the tree (grep -rl
+was empty). All 20 tests across both consuming files pass unchanged.
+
+### Changed
+```
+ tickets.md | 175 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 170 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 216 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1512 -->
 ```yaml
@@ -4143,3 +4325,35 @@ threat: null
 component: null
 ```
 The land waive-deletion scan walks ALL branch commits since merge-base and attributes every deletion to the LANDING ticket, so on a multi-ticket branch each subsequent land refuses on deletions its already-landed siblings own (T-1225, T-1444 each burned a full land round on this 2026-08-05). Fix: before refusing, check whether the deletion's containing commit is already an ancestor of main (sibling landed) or the deletion falls inside a ticket that is done on main whose scope covers the file -- if so, log and skip. Kills the declare-in-report boilerplate round entirely.
+
+<!-- ticket:T-1551 -->
+```yaml
+id: T-1551
+title: unify duplicated committed-lock-reading test helpers (test_coverage_attribution_lock_t1395.py
+  + test_makefile_coverage.py)
+state: queued
+kind: docs
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_coverage_attribution_lock_t1395.py
+- tests/unit/test_makefile_coverage.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+tests/unit/test_coverage_attribution_lock_t1395.py::_load_committed_lock
+and tests/unit/test_makefile_coverage.py::TestCommittedLockCoverageFloor.
+_load_committed_lock (a class method, self-bound) both independently read
+module_line out of the repo-root frob-coverage.lock.json for a regression
+lock, using near-identical logic. T-1490 evaluated promoting the former
+to a shared helper and found this second occurrence, but T-1490's own
+scope (tests/unit/test_coverage_attribution_lock_t1395.py only) does not
+cover tests/unit/test_makefile_coverage.py, so unifying both into one
+shared load_coverage_lock test helper is left as this follow-up rather
+than expanded into T-1490 silently.

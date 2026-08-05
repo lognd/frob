@@ -14,19 +14,7 @@ from typani import Err, Ok
 
 from frob.check import _native as native_mod
 from frob.process._guard import ProcessGuardError
-
-
-# frob:waive WIRE001 reason="a private test-fixture stand-in used only by this file's \
-# own tests below -- there is no production caller to wire it to by design, it exists \
-# solely as a subprocess.CompletedProcess-shaped stub for monkeypatched \
-# guarded_subprocess_run returns" follow_up="T-1511"
-class _FakeCompletedProcess:
-    """Minimal `subprocess.CompletedProcess`-shaped stand-in."""
-
-    def __init__(self, stdout: str = "", stderr: str = "", returncode: int = 0):
-        self.stdout = stdout
-        self.stderr = stderr
-        self.returncode = returncode
+from tests.unit.conftest import _FakeCompletedProcess
 
 
 class TestRunCargoRealPaths:

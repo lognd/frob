@@ -124,8 +124,34 @@ def _added_lines(
     return by_file
 
 
+# frob:ticket T-1510
+_AUTOUSE_FIXTURE_RE = re.compile(
+    r"@(?:pytest\.fixture|pytest_asyncio\.fixture)\s*\([^)]*\bautouse\s*=\s*True",
+    re.DOTALL,
+)
+
+
+# frob:ticket T-1510
+def _is_autouse_pytest_fixture(root: Path, record) -> bool:
+    """True if `record`'s span opens with an `@pytest.fixture(autouse=True)`
+    (or `pytest_asyncio.fixture`) decorator -- pytest's own fixture-injection
+    machinery invokes an autouse fixture implicitly for every test in its
+    scope, never via a direct call token `_wire_reach_patterns`'s text scan
+    can see, so WIRE001 must treat it as reached rather than flag the
+    standard pytest idiom as dead code (T-1510)."""
+    try:
+        lines = (root / record.id.path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    start, end = record.span
+    snippet = "\n".join(lines[start - 1 : end])
+    return bool(_AUTOUSE_FIXTURE_RE.search(snippet))
+
+
 def _new_callable_records(
-    snapshot: GraphSnapshot, hunks_by_file: dict[str, list[tuple[int, int]]]
+    root: Path,
+    snapshot: GraphSnapshot,
+    hunks_by_file: dict[str, list[tuple[int, int]]],
 ) -> list:
     """Every function/method/class whose ENTIRE span sits inside one of
     this diff's added-line hunks -- the proxy this gate uses for "this
@@ -137,13 +163,18 @@ def _new_callable_records(
     "rewritten") -- accepted because the alternative (a full parse-at-base-
     revision diff) is materially more machinery for a WARN-adjacent-to-
     ERROR gate that already has a `frob:waive WIRE001` escape hatch for a
-    genuine false positive."""
+    genuine false positive. T-1510: also excludes an autouse pytest fixture
+    (`_is_autouse_pytest_fixture`) -- pytest's own injection machinery
+    reaches it for every test in scope, not a caller this gate's text scan
+    can ever see."""
     found = []
     for record in snapshot.symbols.values():
         if record.kind not in _CALLABLE_KINDS or not record.id.path.endswith(".py"):
             continue
         qualname = record.id.qualname
         if _is_dunder(qualname) or _is_test_symbol(qualname):
+            continue
+        if _is_autouse_pytest_fixture(root, record):
             continue
         spans = hunks_by_file.get(record.id.path, ())
         if any(h[0] <= record.span[0] and record.span[1] <= h[1] for h in spans):
@@ -348,7 +379,7 @@ def _wire001_unwired_symbol_violations(
     WIRE001 must stay silent about it (case 2/3, a genuinely NEW symbol
     with no prior existence anywhere, still fires exactly as before)."""
     violations: list[Violation] = []
-    for record in _new_callable_records(snapshot, hunks_by_file):
+    for record in _new_callable_records(root, snapshot, hunks_by_file):
         def_lines = frozenset(range(record.span[0], record.span[1] + 1))
         if _is_reached_outside_diff_tests(root, snapshot, record, def_lines):
             continue
@@ -469,7 +500,9 @@ def _wire001_cli_dest_violations(
 
 
 def _touched_callable_records(
-    snapshot: GraphSnapshot, hunks_by_file: dict[str, list[tuple[int, int]]]
+    root: Path,
+    snapshot: GraphSnapshot,
+    hunks_by_file: dict[str, list[tuple[int, int]]],
 ) -> list:
     """Every function/method this diff TOUCHES (a hunk overlaps its span)
     but did NOT wholly define (that is `_new_callable_records`'s own
@@ -478,7 +511,9 @@ def _touched_callable_records(
     where the function itself already has callers so case 1's "no
     non-test caller" check never fires, but the new parameter specifically
     is never passed anywhere."""
-    new_ids = {record.id for record in _new_callable_records(snapshot, hunks_by_file)}
+    new_ids = {
+        record.id for record in _new_callable_records(root, snapshot, hunks_by_file)
+    }
     found = []
     for record in snapshot.symbols.values():
         if record.kind not in _CALLABLE_KINDS or not record.id.path.endswith(".py"):
@@ -599,7 +634,7 @@ def _wire001_new_kwonly_param_violations(
     now but absent at the base is a candidate, and fires only if
     `_keyword_passed_outside_def` finds no call site passing it."""
     violations: list[Violation] = []
-    for record in _touched_callable_records(snapshot, hunks_by_file):
+    for record in _touched_callable_records(root, snapshot, hunks_by_file):
         short = _short_name(record.id.qualname)
         try:
             current_source = (root / record.id.path).read_text(encoding="utf-8")
