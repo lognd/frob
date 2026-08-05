@@ -2470,6 +2470,7 @@ class TestDeadSymbolGate:
 
 
 # frob:ticket T-1428
+# frob:ticket T-1502
 class TestWireGate:
     """T-1428: refuse a ticket's own diff when it adds a function with no
     non-test caller, a gate rule id absent from `_KNOWN_GATE_RULES`, or a
@@ -2538,6 +2539,208 @@ class TestWireGate:
         assert not any(
             v.rule == "WIRE001" and "own_obligations_clean" in v.message
             for v in violations
+        )
+
+    # frob:ticket T-1502
+    def test_new_function_passed_bare_to_a_wrapper_marker_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # T-1502: `memoize_per_run(_target)` (or `wraps`/`lru_cache`/
+        # `cache`) passes the wrapped symbol BY REFERENCE, never as a
+        # `name(`-shaped call token -- WIRE001 must not treat this as
+        # unreached (frob.graph.callgraph._WRAPPER_MARKER_NAMES).
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _target() -> bool:\n"
+            "    return True\n\n\n"
+            "cached = memoize_per_run(_target)\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_target() -> None:\n    assert _target()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "_target" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "_target" in v.message for v in violations
+        )
+
+    # frob:ticket T-1502
+    def test_new_function_named_like_a_wrapper_argument_but_never_passed_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # Negative case: the wrapper-marker allowance must not blanket-
+        # exempt every symbol in a file that happens to mention
+        # `memoize_per_run` -- a genuinely unwired sibling still fires.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _target() -> bool:\n"
+            "    return True\n\n\n"
+            "def _unwired() -> bool:\n"
+            "    return False\n\n\n"
+            "cached = memoize_per_run(_target)\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_unwired() -> None:\n    assert not _unwired()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "_unwired" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert any(
+            v.rule == "WIRE001" and "_unwired" in v.message for v in violations
+        )
+
+    # frob:ticket T-1527
+    def test_new_errorset_class_referenced_by_bare_member_access_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # T-1527: a typani ErrorSet subclass is never referenced call-
+        # shaped (MyError(...)) -- callers spell it MyError.Member (bare
+        # attribute access, no parens); WIRE001 must not treat that as
+        # unreached (src/frob/testing/_coverage_refresh.py's
+        # CoverageRefreshError instance).
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class MyError:\n"
+            "    Broken = 'x'\n",
+        )
+        _write(
+            tmp_path,
+            "src/b.py",
+            "from a import MyError\n\n\n"
+            "def make_result():\n"
+            "    return MyError.Broken\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_myerror() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "MyError" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "MyError" in v.message for v in violations
+        )
+
+    # frob:ticket T-1527
+    def test_new_class_never_referenced_by_member_access_is_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # Negative case: the member-access allowance must not blanket-
+        # exempt every new class -- one genuinely never referenced (by
+        # call OR attribute access) anywhere still fires.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class UnreferencedThing:\n"
+            "    Marker = 'x'\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_unreferenced() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(
+            r for r in snap.symbols.values() if "UnreferencedThing" in r.symref
+        )
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert any(
+            v.rule == "WIRE001" and "UnreferencedThing" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-1532
+    def test_new_function_passed_bare_to_process_job_constructor_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # T-1532: a gate function registered into the process job table as
+        # a bare positional argument (`_ProcessJob(cache_gate, (...))`) is
+        # genuinely wired but never text-adjacent to its own `(` -- the
+        # job-table analog of T-1502's wrapper-marker shape.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _target_gate() -> bool:\n"
+            "    return True\n\n\n"
+            "JOBS = {'x': _ProcessJob(_target_gate, (root,))}\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_target_gate() -> None:\n    assert _target_gate()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "_target_gate" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "_target_gate" in v.message for v in violations
+        )
+
+    # frob:ticket T-1532
+    def test_new_function_never_passed_to_a_job_constructor_is_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # Negative case: the job-table allowance must not blanket-exempt
+        # every symbol in a file that happens to mention _ProcessJob -- a
+        # genuinely unwired sibling still fires.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _target_gate() -> bool:\n"
+            "    return True\n\n\n"
+            "def _unwired_gate() -> bool:\n"
+            "    return False\n\n\n"
+            "JOBS = {'x': _ProcessJob(_target_gate, (root,))}\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_unwired_gate() -> None:\n    assert not _unwired_gate()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "_unwired_gate" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert any(
+            v.rule == "WIRE001" and "_unwired_gate" in v.message for v in violations
         )
 
     # frob:ticket T-1431

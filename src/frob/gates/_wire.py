@@ -29,6 +29,7 @@ from frob.gates._models import Severity, Violation
 from frob.gates._waive import known_gate_rule_ids
 from frob.gitio import Diff, run_argv
 from frob.graph import EdgeKind, GraphSnapshot
+from frob.graph.callgraph import _WRAPPER_MARKER_NAMES
 from frob.graph.digest import compute_digests
 from frob.lang import SymbolKind, parse_file
 from frob.logging import get_logger
@@ -150,6 +151,45 @@ def _new_callable_records(
     return found
 
 
+# T-1532: a gate function registered into the process job table as a bare
+# FIRST POSITIONAL ARGUMENT -- e.g. "cache": _ProcessJob(cache_gate, (...))
+# in src/frob/gates/__init__.py -- is genuinely wired (the job table
+# invokes it) but never appears text-adjacent to its own opening paren,
+# the exact same "passed by reference, not called" shape T-0583/T-1502
+# already teach `_WRAPPER_MARKER_NAMES` to recognize. Reused via the same
+# combined alternation rather than a second regex, since the text shape
+# (`Marker(short, ...)`) is identical either way.
+# frob:ticket T-1532
+_JOB_TABLE_MARKER_NAMES = frozenset({"_ProcessJob"})
+
+
+# frob:ticket T-1502
+def _wire_reach_patterns(
+    short: str, kind: SymbolKind
+) -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str] | None]:
+    """The three "reached" regexes `_is_reached_outside_diff_tests` scans
+    with: a plain call-shaped token, the T-1502/T-1532 bare-name-argument
+    shape (decorator/memoization wrapper markers PLUS job-table
+    constructors -- both pass the symbol BY REFERENCE, not as a call),
+    and (CLASS records only, T-1527) the ErrorSet bare-member-access
+    shape -- split out purely to keep the scanning function itself under
+    ARCH001's line threshold, no behavior change from inlining."""
+    call_pattern = re.compile(rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\(")
+    marker_names = "|".join(
+        re.escape(name)
+        for name in (*_WRAPPER_MARKER_NAMES, *_JOB_TABLE_MARKER_NAMES)
+    )
+    wrapper_pattern = re.compile(
+        rf"(?<![A-Za-z0-9_.])(?:{marker_names})\s*\(\s*{re.escape(short)}\s*[,)]"
+    )
+    member_access_pattern = None
+    if kind == SymbolKind.CLASS:
+        member_access_pattern = re.compile(
+            rf"(?<![A-Za-z0-9_.]){re.escape(short)}\.[A-Za-z_][A-Za-z0-9_]*"
+        )
+    return call_pattern, wrapper_pattern, member_access_pattern
+
+
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to re.compile/ \
 # Path.read_text/str.splitlines, stdlib/pathlib calls the resolver cannot statically \
 # bound; a malformed short-name cannot reach re.compile since it is always \
@@ -158,6 +198,7 @@ def _new_callable_records(
 # snapshot.file_hashes iteration and enumerate(lines, 1) are plain iteration, not \
 # dict/list subscripting that can raise KeyError; a false positive from the gate's \
 # syntactic scan"
+# frob:ticket T-1502
 def _is_reached_outside_diff_tests(
     root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int]
 ) -> bool:
@@ -177,9 +218,20 @@ def _is_reached_outside_diff_tests(
     just does not fire), a false "unreached" verdict wrongly blocks a
     build. This mirrors `build_reference_graph`'s own module docstring
     logic (broader recall over precision) rather than inventing a new
-    tradeoff."""
+    tradeoff.
+
+    T-1502/T-1527: `_wire_reach_patterns` ALSO builds a wrapper-marker-
+    argument pattern (`memoize_per_run(_target)`, passed BY REFERENCE,
+    never `_target(`-shaped -- reuses `frob.graph.callgraph`'s own
+    `_WRAPPER_MARKER_NAMES`) and, for a CLASS record only, a bare
+    `ClassName.Member` attribute-access pattern (the shape a typani
+    `ErrorSet` subclass is actually referenced by -- never `ClassName(`,
+    since an ErrorSet is never instantiated by calling the class). See
+    that helper's own docstring for the full rationale of each shape."""
     short = _short_name(record.id.qualname)
-    call_pattern = re.compile(rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\(")
+    call_pattern, wrapper_pattern, member_access_pattern = _wire_reach_patterns(
+        short, record.kind
+    )
     def_pattern = re.compile(rf"^\s*(async\s+def|def|class)\s+{re.escape(short)}\b")
     for path in snapshot.file_hashes:
         if not path.endswith(".py"):
@@ -198,7 +250,11 @@ def _is_reached_outside_diff_tests(
                 continue
             if def_pattern.match(text):
                 continue
-            if call_pattern.search(text):
+            if call_pattern.search(text) or wrapper_pattern.search(text):
+                return True
+            if member_access_pattern is not None and member_access_pattern.search(
+                text
+            ):
                 return True
     return False
 

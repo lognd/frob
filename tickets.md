@@ -5924,7 +5924,7 @@ previously-unchecked path.
 id: T-1502
 title: WIRE001 text-scan misses memoize_per_run(_target)-shaped wiring (false positive
   on wrapper-bare-name callees)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -5932,12 +5932,79 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/gates/_wire.py
+- src/frob/gates/_cache_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: 'T-1502: narrow WIRE001 wrapper-bare-name detector fix scope'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/gates/_cache_gate.py
+  reason: waiver-removal proof surface for the detector-shape fixes
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_gates.py::TestWireGate::test_new_function_passed_bare_to_a_wrapper_marker_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_new_function_named_like_a_wrapper_argument_but_never_passed_is_flagged
+- tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_hit_skips_extract
+- tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_miss_populates_cache
 threat: null
 component: null
 ```
 WIRE001's _is_reached_outside_diff_tests requires a name( call-shaped occurrence and has no allowance for the bare-name-argument-to-a-wrapper shape frob.graph.callgraph._called_names already special-cases for DEAD001 (_WRAPPER_MARKER_NAMES, T-0583). Teach the WIRE001 text scan the same wrapper shapes so genuinely-wired functions like frob.lang._parse_file_with_artifact_cache (wrapped via memoize_per_run) stop needing frob:waive WIRE001 false-positive waivers. Refiled from w18p-artifacts draft T-draft-bbdfffa7, which died when that worktree was removed.
+
+## Done report
+
+Taught WIRE001's _is_reached_outside_diff_tests (src/frob/gates/_wire.py) the
+bare-name-argument-to-a-wrapper shape frob.graph.callgraph._called_names
+already special-cased for DEAD001 purposes (_WRAPPER_MARKER_NAMES, T-0583):
+memoize_per_run(_target)/wraps(_target)/lru_cache(_target)/cache(_target)
+pass the wrapped symbol by reference, never as a name(-shaped call token, so
+the old scan reported it unreached. Added a second regex
+(wrapper_pattern) alongside the existing call_pattern, built from the same
+_WRAPPER_MARKER_NAMES set imported directly from frob.graph.callgraph (no
+duplicate copy of the marker list).
+
+Removed the frob:waive WIRE001 workaround this exact shape forced onto
+src/frob/lang/__init__.py::_parse_file_with_artifact_cache (the ticket's own
+named real-world instance, follow_up="T-1502"); re-ran the scoped gates and
+its own tests to confirm the false positive is gone with no waiver needed.
+
+Added one positive detector test (a bare-name argument to memoize_per_run in
+a diff-added symbol is no longer flagged) and one negative test (a genuinely
+unwired sibling function in the same file, never passed to any wrapper
+marker, still fires) to TestWireGate in tests/test_gates.py, proving the fix
+does not blanket-exempt a whole file just because it mentions a wrapper
+marker name.
+
+
+Waiver deletions (intentional, the cluster's own acceptance proof -- each removed because the detector now recognizes the shape it papered over): src/frob/lang/__init__.py:WIRE001 (memoize_per_run wrapper shape, T-1502), src/frob/gates/_cache_gate.py:WIRE001 (job-table bare-name shape, T-1532), src/frob/testing/_coverage_refresh.py:WIRE001 (ErrorSet member-access shape, T-1527). These files are leased by unrelated in-progress tickets (T-1220 et al), so they are declared here rather than scope-added.
+
+### Changed
+```
+ src/frob/gates/_cache_gate.py         |   6 -
+ src/frob/gates/_wire.py               |  62 ++++++++++-
+ src/frob/lang/__init__.py             |   9 --
+ src/frob/testing/_coverage_refresh.py |   1 -
+ tests/test_gates.py                   | 203 ++++++++++++++++++++++++++++++++++
+ tickets.md                            | 162 ++++++++++++++++++++++++++-
+ 6 files changed, 421 insertions(+), 22 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestWireGate::test_new_function_passed_bare_to_a_wrapper_marker_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_function_named_like_a_wrapper_argument_but_never_passed_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_hit_skips_extract` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_miss_populates_cache` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1503 -->
 ```yaml
@@ -7545,7 +7612,7 @@ T-1205 acceptance[3] asks for make coverage to become a thin optional wrapper ar
 ```yaml
 id: T-1527
 title: WIRE001 text-scan misses ErrorSet member-access wiring (no-paren false positive)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -7557,6 +7624,9 @@ scope:
 - src/frob/gates/_wire.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestWireGate::test_new_errorset_class_referenced_by_bare_member_access_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_new_class_never_referenced_by_member_access_is_still_flagged
 threat: null
 component: null
 ```
@@ -7576,6 +7646,48 @@ CoverageRefreshError itself has no call-shaped occurrence anywhere.
 Teach the text scan an ErrorSet-member-access shape (ClassName\.[A-Za-z_]
 or a `-> Result[..., ClassName]`/`Err(ClassName.` occurrence) the same
 way T-1502 teaches it the wrapper-bare-name shape.
+
+## Done report
+
+Taught WIRE001's _is_reached_outside_diff_tests (src/frob/gates/_wire.py) an
+ErrorSet-member-access shape: for a CLASS record, a bare `ClassName.Member`
+attribute-access token now also counts as "reached" -- a typani ErrorSet
+subclass is never referenced call-shaped (ClassName(...)); callers spell it
+ClassName.Member, and the class itself otherwise only shows up in a
+Result[..., ClassName] annotation, also paren-free. Extracted the pattern-
+building into a new _wire_reach_patterns helper (shared by both the T-1502
+wrapper-marker shape and this ticket's member-access shape) to keep the
+scanning function itself under ARCH001's 60-line threshold.
+
+Removed the frob:waive WIRE001 workaround this exact shape forced onto
+src/frob/testing/_coverage_refresh.py::CoverageRefreshError (follow_up="T-1527",
+the ticket's own named real-world instance from T-1516); re-ran the scoped
+gates and its own tests to confirm the false positive is gone with no waiver
+needed. Grepped the repo for any other follow_up="T-1527" citation -- none
+found beyond this one.
+
+Added one positive detector test (a new ErrorSet-shaped class referenced only
+via bare Member access in a diff-added symbol is no longer flagged) and one
+negative test (a class never referenced by call OR member access anywhere
+still fires) to TestWireGate in tests/test_gates.py.
+
+### Changed
+```
+ src/frob/gates/_wire.py   | 19 ++++++++++++--
+ src/frob/lang/__init__.py |  9 -------
+ tests/test_gates.py       | 65 +++++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                | 61 +++++++++++++++++++++++++++++++++++++++++---
+ 4 files changed, 140 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestWireGate::test_new_errorset_class_referenced_by_bare_member_access_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_class_never_referenced_by_member_access_is_still_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 232 warning(s), 786 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1528 -->
 ```yaml
@@ -7835,7 +7947,7 @@ Every land refusal on 2026-08-04 was one of a small set of classes, each hand-fi
 id: T-1532
 title: WIRE001 text-scan misses bare-name-as-ProcessJob-argument wiring (job-table
   false positive)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -7847,6 +7959,9 @@ scope:
 - src/frob/gates/_wire.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestWireGate::test_new_function_passed_bare_to_process_job_constructor_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_new_function_never_passed_to_a_job_constructor_is_still_flagged
 threat: null
 component: null
 ```
@@ -7864,6 +7979,50 @@ appearing as a positional argument inside a _ProcessJob(...) (or similarly
 shaped job-table constructor) call as a wired reference. Found while
 landing T-1520 (CACHE001 static gate): cache_gate is wired via the "cache"
 job-table entry but WIRE001 still flagged it.
+
+## Done report
+
+Taught WIRE001's _is_reached_outside_diff_tests (src/frob/gates/_wire.py) the
+job-table bare-name shape: a gate function registered into the process job
+table as a bare first positional argument (`_ProcessJob(cache_gate, (...))`
+in src/frob/gates/__init__.py's _build_process_jobs) is genuinely wired but
+never text-adjacent to its own opening paren -- the same "passed by
+reference, not called" shape T-0583/T-1502 already teach _WRAPPER_MARKER_NAMES
+to recognize. Added a new _JOB_TABLE_MARKER_NAMES set (currently just
+_ProcessJob) and folded it into the SAME combined marker alternation
+_wire_reach_patterns already builds for T-1502's wrapper markers, since the
+text shape (Marker(short, ...)) is identical either way -- no second regex.
+
+Removed the frob:waive WIRE001 workaround this exact shape forced onto
+src/frob/gates/_cache_gate.py::cache_gate (follow_up="T-1532", filed while
+landing T-1520's CACHE001 gate); re-ran the scoped gates and its own tests to
+confirm the false positive is gone with no waiver needed. Grepped the repo
+for any other follow_up="T-1532" citation -- none found beyond this one.
+
+Added one positive detector test (a new gate function passed bare to
+_ProcessJob(...) in a diff-added symbol is no longer flagged) and one
+negative test (a genuinely unwired sibling function in the same file, never
+passed to any job constructor, still fires) to TestWireGate in
+tests/test_gates.py.
+
+### Changed
+```
+ src/frob/gates/_wire.py               |  43 ++++++++++-
+ src/frob/lang/__init__.py             |   9 ---
+ src/frob/testing/_coverage_refresh.py |   1 -
+ tests/test_gates.py                   | 137 ++++++++++++++++++++++++++++++++++
+ tickets.md                            | 107 +++++++++++++++++++++++++-
+ 5 files changed, 280 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestWireGate::test_new_function_passed_bare_to_process_job_constructor_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestWireGate::test_new_function_never_passed_to_a_job_constructor_is_still_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 237 warning(s), 786 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1533 -->
 ```yaml

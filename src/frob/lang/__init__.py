@@ -713,15 +713,6 @@ def _artifact_fingerprint() -> str:
 # frob:ticket T-1464
 # frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_hit_skips_extract  # noqa: E501
 # frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_miss_populates_cache  # noqa: E501
-# frob:waive WIRE001 reason="genuinely wired in production via \
-# memoize_per_run(_parse_file_with_artifact_cache) below (parse_file's real body) -- \
-# WIRE001's own text scan (frob.gates._wire._is_reached_outside_diff_tests) requires a \
-# name(' call-shaped occurrence and has no allowance for the bare-name-argument-to-a- \
-# wrapper shape frob.graph.callgraph._called_names already special-cases for \
-# DEAD001/call-graph purposes (_WRAPPER_MARKER_NAMES, T-0583) -- the exact same shape \
-# _parse_file_uncached itself used before this ticket, which never tripped WIRE001 \
-# only because this ticket's own new helpers also call it directly with parens" \
-# follow_up="T-1502"
 def _parse_file_with_artifact_cache(path: Path) -> Result[ParsedFile, LangError]:
     """`_parse_file_uncached`, wrapped with a persistent, content-hash-keyed
     artifact lookup (T-1464) -- the actual body `parse_file` wraps in

@@ -223,12 +223,6 @@ def _cache001_violation(rel_path: str, site: _UncoveredRead) -> Violation:
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:tests tests/test_cache_gate.py::TestMemoizedReadCoverage.test_uncovered_read_fires  # noqa: E501
 # frob:tests tests/test_cache_gate.py::TestMemoizedReadCoverage.test_silent_shapes  # noqa: E501
-# frob:waive WIRE001 reason="genuinely wired: registered as _ProcessJob(cache_gate, \
-# (st.repo_root,)) under the 'cache' key in src/frob/gates/__init__.py's process job \
-# table -- a bare first-class function reference passed as a positional argument, \
-# never text-adjacent to its own name plus an opening paren, which WIRE001's \
-# call-shaped text scan cannot see (a job-table-argument analog of T-1502/T-1527's \
-# other WIRE001 text-scan detector-gap shapes)" follow_up="T-1532"
 def cache_gate(root: Path) -> tuple[Violation, ...]:
     """CACHE001: every git-tracked `src/frob/**/*.py` `@memoize_per_run`
     function scanned for a read whose target is not derived from any of its

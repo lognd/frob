@@ -68,7 +68,6 @@ _DEFAULT_COV_TARGET = "src/frob"
 
 # frob:ticket T-1516
 # frob:doc docs/modules/testing.md#public-api
-# frob:waive WIRE001 reason="a typani ErrorSet class is never referenced call-shaped (ClassName(...)) -- callers spell it ClassName.Member (bare attribute access) and the class only otherwise appears in a Result[..., ClassName] annotation, also paren-free; WIRE001's text scan structurally cannot see either shape (src/frob/gates/_wire.py's _is_reached_outside_diff_tests). The function that actually returns this error (native_coverage_refresh) IS wired: called from _coverage_wait.py's _run_native_refresh. Gate follow-up filed as T-1527." follow_up="T-1527"  # noqa: E501
 class CoverageRefreshError(ErrorSet):
     """Failure values `native_coverage_refresh` can return."""
 
