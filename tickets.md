@@ -4576,7 +4576,7 @@ Refiled from T-draft-9dc767d0 (T-1238 taxonomy slice, draft-loss class). Group o
 id: T-1565
 title: 'cli regrouping: resolve ticket/debt/deprecated naming (frob tickets vs frob
   ticket)'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -4591,6 +4591,8 @@ component: null
 ```
 Refiled from T-draft-c79d54fa (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
 
+## Drop reason
+- 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
 <!-- ticket:T-1566 -->
 ```yaml
 id: T-1566
