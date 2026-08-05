@@ -127,9 +127,7 @@ class TestRunVitestRealPaths:
         monkeypatch.setattr(
             ts_mod,
             "guarded_subprocess_run",
-            lambda *a, **kw: Ok(
-                _FakeCompletedProcess(stdout="not json", returncode=0)
-            ),
+            lambda *a, **kw: Ok(_FakeCompletedProcess(stdout="not json", returncode=0)),
         )
         result = ts_mod._run_vitest(tmp_path)
         assert "unverified" in result.summary
@@ -142,9 +140,7 @@ class TestRunVitestRealPaths:
         monkeypatch.setattr(
             ts_mod,
             "guarded_subprocess_run",
-            lambda *a, **kw: Ok(
-                _FakeCompletedProcess(stdout="not json", returncode=1)
-            ),
+            lambda *a, **kw: Ok(_FakeCompletedProcess(stdout="not json", returncode=1)),
         )
         result = ts_mod._run_vitest(tmp_path)
         assert result.summary == "tests failed"

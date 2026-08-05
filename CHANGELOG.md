@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.339.0] - unreleased
+
+- T-1555: type-debt pass: clear all ty diagnostics (incl. signature drift in landed land-machinery) + ruff format/check backlog
+
 ## [0.338.0] - unreleased
 
 - T-1445: Extend gate-result cache to root-scanning process-pool gates + add --no-cache CLI flag

@@ -108,9 +108,7 @@ def add_refactor_parser(sub: argparse._SubParsersAction) -> None:
     sp.add_argument(
         "--skip-check-delta",
         action="store_true",
-        help=(
-            "skip the frob check --delta post-condition (for fast local iteration)"
-        ),
+        help=("skip the frob check --delta post-condition (for fast local iteration)"),
     )
     sp.set_defaults(_refactor_kind=None)
 
@@ -143,8 +141,7 @@ def _render_chunk_report(renderer: Renderer, chunk) -> None:
         renderer.line(f"    error: {chunk.error}")
     for alias in chunk.aliases:
         renderer.line(
-            f"    alias: {alias.file_path}: "
-            f"{alias.original_name} -> {alias.alias_name}"
+            f"    alias: {alias.file_path}: {alias.original_name} -> {alias.alias_name}"
         )
     for item in chunk.unresolved:
         renderer.line(f"    unresolved: {item}")

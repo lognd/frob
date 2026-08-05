@@ -740,9 +740,7 @@ class TestReplaceEvidenceCli:
         ticket = queue.tickets["T-0001"]
         assert ticket.evidence == ("tests/x.py::test_new",)
 
-    def test_cli_requires_at_least_one_of_the_three_modes(
-        self, tmp_path: Path
-    ) -> None:
+    def test_cli_requires_at_least_one_of_the_three_modes(self, tmp_path: Path) -> None:
         from frob.app.ticket_runner import _evidence
 
         cfg = AppConfig(

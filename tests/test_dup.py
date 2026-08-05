@@ -890,7 +890,11 @@ class TestCoreAvailable:
     # tests/test_dup.py::TestCoreAvailable.test_import_error_returns_false_and_logs
     def test_import_error_returns_false_and_logs(self, monkeypatch) -> None:
         dup_core.core_available.cache_clear()
-        real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
+        real_import = (
+            __builtins__["__import__"]
+            if isinstance(__builtins__, dict)
+            else __builtins__.__import__
+        )
 
         def _raising_import(name, *args, **kwargs):
             if name == "frob_core":

@@ -121,8 +121,6 @@ def test_lazy_handler_stream_properties_have_a_doc_edge(tmp_path):
     tests = CollectedTests(node_ids=frozenset())
     violations = coverage_gate(tmp_path, snap, queue, diff, tests)
     stream_cov001 = [
-        v
-        for v in violations
-        if v.rule == "COV001" and "Handler.stream" in v.message
+        v for v in violations if v.rule == "COV001" and "Handler.stream" in v.message
     ]
     assert stream_cov001 == []

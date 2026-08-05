@@ -333,8 +333,10 @@ def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
     pid = holder.get("pid")
     session_id = holder.get("session_id")
     started_at = holder.get("started_at")
-    if not isinstance(pid, int) or not isinstance(session_id, str) or not isinstance(
-        started_at, str
+    if (
+        not isinstance(pid, int)
+        or not isinstance(session_id, str)
+        or not isinstance(started_at, str)
     ):
         return None
     alive: bool | None

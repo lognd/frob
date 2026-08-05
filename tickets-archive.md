@@ -1,6 +1,6 @@
-# Tickets archive
+# Tickets
 
-Done/dropped tickets moved here by `frob ticket archive` -- same format as tickets.md, still tracked and greppable.
+Central ledger managed by `frob ticket` -- one section per ticket.
 
 <!-- ticket:T-0001 -->
 ```yaml

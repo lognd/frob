@@ -350,9 +350,7 @@ class TestClusterUnionScope:
 # frob:ticket T-1243
 class TestClusterBrief:
     # frob:ticket T-1243
-    def test_composes_one_briefing_for_the_whole_cluster(
-        self, tmp_path: Path
-    ) -> None:
+    def test_composes_one_briefing_for_the_whole_cluster(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
         _write(
             tmp_path,

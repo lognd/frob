@@ -371,9 +371,7 @@ class TestPerfRunner:
             perf_run(cfg)
         assert exc.value.code == 3
 
-    def test_collect_file_read_oserror_exits_1(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_collect_file_read_oserror_exits_1(self, tmp_path: Path, caplog) -> None:
         # T-1400: `_read_perf_file_text`'s `except OSError` branch
         # (perf_runner.py 288-290) -- an unreadable `--file` (permission
         # denied, disappeared mid-read, etc.) must log and exit 1, not

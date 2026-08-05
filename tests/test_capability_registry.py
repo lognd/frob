@@ -514,7 +514,9 @@ class TestNegativeFixtures:
         "env") and only passes once the registry entry is genuinely
         reclassified."""
         path = tmp_path / "m.py"
-        path.write_text("import signal\nsignal.signal(signal.SIGTERM, lambda *_: None)\n")
+        path.write_text(
+            "import signal\nsignal.signal(signal.SIGTERM, lambda *_: None)\n"
+        )
         observed = scan_file_capabilities(path)
         assert "process-control" in observed
         assert "env" not in observed

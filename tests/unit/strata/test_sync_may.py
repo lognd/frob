@@ -75,7 +75,10 @@ class TestSyncMayReport:
         assert diff.kind == "net.connect"
         assert diff.added_files == ("api/other.py",)
         assert diff.created is False
-        assert 'may "net.connect" via "api/net.py", "api/other.py";' in file_result.new_text
+        assert (
+            'may "net.connect" via "api/net.py", "api/other.py";'
+            in file_result.new_text
+        )
         # Original file on disk is untouched (report never writes).
         assert design_path.read_text(encoding="utf-8") != file_result.new_text
 
@@ -87,7 +90,7 @@ class TestSyncMayReport:
             tmp_path,
             "design",
             "api.strata",
-            "module api\nnode Api : trusted {\n    code \"api/**\";\n}\n",
+            'module api\nnode Api : trusted {\n    code "api/**";\n}\n',
         )
         result = sync_may_report(tmp_path)
         assert result.is_ok
@@ -150,7 +153,7 @@ class TestApplySyncMay:
             tmp_path,
             "design",
             "api.strata",
-            "module api\nnode Api : trusted {\n    code \"api/**\";\n}\n",
+            'module api\nnode Api : trusted {\n    code "api/**";\n}\n',
         )
         result = sync_may_report(tmp_path)
         assert result.is_ok

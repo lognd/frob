@@ -85,9 +85,7 @@ class TestInstallSerialPoolsGatesUnexpectedException:
     "safe to call even if frob.gates fails to import" for ANY import-time
     surprise, not just the named exception type."""
 
-    def test_unexpected_import_time_exception_is_swallowed(
-        self, monkeypatch
-    ) -> None:
+    def test_unexpected_import_time_exception_is_swallowed(self, monkeypatch) -> None:
         # frob:tests tests/unit/perf/test_serial_pools_import_failure.py::TestInstallSerialPoolsGatesUnexpectedException.test_unexpected_import_time_exception_is_swallowed  # noqa: E501
         monkeypatch.setattr(
             builtins, "__import__", _blocking_import("frob.gates", RuntimeError)

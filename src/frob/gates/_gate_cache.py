@@ -739,9 +739,7 @@ def load_root_gate_cache(
         return None
     if cached.touched_key != key:
         return None
-    _log.info(
-        "gate-cache: HIT (root-scanning) gate=%s (whole-tree key match)", gate
-    )
+    _log.info("gate-cache: HIT (root-scanning) gate=%s (whole-tree key match)", gate)
     return cached.violations
 
 

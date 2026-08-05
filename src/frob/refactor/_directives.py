@@ -23,6 +23,7 @@ Three carried reference kinds, matching the epic's acceptance:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
 from frob.graph.dsl import parse_directives
@@ -57,7 +58,7 @@ def _display_path(path: Path) -> str:
 # frob:doc docs/commands/refactor.md#extend_span_for_attached_directives
 # frob:tests tests/test_refactor.py::TestDirectiveCarrier.test_attached_waiver_moves_with_symbol  # noqa: E501
 def extend_span_for_attached_directives(
-    source_lines: list[str], start_line: int
+    source_lines: Sequence[str], start_line: int
 ) -> int:
     """The new (lower) start line to use for a move op so a contiguous
     block of `#`-comment lines directly above `start_line` (no blank-line
@@ -152,7 +153,7 @@ def _scan_file_for_directive_carriers(
             hit_old, hit_new = edge.target, rewrite_map[edge.target]
         elif edge.src in rewrite_map:
             hit_old, hit_new = edge.src, rewrite_map[edge.src]
-        if hit_old is None:
+        if hit_old is None or hit_new is None:
             continue
         span = _comment_span_for_edge(parsed, edge)
         if span is None or span in seen_spans:

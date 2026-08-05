@@ -331,7 +331,9 @@ def test_resolve_local_import_cpp_outside_root_is_none(tmp_path: Path):
     root.mkdir()
     outside_dir = tmp_path / "outside"
     outside_dir.mkdir()
-    resolved = resolve_local_import("../missing.h", "c", file_dir=outside_dir, root=root)
+    resolved = resolve_local_import(
+        "../missing.h", "c", file_dir=outside_dir, root=root
+    )
     assert resolved is None
 
 

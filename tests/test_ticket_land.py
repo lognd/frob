@@ -1543,9 +1543,7 @@ class TestWaiveRewrapNotDeletion:
         assert result.danger_err == LandError.OutOfScopeWaiveDeletion
 
     # frob:ticket T-1388
-    def test_real_fmt001_fixer_rewrap_does_not_trip_the_guard(
-        self, repo: Path
-    ) -> None:
+    def test_real_fmt001_fixer_rewrap_does_not_trip_the_guard(self, repo: Path) -> None:
         """T-1388: the incident this ticket reports is land's OWN pre-land
         Tier-A auto-fix pass (FMT001, `frob.gates._fmt_directives.
         format_paths`) rewrapping an out-of-scope file's `frob:waive`
@@ -1562,8 +1560,8 @@ class TestWaiveRewrapNotDeletion:
         from frob.gates._fmt_directives import format_paths
 
         (repo / "src" / "other.py").write_text(
-            "# frob:waive PERF001 reason=\"some very long reason that used to fit on "
-            "a single physical line under the default 88-col limit ok\"\n"
+            '# frob:waive PERF001 reason="some very long reason that used to fit on '
+            'a single physical line under the default 88-col limit ok"\n'
             "def g():\n    pass\n"
         )
         _commit_all(repo, "add other.py with an over-long single-line PERF001 waiver")
@@ -3896,9 +3894,7 @@ class TestPreCommitUnscopedSweep:
     uses and never touches a real commit."""
 
     # frob:ticket T-1514
-    def _land_one(
-        self, repo: Path, branch: str, filename: str
-    ) -> tuple[str, Path]:
+    def _land_one(self, repo: Path, branch: str, filename: str) -> tuple[str, Path]:
         wt = repo.parent / branch
         _run(["git", "worktree", "add", "-b", branch, str(wt)], repo)
         created = new_ticket(wt, _spec(f"{branch} ticket", scope=(f"src/{filename}",)))
@@ -7326,9 +7322,7 @@ class TestArchiveV2:
         # structural equivalent is `git checkout main -- tickets/` for
         # the tracked (committed) subtree, which cannot reach a file
         # that was never committed in the first place.
-        checkout_result = _run(
-            ["git", "checkout", "main", "--", "tickets/T-1000"], wt
-        )
+        checkout_result = _run(["git", "checkout", "main", "--", "tickets/T-1000"], wt)
         assert checkout_result.returncode == 0, checkout_result.stderr
 
         # The draft, never committed, is untouched by the restore --
@@ -8038,9 +8032,7 @@ class TestLandPlanQueueDrainCommitsDurable:
         def _always_fails(_root: Path) -> Result[tuple, _LandError]:
             return Err(_LandError.NotFound)
 
-        monkeypatch.setattr(
-            land_module, "_land_plan_finalize_drafts", _always_fails
-        )
+        monkeypatch.setattr(land_module, "_land_plan_finalize_drafts", _always_fails)
 
         pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         result = land_plan(repo, worktree)

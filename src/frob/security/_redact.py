@@ -659,5 +659,3 @@ def _scan_line(
             claimed.append(span)
             hits.append((pattern, token))
     return hits
-
-

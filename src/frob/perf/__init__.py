@@ -68,7 +68,6 @@ from frob.perf._collectors import (
 from frob.perf._dup_spawn import duplicate_spawn_violations
 from frob.perf._effect_summaries import EffectGraph, Unknown
 from frob.perf._heat import heat, join_smells, render_bar
-from frob.perf._hotpath_smells import hotpath_smell_violations
 from frob.perf._hotgraph import (
     UNATTRIBUTED_SECTION_ID,
     EdgeHit,
@@ -83,6 +82,7 @@ from frob.perf._hotgraph import (
     language_deciles,
     resolve_stream,
 )
+from frob.perf._hotpath_smells import hotpath_smell_violations
 from frob.perf._loop_effects import loop_invariant_effect_violations
 from frob.perf._models import HeatEntry, HeatReport, PerfError, ProfileArtifact
 from frob.perf._profile import load_artifact, profile_command

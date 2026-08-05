@@ -2602,9 +2602,7 @@ class TestWireGate:
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
-        assert any(
-            v.rule == "WIRE001" and "_unwired" in v.message for v in violations
-        )
+        assert any(v.rule == "WIRE001" and "_unwired" in v.message for v in violations)
 
     # frob:ticket T-1527
     def test_new_errorset_class_referenced_by_bare_member_access_is_not_flagged(
@@ -2621,8 +2619,7 @@ class TestWireGate:
         _write(
             tmp_path,
             "src/a.py",
-            "class MyError:\n"
-            "    Broken = 'x'\n",
+            "class MyError:\n    Broken = 'x'\n",
         )
         _write(
             tmp_path,
@@ -2658,8 +2655,7 @@ class TestWireGate:
         _write(
             tmp_path,
             "src/a.py",
-            "class UnreferencedThing:\n"
-            "    Marker = 'x'\n",
+            "class UnreferencedThing:\n    Marker = 'x'\n",
         )
         _write(
             tmp_path,
@@ -2674,8 +2670,7 @@ class TestWireGate:
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert any(
-            v.rule == "WIRE001" and "UnreferencedThing" in v.message
-            for v in violations
+            v.rule == "WIRE001" and "UnreferencedThing" in v.message for v in violations
         )
 
     # frob:ticket T-1532
@@ -9912,10 +9907,7 @@ class TestFixEngineTierA:
         )
         (root / "design").mkdir()
         (root / "design" / "widget.strata").write_text(
-            "module widget\n"
-            "node widget : trusted {\n"
-            '    code "src/widget/**";\n'
-            "}\n",
+            'module widget\nnode widget : trusted {\n    code "src/widget/**";\n}\n',
             encoding="utf-8",
         )
         snapshot = self._snap(root)
@@ -9959,7 +9951,7 @@ class TestFixEngineTierA:
         )
         (root / "design").mkdir()
         (root / "design" / "api.strata").write_text(
-            "module api\nnode Api : trusted {\n    code \"api/**\";\n}\n",
+            'module api\nnode Api : trusted {\n    code "api/**";\n}\n',
             encoding="utf-8",
         )
         snapshot = self._snap(root)

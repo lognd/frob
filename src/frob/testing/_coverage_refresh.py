@@ -164,14 +164,11 @@ def _run_incremental_or_restamp(
             return Err(CoverageRefreshError.PytestFailed)
         return Ok(True)
     if not xml_path.exists():
-        return (
-            _run_full_suite(
-                root,
-                cov_target=cov_target,
-                reason="nothing touched and no coverage.xml yet",
-            )
-            | (lambda _: True)
-        )
+        return _run_full_suite(
+            root,
+            cov_target=cov_target,
+            reason="nothing touched and no coverage.xml yet",
+        ) | (lambda _: True)
     _log.info(
         "coverage_refresh: nothing touched selects a python test -- "
         "restamping existing coverage.xml only"
@@ -194,18 +191,13 @@ def _run_pytest_pass(
     split out of `native_coverage_refresh` to keep it under the ARCH001
     line threshold. Returns whether pytest actually ran."""
     if full or cold_start:
-        return (
-            _run_full_suite(
-                root,
-                cov_target=cov_target,
-                reason=(
-                    "explicit --full"
-                    if full
-                    else "cold start (no coverage-stamp yet)"
-                ),
-            )
-            | (lambda _: True)
-        )
+        return _run_full_suite(
+            root,
+            cov_target=cov_target,
+            reason=(
+                "explicit --full" if full else "cold start (no coverage-stamp yet)"
+            ),
+        ) | (lambda _: True)
     return _run_incremental_or_restamp(
         root, snapshot, base=base, cov_target=cov_target, xml_path=xml_path
     )

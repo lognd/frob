@@ -209,8 +209,6 @@ def _candidate_line_indices(text: str) -> list[int]:
 #: low.
 
 
-
-
 def _sec004_violation(rel_path: str, lineno: int) -> Violation:
     """SEC004 (T-0968): a `frob:secret-fake` marker with no `reason="..."`
     attribute -- mirrors WAIVE001's malformed-`frob:waive` contract so a
@@ -454,8 +452,6 @@ def fake_marker_staleness_gate(root: Path) -> tuple[Violation, ...]:
             # (EXHAUST001/EXHAUST002, T-1371).
             _log.debug("fake_marker_staleness_gate: skipping unparseable %s", rel_path)
     return tuple(violations)
-
-
 
 
 # frob:enforces CWE-798

@@ -101,9 +101,7 @@ def _atomic_write_release(path: Path, content: str) -> Result[None, ReleaseError
     callers keep a single error vocabulary."""
     written = atomic_write(path, content)
     if written.is_err:
-        _log.error(
-            "release: atomic write to %s failed: %s", path, written.danger_err
-        )
+        _log.error("release: atomic write to %s failed: %s", path, written.danger_err)
         return Err(ReleaseError.WriteFailed)
     return Ok(None)
 

@@ -79,6 +79,7 @@ from ._selfconform import (
     _bind_conformance_inputs,
     _extended_kinds_view,
     _observed_raw_kinds_by_file,
+    _sorted_capability_files,
     _stale_design_violations,
 )
 from ._sysdoc import merge_models
@@ -369,7 +370,7 @@ def _load_mutation_audit_baseline(
         _log.error("mutation-audit: %d design file load error(s)", len(ids.errors))
         return Err(StrataError.ParseFailed)
     model = merge_models(ids.models)
-    bound = _bind_conformance_inputs(model, root)
+    bound = _bind_conformance_inputs(model, root, _sorted_capability_files(root))
     if bound.is_err:
         return Err(bound.danger_err)
     binding = bound.danger_ok

@@ -138,7 +138,9 @@ class TestDocstringProseNotObservedLineLevel:
         # A path that does not exist at all: `_non_executable_byte_spans`
         # itself reads nothing, so the OSError-tolerant "never raises"
         # contract holds even before `read_bytes()` is reached.
-        assert non_executable_line_numbers(tmp_path / "does-not-exist.py") == frozenset()
+        assert (
+            non_executable_line_numbers(tmp_path / "does-not-exist.py") == frozenset()
+        )
 
     # frob:tests src/frob/vet/_capability.py::non_executable_line_numbers kind="unit"
     def test_non_executable_line_numbers_read_bytes_oserror_is_empty(

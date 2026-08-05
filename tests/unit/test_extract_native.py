@@ -43,8 +43,9 @@ def _python_side(
     doc_byte_spans = cc._docstring_byte_spans_from_tree(tree, "python")
     doc_line_spans = sorted(
         {
-            _common._span_of(root.descendant_for_byte_range(start_b, end_b - 1))
+            _common._span_of(node)
             for start_b, end_b in doc_byte_spans
+            if (node := root.descendant_for_byte_range(start_b, end_b - 1)) is not None
         }
     )
 

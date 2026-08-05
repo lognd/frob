@@ -168,9 +168,7 @@ def test_append_event_swallows_oserror_and_logs(tmp_path: Path, caplog):
     import logging
 
     with caplog.at_level(logging.DEBUG, logger="frob.app.telemetry"):
-        with patch(
-            "frob.app.telemetry.Path.open", side_effect=OSError("disk full")
-        ):
+        with patch("frob.app.telemetry.Path.open", side_effect=OSError("disk full")):
             append_event(tmp_path, {"a": 1})
     assert not (tmp_path / TELEMETRY_REL).exists()
     assert any("append failed (ignored)" in rec.message for rec in caplog.records)
@@ -193,8 +191,9 @@ def test_tree_hash_returns_unknown_on_nonzero_returncode(tmp_path: Path):
     # frob:tests src/frob/app/telemetry.py::tree_hash
     # T-1457: git ran but exited nonzero (e.g. not a git repo) -- the
     # separate `result.returncode != 0` fallback branch.
-    from frob.gitio import ProcResult
     from typani import Ok
+
+    from frob.gitio import ProcResult
 
     fake_result = ProcResult(
         argv=("git", "rev-parse", "--short", "HEAD"),

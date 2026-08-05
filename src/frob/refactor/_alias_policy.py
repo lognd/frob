@@ -95,8 +95,7 @@ def resolve_rename_dest_collision(
         original_name=old_leaf,
         alias_name=new_leaf,
         reason=(
-            "destination-namespace collision resolved via "
-            "--alias-conflict rename-dest"
+            "destination-namespace collision resolved via --alias-conflict rename-dest"
         ),
     )
     return own_rename_op, caller_ops, alias

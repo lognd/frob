@@ -33,6 +33,7 @@ class TestRunCargoRealPaths:
             lambda *a, **kw: Ok(_FakeCompletedProcess(stdout="", returncode=0)),
         )
         result = native_mod._run_cargo("check", tmp_path)
+        assert result is not None
         assert result.tool == "cargo-check"
         assert result.exit_code == 0
 
@@ -44,6 +45,7 @@ class TestRunCargoRealPaths:
             lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
         )
         result = native_mod._run_cargo("clippy", tmp_path)
+        assert result is not None
         assert not result.passed
 
     def test_unexpected_crash_is_typed_result(
@@ -55,6 +57,7 @@ class TestRunCargoRealPaths:
 
         monkeypatch.setattr(native_mod, "guarded_subprocess_run", _raise)
         result = native_mod._run_cargo("check", tmp_path)
+        assert result is not None
         assert not result.passed
 
 
@@ -67,6 +70,7 @@ class TestRunCargoFmtCheckRealPaths:
             lambda *a, **kw: Ok(_FakeCompletedProcess(stdout="", returncode=0)),
         )
         result = native_mod._run_cargo_fmt_check(tmp_path)
+        assert result is not None
         assert result.exit_code == 0
         assert "formatted" in result.summary
 
@@ -82,6 +86,7 @@ class TestRunCargoFmtCheckRealPaths:
             ),
         )
         result = native_mod._run_cargo_fmt_check(tmp_path)
+        assert result is not None
         assert result.exit_code == 1
         assert len(result.diagnostics) == 1
 
@@ -93,6 +98,7 @@ class TestRunCargoFmtCheckRealPaths:
             lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
         )
         result = native_mod._run_cargo_fmt_check(tmp_path)
+        assert result is not None
         assert not result.passed
 
 
@@ -105,6 +111,7 @@ class TestRunCargoTestRealPaths:
             lambda *a, **kw: Ok(_FakeCompletedProcess(stdout="", returncode=0)),
         )
         result = native_mod._run_cargo_test(tmp_path)
+        assert result is not None
         assert result.tool == "cargo-test"
 
     def test_kill_switch_disabled(self, tmp_path: Path, monkeypatch) -> None:
@@ -115,6 +122,7 @@ class TestRunCargoTestRealPaths:
             lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
         )
         result = native_mod._run_cargo_test(tmp_path)
+        assert result is not None
         assert not result.passed
 
     def test_unexpected_crash_is_typed_result(
@@ -126,6 +134,7 @@ class TestRunCargoTestRealPaths:
 
         monkeypatch.setattr(native_mod, "guarded_subprocess_run", _raise)
         result = native_mod._run_cargo_test(tmp_path)
+        assert result is not None
         assert not result.passed
 
 
@@ -204,6 +213,7 @@ class TestRunCmakeBuildRealPaths:
             ),
         )
         result = native_mod._run_cmake_build(tmp_path, tmp_path / "build")
+        assert result is not None
         assert result.tool == "cmake-configure"
         assert result.exit_code == 1
 
@@ -220,6 +230,7 @@ class TestRunCmakeBuildRealPaths:
             lambda *a, **kw: Ok(_FakeCompletedProcess(returncode=0)),
         )
         result = native_mod._run_cmake_build(tmp_path, tmp_path / "build")
+        assert result is not None
         assert result.tool == "cmake-build"
         assert result.exit_code == 0
 
@@ -234,6 +245,7 @@ class TestRunCmakeBuildRealPaths:
 
         monkeypatch.setattr(native_mod, "guarded_subprocess_run", _raise)
         result = native_mod._run_cmake_build(tmp_path, tmp_path / "build")
+        assert result is not None
         assert not result.passed
 
     def test_unexpected_crash_is_typed_result(
@@ -249,6 +261,7 @@ class TestRunCmakeBuildRealPaths:
 
         monkeypatch.setattr(native_mod, "guarded_subprocess_run", _raise)
         result = native_mod._run_cmake_build(tmp_path, tmp_path / "build")
+        assert result is not None
         assert not result.passed
 
     def test_kill_switch_disabled(self, tmp_path: Path, monkeypatch) -> None:
@@ -262,6 +275,7 @@ class TestRunCmakeBuildRealPaths:
             lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
         )
         result = native_mod._run_cmake_build(tmp_path, tmp_path / "build")
+        assert result is not None
         assert not result.passed
 
 

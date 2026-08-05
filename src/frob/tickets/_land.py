@@ -171,8 +171,7 @@ def _land_lock_holder_metadata() -> dict:
     session_id = (
         # frob:waive SEC110 reason="session identity marker for lock-holder \
         # attribution, not a secret"
-        os.environ.get("FROB_LAND_SESSION_ID")
-        or f"pid-{pid}"
+        os.environ.get("FROB_LAND_SESSION_ID") or f"pid-{pid}"
     )
     return {
         "pid": pid,
@@ -203,9 +202,7 @@ def _read_land_lock_holder(path: Path) -> dict | None:
 
 @contextmanager
 # frob:ticket T-1495
-def _land_lock(
-    root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S
-) -> Iterator[None]:
+def _land_lock(root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S) -> Iterator[None]:
     """Exclusive, cross-process lock serializing every `land()` call
     against `root` (T-0577) -- see `land`'s docstring for why this closes
     the REL001 version-bump-collision incident class. Degrades to a
@@ -252,8 +249,9 @@ def _land_lock(
                     "land: %s land.lock is held by %s -- waiting up to %.0fs "
                     "before refusing (T-1515: was an unbounded blocking wait)",
                     root,
-                    holder if holder is not None else "an unknown process "
-                    "(lock file unreadable/unwritten)",
+                    holder
+                    if holder is not None
+                    else "an unknown process (lock file unreadable/unwritten)",
                     timeout,
                 )
                 logged_holder = True

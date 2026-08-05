@@ -385,9 +385,7 @@ class TestRootContentKey:
         after = root_content_key(tmp_path)
         assert before != after
 
-    def test_changes_on_uncommitted_edit_never_git_added(
-        self, tmp_path: Path
-    ) -> None:
+    def test_changes_on_uncommitted_edit_never_git_added(self, tmp_path: Path) -> None:
         """Regression test for the real incident this fixed: an edit to a
         git-TRACKED file that was never `git add`ed (the everyday state of
         an in-progress worktree agent's own checkout) MUST still change
@@ -485,9 +483,7 @@ class TestSplitProcessCache:
     """`_split_process_cache` (T-1445): `_build_jobs`'s process-pool
     counterpart to `_substitute_cacheable_jobs`."""
 
-    def test_use_cache_false_returns_everything_as_misses(
-        self, tmp_path: Path
-    ) -> None:
+    def test_use_cache_false_returns_everything_as_misses(self, tmp_path: Path) -> None:
         """frob:tests src/frob/gates/__init__.py::_split_process_cache"""
         from frob.gates import _build_jobs, _load_inputs, _split_process_cache
 

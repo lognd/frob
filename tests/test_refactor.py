@@ -977,7 +977,9 @@ class TestDirectiveCarrier:
         # frob:tests \
         # tests/test_refactor.py::TestDirectiveCarrier.test_attached_waiver_moves_with_\
         # symbol
-        source = "# frob:waive ARCH101 reason=\"test\"\ndef greet():\n    return 'hi'\n"
+        source: str = (
+            "# frob:waive ARCH101 reason=\"test\"\ndef greet():\n    return 'hi'\n"
+        )
         lines = source.splitlines()
         # `greet`'s own def line is line 2 (1-indexed); the waiver directly
         # above it should extend the move span back to line 1.
@@ -987,7 +989,7 @@ class TestDirectiveCarrier:
         # frob:tests \
         # tests/test_refactor.py::TestDirectiveCarrier.test_unrelated_comment_not_exten\
         # ded
-        source = "# just a regular comment\ndef greet():\n    return 'hi'\n"
+        source: str = "# just a regular comment\ndef greet():\n    return 'hi'\n"
         lines = source.splitlines()
         assert extend_span_for_attached_directives(lines, 2) == 2
 

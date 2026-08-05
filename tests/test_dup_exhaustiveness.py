@@ -102,7 +102,9 @@ class TestMatrixExhaustiveness:
         # frob:tests src/frob/dup/_exhaustiveness.py::validate_claim_rungs kind="unit"
         real_rung = DUP_CLAIMS[0].rung
         spec = next(s for s in RUNG_SPECS if s.rung == real_rung)
-        wrong_type = next(ct for ct in CLONE_TYPES if ct not in spec.claimed_clone_types)
+        wrong_type = next(
+            ct for ct in CLONE_TYPES if ct not in spec.claimed_clone_types
+        )
         mismatched = DUP_CLAIMS[0].model_copy(update={"clone_type": wrong_type})
         offenders = validate_claim_rungs((mismatched,))
         assert len(offenders) == 1

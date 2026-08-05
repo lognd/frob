@@ -49,9 +49,9 @@ from frob.strata._audit import (
     evaluate_exhaustiveness,
     group_gaps_by_view,
 )
-from frob.strata._threat_models import ThreatViolation
 from frob.strata._compliance import OutOfScopeRegulation
 from frob.strata._threat_discharge import _discharge_claim_id
+from frob.strata._threat_models import ThreatViolation
 
 
 def _write(root: Path, rel: str, source: str) -> None:
@@ -749,7 +749,6 @@ class TestCodeBoundWiring:
         assert result.is_ok
         assert result.danger_ok.proved
 
-
     # ---- Every composition helper's own Err-propagation branch (T-1415
     # remainder): each patches exactly one already-shipped check function
     # to return Err, proving evaluate_exhaustiveness fails closed rather
@@ -872,9 +871,7 @@ class TestCodeBoundWiring:
                 ),
             )
         )
-        with patch(
-            "frob.strata._audit.evaluate_scenarios", return_value=self._ERR
-        ):
+        with patch("frob.strata._audit.evaluate_scenarios", return_value=self._ERR):
             result = evaluate_exhaustiveness(model)
         assert result.is_err
         assert result.danger_err is StrataError.UnknownReference
@@ -896,7 +893,6 @@ class TestCodeBoundWiring:
         result = evaluate_exhaustiveness(model, root=tmp_path)
         assert result.is_err
         assert result.danger_err is StrataError.AmbiguousCodeBinding
-
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_waived_gap_detail_folds_in_reason_and_rule(self):
@@ -924,7 +920,6 @@ class TestCodeBoundWiring:
         assert waived.rule == "PII003"
         assert "WAIVED[PII003]" in waived.detail
         assert "handled downstream" in waived.detail
-
 
     # `_threat_violation_sub_target`'s own branches (T-1415 remainder):
     # THREAT002's capability kind, THREAT003's CWE id, and the fallback

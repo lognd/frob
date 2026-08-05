@@ -164,7 +164,7 @@ def _scan_file_for_prose_mentions(
             ),
             (None, None),
         )
-        if hit_old is None:
+        if hit_old is None or hit_new is None:
             continue
         seen_spans.add(span)
         new_text = _word_boundary_pattern(hit_old).sub(hit_new, text)
@@ -373,8 +373,7 @@ def _scan_doc_headings(
                 old_text=line,
                 new_text=f"{hashes} {new_heading_text}",
                 reason=(
-                    f"carry doc heading rename {heading_text!r} -> "
-                    f"{new_heading_text!r}"
+                    f"carry doc heading rename {heading_text!r} -> {new_heading_text!r}"
                 ),
             )
         )

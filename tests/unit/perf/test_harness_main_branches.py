@@ -80,9 +80,7 @@ class TestHarnessMainExitCodeNormalization:
         pstats_path = tmp_path / "out.pstats"
         monkeypatch.setenv("FROB_PERF_SERIAL_POOLS", "0")
         monkeypatch.delenv("FROB_PERF_SAMPLE", raising=False)
-        monkeypatch.setattr(
-            sys, "argv", ["_harness.py", str(pstats_path), str(script)]
-        )
+        monkeypatch.setattr(sys, "argv", ["_harness.py", str(pstats_path), str(script)])
         return _harness.main()
 
     def test_int_exit_code_passes_through(self, tmp_path: Path, monkeypatch) -> None:

@@ -61,12 +61,8 @@ class TestWireGateAutouseFixtureExemption:
             "    assert True\n",
         )
         snap = _snapshot(tmp_path)
-        record = next(
-            r for r in snap.symbols.values() if "_npx_available" in r.symref
-        )
-        diff = Diff(
-            base="x", hunks=(Hunk(file="tests/test_a.py", span=record.span),)
-        )
+        record = next(r for r in snap.symbols.values() if "_npx_available" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="tests/test_a.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert _first_rule(violations, "WIRE001") is None
@@ -86,12 +82,8 @@ class TestWireGateAutouseFixtureExemption:
             "def test_something() -> None:\n    assert True\n",
         )
         snap = _snapshot(tmp_path)
-        record = next(
-            r for r in snap.symbols.values() if "_unused_helper" in r.symref
-        )
-        diff = Diff(
-            base="x", hunks=(Hunk(file="tests/test_b.py", span=record.span),)
-        )
+        record = next(r for r in snap.symbols.values() if "_unused_helper" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="tests/test_b.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         v = _first_rule(violations, "WIRE001")
@@ -119,9 +111,7 @@ class TestWireGateAutouseFixtureExemption:
         record = next(
             r for r in snap.symbols.values() if "_explicit_fixture" in r.symref
         )
-        diff = Diff(
-            base="x", hunks=(Hunk(file="tests/test_c.py", span=record.span),)
-        )
+        diff = Diff(base="x", hunks=(Hunk(file="tests/test_c.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         v = _first_rule(violations, "WIRE001")

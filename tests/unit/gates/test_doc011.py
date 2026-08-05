@@ -33,7 +33,9 @@ def _test_ticket(
         kind=TicketKind.FEATURE,
         origin=Origin.HUMAN,
         created=date(2026, 1, 1),
-        body="## Description\nx\n\n## Done report\ndone\n" if state.value == "done" else "",
+        body="## Description\nx\n\n## Done report\ndone\n"
+        if state.value == "done"
+        else "",
     )
 
 

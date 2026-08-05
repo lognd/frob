@@ -129,9 +129,7 @@ class TestClassifyVersionReply:
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.t\
         # est_non_str_version_is_wedged
-        liveness, version = _classify_version_reply(
-            b'{"result": {"version": 123}}\n'
-        )
+        liveness, version = _classify_version_reply(b'{"result": {"version": 123}}\n')
         assert liveness is DaemonLiveness.Wedged
         assert version is None
 
@@ -156,9 +154,7 @@ class TestClearOrphanedSocket:
         with caplog.at_level(logging.INFO, logger="frob.app._daemon_proxy"):
             with patch(
                 "frob.serve.socket_path",
-                return_value=MagicMock(
-                    unlink=MagicMock(side_effect=OSError("gone"))
-                ),
+                return_value=MagicMock(unlink=MagicMock(side_effect=OSError("gone"))),
             ):
                 _clear_orphaned_socket(root)  # must not raise
         assert any(
@@ -177,9 +173,7 @@ class TestClientVersion:
         import logging
 
         with caplog.at_level(logging.DEBUG, logger="frob.app._daemon_proxy"):
-            with patch(
-                "importlib.metadata.version", side_effect=RuntimeError("boom")
-            ):
+            with patch("importlib.metadata.version", side_effect=RuntimeError("boom")):
                 assert _client_version() == "unknown"
         assert any("version lookup failed" in rec.message for rec in caplog.records)
 
@@ -220,9 +214,7 @@ class TestShutdownStaleDaemon:
                 "frob.serve.send_request", return_value=Err(DaemonError.Unreachable)
             ):
                 _shutdown_stale_daemon(root)  # must not raise
-        assert any(
-            "frob_shutdown RPC failed" in rec.message for rec in caplog.records
-        )
+        assert any("frob_shutdown RPC failed" in rec.message for rec in caplog.records)
 
     def test_successful_shutdown_waits_for_lock_release(
         self, root: Path, caplog
@@ -251,9 +243,7 @@ class TestShutdownStaleDaemon:
             ):
                 _shutdown_stale_daemon(root)
         assert exists_calls["n"] >= 2
-        assert any(
-            "frob_shutdown accepted" in rec.message for rec in caplog.records
-        )
+        assert any("frob_shutdown accepted" in rec.message for rec in caplog.records)
 
 
 class TestTryDaemonLeaseErrorPaths:
@@ -278,9 +268,7 @@ class TestTryDaemonLeaseErrorPaths:
         fake_conn.call.side_effect = OSError("broken pipe")
         with (
             patch.object(_daemon_proxy, "ensure_daemon", lambda r: None),
-            patch.object(
-                _daemon_proxy, "_LeaseConnection", return_value=fake_conn
-            ),
+            patch.object(_daemon_proxy, "_LeaseConnection", return_value=fake_conn),
         ):
             result = try_daemon_lease(root, "some-resource")
         assert result.is_err
@@ -295,9 +283,7 @@ class TestTryDaemonLeaseErrorPaths:
         fake_conn.call.return_value = {"error": {"message": "no such resource"}}
         with (
             patch.object(_daemon_proxy, "ensure_daemon", lambda r: None),
-            patch.object(
-                _daemon_proxy, "_LeaseConnection", return_value=fake_conn
-            ),
+            patch.object(_daemon_proxy, "_LeaseConnection", return_value=fake_conn),
         ):
             result = try_daemon_lease(root, "some-resource")
         assert result.is_err

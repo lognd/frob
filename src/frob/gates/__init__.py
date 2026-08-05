@@ -6889,8 +6889,7 @@ def _run_combined_jobs(
     root: Path | None = None,
     max_process_workers: int | None = None,
     preloaded: dict[str, tuple[Violation, ...]] | None = None,
-    process_cache_pending: dict[str, tuple[str | None, tuple[str, ...]]]
-    | None = None,
+    process_cache_pending: dict[str, tuple[str | None, tuple[str, ...]]] | None = None,
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
     """Run `thread_jobs` on a `ThreadPoolExecutor` and `process_jobs`
     (the CPU-bound giants, T-0415/docs/audits/perf.md H3) on a

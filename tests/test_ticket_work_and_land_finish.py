@@ -503,7 +503,9 @@ class TestPreCommitUnscopedSweepFn:
             "frob.app.ticket_runner._land_cmd._sweep_apply_tier_a_pre_commit",
             fake_stage,
         )
-        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        result = _pre_commit_unscoped_error_sweep(
+            tmp_path, "T-0001", "T-0001", baseline
+        )
         assert result is True
         assert staged == [frozenset({"b.txt"})]
 
@@ -525,7 +527,9 @@ class TestPreCommitUnscopedSweepFn:
             "frob.app.ticket_runner._land_cmd._sweep_apply_tier_a_pre_commit",
             lambda root, ticket_id: frozenset(),
         )
-        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        result = _pre_commit_unscoped_error_sweep(
+            tmp_path, "T-0001", "T-0001", baseline
+        )
         assert result is False
 
     # frob:ticket T-1524
@@ -549,7 +553,9 @@ class TestPreCommitUnscopedSweepFn:
                 }
             ),
         )
-        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        result = _pre_commit_unscoped_error_sweep(
+            tmp_path, "T-0001", "T-0001", baseline
+        )
         assert result is True
 
     # frob:ticket T-1524
@@ -573,7 +579,9 @@ class TestPreCommitUnscopedSweepFn:
                 }
             ),
         )
-        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        result = _pre_commit_unscoped_error_sweep(
+            tmp_path, "T-0001", "T-0001", baseline
+        )
         assert result is True
 
     # frob:ticket T-1524
@@ -598,7 +606,9 @@ class TestPreCommitUnscopedSweepFn:
             "frob.app.ticket_runner._land_cmd._sweep_apply_tier_a_pre_commit",
             lambda root, ticket_id: frozenset(),
         )
-        result = _pre_commit_unscoped_error_sweep(tmp_path, "T-0001", "T-0001", baseline)
+        result = _pre_commit_unscoped_error_sweep(
+            tmp_path, "T-0001", "T-0001", baseline
+        )
         assert result is False
 
 

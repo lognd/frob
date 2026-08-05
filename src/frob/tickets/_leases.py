@@ -830,9 +830,7 @@ def _add_and_commit_tickets_md(
             committed = gitio.run_argv(
                 ["git", "-C", str(root), "commit", "-m", message, "--", "tickets.md"]
             )
-            committed = _retry_commit_with_fallback_identity(
-                root, message, committed
-            )
+            committed = _retry_commit_with_fallback_identity(root, message, committed)
     else:
         committed = added
     if (

@@ -4202,7 +4202,10 @@ class TestFingerprintScan:
         # repo because it carries the pyproject-name + crate-dir markers,
         # not because of file identity or suffix alone).
         # frob:tests src/frob/vet/_capability_scan.py::is_self_pattern_path kind="unit"
-        from frob.vet._capability_scan import _aggregate_capabilities, is_self_pattern_path
+        from frob.vet._capability_scan import (
+            _aggregate_capabilities,
+            is_self_pattern_path,
+        )
 
         fake_repo = _make_fake_frob_repo_root(tmp_path / "foreign-install")
         foreign_frob_src = fake_repo / "src" / "frob"
@@ -6487,8 +6490,8 @@ class TestOpaqueIndirectionGate:
         # now exists (distinct from the vtable-patch entry). No finding
         # fires (source-invisible, category-3 per T-0665 doctrine) but the
         # accountability record is asserted, not silent non-detection.
-        from frob.vet._capability_scan import _opaque_indirection_findings
         from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text(
@@ -6544,8 +6547,8 @@ class TestOpaqueIndirectionGate:
         # obligation-gate sibling: closed by T-1047 with a dedicated rust
         # proc-macro excuse entry (category-3, source-invisible -- the
         # expansion never appears in this file's text at all).
-        from frob.vet._capability_scan import _opaque_indirection_findings
         from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
+        from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.rs"
         pkg.write_text("#[derive(RunFromAttribute)]\nstruct Job;\n")

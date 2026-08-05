@@ -207,8 +207,7 @@ def _wire_reach_patterns(
     ARCH001's line threshold, no behavior change from inlining."""
     call_pattern = re.compile(rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\(")
     marker_names = "|".join(
-        re.escape(name)
-        for name in (*_WRAPPER_MARKER_NAMES, *_JOB_TABLE_MARKER_NAMES)
+        re.escape(name) for name in (*_WRAPPER_MARKER_NAMES, *_JOB_TABLE_MARKER_NAMES)
     )
     wrapper_pattern = re.compile(
         rf"(?<![A-Za-z0-9_.])(?:{marker_names})\s*\(\s*{re.escape(short)}\s*[,)]"
@@ -283,9 +282,7 @@ def _is_reached_outside_diff_tests(
                 continue
             if call_pattern.search(text) or wrapper_pattern.search(text):
                 return True
-            if member_access_pattern is not None and member_access_pattern.search(
-                text
-            ):
+            if member_access_pattern is not None and member_access_pattern.search(text):
                 return True
     return False
 

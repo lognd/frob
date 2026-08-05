@@ -59,14 +59,13 @@ class TestLoadIds:
             tmp_path,
             "design/nodes.strata",
             "module nodes\n"
-            'node client : foreign { clearance Public; }\n'
-            'node api : authenticated { clearance Internal; }\n',
+            "node client : foreign { clearance Public; }\n"
+            "node api : authenticated { clearance Internal; }\n",
         )
         _write(
             tmp_path,
             "design/flows.strata",
-            "module flows\n"
-            "flow f_login : client -> api\n",
+            "module flows\nflow f_login : client -> api\n",
         )
         ids = load_design_ids(tmp_path)
         assert ids.errors == ()

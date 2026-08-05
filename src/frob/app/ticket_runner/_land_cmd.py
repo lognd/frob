@@ -448,8 +448,7 @@ def _sweep_apply_tier_a_and_commit(
             str(root),
             "commit",
             "-m",
-            f"fix(land): {final_id} post-land Tier-A cleanup "
-            f"({fixed_count} fix(es))",
+            f"fix(land): {final_id} post-land Tier-A cleanup ({fixed_count} fix(es))",
         ]
         with _land_internal_git_env():
             committed = run_argv(commit_argv)
@@ -694,8 +693,7 @@ def _drop_checkpoint_exempt_findings(
     exempt = frozenset(
         f
         for f in findings
-        if _is_land_owned_finding(root, f[1])
-        or f[0] in _PRE_COMMIT_SWEEP_EXEMPT_RULES
+        if _is_land_owned_finding(root, f[1]) or f[0] in _PRE_COMMIT_SWEEP_EXEMPT_RULES
     )
     if exempt and log_exclusions:
         _log.warning(
@@ -753,9 +751,7 @@ def land_parity_findings(
 
     env = dict(os.environ)
     env["FROB_NO_GATE_CACHE"] = "1"
-    findings = _unscoped_error_findings(
-        root, "land-parity", budget=budget, env=env
-    )
+    findings = _unscoped_error_findings(root, "land-parity", budget=budget, env=env)
     if findings is None:
         return None
     return _drop_checkpoint_exempt_findings(
@@ -1620,6 +1616,7 @@ def _land_pre_commit_sweep_fn(
     scan. `None` (skip) if the baseline thread produced nothing (e.g. a
     dry run, where `_capture_pre_land_baseline` returns `(None, None)`)."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
+    ticket_id: str = cfg.ticket_id  # closure-stable narrowed binding
 
     def sweep(root: Path, final_id: str) -> bool | None:
         baseline_thread.join()
@@ -1627,7 +1624,7 @@ def _land_pre_commit_sweep_fn(
             baseline_holder[0] if baseline_holder else (None, None)
         )
         return _pre_commit_unscoped_error_sweep(
-            root, cfg.ticket_id, final_id, pre_land_findings
+            root, ticket_id, final_id, pre_land_findings
         )
 
     return sweep
@@ -1743,8 +1740,7 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
         )
         return
     _log.info(
-        "land --plan: landed onto %s -- merge_commit=%s finalized=%s "
-        "commit=%s",
+        "land --plan: landed onto %s -- merge_commit=%s finalized=%s commit=%s",
         root,
         report.merge_commit,
         list(report.finalized),
@@ -1962,7 +1958,8 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
             _write_post_land_verify_marker,
         )
 
-        _write_post_land_verify_marker(root, cfg.ticket_id, report.commit_sha)
+        if report.commit_sha is not None:
+            _write_post_land_verify_marker(root, cfg.ticket_id, report.commit_sha)
         swept = _post_land_unscoped_error_sweep(
             root, cfg.ticket_id, report.final_id, pre_land_sha, pre_land_findings
         )

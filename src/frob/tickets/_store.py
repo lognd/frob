@@ -182,6 +182,7 @@ def sanitize_narrative_for_ledger(text: str) -> str:
 
     return _LEDGER_MARKER_RE.sub(_defuse, text)
 
+
 # Archive ledger: same format/marker/fence as the active ledger, rotated in
 # by `frob ticket archive` (T-0096) so the active file stays a few hundred
 # lines instead of growing forever with every done ticket.
@@ -1603,6 +1604,8 @@ def _write_ticket_single_mode(root: Path, ticket: Ticket) -> Result[None, Ticket
     if integrity.is_err:
         return Err(integrity.danger_err)
     return atomic_write(path, spliced)
+
+
 # frob:ticket T-1536
 # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
 def _post_splice_integrity_check(

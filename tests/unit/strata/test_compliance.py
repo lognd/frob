@@ -343,9 +343,7 @@ class TestGdprErasure:
         result = check_regulation_discharge(model)
         assert result.is_ok
         assert any(
-            v.regulation == ""
-            and v.rule == "COMPLIANCE002"
-            and "owner" in v.detail
+            v.regulation == "" and v.rule == "COMPLIANCE002" and "owner" in v.detail
             for v in result.danger_ok
         )
 
@@ -458,9 +456,7 @@ class TestGdprRetention:
         )
         result = check_regulation_discharge(model)
         assert result.is_ok
-        assert any(
-            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
-        )
+        assert any(v.regulation == "" and "owner" in v.detail for v in result.danger_ok)
 
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
     def test_owner_and_review_override_clears_retention(self):
@@ -575,9 +571,7 @@ class TestGdprLawfulBasis:
 
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
     def test_non_pii_flow_is_silent(self):
-        store = Node(
-            id="EuStore", trust="trusted", attrs=("jurisdiction:eu-resident",)
-        )
+        store = Node(id="EuStore", trust="trusted", attrs=("jurisdiction:eu-resident",))
         api = Node(id="Api", trust="trusted")
         flow = Flow(id="collect", src="Api", dst="EuStore", label="Public")
         model = KernelModel(nodes=(api, store), flows=(flow,))
@@ -608,9 +602,7 @@ class TestGdprLawfulBasis:
         )
         result = check_regulation_discharge(model)
         assert result.is_ok
-        assert any(
-            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
-        )
+        assert any(v.regulation == "" and "owner" in v.detail for v in result.danger_ok)
 
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
     def test_owner_and_review_override_clears_basis(self):
@@ -697,9 +689,7 @@ class TestHipaaBaa:
         )
         result = check_regulation_discharge(model)
         assert result.is_ok
-        assert any(
-            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
-        )
+        assert any(v.regulation == "" and "owner" in v.detail for v in result.danger_ok)
 
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
     def test_owner_and_review_override_clears_baa(self):
@@ -787,9 +777,7 @@ class TestMinimization:
         )
         result = check_regulation_discharge(model)
         assert result.is_ok
-        assert any(
-            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
-        )
+        assert any(v.regulation == "" and "owner" in v.detail for v in result.danger_ok)
 
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
     def test_owner_and_review_override_clears_minimization(self):
@@ -879,9 +867,7 @@ class TestPrivacyNotice:
         )
         result = check_regulation_discharge(model)
         assert result.is_ok
-        assert any(
-            v.regulation == "" and "owner" in v.detail for v in result.danger_ok
-        )
+        assert any(v.regulation == "" and "owner" in v.detail for v in result.danger_ok)
 
     # frob:tests src/frob/strata/_compliance.py::check_regulation_discharge kind="unit"
     def test_owner_and_review_override_clears_privacy_notice(self):

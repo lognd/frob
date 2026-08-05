@@ -81,7 +81,9 @@ class TestSummarize:
         summary = _summarize(report, selfconform)
 
         assert "PROVED" not in summary
-        assert "GAP family=security view=owasp-top-10 rule=A1 target=m detail=d" in summary
+        assert (
+            "GAP family=security view=owasp-top-10 rule=A1 target=m detail=d" in summary
+        )
 
     # frob:tests \
     # tests/unit/strata/test_native_test.py::TestSummarize.test_format_selfconform_one_\
@@ -172,7 +174,9 @@ class TestRunNativeSysAuditErrorBranches:
         monkeypatch.setattr(
             _native_test,
             "evaluate_exhaustiveness",
-            lambda model, benign: Ok(AuditReport(views_checked=("security:owasp-top-10",))),
+            lambda model, benign: Ok(
+                AuditReport(views_checked=("security:owasp-top-10",))
+            ),
         )
         monkeypatch.setattr(
             _native_test,

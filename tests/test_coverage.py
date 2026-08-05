@@ -7,6 +7,7 @@ from __future__ import annotations
 import subprocess
 import textwrap
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from typani import Err, Ok
@@ -22,6 +23,13 @@ from frob.testing import (
     python_coverage_targets,
     update_file_cache,
 )
+
+if TYPE_CHECKING:
+    from frob.graph import GraphSnapshot
+
+#: ty: GraphSnapshot-typed sentinel for refresh paths where the snapshot is
+#: unused (the monkeypatched _run never touches it).
+_FAKE_SNAPSHOT = cast("GraphSnapshot", object())
 
 #: T-0538: repo root, resolved the same way every other Makefile-adjacent
 #: test in this repo would -- two levels up from this test file
@@ -296,7 +304,9 @@ class TestCoverageFileCache:
         measured percentage -- the "unchanged file's coverage is never
         recomputed" contract."""
         data = CoverageData(source_sha="abc", module_line={})
-        cache = {"src/foo.py": {"content_hash": "hash-a", "line_pct": 87.5}}
+        cache: dict[str, dict[str, object]] = {
+            "src/foo.py": {"content_hash": "hash-a", "line_pct": 87.5}
+        }
         merged = fill_from_cache(
             data, file_hashes={"src/foo.py": "hash-a"}, cache=cache
         )
@@ -308,7 +318,9 @@ class TestCoverageFileCache:
         one is left unbackfilled -- a real miss, not something a stale
         cache entry should paper over."""
         data = CoverageData(source_sha="abc", module_line={})
-        cache = {"src/foo.py": {"content_hash": "hash-old", "line_pct": 87.5}}
+        cache: dict[str, dict[str, object]] = {
+            "src/foo.py": {"content_hash": "hash-old", "line_pct": 87.5}
+        }
         merged = fill_from_cache(
             data, file_hashes={"src/foo.py": "hash-new"}, cache=cache
         )
@@ -319,7 +331,9 @@ class TestCoverageFileCache:
         """A file this run DID measure keeps its fresh value even when the
         cache disagrees -- fresh data always wins."""
         data = CoverageData(source_sha="abc", module_line={"src/foo.py": 50.0})
-        cache = {"src/foo.py": {"content_hash": "hash-a", "line_pct": 87.5}}
+        cache: dict[str, dict[str, object]] = {
+            "src/foo.py": {"content_hash": "hash-a", "line_pct": 87.5}
+        }
         merged = fill_from_cache(
             data, file_hashes={"src/foo.py": "hash-a"}, cache=cache
         )
@@ -400,7 +414,7 @@ class TestNativeCoverageRefresh:
         monkeypatch.setattr(_refresh_mod, "_run", _fake_run)
         stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
 
-        result = native_coverage_refresh(tmp_path, object())
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_ok
         assert calls[0][0] == "pytest"
         assert "--cov-append" not in calls[0]
@@ -427,7 +441,7 @@ class TestNativeCoverageRefresh:
         )
         self._patch_stamp(monkeypatch, stamp={"source_sha": "x", "file_hashes": {}})
 
-        result = native_coverage_refresh(tmp_path, object())
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_ok
         assert calls[0][0] == "pytest"
         assert "--cov-append" in calls[0]
@@ -457,7 +471,7 @@ class TestNativeCoverageRefresh:
             monkeypatch, stamp={"source_sha": "x", "file_hashes": {}}
         )
 
-        result = native_coverage_refresh(tmp_path, object())
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_ok
         assert calls == []
         assert len(stamp_calls) == 1
@@ -471,7 +485,7 @@ class TestNativeCoverageRefresh:
         monkeypatch.setattr(_refresh_mod, "_run", lambda *a, **k: Err(Unit()))  # noqa: ARG005
         stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
 
-        result = native_coverage_refresh(tmp_path, object())
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_err
         assert result.danger_err == _refresh_mod.CoverageRefreshError.PytestFailed
         assert stamp_calls == []
