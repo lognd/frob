@@ -4671,3 +4671,23 @@ threat: null
 component: null
 ```
 Refiled from T-draft-9dc767d0 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
+
+<!-- ticket:T-1570 -->
+```yaml
+id: T-1570
+title: 'cli regrouping: resolve ticket/debt/deprecated naming (frob tickets vs frob
+  ticket)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: T-1238
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Refiled from T-draft-c79d54fa (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
