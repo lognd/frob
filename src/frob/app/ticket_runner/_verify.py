@@ -33,13 +33,19 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
     """Validate `cfg.ticket_evidence_ids` against collected pytest node ids
     and append the resolvable ones to the ticket's structured evidence list;
     or, with `--evidence-cmd`, record the T-0215 non-pytest cmd-evidence
-    entry instead (docs-kind tickets only). Requires at least one of the
-    two -- neither is silently a no-op."""
-    has_evidence = cfg.ticket_evidence_ids or cfg.ticket_evidence_cmd
+    entry instead (docs-kind tickets only); or, with `--replace OLD NEW`
+    (T-1537), rebind an existing evidence id everywhere it appears. Requires
+    at least one of the three -- neither is silently a no-op."""
+    has_evidence = (
+        cfg.ticket_evidence_ids
+        or cfg.ticket_evidence_cmd
+        or cfg.ticket_evidence_replace
+    )
     if cfg.ticket_id is None or not has_evidence:
         _log.error(
-            "frob ticket evidence requires <id> and either <pytest-node-id>... "
-            "or --evidence-cmd 'command'"
+            "frob ticket evidence requires <id> and one of "
+            "<pytest-node-id>..., --evidence-cmd 'command', or "
+            "--replace OLD-NODE-ID NEW-NODE-ID"
         )
         sys.exit(1)
 
@@ -55,6 +61,13 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
             root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
         )
         if cmd_result.is_err:
+            sys.exit(1)
+
+    if cfg.ticket_evidence_replace:
+        replace_result = _apply_replace_evidence(
+            root, cfg.ticket_id, cfg.ticket_evidence_replace
+        )
+        if replace_result.is_err:
             sys.exit(1)
 
     # frob:ticket T-1178
@@ -903,6 +916,52 @@ def _apply_evidence(
         root, ticket_id, normalized_ids, collected_ids, passed=passing, accepts=accepts
     )
     _log_evidence_result(ticket_id, result)
+    return result
+
+
+# frob:ticket T-1537
+# frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replaces_and_commits  # noqa: E501
+def _apply_replace_evidence(root: Path, ticket_id: str, replace_pair: list[str]):  # noqa: ANN201
+    """CLI wiring for `frob ticket evidence <id> --replace OLD NEW`
+    (T-1537): resolves the SAME `python_ids`/`rust_ids`/`passing` oracle
+    `_apply_evidence` uses (so a `--replace` target is held to the exact
+    same "must resolve, must pass" bar a fresh `add_evidence` id is) and
+    calls `frob.tickets.replace_evidence`, the single-writer path that
+    updates the flat evidence list AND every acceptance binding
+    atomically. `replace_pair` is the CLI's own `[old, new]` 2-element
+    list (`nargs=2`)."""
+    from frob.app import ticket_runner as _ticket_runner
+    from frob.tickets import normalize_evidence_separator, replace_evidence
+
+    old_node, new_node = replace_pair
+    collected = _ticket_runner._collect_python_and_rust_ids(root)
+    if collected.is_err:
+        _log.error(
+            "ticket evidence --replace: pytest collection failed: %s",
+            collected.danger_err,
+        )
+        return collected
+    python_ids, rust_ids, runners = collected.danger_ok
+    collected_ids = python_ids | rust_ids
+
+    normalized_new = normalize_evidence_separator(new_node)
+    passing = _ticket_runner._verify_ids_passing(
+        root, [normalized_new], python_ids, rust_ids, runners
+    )
+
+    result = replace_evidence(
+        root, ticket_id, old_node, new_node, collected_ids, passed=passing
+    )
+    if result.is_err:
+        _log.error("ticket evidence --replace failed: %s", result.danger_err)
+    else:
+        _log.info(
+            "%s: evidence --replace %r -> %r applied (%d evidence id(s))",
+            ticket_id,
+            old_node,
+            new_node,
+            len(result.danger_ok.evidence),
+        )
     return result
 
 

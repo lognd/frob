@@ -599,3 +599,186 @@ class TestLogEvidenceResultRemedy:
         messages = " ".join(r.message for r in caplog.records)
         assert "frob test --collect to refresh" not in messages
         assert "self-refreshes" in messages
+
+
+# frob:ticket T-1537
+class TestReplaceEvidence:
+    """`frob.tickets.replace_evidence` (T-1537): rebind one evidence id
+    everywhere it appears -- the flat evidence list AND every acceptance
+    criterion's own binding -- in a single atomic write."""
+
+    def _seed_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, accepts=None
+    ):
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_old"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="replace evidence target",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_old"],
+            ticket_acceptance=["GIVEN x WHEN y THEN z"],
+        )
+        _new(tmp_path, cfg)
+        if accepts is not None:
+            from frob.app.ticket_runner import _apply_evidence
+
+            _apply_evidence(
+                tmp_path, "T-0001", ["tests/x.py::test_old"], accepts=accepts
+            )
+        return "T-0001"
+
+    def test_replaces_flat_evidence_and_acceptance_binding_atomically(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.tickets import replace_evidence
+
+        ticket_id = self._seed_ticket(tmp_path, monkeypatch, accepts=[0])
+
+        result = replace_evidence(
+            tmp_path,
+            ticket_id,
+            "tests/x.py::test_old",
+            "tests/x.py::test_new",
+            collected=frozenset({"tests/x.py::test_new"}),
+            passed=frozenset({"tests/x.py::test_new"}),
+        )
+        assert result.is_ok
+        updated = result.danger_ok
+        assert updated.evidence == ("tests/x.py::test_new",)
+        assert updated.acceptance[0].evidence == ("tests/x.py::test_new",)
+
+        queue = load_queue(tmp_path).danger_ok
+        on_disk = queue.tickets[ticket_id]
+        assert on_disk.evidence == ("tests/x.py::test_new",)
+        assert on_disk.acceptance[0].evidence == ("tests/x.py::test_new",)
+
+    def test_old_node_absent_is_a_hard_refusal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.tickets import TicketError, replace_evidence
+
+        ticket_id = self._seed_ticket(tmp_path, monkeypatch)
+        result = replace_evidence(
+            tmp_path,
+            ticket_id,
+            "tests/x.py::does_not_exist",
+            "tests/x.py::test_new",
+            collected=frozenset({"tests/x.py::test_new"}),
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceReplaceNotFound
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets[ticket_id].evidence == ("tests/x.py::test_old",)
+
+    def test_unresolvable_new_node_is_rejected(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.tickets import TicketError, replace_evidence
+
+        ticket_id = self._seed_ticket(tmp_path, monkeypatch)
+        result = replace_evidence(
+            tmp_path,
+            ticket_id,
+            "tests/x.py::test_old",
+            "tests/x.py::does_not_resolve",
+            collected=frozenset({"tests/x.py::test_old"}),
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.UnknownEvidence
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets[ticket_id].evidence == ("tests/x.py::test_old",)
+
+    def test_same_old_and_new_is_a_no_op_success(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.tickets import replace_evidence
+
+        ticket_id = self._seed_ticket(tmp_path, monkeypatch)
+        result = replace_evidence(
+            tmp_path, ticket_id, "tests/x.py::test_old", "tests/x.py::test_old"
+        )
+        assert result.is_ok
+        assert result.danger_ok.evidence == ("tests/x.py::test_old",)
+
+
+# frob:ticket T-1537
+class TestReplaceEvidenceCli:
+    """`frob ticket evidence <id> --replace OLD NEW` (T-1537): the CLI
+    layer (`_evidence`/`_apply_replace_evidence`) wiring `replace_evidence`
+    through the same collect/pass oracle `--evidence` ids use."""
+
+    def test_cli_replaces_and_commits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_old"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="replace via cli",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_old"],
+        )
+        _new(tmp_path, cfg)
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_new"}))
+        _patch_passing(monkeypatch)
+        from frob.app.ticket_runner import _evidence
+
+        replace_cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_replace=["tests/x.py::test_old", "tests/x.py::test_new"],
+        )
+        _evidence(tmp_path, replace_cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.evidence == ("tests/x.py::test_new",)
+
+    def test_cli_requires_at_least_one_of_the_three_modes(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.app.ticket_runner import _evidence
+
+        cfg = AppConfig(
+            ticket_command="evidence", ticket_id="T-0001", ticket_path=tmp_path
+        )
+        with pytest.raises(SystemExit) as exc:
+            _evidence(tmp_path, cfg)
+        assert exc.value.code == 1
+
+    def test_cli_replace_not_found_exits_nonzero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_old"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="replace not found",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_old"],
+        )
+        _new(tmp_path, cfg)
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_new"}))
+        _patch_passing(monkeypatch)
+        from frob.app.ticket_runner import _evidence
+
+        replace_cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_replace=[
+                "tests/x.py::does_not_exist",
+                "tests/x.py::test_new",
+            ],
+        )
+        with pytest.raises(SystemExit) as exc:
+            _evidence(tmp_path, replace_cfg)
+        assert exc.value.code == 1

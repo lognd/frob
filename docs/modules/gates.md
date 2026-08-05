@@ -3978,6 +3978,74 @@ TestFixEngineTierA`/`TestFixEngineTierABatch2` exercise every handler at
 the function level against real `GraphSnapshot`s/`TicketQueue`s,
 GIVEN/WHEN/THEN per each ticket's own acceptance criteria.
 
+### SYS100/SYS104 `.strata` declaration auto-fix (T-1531)
+
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_sys104_interface_union -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_sys100_may_via_union -->
+<!-- frob:describes src/frob/strata/_sync_may.py::sync_may_report -->
+<!-- frob:describes src/frob/strata/_sync_may.py::apply_sync_may -->
+
+Every real land refusal on 2026-08-04 traced back to one of a small set
+of `.strata` declaration classes, each hand-fixed with the same
+deterministic recipe repeatedly -- exactly the shape `TIER_A_HANDLERS`
+already exists to close mechanically. T-1531 wires the two
+highest-frequency classes in:
+
+- **`fix_sys104_interface_union`**: SYS104 (a node's declared
+  `interface=[...]` surface drifted from its bound code's real public
+  surface) already has a full writer, `frob.strata._sync_interface`
+  (T-1150) -- this handler is a thin `TIER_A_HANDLERS["SYS104"]` wrapper
+  around `sync_interface_report`/`apply_sync_interface`, the exact
+  functions `frob sys sync-interface` itself calls. Before this ticket,
+  that writer only ran as its own special-case pre-land step
+  (`_land_cmd.py::_sync_interface_pre_land_step`) -- registering it in
+  the generic Tier-A table means the POST-land unscoped sweep
+  (`docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456`) can
+  now auto-repair a SYS104 drift too, not just a pre-land one.
+- **`fix_sys100_may_via_union`**: SYS100's CORE case (net/fs-write/exec,
+  `_effects.py::check_capability_conformance`'s per-file `via` join,
+  T-1440) had no writer at all -- `frob.strata._sync_may` (this ticket)
+  is the new one: for every observed effect with no `may "<kind>" via
+  [...]` grant covering its file, it widens the existing `via` list
+  (sorted union) or inserts a brand-new via-scoped grant line, mirroring
+  `_sync_interface.py`'s own "measure via the real check, edit `.strata`
+  text in place, never re-serialize" strategy end to end (same node-
+  header/body-span matching, same insert-after-anchor convention for a
+  node with no prior declaration).
+
+  **Disclosed scope cut**: SYS100's EXTENDED case
+  (eval/process-control/ffi/install-hook/..., `_selfconform.py::
+  _extended_kind_violations`) fires per-NODE with no per-file evidence at
+  all -- there is no single file this writer could add to a `via` list
+  without guessing which of a node's many bound files actually exercises
+  the capability, so it is deliberately NOT handled by
+  `fix_sys100_may_via_union` (T-1137's own never-guess-at-a-fix posture).
+  A follow-up ticket tracks it separately.
+
+Both handlers follow the same `(root: Path, snapshot: GraphSnapshot) ->
+list[FixApplied]` shape as every other pure-`.strata`-rewrite handler in
+this module (`snapshot` unused -- each reads the design tree itself, same
+as `fix_reg010_registry_sync`/`fix_rel002_release_sync`) and are no-ops
+(empty list, nothing written) when `root` has no `design/` directory at
+all, or when their respective `sync_*_report` call errors (a design file
+that fails to parse, an ambiguous code binding) -- logged and skipped,
+never raised, matching every other handler's "an auto-fix convenience is
+never a hard precondition" posture. Being registered in
+`TIER_A_HANDLERS` means both are automatically wired into EVERY existing
+Tier-A call site with zero further plumbing -- `_land_cmd.py`'s pre-land
+absorption step, its pre-commit unscoped sweep
+(`_pre_commit_unscoped_error_sweep`), AND its post-land unscoped sweep
+(`_post_land_unscoped_error_sweep`) all call `apply_tier_a_fixes`
+already; this ticket needed no changes to `src/frob/app/ticket_runner/
+_land_cmd.py` at all.
+
+**Remaining SYS100/SYS104/land-refusal recipes (disclosed deferral,
+T-1531's own body names six; two shipped here)**: COV002 changed-symbol-
+without-edge auto-insertion, ClaimDivergence done-report re-run,
+TICK006 phantom-draft-citation refile/renumber, and E501-from-merge
+targeted `ruff format` are real, filed as separate follow-up tickets
+rather than guessed at inside this ticket's own budget.
+
 ## Data models
 
 <!-- frob:describes src/frob/gates/_models.py::Severity -->

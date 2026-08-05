@@ -921,6 +921,164 @@ def _append_evidence_and_write(
     return Ok(updated)
 
 
+# frob:ticket T-1537
+# frob:doc docs/modules/tickets.md#frob-ticket-evidence---replace-t-1537
+# frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_replaces_flat_evidence_and_acceptance_binding_atomically  # noqa: E501
+# frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_old_node_absent_is_a_hard_refusal  # noqa: E501
+def replace_evidence(
+    root: Path,
+    ticket_id: str,
+    old_node: str,
+    new_node: str,
+    collected: frozenset[str] | None = None,
+    passed: frozenset[str] | None = None,
+) -> Result[Ticket, TicketError]:
+    """T-1537: rebind one evidence id everywhere it appears -- the flat
+    `ticket.evidence` list AND every acceptance criterion's own `evidence`
+    tuple -- in a SINGLE atomic `write_ticket` call, the same "never split
+    a binding across two writes" posture `_append_evidence_and_write`
+    already holds for a fresh append. Closes the gap `add_evidence` alone
+    left open: a renamed/parametrized test currently orphans its binding
+    (`old_node` still on the ticket, resolves to nothing real) with no CLI
+    remedy -- the coordinator had to hand-edit via `write_ticket` directly
+    twice on 2026-08-04 (T-1520 parametrization). This is that remedy,
+    routed through the SAME single-writer path (`write_ticket`) every
+    other evidence mutation uses, never a second ad hoc write.
+
+    `new_node` is validated exactly like a fresh `add_evidence` call
+    (schema shape via `_validate_evidence_list`, resolution against
+    `collected` when supplied, passing against `passed` when supplied) --
+    a `--replace` must never let an unresolved or failing id sneak in
+    just because it is nominally a "rename," not an "add." `old_node` is
+    normalized the same way (`normalize_evidence_separator`, T-0492) so a
+    dot-form or `::`-form spelling of the SAME id both find the recorded
+    entry; `Err(EvidenceReplaceNotFound)` when normalized `old_node` is
+    present in NEITHER the flat evidence list NOR any acceptance
+    criterion's evidence tuple -- a typo'd source id must never silently
+    no-op. `old_node == new_node` (after normalization) is a no-op success
+    (the ticket is returned unchanged, no write performed) rather than an
+    error -- nothing to replace is not a failure."""
+    from frob.tickets import normalize_evidence_separator, write_ticket
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+
+    prepared = _prepare_replace_evidence(
+        root, ticket_id, old_node, new_node, collected, passed
+    )
+    if prepared.is_err:
+        return Err(prepared.danger_err)
+    normalized_old, ticket, no_op = prepared.danger_ok
+    if no_op:
+        return Ok(ticket)
+
+    normalized_new = normalize_evidence_separator(new_node)
+    updated = _rebind_evidence(ticket, normalized_old, normalized_new)
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s replaced evidence %r -> %r (%d evidence id(s), %d "
+        "acceptance binding(s) updated)",
+        ticket_id,
+        normalized_old,
+        normalized_new,
+        len(updated.evidence),
+        sum(1 for c in ticket.acceptance if normalized_old in c.evidence),
+    )
+    return Ok(updated)
+
+
+# frob:ticket T-1537
+def _prepare_replace_evidence(
+    root: Path,
+    ticket_id: str,
+    old_node: str,
+    new_node: str,
+    collected: frozenset[str] | None,
+    passed: frozenset[str] | None,
+) -> Result[tuple[str, Ticket, bool], TicketError]:
+    """The validate-and-load half of `replace_evidence` (ARCH001 split):
+    normalizes/validates both ids, loads `ticket_id`, confirms
+    `old_node` is actually bound somewhere, and (unless `old_node ==
+    new_node`, the no-op case) checks `new_node` resolves/passes exactly
+    like a fresh `add_evidence` call. Returns `(normalized_old, ticket,
+    no_op)` -- `no_op=True` short-circuits the caller straight to
+    `Ok(ticket)`, no write."""
+    from frob.tickets import (
+        _load_one,
+        _validate_evidence_list,
+        normalize_evidence_separator,
+    )
+
+    normalized_old = normalize_evidence_separator(old_node)
+    validated_new = _validate_evidence_list((new_node,))
+    if validated_new.is_err:
+        return Err(validated_new.danger_err)
+    normalized_new = validated_new.danger_ok[0]
+
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    present_in_flat = normalized_old in ticket.evidence
+    present_in_acceptance = any(normalized_old in c.evidence for c in ticket.acceptance)
+    if not present_in_flat and not present_in_acceptance:
+        _log.warning(
+            "tickets: %s --replace source %r is not present in the "
+            "evidence list or any acceptance criterion",
+            ticket_id,
+            normalized_old,
+        )
+        return Err(TicketError.EvidenceReplaceNotFound)
+
+    if normalized_old == normalized_new:
+        return Ok((normalized_old, ticket, True))
+
+    resolution = _check_evidence_resolution(ticket_id, (normalized_new,), collected)
+    if resolution.is_err:
+        return Err(resolution.danger_err)
+    passing = _check_evidence_passing(ticket_id, (normalized_new,), passed)
+    if passing.is_err:
+        return Err(passing.danger_err)
+    return Ok((normalized_old, ticket, False))
+
+
+# frob:ticket T-1537
+def _rebind_evidence(
+    ticket: Ticket, normalized_old: str, normalized_new: str
+) -> Ticket:
+    """The pure substitution half of `replace_evidence` (ARCH001 split):
+    swaps `normalized_old` for `normalized_new` in `ticket.evidence` AND
+    every acceptance criterion's own `evidence` tuple, deduplicating each
+    post-substitution (order-preserving) in case the ticket already
+    carried BOTH ids -- a straight swap would otherwise create a
+    duplicate `new_node` entry. Returns the updated `Ticket`, unwritten
+    (the caller owns the single `write_ticket` call)."""
+    new_evidence = tuple(
+        normalized_new if nid == normalized_old else nid for nid in ticket.evidence
+    )
+    deduped_evidence = tuple(dict.fromkeys(new_evidence))
+    new_acceptance = tuple(
+        c.model_copy(
+            update={
+                "evidence": tuple(
+                    dict.fromkeys(
+                        normalized_new if nid == normalized_old else nid
+                        for nid in c.evidence
+                    )
+                )
+            }
+        )
+        for c in ticket.acceptance
+    )
+    return ticket.model_copy(
+        update={"evidence": deduped_evidence, "acceptance": new_acceptance}
+    )
+
+
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_exit_zero
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_nonzero_exit

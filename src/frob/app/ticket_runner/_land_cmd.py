@@ -289,8 +289,13 @@ _POST_LAND_SWEEP_BUDGET_S = 300
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
+# frob:ticket T-1535
 def _unscoped_error_findings(
-    root: Path, ticket_id: str, *, budget: int = _POST_LAND_SWEEP_BUDGET_S
+    root: Path,
+    ticket_id: str,
+    *,
+    budget: int = _POST_LAND_SWEEP_BUDGET_S,
+    env: dict[str, str] | None = None,
 ) -> frozenset[tuple[str, str]] | None:
     """Spawn an UNSCOPED, `--budget`-bounded `frob check` in `root` and
     parse the `(rule_id, file)` error-identity set from it, reusing
@@ -304,19 +309,33 @@ def _unscoped_error_findings(
     unmeasurable (refused spawn, timeout, unparsable output) -- the caller
     treats that as "skip the sweep, do not compare a real set against a
     guess," matching every other T-0846/T-0850 unmeasured-is-not-zero
-    convention in this module."""
+    convention in this module.
+
+    `env` (T-1535, `--land-parity`'s own cache-bypassed evaluation): when
+    given, passed straight through to `guarded_subprocess_run`'s own
+    `env=` kwarg instead of the default parent-environment inheritance --
+    `land_parity_findings` uses this to force `FROB_NO_GATE_CACHE=1` onto
+    the spawned check without mutating THIS process's own environment.
+    `None` (every pre-existing caller) preserves the exact prior
+    behavior: no `env=` kwarg at all, `subprocess.run`'s own default
+    (inherit the parent's environment unchanged)."""
     import subprocess
 
     from frob.app import ticket_runner as _ticket_runner
 
+    spawn_kwargs: dict[str, object] = {
+        "cwd": root,
+        "capture_output": True,
+        "text": True,
+        "timeout": budget + 60,
+        "check": False,
+    }
+    if env is not None:
+        spawn_kwargs["env"] = env
     try:
         guarded = _ticket_runner.guarded_subprocess_run(
             [_python_for_tree(root), "-m", "frob", "check", "--budget", str(budget)],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=budget + 60,
-            check=False,
+            **spawn_kwargs,
         )
     except subprocess.TimeoutExpired:
         # T-1463: the docstring's "None means unmeasurable (... timeout ...)"
@@ -687,6 +706,61 @@ def _drop_checkpoint_exempt_findings(
             sorted(exempt),
         )
     return findings - exempt
+
+
+#: `land_parity_findings`'s own budget default (T-1535) -- deliberately
+#: the SAME `_POST_LAND_SWEEP_BUDGET_S` the post-land/pre-commit sweeps
+#: already use, so a worktree-mode `--land-parity` run and the real land
+#: sweep it exists to preview measure against an identical time budget,
+#: never a narrower one that could hide a stage the real sweep would see.
+# frob:ticket T-1535
+_LAND_PARITY_BUDGET_S = _POST_LAND_SWEEP_BUDGET_S
+
+
+# frob:doc docs/modules/tickets.md#frob-check---land-parity-t-1535
+# frob:ticket T-1535
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_none_when_unmeasurable kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_forces_no_gate_cache_env_on_the_spawn kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function kind="unit"  # noqa: E501
+def land_parity_findings(
+    root: Path, *, budget: int = _LAND_PARITY_BUDGET_S
+) -> frozenset[tuple[str, str]] | None:
+    """`frob check --land-parity`'s own evaluation (T-1535): the EXACT
+    same `(rule, file)` unscoped-error identity-set computation the
+    pre-commit/post-land land sweeps run (`_unscoped_error_findings` +
+    `_drop_checkpoint_exempt_findings`, both reused verbatim, no second
+    copy of either), against `root`'s CURRENT tree state -- so a worktree
+    agent can converge on a clean land BEFORE the coordinator ever lands,
+    instead of discovering the divergence only after a real land sweep
+    refuses.
+
+    Two things this adds beyond a bare call to those two functions:
+    cache-bypassed (`FROB_NO_GATE_CACHE=1` injected into the spawned
+    check's OWN environment via `_unscoped_error_findings`'s `env=`
+    param, never this process's own `os.environ` -- T-1346's gate-result
+    cache is exactly the kind of staleness this ticket's own body names
+    as a repeated blind-repair cause), and the T-1524 checkpoint
+    exemptions applied unconditionally (there is no real pre-land-vs-
+    post-land baseline to diff against here, only "what would the sweep
+    see" -- so every checkpoint-artifact exclusion the real sweep would
+    also drop is dropped here too, by the SAME function).
+
+    `None` (unmeasurable: refused spawn, timeout, unparsable output)
+    propagates unchanged from `_unscoped_error_findings` -- the CLI
+    caller (`check_runner.py::_run_land_parity`) treats that as "could
+    not evaluate," never a false-clean zero."""
+    import os
+
+    env = dict(os.environ)
+    env["FROB_NO_GATE_CACHE"] = "1"
+    findings = _unscoped_error_findings(
+        root, "land-parity", budget=budget, env=env
+    )
+    if findings is None:
+        return None
+    return _drop_checkpoint_exempt_findings(
+        root, "land-parity", findings, log_exclusions=True
+    )
 
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456

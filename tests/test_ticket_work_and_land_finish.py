@@ -27,10 +27,12 @@ from frob.app.config import AppConfig
 from frob.app.ticket_runner import _work
 from frob.app.ticket_runner._land_cmd import (
     _absorb_pre_land_fixes,
+    _drop_checkpoint_exempt_findings,
     _finish_worktree,
     _post_land_unscoped_error_sweep,
     _pre_commit_unscoped_error_sweep,
     _print_land_proof,
+    land_parity_findings,
 )
 from frob.app.ticket_runner._lifecycle import _default_work_worktree
 from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket
@@ -655,3 +657,74 @@ class TestLandProofAndFinish:
         assert not worktree.exists()
         worktree_list = _run(["git", "worktree", "list"], repo).stdout
         assert str(worktree) not in worktree_list
+
+
+# frob:ticket T-1535
+class TestLandParityFindings:
+    """T-1535's `frob check --land-parity` evaluation
+    (`land_parity_findings`): the SAME `_unscoped_error_findings` +
+    `_drop_checkpoint_exempt_findings` pair the real land sweeps use,
+    cache-bypassed, against the current tree with no baseline diff."""
+
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_none_when_\
+    # unmeasurable
+    def test_none_when_unmeasurable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: None,
+        )
+        assert land_parity_findings(tmp_path) is None
+
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_forces_no_\
+    # gate_cache_env_on_the_spawn
+    def test_forces_no_gate_cache_env_on_the_spawn(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: dict[str, dict[str, str] | None] = {}
+
+        def fake_unscoped(root, ticket_id, *, budget=0, env=None):  # noqa: ANN001, ANN202
+            seen["env"] = env
+            return frozenset()
+
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            fake_unscoped,
+        )
+        land_parity_findings(tmp_path)
+        seen_env = seen["env"]
+        assert seen_env is not None
+        assert seen_env["FROB_NO_GATE_CACHE"] == "1"
+
+    # frob:tests \
+    # tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_wit\
+    # h_the_land_sweeps_own_exemption_function
+    def test_parity_with_the_land_sweeps_own_exemption_function(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The property this ticket names: for a fixed raw finding set (one
+        real error, one T-1524 checkpoint-artifact PRE001 exempt entry),
+        `land_parity_findings`'s output equals calling the land sweeps'
+        OWN `_drop_checkpoint_exempt_findings` directly against that same
+        raw set -- same parser (both consume `_unscoped_error_findings`'s
+        return value unchanged), same exclusions (both route through the
+        one shared exemption function, never a second hand-copied rule
+        list)."""
+        raw = frozenset(
+            {("X001", "a.txt"), ("PRE001", "tickets.md"), ("Y002", "b.txt")}
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda root, ticket_id, **kw: raw,
+        )
+        parity = land_parity_findings(tmp_path)
+        assert parity is not None
+        expected = _drop_checkpoint_exempt_findings(
+            tmp_path, "land-parity", raw, log_exclusions=False
+        )
+        assert parity == expected
+        assert ("PRE001", "tickets.md") not in parity
+        assert parity == frozenset({("X001", "a.txt"), ("Y002", "b.txt")})

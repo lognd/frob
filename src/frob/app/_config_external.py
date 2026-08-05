@@ -229,6 +229,8 @@ _LIST_FIELDS = (
     "ticket_blocked_by",
     "ticket_acceptance",
     "ticket_evidence_ids",
+    # frob:ticket T-1537
+    "ticket_evidence_replace",
     # frob:ticket T-0749
     "ticket_accepts",
     "ticket_labels",
@@ -289,6 +291,8 @@ _BOOL_FLAGS = (
     "check_stamp_baseline",
     "check_delta",
     "check_fix",
+    # frob:ticket T-1535
+    "check_land_parity",
     "graph_json",
     "registry_sync_gate_rules",
     "debt_json",

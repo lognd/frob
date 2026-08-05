@@ -898,18 +898,64 @@ def _refuse_ticket_lease_mismatch(root: Path, cfg: AppConfig) -> bool:
 
 
 # frob:ticket T-1004
+# frob:ticket T-1535
 def _handle_early_exit_modes(root: Path, cfg: AppConfig) -> bool:
-    """`--only list` and `--budget SECONDS` both exit `run` immediately
-    without the normal full/`--only` dispatch below (T-1004: pulled out of
-    `run` itself to keep it under ARCH001's line threshold) -- returns
-    `True` once either has fired, so `run` can return right after."""
+    """`--only list`, `--budget SECONDS`, and `--land-parity` all exit `run`
+    immediately without the normal full/`--only` dispatch below (T-1004:
+    pulled out of `run` itself to keep it under ARCH001's line threshold) --
+    returns `True` once any has fired, so `run` can return right after."""
     if cfg.check_only == ["list"]:
         _print_stage_list(cfg)
         return True
     if cfg.check_budget is not None:
         _run_budgeted_check(root, cfg)
         return True
+    if cfg.check_land_parity:
+        _run_land_parity(root, cfg)
+        return True
     return False
+
+
+# frob:ticket T-1535
+# frob:doc docs/modules/tickets.md#frob-check---land-parity-t-1535
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function kind="unit"  # noqa: E501
+def _run_land_parity(root: Path, cfg: AppConfig) -> None:
+    """`frob check --land-parity` (T-1535): run
+    `frob.app.ticket_runner._land_cmd.land_parity_findings` against `root`
+    and report -- `None` (unmeasurable) exits 1 with a loud warning
+    (never a false-clean pass), an empty set exits 0 and prints a clean
+    message, and a non-empty set prints every `(rule, file)` finding
+    (`--json` as a `{"findings": [...]}` payload) and exits 1, mirroring
+    exactly what the real land sweep would refuse on."""
+    import json
+
+    from frob.app.ticket_runner._land_cmd import land_parity_findings
+
+    findings = land_parity_findings(root)
+    if findings is None:
+        _log.error(
+            "frob check --land-parity: could not evaluate (spawn refused, "
+            "timeout, or unparsable output) -- this is NOT proof of a "
+            "clean tree, re-run to get a real answer"
+        )
+        sys.exit(1)
+    rows = [{"rule": rule, "file": file} for rule, file in sorted(findings)]
+    if cfg.check_json:
+        _log.info(json.dumps({"findings": rows}, indent=2))
+    elif not rows:
+        _log.info(
+            "frob check --land-parity: clean -- 0 unscoped error(s), "
+            "matches what the land sweep would see"
+        )
+    else:
+        _log.error(
+            "frob check --land-parity: %d unscoped error(s), exactly what "
+            "the land sweep would refuse on:",
+            len(rows),
+        )
+        for rule, file in sorted(findings):
+            _log.error("  %s %s", rule, file)
+    sys.exit(1 if rows else 0)
 
 
 def _handle_stamp_modes(root: Path, cfg: AppConfig) -> bool:

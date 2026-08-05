@@ -821,6 +821,38 @@ merge-time fix, not a workflow correction: an agent hitting a stray
 `git checkout` workaround T-1270's agent improvised -- land itself now
 merges it correctly.
 
+## 6g. Run `frob check --land-parity` before writing your Done report (T-1535)
+
+Every blind repair round on 2026-08-04/05 traced back to a worktree-check
+vs. land-sweep DIVERGENCE: a `--ticket`-scoped run passed while the exact
+same tree would refuse at land (a gate-result cache hid a finding until
+`FROB_NO_GATE_CACHE=1`; a scoped run skipped a family the unscoped sweep
+still evaluates -- SELFAUDIT whole-design, diff-driven DUP, registry-level
+PII012). `frob check --land-parity` runs the EXACT evaluation the land
+pre-commit/post-land sweeps run (`_unscoped_error_findings` +
+`_drop_checkpoint_exempt_findings`, `frob.app.ticket_runner._land_cmd.
+land_parity_findings`) against your CURRENT worktree tree, cache-bypassed,
+with the T-1524 checkpoint-artifact exemptions applied -- so you can
+converge BEFORE the coordinator ever lands, instead of discovering the
+divergence only after a real land sweep refuses:
+
+```
+timeout 400 uv run frob check --land-parity
+```
+
+Exits 0 with a clean message when the land sweep would see zero unscoped
+errors, exits 1 and prints every `(rule, file)` finding otherwise (add
+`--json` for a machine-readable `{"findings": [...]}` payload), and exits
+1 with a loud "could not evaluate" message on an unmeasurable run (spawn
+refused, timeout, unparsable output) -- never a false-clean pass. Run this
+once, section 3b's foreground-`timeout`-wrapped, right before writing your
+Done report -- it is not a substitute for the scoped `--only
+test/archgate/coverage/sys --ticket T-XXXX` checks section 0 already
+requires, it is the one extra check that catches what those necessarily
+scoped checks cannot (playbook section 6c's own scope-note: `--ticket`
+narrows SCOPE/PREWORK/COV002/TODO001/FMT/AFFECT only, every other family
+stays repo-wide).
+
 ## 7. Waive discipline
 
 `frob:waive RULE-ID reason="..."` suppresses one specific violation and

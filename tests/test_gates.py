@@ -9632,6 +9632,7 @@ class TestDocanchorGate:
 
 
 # frob:ticket T-1138
+# frob:ticket T-1531
 class TestFixEngineTierA:
     """`frob.gates._fix_engine`'s Tier-A deterministic --fix handlers
     (T-1138): DOC007 dotted-form rewrite, DOC002 unique-anchor-slug
@@ -9892,6 +9893,98 @@ class TestFixEngineTierA:
         applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
         assert not [a for a in applied if a.rule == "INV006"]
         assert (root / "src" / "pkg.py").read_text(encoding="utf-8") == content
+
+    # -- acceptance: SYS104 interface= union (T-1531) -----------------------
+
+    # frob:ticket T-1531
+    def test_sys104_interface_union_applies_via_apply_tier_a_fixes(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_sys104_interface_union \
+        # kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src" / "widget").mkdir(parents=True)
+        (root / "src" / "widget" / "_io.py").write_text(
+            "def public_fn():\n    pass\n", encoding="utf-8"
+        )
+        (root / "design").mkdir()
+        (root / "design" / "widget.strata").write_text(
+            "module widget\n"
+            "node widget : trusted {\n"
+            '    code "src/widget/**";\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        sys104_applied = [a for a in applied if a.rule == "SYS104"]
+        assert len(sys104_applied) == 1
+        assert "public_fn" in sys104_applied[0].detail
+
+        rewritten = (root / "design" / "widget.strata").read_text(encoding="utf-8")
+        assert "attr interface=[" in rewritten
+        assert "public_fn," in rewritten
+
+    # frob:ticket T-1531
+    def test_sys104_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_sys104_interface_union \
+        # kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "m.py").write_text("def f():\n    pass\n", encoding="utf-8")
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "SYS104"]
+
+    # -- acceptance: SYS100 core may-via union (T-1531) ----------------------
+
+    # frob:ticket T-1531
+    def test_sys100_may_via_union_applies_via_apply_tier_a_fixes(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_sys100_may_via_union kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "api").mkdir(parents=True)
+        (root / "api" / "net.py").write_text(
+            "requests.get('https://x')\n", encoding="utf-8"
+        )
+        (root / "design").mkdir()
+        (root / "design" / "api.strata").write_text(
+            "module api\nnode Api : trusted {\n    code \"api/**\";\n}\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        sys100_applied = [a for a in applied if a.rule == "SYS100"]
+        assert len(sys100_applied) == 1
+        assert "api/net.py" in sys100_applied[0].detail
+
+        rewritten = (root / "design" / "api.strata").read_text(encoding="utf-8")
+        assert 'may "net.connect" via "api/net.py";' in rewritten
+
+    # frob:ticket T-1531
+    def test_sys100_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_sys100_may_via_union kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "api").mkdir(parents=True)
+        (root / "api" / "net.py").write_text(
+            "requests.get('https://x')\n", encoding="utf-8"
+        )
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "SYS100"]
 
     # -- acceptance [2]: TICK002 draft renumber -----------------------------
 

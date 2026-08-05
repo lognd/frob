@@ -111,6 +111,18 @@ def _add_check_selection_args(check_p) -> None:
         action="store_true",
         help="record coverage.xml as the current coverage stamp and exit",
     )
+    # frob:ticket T-1535
+    check_p.add_argument(
+        "--land-parity",
+        dest="check_land_parity",
+        action="store_true",
+        help=(
+            "run the exact unscoped, cache-bypassed error evaluation "
+            "`frob ticket land`'s pre-commit/post-land sweeps run, against "
+            "the current tree, and exit -- converge in the worktree before "
+            "the coordinator ever lands"
+        ),
+    )
     _add_check_delta_and_verbose_args(check_p)
 
 

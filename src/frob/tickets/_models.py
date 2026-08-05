@@ -1727,6 +1727,15 @@ class TicketError(ErrorSet):
         "establish; run the named gate against the named glob and record "
         "its result, then retry"
     )
+    # frob:ticket T-1537
+    #: `frob ticket evidence <id> --replace <old-node> <new-node>` failure
+    #: mode: `old-node` names nothing this ticket's evidence list OR any
+    #: acceptance criterion's evidence tuple actually holds -- a typo'd
+    #: `--replace` source id must never silently no-op.
+    EvidenceReplaceNotFound = (
+        "--replace old-node is not present in this ticket's evidence list "
+        "or any acceptance criterion's evidence"
+    )
 
 
 # frob:ticket T-0176

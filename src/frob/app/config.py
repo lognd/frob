@@ -203,6 +203,13 @@ class AppConfig(BaseModel):
     check_only: list[str] = []
     check_stamp_coverage: bool = False
     check_stamp_baseline: bool = False
+    # frob:ticket T-1535
+    #: `frob check --land-parity`: run the exact unscoped, cache-bypassed
+    #: error evaluation the land pre-commit/post-land sweeps run, against
+    #: the current tree, and exit -- lets a worktree agent converge before
+    #: the coordinator ever lands. `False` (default) leaves normal
+    #: full/`--only`/`--budget` behavior untouched.
+    check_land_parity: bool = False
     check_delta: bool = False
     # frob:ticket T-1260
     #: `frob check --fix`: apply every registered Tier-A deterministic
@@ -391,6 +398,12 @@ class AppConfig(BaseModel):
     ticket_tier_value: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
+    # frob:ticket T-1537
+    #: `frob ticket evidence <id> --replace OLD-NODE-ID NEW-NODE-ID`: rebind
+    #: one evidence id everywhere it appears (flat list + every acceptance
+    #: binding), atomically. Empty (default) means no `--replace` given --
+    #: `[]`/2-element `[old, new]` matches `dup_probe`'s own `nargs=2` shape.
+    ticket_evidence_replace: list[str] = []
     # frob:ticket T-0572
     # frob:ticket T-0749
     # `frob ticket evidence <id> <node-id>... --accepts N [N ...]` /

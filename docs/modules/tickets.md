@@ -2204,6 +2204,77 @@ same unmeasured-is-not-zero posture `_check_gates_summary_fn`/
 `_check_gate_findings_fn` (T-0832/T-0846) already use for the scoped
 claim-divergence check this complements, not replaces.
 
+## `frob check --land-parity` (T-1535)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings -->
+<!-- frob:describes src/frob/app/check_runner.py::_run_land_parity -->
+
+Every blind repair round on 2026-08-04/05 traced back to worktree-check
+vs. land-sweep divergence (module docstring's motivating incidents for
+the post-land sweep above apply equally in the OTHER direction: a
+worktree agent's own scoped verification passing while the same tree
+would refuse at land). `land_parity_findings` (called by `frob check
+--land-parity`, `_run_land_parity`) runs the EXACT same evaluation the
+pre-commit/post-land sweeps above run against the CURRENT worktree tree
+with no baseline diff: `_unscoped_error_findings` (this section's own
+spawn+parse function, reused verbatim) with `FROB_NO_GATE_CACHE=1`
+forced into the SPAWNED check's environment (never this process's own
+`os.environ` -- the caller's `env=` param on `_unscoped_error_findings`,
+T-1535, exists for exactly this), then `_drop_checkpoint_exempt_findings`
+(this section's own T-1524 exemption function, reused verbatim) applied
+unconditionally.
+
+`None` (unmeasurable) exits 1 with a loud "could not evaluate" message,
+never a false-clean pass; an empty set exits 0; a non-empty set prints
+every `(rule, file)` finding and exits 1 -- see
+`docs/guides/agent-playbook.md#6g-run-frob-check---land-parity-before-writing-your-done-report-t-1535`
+for the per-dispatch usage recipe. Reusing both functions verbatim (never
+a second hand-copied parser or exemption list) is what makes this a
+PARITY check rather than an approximation: `tests/test_ticket_work_and_
+land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function`
+pins that `land_parity_findings`'s output on a fixed raw finding set is
+byte-identical to calling `_drop_checkpoint_exempt_findings` directly
+against that same set.
+
+## `frob ticket evidence --replace` (T-1537)
+
+<!-- frob:describes src/frob/tickets/_evidence.py::replace_evidence -->
+
+A renamed or parametrized test that was already bound as ticket evidence
+used to orphan the binding -- `frob ticket land` would refuse ("evidence
+no longer resolves post-merge") with no CLI remedy; the coordinator had
+to hand-edit via `write_ticket` directly, twice, on 2026-08-04 (the T-1520
+parametrization incident this ticket closes). `frob ticket evidence <id>
+--replace OLD-NODE-ID NEW-NODE-ID` rebinds one evidence id everywhere it
+appears -- the flat `ticket.evidence` list AND every acceptance
+criterion's own `evidence` tuple -- in a SINGLE atomic `write_ticket`
+call (`replace_evidence`, the same single-writer path every other
+evidence mutation already uses, never a second ad hoc write; the append
+and the acceptance rebind can never be split across two writes, mirroring
+`_append_evidence_and_write`'s own "no partial state" guarantee).
+
+`NEW-NODE-ID` is held to the exact same bar a fresh `--evidence` id is:
+schema-validated, resolved against the collected pytest/rust node id set,
+and required to have actually PASSED on the CLI's own verification run
+(the same `_verify_ids_passing` oracle `_apply_evidence` uses) -- a
+`--replace` can never let an unresolved or currently-failing id sneak in
+just because it is nominally a rename rather than an addition.
+`OLD-NODE-ID` must be present in EITHER the flat evidence list or at
+least one acceptance criterion's evidence -- `Err(EvidenceReplaceNotFound)`
+otherwise, a typo'd source id is never a silent no-op. `OLD-NODE-ID ==
+NEW-NODE-ID` (after the same dot-to-`::` normalization every evidence id
+goes through) is itself a no-op SUCCESS -- nothing to replace is not a
+failure.
+
+`--replace` composes with the positional node-id list and `--evidence-cmd`
+in one `frob ticket evidence` invocation (all three modes can fire in the
+same call; the command only refuses when NONE of the three is given).
+
+Disclosed follow-up (this ticket's own body): `frob refactor rename`
+detecting a bound-evidence reference and offering the `--replace` rebind
+automatically is a separate, not-yet-built ticket -- this ships the CLI
+primitive that follow-up would call, not the detection.
+
 ## Merge queue (T-1345, first portion)
 
 <!-- frob:describes src/frob/tickets/_land_queue.py::QueueEntry -->

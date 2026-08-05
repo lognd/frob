@@ -1118,6 +1118,121 @@ def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixAppl
 
 
 # ---------------------------------------------------------------------------
+# SYS104 (T-1531): a node's declared `interface=[...]` surface drifted from
+# its real bound-code public surface -- `frob sys sync-interface` (T-1150)
+# already names its own remedy verbatim; this handler wires that existing
+# writer into the generic Tier-A table so both sweep paths (the pre-land
+# absorption step already calls it separately, `_sync_interface_pre_land_
+# step`, but the POST-land unscoped sweep never did) get the same fix.
+# ---------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys104_interface_union_applies_via_apply_tier_a_fixes  # noqa: E501
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys104_no_design_dir_is_a_no_op  # noqa: E501
+# frob:ticket T-1531
+def fix_sys104_interface_union(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+    """Tier-A fix (T-1531): SYS104 already names its own remedy verbatim
+    (`frob sys sync-interface`) -- reuses `sync_interface_report`/
+    `apply_sync_interface` (`frob.strata._sync_interface`, T-1150)
+    directly, the exact functions that CLI verb itself calls, so no
+    detection logic is duplicated here. A design root that does not
+    resolve (no `design/` dir, a parse/elaborate failure) is logged and
+    treated as no fixes applied, matching every other handler's
+    best-effort posture."""
+    from frob.strata._sync_interface import apply_sync_interface, sync_interface_report
+
+    del snapshot  # signature uniformity only, this handler reads the design tree itself
+    if not (root / "design").is_dir():
+        return []
+    report = sync_interface_report(root, "design")
+    if report.is_err:
+        _log.warning(
+            "tier-a fixes: SYS104 sync-interface skipped: %s", report.danger_err
+        )
+        return []
+    result = report.danger_ok
+    if not result.has_drift:
+        return []
+    written = apply_sync_interface(root, result)
+    applied: list[FixApplied] = []
+    for file_result in result.files:
+        if file_result.path not in written:
+            continue
+        for diff in file_result.diffs:
+            detail_bits = []
+            if diff.added:
+                detail_bits.append(f"+{','.join(diff.added)}")
+            if diff.removed:
+                detail_bits.append(f"-{','.join(diff.removed)}")
+            applied.append(
+                FixApplied(
+                    rule="SYS104",
+                    file=file_result.path,
+                    line=0,
+                    detail=f"node {diff.node} interface= {' '.join(detail_bits)}",
+                )
+            )
+    return applied
+
+
+# ---------------------------------------------------------------------------
+# SYS100 core (T-1531): a net/fs-write/exec effect observed in a file with
+# no `may "<kind>" via [...]` grant covering it -- widen (or create) the
+# grant's `via` list to include the observed file, sorted union, via the
+# `frob.strata._sync_may` writer (module docstring there: SYS100's
+# EXTENDED case, eval/process-control/ffi/..., has no per-file evidence to
+# add and is deliberately NOT handled here).
+# ---------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys100_may_via_union_applies_via_apply_tier_a_fixes  # noqa: E501
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys100_no_design_dir_is_a_no_op  # noqa: E501
+# frob:ticket T-1531
+def fix_sys100_may_via_union(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+    """Tier-A fix (T-1531): widen a node's `may "<kind>" via [...]` grant
+    (or insert a brand-new via-scoped grant) to cover a file
+    `check_capability_conformance` (SYS100 core) observed exercising an
+    already-granted capability kind outside its declared `via` surface --
+    `frob.strata._sync_may.sync_may_report`/`apply_sync_may`, this
+    handler's own writer (T-1531, module docstring there for the scope
+    cut: SYS100 EXTENDED is not handled). A design root that does not
+    resolve is logged and treated as no fixes applied."""
+    from frob.strata._sync_may import apply_sync_may, sync_may_report
+
+    del snapshot  # signature uniformity only, this handler reads the design tree itself
+    if not (root / "design").is_dir():
+        return []
+    report = sync_may_report(root, "design")
+    if report.is_err:
+        _log.warning("tier-a fixes: SYS100 sync-may skipped: %s", report.danger_err)
+        return []
+    result = report.danger_ok
+    if not result.has_drift:
+        return []
+    written = apply_sync_may(root, result)
+    applied: list[FixApplied] = []
+    for file_result in result.files:
+        if file_result.path not in written:
+            continue
+        for diff in file_result.diffs:
+            verb = "created" if diff.created else "widened"
+            applied.append(
+                FixApplied(
+                    rule="SYS100",
+                    file=file_result.path,
+                    line=0,
+                    detail=(
+                        f"node {diff.node} may {diff.kind!r} via {verb} "
+                        f"+{','.join(diff.added_files)}"
+                    ),
+                )
+            )
+    return applied
+
+
+# ---------------------------------------------------------------------------
 # WAIVE004 (T-1261): a `frob:waive` matching zero findings -- ONLY ever
 # trustworthy on a genuine full, unscoped run (T-1133's own disclaimer);
 # this handler independently manufactures that full run itself rather
@@ -1396,6 +1511,14 @@ def _waive004_target_rule(message: str) -> str | None:
 #: at all, see `_FROB_DIRECTIVE_MARKER_RE`, so the two never actually
 #: collide on the same physical line in practice -- the ordering is
 #: still fixed explicitly rather than left to dict insertion accident).
+#: SYS104/SYS100 (T-1531) are pure `.strata` text rewrites (same category
+#: as DOC007/DOC002/INV006-carry/FMT001/REG010/REL002) reusing the
+#: `frob.strata._sync_interface`/`frob.strata._sync_may` writers that
+#: already back `frob sys sync-interface`; wiring them here (rather than
+#: only the pre-land-only special-case call sites those writers already
+#: had) is what makes the POST-land unscoped sweep (`_land_cmd.py::
+#: _sweep_apply_tier_a_and_commit`) able to auto-repair them too.
+# frob:ticket T-1531
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 TIER_A_HANDLERS: dict[
     str, Callable[[Path, GraphSnapshot, TicketQueue], list[FixApplied]]
@@ -1409,6 +1532,8 @@ TIER_A_HANDLERS: dict[
     ),
     "REG010": lambda root, snapshot, queue: fix_reg010_registry_sync(root, snapshot),
     "REL002": lambda root, snapshot, queue: fix_rel002_release_sync(root, snapshot),
+    "SYS104": lambda root, snapshot, queue: fix_sys104_interface_union(root, snapshot),
+    "SYS100": lambda root, snapshot, queue: fix_sys100_may_via_union(root, snapshot),
     "TICK002": lambda root, snapshot, queue: fix_tick002_renumber(root, queue),
     "WAIVE004": lambda root, snapshot, queue: fix_waive004_stale_waiver(
         root, snapshot, queue

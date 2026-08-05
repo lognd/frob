@@ -243,6 +243,19 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "exit status and an output digest as evidence -- docs-kind tickets "
         "only, code kinds still require pytest node ids",
     )
+    # frob:ticket T-1537
+    ticket_evidence_p.add_argument(
+        "--replace",
+        dest="ticket_evidence_replace",
+        nargs=2,
+        metavar=("OLD-NODE-ID", "NEW-NODE-ID"),
+        default=[],
+        help="rebind one evidence id everywhere it appears (the flat "
+        "evidence list AND every acceptance criterion's own binding) in "
+        "one atomic write -- for a renamed/parametrized test whose old "
+        "node id no longer resolves; mutually usable alongside positional "
+        "node-id ids/--evidence-cmd in the same invocation",
+    )
     ticket_evidence_p.add_argument(
         "--accepts",
         dest="ticket_accepts",
