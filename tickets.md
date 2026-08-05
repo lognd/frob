@@ -6248,3 +6248,26 @@ threat: null
 component: null
 ```
 T-1547's E501 Tier-A auto-fix handler doc landed as a standalone page (docs/modules/gates_e501_autofix.md) because docs/modules/gates.md -- home to every other Tier-A handler's own writeup -- was under an in-progress T-1205 lease for T-1547's whole duration. T-1205 has landed and the lease is clear: fold that page's content into gates.md's existing '--fix Tier-A deterministic auto-fix handlers' section (matching the SYS100/SYS104 T-1531 precedent's own subsection shape), then delete the standalone page.
+
+<!-- ticket:T-1581 -->
+```yaml
+id: T-1581
+title: COV002 Tier-A insertion handler must use the target file's comment leader
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine.py
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1548's fix_cov002_ticket_directive_insertion writes '# frob:ticket <id>' unconditionally. During T-1548's OWN land sweep it inserted that Python-style line into design/frob.strata (comment leader '//'), which broke strata parsing on main -- frob sys sync-interface died with ParseFailed until hand-repaired (commit on 2026-08-05). Fix: resolve the comment leader per target language (the dsl/lang layer already knows per-language comment syntax for directive PARSING -- reuse that, do not hardcode a second table), and refuse to insert into file types whose leader is unknown. Regression test: handler run against a .strata file and a .rs file inserts '//', against .py inserts '#', against an unknown extension inserts nothing.
