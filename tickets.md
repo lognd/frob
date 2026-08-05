@@ -6012,3 +6012,22 @@ CoverageRefreshError itself has no call-shaped occurrence anywhere.
 Teach the text scan an ErrorSet-member-access shape (ClassName\.[A-Za-z_]
 or a `-> Result[..., ClassName]`/`Err(ClassName.` occurrence) the same
 way T-1502 teaches it the wrapper-bare-name shape.
+
+<!-- ticket:T-1528 -->
+```yaml
+id: T-1528
+title: 'frob ticket list: one-line state summary footer + --stats velocity/ETA line'
+state: queued
+kind: ux
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Coordinators keep running 'frob ticket list | grep queued | wc -l' for basic queue telemetry. Add (1) an always-on single summary footer to frob ticket list: counts per state (queued/planned/in-progress/blocked/done-unarchived/dropped-unarchived) computed from the already-loaded queue -- zero extra IO; (2) a --stats flag appending a second line with historic velocity reusing the existing T-1100/T-0938 flow machinery: median cycle time (created->done), landed/day and filed/day over the trailing window, net burn rate, and a naive backlog ETA (queued / net-landed-per-day, 'growing' when net is negative). Requested by user 2026-08-04.
