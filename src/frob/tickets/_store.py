@@ -1593,9 +1593,20 @@ def _write_ticket_single_mode(root: Path, ticket: Ticket) -> Result[None, Ticket
     (`_splice_ticket_section`, T-0505) and refuse to persist unless the
     result re-parses cleanly with no id lost (`_post_splice_integrity_
     check`). Caller already holds `ledger_lock`."""
-    path = ledger_path(root)
+    return _splice_single_ticket(ledger_path(root), _LEDGER_HEADER, ticket)
+
+
+def _splice_single_ticket(
+    path: Path, header: str, ticket: Ticket
+) -> Result[None, TicketError]:
+    """Shared single-mode splice body for `_write_ticket_single_mode` and
+    `write_archived_ticket` (T-1536/T-1561): splice `ticket`'s own marker
+    block into the monofile at `path` (seeded from `header` if absent) and
+    refuse to persist unless the result re-parses cleanly with no id lost
+    (`_post_splice_integrity_check`). Caller already holds the appropriate
+    lock for `path`."""
     if not path.exists():
-        fresh = _splice_ticket_section(_LEDGER_HEADER, ticket)
+        fresh = _splice_ticket_section(header, ticket)
         integrity = _post_splice_integrity_check(frozenset(), ticket.id, fresh)
         if integrity.is_err:
             return Err(integrity.danger_err)
@@ -1707,23 +1718,7 @@ def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketErro
         )
         return Err(TicketError.NotFound)
     with ledger_lock(root):
-        path = archive_path(root)
-        if not path.exists():
-            fresh = _splice_ticket_section(_ARCHIVE_HEADER, ticket)
-            integrity = _post_splice_integrity_check(frozenset(), ticket.id, fresh)
-            if integrity.is_err:
-                return Err(integrity.danger_err)
-            return atomic_write(path, fresh)
-        text = path.read_text(encoding="utf-8")
-        parsed = _parse_ledger(text)
-        if parsed.is_err:
-            return Err(parsed.danger_err)
-        before_ids = frozenset(parsed.danger_ok)
-        spliced = _splice_ticket_section(text, ticket)
-        integrity = _post_splice_integrity_check(before_ids, ticket.id, spliced)
-        if integrity.is_err:
-            return Err(integrity.danger_err)
-        return atomic_write(path, spliced)
+        return _splice_single_ticket(archive_path(root), _ARCHIVE_HEADER, ticket)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
@@ -1930,13 +1925,6 @@ def _migrate_one_v2(
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_golden_round_trip_semantic_equality  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_idempotent_no_v1_state_is_a_no_op  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_draft_id_ticket_migrates_like_any_other  # noqa: E501
-# frob:waive WIRE001 reason="T-1259's own scope (src/frob/tickets/_store.py, \
-# src/frob/gates/**, docs/modules/tickets.md, .gitattributes, \
-# tests/fixtures/tickets/**, tests/test_tickets_migration.py) does not cover the CLI \
-# parser (_cli_parsers/_ticket/_progress.py) or ticket_runner dispatch \
-# (app/ticket_runner/_query.py, __init__.py) a real `frob ticket migrate --to v2` flag \
-# needs -- this function is the migration engine itself, golden-round-trip tested \
-# directly; the CLI flag that calls it is the follow-up's whole job" follow_up="T-1492"
 def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
     """One-shot, reversible migrator (ledger v2 design section 7,
     deliverable 1): reads today's `tickets.md`/`tickets-archive.md` via
