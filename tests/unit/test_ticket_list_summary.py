@@ -20,10 +20,10 @@ from frob.tickets import (
     Origin,
     TicketKind,
     TicketSpec,
+    load_active,
     new_ticket,
 )
 from frob.tickets._models import TicketFlowReport, TicketFlowRow
-from frob.tickets import load_active
 from frob.tickets._store import atomic_write, ledger_path
 
 
@@ -49,7 +49,7 @@ class TestSummaryFooter:
         # te
         _test_seed(tmp_path, n=3)
         queue = load_active(tmp_path).danger_ok
-        line = _summary_footer(queue)
+        line = _summary_footer(tmp_path, queue)
         assert line == "summary: 3 active (3 queued)"
 
     # frob:ticket T-1528
@@ -58,7 +58,29 @@ class TestSummaryFooter:
         # tests/unit/test_ticket_list_summary.py::TestSummaryFooter.test_empty_queue
         atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
         queue = load_active(tmp_path).danger_ok
-        assert _summary_footer(queue) == "summary: 0 active (empty)"
+        assert _summary_footer(tmp_path, queue) == "summary: 0 active (empty)"
+
+    # frob:ticket T-1530
+    def test_leased_queued_ticket_counts_as_in_progress(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_list_summary.py::TestSummaryFooter.test_leased_queued_\
+        # ticket_counts_as_in_progress
+        """T-1530: the census must match the rows -- a ledger-queued ticket
+        with a live worktree lease renders [in-progress@...] in the rows,
+        so it counts as in-progress here, not queued."""
+        _test_seed(tmp_path, n=2)
+        queue = load_active(tmp_path).danger_ok
+        leased_id = sorted(queue.tickets)[0]
+
+        class _FakeLease:
+            ticket_id = leased_id
+            worktree = str(tmp_path / "wt")
+
+        monkeypatch.setattr("frob.tickets.read_all_leases", lambda root: [_FakeLease()])
+        line = _summary_footer(tmp_path, queue)
+        assert line == "summary: 2 active (1 queued, 1 in-progress)"
 
 
 # frob:ticket T-1528

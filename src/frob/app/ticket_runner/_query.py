@@ -37,6 +37,7 @@ def _filter_by_state(tickets, state):
 
 # frob:ticket T-1528
 # frob:ticket T-0716
+# frob:ticket T-1530
 def _list(root: Path, cfg: AppConfig) -> None:
     # Active store only (T-0096) -- archived done/dropped tickets would
     # otherwise pile back up in every `list` the archive command exists to
@@ -58,15 +59,15 @@ def _list(root: Path, cfg: AppConfig) -> None:
         _log.info(json.dumps([t.model_dump(mode="json") for t in tickets], indent=2))
         return
 
-    if not tickets:
-        _log.info("no tickets")
-        _log.info("%s", _summary_footer(queue))
-        if cfg.ticket_stats:
-            _log.info("%s", _stats_line(root, queue))
-        return
     from frob.app.ticket_runner import _stdout_color
 
     color = _stdout_color()
+    if not tickets:
+        _log.info("no tickets")
+        _log.info("%s", _summary_footer(root, queue, color))
+        if cfg.ticket_stats:
+            _log.info("%s", _stats_line(root, queue))
+        return
     for t in tickets:
         _log.info(
             "%s  [%s]  %s  (%s)",
@@ -75,22 +76,32 @@ def _list(root: Path, cfg: AppConfig) -> None:
             t.title,
             t.kind.value,
         )
-    _log.info("%s", _summary_footer(queue))
+    _log.info("%s", _summary_footer(root, queue, color))
     if cfg.ticket_stats:
         _log.info("%s", _stats_line(root, queue))
 
 
 # frob:ticket T-1528
-def _summary_footer(queue) -> str:  # noqa: ANN001
+# frob:ticket T-1530
+def _summary_footer(root: Path, queue, color: bool = False) -> str:  # noqa: ANN001
     """One-line per-state census of the ACTIVE queue (T-1528) -- the
     always-on `frob ticket list` footer that replaces the
     `list | grep queued | wc -l` shell idiom. Computed from the queue the
-    list just loaded: zero extra IO."""
+    list just loaded plus the live lease overlay.
+
+    T-1530: counts `display_state(t, root)`'s base state (the part before
+    any `@worktree` decoration), NOT the raw ledger state, so the census
+    always agrees with the rows rendered above it -- a leased-but-ledger-
+    queued ticket displays `[in-progress@...]` and must count as
+    in-progress here too. State names are styled through the same
+    `style_state` helper the rows use (no-op when `color` is False)."""
     from collections import Counter
 
-    from frob.tickets import TicketState
+    from frob.tickets import TicketState, display_state
 
-    counts = Counter(t.state for t in queue.tickets.values())
+    counts = Counter(
+        display_state(t, root).split("@")[0] for t in queue.tickets.values()
+    )
     order = (
         TicketState.QUEUED,
         TicketState.PLANNED,
@@ -99,7 +110,11 @@ def _summary_footer(queue) -> str:  # noqa: ANN001
         TicketState.DONE,
         TicketState.DROPPED,
     )
-    parts = [f"{counts[s]} {s.value}" for s in order if counts[s]]
+    parts = [
+        f"{counts[s.value]} {style_state(s.value, color)}"
+        for s in order
+        if counts[s.value]
+    ]
     total = sum(counts.values())
     body = ", ".join(parts) if parts else "empty"
     return f"summary: {total} active ({body})"

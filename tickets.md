@@ -6465,7 +6465,7 @@ See invariants/INV-050.md's inventory table for the full reasoning per cache.
 id: T-1530
 title: ticket list summary footer counts ledger state, not display_state (lease-aware);
   route/style via shared list formatting
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -6473,12 +6473,61 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/app/ticket_runner/_query.py
+- tests/unit/test_ticket_list_summary.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: lease-aware footer fix surface
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/unit/test_ticket_list_summary.py
+  reason: lease-aware footer fix surface
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_leased_queued_ticket_counts_as_in_progress
+- tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_counts_per_state
+- tests/unit/test_ticket_list_summary.py::TestListFooterEndToEnd::test_list_always_prints_summary
+acceptance:
+- text: GIVEN a ledger-queued ticket with a live worktree lease WHEN frob ticket list
+    renders THEN the summary footer counts it in-progress (matching the [in-progress@worktree]
+    row above it), state names route through the shared style_state helper gated by
+    the same color detection as the rows, and all output flows through the module
+    logger
+  evidence:
+  - tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_leased_queued_ticket_counts_as_in_progress
+  - tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_counts_per_state
+  - tests/unit/test_ticket_list_summary.py::TestListFooterEndToEnd::test_list_always_prints_summary
 threat: null
 component: null
 ```
 T-1528's footer tallies t.state raw, but the list rows above it render display_state(t, root) which folds in live worktree leases -- a leased-but-ledger-queued ticket shows [in-progress@...] in the rows while the footer counts it queued, so the two disagree on the same screen. Fix: census display_state(t, root) so footer matches rows exactly. Also: footer/stats lines must go through the same logger + style helpers as the rows (dim/bold via frob.app._style with _stdout_color gating) so formatting is consistent. User-reported 2026-08-04.
+
+## Done report
+
+The T-1528 summary footer tallied raw ledger state while the rows above it render display_state(t, root) with the live lease overlay, so a leased-but-ledger-queued ticket showed [in-progress@worktree] in the rows and counted as queued in the footer on the same screen (user-reported). The census now counts display_state's base state (the segment before any @worktree decoration), guaranteeing footer==rows by construction; state names route through the same style_state helper and _stdout_color gate the rows use, and all output already flowed through the module logger. Regression test pins the leased-queued case; existing footer tests updated for the root-aware signature.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_query.py   | 35 ++++++++++++++++-------
+ tests/unit/test_ticket_list_summary.py | 28 +++++++++++++++++--
+ tickets.md                             | 51 +++++++++++++++++++++++++++++++++-
+ 3 files changed, 100 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_leased_queued_ticket_counts_as_in_progress` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_counts_per_state` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_list_summary.py::TestListFooterEndToEnd::test_list_always_prints_summary` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1531 -->
 ```yaml
