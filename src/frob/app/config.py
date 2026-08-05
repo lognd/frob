@@ -340,6 +340,8 @@ class AppConfig(BaseModel):
     # `--acceptance TEXT` flags. Mutually exclusive with `--acceptance`.
     ticket_acceptance_file: Path | None = None
     ticket_state: str | None = None
+    # frob:ticket T-1528
+    ticket_stats: bool = False
     ticket_by: str | None = None
     ticket_summary: str | None = None
     # frob:ticket T-1130

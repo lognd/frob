@@ -1998,6 +1998,7 @@ class TicketFlowRow(BaseModel):
         return self.filed - self.landed
 
 
+# frob:ticket T-1528
 # frob:ticket T-1100
 # frob:doc docs/modules/tickets.md#public-api
 class TicketFlowReport(BaseModel):
@@ -2019,6 +2020,11 @@ class TicketFlowReport(BaseModel):
     rows: tuple[TicketFlowRow, ...] = ()
     open_count: int = 0
     trailing_net_rate: float = 0.0
+    # frob:ticket T-1528
+    #: Median calendar days from `created` to first observed done
+    #: transition across every ticket that has both; None when no ticket
+    #: has completed yet (render layers label it "n/a", never omit).
+    median_cycle_days: float | None = None
 
     @property
     # frob:ticket T-1100

@@ -35,6 +35,7 @@ def _filter_by_state(tickets, state):
     return [t for t in tickets if t.state == state]
 
 
+# frob:ticket T-1528
 # frob:ticket T-0716
 def _list(root: Path, cfg: AppConfig) -> None:
     # Active store only (T-0096) -- archived done/dropped tickets would
@@ -59,6 +60,9 @@ def _list(root: Path, cfg: AppConfig) -> None:
 
     if not tickets:
         _log.info("no tickets")
+        _log.info("%s", _summary_footer(queue))
+        if cfg.ticket_stats:
+            _log.info("%s", _stats_line(root, queue))
         return
     from frob.app.ticket_runner import _stdout_color
 
@@ -71,6 +75,61 @@ def _list(root: Path, cfg: AppConfig) -> None:
             t.title,
             t.kind.value,
         )
+    _log.info("%s", _summary_footer(queue))
+    if cfg.ticket_stats:
+        _log.info("%s", _stats_line(root, queue))
+
+
+# frob:ticket T-1528
+def _summary_footer(queue) -> str:  # noqa: ANN001
+    """One-line per-state census of the ACTIVE queue (T-1528) -- the
+    always-on `frob ticket list` footer that replaces the
+    `list | grep queued | wc -l` shell idiom. Computed from the queue the
+    list just loaded: zero extra IO."""
+    from collections import Counter
+
+    from frob.tickets import TicketState
+
+    counts = Counter(t.state for t in queue.tickets.values())
+    order = (
+        TicketState.QUEUED,
+        TicketState.PLANNED,
+        TicketState.IN_PROGRESS,
+        TicketState.BLOCKED,
+        TicketState.DONE,
+        TicketState.DROPPED,
+    )
+    parts = [f"{counts[s]} {s.value}" for s in order if counts[s]]
+    total = sum(counts.values())
+    body = ", ".join(parts) if parts else "empty"
+    return f"summary: {total} active ({body})"
+
+
+# frob:ticket T-1528
+def _stats_line(root: Path, queue) -> str:  # noqa: ANN001
+    """`frob ticket list --stats` second footer line (T-1528): trailing
+    filed/landed/net per-day rates, median cycle time, and the naive
+    burn-down ETA -- all straight off `ticket_flow`'s existing T-1100
+    report, no new mining."""
+    from frob.tickets import ticket_flow
+
+    report = ticket_flow(root, queue)
+    trailing = report.rows[-3:]
+    days = len(trailing) or 1
+    filed = sum(r.filed for r in trailing) / days
+    landed = sum(r.landed for r in trailing) / days
+    cycle = (
+        f"{report.median_cycle_days:.1f}d"
+        if report.median_cycle_days is not None
+        else "n/a"
+    )
+    eta = report.eta_days
+    eta_text = f"~{eta:.0f}d" if eta is not None else "not shrinking"
+    return (
+        f"stats: open {report.open_count} | trailing-3d filed {filed:.1f}/d, "
+        f"landed {landed:.1f}/d, net {report.trailing_net_rate:+.1f}/d | "
+        f"median cycle {cycle} | backlog ETA {eta_text}"
+    )
 
 
 # frob:ticket T-0716

@@ -445,18 +445,29 @@ def _count_filed_by_day(all_tickets: dict) -> dict[date, int]:
     return filed_by_day
 
 
+# frob:ticket T-1528
 # frob:ticket T-1162
-def _count_landed_by_day(root: Path, all_tickets: dict) -> dict[date, int]:
+def _count_landed_by_day(
+    root: Path, all_tickets: dict
+) -> tuple[dict[date, int], dict[str, date]]:
     """T-1162: pure I/O -- mine `tickets.md`'s git history
     (`_mine_done_transitions`) for done-transition commits across every
     ticket id in `all_tickets` and tally them into a landed-per-day
-    histogram. Extracted from `ticket_flow`."""
+    histogram. Extracted from `ticket_flow`. T-1528: ALSO returns each
+    id's FIRST observed done date from the same single mining pass, so
+    `ticket_flow`'s median cycle-time needs no second history walk."""
     transitions = _mine_done_transitions(root, tuple(all_tickets.keys()))
     landed_by_day: dict[date, int] = {}
+    first_done: dict[str, date] = {}
     for transition in transitions:
         day = transition.committed_at.date()
         landed_by_day[day] = landed_by_day.get(day, 0) + 1
-    return landed_by_day
+        if (
+            transition.ticket_id not in first_done
+            or day < first_done[transition.ticket_id]
+        ):
+            first_done[transition.ticket_id] = day
+    return landed_by_day, first_done
 
 
 # frob:ticket T-1162
@@ -484,6 +495,7 @@ def _build_flow_rows(
     return rows
 
 
+# frob:ticket T-1528
 # frob:ticket T-1100
 # frob:ticket T-1142
 # frob:ticket T-1162
@@ -548,7 +560,7 @@ def ticket_flow(
 
     all_tickets = _load_flow_ticket_universe(root, queue)
     filed_by_day = _count_filed_by_day(all_tickets)
-    landed_by_day = _count_landed_by_day(root, all_tickets)
+    landed_by_day, first_done = _count_landed_by_day(root, all_tickets)
 
     today = today if today is not None else date.today()
     rows = _build_flow_rows(filed_by_day, landed_by_day, today)
@@ -558,11 +570,29 @@ def ticket_flow(
         sum(r.net for r in trailing) / len(trailing) if trailing else 0.0
     )
     open_count = sum(1 for t in queue.tickets.values() if t.state in _OPEN_STATES)
+    median_cycle = _median_cycle_days(all_tickets, first_done)
     return TicketFlowReport(
         rows=tuple(rows),
         open_count=open_count,
         trailing_net_rate=trailing_net_rate,
+        median_cycle_days=median_cycle,
     )
+
+
+# frob:ticket T-1528
+def _median_cycle_days(all_tickets: dict, first_done: dict[str, date]) -> float | None:
+    """Median calendar days from `created` to first done transition across
+    every ticket appearing in both inputs (T-1528's "time to-complete"
+    stat); None when nothing has completed yet -- render layers must
+    label that "n/a", never omit the stat silently."""
+    from statistics import median
+
+    cycles = [
+        (first_done[tid] - ticket.created).days
+        for tid, ticket in all_tickets.items()
+        if tid in first_done and ticket.created is not None
+    ]
+    return float(median(cycles)) if cycles else None
 
 
 # frob:ticket T-0454

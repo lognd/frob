@@ -295,6 +295,8 @@ _BOOL_FLAGS = (
     "deprecated_json",
     "registry_json",
     "ticket_json",
+    # frob:ticket T-1528
+    "ticket_stats",
     "ticket_show_blocked",
     "ticket_ignore_lease",
     "ticket_force",

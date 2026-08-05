@@ -2592,7 +2592,16 @@ trailing-3-day average net rate, and an `eta_days` property: `open_count
 / -trailing_net_rate` when the rate is genuinely NEGATIVE (net-shrinking),
 `None` otherwise (a flat or growing queue has no meaningful burn-down
 ETA) -- `frob ticket flow`'s render layer labels a `None` ETA as "cannot
-estimate", never silently omits the line.
+estimate", never silently omits the line. T-1528 adds
+`median_cycle_days`: the median calendar days from `created` to each
+ticket's FIRST observed done transition, mined in the same single
+history pass as the landed histogram (no second walk), `None` until
+anything has completed -- consumers label that "n/a", never omit.
+`frob ticket list` renders an always-on one-line state-census footer
+from the already-loaded queue, and `frob ticket list --stats` appends a
+second line (trailing filed/landed/net rates, median cycle, ETA) built
+from this report; --stats inherits the full-history mining cost until
+T-1330 lands.
 
 `frob ticket flow [--json]` (`_flow` in `src/frob/app/ticket_runner/
 _mutate.py`) loads the active queue and prints exactly one table (day /

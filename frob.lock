@@ -646,7 +646,7 @@
       "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
     },
     {
-      "digest": "009ddf428238bab8c27896e80e5f98e728039618f0c3d4c1c08fc6fb7a0f0bf1",
+      "digest": "52cca8547796b570cd071abae5497f5bb98c0c76aa55dae51bf9f2cf565eae3b",
       "facet": "body",
       "ref": "src/frob/tickets/_setters.py::ticket_flow"
     },

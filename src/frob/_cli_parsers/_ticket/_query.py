@@ -37,6 +37,16 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         help="filter by state (--status accepted as a deprecated alias)",
     )
     ticket_list_p.add_argument("--json", dest="ticket_json", action="store_true")
+    # frob:ticket T-1528
+    ticket_list_p.add_argument(
+        "--stats",
+        dest="ticket_stats",
+        action="store_true",
+        help="append a velocity/ETA line (trailing filed/landed/net rates, "
+        "median cycle time, naive burn-down ETA) below the summary footer; "
+        "mines the full ledger git history like `frob ticket flow` -- slow "
+        "on large histories until T-1330 lands",
+    )
 
     ticket_show_p = ticket_sub.add_parser("show", help="show one ticket")
     ticket_show_p.add_argument("ticket_id", metavar="id")

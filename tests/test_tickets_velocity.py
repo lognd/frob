@@ -214,6 +214,7 @@ class TestSprintVelocity:
         assert report.total == 1
 
 
+# frob:ticket T-1528
 # frob:ticket T-1100
 # frob:ticket T-1151
 class TestTicketFlow:
@@ -345,6 +346,51 @@ class TestTicketFlow:
         report = ticket_flow(tmp_path, queue, today=today)
         assert report.trailing_net_rate < 0
         assert report.eta_days is not None
+
+    # frob:ticket T-1528
+    def test_median_cycle_days_from_created_to_first_done(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_setters.py::_median_cycle_days kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        filed_day = date(2026, 5, 27)
+        today = date(2026, 6, 1)
+        # two tickets: cycles of 5 and 3 days -> median 4.0
+        for i, close_day in enumerate((today, date(2026, 5, 30))):
+            tid = f"T-000{i + 1}"
+            started = _ticket(
+                ticket_id=tid, state=TicketState.IN_PROGRESS, created=filed_day
+            )
+            write_ticket(tmp_path, started)
+            _commit_on(tmp_path, f"start {tid}", filed_day)
+            done = started.model_copy(update={"state": TicketState.DONE})
+            write_ticket(tmp_path, done)
+            _commit_on(tmp_path, f"close {tid}", close_day)
+        from frob.tickets import load_active
+
+        queue = load_active(tmp_path).danger_ok
+        report = ticket_flow(tmp_path, queue, today=today)
+        assert report.median_cycle_days == 4.0
+
+    # frob:ticket T-1528
+    def test_median_cycle_none_when_nothing_done(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::_median_cycle_days kind="unit"
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        open_ticket = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, created=date(2026, 5, 27)
+        )
+        write_ticket(tmp_path, open_ticket)
+        _commit_on(tmp_path, "queue T-0001", date(2026, 5, 27))
+        from frob.tickets import load_active
+
+        queue = load_active(tmp_path).danger_ok
+        report = ticket_flow(tmp_path, queue, today=date(2026, 6, 1))
+        assert report.median_cycle_days is None
 
     # frob:ticket T-1142
     def test_archived_ticket_still_counts_toward_landed(self, tmp_path: Path) -> None:
