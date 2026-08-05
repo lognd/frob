@@ -149,6 +149,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
 # frob-zone-start known-gate-rules T-1002
 # frob:ticket T-1520
+# frob:ticket T-1225
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -306,6 +307,13 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF007",
         "PERF008",
         "PERF009",
+        # T-1225: the four EPIC A hot-graph root-cause detectors
+        # (frob.perf._hotpath_smells), same hand-maintained-outside-scan-
+        # basis class as PERF001-009 above.
+        "PERF010",
+        "PERF011",
+        "PERF013",
+        "PERF014",
         # T-1087: `frob vet`'s own rule ids (src/frob/vet/**) -- a
         # different CLI surface (`frob vet`, not `frob check`'s gate
         # family), outside `_rule_id_scan.SCANNED_BASES` entirely, same

@@ -1,6 +1,6 @@
 # Secrets-scan providers
 
-<!-- frob:describes src/frob/gates/_secrets.py::_SecretPattern -->
+<!-- frob:describes src/frob/security/_redact.py::_SecretPattern -->
 
 ## What / where
 

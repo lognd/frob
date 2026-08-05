@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.335.0] - unreleased
+
+- T-1318: perf: telemetry redact_command pulls in the whole frob.gates package via frob.gates._secrets
+
 ## [0.334.0] - unreleased
 
 - T-1520: CACHE001 static gate: a cached computation's observed read-set must be covered by its cache-key inputs

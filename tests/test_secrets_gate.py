@@ -52,7 +52,7 @@ def _commit(root: Path, message: str = "commit") -> None:
 class TestRedact:
     # invariant spec: [INV-039](invariants/INV-039.md)
     def test_never_returns_the_token(self) -> None:
-        # frob:tests src/frob/gates/_secrets.py::_redact
+        # frob:tests src/frob/security/_redact.py::_redact
         # Runtime-constructed (never a contiguous literal in this file's
         # own source), T-0190 GitHub-unflaggable discipline: a bare literal
         # "sk_live_" + 20+ contiguous alnum chars is exactly the shape

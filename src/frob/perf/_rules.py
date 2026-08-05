@@ -41,6 +41,7 @@ from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
 from frob.perf._dup_spawn import duplicate_spawn_violations
 from frob.perf._effect_summaries import EffectGraph as _EffectGraph
+from frob.perf._hotpath_smells import hotpath_smell_violations
 from frob.perf._loop_effects import loop_invariant_effect_violations
 from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
@@ -803,8 +804,13 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
 # frob:enforces CHK-GATE-PERF005
 # frob:enforces CHK-GATE-PERF006
 # frob:enforces CHK-GATE-PERF007
+# frob:enforces CHK-GATE-PERF010
+# frob:enforces CHK-GATE-PERF011
+# frob:enforces CHK-GATE-PERF013
+# frob:enforces CHK-GATE-PERF014
 # frob:ticket T-0775
 # frob:ticket T-0919
+# frob:ticket T-1225
 def perf_rules(
     snapshot: GraphSnapshot, files: Sequence[ParsedFile]
 ) -> tuple[Violation, ...]:
@@ -827,7 +833,11 @@ def perf_rules(
     sibling of PERF008: a function whose body calls two or more distinct
     callees that each independently reach a spawn call with the SAME
     argument shape -- a duplicated, not-shared expensive spawn on one call
-    path -- see `frob.perf._dup_spawn.duplicate_spawn_violations`."""
+    path -- see `frob.perf._dup_spawn.duplicate_spawn_violations`.
+    PERF010/011/013/014 (T-1225) are the four EPIC A hot-graph root-cause
+    detectors (yaml C-loader, repo-scan-in-loop, repeated ast.walk, and
+    finditer-in-nested-loop) -- see `frob.perf._hotpath_smells.
+    hotpath_smell_violations`."""
     violations: list[Violation] = []
     for file in files:
         for symbol in file.symbols:
@@ -843,6 +853,7 @@ def perf_rules(
         loop_invariant_effect_violations(files, graph=shared_effect_graph)
     )
     violations.extend(duplicate_spawn_violations(files, graph=shared_effect_graph))
+    violations.extend(hotpath_smell_violations(files))
     _log.info(
         "perf_rules: scanned %d file(s), %d violation(s)", len(files), len(violations)
     )

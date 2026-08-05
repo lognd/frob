@@ -37,6 +37,15 @@ heavy-tail variance) flag slow-operation shapes straight off a resolved
 `frob.gates.__init__.perf_gate`) fires when a section's current-run
 sketch regresses beyond `[perf.sketch].ratchet_tolerance` relative to its
 stored prior. See docs/modules/perf.md#hot-graph-query-surface-t-0712.
+
+PERF010/011/013/014 (T-1225, `frob.perf._hotpath_smells.
+hotpath_smell_violations`) are four lexical detectors mined from the
+2026-07-29 hot-graph report's EPIC A root causes: a `yaml.safe_load`/
+`yaml.load` call missing the C-accelerated loader, a repo-scan API
+(`xref`/`exports_consumers`/`iter_files`) called inside a loop, more than
+one `ast.walk(tree)` pass over the same tree in one function, and a
+`re.finditer` call nested inside a pattern-list loop nested inside a
+per-line loop.
 """
 
 from __future__ import annotations
@@ -59,6 +68,7 @@ from frob.perf._collectors import (
 from frob.perf._dup_spawn import duplicate_spawn_violations
 from frob.perf._effect_summaries import EffectGraph, Unknown
 from frob.perf._heat import heat, join_smells, render_bar
+from frob.perf._hotpath_smells import hotpath_smell_violations
 from frob.perf._hotgraph import (
     UNATTRIBUTED_SECTION_ID,
     EdgeHit,
@@ -145,6 +155,7 @@ __all__ = [
     "get_sketch",
     "heat",
     "heavy_tail_advisories",
+    "hotpath_smell_violations",
     "install_serial_pools",
     "join_smells",
     "language_deciles",

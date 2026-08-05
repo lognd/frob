@@ -456,6 +456,16 @@
       "ref": "src/frob/process/_lock.py::derived_state_lock"
     },
     {
+      "digest": "adc81a4e1dcf853c71b8a846ea9fc8d83515ecb558a440cb95edaa86e9a28c19",
+      "facet": "body",
+      "ref": "src/frob/security/_redact.py::_redact"
+    },
+    {
+      "digest": "32ab1768f87d3f3f9d2d53f72597d5a65ddd3a8ed5b229410548747a05f6cfd7",
+      "facet": "sig",
+      "ref": "src/frob/security/_redact.py::_redact"
+    },
+    {
       "digest": "0ea0832fd89957882d96cc76a4d833c8fe7f8e3b6da6d9e9004859d3df0111b3",
       "facet": "sig",
       "ref": "src/frob/serve/_events.py::CoverageWatcher"
@@ -684,6 +694,16 @@
       "digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
       "facet": "sig",
       "ref": "src/frob/xref/__init__.py::xref"
+    },
+    {
+      "digest": "ccfcd694071ce0a085fb65118ac55cf1c4d9e19e78eb1207a961b2f8daac107b",
+      "facet": "body",
+      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
+    },
+    {
+      "digest": "23e41841ff29ef3e6c04dc6d927182dc23dfcb37761208faf7e7d6bc365fc50e",
+      "facet": "sig",
+      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
     }
   ],
   "version": 1

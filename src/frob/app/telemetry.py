@@ -9,10 +9,12 @@ call site in this module checks before writing anything.
 
 Redaction discipline: any free-text field that might carry a copy-pasted
 secret (a command's argv head, a tool-call snippet) is passed through
-`redact_command`, which reuses `frob.gates._secrets`'s existing provider
-patterns (T-0157) rather than re-deriving a second scanner -- two secret
-scanners is exactly the kind of drift-prone duplication the engineering
-principles forbid.
+`redact_command`, which reuses `frob.security._redact`'s provider patterns
+(T-0157, extracted out of `frob.gates._secrets` into that lightweight,
+`frob.gates`-independent module by T-1318 so this module's per-invocation
+redaction call never drags in the whole `frob.gates` aggregator package)
+rather than re-deriving a second scanner -- two secret scanners is exactly
+the kind of drift-prone duplication the engineering principles forbid.
 """
 
 from __future__ import annotations
@@ -84,8 +86,19 @@ def redact_command(text: str) -> str:
     long/high-entropy enough that an incidental second occurrence in the
     same short command-line string is not a realistic concern, unlike a
     full source file where `_secrets.py`'s own span-tracking matters.
+
+    T-1318: imports from `frob.security._redact`, NOT `frob.gates._secrets`
+    -- `frob.gates._secrets` is a submodule of the heavy `frob.gates`
+    aggregator package, and importing ANY submodule of a package always
+    executes that package's own `__init__.py` first (ordinary Python
+    import semantics), which eagerly imports `frob.gates`'s entire stage
+    roster as a side effect. Since `timed_call`'s `finally` block calls
+    `record_cli_event` -> `redact_command` on EVERY CLI invocation
+    regardless of subcommand, that import used to cost ~257ms on every
+    single `frob` command -- see `frob.security._redact`'s own module
+    docstring for the extraction this fixes.
     """
-    from frob.gates._secrets import _redact, _scan_line
+    from frob.security._redact import _redact, _scan_line
 
     out = text
     for pattern, token in _scan_line([text], 0):

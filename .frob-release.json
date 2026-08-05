@@ -62,6 +62,7 @@
     "design/frob.strata::frob.registry": "166e6f12f0ad803671395456b63d15a433165c6e677b5fd41da64a1a88a1aa3f",
     "design/frob.strata::frob.registry_model": "b4e0f9d96b53ebb3d60602fd9523c8bd09fef5297eb156722f150457933529d6",
     "design/frob.strata::frob.scripts_ops": "2d8ade490d7dbb8a9e73ddc570fa7988c62579722c1711d7deba2568847bfae0",
+    "design/frob.strata::frob.security": "f7232a1749d98c8d4db32a8b48a2cbdff19127a5a0f766d3549b1f3699817c75",
     "design/frob.strata::frob.serve": "2622a27fad3cbe17f75cc6a2ce3d48de91b6895013d7f5b372cd8313a8482ab0",
     "design/frob.strata::frob.strata_core_native": "8945ef21024fec57629967e628bc003cbca22a14c9c8b8319283448e50c75416",
     "design/frob.strata::frob.stratamod": "718f95fa5d51e66ab4efd81e473db052984fad1d05feeffa0857af3df8ec964c",
@@ -933,6 +934,7 @@
     "src/frob/perf/_hotgraph.py::build_section_index": "3ea14833f21638d944a5ba3261fcf9d07c9f169e05193b21d1f5f7ef4ca3d93c",
     "src/frob/perf/_hotgraph.py::language_deciles": "4bee78e1be2b434d6137435c30c05ba4271b8827f8ed84ac81377cd50191d0b2",
     "src/frob/perf/_hotgraph.py::resolve_stream": "ed689c5806bd9b2c2b46cd4d269e54a3cabf1c2eddfd2eb807261cef01d7a90c",
+    "src/frob/perf/_hotpath_smells.py::hotpath_smell_violations": "d54180fce2fddeb5edcef596a30e16b31066b4837276ae48f94603e3189c8f09",
     "src/frob/perf/_loop_effects.py::loop_invariant_effect_violations": "1a6c28d329c3795a9457d7204f77c5896573263656cce426b02a2815bf535d9f",
     "src/frob/perf/_models.py::HeatEntry": "ccd9d4320749cb10f5b9fa7f271f1117c2a88e9ba19ca2a5a1f9b1d9d2ebcc79",
     "src/frob/perf/_models.py::HeatReport": "60d746977c9eb6cfb26262d9e50bdd4ee310298f8c11ef5c42e329318df00176",
@@ -2029,5 +2031,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.334.0"
+  "version": "0.335.0"
 }

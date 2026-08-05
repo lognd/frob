@@ -2147,8 +2147,17 @@ act on.
 <!-- frob:describes src/frob/gates/_baseline.py::delta_violations -->
 <!-- frob:describes src/frob/gates/_baseline.py::violation_fingerprint -->
 <!-- frob:describes src/frob/gates/_secrets.py::secrets_gate -->
-<!-- frob:describes src/frob/gates/_secrets.py::_redact -->
+<!-- frob:describes src/frob/security/_redact.py::_redact -->
 <!-- frob:describes src/frob/gates/_secrets.py::fake_marker_staleness_gate -->
+
+`_redact` (never returns the matched token itself, only its
+`display_prefix` plus a fixed-length mask) moved from `frob.gates.
+_secrets` into `frob.security._redact` (T-1318): `frob.app.telemetry.
+redact_command` needed it on every CLI invocation regardless of
+subcommand, and importing it through `frob.gates._secrets` pulled in the
+whole `frob.gates` package's import graph just to redact one telemetry
+string. `frob.gates._secrets` re-exports `_redact` unchanged for its own
+`secrets_gate` use, so no gate-side caller needed to change.
 <!-- frob:describes src/frob/gates/_pii_structural/__init__.py::pii_structural_gate -->
 <!-- frob:describes src/frob/gates/_pii_structural/_signatures.py::_FieldSignature -->
 <!-- frob:describes src/frob/gates/_pii_structural/_python_fields.py::_scan_python_fields -->

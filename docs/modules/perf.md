@@ -833,6 +833,17 @@ def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport
     # Pure join of pstats rows onto symbol spans.
 def perf_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
     # PERF001..PERF008,PERF012; pure; consumed by the policy gate stage.
+    # T-1225: also dispatches the four hot-graph-mined PERF01x detectors
+    # (PERF010 yaml.safe_load/yaml.load without the C loader, PERF011 a
+    # repo-scan API called inside a loop, PERF013 >1 ast.walk over the
+    # same tree in one function family, PERF014 re.finditer nested
+    # inside a per-line loop) via _hotpath_smells.hotpath_smell_
+    # violations, folded into this same return tuple.
+
+# frob/perf/_hotpath_smells.py
+def hotpath_smell_violations(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
+    # PERF010/011/013/014 (T-1225): the four hot-graph-mined anti-pattern
+    # detectors, folded into perf_rules's return tuple above.
 
 # frob/perf/_recursion.py
 def recursion_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
