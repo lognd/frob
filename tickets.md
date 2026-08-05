@@ -5932,3 +5932,27 @@ fortress: reserved stricter tier (placeholder wiring only; semantics in a follow
 ONE-WAY AUTO-RATCHET: rapid auto-upgrades to standard when any threshold trips (repo file count, total ticket count, concurrent agent/lease count -- exact thresholds to be tuned in implementation). Upgrades are automatic and logged; DOWNGRADES are never automatic -- an explicit CLI decision that is loudly logged.
 
 Note T-1518 (land pipeline stages) and T-1444 (merge-queue) already deliver adjacent pieces; implementer should branch the land path at the stage seams T-1518 defines rather than adding profile conditionals inline.
+
+<!-- ticket:T-1576 -->
+```yaml
+id: T-1576
+title: 'frob scaffold: default brand-new repos to profile=rapid'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: T-1575
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/**
+- src/frob/_cli_parsers/**
+- docs/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Once T-1575 lands profiles, frob scaffold (new-repo init) should write profile = "rapid" into the generated frob.toml -- a brand-new repo is exactly the under-threshold case rapid exists for, and the one-way auto-ratchet upgrades it to standard the moment it grows past the thresholds. Existing repos are untouched: absent key still means standard.
