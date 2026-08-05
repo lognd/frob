@@ -81,9 +81,7 @@ def test_iter_functions_cpp_yields_qualified_names(tmp_path: Path) -> None:
 def test_enclosing_class_cpp_none_for_top_level_function(tmp_path: Path) -> None:
     """A free function's enclosing class is None."""
     root = _parse(tmp_path)
-    func_node, _sym = next(
-        (n, s) for n, s in _iter_functions_cpp(root) if s == "f"
-    )
+    func_node, _sym = next((n, s) for n, s in _iter_functions_cpp(root) if s == "f")
     assert _enclosing_class_cpp(func_node) is None
 
 
@@ -100,23 +98,19 @@ def test_enclosing_class_cpp_names_the_struct_or_class(tmp_path: Path) -> None:
 
 # frob:tests tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_covers_bindings
 def test_collect_locals_cpp_covers_bindings(tmp_path: Path) -> None:
-    """For-loop and range-for bindings, and plain declarations are all
-    collected as locals.
+    """For-loop and range-for bindings, plain declarations, AND function
+    parameters (T-1509) are all collected as locals.
 
-    NOTE (found while writing this test, filed as a separate bug ticket,
-    T-1307's own scope is tests-only): `_collect_locals_cpp` looks up the
-    `parameters` field on `func_node` (`function_definition`) directly,
-    but tree-sitter's cpp grammar puts that field on the function's
-    `function_declarator` child instead -- so function PARAMETERS are
+    T-1509 fix: `_collect_locals_cpp` used to look up the `parameters`
+    field on `func_node` (`function_definition`) directly, but
+    tree-sitter's cpp grammar puts that field on the function's
+    `function_declarator` child instead -- so function PARAMETERS were
     never actually added to the local set here (unlike `_legacy_py`'s
-    equivalent, which does collect params). This test documents the real,
-    current behavior rather than the intended one; do not "fix" this
-    assertion without also fixing `_collect_locals_cpp` under its own
-    ticket."""
+    equivalent, which does collect params). `_cpp_function_declarator`
+    now unwraps to the real `function_declarator` node first, matching
+    `_cpp_func_name`'s own pointer/reference-declarator unwrap."""
     root = _parse(tmp_path)
-    func_node, _sym = next(
-        (n, s) for n, s in _iter_functions_cpp(root) if s == "f"
-    )
+    func_node, _sym = next((n, s) for n, s in _iter_functions_cpp(root) if s == "f")
     locals_ = _collect_locals_cpp(func_node)
     # plain declaration + for/range-for bindings
     assert "x" in locals_
@@ -125,10 +119,51 @@ def test_collect_locals_cpp_covers_bindings(tmp_path: Path) -> None:
     assert "v" in locals_
     assert "z" in locals_
     assert "n" in locals_
-    # params are NOT collected (the documented gap above)
-    assert "a" not in locals_
-    assert "b" not in locals_
-    assert "c" not in locals_
+    # params ARE now collected, including pointer/reference declarators
+    assert "a" in locals_
+    assert "b" in locals_
+    assert "c" in locals_
+
+
+# frob:tests \
+# tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_method_params_too
+def test_collect_locals_cpp_method_params_too(tmp_path: Path) -> None:
+    """A class method's plain (non-pointer) parameters are also collected
+    as locals (T-1509) -- the fix must not be pointer/reference-only."""
+    root = _parse(tmp_path)
+    func_node, _sym = next(
+        (n, s) for n, s in _iter_functions_cpp(root) if s == "C.method"
+    )
+    locals_ = _collect_locals_cpp(func_node)
+    assert "a" in locals_
+    assert "b" in locals_
+
+
+# frob:tests \
+# tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_param_folds_to_positional_\
+# token
+def test_collect_locals_cpp_param_folds_to_positional_token(
+    tmp_path: Path,
+) -> None:
+    """T-1509's real detection-quality fix: two functions identical except
+    for parameter NAMES now fingerprint identically, because a parameter
+    identifier folds to a positional `_vN` token like every other local
+    (it did not before this fix -- a raw, un-folded parameter name would
+    make the serialized token strings differ between two such functions)."""
+    src_a = "int f(int alpha, int beta) { return alpha + beta; }\n"
+    src_b = "int f(int gamma, int delta) { return gamma + delta; }\n"
+
+    def _serialize(src: str) -> str:
+        path = tmp_path / f"{hash(src) & 0xFFFF}.cpp"
+        path.write_text(src)
+        tree, _source, _lang = raw_tree(path).danger_ok
+        func_node, _sym = next(_iter_functions_cpp(tree.root_node))
+        body = _child(func_node, "body")
+        assert body is not None
+        locals_ = _collect_locals_cpp(func_node)
+        return _serialize_cpp_body(body, locals_)
+
+    assert _serialize(src_a) == _serialize(src_b)
 
 
 # frob:tests \
@@ -140,9 +175,7 @@ def test_serialize_cpp_body_normalizes_locals_strings_and_numbers(
     """Local identifiers fold to positional `_vN` tokens, string/char
     literals fold to `_S_`, and numeric literals fold to `_N_`."""
     root = _parse(tmp_path)
-    func_node, _sym = next(
-        (n, s) for n, s in _iter_functions_cpp(root) if s == "f"
-    )
+    func_node, _sym = next((n, s) for n, s in _iter_functions_cpp(root) if s == "f")
     body = _child(func_node, "body")
     assert body is not None
     locals_ = _collect_locals_cpp(func_node)

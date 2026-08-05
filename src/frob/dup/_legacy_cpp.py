@@ -15,9 +15,20 @@ from frob.lang import node_text as _node_text
 
 
 def _collect_locals_cpp(func_node: Node) -> set[str]:
-    """Collect identifiers local to a C++ function (params + declarations)."""
+    """Collect identifiers local to a C++ function (params + declarations).
+
+    T-1509: tree-sitter's cpp grammar puts the `parameters` field on the
+    `function_declarator` node (`func_node`'s `declarator` field), not on
+    `function_definition` itself -- `_child(func_node, "parameters")`
+    always returned `None`, so no C++ function's parameters were ever
+    added as locals here. `_cpp_function_declarator` walks through any
+    pointer/reference declarator wrapping (mirroring `_cpp_func_name`'s
+    own unwrap) to reach the real `function_declarator` first.
+    """
     locals_: set[str] = set()
-    params = _child(func_node, "parameters")
+    declarator = _child(func_node, "declarator")
+    func_declarator = _cpp_function_declarator(declarator) if declarator else None
+    params = _child(func_declarator, "parameters") if func_declarator else None
     if params:
         for c in params.named_children:
             _harvest_cpp_param(c, locals_)
@@ -25,6 +36,19 @@ def _collect_locals_cpp(func_node: Node) -> set[str]:
     if body:
         _collect_assigned_names_cpp(body, locals_)
     return locals_
+
+
+def _cpp_function_declarator(node: Node) -> Node | None:
+    """Unwrap pointer/reference declarator wrapping to the inner
+    `function_declarator` node carrying the `parameters` field, or `None`
+    if `node` is not (and does not wrap) one."""
+    while node.type in ("pointer_declarator", "reference_declarator"):
+        inner = node.child_by_field_name("declarator")
+        if inner is None:
+            return None
+        # frob:invariant terminates reason="inner is node's own 'declarator' field child, a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
+        node = inner
+    return node if node.type == "function_declarator" else None
 
 
 def _harvest_cpp_param(node: Node, out: set[str]) -> None:
@@ -40,7 +64,18 @@ def _harvest_cpp_param(node: Node, out: set[str]) -> None:
 
 
 def _harvest_cpp_declarator_name(node: Node, out: set[str]) -> None:
-    """Unwrap pointer/reference declarators to the identifier name(s) inside."""
+    """Unwrap pointer/reference declarators to the identifier name(s) inside.
+
+    T-1509: `reference_declarator` (`int& c`) does not label its inner
+    identifier with a `declarator` field the way `pointer_declarator`
+    (`int* b`) does in this tree-sitter-cpp grammar version -- verified
+    directly, `child_by_field_name("declarator")` returns `None` for a
+    real `reference_declarator` node. Falling back to `named_children`
+    when the field lookup misses covers this without a grammar-version
+    special case: it is a no-op for `pointer_declarator` (whose field
+    lookup already succeeds) and correctly reaches the bare `identifier`
+    child for `reference_declarator`.
+    """
     if node.type == "identifier":
         out.add(_node_text(node))
     elif node.type in (
@@ -49,9 +84,13 @@ def _harvest_cpp_declarator_name(node: Node, out: set[str]) -> None:
         "abstract_pointer_declarator",
     ):
         inner = node.child_by_field_name("declarator")
-        if inner:
+        if inner is not None:
             # frob:invariant terminates reason="inner is node's own 'declarator' field child, a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
             _harvest_cpp_declarator_name(inner, out)
+        else:
+            for c in node.named_children:
+                # frob:invariant terminates reason="c ranges over node's named_children, each a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
+                _harvest_cpp_declarator_name(c, out)
     else:
         for c in node.named_children:
             # frob:invariant terminates reason="c ranges over node's named_children, each a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501

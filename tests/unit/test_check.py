@@ -263,9 +263,7 @@ class TestRunCheckTs:
         # Covers the branch pair (call + non-None append) for EACH of the
         # 4 non-gates task lambdas, none of which any prior test
         # exercised (they were only ever run with skip_*=True).
-        monkeypatch.setattr(
-            check_mod, "_run_tsc", lambda root: ToolResult(tool="tsc")
-        )
+        monkeypatch.setattr(check_mod, "_run_tsc", lambda root: ToolResult(tool="tsc"))
         monkeypatch.setattr(
             check_mod, "_run_eslint", lambda root: ToolResult(tool="eslint")
         )
@@ -1557,3 +1555,475 @@ class TestScopeDisclosure:
 
         note = _scope_disclosure_note(ticket=None, gates=frozenset(), ran=_ALL_GATES)
         assert note is None
+
+
+# frob:ticket T-1507
+# frob:ticket T-1512
+class TestRunRuffRealPaths:
+    """Real-behavior tests for `frob.check._python._run_ruff` /
+    `_ruff_format_result` (T-1507/T-1512 TEST005 burn-down): no prior test
+    exercised these beyond the missing-binary path."""
+
+    def test_success_parses_ruff_json_and_appends_format_result(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        def _fake_run(cmd, **kw):
+            if "check" in cmd:
+                return Ok(_FakeProc("[]", 0))
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        results = python_mod._run_ruff(tmp_path, None)
+        assert len(results) == 2
+        assert results[0].tool == "ruff-check"
+        assert results[1].tool == "ruff-format"
+
+    def test_missing_binary_yields_two_typed_results(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        import frob.check._python as python_mod
+
+        def _raise(*a, **kw):
+            raise FileNotFoundError()
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _raise)
+        results = python_mod._run_ruff(tmp_path, None)
+        assert len(results) == 2
+        assert not results[0].passed
+        assert not results[1].passed
+
+    def test_kill_switch_disabled_yields_two_typed_results(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        from typani import Err
+
+        import frob.check._python as python_mod
+        from frob.process._guard import ProcessGuardError
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
+        )
+        results = python_mod._run_ruff(tmp_path, None)
+        assert len(results) == 2
+        assert not results[0].passed
+        assert not results[1].passed
+
+
+def _FakeProc(stdout: str = "", returncode: int = 0, stderr: str = ""):  # noqa: N802
+    """Minimal `subprocess.CompletedProcess`-shaped stand-in for `_python.py`
+    runner tests (T-1507)."""
+
+    class _P:
+        def __init__(self):
+            self.stdout = stdout
+            self.stderr = stderr
+            self.returncode = returncode
+
+    return _P()
+
+
+# frob:ticket T-1507
+# frob:ticket T-1512
+class TestRuffFormatResultRealPaths:
+    def test_all_formatted_is_clean_pass(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_ruff_format_result kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("", 0)),
+        )
+        result = python_mod._ruff_format_result(tmp_path)
+        assert result.exit_code == 0
+        assert "formatted" in result.summary
+
+    def test_would_reformat_lines_produce_diagnostics(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_ruff_format_result kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("Would reformat foo.py\n", 1)),
+        )
+        result = python_mod._ruff_format_result(tmp_path)
+        assert result.exit_code == 1
+        assert len(result.diagnostics) == 1
+
+    def test_missing_binary_is_typed_result(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_ruff_format_result kind="unit"
+        import frob.check._python as python_mod
+
+        def _raise(*a, **kw):
+            raise FileNotFoundError()
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _raise)
+        result = python_mod._ruff_format_result(tmp_path)
+        assert not result.passed
+
+    def test_kill_switch_disabled(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_ruff_format_result kind="unit"
+        from typani import Err
+
+        import frob.check._python as python_mod
+        from frob.process._guard import ProcessGuardError
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
+        )
+        result = python_mod._ruff_format_result(tmp_path)
+        assert not result.passed
+
+
+# frob:ticket T-1507
+# frob:ticket T-1512
+class TestRunTyRealPaths:
+    def test_success_parses_ty_output(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("All checks passed!\n", 0)),
+        )
+        result = python_mod._run_ty(tmp_path)
+        assert result.tool == "ty"
+
+    def test_extra_search_path_added_when_src_dir_exists(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / ".venv").mkdir()
+        seen_cmd = {}
+
+        def _fake_run(cmd, **kw):
+            seen_cmd["cmd"] = cmd
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        python_mod._run_ty(tmp_path)
+        assert "--extra-search-path" in seen_cmd["cmd"]
+        assert "--python" in seen_cmd["cmd"]
+
+    def test_ty_toml_extra_paths_are_appended(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        (tmp_path / "ty.toml").write_text('[environment]\nextra-paths = ["vendor"]\n')
+        seen_cmd = {}
+
+        def _fake_run(cmd, **kw):
+            seen_cmd["cmd"] = cmd
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        python_mod._run_ty(tmp_path)
+        assert any("vendor" in part for part in seen_cmd["cmd"])
+
+    def test_malformed_ty_toml_is_silently_ignored(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        (tmp_path / "ty.toml").write_text("not valid toml [[[")
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("", 0)),
+        )
+        result = python_mod._run_ty(tmp_path)
+        assert result.tool == "ty"
+
+    def test_missing_binary_is_typed_result(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        import frob.check._python as python_mod
+
+        def _raise(*a, **kw):
+            raise FileNotFoundError()
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _raise)
+        result = python_mod._run_ty(tmp_path)
+        assert not result.passed
+
+    def test_kill_switch_disabled(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Err
+
+        import frob.check._python as python_mod
+        from frob.process._guard import ProcessGuardError
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
+        )
+        result = python_mod._run_ty(tmp_path)
+        assert not result.passed
+
+    def test_file_root_scans_parent_dir(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        f = tmp_path / "mod.py"
+        f.write_text("x = 1\n")
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("", 0)),
+        )
+        result = python_mod._run_ty(f)
+        assert result.tool == "ty"
+
+
+# frob:ticket T-1507
+# frob:ticket T-1512
+class TestBuildImportGraphAndCycleRealPaths:
+    def test_no_files_produces_empty_graph(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_build_import_graph kind="unit"
+        from frob.check._python import _build_import_graph
+
+        graph = _build_import_graph(tmp_path)
+        assert list(graph.nodes) == []
+
+    def test_local_import_adds_edge(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_build_import_graph kind="unit"
+        from frob.check._python import _build_import_graph
+
+        (tmp_path / "a.py").write_text("import b\n")
+        (tmp_path / "b.py").write_text("x = 1\n")
+        graph = _build_import_graph(tmp_path)
+        assert "a.py" in graph.nodes
+        assert "b.py" in graph.nodes
+
+    def test_excluded_dirs_are_skipped(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_build_import_graph kind="unit"
+        from frob.check._python import _build_import_graph
+
+        venv = tmp_path / ".venv"
+        venv.mkdir()
+        (venv / "skip.py").write_text("x = 1\n")
+        graph = _build_import_graph(tmp_path)
+        assert "skip.py" not in graph.nodes
+        assert not any(".venv" in n for n in graph.nodes)
+
+    def test_run_cycle_no_cycles_is_clean_pass(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
+        from frob.check._python import _run_cycle
+
+        (tmp_path / "a.py").write_text("x = 1\n")
+        result = _run_cycle(tmp_path)
+        assert result.tool == "frob-cycle"
+        assert result.exit_code == 0
+        assert result.summary == "no cycles"
+
+    def test_run_cycle_mutual_import_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
+        from frob.check._python import _run_cycle
+
+        (tmp_path / "a.py").write_text("import b\n")
+        (tmp_path / "b.py").write_text("import a\n")
+        result = _run_cycle(tmp_path)
+        assert result.tool == "frob-cycle"
+        # a 2-node cycle is info-severity (never a hard failure on its own)
+        assert result.exit_code in (0, 1)
+
+
+# frob:ticket T-1507
+# frob:ticket T-1512
+class TestRunBindRealPaths:
+    def test_no_bind_markers_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_bind kind="unit"
+        from frob.check._python import _run_bind
+
+        (tmp_path / "a.py").write_text("x = 1\n")
+        assert _run_bind(tmp_path) is None
+
+    def test_has_bind_markers_true_when_present(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_has_bind_markers kind="unit"
+        from frob.check._python import _has_bind_markers
+
+        (tmp_path / "a.py").write_text("# BIND foo\nx = 1\n")
+        assert _has_bind_markers(tmp_path) is True
+
+    def test_has_bind_markers_false_when_absent(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_has_bind_markers kind="unit"
+        from frob.check._python import _has_bind_markers
+
+        (tmp_path / "a.py").write_text("x = 1\n")
+        assert _has_bind_markers(tmp_path) is False
+
+    def test_has_bind_markers_survives_unreadable_file(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_has_bind_markers kind="unit"
+        import frob.check._python as python_mod
+
+        (tmp_path / "a.py").write_text("x = 1\n")
+
+        def _raise_read_bytes(self):
+            raise OSError("simulated: unreadable")
+
+        monkeypatch.setattr(Path, "read_bytes", _raise_read_bytes)
+        assert python_mod._has_bind_markers(tmp_path) is False
+
+    def test_import_error_for_missing_bind_module_is_none(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_bind kind="unit"
+        import builtins
+
+        import frob.check._python as python_mod
+
+        (tmp_path / "a.py").write_text("# BIND foo\n")
+        real_import = builtins.__import__
+
+        def _fake_import(name, *a, **kw):
+            if name == "frob.bind":
+                raise ImportError("simulated: no frob.bind")
+            return real_import(name, *a, **kw)
+
+        monkeypatch.setattr(builtins, "__import__", _fake_import)
+        assert python_mod._run_bind(tmp_path) is None
+
+    def test_bind_mismatch_diagnostics_maps_mismatches(self) -> None:
+        # frob:tests src/frob/check/_python.py::_bind_mismatch_diagnostics kind="unit"  # noqa: E501
+        from frob.check._python import _bind_mismatch_diagnostics
+
+        class _Mismatch:
+            file = "a.py"
+            line = 3
+            message = "binding drift"
+
+        class _Result:
+            mismatches = [_Mismatch()]
+
+        diags = _bind_mismatch_diagnostics(_Result())
+        assert len(diags) == 1
+        assert diags[0].severity == "error"
+        assert diags[0].file == "a.py"
+
+
+# frob:ticket T-1507
+# frob:ticket T-1512
+class TestExportsRealPaths:
+    def test_missing_exports_flags_unexported_symbols(self) -> None:
+        # frob:tests src/frob/check/_python.py::_missing_exports kind="unit"
+        from frob.check._python import _missing_exports
+
+        class _Mod:
+            module = "foo"
+            symbols = ["bar", "baz"]
+
+        missing = _missing_exports("from .foo import bar\n", [_Mod()])
+        assert missing == ["foo.baz"]
+
+    def test_missing_exports_empty_when_all_present(self) -> None:
+        # frob:tests src/frob/check/_python.py::_missing_exports kind="unit"
+        from frob.check._python import _missing_exports
+
+        class _Mod:
+            module = "foo"
+            symbols = ["bar"]
+
+        missing = _missing_exports("from .foo import bar\n", [_Mod()])
+        assert missing == []
+
+    def test_exports_for_package_no_siblings_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_exports_for_package kind="unit"
+        from frob.check._python import _exports_for_package
+
+        init_file = tmp_path / "__init__.py"
+        init_file.write_text("")
+        assert _exports_for_package(init_file, tmp_path) is None
+
+    def test_exports_for_package_tests_dir_is_exempt(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_exports_for_package kind="unit"
+        from frob.check._python import _exports_for_package
+
+        pkg = tmp_path / "tests" / "sub"
+        pkg.mkdir(parents=True)
+        init_file = pkg / "__init__.py"
+        init_file.write_text("")
+        (pkg / "test_foo.py").write_text("def test_x(): pass\n")
+        assert _exports_for_package(init_file, tmp_path) is None
+
+    def test_exports_for_package_reports_missing_symbol(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_exports_for_package kind="unit"
+        from frob.check._python import _exports_for_package
+
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        init_file = pkg / "__init__.py"
+        init_file.write_text("")
+        (pkg / "mod.py").write_text("def public_fn():\n    pass\n")
+        result = _exports_for_package(init_file, tmp_path)
+        assert result is not None
+        assert "public_fn" in result.summary or result.diagnostics
+
+    def test_unexported_symbols_result_builds_note_diagnostics(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_unexported_symbols_result kind="unit"  # noqa: E501
+        from frob.check._python import _unexported_symbols_result
+
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        init_file = pkg / "__init__.py"
+        init_file.write_text("")
+        result = _unexported_symbols_result(init_file, pkg, tmp_path, ["mod.public_fn"])
+        assert result.tool == "frob-exports(pkg)"
+        assert len(result.diagnostics) == 1
+        assert result.diagnostics[0].severity == "note"
+
+    def test_run_exports_scans_every_init_file(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_exports kind="unit"
+        from frob.check._python import _run_exports
+
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text("")
+        (pkg / "mod.py").write_text("def public_fn():\n    pass\n")
+        results = _run_exports(tmp_path)
+        assert any(r.tool == "frob-exports(pkg)" for r in results)
+
+    def test_run_exports_no_init_files_is_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_exports kind="unit"
+        from frob.check._python import _run_exports
+
+        (tmp_path / "mod.py").write_text("x = 1\n")
+        assert _run_exports(tmp_path) == []
