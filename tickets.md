@@ -3264,7 +3264,7 @@ T-1433's SIGUSR1 stack-dump handler (tests/conftest.py::_install_stackdump_handl
 id: T-1469
 title: make coverage doctor precondition dies on stale leases a finished agent left;
   auto-reconcile instead
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-02'
