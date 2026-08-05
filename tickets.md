@@ -228,7 +228,7 @@ Umbrella epic for the 2026-07-29 in-process cProfile hot-graph report (scratchpa
 id: T-1205
 title: 'coverage as managed derived state: auto-refresh touched-set, never stale,
   never manual'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
