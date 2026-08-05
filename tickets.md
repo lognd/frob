@@ -5896,3 +5896,39 @@ v2-appropriate location/expectation where it is not.
 
 ## Drop reason
 - 2026-08-05: moot: coordinator fixed the 11 v1-assuming tests in this worktree before landing
+
+<!-- ticket:T-1575 -->
+```yaml
+id: T-1575
+title: 'Development profiles: frob.toml profile=rapid|standard|fortress with one-way
+  auto-ratchet'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/**
+- src/frob/_cli_parsers/**
+- docs/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Small/new repos pay the same fixed land ceremony as this 950-file repo: TEST016 mutation evidence, double sweep, baseline snapshot worktree, REL001 -- ~30 min to land a trivial ticket in a repo with a couple of tickets. The ceremony does not scale down with repo size because it is fixed-cost, not proportional.
+
+Add frob.toml [profile] with profile = rapid | standard | fortress (default standard = today's behavior).
+
+rapid: no TEST016 on the land path; single post-land sweep with revert-on-red (no pre-commit sweep); no baseline snapshot worktree; evidence/done-report requirements light for kind=docs/chore; REL001 off. NEVER relaxed: ledger integrity checks, LAND-PROOF verification.
+
+fortress: reserved stricter tier (placeholder wiring only; semantics in a follow-up).
+
+ONE-WAY AUTO-RATCHET: rapid auto-upgrades to standard when any threshold trips (repo file count, total ticket count, concurrent agent/lease count -- exact thresholds to be tuned in implementation). Upgrades are automatic and logged; DOWNGRADES are never automatic -- an explicit CLI decision that is loudly logged.
+
+Note T-1518 (land pipeline stages) and T-1444 (merge-queue) already deliver adjacent pieces; implementer should branch the land path at the stage seams T-1518 defines rather than adding profile conditionals inline.
