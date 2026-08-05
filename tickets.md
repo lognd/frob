@@ -8727,7 +8727,7 @@ own audit. Filing a follow-up.
 ```yaml
 id: T-1537
 title: 'frob ticket evidence --replace: rebind evidence ids when tests are renamed/parametrized'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
