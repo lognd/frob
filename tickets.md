@@ -4372,8 +4372,106 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- tests/_cache_transparency.py
+- tests/test_cache_gate.py
+- tests/test_cache_transparency.py
+- tests/test_ticket_land.py
+- tests/test_tickets_migration.py
+- tests/unit/perf/test_hotpath_smells.py
+- tests/unit/perf/test_serial_pools_import_failure.py
+- tests/unit/test_coverage_attribution_lock_t1395.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_store.py
+- tests/unit/test_dup_legacy_cpp.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/_cache_transparency.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_cache_gate.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_cache_transparency.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_tickets_migration.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/perf/test_hotpath_smells.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/perf/test_serial_pools_import_failure.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_coverage_attribution_lock_t1395.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_dup_legacy_cpp.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_tickets.py
+  reason: 'error-burn touched set: 8 test files carrying orphaned WIRE001 waivers,
+    the two ARCH001/PERF001 source files, the PII012 test file, the split-helper test
+    suites'
+  actor: logan
+  at: '2026-08-05'
 acceptance:
 - text: 'GIVEN a full unscoped frob check on main THEN gate errors are 0: the 16 WIRE002
     stale waivers rebind to the open successor ticket, T-1269/T-1495 evidence ids
@@ -4386,7 +4484,6 @@ threat: null
 component: null
 ```
 Post-T-1555 re-measure found 26 errors. 2 (PRE001/SCOPE001) were an uncommitted archive artifact, fixed. The rest: 15 waivers name done T-1490 + 1 names done T-1488 (WIRE002); T-1269 evidence test_tick_gate_dirty_unwinds_everything renamed to test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge, T-1495 evidence test_no_foreign_commit_unwinds_cleanly_as_before renamed to test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge (COV003); ARCH001 on src/frob/tickets/_land.py::_land_plan_locked (67) and src/frob/tickets/_store.py::v2_state_transitions (77); PERF001 at _store.py:790 (list membership in loop); PII012 x3 in tests/unit/test_dup_legacy_cpp.py (lexer-token identifiers, not credentials).
-
 <!-- ticket:T-1561 -->
 ```yaml
 id: T-1561
