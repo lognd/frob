@@ -10142,7 +10142,7 @@ class TestAutofixManifest:
         apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
         assert not _autofix_manifest_path(root).is_file()
 
-# frob:ticket T-1548
+    # frob:ticket T-1548
     # frob:ticket T-1348
     def test_killed_mid_handler_leaves_manifest_naming_completed_fixes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -10480,7 +10480,8 @@ class TestFixEngineTierABatch2:
 
         assert not [a for a in applied if a.rule == "WAIVE004"]
         assert (root / "src" / "m.py").read_text(encoding="utf-8") == original
-# frob:ticket T-1548
+
+    # frob:ticket T-1548
 
     # -- TIER_A_HANDLERS dict promotion --------------------------------------
 
