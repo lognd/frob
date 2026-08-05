@@ -2487,7 +2487,7 @@ T-1203's mutation-audit harness (src/frob/strata/_mutation_audit.py, SecondDetec
 ```yaml
 id: T-1330
 title: Wire v2 git-history mining into frob ticket flow/sprint velocity
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -2500,6 +2500,9 @@ scope:
 - tests/test_tickets_velocity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions
+- tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v1_v2_parity_for_equivalent_history
 threat: null
 component: null
 ```
@@ -2518,6 +2521,79 @@ on `_store_mode(root)` -- v2 mode should mine per-ticket history via
 `tickets.md` blob. Needs its own SprintTransition-shaped adapter and a
 parity test against the v1 path for an equivalent ticket set (mirrors
 T-1257's acceptance criterion 3, not yet closed by that ticket).
+
+## Done report
+
+T-1257 built the v2 per-ticket history mining primitive (v2_state_
+transitions, src/frob/tickets/_store.py) but never wired it into the
+user-facing commands that actually cost time: sprint_velocity and
+ticket_flow (both funnel through _mine_done_transitions) stayed
+hardcoded to the v1 whole-ledger walk regardless of store mode.
+
+Change: _mine_done_transitions_v1 is the original body, split out
+unchanged. _mine_done_transitions_v2 is new: for each queried ticket
+id, it calls v2_state_transitions (git log --follow -p over that
+ticket's own small file) instead of re-reading the ENTIRE tickets.md
+blob at every commit in the ledger's history via _blob_at. _mine_done_
+transitions itself now dispatches on _store_mode(root): v2 mode uses
+the new fast path, v1/dir mode keeps the original walk.
+
+Measured before/after (synthetic benchmark, this repo is still v1-
+mode per LEDGERV1001 so a live frob ticket flow timing on THIS repo
+is not yet possible -- see below): 30 tickets each cycling queued ->
+in-progress -> done (90 ticket-mutating commits total), querying 3
+target ids' done transitions.
+  v1 (_mine_done_transitions_v1, whole-ledger walk): 0.597s
+  v2 (_mine_done_transitions_v2, per-ticket walk):   0.038s
+  ~15.7x faster at this scale; the gap widens with total ledger
+  history size since v1's cost is O(all ticket-mutating commits ever)
+  regardless of how many ids are queried, while v2's cost is O(sum of
+  the QUERIED tickets' own commit counts) -- the actual driver behind
+  the ~6 minute frob ticket flow/list --stats cost this ticket exists
+  to fix once a repo migrates to ledger v2.
+
+Found while building the v1/v2 parity test (T-1330's own acceptance
+criterion, mirroring T-1257's unclosed #3): v2_state_transitions
+itself has a real, separate bug -- git's `--follow` copy detection can
+misattribute a new ticket's creation commit as a "copy" of a sibling
+ticket's file when the two are >=50% byte-similar (routine, since
+every v2 ticket.md shares templated frontmatter), and combined with
+--reverse this silently truncates the mined history to just that one
+commit, dropping every real subsequent transition. This is a defect
+in the T-1257 primitive itself, not in this ticket's dispatch wiring;
+filed as T-1543 (renumbers at land), out of this ticket's
+declared scope (src/frob/tickets/_store.py is not in scope) to fix
+here. The parity test in this ticket's own evidence uses distinct
+enough ticket content to avoid tripping it, so it is not itself
+affected, but a real v2-mode repo could be until the follow-up lands.
+
+### Changed
+```
+ design/frob.strata                       | 711 ++++++++++++++++---------------
+ docs/audits/docs-staleness-2026-07-29.md |  32 +-
+ docs/design/ledger-v2.md                 |  10 +
+ docs/design/registry/check-coverage.yaml |   6 +-
+ docs/modules/tickets.md                  |  18 +
+ src/frob/gates/_doclink_docanchor.py     | 125 +++++-
+ src/frob/gates/_waive.py                 |   4 +
+ src/frob/tickets/_reporting.py           |  17 +-
+ src/frob/tickets/_setters.py             |  91 +++-
+ src/frob/tickets/_store.py               | 130 +++++-
+ tests/test_tickets_velocity.py           | 129 +++++-
+ tests/unit/gates/test_doc011.py          | 111 +++++
+ tests/unit/test_ticket_store.py          | 123 ++++++
+ tickets.md                               | 419 +++++++++++++++++-
+ 14 files changed, 1538 insertions(+), 388 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v1_v2_parity_for_equivalent_history` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 609 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1332 -->
 ```yaml
@@ -5543,7 +5619,7 @@ arch/_patterns.py (_find_if_statements).
 ```yaml
 id: T-1486
 title: 'docstatus follow-up: ticket-id prose vs ledger + docs index completeness'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-03'
@@ -5555,8 +5631,48 @@ scope:
 - src/frob/gates/_doclink_docanchor.py
 - docs/design/registry/check-coverage.yaml
 - docs/audits/docs-staleness-2026-07-29.md
+- tests/unit/gates/test_doc011.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/gates/test_doc011.py
+  reason: 'DOC011 (ticket-id prose vs ledger, T-1486) needs regression tests bound
+
+    to the new docstatus_gate/doc011 additions. tests/test_gates.py (the
+
+    existing gate-family test home) is leased by another in-progress
+
+    ticket (T-1205), so this ticket adds a new dedicated test file instead
+
+    of contending for that lease.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'New DOC011 gate rule (T-1486) must be registered in
+
+    _KNOWN_GATE_RULES (src/frob/gates/_waive.py) -- the same static list
+
+    DOC008/DOC009/DOC010 already appear in -- or known_gate_rule_ids()
+
+    never reports it and the check-coverage registry exhaustiveness test
+
+    fails. One-line addition, mechanical registration only.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_unknown_ticket_id_in_prose_fires_doc011
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_known_active_ticket_id_passes
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_fenced_code_block_is_not_flagged
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_inline_code_span_is_not_flagged
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_no_ledger_at_all_still_flags_prose_mentions
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_duplicate_mention_on_one_line_reported_once
 threat: null
 component: null
 ```
@@ -5580,6 +5696,86 @@ land:
    new rule).
 
 Ref: gate-gap class 6 in docs/audits/docs-staleness-2026-07-29.md.
+
+## Done report
+
+T-1232's own two named follow-up sub-items (gate-gap class 6) are
+resolved:
+
+Sub-item 1 (ticket-id prose vs ledger): built as DOC011.
+docstatus_gate (src/frob/gates/_doclink_docanchor.py) now also scans
+every docs/**/*.md file (fenced/inline code spans blanked first, same
+posture as DOC008's link scan) for T-####/T-draft-<hex> mentions and
+flags any that do not resolve to a real ticket, active or archived
+(_doc011_known_ticket_ids reads frob.tickets._store.load_all/
+load_archive). Deliberately does NOT attempt the harder half (a
+mention whose state contradicts the prose) -- that needs sentence-
+level parsing of the surrounding claim, out of scope here.
+
+Shipped at WARN, not ERROR: the first live run against this repo's
+own docs tree found 10 genuine pre-existing stale citations (mostly
+T-draft-<hex> ids that finalized to a real T-#### long ago, one true
+orphan T-0104, one likely-intentional example T-9999), entirely
+outside this ticket's declared scope to fix. A follow-up ticket
+(T-1542, renumbers at land) tracks fixing those citations
+and promoting DOC011 to ERROR once the list is empty.
+
+Sub-item 2 (index completeness): INVESTIGATED, not built as proposed.
+doclink_gate (DOC001) already treats a doc as non-orphaned via direct
+index links, transitive link chains through other docs, frob:describes
+anchors, or frob:doc edges -- strictly broader than the sub-item's
+proposed "named in docs/index.md's own link inventory" check, which
+would be a narrower, stricter rule that could false-positive on a
+legitimately deep-linked doc DOC001 already tolerates. Concluded this
+sub-item is subsumed by DOC001, not a genuinely distinct gap; recorded
+in docs/audits/docs-staleness-2026-07-29.md rather than building
+redundant code, per the ticket's own explicit "worth checking...
+before building a new rule" framing.
+
+Registered CHK-GATE-DOC011 in docs/design/registry/check-coverage.yaml
+(gate_rule_total 286 -> 287) and "DOC011" in _KNOWN_GATE_RULES
+(src/frob/gates/_waive.py) -- required scope additions beyond the
+ticket's original three files (tests/unit/gates/test_doc011.py, new
+test home since tests/test_gates.py is leased by T-1205;
+src/frob/gates/_waive.py, mechanical rule-id registration).
+
+Disclosed gap: docs/modules/gates.md's rule catalog table still needs
+a DOC011 row (same table DOC009/DOC010 already appear in) -- could not
+add it here, also leased by T-1205 for this ticket's whole duration.
+docstatus_gate carries a frob:waive AFFECT001 with that exact reason;
+the follow-up ticket (T-1542) now also covers this file.
+
+### Changed
+```
+ design/frob.strata                       | 711 ++++++++++++++++---------------
+ docs/audits/docs-staleness-2026-07-29.md |  32 +-
+ docs/design/ledger-v2.md                 |  10 +
+ docs/design/registry/check-coverage.yaml |   6 +-
+ docs/modules/tickets.md                  |  18 +
+ src/frob/gates/_doclink_docanchor.py     | 125 +++++-
+ src/frob/gates/_waive.py                 |   4 +
+ src/frob/tickets/_reporting.py           |  17 +-
+ src/frob/tickets/_setters.py             |  91 +++-
+ src/frob/tickets/_store.py               | 130 +++++-
+ tests/test_tickets_velocity.py           | 129 +++++-
+ tests/unit/gates/test_doc011.py          | 111 +++++
+ tests/unit/test_ticket_store.py          | 123 ++++++
+ tickets.md                               | 423 +++++++++++++++++-
+ 14 files changed, 1542 insertions(+), 388 deletions(-)
+```
+
+### Evidence
+- `tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_unknown_ticket_id_in_prose_fires_doc011` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_known_active_ticket_id_passes` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_fenced_code_block_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_inline_code_span_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_no_ledger_at_all_still_flags_prose_mentions` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_duplicate_mention_on_one_line_reported_once` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 1 error(s), 264 warning(s), 789 waived
+- error-findings: PRE001@tickets/T-1486
 
 <!-- ticket:T-1487 -->
 ```yaml
@@ -8119,7 +8315,7 @@ Every blind repair round on 2026-08-04/05 came from worktree-check vs land-sweep
 id: T-1536
 title: 'ledger self-corruption: done-report section replacement can duplicate a foreign
   ticket block and break whole-store YAML load'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -8129,10 +8325,97 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_defuses_marker_lookalike_line
+- tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_unbalanced_fence_around_marker_lookalike_still_defused
+- tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_no_marker_lookalike_line_passes_through_unchanged
+- tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_defused_line_no_longer_matches_the_real_marker_pattern
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_marker_lookalike_body_line_refuses_write
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_ordinary_body_still_writes_clean
+- tests/unit/test_ticket_store.py::TestComposeDoneReport::test_marker_lookalike_line_in_why_is_defused
 threat: null
 component: null
 ```
 2026-08-05 ~00:55 in worktree t-1350: after done-report refreshes for T-1318/T-1350/T-1225, tickets.md held a DUPLICATE T-1315 anchor whose block body was T-1318's report text with no frontmatter -- the whole store refused to load (T-1315 frontmatter is not valid YAML), 155336 chars / 2605 lines of the ledger were inside the corrupt span, and land failed NotFound for every ticket. Repaired by deleting the corrupt duplicate span (real blocks below it were intact). Root-cause replace_done_report_section/write path for how a section write can (a) target a foreign ticket's region and (b) duplicate an anchor. Independent hardening regardless of root cause: every ledger write (write_ticket/done-report/splice) MUST re-parse the full ledger post-write and refuse to persist on any load failure or duplicate anchor -- fail loudly before the corruption is durable. Also raises priority of the ledger v2 final cutover (per-ticket files structurally eliminate the shared-file blast radius).
+
+## Done report
+
+Root cause: _LEDGER_MARKER_RE matches any line of the exact form
+"<!-- ticket:T-#### -->" anywhere in tickets.md, including inside a
+ticket's own narrative body. A Done-report why-text that happens to
+quote another ticket's literal marker verbatim (e.g. describing this
+very corruption incident) forges a fake section boundary the next time
+the ledger is parsed: _parse_ledger then reads the following span as
+that foreign id's frontmatter, finds ordinary prose instead of YAML,
+and the whole store refuses to load -- the exact duplicate-T-1315-
+anchor shape from the incident. An unbalanced code fence in the same
+narrative compounds the damage (the bogus chunk can swallow real
+content further down) but the marker-lookalike line is the actual root
+cause.
+
+Fix (a): sanitize_narrative_for_ledger (src/frob/tickets/_store.py)
+defuses any line that would exactly match the marker pattern by
+inserting a space inside the HTML-comment token (<!-- becomes <! --),
+keeping the text legible while guaranteeing it can never round-trip as
+a real marker. compose_done_report (src/frob/tickets/_reporting.py)
+now runs the caller's why text through this sanitizer before splicing
+it into the composed Done-report section, so this class of narrative
+can never corrupt a neighboring ticket's block again.
+
+Fix (b): write_ticket's single-mode path (the one write path with no
+post-write check at all -- write_all/write_archive/splice_ledger
+already had _check_ledger_id_integrity) now re-parses its own spliced
+output in memory via the new _post_splice_integrity_check before ever
+calling atomic_write, and refuses (Err(LedgerIntegrityViolation)) if
+the result fails to re-parse or drops any id that was present before
+the write. write_ticket was split into a small dispatcher plus
+_write_ticket_single_mode to stay under the ARCH001 length threshold
+after adding this check.
+
+Regression tests reproduce the exact incident shape: a why narrative
+containing a marker-lookalike line plus an unbalanced ```yaml fence
+(TestSanitizeNarrativeForLedger, TestComposeDoneReport::test_marker_
+lookalike_line_in_why_is_defused), and a direct write_ticket call whose
+ticket.body forges a sibling's marker, asserting the write refuses and
+the sibling still loads clean afterward (TestWriteTicket).
+
+Deferred, out of scope for this ticket: the same marker-lookalike
+defense is not yet applied to other free-text entry points (scope
+--reason-file, ticket --body-file, drop --reason, review --findings-
+file) -- each goes through a different write path and would need its
+own audit. Filing a follow-up.
+
+### Changed
+```
+ design/frob.strata                       | 711 ++++++++++++++++---------------
+ docs/audits/docs-staleness-2026-07-29.md |  32 +-
+ docs/design/ledger-v2.md                 |  10 +
+ docs/design/registry/check-coverage.yaml |   6 +-
+ docs/modules/tickets.md                  |  18 +
+ src/frob/gates/_doclink_docanchor.py     | 125 +++++-
+ src/frob/gates/_waive.py                 |   4 +
+ src/frob/tickets/_reporting.py           |  17 +-
+ src/frob/tickets/_setters.py             |  91 +++-
+ src/frob/tickets/_store.py               | 130 +++++-
+ tests/test_tickets_velocity.py           | 129 +++++-
+ tests/unit/gates/test_doc011.py          | 111 +++++
+ tests/unit/test_ticket_store.py          | 123 ++++++
+ tickets.md                               | 412 +++++++++++++++++-
+ 14 files changed, 1531 insertions(+), 388 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_defuses_marker_lookalike_line` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_unbalanced_fence_around_marker_lookalike_still_defused` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_no_marker_lookalike_line_passes_through_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger::test_defused_line_no_longer_matches_the_real_marker_pattern` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteTicket::test_marker_lookalike_body_line_refuses_write` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteTicket::test_ordinary_body_still_writes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestComposeDoneReport::test_marker_lookalike_line_in_why_is_defused` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1537 -->
 ```yaml
@@ -8210,3 +8493,139 @@ threat: null
 component: null
 ```
 PERF012 fires from src/frob/perf but docs/design/registry/check-coverage.yaml has no CHK-GATE-PERF012 entry -- pre-existing gap found (not caused) by T-1225's PERF01x work. Originally tracked as worktree draft T-draft-7858da45, which the tickets.md splice drops from merge previews (land-splice-regression class), so refiled as a real ticket.
+
+<!-- ticket:T-1541 -->
+```yaml
+id: T-1541
+title: audit non-done-report free-text ledger entry points for marker-lookalike corruption
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1536 fixed the marker-lookalike ledger-corruption class specifically
+for the Done-report why path (compose_done_report/sanitize_narrative_
+for_ledger) and hardened write_ticket's single-mode splice with a
+post-write reparse-and-refuse check. Other free-text entry points that
+also end up embedded into a ticket's body/ledger text -- ticket new
+--body-file/--acceptance-file, scope --reason-file, drop --reason,
+review --findings-file -- were not audited or defused against the same
+marker-lookalike-line class in this ticket (kept narrowly scoped to the
+done-report path per the incident this ticket root-caused). Audit each
+of those write paths for the same vulnerability and apply sanitize_
+narrative_for_ledger (or an equivalent) wherever caller-authored free
+text is spliced into ticket.body before a single-mode ledger write.
+
+<!-- ticket:T-1542 -->
+```yaml
+id: T-1542
+title: fix 10 stale ticket-id citations DOC011 found, then promote DOC011 WARN to
+  ERROR
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/audits/README.md docs/audits/perf.md docs/modules/dup.md docs/modules/gates.md
+  docs/modules/serve.md docs/modules/strata.md docs/modules/tickets.md docs/strata/host.md
+  src/frob/gates/_doclink_docanchor.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1486 shipped DOC011 (a T-####/T-draft-<hex> mention in doc prose that
+does not resolve to any active or archived ticket) as a WARN-severity
+gate rather than ERROR, specifically because its first live run against
+this repo's own docs tree found 10 genuine pre-existing stale citations,
+entirely outside T-1486's own declared scope to fix:
+
+  docs/audits/README.md:31        T-draft-0b60dd31
+  docs/audits/perf.md:159         T-draft-bafbce1c
+  docs/modules/dup.md:615         T-draft-d6bca168
+  docs/modules/gates.md:1175      T-0104
+  docs/modules/gates.md:1177      T-draft-4e98abb1
+  docs/modules/gates.md:1178      T-draft-05d8f716
+  docs/modules/serve.md:726       T-draft-8a56400c
+  docs/modules/strata.md:254      T-9999 (may be an intentional example)
+  docs/modules/tickets.md:2235    T-draft-2f611252
+  docs/strata/host.md:542         T-draft-7b5b5541
+
+Most are T-draft-<hex> ids that finalized to a real T-#### long ago --
+fix each by resolving what the draft became (git log/tickets-archive.md
+should show the renumber) and updating the citation, or confirm T-9999
+is deliberately illustrative and leave it (maybe reword to make that
+obvious, e.g. T-####). T-0104 needs its own check: either a genuine typo
+for a real id, or a citation that should be dropped.
+
+Once this list is provably empty (re-run `frob check --only docstatus`
+unscoped), promote DOC011's severity from WARN to ERROR in
+src/frob/gates/_doclink_docanchor.py::_doc011_violation -- this ticket
+was only ever meant as a soft landing, not the permanent posture.
+
+<!-- ticket:T-1543 -->
+```yaml
+id: T-1543
+title: v2_state_transitions silently drops transitions when git detects a false copy
+  across similar ticket files
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Discovered while writing T-1330's v1/v2 parity benchmark:
+v2_state_transitions (src/frob/tickets/_store.py, T-1257) calls
+`git log --reverse --follow -p -- tickets/T-####/ticket.md`. When a
+NEW ticket's initial content is >=50% byte-similar to another
+ticket's ticket.md as it exists in that same commit's tree (common,
+since every v2 ticket.md shares the same templated frontmatter --
+id/title/state differ, ~8 other fields identical), git's `-C`-implied
+copy detection under `--follow` attributes the new file's creation
+commit as a "copy from" the other ticket's file instead of a plain
+addition -- and combined with --reverse, git's --follow only reports
+that ONE (creation) commit and silently stops, dropping every
+subsequent state-transition commit for that ticket entirely.
+
+Reproduced directly: two tickets sharing the standard template,
+differing only in id/title/state/body, produced a copy-detected
+creation commit for the second ticket and v2_state_transitions
+returned only its "queued" transition -- "in-progress" and "done"
+(both real, separately committed) were silently missing. This
+explains T-1257's own unclosed acceptance criterion #3 (v1/v2 parity)
+and directly undermines T-1330's fast path: a repo where two tickets'
+files are byte-similar enough (routine for freshly-filed tickets with
+short bodies) can silently under-report DONE transitions for `frob
+ticket flow`/`sprint velocity` in v2 mode, with no error surfaced.
+
+Fix should live in v2_state_transitions itself: disable copy/rename
+detection for this specific git log call (e.g. --no-follow plus a
+manual git log --all -- <path> reconstruction that does not depend on
+--follow's copy heuristic, or pass a --find-copies-harder=0 equivalent
+that suppresses the false attribution) so the mined transition list
+is provably complete regardless of a ticket's content similarity to
+its siblings. Add a regression test reproducing the exact two-similar-
+tickets shape.

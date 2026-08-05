@@ -142,6 +142,46 @@ _LEDGER_HEADER = (
     "# Tickets\n\nCentral ledger managed by `frob ticket` -- one section per ticket.\n"
 )
 
+
+# frob:ticket T-1536
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger.test_defuses_marker_lookalike_line  # noqa: E501
+def sanitize_narrative_for_ledger(text: str) -> str:
+    """Neutralize any line in caller-authored narrative `text` that would
+    otherwise round-trip as a literal `<!-- ticket:T-#### -->` ledger
+    section marker (T-1536).
+
+    Root cause of the 2026-08-05 incident this exists to make structurally
+    impossible: `_LEDGER_MARKER_RE`/`_splice_ticket_section`/`_parse_ledger`
+    all treat ANY line matching `^<!-- ticket:T-#### -->[ \\t]*$` -- no
+    matter WHERE it sits, including deep inside a `--why-file` narrative
+    quoting a code fence -- as a real section boundary. A Done-report `why`
+    that happens to contain such a line (e.g. quoting this very incident's
+    corrupt ledger span verbatim, or any other reason an agent's narrative
+    text ends up with a marker-shaped line) forges a FAKE section start the
+    next time the ledger is parsed: `_parse_ledger` then reads everything
+    from that fake marker to the next real one as if it were the named
+    ticket's own frontmatter, fails to find valid YAML there (the
+    "duplicate anchor with no frontmatter" shape from the incident), and
+    the whole store refuses to load. An unbalanced code fence in the same
+    narrative compounds this (a stray/incomplete ```` ```yaml ```` block can
+    make the bogus chunk swallow real content past it) but is not the root
+    cause by itself -- the marker-lookalike line is what turns narrative
+    prose into a structural token at all.
+
+    Every line that would otherwise be an EXACT match for the marker
+    pattern is defused by inserting a single space inside the HTML-comment
+    open token (`<!--` -> `<! --`) -- visually near-identical, ASCII-only,
+    and guaranteed to break `_LEDGER_MARKER_RE`'s exact-string match so the
+    line can never again be mistaken for a real section boundary, no matter
+    how many times it round-trips through parse/splice/render. Text with no
+    marker-lookalike line passes through completely unchanged."""
+
+    def _defuse(match: re.Match[str]) -> str:
+        return match.group(0).replace("<!--", "<! --", 1)
+
+    return _LEDGER_MARKER_RE.sub(_defuse, text)
+
 # Archive ledger: same format/marker/fence as the active ledger, rotated in
 # by `frob ticket archive` (T-0096) so the active file stays a few hundred
 # lines instead of growing forever with every done ticket.
@@ -1363,7 +1403,9 @@ def write_archive(
 # frob:doc docs/design/ledger-v2.md#3-lock-model
 # frob:ticket T-0458
 # frob:ticket T-1254
+# frob:ticket T-1536
 # frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
 def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert one ticket into whichever backend the repo uses (atomic).
 
@@ -1392,6 +1434,19 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     race back to. Composes with the caller's own `ledger_lock` hold where
     one exists (e.g. `_reporting.py`'s `set_done_report`) rather than
     replacing it -- see `ticket_lock`'s own docstring.
+
+    T-1536: single mode's spliced text is re-parsed IN MEMORY before it is
+    ever written to disk (`_post_splice_integrity_check`) -- the same
+    "refuse before the corruption is durable" posture `write_all`/
+    `write_archive`/`splice_ledger` already had via `_check_ledger_id_
+    integrity`, extended to this single-ticket path, which previously had
+    no post-splice check at all. A `ticket.body` containing a line that
+    happens to be byte-identical to another ticket's `<!-- ticket:T-#### -->`
+    marker (forging a fake section boundary) or any other splice defect
+    that would make the ledger fail to re-parse, or silently drop a
+    sibling id that was present before this write, refuses the write
+    outright (`Err(LedgerIntegrityViolation)`) instead of persisting a
+    ledger the very next read could fail to load.
     """
     mode = _store_mode(root)
     if mode == "v2":
@@ -1401,16 +1456,73 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
             )
     with ledger_lock(root):
         if mode == "single":
-            path = ledger_path(root)
-            if not path.exists():
-                fresh = _splice_ticket_section(_LEDGER_HEADER, ticket)
-                return atomic_write(path, fresh)
-            text = path.read_text(encoding="utf-8")
-            parsed = _parse_ledger(text)
-            if parsed.is_err:
-                return Err(parsed.danger_err)
-            return atomic_write(path, _splice_ticket_section(text, ticket))
+            return _write_ticket_single_mode(root, ticket)
         return atomic_write(_dir_path_for(root, ticket), _serialize_ticket(ticket))
+
+
+# frob:ticket T-1536
+def _write_ticket_single_mode(root: Path, ticket: Ticket) -> Result[None, TicketError]:
+    """`write_ticket`'s single-mode body, split out to keep the public
+    dispatcher under the ARCH001 length threshold (T-1536): splice
+    `ticket`'s own marker block into the on-disk ledger text
+    (`_splice_ticket_section`, T-0505) and refuse to persist unless the
+    result re-parses cleanly with no id lost (`_post_splice_integrity_
+    check`). Caller already holds `ledger_lock`."""
+    path = ledger_path(root)
+    if not path.exists():
+        fresh = _splice_ticket_section(_LEDGER_HEADER, ticket)
+        integrity = _post_splice_integrity_check(frozenset(), ticket.id, fresh)
+        if integrity.is_err:
+            return Err(integrity.danger_err)
+        return atomic_write(path, fresh)
+    text = path.read_text(encoding="utf-8")
+    parsed = _parse_ledger(text)
+    if parsed.is_err:
+        return Err(parsed.danger_err)
+    before_ids = frozenset(parsed.danger_ok)
+    spliced = _splice_ticket_section(text, ticket)
+    integrity = _post_splice_integrity_check(before_ids, ticket.id, spliced)
+    if integrity.is_err:
+        return Err(integrity.danger_err)
+    return atomic_write(path, spliced)
+# frob:ticket T-1536
+# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
+def _post_splice_integrity_check(
+    before_ids: frozenset[str], written_id: str, spliced_text: str
+) -> Result[None, TicketError]:
+    """`write_ticket`'s single-mode post-splice guard (T-1536): re-parse
+    `spliced_text` and refuse (`Err(LedgerIntegrityViolation)`) unless it
+    parses cleanly AND every id that was present in `before_ids` (plus
+    `written_id` itself) still round-trips out with its marker intact.
+
+    Catches two failure shapes in one check: (1) `spliced_text` fails to
+    re-parse at all -- e.g. `written_id`'s own body contains a line that
+    forges a fake `<!-- ticket:T-#### -->` marker for some OTHER id, so
+    `_parse_ledger` reads a chunk of narrative prose as that id's (invalid)
+    frontmatter and errors; (2) `spliced_text` parses fine but a sibling id
+    silently vanished from it -- the markerless-block class T-0764's
+    `_check_ledger_id_integrity` already guards for `write_all`/
+    `write_archive`/`splice_ledger`, extended here to the one write path
+    that previously had no post-write check of its own at all."""
+    reparsed = _parse_ledger(spliced_text)
+    if reparsed.is_err:
+        _log.error(
+            "tickets: write refused -- splicing %s produced a ledger that "
+            "fails to re-parse (%s, T-1536 post-write integrity check)",
+            written_id,
+            reparsed.danger_err,
+        )
+        return Err(TicketError.LedgerIntegrityViolation)
+    missing = (before_ids | {written_id}) - set(reparsed.danger_ok)
+    if missing:
+        _log.error(
+            "tickets: write refused -- splicing %s dropped id(s) %s from "
+            "the ledger (T-1536 post-write integrity check)",
+            written_id,
+            sorted(missing),
+        )
+        return Err(TicketError.LedgerIntegrityViolation)
+    return Ok(None)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals

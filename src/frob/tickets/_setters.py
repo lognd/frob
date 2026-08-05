@@ -54,7 +54,13 @@ from frob.tickets._models import (
     TicketState,
     TicketTier,
 )
-from frob.tickets._store import ledger_lock, load_archive, write_ticket
+from frob.tickets._store import (
+    _store_mode,
+    ledger_lock,
+    load_archive,
+    v2_state_transitions,
+    write_ticket,
+)
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
@@ -303,23 +309,28 @@ def _blob_at(root: Path, sha: str) -> str | None:
     return spawned.danger_ok.stdout
 
 
-# frob:ticket T-0938
-def _mine_done_transitions(
+# frob:ticket T-1330
+def _mine_done_transitions_v1(
     root: Path, ticket_ids: Sequence[str]
 ) -> tuple[SprintTransition, ...]:
-    """Mine every `state: done` transition each id in `ticket_ids` has
-    ever made in `tickets.md`'s git history (T-0938's derivation source
-    -- see `sprint_velocity`'s docstring for the honest tradeoffs of this
-    approach): walk `_ledger_commit_history` oldest-first, reading each
-    commit's `tickets.md` blob ONCE (`_blob_at`) and checking every
-    tracked id's `state:` value against that one blob -- a `done` value
-    that differs from the id's previous observed state is a transition.
+    """v1 (monofile-ledger) done-transition mining -- `_mine_done_
+    transitions`'s original body, split out unchanged when T-1330 added
+    the v2 dispatch (`_mine_done_transitions_v2`): walk `_ledger_commit_
+    history` oldest-first, reading each commit's `tickets.md` blob ONCE
+    (`_blob_at`) and checking every tracked id's `state:` value against
+    that one blob -- a `done` value that differs from the id's previous
+    observed state is a transition.
+
     A `git log -G<anchor>` pickaxe restriction was tried first and
     rejected: the `<!-- ticket:ID -->` anchor line itself never changes
     across a state edit (only the `state:` line inside its block does),
     so `-G` on the anchor structurally misses every transition after the
     ticket's own creation commit -- a full walk is the only correct
-    approach here, not an optimization left undone."""
+    approach here, not an optimization left undone. This walk costs one
+    `_blob_at` (subprocess `git show`) call per commit in `tickets.md`'s
+    ENTIRE history, times every caller -- the ~6-minute `frob ticket
+    flow`/`list --stats` cost T-1330 fixed for v2-mode repos by mining
+    each ticket's own small file instead (`_mine_done_transitions_v2`)."""
     if not ticket_ids:
         return ()
     transitions: list[SprintTransition] = []
@@ -360,6 +371,64 @@ def _mine_done_transitions(
             except Exception:
                 continue
     return tuple(transitions)
+
+
+# frob:ticket T-1330
+def _mine_done_transitions_v2(
+    root: Path, ticket_ids: Sequence[str]
+) -> tuple[SprintTransition, ...]:
+    """v2 (file-per-ticket) done-transition mining (T-1330): for each id,
+    `v2_state_transitions` walks ONLY that ticket's own small `ticket.md`
+    file's git history (`git log --follow -p`, one subprocess call per
+    ticket) instead of re-reading the ENTIRE shared ledger's blob at
+    every commit in its history (`_mine_done_transitions_v1`'s cost, the
+    ~6-minute `frob ticket flow`/`list --stats` regression this ticket
+    fixes for v2-mode repos) -- fast because each ticket's own file
+    history is a small, disjoint slice of the repo's total commit count,
+    not the whole thing walked once per caller. Same `SprintTransition`
+    output shape as the v1 path, so every downstream reader
+    (`sprint_velocity`, `ticket_flow`) is unaffected by which mode ran."""
+    if not ticket_ids:
+        return ()
+    transitions: list[SprintTransition] = []
+    for ticket_id in ticket_ids:
+        prev_state: str | None = None
+        for sha, iso, state in v2_state_transitions(root, ticket_id):
+            if state == TicketState.DONE.value and state != prev_state:
+                try:
+                    committed_at = datetime.fromisoformat(iso)
+                except ValueError:
+                    prev_state = state
+                    continue
+                transitions.append(
+                    SprintTransition(
+                        ticket_id=ticket_id,
+                        sha=sha,
+                        committed_at=committed_at,
+                        from_state=prev_state,
+                        to_state=state,
+                    )
+                )
+            prev_state = state
+    return tuple(transitions)
+
+
+# frob:ticket T-0938
+# frob:ticket T-1330
+def _mine_done_transitions(
+    root: Path, ticket_ids: Sequence[str]
+) -> tuple[SprintTransition, ...]:
+    """Mine every `state: done` transition each id in `ticket_ids` has
+    ever made (T-0938's derivation source -- see `sprint_velocity`'s
+    docstring for the honest tradeoffs of this approach), dispatched on
+    `_store_mode(root)` (T-1330): v2-mode repos mine each ticket's own
+    small file (`_mine_done_transitions_v2`, fast -- see its docstring
+    for the cost this avoids); v1-mode repos keep the original whole-
+    ledger walk (`_mine_done_transitions_v1`) unchanged, since the fast
+    path requires per-ticket files to exist at all."""
+    if _store_mode(root) == "v2":
+        return _mine_done_transitions_v2(root, ticket_ids)
+    return _mine_done_transitions_v1(root, ticket_ids)
 
 
 # frob:ticket T-0938

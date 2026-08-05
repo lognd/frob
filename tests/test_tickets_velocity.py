@@ -20,7 +20,7 @@ from frob.tickets import (
     ticket_flow,
 )
 from frob.tickets._models import SprintTransition, SprintVelocityReport
-from frob.tickets._store import write_ticket
+from frob.tickets._store import _serialize_ticket, write_ticket
 from tests.test_tickets_tiers import _ticket
 
 
@@ -212,6 +212,133 @@ class TestSprintVelocity:
         assert report.closed == 0
         assert report.remaining == 0
         assert report.total == 1
+
+
+# frob:ticket T-1330
+class TestSprintVelocityV2Mode:
+    """T-1330: `sprint_velocity`/`ticket_flow` (via `_mine_done_
+    transitions`) mine v2-mode repos through `v2_state_transitions` (each
+    ticket's own small `tickets/T-####/ticket.md` git history) instead of
+    the v1 whole-`tickets.md`-history walk -- the fix for `frob ticket
+    flow`/`list --stats` costing ~6 minutes once T-1259's ledger-v2
+    migration landed (T-1257 built the mining primitive but never wired
+    it into these user-facing commands)."""
+
+    def _commit(self, root: Path, message: str) -> None:
+        """Stage+commit everything in `root`'s git checkout with a fixed
+        test identity -- the v2-mode analog of this module's top-level
+        `_commit` helper, which only stages `tickets.md`."""
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.email=test@example.com",
+                "-c",
+                "user.name=Test",
+                "commit",
+                "-q",
+                "-m",
+                message,
+            ],
+            cwd=root,
+            check=True,
+        )
+
+    def _bootstrap_v2(self, root: Path, ticket: Ticket, message: str) -> None:
+        """Write `ticket`'s FIRST v2-mode file directly (`_serialize_
+        ticket`, mirroring `tests/test_tickets.py::TestV2StateTransitions.
+        _commit_ticket`) and commit it -- `write_ticket` cannot bootstrap
+        v2 mode itself (`_store_mode` only detects 'v2' once a `tickets/
+        T-####/ticket.md` already exists), so the very first write for a
+        v2-mode test repo must create that file by hand; every write
+        after this one can go through `write_ticket` normally, since
+        `_store_mode` now sees the directory it created."""
+        d = root / "tickets" / ticket.id
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "ticket.md").write_text(_serialize_ticket(ticket))
+        self._commit(root, message)
+
+    # frob:ticket T-1330
+    def test_v2_mode_mines_via_v2_state_transitions(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_velocity.py::TestSprintVelocityV2Mode.test_v2_mode_mines_via_v2_state_transitions  # noqa: E501
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+
+        queued = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, sprint="sprint-v2"
+        )
+        self._bootstrap_v2(tmp_path, queued, "queue T-0001")
+        assert (tmp_path / "tickets" / "T-0001" / "ticket.md").exists()
+
+        in_progress = queued.model_copy(update={"state": TicketState.IN_PROGRESS})
+        write_ticket(tmp_path, in_progress)
+        self._commit(tmp_path, "start T-0001")
+
+        done = in_progress.model_copy(update={"state": TicketState.DONE})
+        write_ticket(tmp_path, done)
+        self._commit(tmp_path, "close T-0001")
+
+        queue = TicketQueue(tickets={done.id: done})
+        report = sprint_velocity(tmp_path, queue, "sprint-v2")
+
+        assert report.total == 1
+        assert report.closed == 1
+        assert len(report.transitions) == 1
+        transition = report.transitions[0]
+        assert transition.ticket_id == "T-0001"
+        assert transition.from_state == "in-progress"
+        assert transition.to_state == "done"
+
+    # frob:ticket T-1330
+    def test_v1_v2_parity_for_equivalent_history(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_velocity.py::TestSprintVelocityV2Mode.test_v1_v2_parity_for_equivalent_history  # noqa: E501
+        """T-1330's own acceptance criterion (mirroring T-1257's unclosed
+        #3): the same queue/state history mined through the v1 path
+        (`_mine_done_transitions_v1`) and the v2 path (`_mine_done_
+        transitions_v2`) must agree on the derived transitions, modulo
+        the `sha`/`committed_at` values (different commits, different
+        storage layout) -- ticket_id/from_state/to_state must match."""
+        from frob.tickets._setters import (
+            _mine_done_transitions_v1,
+            _mine_done_transitions_v2,
+        )
+
+        # v1: single tickets.md ledger.
+        v1_root = tmp_path / "v1"
+        v1_root.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=v1_root, check=True)
+        subprocess.run(["git", "checkout", "-q", "-b", "main"], cwd=v1_root, check=True)
+        queued = _ticket(ticket_id="T-0001", state=TicketState.QUEUED)
+        write_ticket(v1_root, queued)
+        _commit(v1_root, "queue T-0001")
+        in_progress = queued.model_copy(update={"state": TicketState.IN_PROGRESS})
+        write_ticket(v1_root, in_progress)
+        _commit(v1_root, "start T-0001")
+        done = in_progress.model_copy(update={"state": TicketState.DONE})
+        write_ticket(v1_root, done)
+        _commit(v1_root, "close T-0001")
+        v1_transitions = _mine_done_transitions_v1(v1_root, ["T-0001"])
+
+        # v2: file-per-ticket, same state sequence.
+        v2_root = tmp_path / "v2"
+        v2_root.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=v2_root, check=True)
+        subprocess.run(["git", "checkout", "-q", "-b", "main"], cwd=v2_root, check=True)
+        self._bootstrap_v2(v2_root, queued, "queue T-0001")
+        write_ticket(v2_root, in_progress)
+        self._commit(v2_root, "start T-0001")
+        write_ticket(v2_root, done)
+        self._commit(v2_root, "close T-0001")
+        v2_transitions = _mine_done_transitions_v2(v2_root, ["T-0001"])
+
+        assert len(v1_transitions) == len(v2_transitions) == 1
+        v1t, v2t = v1_transitions[0], v2_transitions[0]
+        assert v1t.ticket_id == v2t.ticket_id == "T-0001"
+        assert v1t.from_state == v2t.from_state == "in-progress"
+        assert v1t.to_state == v2t.to_state == "done"
 
 
 # frob:ticket T-1528

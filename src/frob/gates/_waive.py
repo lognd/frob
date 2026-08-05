@@ -150,6 +150,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob-zone-start known-gate-rules T-1002
 # frob:ticket T-1520
 # frob:ticket T-1225
+# frob:ticket T-1486
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -292,6 +293,9 @@ _KNOWN_GATE_RULES = frozenset(
         "DOC009",
         # T-1230: a `make <target>` prose citation isn't a real Makefile recipe.
         "DOC010",
+        # T-1486: a T-####/T-draft-<hex> doc-prose mention doesn't resolve to
+        # any active or archived ticket.
+        "DOC011",
         "DUP001",
         "DUP002",
         "DUP003",

@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 286
+gate_rule_total: 287
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -965,6 +965,10 @@ gate_rule_entries:
   - id: "CHK-GATE-DOC010"
     name: "DOC010 is a live, enforced gate rule (T-1230: a `make <target>` prose citation is not a real Makefile recipe)"
     disposition: "handled_by:DOC010"
+    cross_refs: []
+  - id: "CHK-GATE-DOC011"
+    name: "DOC011 is a live, enforced gate rule (T-1486: a T-####/T-draft-<hex> doc-prose mention does not resolve to any active or archived ticket; WARN pending a follow-up cleanup ticket, see docs/audits/docs-staleness-2026-07-29.md)"
+    disposition: "handled_by:DOC011"
     cross_refs: []
   - id: "CHK-GATE-REG012"
     name: "REG012 is a live, enforced gate rule"

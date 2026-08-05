@@ -175,6 +175,16 @@ had to be "the whole file" too. This is the direct ancestor of the T-0933
 everything, guarded by a reentrancy registry that has already needed two
 separate bug fixes to key correctly).
 
+T-1536 raised this section's priority further: v1's single shared file is
+also a single shared BLAST RADIUS -- a narrative line in one ticket's
+Done report that happens to forge another ticket's `<!-- ticket:T-#### -->`
+marker can corrupt or duplicate a neighboring ticket's block, because both
+tickets' bytes live in the same file at all. v1 now defends against this
+class at the write path (`sanitize_narrative_for_ledger`, `write_ticket`'s
+post-splice re-parse-and-refuse check), but the per-ticket-file layout
+below eliminates the shared-file precondition structurally: two tickets'
+bytes cannot corrupt each other if they were never in the same file.
+
 Ledger v2 replaces this with two independent lock tiers:
 
 1. **Per-ticket file lock**: `tickets/T-####/.lock` (or an flock directly

@@ -125,6 +125,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/_evidence.py::reverify_close_guard -->
 <!-- frob:describes src/frob/tickets/_models.py::recover_done_report_why -->
 <!-- frob:describes src/frob/tickets/_reporting.py::compose_done_report -->
+<!-- frob:describes src/frob/tickets/_store.py::sanitize_narrative_for_ledger -->
 <!-- frob:describes src/frob/tickets/_evidence.py::render_evidence_block -->
 <!-- frob:describes src/frob/tickets/_evidence.py::replay_evidence_from_done_report -->
 <!-- frob:describes src/frob/tickets/_evidence.py::render_changed_block -->
@@ -376,6 +377,18 @@ def compose_done_report(why: str, changed_lines: Sequence[str],
     # section string. set_done_report's only caller; exposed separately so
     # a caller that already has git/evidence data in hand can render
     # without touching the store.
+    # T-1536: `why` is run through sanitize_narrative_for_ledger before
+    # composing, so a narrative line that happens to be byte-identical to
+    # another ticket's `<!-- ticket:T-#### -->` marker (e.g. quoting a
+    # corrupt-ledger incident verbatim) can never forge a fake section
+    # boundary the next time the ledger is parsed.
+def sanitize_narrative_for_ledger(text: str) -> str
+    # T-1536: defuses any line in caller-authored `text` that would
+    # otherwise be byte-identical to a real `<!-- ticket:T-#### -->` ledger
+    # marker (`<!--` -> `<! --`), so free-text narrative can never be
+    # mistaken for a structural section boundary on a later parse. Used by
+    # compose_done_report; text with no marker-lookalike line is returned
+    # unchanged.
 def render_evidence_block(evidence: Sequence[str]) -> str
     # T-0458: renders a ticket's evidence tuple as-is -- no fresh
     # collection or test run needed, since every id in `evidence` was
@@ -3040,6 +3053,11 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]
     # Every ticket in the repo as an id -> Ticket map, backend-agnostic.
 def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]
     # Upserts one ticket into whichever backend the repo uses (atomic).
+    # T-1536: single mode's spliced ledger text is re-parsed in memory
+    # before it is ever written to disk (`_post_splice_integrity_check`) --
+    # the write refuses (Err(LedgerIntegrityViolation)) if the result fails
+    # to re-parse or silently drops a sibling id, instead of persisting a
+    # ledger the next read could fail to load.
 def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]
     # Replaces the ENTIRE store with `tickets` (used by renumber); single
     # mode rewrites the ledger wholesale, dir mode writes each file and

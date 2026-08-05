@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.336.0] - unreleased
+
+- T-1536: ledger self-corruption: done-report section replacement can duplicate a foreign ticket block and break whole-store YAML load
+
 ## [0.335.0] - unreleased
 
 - T-1318: perf: telemetry redact_command pulls in the whole frob.gates package via frob.gates._secrets

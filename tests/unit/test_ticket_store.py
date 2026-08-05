@@ -43,6 +43,7 @@ from frob.tickets._store import (
     load_archive,
     migrate_to_ledger,
     read_done_report,
+    sanitize_narrative_for_ledger,
     slugify,
     tickets_dir,
     v2_attachments_dir,
@@ -272,6 +273,55 @@ class TestLoadAllAndWriteTicket:
         assert loaded.is_ok
         assert loaded.danger_ok["T-0001"].component == "tickets"
         assert loaded.danger_ok["T-0001"].labels == ("board", "epic")
+
+
+# frob:ticket T-1536
+class TestWriteTicket:
+    """Post-splice integrity guard for `write_ticket`'s single-mode path
+    (T-1536): a `ticket.body` that forges a fake ledger marker for a
+    sibling id, or that would otherwise drop a sibling on re-parse, must
+    refuse to persist rather than corrupt the shared ledger."""
+
+    # frob:ticket T-1536
+    def test_marker_lookalike_body_line_refuses_write(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
+        sibling = _ticket("T-0002")
+        assert write_ticket(tmp_path, sibling).is_ok
+
+        # T-1536 incident shape: a done-report narrative that happens to
+        # quote another ticket's literal marker line verbatim (e.g. an
+        # incident report describing a corrupted ledger span) forges a
+        # fake section boundary for T-0002 the next time the file is
+        # parsed -- this write must refuse rather than persist that.
+        poisoned = _ticket().model_copy(
+            update={
+                "body": (
+                    "## Description\nsomething\n\n"
+                    "## Done report\n\n"
+                    "quoting the incident verbatim:\n"
+                    "<!-- ticket:T-0002 -->\n"
+                    "not real frontmatter, just narrative prose\n"
+                )
+            }
+        )
+        result = write_ticket(tmp_path, poisoned)
+        assert result.is_err
+        assert result.danger_err == TicketError.LedgerIntegrityViolation
+
+        # The ledger on disk must be unchanged -- T-0002 still loads clean.
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok.keys() == {"T-0002"}
+
+    # frob:ticket T-1536
+    def test_ordinary_body_still_writes_clean(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_ordinary_body_still_writes_clean  # noqa: E501
+        ticket = _ticket()
+        result = write_ticket(tmp_path, ticket)
+        assert result.is_ok
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok.keys() == {"T-0001"}
 
 
 # frob:ticket T-1254
@@ -704,6 +754,56 @@ class TestReplaceDoneReportSection:
         assert "keep me" in result
 
 
+# frob:ticket T-1536
+class TestSanitizeNarrativeForLedger:
+    """T-1536: any line in caller-authored narrative that would otherwise
+    round-trip as a literal `<!-- ticket:T-#### -->` ledger marker must be
+    defused before it ever reaches a splice/render call -- the root-cause
+    fix for the 2026-08-05 T-1315/T-1318/T-1350 duplicate-anchor incident."""
+
+    # frob:ticket T-1536
+    def test_defuses_marker_lookalike_line(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger.test_defuses_marker_lookalike_line  # noqa: E501
+        why = "Incident repro:\n<!-- ticket:T-1315 -->\nsome narrative text\n"
+        out = sanitize_narrative_for_ledger(why)
+        assert "<!-- ticket:T-1315 -->" not in out
+        # Still human-readable -- only the exact-match token is broken.
+        assert "T-1315" in out
+        assert "ticket:T-1315" in out
+
+    # frob:ticket T-1536
+    def test_unbalanced_fence_around_marker_lookalike_still_defused(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger.test_unbalanced_fence_around_marker_lookalike_still_defused  # noqa: E501
+        # The exact incident shape: a why-file narrative quoting a corrupt
+        # ledger span, complete with an unclosed ```yaml fence -- the fence
+        # imbalance itself is irrelevant to this function; the marker
+        # lookalike line is what must be defused.
+        why = (
+            "the corrupt span looked like:\n"
+            "<!-- ticket:T-1315 -->\n"
+            "```yaml\n"
+            "id: T-1318\n"
+            "unrelated report text with no closing fence\n"
+        )
+        out = sanitize_narrative_for_ledger(why)
+        assert "<!-- ticket:T-1315 -->" not in out
+
+    # frob:ticket T-1536
+    def test_no_marker_lookalike_line_passes_through_unchanged(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger.test_no_marker_lookalike_line_passes_through_unchanged  # noqa: E501
+        why = "Ordinary narrative text mentioning T-1315 inline, no bare marker line.\n"
+        assert sanitize_narrative_for_ledger(why) == why
+
+    # frob:ticket T-1536
+    def test_defused_line_no_longer_matches_the_real_marker_pattern(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestSanitizeNarrativeForLedger.test_defused_line_no_longer_matches_the_real_marker_pattern  # noqa: E501
+        from frob.tickets._store import _LEDGER_MARKER_RE
+
+        why = "<!-- ticket:T-0042 -->\n"
+        out = sanitize_narrative_for_ledger(why)
+        assert _LEDGER_MARKER_RE.search(out) is None
+
+
 def _ticket_evidence(
     evidence: tuple[str, ...] = (), ticket_id: str = "T-0001"
 ) -> Ticket:
@@ -774,6 +874,7 @@ class TestRenderChangedBlock:
 
 
 # frob:ticket T-0458
+# frob:ticket T-1536
 class TestComposeDoneReport:
     def test_composes_all_three_sections(self) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_composes_all_three_sections  # noqa: E501
@@ -805,6 +906,28 @@ class TestComposeDoneReport:
         assert report.count("Done report") == 1
         assert report.startswith("## Done report")
         assert "narrative here" in report
+
+    # frob:ticket T-1536
+    def test_marker_lookalike_line_in_why_is_defused(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_marker_lookalike_line_in_why_is_defused  # noqa: E501
+        """T-1536 regression: the exact incident shape -- a `why` narrative
+        quoting another ticket's literal ledger marker verbatim, with an
+        unbalanced code fence around it (the corrupt-span repro text an
+        agent's Done report would plausibly include) -- must never survive
+        into the composed section as a real, marker-matching line."""
+        from frob.tickets import compose_done_report
+        from frob.tickets._store import _LEDGER_MARKER_RE
+
+        why = (
+            "root cause repro:\n"
+            "<!-- ticket:T-1315 -->\n"
+            "```yaml\n"
+            "id: T-1318\n"
+            "unrelated report text, fence never closed\n"
+        )
+        report = compose_done_report(why, (), ())
+        assert _LEDGER_MARKER_RE.search(report) is None
+        assert "T-1315" in report  # still legible, just not a real marker
 
     def test_leaves_non_leading_heading_in_narrative_alone(self) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_leaves_non_leading_heading_in_narrative_alone  # noqa: E501

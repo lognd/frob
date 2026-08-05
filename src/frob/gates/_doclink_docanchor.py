@@ -478,6 +478,99 @@ def _audit_docs(root: Path) -> set[str]:
     return {p.relative_to(root).as_posix() for p in root.glob("docs/audits/*.md")}
 
 
+# frob:ticket T-1486
+# DOC011 (T-1486, gate-gap class 6 item 1, T-1232's own follow-up): a
+# `T-####`/`T-draft-<hex>` id mentioned in doc PROSE must name a ticket
+# that actually exists somewhere in the ledger (active or archived) --
+# a typo'd or long-since-renumbered id in a doc citation reads as a real,
+# followable reference but silently resolves to nothing. Deliberately
+# narrower than the ticket's own "harder" stretch goal (flagging a
+# mention whose STATE contradicts the prose, e.g. "tracked under T-0397"
+# when T-0397 is closed): that needs NLP-grade parsing of the sentence
+# around each mention to know what claim is even being made, which is a
+# much larger, separately-scoped effort -- this closes the cheaper,
+# unambiguous half (existence) first.
+_DOC011_ID_MENTION_RE = re.compile(r"\bT-(?:\d{4}|draft-[0-9a-f]{8})\b")
+
+
+# frob:enforces CHK-GATE-DOC011
+def _doc011_violation(doc_rel: str, line: int, ticket_id: str) -> Violation:
+    """Build one DOC011 `Violation` -- a doc prose mention of a ticket id
+    that does not resolve to any active or archived ticket.
+
+    T-1486: WARN, not ERROR, deliberately -- the first live run against
+    this repo's own docs tree found 10 genuine pre-existing stale
+    citations (mostly `T-draft-<hex>` ids that finalized to a real T-####
+    long ago, plus one true orphan and one illustrative example),
+    entirely outside this ticket's own declared scope to fix. Shipping
+    this at ERROR would fail every unscoped `frob check` the moment it
+    lands, for drift this ticket only DETECTS, not causes. A follow-up
+    ticket tracks fixing the flagged citations; promote to ERROR once
+    that lands and the count is provably zero."""
+    return Violation(
+        rule="DOC011",
+        severity=Severity.WARN,
+        file=doc_rel,
+        line=line,
+        message=(
+            f"DOC011: {doc_rel}:{line} mentions {ticket_id!r}, which is not "
+            f"a real ticket (not in tickets.md or tickets-archive.md) -- "
+            f"typo, or the id was never finalized/was dropped without a "
+            f"trace; fix the citation or drop it"
+        ),
+    )
+
+
+def _doc011_known_ticket_ids(root: Path) -> set[str]:
+    """Every ticket id that has ever existed in this repo's ledger, active
+    OR archived (T-1486): late-imports `frob.tickets._store` to avoid a
+    module-level `frob.gates` -> `frob.tickets` dependency this package
+    does not otherwise carry. Best-effort -- a store that fails to parse
+    (mid-conflict, genuinely malformed) degrades to an empty known-id set
+    rather than raising, so a broken ledger never masquerades as every
+    doc citation being a DOC011 finding; `gate:TICK`'s own ledger-parse
+    checks are the right place for a malformed-ledger error, not this
+    gate."""
+    from frob.tickets._store import load_all, load_archive
+
+    known: set[str] = set()
+    active = load_all(root)
+    if active.is_ok:
+        known.update(active.danger_ok)
+    archived = load_archive(root)
+    if archived.is_ok:
+        known.update(archived.danger_ok)
+    return known
+
+
+def _doc011_scan_doc(
+    root: Path, doc_rel: str, known_ids: set[str]
+) -> tuple[Violation, ...]:
+    """Every DOC011 violation in `doc_rel`: each `T-####`/`T-draft-<hex>`
+    mention in PROSE (fenced/inline code spans blanked first, same as
+    DOC008's link scan, so a code example showing the id SYNTAX itself
+    is never flagged) that is not in `known_ids`."""
+    try:
+        raw = (root / doc_rel).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ()
+    text = _strip_code_spans(raw)
+    line_index = _line_index(text)
+    violations: list[Violation] = []
+    seen_on_line: set[tuple[int, str]] = set()
+    for match in _DOC011_ID_MENTION_RE.finditer(text):
+        ticket_id = match.group(0)
+        if ticket_id in known_ids:
+            continue
+        line = line_index(match.start())
+        key = (line, ticket_id)
+        if key in seen_on_line:
+            continue
+        seen_on_line.add(key)
+        violations.append(_doc011_violation(doc_rel, line, ticket_id))
+    return tuple(violations)
+
+
 # frob:enforces CHK-GATE-DOC009
 def _doc009_violation(doc_rel: str, message: str) -> Violation:
     """Build one DOC009 error `Violation` -- a missing or unresolvable
@@ -516,21 +609,45 @@ def _doc009_check_doc(root: Path, doc_rel: str) -> Violation | None:
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive AFFECT001 reason="T-1486: docstatus_gate's affects()-closure doc \
+# (docs/modules/gates.md#public-api) genuinely needs a DOC011 catalog row, matching \
+# the DOC009/DOC010 precedent immediately above it in that table -- but \
+# docs/modules/gates.md is leased by another in-progress ticket (T-1205) for the \
+# duration of this ticket's work, so frob ticket scope --add refuses it \
+# (ScopeLeaseConflict). Tracked in this ticket's own follow-up (fix 10 stale ticket-id \
+# citations DOC011 found...), which also touches docs/modules/gates.md; remove this \
+# waiver once that lands and the row exists."
 def docstatus_gate(root: Path) -> tuple[Violation, ...]:
     """DOC009: every `docs/audits/*.md` file needs a dated status (or
     superseded-by) header -- an audit is a point-in-time snapshot, and
     unlike code it carries no digest/hash the drift gate can compare
-    against, so a currency claim has to be explicit and checkable."""
+    against, so a currency claim has to be explicit and checkable.
+
+    T-1486: also runs DOC011 (a `T-####`/`T-draft-<hex>` mention in ANY
+    `docs/**/*.md` prose that does not resolve to a real ticket, active or
+    archived) -- bundled into this same `--only docstatus` group rather
+    than wired as a separate stage, since both checks are cheap, whole-
+    docs-tree, repo_root-scoped scans with no shared state between them
+    beyond "read every doc file once"."""
     root = Path(root)
     docs = _audit_docs(root)
-    violations = tuple(
+    violations = [
         v
         for doc_rel in sorted(docs)
         for v in (_doc009_check_doc(root, doc_rel),)
         if v is not None
+    ]
+    doc011_docs = {p.relative_to(root).as_posix() for p in root.glob("docs/**/*.md")}
+    known_ids = _doc011_known_ticket_ids(root)
+    for doc_rel in sorted(doc011_docs):
+        violations.extend(_doc011_scan_doc(root, doc_rel, known_ids))
+    _log.info(
+        "docstatus: %d audit doc(s), %d doc011 doc(s), %d violation(s)",
+        len(docs),
+        len(doc011_docs),
+        len(violations),
     )
-    _log.info("docstatus: %d audit doc(s), %d violation(s)", len(docs), len(violations))
-    return violations
+    return tuple(violations)
 
 
 # T-1230 (gate-gap class 4, non-python doc targets): a `` `make <target>` ``

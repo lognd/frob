@@ -1,6 +1,6 @@
 # Docs staleness audit -- 2026-07-29
 
-Status: 2026-08-03
+Status: 2026-08-05
 
 Point-in-time audit snapshot. Denominator: 121 docs (docs/** plus
 README.md, CLAUDE.md, FROBLEMS.md, CHANGELOG.md), all 121 claim-verified
@@ -304,3 +304,33 @@ member tables as listed in the sweep transcripts.
    header (gate-checkable); ticket-state prose (T-#### mentions) can
    be checked against the ledger; index completeness checkable against
    the docs tree.
+   - Sub-item 1 (dated status header): DONE, T-1232, DOC009.
+   - Sub-item 2 (ticket-id prose vs ledger): DONE, T-1486, DOC011 --
+     `src/frob/gates/_doclink_docanchor.py::docstatus_gate` now also
+     flags a `T-####`/`T-draft-<hex>` doc-prose mention that does not
+     resolve to any active or archived ticket. Shipped at WARN, not
+     ERROR: the first live run found 10 genuine pre-existing stale
+     citations across the docs tree (mostly finalized `T-draft-<hex>`
+     ids never updated to the real `T-####` they became), entirely
+     outside T-1486's own declared scope to fix -- tracked as a
+     follow-up ticket that also promotes DOC011 to ERROR once that
+     list is empty. Deliberately does NOT attempt the harder half (a
+     mention whose STATE contradicts the prose, e.g. "tracked under
+     T-0397" when T-0397 is closed) -- that needs sentence-level
+     parsing of the surrounding claim, a separately-scoped effort.
+   - Sub-item 3 (index completeness): INVESTIGATED, not built, T-1486.
+     `doclink_gate` (DOC001) already treats a doc as non-orphaned when
+     it is reachable via ANY of: a direct link from `docs/index.md`/
+     README.md, a transitive chain through other linked docs, a
+     `frob:describes` anchor, or a `frob:doc` edge target -- strictly
+     BROADER than "named in docs/index.md's own link inventory," the
+     sub-item's originally proposed check. A separate index-vs-tree
+     rule checking only direct index links would be a STRICTER,
+     narrower check than DOC001 already runs, and would false-positive
+     on any doc intentionally linked only from a deeper page rather
+     than the index directly (a legitimate, already-tolerated shape).
+     Conclusion: this sub-item is subsumed by DOC001, not a genuinely
+     distinct gap -- no new rule needed. `docs/index.md`'s own listed
+     "index link inventory omits 10+ existing docs" finding (Class B,
+     Status/currency section above) is a real doc-content fix, not a
+     gate gap; it remains open as ordinary doc drift, not tracked here.

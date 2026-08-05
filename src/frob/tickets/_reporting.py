@@ -85,6 +85,7 @@ from frob.tickets._models import _split_scope_entries as _normalize_scope_entrie
 from frob.tickets._store import (
     _store_mode,
     ledger_lock,
+    sanitize_narrative_for_ledger,
     write_done_report,
     write_ticket,
 )
@@ -269,15 +270,25 @@ def compose_done_report(
     never buried, the same "never silent" posture `_render_acceptance_
     amendments` gives `frob ticket show`.
 
+    T-1536: `why` is also run through `sanitize_narrative_for_ledger` before
+    composing, so a narrative line that happens to be byte-identical to a
+    real `<!-- ticket:T-#### -->` ledger marker (e.g. quoting an incident's
+    corrupt span verbatim) can never be mistaken for a real section
+    boundary the next time the ledger is parsed.
+
     T-0826: if `why` itself already begins with a '## Done report' heading
     (case-insensitive, possibly preceded by blank lines -- e.g. an agent's
     `--why-file` content that already carries its own heading, a recurring
     cosmetic ledger noise reviewers kept flagging), that leading heading
     line is stripped BEFORE composing so the rendered block always has
     exactly one heading, never two."""
-    why_text = _strip_leading_done_report_heading(why).strip() or (
-        "(no narrative supplied)"
-    )
+    # T-1536: defuse any line in the caller's narrative that would
+    # otherwise round-trip as a literal `<!-- ticket:T-#### -->` ledger
+    # section marker -- see `sanitize_narrative_for_ledger`'s docstring for
+    # the exact corruption class this closes.
+    why_text = sanitize_narrative_for_ledger(
+        _strip_leading_done_report_heading(why).strip()
+    ) or ("(no narrative supplied)")
     changed_block = render_changed_block(changed_lines)
     evidence_block = render_evidence_block(evidence)
     claims_section = f"\n\n{render_claims_block(claims)}" if claims is not None else ""
