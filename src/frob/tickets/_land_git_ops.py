@@ -1032,24 +1032,40 @@ def _uncommitted_waive_deletions(
 
 
 def _committed_waive_deletions(
-    worktree: Path, merge_base: str
+    worktree: Path, base_ref: str
 ) -> Result[tuple[tuple[str, str], ...], LandError]:
     """`(file, rule)` pairs for every `frob:waive` comment line the
-    branch's own COMMITTED history (`merge_base..HEAD`) deletes -- the
+    branch's own COMMITTED history (`base_ref..HEAD`) deletes -- the
     T-1326 extension of T-1323's guard: `_uncommitted_waive_deletions`
     only ever inspected the dirty worktree state at land time, so a
     `frob:waive` deletion an agent or tool COMMITTED mid-ticket (rather
     than leaving uncommitted) was invisible to it and rode the merge in
     unattributed -- the reviewer-flagged laundering vector T-1323's own
     approval left open. Thin wrapper around `_waive_deletions_in_diff`
-    with `diff_args=(f"{merge_base}..HEAD",)`; a deletion that happened
-    on `merge_base..HEAD` and was then RE-ADDED by a later commit in the
+    with `diff_args=(f"{base_ref}..HEAD",)`; a deletion that happened
+    on `base_ref..HEAD` and was then RE-ADDED by a later commit in the
     same range does not appear here, since a two-endpoint diff (like a
     single uncommitted diff) only ever reports the NET change across the
     whole range, never per-intermediate-commit churn -- exactly mirroring
     how the uncommitted-state check already treats an add-then-remove
-    inside a single dirty worktree."""
-    return _waive_deletions_in_diff(worktree, (f"{merge_base}..HEAD",))
+    inside a single dirty worktree.
+
+    T-1550: `base_ref` is `main_branch`'s CURRENT tip, not the stale
+    `merge_base` this used to diff from. On a shared multi-ticket
+    worktree, an already-LANDED sibling ticket's own committed deletion
+    still sits in `merge_base..HEAD` (the worktree branch keeps every
+    commit it ever made, land squash-applies rather than rewriting
+    history), so diffing from the stale `merge_base` re-discovers and
+    re-attributes that sibling's already-landed deletion to whichever
+    ticket lands next (T-1225, T-1444's re-declare-round incidents).
+    Diffing from `main_branch`'s live tip instead means a deletion
+    already reflected on main (because the sibling's squash-apply
+    already carried it there) shows NO delta at all for that line -- both
+    sides lack it -- so it is structurally never reported, no ancestry
+    walk or commit-to-ticket attribution required. A deletion still only
+    ever present on the worktree branch (not yet landed by anyone) is
+    unaffected and is still caught exactly as before."""
+    return _waive_deletions_in_diff(worktree, (f"{base_ref}..HEAD",))
 
 
 def _waive_deletion_declared_in_done_report(body: str, file: str, rule: str) -> bool:
@@ -1097,8 +1113,9 @@ def _uncommitted_out_of_scope_waive_deletions(
 
 
 # frob:ticket T-1326
+# frob:ticket T-1550
 def _committed_out_of_scope_waive_deletions(
-    worktree: Path, ticket: Ticket, merge_base: str
+    worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[tuple[tuple[str, str], ...], LandError]:
     """`(file, rule)` pairs from `_committed_waive_deletions` that are
     NEITHER covered by `ticket.scope` (`_deletion_owned`, same D-12
@@ -1107,13 +1124,17 @@ def _committed_out_of_scope_waive_deletions(
     `_uncommitted_out_of_scope_waive_deletions` (T-1323), extended (T-1326)
     to cover a `frob:waive` deletion the branch already COMMITTED before
     land ran, not only one still sitting uncommitted in the worktree.
-    Identical ownership/declaration logic, applied against `merge_base..
-    HEAD` instead of `HEAD` vs. the working tree -- a deletion on MAIN's
-    side of `merge_base` (i.e. main deleted the waiver on its own branch,
-    not this ticket's branch) never appears in this range at all, so a
-    merge-base drift never counts against a landing ticket that did not
-    touch it."""
-    found = _committed_waive_deletions(worktree, merge_base)
+    Identical ownership/declaration logic, applied against `base_ref..
+    HEAD` instead of `HEAD` vs. the working tree.
+
+    T-1550: `base_ref` is `main_branch`'s live tip (see `_committed_
+    waive_deletions`'s own T-1550 note), not the stale `merge_base` this
+    used to receive -- a deletion an already-landed SIBLING ticket
+    committed on this same shared worktree branch is already reflected
+    on `main_branch` by the time it lands, so it never shows up in a
+    `main_branch..HEAD` diff at all and is never re-attributed to
+    whichever ticket lands next off the same branch."""
+    found = _committed_waive_deletions(worktree, base_ref)
     if found.is_err:
         return Err(found.danger_err)
     out_of_scope = tuple(

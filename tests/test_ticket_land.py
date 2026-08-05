@@ -1782,6 +1782,71 @@ class TestCommittedWaiveDeletionRefusal:
 
         assert result.is_ok, result.err
 
+    # frob:ticket T-1550
+    def test_already_landed_sibling_deletion_on_shared_worktree_not_recounted(
+        self, repo: Path
+    ) -> None:
+        """T-1550: the exact multi-ticket-worktree shape T-1225/T-1444 hit
+        for real. Ticket A declares its own out-of-scope waiver deletion in
+        its Done report, lands (a REAL, non-dry-run land, so the deletion
+        is now genuinely reflected on `main`) -- then ticket B, continuing
+        on the SAME worktree branch (never re-merging main, exactly the
+        shape a multi-ticket worktree agent runs per the playbook), lands
+        with no waiver deletion of its own. Before T-1550, B's committed-
+        history scan diffed from the STALE `merge_base` captured before A
+        ever landed, so A's now-landed deletion still showed up in
+        `merge_base..HEAD` and B's land was wrongly refused with
+        `OutOfScopeWaiveDeletion` even though B never touched it and A's
+        deletion is already legitimately on `main`."""
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="stale, ticket A retires this"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a stale PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-shared-1550", str(wt)], repo)
+
+        # Ticket A: declares and commits the waiver deletion, then lands
+        # for real -- `other.py`'s waiver is now genuinely gone on main.
+        created_a = new_ticket(wt, _spec("Ticket A", scope=("src/feature.py",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(wt, tid_a, TicketState.PLANNED).is_ok
+        assert transition(wt, tid_a, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket_a = loaded.danger_ok[tid_a]
+        ticket_a = ticket_a.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": (
+                    ticket_a.body
+                    + "\n## Done report\n\nAlso removed the stale "
+                    + "frob:waive PERF001 in src/other.py (found while "
+                    + "working this ticket).\n"
+                ),
+            }
+        )
+        assert write_ticket(wt, ticket_a).is_ok
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(wt, "ticket A: retire the stale waiver, declared in Done report")
+
+        land_a = land(repo, tid_a, wt, dry_run=False)
+        assert land_a.is_ok, land_a.err
+        assert "frob:waive" not in (repo / "src" / "other.py").read_text()
+
+        # Ticket B: same worktree, same branch, no re-merge of main -- the
+        # multi-ticket-worktree shape this ticket fixes. B never touches
+        # other.py at all.
+        created_b = new_ticket(wt, _spec("Ticket B", scope=("src/feature.py",)))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        _make_closeable(wt, tid_b)
+
+        result_b = land(repo, tid_b, wt, dry_run=True)
+
+        assert result_b.is_ok, result_b.err
+
 
 # frob:ticket T-1332
 class TestRenameAwareWaiveDeletionAttribution:
@@ -6272,6 +6337,58 @@ class TestLandRepairMarker:
         assert marker.exists()
 
 
+# frob:ticket T-1523
+class TestPostLandVerifyPendingMarker:
+    """T-1523: the post-commit twin of `TestLandRepairMarker` above --
+    `_stale_post_land_verify_markers` reads back whatever `_write_post_
+    land_verify_marker` recorded, read-only, for `_land_cmd._land_core`'s
+    own `_report_stale_post_land_verify_markers` to reconcile at the start
+    of the NEXT invocation."""
+
+    def test_no_marker_is_a_silent_empty_result(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
+        assert _land_mod._stale_post_land_verify_markers(repo) == ()
+
+    def test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor  # noqa: E501
+        sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        _land_mod._write_post_land_verify_marker(repo, "T-9999", sha)
+
+        found = _land_mod._stale_post_land_verify_markers(repo)
+        assert found == (("T-9999", sha),)
+
+        # Write + clear round-trips cleanly, like the T-0907 marker does.
+        _land_mod._clear_post_land_verify_marker(repo, "T-9999")
+        assert _land_mod._stale_post_land_verify_markers(repo) == ()
+
+    def test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared(
+        self, repo: Path
+    ) -> None:
+        """The integration shape: a marker left behind by a "killed"
+        prior land is picked up by `_land_cmd._land_core`'s own
+        reconciliation call the NEXT time `frob ticket land` runs for a
+        DIFFERENT ticket -- reported via a `LAND-PROOF-RECOVERED:` log
+        line and cleared, never blocking the new ticket's own land."""
+        # frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _report_stale_post_land_verify_markers,
+        )
+
+        pre_existing_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        _land_mod._write_post_land_verify_marker(repo, "T-8888", pre_existing_sha)
+        marker_path = _land_mod._land_verify_pending_marker_path(repo, "T-8888")
+        assert marker_path.exists()
+
+        _report_stale_post_land_verify_markers(repo)
+
+        # Reconciled (cleared) regardless of verified outcome -- a
+        # DIFFERENT, currently-landing ticket must never be blocked by a
+        # PRIOR, unrelated ticket's leftover marker.
+        assert not marker_path.exists()
+
+
 def _t0907_child_land(
     root: Path, ticket_id: str, worktree: Path, ready_path: Path
 ) -> None:
@@ -7761,10 +7878,17 @@ class TestLandPlan:
         assert post_sha == pre_sha
 
     # frob:ticket T-1269
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_everything  # noqa: E501
-    def test_tick_gate_dirty_unwinds_everything(
+    # frob:ticket T-1522
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge  # noqa: E501
+    def test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge(
         self, repo: Path, tmp_path: Path
     ) -> None:
+        """T-1522: pre-T-1522 this fully unwound back to the pre-merge tip
+        on a dirty TICK-gate re-check, discarding the merge commit itself
+        -- the exact shape that ate the T-1199/T-1200 queue-drain commits
+        in the 2026-08-04 incident when a LATER, unrelated step failed in
+        the same invocation. The merge commit is now a durable checkpoint:
+        only the finalize-renumbering commit on top of it is undone."""
         from frob.tickets._land import land_plan
 
         worktree = _make_design_worktree(repo, tmp_path)
@@ -7777,12 +7901,18 @@ class TestLandPlan:
         result = land_plan(repo, worktree, check_ticks=lambda: False)
         assert result.is_err
         assert result.danger_err is LandError.PlanTickGateDirty
-        # Fully unwound: root back at its pre-merge tip, draft never
-        # finalized anywhere, no half-landed doc file.
+        # The merge commit persists (T-1522): the doc file it carried
+        # survives, and root's tip moved past the pre-merge sha even
+        # though this call reported an error.
         post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
-        assert post_sha == pre_sha
-        assert not (repo / "docs" / "new.md").exists()
-        assert draft.id not in load_all(repo).danger_ok
+        assert post_sha != pre_sha
+        assert (repo / "docs" / "new.md").exists()
+        # Only the finalize step (draft -> real id renumbering) is
+        # undone: the draft's id is back as a draft, not finalized to a
+        # real id anywhere on root.
+        loaded = load_all(repo).danger_ok
+        assert draft.id in loaded
+        assert loaded[draft.id].id.startswith("T-draft-")
 
     # frob:ticket T-1269
     # frob:tests tests/test_ticket_land.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
@@ -7853,14 +7983,16 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
         assert "an unrelated interleaved commit" in log
 
     # frob:ticket T-1495
-    # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_no_foreign_commit_unwinds_cleanly_as_before  # noqa: E501
-    def test_no_foreign_commit_unwinds_cleanly_as_before(
+    # frob:ticket T-1522
+    # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge  # noqa: E501
+    def test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge(
         self, repo: Path, tmp_path: Path
     ) -> None:
-        """The ordinary, non-interleaved case is unaffected: no foreign
-        commit landed, so the unwind still runs and root returns to its
-        exact pre-merge tip (same assertion `test_tick_gate_dirty_
-        unwinds_everything` above already covers for the plain path)."""
+        """The ordinary, non-interleaved case: no foreign commit landed,
+        so the unwind still runs -- but (T-1522) it now stops at the
+        merge commit rather than the pre-merge tip, since the merge
+        commit is a durable checkpoint, not something a later, unrelated
+        failure in the same invocation should discard."""
         from frob.tickets._land import land_plan
 
         worktree = _make_design_worktree(repo, tmp_path)
@@ -7873,8 +8005,62 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
         assert result.is_err
         assert result.danger_err is LandError.PlanTickGateDirty
         post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
-        assert post_sha == pre_sha
-        assert not (repo / "docs" / "new.md").exists()
+        assert post_sha != pre_sha
+        assert (repo / "docs" / "new.md").exists()
+
+
+# frob:ticket T-1522
+class TestLandPlanQueueDrainCommitsDurable:
+    """T-1522: the exact 2026-08-04 T-1199/T-1200 incident shape --
+    `land_plan`'s merge step already durably carries a shared worktree
+    branch's OTHER, queue-drained content onto `root` (a doc file, other
+    already-merged tickets) before the finalize step runs at all. A
+    finalize failure AFTER that merge succeeded must not discard it."""
+
+    # frob:ticket T-1522
+    # frob:tests tests/test_ticket_land.py::TestLandPlanQueueDrainCommitsDurable.test_finalize_failure_after_merge_keeps_the_merge_commit  # noqa: E501
+    def test_finalize_failure_after_merge_keeps_the_merge_commit(
+        self, repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.tickets import _land as land_module
+        from frob.tickets._land import land_plan
+        from frob.tickets._models import LandError as _LandError
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md -- the 'queue-drained' content")
+
+        # Simulate a finalize failure (a `NotFound` from `finalize_draft`,
+        # or any other post-merge finalize error) AFTER the merge commit
+        # already exists on root -- exactly the 2026-08-04 shape where
+        # something unrelated to the already-merged content fails.
+        def _always_fails(_root: Path) -> Result[tuple, _LandError]:
+            return Err(_LandError.NotFound)
+
+        monkeypatch.setattr(
+            land_module, "_land_plan_finalize_drafts", _always_fails
+        )
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land_plan(repo, worktree)
+        assert result.is_err
+        assert result.danger_err is LandError.NotFound
+
+        # T-1522: the merge commit persists -- root's tip moved past the
+        # pre-merge sha (it now IS the merge commit) and the doc file it
+        # carried is on disk, even though this invocation reported an
+        # error for the (unrelated) finalize failure.
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha != pre_sha
+        assert (repo / "docs" / "new.md").exists()
+
+        # A retry of land_plan against the now-advanced root is a clean
+        # no-op merge (nothing new to bring in) -- proving the content is
+        # genuinely durable, not merely "not yet reset" mid-call.
+        monkeypatch.undo()
+        retry = land_plan(repo, worktree)
+        assert retry.is_ok, retry.err
 
 
 # frob:ticket T-1515

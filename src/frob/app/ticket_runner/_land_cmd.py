@@ -855,6 +855,32 @@ def _pre_commit_unscoped_error_sweep(
 
 
 # frob:ticket T-1175
+# frob:ticket T-1523
+def _land_proof_checks(root: Path, final_id: str, commit_sha: str) -> tuple[bool, str]:
+    """The two checks `_print_land_proof`'s `LAND-PROOF:` line reports
+    (T-1175), split out (T-1523) so `_report_stale_post_land_verify_
+    markers` can run the IDENTICAL check against a RECOVERED marker's
+    `(ticket_id, commit_sha)` pair without duplicating the git/ledger
+    logic: `commit_sha` is an ancestor of `root`'s `main`, AND `final_id`'s
+    state on `main` is a terminal state (done/dropped). Returns
+    `(ancestor_ok, state_desc)` -- the caller derives `verified` and any
+    logging itself."""
+    from frob.tickets import load_all
+
+    is_ancestor = run_argv(
+        ["git", "-C", str(root), "merge-base", "--is-ancestor", commit_sha, "main"]
+    )
+    ancestor_ok = is_ancestor.is_ok and is_ancestor.danger_ok.returncode == 0
+
+    state_desc = "unknown"
+    loaded = load_all(root)
+    if loaded.is_ok:
+        ticket = loaded.danger_ok.get(final_id)
+        if ticket is not None:
+            state_desc = ticket.state.value
+    return ancestor_ok, state_desc
+
+
 def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     """T-1175's machine-checkable on-main proof line: after a real
     (non-dry-run, `Ok`) land, verify and print `commit_sha` is an ancestor
@@ -865,27 +891,11 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     Printed as one grep-able `LAND-PROOF:` line, and the combined
     `verified` bool is also RETURNED so `--finish` can gate worktree
     removal on it without re-deriving either check itself."""
-    from frob.tickets import TicketState, load_all
+    from frob.tickets import TicketState
 
-    is_ancestor = run_argv(
-        [
-            "git",
-            "-C",
-            str(root),
-            "merge-base",
-            "--is-ancestor",
-            report.commit_sha,
-            "main",
-        ]
+    ancestor_ok, state_desc = _land_proof_checks(
+        root, report.final_id, report.commit_sha
     )
-    ancestor_ok = is_ancestor.is_ok and is_ancestor.danger_ok.returncode == 0
-
-    state_desc = "unknown"
-    loaded = load_all(root)
-    if loaded.is_ok:
-        ticket = loaded.danger_ok.get(report.final_id)
-        if ticket is not None:
-            state_desc = ticket.state.value
     state_ok = state_desc in (TicketState.DONE.value, TicketState.DROPPED.value)
     verified = ancestor_ok and state_ok
 
@@ -899,6 +909,49 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
         verified,
     )
     return verified
+
+
+# frob:ticket T-1523
+# frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared  # noqa: E501
+def _report_stale_post_land_verify_markers(root: Path) -> None:
+    """Reconcile every leftover T-1523 post-land-verify-pending marker
+    under `root` -- called at the very START of `_land_core`, before this
+    invocation does any work of its own: a prior `frob ticket land`
+    SIGTERM-killed between its own commit landing and its post-land
+    verification tail finishing (the 2026-08-04 T-1464 incident's own
+    trigger) leaves one of these markers behind. This is READ-ONLY --
+    unlike T-0907's own `_repair_stale_land_marker`, it never resets or
+    mutates `root`; the commit the marker names is already durably on
+    `root` either way (the marker is written AFTER the commit exists), so
+    there is nothing to roll back. It simply re-runs the same two
+    `LAND-PROOF` checks (`_land_proof_checks`) that a normal, uninterrupted
+    land would have run, logs a `LAND-PROOF-RECOVERED:` line naming the
+    result, and clears the marker -- surfacing exactly what a >540s kill
+    left ambiguous instead of leaving it silently unverified forever. A
+    `verified=False` result is a loud signal for a human to inspect
+    `root`'s ledger/git-log by hand; this function itself never refuses or
+    exits, since the NEW ticket this invocation is actually landing must
+    not be blocked by a PRIOR, unrelated ticket's leftover marker."""
+    from frob.tickets import TicketState
+    from frob.tickets._land import _clear_post_land_verify_marker
+    from frob.tickets._land import _stale_post_land_verify_markers as _stale_markers
+
+    for ticket_id, commit_sha in _stale_markers(root):
+        ancestor_ok, state_desc = _land_proof_checks(root, ticket_id, commit_sha)
+        state_ok = state_desc in (TicketState.DONE.value, TicketState.DROPPED.value)
+        verified = ancestor_ok and state_ok
+        _log.warning(
+            "LAND-PROOF-RECOVERED: a prior `frob ticket land %s` was "
+            "interrupted after its commit (%s) landed but before "
+            "post-land verification finished (T-1523) -- re-checked now: "
+            "is_ancestor_of_main=%s state_on_main=%s verified=%s",
+            ticket_id,
+            commit_sha,
+            ancestor_ok,
+            state_desc,
+            verified,
+        )
+        _clear_post_land_verify_marker(root, ticket_id)
 
 
 # frob:ticket T-1175
@@ -1826,6 +1879,13 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
 
     root = _resolve_land_root(root, worktree, cfg.ticket_id)
 
+    # T-1523: reconcile any leftover post-land-verify-pending marker from
+    # a PRIOR invocation crashing between its own commit and its own
+    # verification tail, before this invocation touches anything new --
+    # run against the RESOLVED root (the real primary checkout, not a
+    # possibly-still-worktree-pointed cfg default).
+    _report_stale_post_land_verify_markers(root)
+
     _warn_land_override_flags(cfg)
 
     # T-1463: run concurrently with land()'s own merge/checks below -- see
@@ -1887,9 +1947,31 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
     )
 
     if not report.dry_run and pre_land_sha is not None:
+        # T-1523: the land commit (`report.commit_sha`) is ALREADY durably
+        # on `root` at this point -- everything from here through the
+        # sweep call below is the >540s-killable "post-land verification"
+        # gap T-1495 point 4 named (the 2026-08-04 T-1464 incident's own
+        # trigger). Marker written right before the sweep's own possible
+        # `git reset --hard` (`_post_land_unscoped_error_sweep` ->
+        # `_sweep_revert_land`), cleared right after -- a SIGTERM in
+        # between leaves it for `_report_stale_post_land_verify_markers`
+        # (called at the START of the NEXT `frob ticket land` invocation)
+        # to surface instead of silently vanishing.
+        from frob.tickets._land import (
+            _clear_post_land_verify_marker,
+            _write_post_land_verify_marker,
+        )
+
+        _write_post_land_verify_marker(root, cfg.ticket_id, report.commit_sha)
         swept = _post_land_unscoped_error_sweep(
             root, cfg.ticket_id, report.final_id, pre_land_sha, pre_land_findings
         )
+        # Either outcome resolves the pending window: `swept=True` means
+        # root is confirmed clean at `report.commit_sha`; `swept=False`
+        # means the sweep already reverted root back to its pre-land tip
+        # (nothing landed to verify anymore) -- neither leaves anything
+        # for a later invocation to reconcile.
+        _clear_post_land_verify_marker(root, cfg.ticket_id)
         if not swept:
             _log.error(
                 "ticket land failed: %s post-land unscoped error sweep "

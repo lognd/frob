@@ -4584,7 +4584,7 @@ question for this follow-up.
 ```yaml
 id: T-1522
 title: 'land: queue-drain commits must be durable across a same-invocation later unwind'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -4597,6 +4597,12 @@ scope:
 - src/frob/tickets/_land_squash.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLandPlanQueueDrainCommitsDurable::test_finalize_failure_after_merge_keeps_the_merge_commit
+- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge
+- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding
+- tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
+- tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge
 threat: null
 component: null
 ```
@@ -4629,12 +4635,60 @@ Investigate the queue-drain absorption call path (search
 to find exactly where drained commits and the primary ticket's commits
 share an unwind boundary, and design the split.
 
+## Done report
+
+T-1522: `land_plan`'s (`src/frob/tickets/_land.py`) failure-unwind path no
+longer resets `root` all the way back to its pre-merge tip once the merge
+commit exists. The merge commit is the queue-drain checkpoint on a shared
+design-phase worktree branch -- it already durably carries every other
+ticket's content the branch accumulated -- so a LATER, unrelated failure
+in the SAME invocation (a finalize error, a dirty `check_ticks()` result)
+now unwinds only what was committed AFTER the merge (new helper
+`_land_plan_unwind_after_merge`), never the merge itself. This is the
+2026-08-04 T-1199/T-1200 incident shape (tickets-archive.md) directly:
+those tickets' already-merged content was discarded by two retried
+`land_plan` attempts because the unwind reset past the merge commit on an
+unrelated later failure. `dry_run`'s own always-revert behavior is
+unchanged -- a dry run is deliberately "run then always revert", not a
+failure path.
+
+Updated two pre-existing tests whose assertions encoded the OLD (buggy)
+full-unwind behavior (`test_tick_gate_dirty_unwinds_everything` ->
+`test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge`,
+`test_no_foreign_commit_unwinds_cleanly_as_before` ->
+`test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge`), and
+added a new `TestLandPlanQueueDrainCommitsDurable` test class that
+reproduces the T-1199/T-1200 shape directly: a finalize failure injected
+via monkeypatch AFTER a real merge commit, asserting the merge content
+(a doc file) survives and a follow-up retry is a clean no-op.
+
+### Changed
+```
+ src/frob/tickets/_land.py         | 30 ++++++++-----
+ src/frob/tickets/_land_git_ops.py | 49 +++++++++++++++-------
+ tests/test_ticket_land.py         | 65 +++++++++++++++++++++++++++++
+ tickets.md                        | 88 +++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 205 insertions(+), 27 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandPlanQueueDrainCommitsDurable::test_finalize_failure_after_merge_keeps_the_merge_commit` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 362 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1523 -->
 ```yaml
 id: T-1523
 title: 'land: checkpoint or split post-land verification so a >540s kill is always
   safe'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -4645,8 +4699,23 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Adding regression tests for the new T-1523 post-land-verify-pending
+
+    marker mechanism.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result
+- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor
+- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared
 threat: null
 component: null
 ```
@@ -4678,6 +4747,67 @@ Either option needs its own design doc/ticket-plan before implementation
 -- this is exactly the kind of decision the T-1495 body's "find the
 actual reset path... make it refuse or reconcile" ask flags as needing
 judgment beyond a mechanical fix.
+
+## Done report
+
+T-1523: this is a targeted slice of the ticket's own "Option A" design
+sketch (checkpoint the killable post-commit window, T-1495 point 4), NOT
+the full Option A "every intermediate state durable" scope or Option B's
+separate `--verify-only` CLI verb -- the ticket body itself says either
+option needs its own design doc; this closes the specific, highest-risk
+piece: `_post_land_unscoped_error_sweep` (the only post-commit step that
+can still mutate/revert `root`, per T-1514's own docstring, which already
+narrowed the pre-commit half of this same gap).
+
+New T-1523 marker (`.frob/land-verify-pending/<ticket_id>.json`,
+`src/frob/tickets/_land.py`: `_write_post_land_verify_marker`/
+`_clear_post_land_verify_marker`/`_stale_post_land_verify_markers`) is
+written right after a real land's commit exists on `root` but before the
+post-land sweep runs (`_land_cmd._land_core`), and cleared immediately
+after the sweep resolves (either outcome -- clean or reverted -- resolves
+the pending window). A SIGTERM during the sweep itself now leaves this
+marker behind instead of nothing.
+
+`_land_cmd._report_stale_post_land_verify_markers` (read-only, never
+mutates `root` -- the commit it names is already durably there either
+way) runs at the start of every subsequent `_land_core` call (single-
+ticket land and `_land_drain`'s loop alike): re-runs the same two
+`LAND-PROOF` checks (`is_ancestor_of_main`, ticket state on main; shared
+via new helper `_land_proof_checks`, factored out of `_print_land_proof`)
+against any leftover marker, logs a `LAND-PROOF-RECOVERED:` line naming
+the verified result, and clears the marker -- surfacing exactly what a
+kill left ambiguous instead of leaving it silently unverified forever,
+without ever blocking the NEW ticket this invocation is actually landing.
+
+Deferred, disclosed: `LAND-PROOF`/`--finish` themselves were already
+established as idempotent/safe-to-retry by playbook section 0 item 9 and
+T-1175, so they are not part of this marker's covered window. The larger
+Option A (every intermediate write self-describing) and Option B (a
+separate resumable `--verify-only <sha>` CLI step) remain their own
+design-doc-first follow-up if the sweep-specific gap closed here proves
+insufficient in practice; a follow-up ticket has been filed for that
+remaining design work rather than silently expanding this one's scope
+(its real id will be assigned at land -- filed as a draft from this
+worktree).
+
+### Changed
+```
+ src/frob/tickets/_land.py         | 106 ++++++++++++++++-----
+ src/frob/tickets/_land_git_ops.py |  49 +++++++---
+ tests/test_ticket_land.py         | 164 +++++++++++++++++++++++++++++---
+ tickets.md                        | 190 +++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 451 insertions(+), 58 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 514 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1525 -->
 ```yaml
@@ -5250,7 +5380,7 @@ Follow-up from T-1531: a ClaimDivergence land refusal already has a documented m
 id: T-1550
 title: attribute branch-history waive deletions to the sibling ticket that landed
   them (kill the OutOfScopeWaiveDeletion re-declare round)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -5258,12 +5388,89 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/tickets/_land_git_ops.py
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: 'Narrowing to the waive-deletion attribution scan and its land-check
+
+    callers/tests per the ticket body''s fix description.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'Narrowing to the waive-deletion attribution scan and its land-check
+
+    callers/tests per the ticket body''s fix description.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Narrowing to the waive-deletion attribution scan and its land-check
+
+    callers/tests per the ticket body''s fix description.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
 threat: null
 component: null
 ```
 The land waive-deletion scan walks ALL branch commits since merge-base and attributes every deletion to the LANDING ticket, so on a multi-ticket branch each subsequent land refuses on deletions its already-landed siblings own (T-1225, T-1444 each burned a full land round on this 2026-08-05). Fix: before refusing, check whether the deletion's containing commit is already an ancestor of main (sibling landed) or the deletion falls inside a ticket that is done on main whose scope covers the file -- if so, log and skip. Kills the declare-in-report boilerplate round entirely.
+
+## Done report
+
+T-1550: `_committed_waive_deletions`/`_committed_out_of_scope_waive_deletions`
+(src/frob/tickets/_land_git_ops.py) and `_check_committed_waive_deletions`
+(src/frob/tickets/_land.py) now diff the branch's committed history against
+`main_branch`'s LIVE tip instead of the stale `merge_base` captured before
+any sibling ticket on the same shared worktree branch had landed. A
+deletion an already-landed sibling committed is, by the time it lands,
+already reflected on `main_branch` itself (squash-apply carries the whole
+diff there) -- diffing from the live tip means that specific line shows no
+delta on either side and is never re-discovered, with no ancestry walk or
+commit-to-ticket message parsing required. A deletion still only present
+on the worktree branch (not yet landed by anyone) is unaffected and still
+refuses exactly as before. New regression test
+`TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted`
+reproduces the T-1225/T-1444 shape directly: ticket A declares and lands
+(real, non-dry-run) an out-of-scope waiver deletion; ticket B, continuing
+on the same worktree branch with no re-merge of main, previously got
+refused re-attributing A's already-landed deletion to itself -- now lands
+clean.
+
+### Changed
+```
+ tickets.md | 40 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 386 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1551 -->
 ```yaml
@@ -5430,3 +5637,41 @@ affected the same way, unmeasured here.
       default THEN every previously-passing test still passes (v1-path
       tests updated to seed `tickets.md` explicitly, not broken by the
       flip).
+
+<!-- ticket:T-1554 -->
+```yaml
+id: T-1554
+title: 'land: design the remaining post-commit checkpoint gap beyond the sweep window
+  (T-1523 follow-up)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1523 closed a narrow slice of this (the post-land unscoped-error sweep's
+own killable window, via a durable marker + read-only reconciliation on
+the next invocation). Two larger design questions from its body remain
+open:
+
+- Option A (full): make EVERY intermediate land state durable/self-
+  describing, not just the sweep window, so a kill at ANY instant is
+  recoverable, including push and --finish's own worktree-removal step
+  (currently believed safe/idempotent per playbook section 0 item 9 and
+  T-1175's LAND-PROOF, but never load-bearing-verified against a real
+  SIGTERM injection the way T-1523's own test suite does for the sweep).
+- Option B: a separately-invocable `frob ticket land --verify-only <sha>`
+  resumable CLI step, decoupled from a fresh merge/commit entirely.
+
+Needs its own design doc before implementation, same as T-1523's body
+said before it was scoped down.

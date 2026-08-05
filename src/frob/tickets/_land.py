@@ -496,6 +496,123 @@ def _reconcile_one_land_repair_marker(
     return Ok(None)
 
 
+# frob:ticket T-1523
+#: The T-0907 land-repair marker (above) covers the PRE-commit staging
+#: window -- written before `_land_squash_apply` mutates `root`, cleared
+#: the moment it returns. That leaves a real, separately-killable gap
+#: (T-1495 point 4, the 2026-08-04 incident's own trigger): once the
+#: final commit lands, `frob.app.ticket_runner._land_cmd._land` still has
+#: to run the post-land unscoped-error sweep, print the `LAND-PROOF:`
+#: line, and (with `--finish`) remove the worktree -- a `>540s` SIGTERM
+#: during THAT window leaves a real, already-landed commit on `root`
+#: with none of that verification ever having run, and nothing durable
+#: recording that fact for the next invocation to notice. This marker
+#: closes that gap the same way T-0907's does for its own window: written
+#: right after the commit exists, cleared once post-land verification
+#: actually completes (`frob.app.ticket_runner._land_cmd._land`'s own
+#: tail sequence), reconciled (verified + logged, never mutated) at the
+#: START of the next `frob ticket land` invocation against the same
+#: `root` by `_stale_post_land_verify_markers`.
+_LAND_VERIFY_PENDING_DIRNAME = "land-verify-pending"
+
+
+# frob:ticket T-1523
+def _land_verify_pending_dir(root: Path) -> Path:
+    """`<root>/.frob/land-verify-pending`, where a landed-but-not-yet-
+    verified commit's marker is recorded (T-1523)."""
+    return root / ".frob" / _LAND_VERIFY_PENDING_DIRNAME
+
+
+# frob:ticket T-1523
+def _land_verify_pending_marker_path(root: Path, ticket_id: str) -> Path:
+    """The per-ticket post-land-verify-pending marker path under `root`
+    (T-1523)."""
+    return _land_verify_pending_dir(root) / f"{ticket_id}.json"
+
+
+# frob:ticket T-1523
+def _write_post_land_verify_marker(root: Path, ticket_id: str, commit_sha: str) -> None:
+    """Record `commit_sha` (the just-landed commit, ALREADY on `root`)
+    under `ticket_id`'s post-land-verify-pending marker (T-1523) -- called
+    by `_land_cmd._land` immediately after `land()` returns a real,
+    non-dry-run success, BEFORE the post-land sweep/`LAND-PROOF`/`--finish`
+    tail runs. A SIGTERM anywhere in that tail leaves this marker behind
+    for `_stale_post_land_verify_markers` to pick up on the next
+    invocation. Best-effort like `_write_land_repair_marker`: a write
+    failure is logged but never fails the land itself, since the commit
+    it would have tracked is already durably on `root` either way -- this
+    marker is purely a recovery AID, not a mutation gate."""
+    path = _land_verify_pending_marker_path(root, ticket_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"ticket_id": ticket_id, "commit_sha": commit_sha}) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not write post-land-verify-pending marker "
+            "(%s) -- proceeding without the T-1523 crash-recovery aid "
+            "for this run",
+            ticket_id,
+            exc,
+        )
+
+
+# frob:ticket T-1523
+def _clear_post_land_verify_marker(root: Path, ticket_id: str) -> None:
+    """Remove `ticket_id`'s post-land-verify-pending marker, if any
+    (T-1523) -- called once `_land_cmd._land`'s post-land verification
+    tail (sweep, `LAND-PROOF`, `--finish`) has actually completed,
+    mirroring `_clear_land_repair_marker`'s unconditional-cleanup shape."""
+    path = _land_verify_pending_marker_path(root, ticket_id)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not clear post-land-verify-pending marker: %s",
+            ticket_id,
+            exc,
+        )
+
+
+# frob:ticket T-1523
+# frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
+def _stale_post_land_verify_markers(root: Path) -> tuple[tuple[str, str], ...]:
+    """`(ticket_id, commit_sha)` for every leftover T-1523 post-land-
+    verify-pending marker under `root`, read-only (never mutates `root`
+    or the marker files themselves -- clearing is the caller's own
+    responsibility once it has actually acted on what this reports).
+    Called at the very start of `_land_cmd._land`, before this invocation
+    does any work of its own, so a prior run's SIGTERM-interrupted
+    verification tail is surfaced (and reconciled) before anything new
+    happens. No marker at all -- the overwhelmingly common case -- returns
+    an empty tuple."""
+    marker_dir = _land_verify_pending_dir(root)
+    if not marker_dir.is_dir():
+        return ()
+    found: list[tuple[str, str]] = []
+    for marker_path in sorted(marker_dir.glob("*.json")):
+        try:
+            raw = json.loads(marker_path.read_text(encoding="utf-8"))
+            found.append((str(raw["ticket_id"]), str(raw["commit_sha"])))
+        except (OSError, ValueError, KeyError) as exc:
+            _log.error(
+                "land: found an unreadable T-1523 post-land-verify-"
+                "pending marker at %s (%s) -- a prior `frob ticket land` "
+                "landed a commit but crashed before verifying it; "
+                "inspect %s and `git -C %s log --oneline -5` by hand, "
+                "then remove %s once resolved",
+                marker_path,
+                exc,
+                marker_path,
+                root,
+                marker_path,
+            )
+    return tuple(found)
+
+
 # frob:ticket T-0176
 # frob:ticket T-1355
 # frob:ticket T-1410
@@ -756,7 +873,7 @@ def land(
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_everything  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge  # noqa: E501
 # frob:ticket T-1495
 def land_plan(
     root: Path,
@@ -783,11 +900,21 @@ def land_plan(
     `land()` uses) for atomicity against a concurrent `land()`/`land_plan()`
     call against the SAME `root`.
 
-    On ANY failure after the merge (a finalize error, or `check_ticks()`
-    returning `False`), `root` is `git reset --hard`ed back to its pre-
-    merge tip -- no half-merged ledger, no partially-renumbered drafts
-    survive. A merge CONFLICT (before any commit exists) is resolved via
-    `git merge --abort` instead, since nothing was committed yet.
+    On a failure AFTER the merge (a finalize error, or `check_ticks()`
+    returning `False`), `root` is `git reset --hard`ed back to the MERGE
+    COMMIT itself, never past it (T-1522) -- the merge commit is the
+    "queue-drain" checkpoint: it already durably carries every OTHER
+    ticket's finalized/landed content this worktree's branch accumulated
+    (a shared multi-ticket worktree's earlier tickets), and discarding it
+    just because a LATER, unrelated step in the SAME invocation failed
+    silently ate that content in a real 2026-08-04 incident (T-1199/T-1200
+    eaten by two retried land_plan attempts). Only the partially-
+    renumbered drafts / TICK-dirty state on top of the merge is undone; a
+    genuine merge-step failure (before any commit exists at all) still
+    resets all the way back to the pre-merge tip, since there is nothing
+    durable to preserve in that case. A merge CONFLICT (before any commit
+    exists) is resolved via `git merge --abort` instead, since nothing was
+    committed yet.
 
     `check_ticks` (default `None`, skip -- matching `land`'s own `check_
     gates`/`covers_scope`/etc. cycle-avoidance posture, docs/rework.md:
@@ -1060,6 +1187,32 @@ def _land_plan_merge_and_finalize(
 
 
 # frob:ticket T-1495
+# frob:ticket T-1522
+def _land_plan_unwind_after_merge(
+    root: Path, pre_merge_sha: str, own_commits: Sequence[str]
+) -> Result[None, LandError]:
+    """T-1522: unwind a `land_plan` failure that happens AFTER the merge
+    step (`_land_plan_merge_and_finalize`'s first own commit) WITHOUT ever
+    discarding that merge commit itself -- see `_land_plan_locked`'s own
+    T-1522 docstring note for the 2026-08-04 incident (T-1199/T-1200's
+    already-merged content eaten by a later, unrelated failure in the SAME
+    invocation) this closes. `own_commits[0]` (when present) is always the
+    merge commit (`_land_plan_merge_and_finalize`'s own contract: it is
+    the first entry appended, before the finalize commit if any) -- reset
+    only as far as THAT, discarding anything committed after it
+    (`own_commits[1:]`, e.g. a finalize commit), never further. When
+    `own_commits` is empty (the merge step itself never produced a commit
+    at all -- `_land_plan_merge_worktree` failed before committing), this
+    degrades to the plain pre-T-1522 unwind straight back to
+    `pre_merge_sha`, since there is nothing durable yet to preserve."""
+    if not own_commits:
+        return _land_plan_reset_hard(root, pre_merge_sha, own_commits=own_commits)
+    merge_commit = own_commits[0]
+    return _land_plan_reset_hard(root, merge_commit, own_commits=own_commits[1:])
+
+
+# frob:ticket T-1495
+# frob:ticket T-1522
 def _land_plan_locked(
     root: Path,
     worktree: Path,
@@ -1070,13 +1223,23 @@ def _land_plan_locked(
     """`land_plan`'s body (T-1269), run by the caller already holding
     `root`'s `_land_lock`: merge, finalize every draft, optionally re-check
     TICK-gate cleanliness, and -- for a real (non-dry-run) call -- leave
-    the merge commit as `root`'s new tip; a `dry_run` or any failure resets
-    `root` back to its pre-merge tip instead. T-1495: every unwind path
+    the merge commit as `root`'s new tip. T-1495: every unwind path
     threads `own_commits` (`_land_plan_merge_and_finalize`'s own return)
     into `_land_plan_reset_hard`, refusing instead of discarding a foreign
     commit interleaved onto `root` mid-run -- see
     `_assert_reset_only_discards_own_commits`'s doc for the 2026-08-04
-    incident this closes."""
+    incident this closes.
+
+    T-1522: a failure AFTER the merge already succeeded (a finalize
+    error, or `check_ticks()` reporting dirty) no longer resets all the
+    way back to `pre_merge_sha` -- `_land_plan_unwind_after_merge` stops
+    at the merge commit instead, so content this worktree branch already
+    accumulated from OTHER, earlier tickets (a shared multi-ticket
+    worktree's queue-drain shape) stays durably on `root` even when the
+    finalize/TICK-gate step on top of it fails. `dry_run`'s own
+    always-reset path is UNCHANGED by this -- a dry run is deliberately
+    "run it, then always revert", not a failure path, so it still resets
+    all the way back to `pre_merge_sha` regardless of outcome."""
     pre_merge = _land_plan_pre_merge_sha(root)
     if pre_merge.is_err:
         return Err(pre_merge.danger_err)
@@ -1084,7 +1247,7 @@ def _land_plan_locked(
 
     merged_finalized, own_commits = _land_plan_merge_and_finalize(root, worktree)
     if merged_finalized.is_err:
-        _land_plan_reset_hard(root, pre_merge_sha, own_commits=own_commits)
+        _land_plan_unwind_after_merge(root, pre_merge_sha, own_commits)
         return Err(merged_finalized.danger_err)
     merge_commit, finalized_ids = merged_finalized.danger_ok
 
@@ -1093,12 +1256,12 @@ def _land_plan_locked(
         if clean is False:
             _log.error(
                 "land --plan: post-merge TICK gate re-check reported "
-                "non-clean -- unwinding to %s",
-                pre_merge_sha,
+                "non-clean -- unwinding to the merge commit %s, keeping "
+                "any queue-drained sibling content it already carries "
+                "(T-1522)",
+                merge_commit,
             )
-            unwound = _land_plan_reset_hard(
-                root, pre_merge_sha, own_commits=own_commits
-            )
+            unwound = _land_plan_unwind_after_merge(root, pre_merge_sha, own_commits)
             return Err(
                 unwound.danger_err if unwound.is_err else LandError.PlanTickGateDirty
             )
@@ -1507,19 +1670,29 @@ def _check_committed_waive_deletions(
     check that only ever inspected `git diff HEAD`, so it rode the merge
     in unattributed exactly like the uncommitted case T-1323 closed.
 
-    Runs at `_land_precheck` time, strictly before any git mutation, using
-    `_true_merge_base(worktree, main_branch)` to resolve the TRUE common
-    ancestor -- the same merge-base `_worktree_full_changeset` (T-0761)
-    already trusts -- so a `frob:waive` line deleted on MAIN's own side of
-    that ancestor (main dropped the waiver on ITS branch, never touched by
-    this ticket) never appears in `merge_base..HEAD` at all and is
-    correctly NOT counted against the landing ticket."""
+    Runs at `_land_precheck` time, strictly before any git mutation.
+    `_true_merge_base(worktree, main_branch)` is still resolved here for
+    the refusal log line's own "commits since merge-base" context, but
+    (T-1550) the deletion scan itself is diffed against `main_branch`'s
+    LIVE tip, not this stale merge-base: on a shared multi-ticket
+    worktree, `merge_base..HEAD` still contains every commit an
+    already-landed SIBLING ticket made on this same branch, including any
+    `frob:waive` deletion it committed -- re-diffing from the original
+    merge-base re-discovers that already-landed deletion and re-attributes
+    it to whichever ticket lands next (T-1225, T-1444's re-declare-round
+    incidents). A deletion already reflected on `main_branch` (because the
+    sibling's own land already squash-applied it there) shows no delta at
+    all against the live tip, so it is structurally excluded without any
+    ancestry walk or commit-to-ticket attribution -- see
+    `_committed_waive_deletions`'s own T-1550 docstring note. A
+    `frob:waive` line deleted on main's own unrelated history (main
+    dropped the waiver on ITS branch, never touched by this ticket) is
+    likewise never in `main_branch..HEAD` at all (both sides already
+    agree) and is correctly NOT counted against the landing ticket."""
     merge_base = _true_merge_base(worktree, main_branch)
     if merge_base.is_err:
         return Err(merge_base.danger_err)
-    found = _committed_out_of_scope_waive_deletions(
-        worktree, ticket, merge_base.danger_ok
-    )
+    found = _committed_out_of_scope_waive_deletions(worktree, ticket, main_branch)
     if found.is_err:
         return Err(found.danger_err)
     if found.danger_ok:
