@@ -5375,7 +5375,7 @@ Changed:
 id: T-1561
 title: 'evidence ops cannot reach archived tickets while COV003 still scans them:
   add --archived reach or an unarchive verb'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
