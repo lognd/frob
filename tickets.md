@@ -4614,3 +4614,22 @@ Refiled from T-draft-96951a81 (T-1238 slice, draft-loss class; also cited by T-1
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
+
+<!-- ticket:T-1567 -->
+```yaml
+id: T-1567
+title: 'cli regrouping: frob quality verb group (check/test/dup/arch/bind/cycle/mutate/perf)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: T-1238
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Refiled from T-draft-48c9ced6 (T-1238 taxonomy slice; the draft died in the land-splice draft-loss class before T-1271's land). Group the quality-facing verbs under one frob quality namespace following the frob explore precedent (T-1271/T-1238, src/frob/_cli_parsers/_explore.py + explore_runner.py).
