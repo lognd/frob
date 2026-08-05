@@ -1079,7 +1079,7 @@ Root cause and target: Rust-migration candidate #3 from the report, MEDIUM feasi
 ```yaml
 id: T-1225
 title: 'perf: PERF01x detectors from hot-graph root causes'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -1091,6 +1091,7 @@ scope:
 - src/frob/perf/**
 - docs/design/registry/check-coverage.yaml
 - src/frob/gates/_waive.py
+- src/frob/gates/_secrets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -1138,6 +1139,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-04'
+- op: add
+  glob: src/frob/gates/_secrets.py
+  reason: 'branch-history artifact: the COV007 waive deletion in _secrets.py belongs
+    to sibling T-1318 (landed a579f23e); declared here so the history scan attributes
+    it'
+  actor: logan
+  at: '2026-08-05'
 evidence:
 - tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
 - tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_on_fixed_shape
@@ -1244,29 +1252,8 @@ hotpath_smell_violations).
 
 ### Changed
 ```
- design/frob.strata                                 | 1681 ++++++++++----------
- docs/design/registry/check-coverage.yaml           |   18 +-
- docs/guides/extending/secrets-scan-providers.md    |    2 +-
- docs/modules/gates.md                              |   11 +-
- docs/modules/perf.md                               |   11 +
- frob.lock                                          |   20 +
- src/frob/app/telemetry.py                          |   23 +-
- src/frob/gates/_pii_structural/_self_match.py      |    2 +
- src/frob/gates/_secrets.py                         |  603 +------
- src/frob/gates/_waive.py                           |    8 +
- src/frob/perf/__init__.py                          |   11 +
- src/frob/perf/_hotpath_smells.py                   |  302 ++++
- src/frob/perf/_rules.py                            |   13 +-
- src/frob/security/__init__.py                      |   14 +
- src/frob/security/_redact.py                       |  663 ++++++++
- tests/test_secrets_gate.py                         |    2 +-
- tests/unit/perf/test_harness_main_branches.py      |  112 ++
- tests/unit/perf/test_hotpath_smells.py             |  216 +++
- .../unit/perf/test_serial_pools_import_failure.py  |  102 ++
- tests/unit/security/__init__.py                    |    0
- tests/unit/security/test_redact.py                 |  107 ++
- tickets.md                                         |  658 +++++++-
- 22 files changed, 3145 insertions(+), 1434 deletions(-)
+ tickets.md | 23 +++++++++++++++--------
+ 1 file changed, 15 insertions(+), 8 deletions(-)
 ```
 
 ### Evidence
@@ -1285,8 +1272,7 @@ hotpath_smell_violations).
 
 ### Captured claims
 - tests: 12 passed (from 12 evidence id(s))
-- gates: 2 error(s), 458 warning(s), 794 waived
-- error-findings: COV001@design/frob.strata, TICK006@tickets.md
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1226 -->
 ```yaml
