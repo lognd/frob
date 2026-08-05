@@ -4554,7 +4554,7 @@ Refiled from T-draft-ea75efc3 (T-1238 taxonomy slice, draft-loss class). Group d
 ```yaml
 id: T-1564
 title: 'cli regrouping: frob ops verb group (release/natives/doctor/clean/fleet/deploy/scaffold/gitlog/stats)'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -4569,6 +4569,8 @@ component: null
 ```
 Refiled from T-draft-9dc767d0 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
 
+## Drop reason
+- 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
 <!-- ticket:T-1565 -->
 ```yaml
 id: T-1565
