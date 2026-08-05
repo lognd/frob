@@ -7351,3 +7351,23 @@ missing a real-but-non-call-shaped wiring mechanism), specialized to
 autouse fixtures. Teach WIRE001 to recognize @pytest.fixture(autouse=True)
 -decorated functions as wired by construction, or otherwise special-case
 the shape.
+
+<!-- ticket:T-1535 -->
+```yaml
+id: T-1535
+title: 'frob check --land-parity: worktree mode evaluating exactly what the land sweep
+  will (parity property-tested)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Every blind repair round on 2026-08-04/05 came from worktree-check vs land-sweep divergence: DUP001 passed committed in the worktree but erred on the staged merge preview; gate caches hid findings until FROB_NO_GATE_CACHE=1; scoped --ticket runs skip the families that actually refuse lands (SELFAUDIT whole-design, diff-driven DUP, registry-level PII012). Deliver: (1) a --land-parity mode running the same unscoped errors-only evaluation _unscoped_error_findings performs, against the current tree, cache-bypassed, with the T-1524 checkpoint exemptions applied -- so an agent can converge in the worktree before the coordinator ever lands; (2) a parity property test: for a fixed tree, check --land-parity findings == the pre-commit sweep findings (same parser, same exclusions); (3) the agent playbook gains 'run --land-parity before writing your Done report'.
