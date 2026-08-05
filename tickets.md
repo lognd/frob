@@ -5619,7 +5619,7 @@ arch/_patterns.py (_find_if_statements).
 ```yaml
 id: T-1486
 title: 'docstatus follow-up: ticket-id prose vs ledger + docs index completeness'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-03'
