@@ -6038,3 +6038,25 @@ component: null
 The T-1323 mass-invalidation guard refuses to delete when >= 5 waivers of one rule go stale in one run. Correct for degraded runs -- but it also means a rule whose waivers become GENUINELY mass-stale (detector tightened, mass refactor) is permanently uncleanable: every run re-flags them, the auto-fix always refuses, warnings never drain. The guard cannot currently tell 'detector died' from 'detector ran and they really are all stale'.
 
 Refinement: when the SAME self-manufactured run produced >= 1 live finding of the target rule elsewhere in the tree, the detector demonstrably ran and can find that rule -- mass-staleness is then trustworthy, and deletion may proceed (still capped per run, still one rule at a time, still logged per waiver). When the rule has ZERO findings anywhere (the degraded signature, exactly what T-1578's structural signal also targets), keep refusing as today. Depends on T-1578 conceptually but is independently implementable; blocked_by is intentionally not set.
+
+<!-- ticket:T-1580 -->
+```yaml
+id: T-1580
+title: fold docs/modules/gates_e501_autofix.md into docs/modules/gates.md
+state: queued
+kind: docs
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/modules/gates.md
+- docs/modules/gates_e501_autofix.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1547's E501 Tier-A auto-fix handler doc landed as a standalone page (docs/modules/gates_e501_autofix.md) because docs/modules/gates.md -- home to every other Tier-A handler's own writeup -- was under an in-progress T-1205 lease for T-1547's whole duration. T-1205 has landed and the lease is clear: fold that page's content into gates.md's existing '--fix Tier-A deterministic auto-fix handlers' section (matching the SYS100/SYS104 T-1531 precedent's own subsection shape), then delete the standalone page.
