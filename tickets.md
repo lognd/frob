@@ -9690,3 +9690,23 @@ threat: null
 component: null
 ```
 Follow-up from T-1531: a ClaimDivergence land refusal already has a documented manual recipe (re-run the ticket's done-report with its existing why text -- the recap re-measures the claim against current evidence). Wire a Tier-A handler that performs exactly that through the T-1262 verify-or-rollback transaction like every other handler here.
+
+<!-- ticket:T-1550 -->
+```yaml
+id: T-1550
+title: attribute branch-history waive deletions to the sibling ticket that landed
+  them (kill the OutOfScopeWaiveDeletion re-declare round)
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The land waive-deletion scan walks ALL branch commits since merge-base and attributes every deletion to the LANDING ticket, so on a multi-ticket branch each subsequent land refuses on deletions its already-landed siblings own (T-1225, T-1444 each burned a full land round on this 2026-08-05). Fix: before refusing, check whether the deletion's containing commit is already an ancestor of main (sibling landed) or the deletion falls inside a ticket that is done on main whose scope covers the file -- if so, log and skip. Kills the declare-in-report boilerplate round entirely.
