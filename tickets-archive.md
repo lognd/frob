@@ -149819,7 +149819,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
 - tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses
-- tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_everything
+- tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
 - tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge
 - tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
 acceptance:
@@ -149837,7 +149837,7 @@ acceptance:
     ledger, no partially-renumbered drafts) and names the manual remedy
   evidence:
   - tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses
-  - tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_everything
+  - tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
 threat: null
 component: null
 ```
@@ -149905,7 +149905,7 @@ Acceptance:
 
 Evidence: tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically,
 tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses,
-tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_everything,
+tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge,
 tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge,
 tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
 (5 new tests, all passing: `uv run pytest tests/test_ticket_land.py::TestLandPlan -q`
@@ -149947,7 +149947,7 @@ touched set (repo-wide baselines that pre-exist this change).
 ### Evidence
 - `tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_everything` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports` (pytest node id, verified passing when recorded)
 
@@ -178710,7 +178710,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding
-- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_cleanly_as_before
+- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge
 threat: null
 component: null
 ```
@@ -178826,7 +178826,7 @@ previously-unchecked path.
 
 ### Evidence
 - `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_cleanly_as_before` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))
