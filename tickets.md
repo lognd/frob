@@ -4387,3 +4387,28 @@ threat: null
 component: null
 ```
 Post-T-1555 re-measure found 26 errors. 2 (PRE001/SCOPE001) were an uncommitted archive artifact, fixed. The rest: 15 waivers name done T-1490 + 1 names done T-1488 (WIRE002); T-1269 evidence test_tick_gate_dirty_unwinds_everything renamed to test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge, T-1495 evidence test_no_foreign_commit_unwinds_cleanly_as_before renamed to test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge (COV003); ARCH001 on src/frob/tickets/_land.py::_land_plan_locked (67) and src/frob/tickets/_store.py::v2_state_transitions (77); PERF001 at _store.py:790 (list membership in loop); PII012 x3 in tests/unit/test_dup_legacy_cpp.py (lexer-token identifiers, not credentials).
+
+<!-- ticket:T-1561 -->
+```yaml
+id: T-1561
+title: 'evidence ops cannot reach archived tickets while COV003 still scans them:
+  add --archived reach or an unarchive verb'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+acceptance:
+- text: GIVEN an archived ticket whose bound evidence id goes stale (test renamed)
+    THEN a frob CLI path exists to rebind it (evidence --replace --archived, or ticket
+    unarchive) -- the gate never polices records the CLI cannot repair
+  evidence: []
+threat: null
+component: null
+```
+2026-08-05: COV003 fired on archived T-1269/T-1495 after their bound tests were renamed by wave-4 unwind-semantics work; frob ticket evidence --replace answered NotFound because the store only reads tickets.md. Gate scans the archive, repair tooling does not reach it -- catalogued-is-not-enforced inverse: enforced-but-not-repairable. Coordinator worked around with an exact-string swap in tickets-archive.md.
