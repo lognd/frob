@@ -4330,3 +4330,32 @@ threat: null
 component: null
 ```
 Successor to T-1490 and T-1488, which closed while 16 frob:waive WIRE001 directives still named them, orphaning the waivers into WIRE002 errors (2026-08-05 incident). This ticket is the OPEN waiver home those 16 directives rebind to; it stays open until the class is actually resolved. Siblings: T-1503 (extract_native golden helpers), T-1534 (autouse fixtures).
+
+<!-- ticket:T-1559 -->
+```yaml
+id: T-1559
+title: 'land/close guard: refuse or auto-migrate open frob:waive directives bound
+  to the closing ticket (WIRE002 orphan prevention)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+acceptance:
+- text: GIVEN a ticket close/land WHEN any frob:waive directive in the repo names
+    the closing ticket id THEN the close refuses with the waiver list and the exact
+    rebind command, OR a Tier-A auto-fix rebinds them to a named open successor --
+    closing a waiver-bound ticket can never silently red main again
+  evidence: []
+- text: GIVEN the guard fires THEN the refusal message names each waiver file:line
+    and the successor-ticket flag to pass
+  evidence: []
+threat: null
+component: null
+```
+2026-08-05 incident: T-1490/T-1488 landed and closed while 16 frob:waive WIRE001 directives bound them; the next full check showed 16 WIRE002 errors on main with no gate having warned at close time. The WIRE002 rule (waivers must bind an open ticket) is only enforced at check time, after the close already happened. Tier-A auto-fix family (T-1544..T-1549 precedent).
