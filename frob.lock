@@ -471,12 +471,12 @@
       "ref": "src/frob/serve/_events.py::subscribe_and_wait"
     },
     {
-      "digest": "041b76fdaefb8c1c1de5cfa5a9730a9ea4127695a8f0f1249647bae1673f0982",
+      "digest": "769bd5b146be8cd3c9b73f900fc6fdefb09fb43e698629c1533326bfac06aac3",
       "facet": "body",
       "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
     },
     {
-      "digest": "f79bdfce60d4e3e205c51afe6a5f158e6858dd30379cebf981b9b6e0a368bff2",
+      "digest": "1acd1a9013351344e5ea44210a0b4183cb852e237973a7f294a612893a160455",
       "facet": "sig",
       "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
     },

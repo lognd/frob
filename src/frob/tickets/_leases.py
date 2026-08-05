@@ -40,6 +40,7 @@ from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob import gitio
+from frob.gitio import GitError, ProcResult
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -750,6 +751,51 @@ def _without_agent_commit_guard() -> Iterator[None]:
             os.environ["FROB_AGENT"] = prior
 
 
+# frob:ticket T-1321
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_identity_less_environment_falls_back_to_throwaway_git_identity  # noqa: E501
+def _retry_commit_with_fallback_identity(
+    root: Path,
+    message: str,
+    committed: Result[ProcResult, GitError],
+) -> Result[ProcResult, GitError]:
+    """A bare CI runner has no `user.name`/`user.email` in its git config
+    (no developer machine's global config to fall back to), so `git
+    commit` fails rc=128 with "Author identity unknown" -- T-1321. Retries
+    once, ONLY on that specific failure shape, with a throwaway `-c`
+    identity scoped to this single invocation (never written to any
+    config file) so the ledger commit still succeeds in an identity-less
+    environment. Any other failure (a genuine merge conflict, a missing
+    repo, etc.) is returned unchanged -- this never masks a real error."""
+    if committed.is_ok and committed.danger_ok.returncode == 0:
+        return committed
+    if committed.is_err:
+        return committed
+    stderr = committed.danger_ok.stderr
+    if "Author identity unknown" not in stderr and "user.email" not in stderr:
+        return committed
+    _log.warning(
+        "tickets: %s has no git user.name/user.email configured -- "
+        "retrying the ledger commit with a throwaway frob-bot identity",
+        root,
+    )
+    return gitio.run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "-c",
+            "user.name=frob-bot",
+            "-c",
+            "user.email=frob-bot@example.invalid",
+            "commit",
+            "-m",
+            message,
+            "--",
+            "tickets.md",
+        ]
+    )
+
+
 # frob:ticket T-1054
 # frob:ticket T-1432
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_pre_staged_unrelated_file_never_rides_along_into_the_commit  # noqa: E501
@@ -783,6 +829,9 @@ def _add_and_commit_tickets_md(
         with _without_agent_commit_guard():
             committed = gitio.run_argv(
                 ["git", "-C", str(root), "commit", "-m", message, "--", "tickets.md"]
+            )
+            committed = _retry_commit_with_fallback_identity(
+                root, message, committed
             )
     else:
         committed = added

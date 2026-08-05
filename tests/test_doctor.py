@@ -12,16 +12,19 @@ from frob import doctor
 from frob.process._lock import derived_state_lock
 
 
-def test_run_diagnosis_natives_present(monkeypatch):
+def test_run_diagnosis_natives_present(monkeypatch, tmp_path: Path):
     # frob:tests src/frob/doctor.py::run_diagnosis
     """Every `NATIVE_EXTENSIONS` entry importing cleanly reports healthy=True
-    and no remediation."""
+    and no remediation. Uses an isolated `tmp_path` root (T-1321) rather
+    than the real checkout, so a fresh CI clone missing scaffold-managed
+    git hooks does not fold unrelated scaffold drift into this natives-only
+    assertion."""
 
     class _Fake:
         __version__ = "9.9.9"
 
     monkeypatch.setattr(importlib, "import_module", lambda name: _Fake())
-    report = doctor.run_diagnosis()
+    report = doctor.run_diagnosis(root=tmp_path)
     assert report.healthy is True
     assert report.remediation is None
     assert {ext.name for ext in report.extensions} == set(doctor.NATIVE_EXTENSIONS)
@@ -29,26 +32,29 @@ def test_run_diagnosis_natives_present(monkeypatch):
     assert all(ext.version == "9.9.9" for ext in report.extensions)
 
 
-def test_run_diagnosis_natives_absent(monkeypatch):
+def test_run_diagnosis_natives_absent(monkeypatch, tmp_path: Path):
     # frob:tests src/frob/doctor.py::run_diagnosis
     """A missing native extension reports healthy=False with the exact
-    `REMEDIATION_HINT` and no version for the failing extension."""
+    `REMEDIATION_HINT` and no version for the failing extension. Uses an
+    isolated `tmp_path` root (T-1321) so this stays a natives-only check."""
 
     def _raise(name: str):
         raise ImportError(f"No module named {name!r}")
 
     monkeypatch.setattr(importlib, "import_module", _raise)
-    report = doctor.run_diagnosis()
+    report = doctor.run_diagnosis(root=tmp_path)
     assert report.healthy is False
     assert report.remediation == doctor.REMEDIATION_HINT
     assert all(not ext.available for ext in report.extensions)
     assert all(ext.version is None for ext in report.extensions)
 
 
-def test_run_diagnosis_partial_availability(monkeypatch):
+def test_run_diagnosis_partial_availability(monkeypatch, tmp_path: Path):
     # frob:tests src/frob/doctor.py::run_diagnosis
     """One extension importable and the other missing is still unhealthy
-    overall (healthy is an all-or-nothing verdict, not per-extension)."""
+    overall (healthy is an all-or-nothing verdict, not per-extension).
+    Uses an isolated `tmp_path` root (T-1321) so this stays a natives-only
+    check."""
 
     def _selective(name: str):
         if name == "frob_core":
@@ -56,7 +62,7 @@ def test_run_diagnosis_partial_availability(monkeypatch):
         raise ImportError(name)
 
     monkeypatch.setattr(importlib, "import_module", _selective)
-    report = doctor.run_diagnosis()
+    report = doctor.run_diagnosis(root=tmp_path)
     assert report.healthy is False
     assert report.remediation == doctor.REMEDIATION_HINT
     by_name = {ext.name: ext for ext in report.extensions}

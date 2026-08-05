@@ -754,6 +754,52 @@ class TestCommitTicketLedgerChange:
         )
         assert committed_files == ["tickets.md"]
 
+    # frob:ticket T-1321
+    def test_identity_less_environment_falls_back_to_throwaway_git_identity(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_identity_less_environment_falls_back_to_throwaway_git_identity  # noqa: E501
+        """T-1321: a bare CI runner has no `user.name`/`user.email` in its
+        git config (unlike a developer machine's global config, which the
+        `repo` fixture's local `git config` calls otherwise mask) -- the
+        ledger auto-commit must not fail rc=128 in that environment; it
+        retries once with a throwaway `-c` identity."""
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+
+        # Strip the fixture's own local identity, then isolate this
+        # process from ANY other identity source (a real global/system git
+        # config on the machine running this test, or GIT_AUTHOR_*/
+        # GIT_COMMITTER_* env vars) so the test genuinely reproduces a bare
+        # CI runner rather than accidentally falling back to this
+        # machine's own config.
+        _run(["git", "config", "--unset", "user.email"], repo)
+        _run(["git", "config", "--unset", "user.name"], repo)
+        fake_home = tmp_path / "fake-home"
+        fake_home.mkdir()
+        monkeypatch.setenv("HOME", str(fake_home))
+        monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+        for var in (
+            "GIT_AUTHOR_NAME",
+            "GIT_AUTHOR_EMAIL",
+            "GIT_COMMITTER_NAME",
+            "GIT_COMMITTER_EMAIL",
+        ):
+            monkeypatch.delenv(var, raising=False)
+
+        result = commit_ticket_ledger_change(
+            repo, "T-0001", "chore(tickets): drop T-0001"
+        )
+        assert result.is_ok, result.err
+
+        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        assert status.stdout.strip() == ""
+
+        log = _run(["git", "log", "-1", "--pretty=%an <%ae>"], repo)
+        assert log.stdout.strip() == "frob-bot <frob-bot@example.invalid>"
+
 
 # frob:ticket T-1130
 class TestNewDropFailAutoCommit:

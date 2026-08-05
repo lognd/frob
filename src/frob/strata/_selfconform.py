@@ -426,7 +426,10 @@ def _sorted_capability_files(root: Path) -> list[Path]:
 
 
 def _capability_binding(
-    model: KernelModel, binding: CodeBinding, root: Path
+    model: KernelModel,
+    binding: CodeBinding,
+    root: Path,
+    capability_files: list[Path] | None = None,
 ) -> Result[CodeBinding, StrataError]:
     """`binding` (Python-only, from `bind_code`) extended with every OTHER
     capability-scannable-language file under `root`, bound by the SAME
@@ -440,10 +443,23 @@ def _capability_binding(
     reimplemented) over the non-`.py` capability-scannable file set, deny-
     by-default on ambiguity exactly like `bind_code`, and merges the
     result into `binding.owner` so every downstream SYS100/SYS101 join in
-    this module sees every registry-covered language, not just Python)."""
+    this module sees every registry-covered language, not just Python).
+    `capability_files` (T-1449): the caller's already-walked
+    `_sorted_capability_files(root)` result, reused instead of re-walking
+    the whole tree here -- `check_self_conformance` threads its ONE walk
+    through both this function and `_coverage_totality_violations` so a
+    single `check_self_conformance` call costs one full-tree walk, not
+    two (T-1449's `TestRealGateGreen`/`TestCoverageTotality` full-repo-scan
+    peak-memory ticket). Falls back to a fresh walk when `None` (every
+    other caller/test that does not have one handy)."""
     globs = [(node.id, glob) for node in model.nodes for glob in _node_code_globs(node)]
     owner = dict(binding.owner)
-    for path in _sorted_capability_files(root):
+    files = (
+        capability_files
+        if capability_files is not None
+        else _sorted_capability_files(root)
+    )
+    for path in files:
         if path.suffix.lower() == ".py":
             continue  # already bound by `bind_code`
         rel = path.relative_to(root).as_posix()
@@ -929,7 +945,9 @@ def _coverage_totality_scan_prefix(root: Path) -> str | None:
 # invariant spec: [INV-048](invariants/INV-048.md)
 # frob:tests tests/unit/strata/test_selfconform.py::TestCoverageTotality.test_foreign_file_with_capability_fires_sys103  # noqa: E501
 def _coverage_totality_violations(
-    capability_binding: CodeBinding, root: Path
+    capability_binding: CodeBinding,
+    root: Path,
+    capability_files: list[Path] | None = None,
 ) -> list[SelfConformViolation]:
     """SYS103 (SYS-COV, T-0667, unrestricted as of T-1091): every
     `FOREIGN` file under `root` whose `root`-relative path starts with
@@ -964,10 +982,20 @@ def _coverage_totality_violations(
     `capability_binding.owner.get(rel, FOREIGN)` per real file sidesteps
     that gap: a file absent from the mapping is treated identically to
     one explicitly marked `FOREIGN`, which is what its absence always
-    means."""
+    means.
+
+    `capability_files` (T-1449): the caller's already-walked
+    `_sorted_capability_files(root)` result, reused instead of re-walking
+    -- see `_capability_binding`'s matching parameter docstring for the
+    full rationale. Falls back to a fresh walk when `None`."""
     found: list[SelfConformViolation] = []
     prefix = _coverage_totality_scan_prefix(root)
-    for path in _sorted_capability_files(root):
+    files = (
+        capability_files
+        if capability_files is not None
+        else _sorted_capability_files(root)
+    )
+    for path in files:
         rel = path.relative_to(root).as_posix()
         if prefix is not None and not rel.startswith(prefix):
             continue
@@ -1576,13 +1604,25 @@ def check_self_conformance(
     syntax-specific by design) -- it is simply no longer handed to any
     SYS100/SYS101/SYS102 join. `Err` propagates `bind_code`'s (or
     `_capability_binding`'s) `AmbiguousCodeBinding` unchanged -- deny by
-    default, never a silent partial scan."""
-    bound_binding = _bind_conformance_inputs(model, root)
+    default, never a silent partial scan.
+
+    T-1449: `_sorted_capability_files(root)` -- a full, `[graph].exclude`-
+    filtered tree walk -- used to run TWICE per call (once inside
+    `_capability_binding`, again inside `_coverage_totality_violations`),
+    doubling the walk cost of every `check_self_conformance` invocation,
+    including the two full-repo-scan tests
+    (`TestRealGateGreen`/`TestCoverageTotality`) whose back-to-back peak
+    memory/wall time motivated pinning them to one xdist worker. Walked
+    exactly ONCE here and threaded through both call sites instead."""
+    capability_files = _sorted_capability_files(root)
+    bound_binding = _bind_conformance_inputs(model, root, capability_files)
     if bound_binding.is_err:
         return Err(bound_binding.danger_err)
     capability_binding = bound_binding.danger_ok
 
-    violations = _collect_sys_violations(model, capability_binding, root)
+    violations = _collect_sys_violations(
+        model, capability_binding, root, capability_files
+    )
     applied = _apply_sys_waivers(model, violations)
     applied = _apply_conformance_waiver_staleness(applied)
     return Ok(_finalize_self_conform_report(applied, root))
@@ -1681,15 +1721,20 @@ def _finalize_self_conform_report(applied, root: Path) -> SelfConformReport:  # 
 
 
 def _bind_conformance_inputs(
-    model: KernelModel, root: Path
+    model: KernelModel, root: Path, capability_files: list[Path]
 ) -> Result[CodeBinding, StrataError]:
     """`bind_code` then `_capability_binding`, in order -- the two fallible
     binding steps `check_self_conformance` needs before any SYS rule can
-    run, split out purely to keep that function's body short."""
+    run, split out purely to keep that function's body short.
+    `capability_files` (T-1449): threaded straight through to
+    `_capability_binding` -- `check_self_conformance`'s one shared walk,
+    see that function's docstring."""
     bound = bind_code(model, root)
     if bound.is_err:
         return Err(bound.danger_err)
-    capability_bound = _capability_binding(model, bound.danger_ok, root)
+    capability_bound = _capability_binding(
+        model, bound.danger_ok, root, capability_files
+    )
     if capability_bound.is_err:
         return Err(capability_bound.danger_err)
     return Ok(capability_bound.danger_ok)
@@ -1723,7 +1768,10 @@ def _dedupe_sys100_extended_against_core(
 
 
 def _collect_sys_violations(
-    model: KernelModel, capability_binding: CodeBinding, root: Path
+    model: KernelModel,
+    capability_binding: CodeBinding,
+    root: Path,
+    capability_files: list[Path] | None = None,
 ) -> list[SelfConformViolation]:
     """Every SYS100/SYS100-extended/SYS101/SYS102/SYS103 finding, in that
     order, for `check_self_conformance`. T-0266: the extended SYS100 pass is
@@ -1736,7 +1784,10 @@ def _collect_sys_violations(
     `scan_file_capabilities` on the same files); `raw_by_node` is now
     scanned ONCE here and both cheap set views (`_extended_kinds_view`,
     `_all_kinds_view`) are derived from it before being handed to the two
-    violation functions."""
+    violation functions. `capability_files` (T-1449): threaded through to
+    `_coverage_totality_violations` -- `check_self_conformance`'s one
+    shared walk, see that function's docstring. `None` (every direct
+    caller/test with no walk handy) falls back to a fresh walk there."""
     core_violations = _core_undeclared_violations(model, capability_binding, root)
     raw_by_file = _observed_raw_kinds_by_file(capability_binding, root)
     raw_by_node = _aggregate_raw_kinds_by_node(capability_binding, raw_by_file)
@@ -1753,7 +1804,9 @@ def _collect_sys_violations(
         )
     )
     violations.extend(_unmodeled_violations(root, capability_binding))
-    violations.extend(_coverage_totality_violations(capability_binding, root))
+    violations.extend(
+        _coverage_totality_violations(capability_binding, root, capability_files)
+    )
     violations.extend(
         _interface_conformance_violations(model, capability_binding, root)
     )

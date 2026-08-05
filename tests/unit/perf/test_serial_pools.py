@@ -46,17 +46,32 @@ def _pool_worker(n: int) -> int:
 @pytest.fixture(autouse=True)
 def _restore_pool_executors() -> Iterator[None]:
     """`install_serial_pools` mutates `concurrent.futures`'s module-level
-    executor names as a side effect (by design -- see that function's
-    docstring). Every test in this module that calls it must restore the
-    real executors afterward so no other test in the same session
-    silently runs its pool dispatch inline."""
+    executor names AND (when `frob.gates` imports cleanly) `frob.gates`'s
+    own bound `ThreadPoolExecutor`/`ProcessPoolExecutor` names as a side
+    effect (by design -- see that function's docstring). T-1321: the
+    `frob.gates`-level half of this patch was NOT being restored here --
+    only the `concurrent.futures`-level half was -- so a full-suite run
+    that exercised this module before `frob.gates`'s own baseline
+    perf/serial test (`test_without_serial_pools_worker_is_unattributed`)
+    left `frob.gates`'s pool executors serial for the rest of the
+    session, deflating that baseline test's "no attribution boost without
+    the patch" measurement under xdist/full-suite ordering. Both halves
+    are captured and restored here now, and the restore always runs
+    (`frob.gates` may or may not be importable -- restoring unconditionally
+    is harmless either way)."""
     real_thread_pool = concurrent.futures.ThreadPoolExecutor
     real_process_pool = concurrent.futures.ProcessPoolExecutor
+    import frob.gates as _frob_gates
+
+    real_gates_thread_pool = _frob_gates.ThreadPoolExecutor
+    real_gates_process_pool = _frob_gates.ProcessPoolExecutor
     try:
         yield
     finally:
         concurrent.futures.ThreadPoolExecutor = real_thread_pool  # type: ignore[misc]
         concurrent.futures.ProcessPoolExecutor = real_process_pool  # type: ignore[misc]
+        _frob_gates.ThreadPoolExecutor = real_gates_thread_pool  # type: ignore[attr-defined]
+        _frob_gates.ProcessPoolExecutor = real_gates_process_pool  # type: ignore[attr-defined]
 
 
 class TestStackSamplerAllThreads:

@@ -113,6 +113,22 @@ class TestCliStartRecordsGateCompatibleDigest:
         records a sweep the prework gate accepts against a fresh snapshot."""
         root = _make_repo(tmp_path)
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        # T-1321: a bare CI runner has no user.name/user.email in its git
+        # config, and `frob ticket new`'s auto-commit of tickets.md
+        # (_add_and_commit_tickets_md) runs a plain `git commit` that then
+        # fails rc=128 with "Author identity unknown" -- set a throwaway
+        # local identity so this fixture repo is hermetic regardless of the
+        # runner's own global git config.
+        # frob:waive PII012 reason="'user.name'/'user.email' here are git's own config keys, not a real person's identity -- this fixture sets a throwaway local git identity so the ledger commit succeeds hermetically"  # noqa: E501
+        subprocess.run(
+            ["git", "config", "user.name", "frob-test"], cwd=root, check=True
+        )
+        # frob:waive PII011 reason="'frob-test@example.invalid' is a synthetic throwaway identity for a hermetic git commit in a tmp_path fixture repo, not a real person's email; .invalid is the RFC 2606 reserved non-routable TLD"  # noqa: E501
+        subprocess.run(
+            ["git", "config", "user.email", "frob-test@example.invalid"],
+            cwd=root,
+            check=True,
+        )
         frob = [sys.executable, "-m", "frob"]
 
         new = subprocess.run(

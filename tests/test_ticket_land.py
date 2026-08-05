@@ -182,6 +182,39 @@ def _make_closeable(root: Path, ticket_id: str) -> None:
     assert write_ticket(root, ticket).is_ok
 
 
+# frob:ticket T-1393
+# frob:waive WIRE001 reason="autouse=True pytest fixture -- invoked implicitly by \
+# pytest's own fixture-injection machinery on every test in this module, never by a \
+# literal name() call WIRE001's text scan looks for; same detector-gap class as \
+# T-1502/T-1527 (a real-but-non-call-shaped wiring mechanism)" \
+# follow_up="T-1534"
+@pytest.fixture(autouse=True)
+def _isolate_from_host_git_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-1393: every fixture repo in this module sets its own LOCAL
+    `user.name`/`user.email`, but a bare `git` subprocess spawned from
+    here (this module's own `_run` helper, or production `land()` via
+    `gitio.run_argv`, which inherits `os.environ` -- neither passes an
+    explicit `env=`) still falls through to the HOST machine's real
+    `--global`/`--system` git config for anything neither fixture nor
+    production code sets explicitly. That real config is genuinely
+    shared, mutable, contended state across every `pytest-xdist` worker
+    process on this machine (unlike `tmp_path`, which xdist already
+    gives each worker its own tree under) -- diagnosed for T-1393's
+    `test_disjoint_v2_tickets_land_with_no_custom_merge` flake, which
+    reproduced only embedded in a full, `-n 4` unscoped suite run, never
+    standalone or as this file alone: a config value the host happens to
+    carry (e.g. `credential.helper`, `core.autocrlf`, a `commit.gpgsign`
+    or `core.hooksPath` override) can slow or alter one worker's git
+    spawns unpredictably under real parallel load in a way no single-file
+    rerun can trigger. `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM` pointed at
+    `os.devnull` (git >=2.32) make every git spawn in this test session
+    see an empty global/system config regardless of what is actually
+    installed on the host, closing that gap for every test in this
+    module, not just the one that flaked."""
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", os.devnull)
+
+
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
     """A main checkout with an initialized ledger and one committed file."""

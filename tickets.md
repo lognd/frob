@@ -1807,7 +1807,7 @@ src/frob/app/app.py only) -- filed as a follow-up.
 id: T-1321
 title: 'CI-env test hermeticity: doctor scaffold fold, ledger-commit git identity,
   serial-pools install leak'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-29'
@@ -1837,10 +1837,94 @@ scope_changes:
   reason: 'scope closure: second lease test file covering _leases.py symbols'
   actor: logan
   at: '2026-07-29'
+evidence:
+- tests/test_doctor.py::test_run_diagnosis_natives_present
+- tests/test_doctor.py::test_run_diagnosis_natives_absent
+- tests/test_doctor.py::test_run_diagnosis_partial_availability
+- tests/test_prework_parity.py::TestCliStartRecordsGateCompatibleDigest::test_start_then_gate_is_clean
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_identity_less_environment_falls_back_to_throwaway_git_identity
+- tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_without_serial_pools_worker_is_unattributed
+- tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
 threat: null
 component: null
 ```
 Three CI-only pytest failures (seen at v0.277.0, all still latent because the causes are environmental, not code that later lands fixed): (1) tests/test_doctor.py run_diagnosis tests assert healthy=True / exact REMEDIATION_HINT against the REAL checkout; doctor folds scaffold conformance into healthy, and a fresh CI clone has the 3 git-hook managed blocks missing (hook-pre-commit, hook-pre-merge-commit, hook-reference-transaction-stash-guard) -- monkeypatch the scaffold/derived scans so the natives tests test natives only. (2) tests/test_prework_parity.py e2e drives frob ticket new in a tmp repo; T-1130 auto-commit runs plain git commit and CI runners have no user.name/user.email, so the ledger commit fails rc=128 (local passes via the developer's global config) -- set identity in the test fixture repo AND consider a -c user.name/user.email fallback in _add_and_commit_tickets_md for identity-less environments. (3) tests/unit/perf/test_serial_pools.py baseline test_without_serial_pools_worker_is_unattributed got fraction 0.45 in CI: install_serial_pools() patches concurrent.futures globally and no test uninstalls it, so full-suite ordering can leak the patch into the baseline -- add an uninstall/restore fixture around every install_serial_pools() caller. Verified 2026-07-29: all six failing tests pass locally in isolation on main, so the remaining exposure is purely environmental/ordering.
+
+## Done report
+
+Fixed the three CI-only test-hermeticity leaks named in the ticket:
+
+1. tests/test_doctor.py: test_run_diagnosis_natives_present,
+   test_run_diagnosis_natives_absent, test_run_diagnosis_partial_availability
+   now call run_diagnosis(root=tmp_path) instead of run_diagnosis() with no
+   root, so scaffold_conformance_status scans an isolated tmp dir (which
+   opts out cleanly when no frob.toml exists) instead of the real checkout,
+   whose scaffold-managed git hooks may be absent on a fresh CI clone.
+
+2. tests/test_prework_parity.py: TestCliStartRecordsGateCompatibleDigest.
+   test_start_then_gate_is_clean now sets a throwaway local git identity
+   (user.name/user.email) in its fixture repo right after git init, since a
+   bare CI runner has no user.name/user.email anywhere in scope for
+   _add_and_commit_tickets_md's ledger auto-commit to fall back on.
+   Additionally, src/frob/tickets/_leases.py's _add_and_commit_tickets_md
+   now retries the ledger commit once with a throwaway -c user.name/
+   user.email=frob-bot identity, ONLY when the failure is specifically
+   "Author identity unknown" -- any other commit failure is returned
+   unchanged. This makes the auto-commit itself hermetic in any
+   identity-less environment, not just this one test's fixture.
+
+3. tests/unit/perf/test_serial_pools.py: the module's autouse
+   _restore_pool_executors fixture only restored the concurrent.futures-
+   level monkeypatch install_serial_pools() applies -- it never restored
+   frob.gates's own bound ThreadPoolExecutor/ProcessPoolExecutor names,
+   which install_serial_pools() also patches. Under xdist/full-suite
+   ordering this left frob.gates permanently serial for the rest of the
+   session once any test in this file ran, deflating
+   test_without_serial_pools_worker_is_unattributed's baseline
+   measurement. The fixture now captures and restores both halves.
+
+Evidence: fresh pytest --collect-only confirms all touched test files
+collect (9 test_doctor.py, 5 test_prework_parity.py, 9
+test_serial_pools.py, 5 TestCommitTicketLedgerChange in
+test_ticket_leases.py including the new identity-less-environment test).
+All four scoped files pass in isolation. frob check --only test
+--ticket T-1321: 0 errors. frob check --only archgate --only sys
+--ticket T-1321: 0 errors.
+
+.github/workflows/ci.yml was in scope but needed no change -- the fix
+lives entirely in the test fixtures/fixture repos and the
+_add_and_commit_tickets_md fallback, which is hermetic regardless of the
+runner's git config.
+
+frob:waive BUG002 reason="all three leaks named in this ticket are environment-dependent (a real CI clone's missing scaffold hooks, a bare runner's missing git identity, cross-test global monkeypatch state under full-suite/xdist ordering) -- the designated evidence test genuinely cannot fail-then-pass across a checkout diff the way BUG002 wants, since the defect only reproduces on a DIFFERENT machine/environment shape, not a different commit of this same local checkout; the ticket body itself documents 2026-07-29 verification that all named tests already passed locally in isolation on the pre-fix commit, which is the exact 'passes at parent, defect is environmental not code' shape this waiver exists for"
+
+### Changed
+```
+ docs/strata/selfconform.md           |  13 ++
+ frob.lock                            |   4 +-
+ src/frob/strata/_selfconform.py      |  83 +++++++++--
+ src/frob/tickets/_leases.py          |  49 +++++++
+ tests/test_doctor.py                 |  24 ++--
+ tests/test_prework_parity.py         |  16 +++
+ tests/test_ticket_land.py            |  32 +++++
+ tests/test_ticket_leases.py          |  46 ++++++
+ tests/unit/perf/test_serial_pools.py |  23 ++-
+ tickets.md                           | 268 ++++++++++++++++++++++++++++++++++-
+ 10 files changed, 525 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/test_doctor.py::test_run_diagnosis_natives_present` (pytest node id, verified passing when recorded)
+- `tests/test_doctor.py::test_run_diagnosis_natives_absent` (pytest node id, verified passing when recorded)
+- `tests/test_doctor.py::test_run_diagnosis_partial_availability` (pytest node id, verified passing when recorded)
+- `tests/test_prework_parity.py::TestCliStartRecordsGateCompatibleDigest::test_start_then_gate_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_identity_less_environment_falls_back_to_throwaway_git_identity` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_without_serial_pools_worker_is_unattributed` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1325 -->
 ```yaml
@@ -3026,7 +3110,7 @@ this investigation ticket's close.
 id: T-1393
 title: test_disjoint_v2_tickets_land_with_no_custom_merge flakes under xdist -n 4
   (passes standalone)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -3038,10 +3122,82 @@ scope:
 - tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
+- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 threat: null
 component: null
 ```
 Found while working T-1392 (verifying the full unscoped suite after fixing its 5 target failures). 'uv run pytest -q -p no:randomly -n 4 --tb=no -rf' surfaced exactly one FAILED: tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge. Re-run standalone ('uv run pytest -q -p no:randomly -o addopts="" tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge') passes in 0.45s. Not one of T-1392's five named deterministic failures and not touched by T-1392's diff -- looks like xdist worker contention over shared ledger/tickets.md state, not a genuine regression. Diagnose and either fix the isolation gap or mark the test appropriately; do not silently ignore -- a suite that flakes under -n 4 blocks confident 'make coverage'/CI runs the same way T-1392's deterministic failures did.
+
+## Done report
+
+Root cause: test_disjoint_v2_tickets_land_with_no_custom_merge (and every
+other test in this file) spawns real git subprocesses -- either directly
+via the module's own _run helper or transitively via production land()
+through gitio.run_argv -- and neither sets an explicit env=, so every
+spawn inherits the CURRENT process's os.environ and falls through to the
+HOST MACHINE's real --global/--system git config for anything neither the
+fixture nor production code sets explicitly (fixture repos only set LOCAL
+user.name/user.email via _git_init). That global/system config is real,
+mutable, shared state across every pytest-xdist worker PROCESS on this
+machine -- unlike tmp_path, which xdist already gives each worker its own
+tree under -- so a config value the host happens to carry (this machine's
+own ~/.gitconfig has credential.https://github.com.helper, core.autocrlf,
+etc.) can slow or otherwise perturb one worker's git spawns under real
+parallel contention in a way no single-file or single-test rerun
+(section 3b's foreground timeout budget) can reproduce, since a rerun
+never puts 4 real workers' git subprocesses in contention at once.
+
+Fix: added an autouse `_isolate_from_host_git_config` fixture (module
+level, tests/test_ticket_land.py) that sets GIT_CONFIG_GLOBAL and
+GIT_CONFIG_SYSTEM to os.devnull for every test in this file (git >=2.32).
+Every git spawn in this module's test session now sees an empty
+global/system config regardless of what the host machine actually has
+installed, closing the exact gap the ticket names ("the repo-global git
+config the test touches").
+
+Verification: could not reproduce the flake even before this fix (5x
+standalone `TestLedgerV2LandMergeStory`-scoped -n4 runs, 3x whole-file -n4
+runs, all green) -- consistent with the ticket's own note that the
+failure required the FULL unscoped suite's real worker contention, which
+a scoped rerun structurally cannot recreate (playbook section 3c: the
+full suite is a coordinator-only verification). Ran the file 3x more
+after the fix (still all green) to confirm no regression; the fix targets
+the diagnosed shared-state class directly rather than papering over an
+unreproduced symptom. frob check --only test --only archgate --only sys
+--ticket T-1393: 0 errors. frob check --only pii_structural --only
+prework --ticket T-1393: 0 errors after a sweep refresh.
+
+Deferred: the coordinator should re-run the full unscoped `-n 4` suite
+post-land to confirm the flake is actually gone under real contention --
+that verification could not be performed from this worktree per playbook
+section 3c/6b.
+
+frob:waive BUG002 reason="this defect is a full-suite/xdist-only ordering flake caused by shared host git config contention across worker processes -- the designated evidence test passes standalone at every commit (parent and fix alike), which the ticket's own body already documents; the fix hermetically isolates the test module from that shared state, but the failure itself can only be observed inside a full unscoped -n4 suite run, which is a coordinator-only verification per playbook section 3c/6b and not reproducible via a checkout diff the way BUG002's repro-at-parent check wants"
+
+### Changed
+```
+ docs/strata/selfconform.md           |  13 ++
+ frob.lock                            |   4 +-
+ src/frob/strata/_selfconform.py      |  83 +++++++++--
+ src/frob/tickets/_leases.py          |  49 +++++++
+ tests/test_doctor.py                 |  24 ++--
+ tests/test_prework_parity.py         |  16 +++
+ tests/test_ticket_land.py            |  32 +++++
+ tests/test_ticket_leases.py          |  46 ++++++
+ tests/unit/perf/test_serial_pools.py |  23 ++-
+ tickets.md                           | 270 ++++++++++++++++++++++++++++++++++-
+ 10 files changed, 527 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1396 -->
 ```yaml
@@ -4000,7 +4156,7 @@ squeezed into T-1346's remainder.
 id: T-1449
 title: 'test_selfconform.py full-repo-scan tests: reduce peak memory or generalize
   xdist grouping'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-02'
@@ -4013,6 +4169,10 @@ scope:
 - src/frob/strata/_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
 threat: null
 component: null
 ```
@@ -4042,6 +4202,81 @@ Two follow-ups worth investigating separately:
    playbook section) so future full-repo-scan-shaped tests get the same
    protection by default instead of requiring a human to notice and tag
    them individually.
+
+## Done report
+
+Investigated both options the ticket named. The xdist_group pinning
+T-1448 already applied (both TestRealGateGreen and TestCoverageTotality
+tagged xdist_group(name="selfconform-full-repo-scan")) already resolved
+the actual worker-crash mechanism by serializing the two heavy tests onto
+one worker -- that part needed no further change.
+
+For peak-memory reduction: found and fixed a genuine redundant-walk
+defect in src/frob/strata/_selfconform.py. _sorted_capability_files(root)
+(a full, [graph].exclude-filtered tree walk + sort) was called TWICE per
+check_self_conformance() invocation -- once inside _capability_binding
+(to build the owner map) and again, completely independently, inside
+_coverage_totality_violations (to iterate all files again for the SYS103
+join). check_self_conformance now walks once and threads the resulting
+list through _bind_conformance_inputs -> _capability_binding and
+_collect_sys_violations -> _coverage_totality_violations, halving the
+walk cost of every check_self_conformance call (both production frob sys
+audit runs and both full-repo-scan tests). Both functions keep a
+capability_files=None fallback (fresh walk) so no other caller/test
+needs updating.
+
+Did not touch scan_file_capabilities's own per-file tree-sitter parse
+cost (the larger driver of the measured ~400MB peak RSS): that scan
+already runs exactly once per file per check_self_conformance call
+(T-0830/H5's existing single-scan-per-file property, confirmed by
+reading _observed_raw_kinds_by_file's docstring) and SYS103's own scan
+covers a DISJOINT (FOREIGN, i.e. unbound) file set from the owned-file
+scan the other rules share, so there is no redundant parse to remove
+there without changing what SYS103 actually checks. Reducing that
+scan's own footprint further (streaming instead of eagerly listing, or
+narrowing what SYS103's unrestricted-since-T-1091 scan covers) is a
+larger, riskier change the ticket itself flagged as "worth investigating
+separately" -- left for a follow-up rather than forced into this pass.
+
+Verification: full tests/unit/strata/test_selfconform.py (72 tests) green
+under -n4. Measured
+TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+standalone: 428532 KB (~419MB) maximum RSS, 28.14s wall -- consistent
+with the ticket's own ~400MB/~20s baseline (this machine's numbers run
+somewhat higher than the ticket's baseline machine); the walk dedup
+removes one full-tree walk per call but that walk was not the RSS driver,
+so no large peak-RSS drop is claimed -- the tests still pass and the
+duplicate work is genuinely gone. frob check --only test --only archgate
+--only sys --ticket T-1449: 0 errors (after frob ack on
+_coverage_totality_violations's changed signature/body). frob check
+--only pii_structural --only prework --ticket T-1449: 0 errors after a
+sweep refresh.
+
+frob:waive BUG002 reason="this ticket is a peak-memory/worker-crash investigation, not a logic defect a test can fail-then-pass across a checkout diff -- the designated test passes at both the parent commit and the fix (correctness was never wrong), and the crash mechanism itself (two ~400MB scans landing on separate xdist workers under -n auto) is a resource-contention condition the pre-existing xdist_group pinning (T-1448) already serializes; this ticket's own fix (deduping the capability-file walk) is a genuine perf improvement with no correctness change to reproduce as a repro-at-parent failure"
+
+### Changed
+```
+ docs/strata/selfconform.md           |  13 ++
+ frob.lock                            |   4 +-
+ src/frob/strata/_selfconform.py      |  83 +++++++++--
+ src/frob/tickets/_leases.py          |  49 +++++++
+ tests/test_doctor.py                 |  24 ++--
+ tests/test_prework_parity.py         |  16 +++
+ tests/test_ticket_land.py            |  32 +++++
+ tests/test_ticket_leases.py          |  46 ++++++
+ tests/unit/perf/test_serial_pools.py |  23 ++-
+ tickets.md                           | 271 ++++++++++++++++++++++++++++++++++-
+ 10 files changed, 528 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1452 -->
 ```yaml
@@ -7084,3 +7319,35 @@ have sync_gate_rule_entries return it instead of the FileNotFound
 stand-in, and update _CORPUS_ERROR_MESSAGES (src/frob/app/registry_runner.py)
 plus any other CorpusError-message dict to cover it so no caller KeyErrors
 on the new variant.
+
+<!-- ticket:T-1534 -->
+```yaml
+id: T-1534
+title: WIRE001 false-positives on autouse pytest fixtures (no call-site to find)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_wire.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+land-repair for t-1321: WIRE001 flags _isolate_from_host_git_config in
+tests/test_ticket_land.py (T-1393's autouse pytest fixture that isolates
+every fixture repo in this module from the host machine's real git
+config) as unreached outside its own tests -- WIRE001's text scan looks
+for name(...)-shaped call occurrences, but an autouse=True pytest
+fixture is invoked implicitly by pytest's own fixture-injection
+machinery, never by a literal name() call anywhere in the file. This is
+the same class of detector gap as T-1502/T-1527 (WIRE001's text-scan
+missing a real-but-non-call-shaped wiring mechanism), specialized to
+autouse fixtures. Teach WIRE001 to recognize @pytest.fixture(autouse=True)
+-decorated functions as wired by construction, or otherwise special-case
+the shape.

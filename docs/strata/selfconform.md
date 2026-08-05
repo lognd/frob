@@ -115,6 +115,19 @@ detection THREAT004 already runs.
   rule (imports), but it leaves "this whole directory has no owner"
   unraised anywhere. SYS102 is that missing raise.
 
+`check_self_conformance` (the `frob sys audit` entrypoint all three rules
+above run through) walks `_sorted_capability_files(root)` -- the
+`[graph].exclude`-filtered tree scan every rule's observation is built
+from -- exactly ONCE per audit (T-1449). It used to run twice (once
+inside `_capability_binding`, again inside `_coverage_totality_
+violations`), doubling the walk cost of every single-call audit,
+including the two full-repo-scan tests
+(`TestRealGateGreen`/`TestCoverageTotality`) whose back-to-back peak
+memory/wall time motivated pinning them to one xdist worker
+(`tests/unit/strata/test_selfconform.py`). The single walk's file list is
+now threaded through both call sites instead of re-derived; no rule's
+findings changed, only the redundant I/O.
+
 ## may-mutation audit (T-1203)
 
 SYS100/SYS101 prove that today's `design/frob.strata` declarations are
