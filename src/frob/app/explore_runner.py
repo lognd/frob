@@ -37,8 +37,7 @@ def run(cfg: AppConfig) -> None:
         _run_docs_search(cfg)
     else:
         _log.error(
-            "frob explore requires a subcommand: map, outline, xref, or "
-            "docs-search"
+            "frob explore requires a subcommand: map, outline, xref, or docs-search"
         )
         sys.exit(1)
 

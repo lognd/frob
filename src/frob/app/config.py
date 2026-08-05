@@ -58,6 +58,7 @@ def _validate_enum_choice(
         )
     return value
 
+
 #: T-1270: `load_arch_config`/`stale_install_warning` and the ARCH_DEFAULT_*
 #: constants live in `frob.app._config_meta` now (a real seam distinct from
 #: the `AppConfig` schema); re-exported here so every pre-existing `from

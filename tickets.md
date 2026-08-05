@@ -872,10 +872,10 @@ EPIC closure decision: T-1238's own scope is the frob explore first-slice
 (help-surface rework across every other verb group) is explicitly deferred
 per the epic's own directive to design the full taxonomy before
 implementing anything beyond explore -- tracked by draft
-T-draft-96951a81 (help-surface rework), filed alongside three further
-taxonomy-slice drafts (T-draft-48c9ced6 quality group, T-draft-ea75efc3
-design group, T-draft-9dc767d0 ops group) and a naming-decision draft
-(T-draft-c79d54fa). This closure choice was made by the prior session that
+T-1571 (help-surface rework), filed alongside three further
+taxonomy-slice drafts (T-1567 quality group, T-1568
+design group, T-1569 ops group) and a naming-decision draft
+(T-1570). This closure choice was made by the prior session that
 implemented the slice (commit 532799ac) and is being finalized here after
 a same-day merge with main (main advanced ~25 lands, including two
 unrelated conflicting features -- frob refactor verb group T-1200/T-1201
@@ -4525,7 +4525,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-48c9ced6 (T-1238 taxonomy slice; the draft died in the land-splice draft-loss class before T-1271's land). Group the quality-facing verbs under one frob quality namespace following the frob explore precedent (T-1271/T-1238, src/frob/_cli_parsers/_explore.py + explore_runner.py).
+Refiled from T-1567 (T-1238 taxonomy slice; the draft died in the land-splice draft-loss class before T-1271's land). Group the quality-facing verbs under one frob quality namespace following the frob explore precedent (T-1271/T-1238, src/frob/_cli_parsers/_explore.py + explore_runner.py).
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
@@ -4546,7 +4546,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-ea75efc3 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
+Refiled from T-1568 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
@@ -4567,7 +4567,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-9dc767d0 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
+Refiled from T-1569 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
@@ -4589,7 +4589,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-c79d54fa (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
+Refiled from T-1570 (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
@@ -4610,7 +4610,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-96951a81 (T-1238 slice, draft-loss class; also cited by T-1238's Done report). Rework the top-level frob --help output to present the T-1238 verb groups instead of the flat 30+ subcommand list.
+Refiled from T-1571 (T-1238 slice, draft-loss class; also cited by T-1238's Done report). Rework the top-level frob --help output to present the T-1238 verb groups instead of the flat 30+ subcommand list.
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
@@ -4632,7 +4632,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-48c9ced6 (T-1238 taxonomy slice; the draft died in the land-splice draft-loss class before T-1271's land). Group the quality-facing verbs under one frob quality namespace following the frob explore precedent (T-1271/T-1238, src/frob/_cli_parsers/_explore.py + explore_runner.py).
+Refiled from T-1567 (T-1238 taxonomy slice; the draft died in the land-splice draft-loss class before T-1271's land). Group the quality-facing verbs under one frob quality namespace following the frob explore precedent (T-1271/T-1238, src/frob/_cli_parsers/_explore.py + explore_runner.py).
 
 <!-- ticket:T-1568 -->
 ```yaml
@@ -4651,7 +4651,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-ea75efc3 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
+Refiled from T-1568 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
 
 <!-- ticket:T-1569 -->
 ```yaml
@@ -4670,7 +4670,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-9dc767d0 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
+Refiled from T-1569 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
 
 <!-- ticket:T-1570 -->
 ```yaml
@@ -4690,7 +4690,7 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-c79d54fa (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
+Refiled from T-1570 (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
 
 <!-- ticket:T-1571 -->
 ```yaml
@@ -4709,4 +4709,4 @@ scope_breadth_ack_reason: null
 threat: null
 component: null
 ```
-Refiled from T-draft-96951a81 (T-1238 slice, draft-loss class; also cited by T-1238's Done report). Rework the top-level frob --help output to present the T-1238 verb groups instead of the flat 30+ subcommand list.
+Refiled from T-1571 (T-1238 slice, draft-loss class; also cited by T-1238's Done report). Rework the top-level frob --help output to present the T-1238 verb groups instead of the flat 30+ subcommand list.

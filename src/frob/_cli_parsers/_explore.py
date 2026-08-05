@@ -24,8 +24,7 @@ def _add_explore_parser(sub) -> None:
     logic."""
     explore_p = sub.add_parser(
         "explore",
-        help="navigation: map/outline/xref/docs-search grouped under one "
-        "verb (T-1238)",
+        help="navigation: map/outline/xref/docs-search grouped under one verb (T-1238)",
     )
     explore_sub = explore_p.add_subparsers(dest="explore_command")
 
