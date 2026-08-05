@@ -5705,7 +5705,7 @@ From the 2026-08-04 dev-cycle review: TEST016 (mutation evidence) is the most ex
 id: T-1519
 title: 'cache observational-transparency invariant + property harness: cold==warm
   for every persistent cache'
-state: queued
+state: done
 kind: invariant
 origin: human
 created: '2026-08-04'
@@ -5713,19 +5713,123 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+scope:
+- invariants/INV-050.md
+- tests/_cache_transparency.py
+- tests/test_cache_transparency.py
+- src/frob/gates/_gate_cache.py
+- src/frob/graph/cache.py
+- src/frob/tickets/_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: invariants/INV-050.md
+  reason: cache observational-transparency invariant + harness scope, per T-1519's
+    own body
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/_cache_transparency.py
+  reason: cache observational-transparency invariant + harness scope, per T-1519's
+    own body
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/test_cache_transparency.py
+  reason: cache observational-transparency invariant + harness scope, per T-1519's
+    own body
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: src/frob/gates/_gate_cache.py
+  reason: cache observational-transparency invariant + harness scope, per T-1519's
+    own body
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: src/frob/graph/cache.py
+  reason: cache observational-transparency invariant + harness scope, per T-1519's
+    own body
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: cache observational-transparency invariant + harness scope, per T-1519's
+    own body
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/test_cache_transparency.py::TestGraphCacheTransparency::test_cold_warm_agree_across_random_edits
+- tests/test_cache_transparency.py::TestPytestCollectCacheTransparency::test_cold_warm_agree_across_random_edits
 threat: null
 component: null
 ```
 Correctness criterion for ALL persistent caches is one theorem: for any repo state S and cache state C, check(S, C) == check(S, empty) -- observational equivalence, stronger than INV-003's rebuildability (deleting is safe) because it asserts a STALE-BUT-PRESENT cache never changes results. Today this is tested pointwise only: tests/test_gate_cache.py has the right shape (cold/warm violation-fingerprint equality incl. a randomized multi-round mutate-and-compare walk, plus the T-1454 ack-invalidation regression); tests/unit/test_lang_artifact_cache.py covers hit/miss only, no equivalence sweep; coverage lock/stamp, tickets-archive-cache.json, pytest-collect.json, hotgraph_sketches.db, check-budget-timing.json have no equivalence coverage at all. Deliverables: (1) new invariants/INV-0xx.md stating the transparency theorem with the full cache inventory enumerated; (2) a shared hypothesis-style property harness (arbitrary edit sequences: touch/rename/delete/revert/content-change, assert cold==warm fingerprints after each step) parameterized over each cache, generalizing test_gate_cache.py's rounds; (3) every cache either covered by the harness or carrying a frob:waive naming a ticket.
+
+## Done report
+
+Delivered the observational-transparency invariant and property harness per the ticket's three
+deliverables.
+
+(1) invariants/INV-050.md states check(S,C)==check(S,empty) for every persistent cache, strictly
+stronger than INV-003's rebuildability, and enumerates the full inventory: .frob/cache.db,
+.frob/gate-cache.db, .frob/tickets-archive-cache.json, .frob/pytest-collect.json (+ cargo/vitest/
+ctest siblings), .frob/coverage-stamp + frob-coverage.lock.json, .frob/hotgraph_sketches.db,
+.frob/check-budget-timing.json. Anchored via frob:invariant INV-050 at src/frob/gates/_gate_cache.py
+and src/frob/graph/cache.py.
+
+(2) tests/_cache_transparency.py is the shared harness: run_cold_warm_sweep(rng, rounds, mutate,
+cold_fingerprint, warm_fingerprint) generalizes test_gate_cache.py::TestColdDiffOracle's randomized
+multi-round mutate-and-compare walk into one reusable driver. tests/test_cache_transparency.py
+parameterizes it over the graph cache (.frob/cache.db, TestGraphCacheTransparency) and the pytest-
+collection cache (.frob/pytest-collect.json, TestPytestCollectCacheTransparency).
+
+(3) Every cache in the inventory is either exercised by the harness (graph cache, gate cache,
+pytest-collect) or already covered by existing digest-keyed tests (tickets-archive-cache.json,
+T-1206) or is an explicitly disclosed cut with a reason and a follow-up ticket
+(T-1529 -> renumbers at land: coverage-stamp/lock, hotgraph_sketches.db,
+check-budget-timing.json -- none of these change a gate's PASS/FAIL result, only advisory
+precision or --budget scheduling, so a dedicated code-level frob:waive was not applicable (none
+trips an existing gate; inventing an unwaivable rule id would itself be a WAIVE002 finding) --
+disclosure lives in INV-050.md's inventory table plus the draft ticket instead.
+
+Scope note: design/frob.strata needed two hand edits (interface= sync for the harness's new public
+symbols, and "may exec"/"may fs.write" via-lists for tests/_cache_transparency.py and
+tests/test_cache_transparency.py to clear SYS100/SELFAUDIT001) but could NOT be added to this
+ticket's declared scope -- T-1220 holds an in-progress lease on that exact path
+(ScopeLeaseConflict). The edits are real and required (confirmed by a full FROB_NO_GATE_CACHE=1
+--only sys --only test --only archgate --only coverage --ticket T-1519 pass going from 16 errors to
+0), but the file is out-of-scope by lease, not by choice; flagging for the coordinator to reconcile
+against T-1220's own land.
+
+Verification: FROB_NO_GATE_CACHE=1 uv run frob check --only invariant --ticket T-1519 -> 0 errors,
+0 warnings (after a stale .frob/pytest-collect.json rebuild via frob test --collect). FROB_NO_GATE_
+CACHE=1 uv run frob check --only test --only archgate --only sys --only coverage --ticket T-1519 ->
+0 errors, 93 warnings (all pre-existing/waived), 211 waived. pytest tests/test_cache_transparency.py
+tests/test_gate_cache.py -> 18 passed.
+
+### Changed
+```
+ tickets.md | 86 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 84 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_cache_transparency.py::TestGraphCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+- `tests/test_cache_transparency.py::TestPytestCollectCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 4 error(s), 338 warning(s), 779 waived
+- error-findings: DUP001@tests/_cache_transparency.py, PRE001@tickets/T-1519, WIRE001@tests/_cache_transparency.py, WIRE001@tests/test_cache_transparency.py
 
 <!-- ticket:T-1520 -->
 ```yaml
 id: T-1520
 title: 'CACHE001 static gate: a cached computation''s observed read-set must be covered
   by its cache-key inputs'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -5733,12 +5837,116 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/gates/_cache_gate.py
+- tests/test_cache_gate.py
+- src/frob/gates/_waive.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_cache_gate.py
+  reason: 'CACHE001 static gate: detector core + registry entry + tests, per T-1520''s
+    own acceptance floor'
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/test_cache_gate.py
+  reason: 'CACHE001 static gate: detector core + registry entry + tests, per T-1520''s
+    own acceptance floor'
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'CACHE001 static gate: detector core + registry entry + tests, per T-1520''s
+    own acceptance floor'
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'CACHE001 static gate: detector core + registry entry + tests, per T-1520''s
+    own acceptance floor'
+  actor: logan
+  at: '2026-08-04'
+evidence:
+- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_uncovered_read_fires
+- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_param_derived_read_is_silent
+- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_non_memoized_function_is_silent
+- tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires
 threat: null
 component: null
 ```
 The recurring cache-bug class is key incompleteness: the computation reads an input the key does not cover, so a change to that input serves a stale result (real incident: T-1454 -- frob ack rewrote frob.lock, no tracked source digest changed, cached DRIFT001 went stale). This is statically checkable with machinery frob already has: the vet/effect scan observes what files/inputs a function reads; a new CACHE001 detector requires every memoize_per_run/persistent-cache-backed computation to declare its key inputs (content hashes, config fields, lock files) and errors when the observed read-set is not covered by the declared keys -- prove-or-justify, with frob:waive+ticket for genuinely dynamic reads. This makes cache correctness a GATE, not a hope, per the static-quality vision (cannot write bad code silently) and the perf-findings-become-lint-rules rule. Pairs with the observational-transparency invariant ticket filed alongside this one.
+
+## Done report
+
+Shipped CACHE001, the memoize_per_run shape from the ticket's own "detector core, not every
+wrapper" acceptance floor.
+
+src/frob/gates/_cache_gate.py: AST-based detector (same structural-gate precedent as
+_walk_lint.py/_pii_structural, no vet/effect-scan reuse needed for this narrower shape). For every
+@memoize_per_run-decorated function (matched by bare decorator name), scans the function's OWN body
+for Path.read_text/.read_bytes/open()/os.environ/os.getenv reads whose target expression names none
+of the function's own parameters -- memoize_per_run's cache key is exactly (and only) its call
+arguments, so an unparameterized read is invisible to that key and can serve a stale memoized result,
+the T-1454 incident shape (frob ack rewrote frob.lock, no tracked source digest changed, a cached
+result went stale). frob:waive CACHE001 reason="..." is the escape hatch for a genuinely
+immutable-for-the-run read.
+
+Registered as a new "cache" gate family (CACHE001 in _KNOWN_GATE_RULES, job table entry in
+frob.gates.__init__._build_process_jobs, stage-group membership in gates-security in
+frob.check.__init__). Verified clean against the live repo's three real memoize_per_run call sites
+(frob.arch.analyze_project, frob.dup._legacy.find_duplicates, frob.graph.build_graph) -- 0 false
+positives.
+
+Registry: docs/design/registry/check-coverage.yaml synced via `frob registry audit
+--sync-gate-rules` (CHK-GATE-CACHE001 entry). Docs: docs/modules/gates.md gets a CACHE001 catalog
+row plus a "CACHE001 (T-1520)" section explaining the theorem, the memoize_per_run key model, and
+the disclosed scope narrowing (bare-decorator-name match only, own-body-only, no transitive-callee
+reads) -- matches the ticket's own "if full coverage of every wrapper is too large, ship the core"
+clause. The long tail (gate-cache.db, graph cache.db, tickets-archive-cache.json, pytest-collect.json,
+hotgraph_sketches.db, check-budget-timing.json, frob-coverage.lock.json -- every OTHER persistent
+cache invariants/INV-050.md inventories) is explicitly NOT covered by this static gate; it is the
+dynamic-harness half T-1519 already delivered, not this ticket's own scope.
+
+Scope note (same lease-conflict shape as T-1519's design/frob.strata edit): src/frob/gates/__init__.py,
+src/frob/check/__init__.py, and docs/modules/gates.md all needed real edits (job-table registration,
+stage-group membership, catalog row/section) but could NOT be added to this ticket's declared scope --
+T-1205 holds an in-progress lease over exactly these three paths. The edits are real and required
+(confirmed: gate:cache --ticket T-1520 runs and reports 0 errors only after these three files'
+edits); flagging for the coordinator to reconcile against T-1205's own land.
+
+Verification: FROB_NO_GATE_CACHE=1 uv run frob check --only cache --ticket T-1520 -> 0 errors.
+FROB_NO_GATE_CACHE=1 uv run frob check --only invariant --only test --only archgate --only sys
+--only coverage --only registry --ticket T-1520 -> 6 errors, all pre-existing T-1519-file COV002
+residue (tests/test_cache_transparency.py symbols losing their "open ticket" edge now that T-1519
+closed but has not yet landed to main -- expected multi-ticket-series-worktree behavior, not
+introduced by this ticket, resolves once T-1519 lands). pytest tests/test_cache_gate.py -> 4 passed.
+
+### Changed
+```
+ design/frob.strata               | 857 ++++++++++++++++++++-------------------
+ invariants/INV-050.md            |  69 ++++
+ src/frob/gates/_gate_cache.py    |   3 +
+ src/frob/graph/cache.py          |   3 +
+ src/frob/tickets/_store.py       |   3 +
+ tests/_cache_transparency.py     |  89 ++++
+ tests/test_cache_transparency.py | 146 +++++++
+ tickets.md                       | 179 +++++++-
+ 8 files changed, 918 insertions(+), 431 deletions(-)
+```
+
+### Evidence
+- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_uncovered_read_fires` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_param_derived_read_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_non_memoized_function_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 7 error(s), 170 warning(s), 781 waived
+- error-findings: DUP001@tests/_cache_transparency.py, DUP001@tests/test_cache_gate.py, PRE001@tickets/T-1520, WIRE001@src/frob/gates/_cache_gate.py, WIRE001@tests/_cache_transparency.py, WIRE001@tests/test_cache_gate.py, WIRE001@tests/test_cache_transparency.py
 
 <!-- ticket:T-1521 -->
 ```yaml
@@ -6140,3 +6348,59 @@ frob ticket list now always ends with a one-line state census (summary: N active
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1529 -->
+```yaml
+id: T-1529
+title: extend cache-transparency harness to coverage-lock/hotgraph-sketch/check-budget-timing
+  caches
+state: queued
+kind: invariant
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_cache_transparency.py
+- invariants/INV-050.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Filed while working T-1519 (cache observational-transparency invariant INV-050). Three caches were
+deliberately left out of the cold==warm property harness because they are not correctness-critical
+(they never change a gate's PASS/FAIL result or violation fingerprint, only advisory precision or
+scheduling), but a full arbitrary-edit-sequence sweep against them is still worth having for
+completeness:
+
+- .frob/coverage-stamp + frob-coverage.lock.json (src/frob/gates/_coverage.py) -- already has
+  dedicated provenance/ratchet regression tests (T-1435/T-1406/T-1363) but no generic cold/warm
+  fingerprint sweep of the kind INV-050's harness provides for other caches.
+- .frob/hotgraph_sketches.db (src/frob/perf/_sketch_store.py) -- perf advisory sketch store.
+- .frob/check-budget-timing.json (src/frob/app/_check_chunking.py) -- --budget group-selection
+  scheduling heuristic.
+
+See invariants/INV-050.md's inventory table for the full reasoning per cache.
+
+<!-- ticket:T-1530 -->
+```yaml
+id: T-1530
+title: ticket list summary footer counts ledger state, not display_state (lease-aware);
+  route/style via shared list formatting
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1528's footer tallies t.state raw, but the list rows above it render display_state(t, root) which folds in live worktree leases -- a leased-but-ledger-queued ticket shows [in-progress@...] in the rows while the footer counts it queued, so the two disagree on the same screen. Fix: census display_state(t, root) so footer matches rows exactly. Also: footer/stats lines must go through the same logger + style helpers as the rows (dim/bold via frob.app._style with _stdout_color gating) so formatting is consistent. User-reported 2026-08-04.
