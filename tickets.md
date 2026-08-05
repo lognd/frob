@@ -5983,3 +5983,31 @@ component: null
 WIRE001 is diff-scoped by construction (src/frob/gates/_wire.py: 'a newly-added symbol' -- it can only fire against a ticket diff). On a full unscoped run it produces ZERO findings structurally, so ALL WIRE001 waivers read 'matches 0 findings' forever: 62 bogus WAIVE004 warnings on main today, plus ~40 more per land log. SCOPE001 is likewise diff-bound (_waive.py:1092 already documents it as 'a diff-scoped rule like SCOPE001'). T-1064 built the exact mechanism for this (_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES) but only enrolled INV006/DUP001/DUP002/AFFECT001/AFFECT002.
 
 Fix: enroll WIRE001 and SCOPE001; audit DEPR005, DEAD001, REF002 for the same shape and enroll any that qualify. Each enrollment needs a one-line justification comment citing the gate's own diff-scoping. Expected effect: roughly 80 of the 98 standing WAIVE004 warnings on main disappear, and the per-land WAIVE004 noise drops proportionally.
+
+<!-- ticket:T-1578 -->
+```yaml
+id: T-1578
+title: Natives-stale worktree gate runs must signal degradation structurally, not
+  report zero findings
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/**
+- src/frob/gates/**
+- src/frob/app/ticket_runner/_land_cmd.py
+- docs/modules/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Every land's pre-land Tier-A pass runs fix_waive004_stale_waiver's self-manufactured run_gates() inside the WORKTREE, where native builds (frob_core/strata_core) are routinely stale/missing. The perf/reach substrate then silently under-reports to ZERO findings, all 73 PERF004 (+PERF001/2/3/8) waivers read stale, and only the T-1323 mass-invalidation COUNT heuristic saves the waivers -- _degraded_verification_reason's structural natives check does NOT fire, which is the gap: the run looks healthy while its analysis layer is dead.
+
+Fix, two layers: (1) the perf/reach substrate must emit a structural degraded-run signal (skipped-stage / import-failure marker on the report) when its native deps fail to import or are content-stale, so _degraded_verification_reason catches it BEFORE the count heuristic -- 'zero findings' and 'could not analyze' must be distinguishable everywhere, not just for perf; (2) the pre-land Tier-A pass in _land_cmd.py should preflight-check worktree natives and skip the WAIVE004 self-run entirely when stale -- today it burns a full run_gates() per land whose verdict is guaranteed untrustworthy, then logs a scary ERROR. Expected effect: the per-land 'WAIVE004 auto-fix: 73 directives went stale' ERROR disappears and each land gets a full gates-run cheaper.
