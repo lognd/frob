@@ -216,7 +216,9 @@ def _isolate_from_host_git_config(monkeypatch: pytest.MonkeyPatch) -> None:
 
 # frob:ticket T-1553
 @pytest.fixture(autouse=True)
-def _pin_v1_mode_on_bare_tmp_path(request: pytest.FixtureRequest, tmp_path: Path) -> None:
+def _pin_v1_mode_on_bare_tmp_path(
+    request: pytest.FixtureRequest, tmp_path: Path
+) -> None:
     """T-1553: the fresh-repo default flipped to v2 -- pin `tmp_path`
     itself to v1/'single' mode for the classes named in
     `_V1_PINNED_CLASSES` below, all of which exercise

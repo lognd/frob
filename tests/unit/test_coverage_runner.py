@@ -45,9 +45,7 @@ class TestCoverageRunner:
         import frob.testing._coverage_refresh as refresh_module
 
         snapshot = object()
-        monkeypatch.setattr(
-            graph_module, "load_graph", lambda cache: Ok(snapshot)
-        )
+        monkeypatch.setattr(graph_module, "load_graph", lambda cache: Ok(snapshot))
         seen: dict = {}
 
         def _fake_refresh(root, snap, *, full=False, **kw):  # noqa: ANN001, ANN202
@@ -56,9 +54,7 @@ class TestCoverageRunner:
             seen["full"] = full
             return Ok(Unit())
 
-        monkeypatch.setattr(
-            refresh_module, "native_coverage_refresh", _fake_refresh
-        )
+        monkeypatch.setattr(refresh_module, "native_coverage_refresh", _fake_refresh)
         coverage_runner.run(self._cfg(tmp_path, full=True))  # must not raise
         assert seen == {"root": tmp_path, "snapshot": snapshot, "full": True}
 

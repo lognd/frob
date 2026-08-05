@@ -94,7 +94,9 @@ _V1_PINNED_CLASSES = frozenset(
 # literal name() call WIRE001's text scan looks for; same detector-gap class as \
 # T-1502/T-1527" follow_up="T-1534"
 @pytest.fixture(autouse=True)
-def _pin_v1_mode_on_bare_tmp_path(request: pytest.FixtureRequest, tmp_path: Path) -> None:
+def _pin_v1_mode_on_bare_tmp_path(
+    request: pytest.FixtureRequest, tmp_path: Path
+) -> None:
     """T-1553: pin `tmp_path` to v1/'single' mode for the classes in
     `_V1_PINNED_CLASSES`, which exercise the monofile store path against
     a bare `tmp_path`; every other class either seeds its own mode

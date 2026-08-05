@@ -738,7 +738,9 @@ def drop_ticket(
     # caller-authored free text spliced directly into the body's
     # '## Drop reason' section -- the same marker-lookalike-corruption
     # class T-1536 defused for the Done-report `why` path.
-    line = f"- {date.today().isoformat()}: {sanitize_narrative_for_ledger(reason.strip())}"
+    line = (
+        f"- {date.today().isoformat()}: {sanitize_narrative_for_ledger(reason.strip())}"
+    )
     if absorbed_by:
         line += f" (absorbed by {absorbed_by})"
     new_body = _append_to_section(ticket.body, _DROP_REASON_HEADING, line)

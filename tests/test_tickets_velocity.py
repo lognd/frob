@@ -20,7 +20,12 @@ from frob.tickets import (
     ticket_flow,
 )
 from frob.tickets._models import SprintTransition, SprintVelocityReport
-from frob.tickets._store import _serialize_ticket, atomic_write, ledger_path, write_ticket
+from frob.tickets._store import (
+    _serialize_ticket,
+    atomic_write,
+    ledger_path,
+    write_ticket,
+)
 from tests.test_tickets_tiers import _ticket
 
 
