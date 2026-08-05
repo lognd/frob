@@ -4304,3 +4304,29 @@ follow-up ticket (or several):
 
 Filed by T-1271's Done report (2026-08-04) per the epic-closure
 "minimal honest core, disclose the rest" instruction.
+
+<!-- ticket:T-1558 -->
+```yaml
+id: T-1558
+title: 'WIRE001 module-local test-helper false-positive class: teach the gate or wire
+  the helpers (T-1490/T-1488 successor, waiver home)'
+state: queued
+kind: docs
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+acceptance:
+- text: GIVEN a module-local pytest helper (fixture factory, git-init scaffold, parametrized-data
+    builder) with no direct call-site the callgraph can see THEN WIRE001 either recognizes
+    the pytest usage pattern natively or the helper is wired/bound explicitly -- and
+    the 16 waivers currently binding here are deleted
+  evidence: []
+threat: null
+component: null
+```
+Successor to T-1490 and T-1488, which closed while 16 frob:waive WIRE001 directives still named them, orphaning the waivers into WIRE002 errors (2026-08-05 incident). This ticket is the OPEN waiver home those 16 directives rebind to; it stays open until the class is actually resolved. Siblings: T-1503 (extract_native golden helpers), T-1534 (autouse fixtures).
