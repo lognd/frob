@@ -4175,7 +4175,7 @@ SELFAUDIT001 pair above.
 ```yaml
 id: T-1526
 title: 'coverage: make make coverage/coverage-fast a thin wrapper over native_coverage_refresh'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
