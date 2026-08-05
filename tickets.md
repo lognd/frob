@@ -6404,3 +6404,23 @@ threat: null
 component: null
 ```
 T-1528's footer tallies t.state raw, but the list rows above it render display_state(t, root) which folds in live worktree leases -- a leased-but-ledger-queued ticket shows [in-progress@...] in the rows while the footer counts it queued, so the two disagree on the same screen. Fix: census display_state(t, root) so footer matches rows exactly. Also: footer/stats lines must go through the same logger + style helpers as the rows (dim/bold via frob.app._style with _stdout_color gating) so formatting is consistent. User-reported 2026-08-04.
+
+<!-- ticket:T-1531 -->
+```yaml
+id: T-1531
+title: auto-repair the recurring land-refusal classes via Tier-A/B fix handlers (strata
+  declarations, ticket edges, report refresh, draft renumber)
+state: queued
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Every land refusal on 2026-08-04 was one of a small set of classes, each hand-fixed with the SAME deterministic recipe dozens of times. Extend the tiered fix engine (Tier-A deterministic; Tier-B T-1262 apply-verify-rollback) with handlers so land repairs them automatically before refusing: (1) SYS100 undeclared capability -> add the observed file to the named node's may-via list (sorted union; compact grammar); (2) SYS104 undeclared public symbol -> add to the node's compact attr interface=[...] list (sorted union); (3) COV002 changed-symbol-without-edge -> insert '# frob:ticket <landing-id>' above the symbol when the diff belongs to the landing ticket; (4) ClaimDivergence -> re-run done-report with the existing why text (the recap re-measures; this is exactly the documented manual recipe); (5) TICK006 phantom draft citation -> refile + renumber-to-cited-id when the citation names a draft absent from ledger+archive; (6) E501 introduced by merge -> ruff-format the specific lines (Tier-A fmt already close). Every applied fix goes through Tier-B verify-or-rollback and is loudly logged; anything not exactly matching a recipe still refuses. Success metric: a re-land of a branch whose only findings are in these classes succeeds with zero human edits. Builds on T-1481 (check --fix CLI) and complements T-1514's free pre-commit refusals.
