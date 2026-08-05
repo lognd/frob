@@ -4896,7 +4896,7 @@ precondition) to actually run the migration against this repo's real
 ```yaml
 id: T-1553
 title: 'ledger v2: flip fresh-repo default to v2 (safe, test-fixture-audited)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
