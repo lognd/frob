@@ -1,6 +1,6 @@
-# Tickets
+# Tickets archive
 
-Central ledger managed by `frob ticket` -- one section per ticket.
+Done/dropped tickets moved here by `frob ticket archive` -- same format as tickets.md, still tracked and greppable.
 
 <!-- ticket:T-0001 -->
 ```yaml
@@ -178267,6 +178267,63 @@ the follow-up ticket (T-1542) now also covers this file.
 - gates: 1 error(s), 264 warning(s), 789 waived
 - error-findings: PRE001@tickets/T-1486
 
+<!-- ticket:T-1488 -->
+```yaml
+id: T-1488
+title: 'tests: promote _make_design_worktree to shared conftest helper if a second
+  module needs it'
+state: done
+kind: docs
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_ticket_land.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
+threat: null
+component: null
+```
+tests/test_ticket_land.py::_make_design_worktree (T-1269) builds a
+design-phase worktree fixture (docs/ledger changes, no closeable ticket)
+for TestLandPlan's five test methods, in this same file. It has no
+caller outside its own file's tests today (WIRE001), waived with this
+follow-up. Promote to a shared conftest helper if a second test module
+needs an identical design-phase worktree fixture.
+
+## Done report
+
+Checked for a second consumer of tests/test_ticket_land.py's
+_make_design_worktree helper across the whole test tree
+(grep "_make_design_worktree" tests/ --include="*.py"): the only matches
+are its own definition and TestLandPlan's five call sites, all in
+tests/test_ticket_land.py itself. No second module needs this fixture.
+
+Disposition: won't-fix at this ticket's scope -- the existing per-file
+WIRE001 waiver on _make_design_worktree stays in place; there is nothing
+to promote to a shared conftest helper today. Revisit if/when a second
+test module genuinely needs an identical design-phase worktree fixture
+(the condition the ticket's own follow-up names). No code change made.
+
+### Changed
+```
+ tickets.md | 104 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 97 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 365 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1489 -->
 ```yaml
 id: T-1489
@@ -178386,6 +178443,255 @@ regressions.
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 2 error(s), 799 warning(s), 746 waived
 - error-findings: SELFAUDIT001@design, WIRE001@tests/unit/test_coverage_attribution_lock_t1395.py
+
+<!-- ticket:T-1490 -->
+```yaml
+id: T-1490
+title: WIRE001 on test_coverage_attribution_lock_t1395.py's _load_committed_lock helper
+state: done
+kind: docs
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_coverage_attribution_lock_t1395.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
+threat: null
+component: null
+```
+land-repair for w16b-coverage: WIRE001 flags _load_committed_lock in
+tests/unit/test_coverage_attribution_lock_t1395.py (T-1395's regression
+lock reading the committed frob-coverage.lock.json) as unreached outside
+its own tests. It is a private per-file fixture helper used only by this
+same file's two test methods (test_t1395_named_modules_are_nonzero_in_
+committed_lock, test_no_module_reads_exactly_zero_in_committed_lock),
+mirroring the tests/unit/test_conftest_stackdump.py::_load_conftest (T-1466)
+and this same check run's tests/test_ticket_land.py::_make_design_worktree /
+tests/test_tickets_lease.py::_write_ticket_file precedents. Follow-up:
+evaluate whether a shared load_coverage_lock test helper belongs in a
+common fixture module if more regression locks of this shape get added, or
+whether the current per-file scope is intentionally final (in which case
+this ticket should close as won't-fix with that recorded).
+
+## Done report
+
+Evaluated promoting tests/unit/test_coverage_attribution_lock_t1395.py's
+_load_committed_lock to a shared test-support helper. Found a second,
+independently-written occurrence of the same pattern in
+tests/unit/test_makefile_coverage.py (TestCommittedLockCoverageFloor.
+_load_committed_lock, a class method), but T-1490's own declared scope
+does not include that file, so unifying both is out of scope here --
+filed T-1551 to track the unification separately rather than
+silently widening this ticket.
+
+Disposition: the per-file WIRE001 waiver on
+tests/unit/test_coverage_attribution_lock_t1395.py::_load_committed_lock
+stays in place (won't-fix at this ticket's scope) -- it correctly follows
+the tests/unit/test_conftest_stackdump.py::_load_conftest (T-1466)
+precedent for a private per-file regression-lock fixture helper with no
+production caller by design. No code change made in this ticket beyond
+this evaluation and the follow-up filing.
+
+### Changed
+```
+ tickets.md | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 60 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 215 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1491 -->
+```yaml
+id: T-1491
+title: 'ledger v2: final cutover -- flip fresh-repo default, delete v1 splice machinery'
+state: done
+kind: feature
+origin: agent
+created: '2026-08-03'
+priority: medium
+blocked_by:
+- T-1259
+parent: T-1259
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_merge.py
+- src/frob/tickets/_land_merge_zones.py
+- .gitattributes
+- docs/modules/tickets.md
+- docs/design/ledger-v2.md
+- tests/test_ticket_land.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: added the T-1259 acceptance[5] draft-death regression test here (matches
+    the existing TestArchiveV2 fixture pattern)
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
+acceptance:
+- text: 'GIVEN this repo''s own ledger has been migrated to v2 in a quiet window (no
+    in-flight worktrees) THEN the fresh-repo default in _store_mode is flipped to
+    v2 (tracked separately: T-draft-a85ee099) and render_ledger/splice_ledger/land_merge.py/land_merge_zones.py/the
+    tickets.md gitattributes merge-driver line are deleted once this repo''s own ledger
+    is actually migrated (tracked separately: T-draft-313a764b); THIS ticket instead
+    delivers the T-1259 acceptance[5] draft-death regression test against v2, proving
+    the TICK002/TICK006 draft-death class is structurally impossible on the v2 layout.'
+  evidence:
+  - tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: GIVEN this repo own ledger has been migrated to v2 in a quiet window (no
+    in-flight worktrees) WHEN a fresh repo initializes THEN it defaults to v2, and
+    delete render_ledger, splice_ledger, land_merge.py, land_merge_zones.py, and the
+    tickets.md gitattributes merge-driver line
+  new_text: 'GIVEN this repo''s own ledger has been migrated to v2 in a quiet window
+    (no in-flight worktrees) THEN the fresh-repo default in _store_mode is flipped
+    to v2 (tracked separately: T-draft-a85ee099) and render_ledger/splice_ledger/land_merge.py/land_merge_zones.py/the
+    tickets.md gitattributes merge-driver line are deleted once this repo''s own ledger
+    is actually migrated (tracked separately: T-draft-313a764b); THIS ticket instead
+    delivers the T-1259 acceptance[5] draft-death regression test against v2, proving
+    the TICK002/TICK006 draft-death class is structurally impossible on the v2 layout.'
+  reason: "Investigated both halves of this criterion directly and found each too\n\
+    large to force through safely in this session:\n\n1. Flipping `_store_mode`'s\
+    \ fresh-repo default to v2 breaks at least 6\n   measured tests in tests/test_tickets.py\
+    \ alone (bare tmp_path fixtures\n   implicitly relying on the v1 default), with\
+    \ more likely affected\n   across tests/test_ticket_land.py, tests/test_tickets_migration.py,\n\
+    \   tests/test_tickets_collision.py, tests/test_tickets_velocity.py --\n   unmeasured.\
+    \ Filed T-draft-a85ee099 (renumbers at land) to audit and\n   update every such\
+    \ fixture, then land the flip cleanly.\n2. Deleting render_ledger/splice_ledger/_land_merge.py/\n\
+    \   _land_merge_zones.py/the gitattributes merge-driver line is not safe\n   while\
+    \ this repo's OWN ledger is still v1-mode -- this very dispatch\n   session used\
+    \ splice_ledger (via the registered merge driver) for\n   every ticket mutation.\
+    \ Deletion is only safe after this repo's own\n   `tickets.md` is actually migrated\
+    \ to v2 in a quiet window, which this\n   ticket's own preconditions (this ticket's\
+    \ Description) require but\n   explicitly defer to the coordinator's judgment,\
+    \ not a worktree agent's.\n   Filed T-draft-313a764b (renumbers at land) to carry\
+    \ the deletion\n   forward once that precondition holds.\n\nWhat this ticket DID\
+    \ ship: the T-1259 acceptance[5] draft-death\nregression test against v2 (tests/test_ticket_land.py::TestArchiveV2::\n\
+    test_v2_draft_survives_a_concurrent_worktree_restore), confirming the\nTICK002/TICK006\
+    \ draft-death class is structurally impossible on the v2\nper-ticket-file layout\
+    \ (disjoint git objects, no shared-file restore can\never touch an uncommitted\
+    \ draft). Migration itself (migrate_v1_to_v2) was\nalready verified end-to-end\
+    \ by T-1259's own 11 evidence ids; re-run here\nand still passing, confirming\
+    \ no regression since T-1259 closed.\n"
+  actor: logan
+  at: '2026-08-05'
+threat: null
+component: null
+```
+T-1259 deliberately deferred final cutover (design section 7 deliverable 4): a live cutover of this repo own ledger mid multi-agent drive risks every in-flight worktree, and T-1259's own scope/session was migrate+gate only, not a real production cutover. Preconditions before this ticket can close: (1) this repo has actually run frob ticket migrate --to v2 in a coordinator-chosen quiet window with zero in-progress worktrees, (2) the LEDGERV1001 deprecation window recorded in docs/modules/tickets.md has been observed for a real interval, not just landed. Deliverables: flip the fresh-repo default in _store_mode to v2, delete _render_ledger/splice_ledger/_land_merge.py/_land_merge_zones.py, remove the gitattributes merge-driver line, and a regression test reproducing the T-1115/T-1126/T-1127/T-1128 draft-death shape against v2 asserting no draft is lost (T-1259 acceptance[5]).
+
+## Done report
+
+Investigated both halves of the final-cutover deliverable and reduced
+scope to what is safe to land in this session (acceptance[0] amended
+accordingly, reason recorded in the ticket's acceptance_amendments audit
+trail):
+
+- Flipping `_store_mode`'s fresh-repo default to 'v2' breaks at least 6
+  measured tests in tests/test_tickets.py alone (bare tmp_path fixtures
+  that implicitly rely on the current v1 default); more are likely
+  affected across tests/test_ticket_land.py, tests/test_tickets_
+  migration.py, tests/test_tickets_collision.py, tests/test_tickets_
+  velocity.py, unmeasured here. Filed T-1553 to audit and
+  update the affected fixtures, then land the flip.
+- Deleting render_ledger/splice_ledger/_land_merge.py/
+  _land_merge_zones.py/the gitattributes merge-driver line is not safe
+  while this repo's own ledger is still v1-mode -- this dispatch session
+  itself used splice_ledger (via the registered merge driver) for every
+  ticket mutation performed. Filed T-1552 to carry the
+  deletion forward once this repo's own ledger is actually migrated to
+  v2 in a coordinator-chosen quiet window (the ticket's own stated
+  precondition).
+
+What shipped: the T-1259 acceptance[5] draft-death regression test
+against v2 (tests/test_ticket_land.py::TestArchiveV2::
+test_v2_draft_survives_a_concurrent_worktree_restore), reproducing the
+T-1115/T-1126/T-1127/T-1128 draft-death shape (a draft ticket lost to a
+section 10b-style ledger restore) directly against the v2 per-ticket-
+file layout: main advances independently, a worktree files a brand-new
+draft never seen by main, the worktree then runs the section-10b-style
+`git checkout main -- <path>` restore on the tracked file it shares with
+main, and the draft (never committed, its own disjoint git object)
+survives both the restore and a subsequent merge. This confirms the
+TICK002/TICK006 draft-death class is structurally impossible on v2, not
+merely mitigated.
+
+Migration itself (`migrate_v1_to_v2`) was already verified end-to-end by
+T-1259's own 11 evidence ids; re-ran tests/test_tickets_migration.py in
+this session and it is still green, confirming no regression since
+T-1259 closed -- this stands as this ticket's migration-verification
+evidence, since the CLI wiring for `frob ticket migrate --to v2`
+(T-1492) is explicitly out of this ticket's declared scope.
+
+### Changed
+```
+ src/frob/tickets/_store.py | 172 +++++++++++++++++++++++++--------
+ tests/test_tickets.py      |  57 +++++++++++
+ tickets.md                 | 232 +++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 416 insertions(+), 45 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 593 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
+
+### Acceptance amendments
+- [0] replace: 'GIVEN this repo own ledger has been migrated to v2 in a quiet window (no in-flight worktrees) WHEN a fresh repo initializes THEN it defaults to v2, and delete render_ledger, splice_ledger, land_merge.py, land_merge_zones.py, and the tickets.md gitattributes merge-driver line' -> "GIVEN this repo's own ledger has been migrated to v2 in a quiet window (no in-flight worktrees) THEN the fresh-repo default in _store_mode is flipped to v2 (tracked separately: T-1553) and render_ledger/splice_ledger/land_merge.py/land_merge_zones.py/the tickets.md gitattributes merge-driver line are deleted once this repo's own ledger is actually migrated (tracked separately: T-1552); THIS ticket instead delivers the T-1259 acceptance[5] draft-death regression test against v2, proving the TICK002/TICK006 draft-death class is structurally impossible on the v2 layout." (reason: Investigated both halves of this criterion directly and found each too
+large to force through safely in this session:
+
+1. Flipping `_store_mode`'s fresh-repo default to v2 breaks at least 6
+   measured tests in tests/test_tickets.py alone (bare tmp_path fixtures
+   implicitly relying on the v1 default), with more likely affected
+   across tests/test_ticket_land.py, tests/test_tickets_migration.py,
+   tests/test_tickets_collision.py, tests/test_tickets_velocity.py --
+   unmeasured. Filed T-1553 (renumbers at land) to audit and
+   update every such fixture, then land the flip cleanly.
+2. Deleting render_ledger/splice_ledger/_land_merge.py/
+   _land_merge_zones.py/the gitattributes merge-driver line is not safe
+   while this repo's OWN ledger is still v1-mode -- this very dispatch
+   session used splice_ledger (via the registered merge driver) for
+   every ticket mutation. Deletion is only safe after this repo's own
+   `tickets.md` is actually migrated to v2 in a quiet window, which this
+   ticket's own preconditions (this ticket's Description) require but
+   explicitly defer to the coordinator's judgment, not a worktree agent's.
+   Filed T-1552 (renumbers at land) to carry the deletion
+   forward once that precondition holds.
+
+What this ticket DID ship: the T-1259 acceptance[5] draft-death
+regression test against v2 (tests/test_ticket_land.py::TestArchiveV2::
+test_v2_draft_survives_a_concurrent_worktree_restore), confirming the
+TICK002/TICK006 draft-death class is structurally impossible on the v2
+per-ticket-file layout (disjoint git objects, no shared-file restore can
+ever touch an uncommitted draft). Migration itself (migrate_v1_to_v2) was
+already verified end-to-end by T-1259's own 11 evidence ids; re-run here
+and still passing, confirming no regression since T-1259 closed.
+; logan, 2026-08-05)
 
 <!-- ticket:T-1495 -->
 ```yaml
@@ -179481,6 +179787,989 @@ refresh of the gate state after merging main.
 - gates: 0 error(s), 876 warning(s), 754 waived
 - error-findings: none (measured, zero errors)
 
+<!-- ticket:T-1507 -->
+```yaml
+id: T-1507
+title: 'TEST005 burn-down: src/frob/check/_native.py and _python.py module-line floor
+  (T-1309 follow-up)'
+state: done
+kind: feature
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/check/_native.py
+- src/frob/check/_python.py
+- tests/unit/test_check_native_cargo_runners.py
+- tests/unit/test_check.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_check.py::TestCheckResultCounts::test_total_errors_sums_across_results
+- tests/unit/test_check.py::TestCheckResultCounts::test_total_warnings_sums_across_results
+- tests/unit/test_check.py::TestCheckResultCounts::test_zero_results_is_zero
+- tests/unit/test_check.py::TestRunCheck::test_all_stages_skipped_returns_empty_result_for_root
+- tests/unit/test_check.py::TestRunCheckCpp::test_all_stages_skipped_returns_empty_result
+- tests/unit/test_check.py::TestRunCheckCpp::test_gates_stage_runs_by_default
+- tests/unit/test_check.py::TestRunCheckRust::test_all_stages_skipped_returns_empty_result
+- tests/unit/test_check.py::TestRunCheckRust::test_gates_stage_runs_by_default
+- tests/unit/test_check.py::TestRunCheckRust::test_check_clippy_fmt_test_stages_all_run_and_append
+- tests/unit/test_check.py::TestRunCheckTs::test_all_stages_skipped_returns_empty_result
+- tests/unit/test_check.py::TestRunCheckTs::test_gates_stage_runs_by_default
+- tests/unit/test_check.py::TestRunCheckTs::test_tsc_eslint_prettier_vitest_stages_all_run_and_append
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDetectProjectType::test_cargo_toml_is_rust
+- tests/unit/test_check.py::TestDetectProjectType::test_cmakelists_is_cpp
+- tests/unit/test_check.py::TestDetectProjectType::test_pyproject_is_python
+- tests/unit/test_check.py::TestDetectProjectType::test_package_json_and_tsconfig_is_typescript
+- tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript
+- tests/unit/test_check.py::TestDetectProjectType::test_no_sentinel_is_unknown
+- tests/unit/test_check.py::TestDetectProjectType::test_bare_py_file_no_pyproject_is_python
+- tests/unit/test_check.py::TestRunGatesQueueFailure::test_malformed_tickets_md_is_hard_error_not_silent_skip
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation
+- tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
+- tests/unit/test_check.py::TestRunGatesDelta::test_stale_baseline_falls_back_to_full_set_with_warning
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_passes_use_cache_true_by_default
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_no_cache_forces_use_cache_false
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waived_group_excluded_from_headline_but_listed
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_partial_group_waiver_does_not_hide_whole_group
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_on_shared_symbol_does_not_hide_distinct_superset_group
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiving_every_fragment_of_superset_group_waives_it_too
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_unwaived_group_still_counts
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_above_nested_closure_covers_it_via_enclosing_method
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_waived_long_function_excluded_from_headline_but_listed
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_unwaived_long_function_still_counts
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_uses_calibrated_default_not_library_default
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_respects_explicit_frob_toml_override
+- tests/unit/test_check.py::test_check_run_check_arch_integration
+- tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_racing_tasks_restore_original_stdout_handler_level
+- tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_all_none_tasks_still_restore_level
+- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_precheck_failure_short_circuits_under_lock
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_build_failure_skips_tests_under_held_lock
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_rust_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_ts_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestScopeDisclosure::test_only_names_the_gate_families_it_did_not_run
+- tests/unit/test_check.py::TestScopeDisclosure::test_ticket_flag_notes_which_families_are_actually_diff_scoped
+- tests/unit/test_check.py::TestScopeDisclosure::test_full_unfiltered_run_adds_no_disclosure
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_success_parses_ruff_json_and_appends_format_result
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_missing_binary_yields_two_typed_results
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_kill_switch_disabled_yields_two_typed_results
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_all_formatted_is_clean_pass
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_would_reformat_lines_produce_diagnostics
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_kill_switch_disabled
+- tests/unit/test_check.py::TestRunTyRealPaths::test_success_parses_ty_output
+- tests/unit/test_check.py::TestRunTyRealPaths::test_extra_search_path_added_when_src_dir_exists
+- tests/unit/test_check.py::TestRunTyRealPaths::test_ty_toml_extra_paths_are_appended
+- tests/unit/test_check.py::TestRunTyRealPaths::test_malformed_ty_toml_is_silently_ignored
+- tests/unit/test_check.py::TestRunTyRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check.py::TestRunTyRealPaths::test_kill_switch_disabled
+- tests/unit/test_check.py::TestRunTyRealPaths::test_file_root_scans_parent_dir
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_no_files_produces_empty_graph
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_local_import_adds_edge
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_excluded_dirs_are_skipped
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_no_cycles_is_clean_pass
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_mutual_import_detected
+- tests/unit/test_check.py::TestRunBindRealPaths::test_no_bind_markers_is_none
+- tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_true_when_present
+- tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_false_when_absent
+- tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_survives_unreadable_file
+- tests/unit/test_check.py::TestRunBindRealPaths::test_import_error_for_missing_bind_module_is_none
+- tests/unit/test_check.py::TestRunBindRealPaths::test_bind_mismatch_diagnostics_maps_mismatches
+- tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_flags_unexported_symbols
+- tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_empty_when_all_present
+- tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_no_siblings_is_none
+- tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_tests_dir_is_exempt
+- tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_reports_missing_symbol
+- tests/unit/test_check.py::TestExportsRealPaths::test_unexported_symbols_result_builds_note_diagnostics
+- tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_scans_every_init_file
+- tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_no_init_files_is_empty
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_success_parses_cargo_json
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_unexpected_crash_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoFmtCheckRealPaths::test_all_formatted_is_clean_pass
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoFmtCheckRealPaths::test_unformatted_lines_produce_warning_diagnostics
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoFmtCheckRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoTestRealPaths::test_success_parses_cargo_json
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoTestRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoTestRealPaths::test_unexpected_crash_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_success_returns_none
+- tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_nonzero_exit_returns_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_unexpected_crash_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_configure_failure_short_circuits
+- tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_build_success_reports_build_succeeded
+- tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_unexpected_crash_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_no_compile_commands_is_none
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_no_sources_is_none
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_success_parses_clang_tidy_output
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_parse_failure_is_typed_crash_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_no_sources_is_none
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_all_formatted_is_clean_pass
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_needs_format_produces_diagnostics
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_missing_build_dir_is_none
+- tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_success_parses_junit_report
+- tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_falls_back_to_text_parsing_without_junit
+- tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_malformed_junit_is_typed_crash_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_unexpected_crash_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_finds_test_executable
+- tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_ignores_non_test_artifacts
+- tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_skips_malformed_json_lines
+- tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_no_matching_message_is_none
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_no_test_binary_found_is_none
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_missing_cargo_binary_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_build_kill_switch_disabled
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_valgrind_success_parses_output
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_missing_valgrind_binary_is_typed_result
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_run_kill_switch_disabled
+threat: null
+component: null
+```
+T-1309's 5 TEST005 findings in src/frob/check: 2 branch findings
+(run_check_rust, run_check_ts) and 3 module-line findings (_native.py
+22.7%, _python.py 65.0%, _ts.py 53.5%). T-1309 closed run_check_rust,
+run_check_ts, and _ts.py (module line now 82% via
+tests/unit/test_check_ts_runners.py's real tsc/eslint/prettier/vitest
+success + kill-switch-disabled + timeout path tests).
+
+_native.py and _python.py remain below the 70% module_line_cov floor:
+- _native.py (24% even after adding cargo-runner tests
+  tests/unit/test_check_native_cargo_runners.py): most of the file's
+  225 lines are the cmake/clang-tidy/clang-format/ctest/valgrind runners
+  (lines 43-264), which this ticket's cargo-only tests did not touch --
+  a substantially larger test-writing job (mocking guarded_subprocess_run
+  across ~8 more functions) than fit in this dispatch.
+- _python.py (60%, 388 lines): scattered gaps across ruff/ty/pytest
+  runner functions and result-formatting helpers -- also needs a
+  dedicated pass, not attempted here.
+
+Filed as a follow-up so this known-remaining work is tracked rather than
+silently dropped when T-1309 closes on its completed subset.
+
+## Done report
+
+TEST005 module-line burn-down for src/frob/check/_native.py and _python.py
+(T-1309 follow-up). Merged with T-1512 (the _python.py module-line
+follow-up) since both targeted the same file's remaining gap; both
+tickets close together.
+
+Added real-behavior tests (no mocked-away logic, monkeypatched only at
+the `guarded_subprocess_run`/import boundary) covering the previously
+untested runner functions:
+
+_native.py (tests/unit/test_check_native_cargo_runners.py): cmake
+configure/build success+failure+missing-binary+crash+kill-switch paths,
+clang-tidy (no compile db, no sources, success, missing binary,
+kill-switch, malformed-output crash), clang-format (no sources, all
+formatted, needs-format diagnostics, missing binary, kill-switch), ctest
+(missing build dir, JUnit success, text-parse fallback, malformed JUnit
+crash, missing binary, unexpected crash, kill-switch),
+_find_test_binary_from_cargo_json (found/ignored/malformed/absent), and
+_run_cargo_valgrind (no test binary, missing cargo, build kill-switch,
+valgrind success, missing valgrind binary, run kill-switch).
+
+_python.py (tests/unit/test_check.py): _run_ruff/_ruff_format_result
+(success, would-reformat diagnostics, missing binary, kill-switch),
+_run_ty (success, extra-search-path/--python wiring, ty.toml
+extra-paths, malformed ty.toml tolerance, missing binary, kill-switch,
+file-root parent-dir scan), _build_import_graph/_run_cycle (empty graph,
+local-import edge, excluded-dir skip, no-cycle clean pass, mutual-import
+cycle detection), _run_bind/_has_bind_markers/_bind_mismatch_diagnostics
+(no markers, markers present, unreadable file, missing frob.bind import,
+mismatch-to-diagnostic mapping), and
+_missing_exports/_exports_for_package/_unexported_symbols_result/
+_run_exports (present/missing symbol sets, no-siblings skip, tests/-dir
+exemption, missing-symbol reporting, multi-package scan, no-init-files
+empty result).
+
+Measured coverage (pytest --cov, this ticket's own test files only):
+- src/frob/check/_native.py: 225 stmts, 88% line coverage (up from 23%
+  measured at ticket start) -- `pytest tests/unit/test_check_native_cargo_runners.py
+  --cov=frob.check._native --cov-report=term-missing`
+- src/frob/check/_python.py: 388 stmts, 90% line coverage (up from 56%
+  measured with the same test set at ticket start) -- `pytest
+  tests/unit/test_check.py --cov=frob.check._python --cov-report=term-missing`
+
+Both comfortably clear the 70% module_line_cov TEST005 floor. Per playbook
+section 6c/6d, this is a locally-scoped pytest --cov measurement, not a
+full `make coverage` stamp -- the coordinator's next full-suite coverage
+run is the authoritative TEST005 number; these numbers demonstrate the
+fix, not a package-wide guarantee.
+
+`frob check --only test --ticket T-1507`: 0 errors, 8 pre-existing
+warnings (TEST003/TEST014 findings unrelated to this ticket's scope),
+3 waived.
+`frob check --land-parity`: clean -- 0 unscoped errors.
+`ruff check`/`ruff format`: clean on all 4 touched files.
+
+Filed: none (T-1509 and T-1508 were pre-filed before this dispatch;
+no new out-of-scope work discovered).
+
+### Changed
+```
+ design/frob.strata                            |   4 +-
+ src/frob/dup/_legacy_cpp.py                   |  47 +-
+ tests/unit/test_check.py                      | 476 +++++++++++++++++-
+ tests/unit/test_check_native_cargo_runners.py | 530 ++++++++++++++++++-
+ tests/unit/test_dup_legacy_cpp.py             |  83 ++-
+ tickets.md                                    | 699 +++++++++++++++++++++++++-
+ 6 files changed, 1795 insertions(+), 44 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestCheckResultCounts::test_total_errors_sums_across_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCheckResultCounts::test_total_warnings_sums_across_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCheckResultCounts::test_zero_results_is_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheck::test_all_stages_skipped_returns_empty_result_for_root` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckCpp::test_all_stages_skipped_returns_empty_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckCpp::test_gates_stage_runs_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckRust::test_all_stages_skipped_returns_empty_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckRust::test_gates_stage_runs_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckRust::test_check_clippy_fmt_test_stages_all_run_and_append` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckTs::test_all_stages_skipped_returns_empty_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckTs::test_gates_stage_runs_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckTs::test_tsc_eslint_prettier_vitest_stages_all_run_and_append` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_cargo_toml_is_rust` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_cmakelists_is_cpp` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_pyproject_is_python` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_package_json_and_tsconfig_is_typescript` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_no_sentinel_is_unknown` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_bare_py_file_no_pyproject_is_python` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesQueueFailure::test_malformed_tickets_md_is_hard_error_not_silent_skip` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesDelta::test_stale_baseline_falls_back_to_full_set_with_warning` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_passes_use_cache_true_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_no_cache_forces_use_cache_false` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waived_group_excluded_from_headline_but_listed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_partial_group_waiver_does_not_hide_whole_group` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_on_shared_symbol_does_not_hide_distinct_superset_group` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiving_every_fragment_of_superset_group_waives_it_too` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_unwaived_group_still_counts` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_above_nested_closure_covers_it_via_enclosing_method` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_waived_long_function_excluded_from_headline_but_listed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_unwaived_long_function_still_counts` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_uses_calibrated_default_not_library_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_respects_explicit_frob_toml_override` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::test_check_run_check_arch_integration` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_racing_tasks_restore_original_stdout_handler_level` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_all_none_tasks_still_restore_level` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_precheck_failure_short_circuits_under_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_build_failure_skips_tests_under_held_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_rust_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_ts_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestScopeDisclosure::test_only_names_the_gate_families_it_did_not_run` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestScopeDisclosure::test_ticket_flag_notes_which_families_are_actually_diff_scoped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestScopeDisclosure::test_full_unfiltered_run_adds_no_disclosure` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunRuffRealPaths::test_success_parses_ruff_json_and_appends_format_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunRuffRealPaths::test_missing_binary_yields_two_typed_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunRuffRealPaths::test_kill_switch_disabled_yields_two_typed_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_all_formatted_is_clean_pass` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_would_reformat_lines_produce_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_success_parses_ty_output` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_extra_search_path_added_when_src_dir_exists` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_ty_toml_extra_paths_are_appended` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_malformed_ty_toml_is_silently_ignored` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_file_root_scans_parent_dir` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_no_files_produces_empty_graph` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_local_import_adds_edge` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_excluded_dirs_are_skipped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_no_cycles_is_clean_pass` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_mutual_import_detected` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_no_bind_markers_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_true_when_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_false_when_absent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_survives_unreadable_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_import_error_for_missing_bind_module_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_bind_mismatch_diagnostics_maps_mismatches` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_flags_unexported_symbols` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_empty_when_all_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_no_siblings_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_tests_dir_is_exempt` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_reports_missing_symbol` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_unexported_symbols_result_builds_note_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_scans_every_init_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_no_init_files_is_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_success_parses_cargo_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_unexpected_crash_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoFmtCheckRealPaths::test_all_formatted_is_clean_pass` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoFmtCheckRealPaths::test_unformatted_lines_produce_warning_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoFmtCheckRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoTestRealPaths::test_success_parses_cargo_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoTestRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoTestRealPaths::test_unexpected_crash_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_success_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_nonzero_exit_returns_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_unexpected_crash_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestCmakeConfigureRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_configure_failure_short_circuits` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_build_success_reports_build_succeeded` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_unexpected_crash_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCmakeBuildRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_no_compile_commands_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_no_sources_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_success_parses_clang_tidy_output` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangTidyCmakeRealPaths::test_parse_failure_is_typed_crash_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_no_sources_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_all_formatted_is_clean_pass` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_needs_format_produces_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunClangFormatRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_missing_build_dir_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_success_parses_junit_report` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_falls_back_to_text_parsing_without_junit` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_malformed_junit_is_typed_crash_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_unexpected_crash_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCtestRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_finds_test_executable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_ignores_non_test_artifacts` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_skips_malformed_json_lines` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_no_matching_message_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_no_test_binary_found_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_missing_cargo_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_build_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_valgrind_success_parses_output` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_missing_valgrind_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_run_kill_switch_disabled` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 140 passed (from 140 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1509 -->
+```yaml
+id: T-1509
+title: dup._legacy_cpp never collects C++ function params as locals (params field
+  looked up on the wrong node)
+state: done
+kind: bug
+origin: human
+created: '2026-08-03'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/dup/_legacy_cpp.py
+- tests/unit/test_dup_legacy_cpp.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_dup_legacy_cpp.py
+  reason: regression test for the params-collection fix lives in the existing test
+    file for this module
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_covers_bindings
+- tests/unit/test_dup_legacy_cpp.py::test_enclosing_class_cpp_none_for_top_level_function
+- tests/unit/test_dup_legacy_cpp.py::test_enclosing_class_cpp_names_the_struct_or_class
+- tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_method_params_too
+- tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_param_folds_to_positional_token
+- tests/unit/test_dup_legacy_cpp.py::test_serialize_cpp_body_normalizes_locals_strings_and_numbers
+- tests/unit/test_dup_legacy_cpp.py::test_iter_functions_cpp_yields_qualified_names
+threat: null
+component: null
+```
+`frob.dup._legacy_cpp._collect_locals_cpp` calls `_child(func_node, "parameters")`
+where `func_node` is the C++ `function_definition` node -- but tree-sitter's
+cpp grammar puts the `parameters` field on the `function_declarator` child
+(`func_node`'s `declarator` field), not on `function_definition` itself.
+Verified directly: a real parse of `int f(int a, int* b, int& c) { ... }`
+shows `child_by_field_name("parameters")` returns None on the
+`function_definition` node.
+
+Effect: C++ function parameters are NEVER added to `_collect_locals_cpp`'s
+local-name set for the legacy dup scanner, so `_serialize_cpp_body` never
+folds a parameter identifier to a positional `_vN` token the way it does
+for every other local (loop bindings, plain declarations). Two C++
+functions that are structurally identical except for parameter NAMES will
+fail to fingerprint as clones under the legacy scanner -- a real
+detection-quality gap, not just a coverage gap.
+
+Fix: harvest `parameters` from `func_node`'s declarator (walk through
+pointer/reference declarator wrapping the same way `_cpp_func_name`
+already does) rather than from `func_node` directly.
+
+Found while working T-1307 (TEST005 burn-down: src/frob/dup) -- writing a
+real behavioral test for `_collect_locals_cpp` against a params-bearing
+fixture surfaced this; not fixed here since T-1307's scope is tests, not
+scanner correctness.
+
+## Done report
+
+Fixed the real detection-quality bug: `_collect_locals_cpp` looked up the
+`parameters` field on `func_node` (`function_definition`) directly, but
+tree-sitter's cpp grammar puts that field on the function's
+`function_declarator` child instead (`func_node`'s `declarator` field).
+Verified directly against a real parse of `int f(int a, int* b, int& c)
+{ ... }` before the fix: `child_by_field_name("parameters")` returned
+`None` on the `function_definition` node.
+
+Fix: `_cpp_function_declarator` unwraps any pointer/reference declarator
+wrapping (mirroring `_cpp_func_name`'s existing unwrap) to reach the real
+`function_declarator` node, then `_collect_locals_cpp` reads
+`parameters` off THAT node.
+
+While writing the regression test for a reference parameter (`int& c`),
+found and fixed a second, related bug in the same file:
+`_harvest_cpp_declarator_name`'s `reference_declarator` branch assumed
+`child_by_field_name("declarator")` would find the wrapped identifier the
+same way it does for `pointer_declarator` -- verified this tree-sitter-cpp
+grammar version does NOT label `reference_declarator`'s identifier child
+with a `declarator` field (only `pointer_declarator` does), so a `None`
+field lookup silently dropped reference parameters even after the params
+field fix above. Falls back to iterating `named_children` when the field
+lookup misses -- a no-op for `pointer_declarator` (whose lookup already
+succeeds), and correctly reaches the identifier for
+`reference_declarator`. Both fixes are in this ticket's declared scope
+(src/frob/dup/_legacy_cpp.py).
+
+Added tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_method_params_too
+(a class method's plain params are collected too, not just free-function
+pointer/reference ones) and
+::test_collect_locals_cpp_param_folds_to_positional_token (the real
+detection-quality assertion: two functions identical except for
+parameter NAMES now fingerprint identically via
+`_serialize_cpp_body`'s positional `_vN` folding -- they did not before
+this fix). Updated the existing
+::test_collect_locals_cpp_covers_bindings to assert params ARE now
+collected (it previously documented the bug as expected behavior).
+
+Ticket scope was `src/frob/dup/_legacy_cpp.py` only; narrowed-added
+`tests/unit/test_dup_legacy_cpp.py` via `frob ticket scope --add` since
+the regression test lives in the module's existing test file.
+
+`frob check --only test --ticket T-1509`: 0 errors, 8 pre-existing
+warnings unrelated to this ticket's scope, 3 waived.
+`frob check --land-parity`: clean -- 0 unscoped errors.
+`pytest tests/unit/test_dup_legacy_cpp.py`: 7/7 passed.
+`ruff check`/`ruff format`: clean.
+
+Filed: none.
+
+### Changed
+```
+ design/frob.strata                            |   4 +-
+ src/frob/dup/_legacy_cpp.py                   |  47 +-
+ tests/unit/test_check.py                      | 476 ++++++++++++++++-
+ tests/unit/test_check_native_cargo_runners.py | 530 ++++++++++++++++++-
+ tests/unit/test_dup_legacy_cpp.py             |  83 ++-
+ tickets.md                                    | 705 +++++++++++++++++++++++++-
+ 6 files changed, 1801 insertions(+), 44 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_covers_bindings` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_cpp.py::test_enclosing_class_cpp_none_for_top_level_function` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_cpp.py::test_enclosing_class_cpp_names_the_struct_or_class` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_method_params_too` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_param_folds_to_positional_token` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_cpp.py::test_serialize_cpp_body_normalizes_locals_strings_and_numbers` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_cpp.py::test_iter_functions_cpp_yields_qualified_names` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1510 -->
+```yaml
+id: T-1510
+title: WIRE001 static caller search cannot see autouse pytest fixtures (test_check_ts_runners.py::_npx_available)
+state: done
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_check_ts_runners.py
+- src/frob/gates/_wire.py
+- tests/unit/test_wire_autouse_fixture.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: WIRE001's autouse-fixture fix lives in the gate module; new dedicated unit
+    test file for positive/negative coverage since tests/test_gates.py is leased by
+    T-1205
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_wire_autouse_fixture.py
+  reason: WIRE001's autouse-fixture fix lives in the gate module; new dedicated unit
+    test file for positive/negative coverage since tests/test_gates.py is leased by
+    T-1205
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_autouse_fixture_is_not_flagged
+- tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_plain_test_helper_with_no_caller_is_still_flagged
+- tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_non_autouse_fixture_with_no_caller_is_still_flagged
+- tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output
+threat: null
+component: null
+```
+WIRE001 flags _npx_available in tests/unit/test_check_ts_runners.py as unreached
+outside its own tests. It is an autouse pytest fixture, wired in by pytest's own
+fixture-injection machinery for every test in this file -- not a direct-call
+relationship WIRE001's static caller search can see -- the standard pytest fixture
+idiom, not dead code. Follow-up: teach WIRE001's static caller search to recognize
+an autouse fixture's implicit per-test invocation (pytest.fixture(autouse=True))
+as a reached use, so files relying on this idiom stop needing a per-fixture
+frob:waive WIRE001 waiver.
+
+## Done report
+
+Taught WIRE001's static caller search to recognize an
+@pytest.fixture(autouse=True) (or pytest_asyncio.fixture) decorated
+symbol as reached: `_is_autouse_pytest_fixture` (src/frob/gates/_wire.py)
+scans the symbol's own span for the decorator (the parser already
+includes the decorator line in a record's span, verified directly), and
+`_new_callable_records` now excludes any such symbol from candidacy
+alongside the existing dunder/test-symbol exemptions -- pytest's own
+fixture-injection machinery reaches an autouse fixture implicitly for
+every test in scope, never via a direct call token this gate's text scan
+can see.
+
+Removed the per-fixture WIRE001 waiver this fix makes unnecessary from
+tests/unit/test_check_ts_runners.py::_npx_available (the ticket's own
+motivating instance) and confirmed no other file in the tree carries a
+follow_up="T-1510" waiver (grep -rl was empty).
+
+Added tests/unit/test_wire_autouse_fixture.py with one positive case
+(new autouse fixture: not flagged) and two negative controls (an
+ordinary new private test helper with no caller: still flagged; a
+non-autouse @pytest.fixture with no caller: still flagged, since that
+shape is out of this ticket's scope). Placed in a new file rather than
+tests/test_gates.py::TestWireGate (that file's tests/** lease was held
+by concurrent in-progress T-1205 at scope-add time).
+
+
+Waiver deletion in branch history (intentional, sibling T-1511's work on this same branch): tests/unit/test_check_native_cargo_runners.py:WIRE001 -- removed because T-1511 promoted _FakeCompletedProcess to the shared tests/unit/conftest.py, making the fixture-stand-in waiver obsolete. Declared here because that file is in T-1511's scope, not T-1510's, and the history scan attributes the whole branch to the landing ticket (T-1550 tracks the structural fix).
+
+### Changed
+```
+ src/frob/gates/_wire.py                       |  47 +++++-
+ tests/unit/conftest.py                        |  24 +++
+ tests/unit/test_check_native_cargo_runners.py |  14 +-
+ tests/unit/test_check_ts_runners.py           |  18 +--
+ tests/unit/test_wire_autouse_fixture.py       | 129 ++++++++++++++++
+ tickets.md                                    | 208 +++++++++++++++++++++++++-
+ 6 files changed, 400 insertions(+), 40 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_autouse_fixture_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_plain_test_helper_with_no_caller_is_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_non_autouse_fixture_with_no_caller_is_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1511 -->
+```yaml
+id: T-1511
+title: WIRE001 on _FakeCompletedProcess test-fixture stand-in (check native/ts runner
+  tests)
+state: done
+kind: docs
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_check_native_cargo_runners.py
+- tests/unit/test_check_ts_runners.py
+- tests/unit/conftest.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/conftest.py
+  reason: promoting the duplicated _FakeCompletedProcess stand-in (now confirmed used
+    by 2 files) to a shared tests/unit conftest per the ticket's own follow-up criterion
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_success_parses_cargo_json
+- tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output
+threat: null
+component: null
+```
+WIRE001 flags _FakeCompletedProcess in tests/unit/test_check_native_cargo_runners.py
+and tests/unit/test_check_ts_runners.py as unreached outside its own tests. It is a
+private per-file test-fixture stand-in used only by each file's own tests below --
+there is no production caller to wire it to by design, it exists solely as a
+subprocess.CompletedProcess-shaped stub for monkeypatched guarded_subprocess_run
+returns, mirroring the tests/unit/test_conftest_stackdump.py::_load_conftest (T-1466)
+precedent. Follow-up: evaluate whether this stub should move to a shared
+test-support module (frob.testing or a conftest fixture) if more runner tests want
+the same stub, or whether the current per-file scope is intentionally final (in
+which case this ticket should close as won't-fix with that recorded).
+
+## Done report
+
+_FakeCompletedProcess was independently duplicated verbatim in both
+tests/unit/test_check_ts_runners.py and
+tests/unit/test_check_native_cargo_runners.py, satisfying the ticket's
+own promotion criterion ("if more runner tests want the same stub").
+Promoted it to a new tests/unit/conftest.py (plain class, imported
+explicitly via `from tests.unit.conftest import _FakeCompletedProcess`
+-- tests/ is a real package, this is a normal absolute import, not
+pytest's fixture-function auto-injection) and removed both per-file
+copies and their WIRE001 waivers. wire_gate --ticket T-1511 now reports
+0 errors: the shared class has a real, direct-call-shaped caller in each
+of its two consuming files, so WIRE001's text scan reaches it without
+needing an exemption.
+
+Confirmed no remaining follow_up="T-1511" waiver in the tree (grep -rl
+was empty). All 20 tests across both consuming files pass unchanged.
+
+### Changed
+```
+ tickets.md | 175 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 170 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 216 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1512 -->
+```yaml
+id: T-1512
+title: 'TEST005 follow-up: _python.py module-line floor findings from T-1309 sweep'
+state: done
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/check/_python.py
+- tests/unit/test_check.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/check/_python.py
+  reason: narrowing empty scope to the exact _python.py TEST005 follow-up files, merged
+    into T-1507's burn-down work
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: narrowing empty scope to the exact _python.py TEST005 follow-up files, merged
+    into T-1507's burn-down work
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_check.py::TestCheckResultCounts::test_total_errors_sums_across_results
+- tests/unit/test_check.py::TestCheckResultCounts::test_total_warnings_sums_across_results
+- tests/unit/test_check.py::TestCheckResultCounts::test_zero_results_is_zero
+- tests/unit/test_check.py::TestRunCheck::test_all_stages_skipped_returns_empty_result_for_root
+- tests/unit/test_check.py::TestRunCheckCpp::test_all_stages_skipped_returns_empty_result
+- tests/unit/test_check.py::TestRunCheckCpp::test_gates_stage_runs_by_default
+- tests/unit/test_check.py::TestRunCheckRust::test_all_stages_skipped_returns_empty_result
+- tests/unit/test_check.py::TestRunCheckRust::test_gates_stage_runs_by_default
+- tests/unit/test_check.py::TestRunCheckRust::test_check_clippy_fmt_test_stages_all_run_and_append
+- tests/unit/test_check.py::TestRunCheckTs::test_all_stages_skipped_returns_empty_result
+- tests/unit/test_check.py::TestRunCheckTs::test_gates_stage_runs_by_default
+- tests/unit/test_check.py::TestRunCheckTs::test_tsc_eslint_prettier_vitest_stages_all_run_and_append
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDetectProjectType::test_cargo_toml_is_rust
+- tests/unit/test_check.py::TestDetectProjectType::test_cmakelists_is_cpp
+- tests/unit/test_check.py::TestDetectProjectType::test_pyproject_is_python
+- tests/unit/test_check.py::TestDetectProjectType::test_package_json_and_tsconfig_is_typescript
+- tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript
+- tests/unit/test_check.py::TestDetectProjectType::test_no_sentinel_is_unknown
+- tests/unit/test_check.py::TestDetectProjectType::test_bare_py_file_no_pyproject_is_python
+- tests/unit/test_check.py::TestRunGatesQueueFailure::test_malformed_tickets_md_is_hard_error_not_silent_skip
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation
+- tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
+- tests/unit/test_check.py::TestRunGatesDelta::test_stale_baseline_falls_back_to_full_set_with_warning
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_passes_use_cache_true_by_default
+- tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_no_cache_forces_use_cache_false
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waived_group_excluded_from_headline_but_listed
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_partial_group_waiver_does_not_hide_whole_group
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_on_shared_symbol_does_not_hide_distinct_superset_group
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiving_every_fragment_of_superset_group_waives_it_too
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_unwaived_group_still_counts
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_above_nested_closure_covers_it_via_enclosing_method
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_waived_long_function_excluded_from_headline_but_listed
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_unwaived_long_function_still_counts
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_uses_calibrated_default_not_library_default
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_respects_explicit_frob_toml_override
+- tests/unit/test_check.py::test_check_run_check_arch_integration
+- tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_racing_tasks_restore_original_stdout_handler_level
+- tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_all_none_tasks_still_restore_level
+- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_precheck_failure_short_circuits_under_lock
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_build_failure_skips_tests_under_held_lock
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_rust_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_ts_holds_shared_lock_across_precheck_and_stages
+- tests/unit/test_check.py::TestScopeDisclosure::test_only_names_the_gate_families_it_did_not_run
+- tests/unit/test_check.py::TestScopeDisclosure::test_ticket_flag_notes_which_families_are_actually_diff_scoped
+- tests/unit/test_check.py::TestScopeDisclosure::test_full_unfiltered_run_adds_no_disclosure
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_success_parses_ruff_json_and_appends_format_result
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_missing_binary_yields_two_typed_results
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_kill_switch_disabled_yields_two_typed_results
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_all_formatted_is_clean_pass
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_would_reformat_lines_produce_diagnostics
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_kill_switch_disabled
+- tests/unit/test_check.py::TestRunTyRealPaths::test_success_parses_ty_output
+- tests/unit/test_check.py::TestRunTyRealPaths::test_extra_search_path_added_when_src_dir_exists
+- tests/unit/test_check.py::TestRunTyRealPaths::test_ty_toml_extra_paths_are_appended
+- tests/unit/test_check.py::TestRunTyRealPaths::test_malformed_ty_toml_is_silently_ignored
+- tests/unit/test_check.py::TestRunTyRealPaths::test_missing_binary_is_typed_result
+- tests/unit/test_check.py::TestRunTyRealPaths::test_kill_switch_disabled
+- tests/unit/test_check.py::TestRunTyRealPaths::test_file_root_scans_parent_dir
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_no_files_produces_empty_graph
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_local_import_adds_edge
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_excluded_dirs_are_skipped
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_no_cycles_is_clean_pass
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_mutual_import_detected
+- tests/unit/test_check.py::TestRunBindRealPaths::test_no_bind_markers_is_none
+- tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_true_when_present
+- tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_false_when_absent
+- tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_survives_unreadable_file
+- tests/unit/test_check.py::TestRunBindRealPaths::test_import_error_for_missing_bind_module_is_none
+- tests/unit/test_check.py::TestRunBindRealPaths::test_bind_mismatch_diagnostics_maps_mismatches
+- tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_flags_unexported_symbols
+- tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_empty_when_all_present
+- tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_no_siblings_is_none
+- tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_tests_dir_is_exempt
+- tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_reports_missing_symbol
+- tests/unit/test_check.py::TestExportsRealPaths::test_unexported_symbols_result_builds_note_diagnostics
+- tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_scans_every_init_file
+- tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_no_init_files_is_empty
+threat: null
+component: null
+```
+Tracks the _python.py module-line coverage-floor findings surfaced during T-1309's run_check TEST005 sweep; split out so T-1309 could close on its own scope. Refiled: the original tracking draft T-1512 died in a removed worktree before landing.
+
+## Done report
+
+_python.py module-line TEST005 follow-up from T-1309's sweep. Done in
+lockstep with T-1507 (same worktree, same commits) since both target the
+same file (src/frob/check/_python.py) and its test file
+(tests/unit/test_check.py) -- see T-1507's Done report for the full test
+inventory and coverage numbers.
+
+Summary: src/frob/check/_python.py line coverage went from 56% (measured
+with the pre-existing test_check.py suite at ticket start) to 90%
+(measured with the same suite plus this ticket's added
+TestRunRuffRealPaths/TestRuffFormatResultRealPaths/TestRunTyRealPaths/
+TestBuildImportGraphAndCycleRealPaths/TestRunBindRealPaths/
+TestExportsRealPaths classes) -- `pytest tests/unit/test_check.py
+--cov=frob.check._python --cov-report=term-missing`, well above the 70%
+TEST005 module_line_cov floor.
+
+Ticket scope started empty (`scope=[]`); narrowed via `frob ticket scope
+--add src/frob/check/_python.py --add tests/unit/test_check.py` to the
+exact files this work touched (scope-closure warnings on that command
+are pre-existing test_check.py coverage of src/frob/check/__init__.py,
+none of it added by this ticket).
+
+`frob check --only test --ticket T-1512`: 0 errors (same repo-wide
+gate:TEST result as T-1507's run, above).
+`frob check --land-parity`: clean -- 0 unscoped errors (same run as
+T-1507, both tickets landing from the same tree state).
+`ruff check`/`ruff format`: clean.
+
+Filed: none.
+
+### Changed
+```
+ design/frob.strata                            |   4 +-
+ src/frob/dup/_legacy_cpp.py                   |  47 +-
+ tests/unit/test_check.py                      | 476 ++++++++++++++++-
+ tests/unit/test_check_native_cargo_runners.py | 530 ++++++++++++++++++-
+ tests/unit/test_dup_legacy_cpp.py             |  83 ++-
+ tickets.md                                    | 702 +++++++++++++++++++++++++-
+ 6 files changed, 1798 insertions(+), 44 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestCheckResultCounts::test_total_errors_sums_across_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCheckResultCounts::test_total_warnings_sums_across_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCheckResultCounts::test_zero_results_is_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheck::test_all_stages_skipped_returns_empty_result_for_root` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckCpp::test_all_stages_skipped_returns_empty_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckCpp::test_gates_stage_runs_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckRust::test_all_stages_skipped_returns_empty_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckRust::test_gates_stage_runs_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckRust::test_check_clippy_fmt_test_stages_all_run_and_append` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckTs::test_all_stages_skipped_returns_empty_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckTs::test_gates_stage_runs_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunCheckTs::test_tsc_eslint_prettier_vitest_stages_all_run_and_append` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_cargo_toml_is_rust` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_cmakelists_is_cpp` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_pyproject_is_python` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_package_json_and_tsconfig_is_typescript` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_no_sentinel_is_unknown` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_bare_py_file_no_pyproject_is_python` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesQueueFailure::test_malformed_tickets_md_is_hard_error_not_silent_skip` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesDelta::test_stale_baseline_falls_back_to_full_set_with_warning` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_passes_use_cache_true_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesCacheWiring::test_run_gates_no_cache_forces_use_cache_false` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waived_group_excluded_from_headline_but_listed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_partial_group_waiver_does_not_hide_whole_group` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_on_shared_symbol_does_not_hide_distinct_superset_group` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiving_every_fragment_of_superset_group_waives_it_too` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_unwaived_group_still_counts` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_above_nested_closure_covers_it_via_enclosing_method` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_waived_long_function_excluded_from_headline_but_listed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch001_unwaived_long_function_still_counts` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_uses_calibrated_default_not_library_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_respects_explicit_frob_toml_override` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::test_check_run_check_arch_integration` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_racing_tasks_restore_original_stdout_handler_level` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_all_none_tasks_still_restore_level` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_precheck_failure_short_circuits_under_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_build_failure_skips_tests_under_held_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_rust_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_ts_holds_shared_lock_across_precheck_and_stages` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestScopeDisclosure::test_only_names_the_gate_families_it_did_not_run` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestScopeDisclosure::test_ticket_flag_notes_which_families_are_actually_diff_scoped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestScopeDisclosure::test_full_unfiltered_run_adds_no_disclosure` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunRuffRealPaths::test_success_parses_ruff_json_and_appends_format_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunRuffRealPaths::test_missing_binary_yields_two_typed_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunRuffRealPaths::test_kill_switch_disabled_yields_two_typed_results` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_all_formatted_is_clean_pass` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_would_reformat_lines_produce_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRuffFormatResultRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_success_parses_ty_output` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_extra_search_path_added_when_src_dir_exists` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_ty_toml_extra_paths_are_appended` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_malformed_ty_toml_is_silently_ignored` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_missing_binary_is_typed_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_kill_switch_disabled` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunTyRealPaths::test_file_root_scans_parent_dir` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_no_files_produces_empty_graph` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_local_import_adds_edge` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_excluded_dirs_are_skipped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_no_cycles_is_clean_pass` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_run_cycle_mutual_import_detected` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_no_bind_markers_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_true_when_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_false_when_absent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_has_bind_markers_survives_unreadable_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_import_error_for_missing_bind_module_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunBindRealPaths::test_bind_mismatch_diagnostics_maps_mismatches` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_flags_unexported_symbols` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_missing_exports_empty_when_all_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_no_siblings_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_tests_dir_is_exempt` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_exports_for_package_reports_missing_symbol` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_unexported_symbols_result_builds_note_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_scans_every_init_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_no_init_files_is_empty` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 93 passed (from 93 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-1513 -->
 ```yaml
 id: T-1513
@@ -180510,6 +181799,235 @@ frob ticket list now always ends with a one-line state census (summary: N active
 - tests: 4 passed (from 4 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
 
+<!-- ticket:T-1522 -->
+```yaml
+id: T-1522
+title: 'land: queue-drain commits must be durable across a same-invocation later unwind'
+state: done
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_squash.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLandPlanQueueDrainCommitsDurable::test_finalize_failure_after_merge_keeps_the_merge_commit
+- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge
+- tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding
+- tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
+- tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge
+threat: null
+component: null
+```
+T-1495 point 2 (filed as a follow-up, not implemented in T-1495 itself):
+queue-drain commits (other tickets' lands absorbed into the same land
+invocation as a primary ticket) must become durable the moment each one
+is committed -- a later failure in the SAME invocation (e.g.
+CrossTicketLeakage on the primary ticket) currently unwinds the whole
+run, including unrelated already-drained lands (the T-1199/T-1200
+queue-drain commits eaten by attempt-1/2 unwinds in the 2026-08-04
+incident, tickets.md/T-1495's own Done report has the reflog detail).
+
+This needs a real design decision beyond an unwind-boundary assertion:
+either (a) each queue-drain commit needs to be pushed/durable
+independently before the primary ticket's own steps run (so a later
+primary-ticket failure only ever unwinds the primary ticket's own
+commits, never the queue-drain ones already durable), or (b) the
+queue-drain absorption mechanism itself needs to stop being a single
+undo-able unit and instead commit-then-forget per drained ticket. T-1495
+itself only fixes the concretely-identified unguarded reset path
+(land_plan's own _land_plan_reset_hard) with a same-run unwind-boundary
+assertion (_assert_reset_only_discards_own_commits) -- that assertion
+protects against a FOREIGN process's interleaved commit being eaten, but
+does not change the fact that within ONE run, queue-drained commits and
+the primary ticket's own commits are currently treated as a single
+all-or-nothing unwind unit.
+
+Investigate the queue-drain absorption call path (search
+`_absorbed_land_report`/stacked-sibling absorption, T-1001 churn item 2)
+to find exactly where drained commits and the primary ticket's commits
+share an unwind boundary, and design the split.
+
+## Done report
+
+T-1522: `land_plan`'s (`src/frob/tickets/_land.py`) failure-unwind path no
+longer resets `root` all the way back to its pre-merge tip once the merge
+commit exists. The merge commit is the queue-drain checkpoint on a shared
+design-phase worktree branch -- it already durably carries every other
+ticket's content the branch accumulated -- so a LATER, unrelated failure
+in the SAME invocation (a finalize error, a dirty `check_ticks()` result)
+now unwinds only what was committed AFTER the merge (new helper
+`_land_plan_unwind_after_merge`), never the merge itself. This is the
+2026-08-04 T-1199/T-1200 incident shape (tickets-archive.md) directly:
+those tickets' already-merged content was discarded by two retried
+`land_plan` attempts because the unwind reset past the merge commit on an
+unrelated later failure. `dry_run`'s own always-revert behavior is
+unchanged -- a dry run is deliberately "run then always revert", not a
+failure path.
+
+Updated two pre-existing tests whose assertions encoded the OLD (buggy)
+full-unwind behavior (`test_tick_gate_dirty_unwinds_everything` ->
+`test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge`,
+`test_no_foreign_commit_unwinds_cleanly_as_before` ->
+`test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge`), and
+added a new `TestLandPlanQueueDrainCommitsDurable` test class that
+reproduces the T-1199/T-1200 shape directly: a finalize failure injected
+via monkeypatch AFTER a real merge commit, asserting the merge content
+(a doc file) survives and a follow-up retry is a clean no-op.
+
+### Changed
+```
+ src/frob/tickets/_land.py         | 30 ++++++++-----
+ src/frob/tickets/_land_git_ops.py | 49 +++++++++++++++-------
+ tests/test_ticket_land.py         | 65 +++++++++++++++++++++++++++++
+ tickets.md                        | 88 +++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 205 insertions(+), 27 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandPlanQueueDrainCommitsDurable::test_finalize_failure_after_merge_keeps_the_merge_commit` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 362 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1523 -->
+```yaml
+id: T-1523
+title: 'land: checkpoint or split post-land verification so a >540s kill is always
+  safe'
+state: done
+kind: feature
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_land.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Adding regression tests for the new T-1523 post-land-verify-pending
+
+    marker mechanism.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result
+- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor
+- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared
+threat: null
+component: null
+```
+T-1495 point 4 (filed as a follow-up, not implemented in T-1495 itself):
+land duration routinely exceeds the 540s foreground guard (the 2026-08-04
+incident's own trigger: `frob ticket land T-1464` was SIGTERM-killed at
+that timeout AFTER its land commits were already on main but before
+post-land verification finished). Either checkpoint land so a kill is
+safe at any instant, or split post-land verification into a resumable
+separate step.
+
+This needs a real design decision beyond an unwind-boundary assertion:
+- Option A: make every intermediate state durable/self-describing enough
+  that a kill at any instant is recoverable by the NEXT invocation
+  (T-0907's land-repair marker already does this for the pre-commit
+  staging window; the gap is POST-commit, between the final commit
+  landing and the post-land unscoped-error sweep / push / worktree
+  finish steps -- T-1514 (same cluster, already landed) narrows this
+  specific gap by moving T-1456's sweep to run PRE-commit instead of
+  post-commit, but push/finish and any other post-commit step are still
+  in the killable window).
+- Option B: split `frob ticket land` into two separately-invocable
+  steps -- "land" (merge/finalize/commit, must complete or cleanly
+  unwind) and a separate "land --verify-only <sha>" resumable step that
+  re-runs whatever post-land checks remain, safe to kill and retry
+  independently of the commit itself ever having happened.
+
+Either option needs its own design doc/ticket-plan before implementation
+-- this is exactly the kind of decision the T-1495 body's "find the
+actual reset path... make it refuse or reconcile" ask flags as needing
+judgment beyond a mechanical fix.
+
+## Done report
+
+T-1523: this is a targeted slice of the ticket's own "Option A" design
+sketch (checkpoint the killable post-commit window, T-1495 point 4), NOT
+the full Option A "every intermediate state durable" scope or Option B's
+separate `--verify-only` CLI verb -- the ticket body itself says either
+option needs its own design doc; this closes the specific, highest-risk
+piece: `_post_land_unscoped_error_sweep` (the only post-commit step that
+can still mutate/revert `root`, per T-1514's own docstring, which already
+narrowed the pre-commit half of this same gap).
+
+New T-1523 marker (`.frob/land-verify-pending/<ticket_id>.json`,
+`src/frob/tickets/_land.py`: `_write_post_land_verify_marker`/
+`_clear_post_land_verify_marker`/`_stale_post_land_verify_markers`) is
+written right after a real land's commit exists on `root` but before the
+post-land sweep runs (`_land_cmd._land_core`), and cleared immediately
+after the sweep resolves (either outcome -- clean or reverted -- resolves
+the pending window). A SIGTERM during the sweep itself now leaves this
+marker behind instead of nothing.
+
+`_land_cmd._report_stale_post_land_verify_markers` (read-only, never
+mutates `root` -- the commit it names is already durably there either
+way) runs at the start of every subsequent `_land_core` call (single-
+ticket land and `_land_drain`'s loop alike): re-runs the same two
+`LAND-PROOF` checks (`is_ancestor_of_main`, ticket state on main; shared
+via new helper `_land_proof_checks`, factored out of `_print_land_proof`)
+against any leftover marker, logs a `LAND-PROOF-RECOVERED:` line naming
+the verified result, and clears the marker -- surfacing exactly what a
+kill left ambiguous instead of leaving it silently unverified forever,
+without ever blocking the NEW ticket this invocation is actually landing.
+
+Deferred, disclosed: `LAND-PROOF`/`--finish` themselves were already
+established as idempotent/safe-to-retry by playbook section 0 item 9 and
+T-1175, so they are not part of this marker's covered window. The larger
+Option A (every intermediate write self-describing) and Option B (a
+separate resumable `--verify-only <sha>` CLI step) remain their own
+design-doc-first follow-up if the sweep-specific gap closed here proves
+insufficient in practice; a follow-up ticket has been filed for that
+remaining design work rather than silently expanding this one's scope
+(its real id will be assigned at land -- filed as a draft from this
+worktree).
+
+### Changed
+```
+ src/frob/tickets/_land.py         | 106 ++++++++++++++++-----
+ src/frob/tickets/_land_git_ops.py |  49 +++++++---
+ tests/test_ticket_land.py         | 164 +++++++++++++++++++++++++++++---
+ tickets.md                        | 190 +++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 451 insertions(+), 58 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 514 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1524 -->
 ```yaml
 id: T-1524
@@ -180787,6 +182305,95 @@ frob ticket list now always ends with a one-line state census (summary: N active
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1529 -->
+```yaml
+id: T-1529
+title: extend cache-transparency harness to coverage-lock/hotgraph-sketch/check-budget-timing
+  caches
+state: done
+kind: invariant
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_cache_transparency.py
+- invariants/INV-050.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/test_cache_transparency.py::TestCoverageLockCacheTransparency::test_cold_warm_agree_across_random_edits
+- tests/test_cache_transparency.py::TestHotgraphSketchCacheTransparency::test_cold_warm_agree_across_random_edits
+- tests/test_cache_transparency.py::TestBudgetTimingCacheTransparency::test_cold_warm_agree_across_random_edits
+threat: null
+component: null
+```
+Filed while working T-1519 (cache observational-transparency invariant INV-050). Three caches were
+deliberately left out of the cold==warm property harness because they are not correctness-critical
+(they never change a gate's PASS/FAIL result or violation fingerprint, only advisory precision or
+scheduling), but a full arbitrary-edit-sequence sweep against them is still worth having for
+completeness:
+
+- .frob/coverage-stamp + frob-coverage.lock.json (src/frob/gates/_coverage.py) -- already has
+  dedicated provenance/ratchet regression tests (T-1435/T-1406/T-1363) but no generic cold/warm
+  fingerprint sweep of the kind INV-050's harness provides for other caches.
+- .frob/hotgraph_sketches.db (src/frob/perf/_sketch_store.py) -- perf advisory sketch store.
+- .frob/check-budget-timing.json (src/frob/app/_check_chunking.py) -- --budget group-selection
+  scheduling heuristic.
+
+See invariants/INV-050.md's inventory table for the full reasoning per cache.
+
+## Done report
+
+Added three TestXCacheTransparency classes to tests/test_cache_transparency.py,
+extending the shared run_cold_warm_sweep harness (tests/_cache_transparency.py,
+T-1519) to the three caches INV-050's inventory table had left as a
+disclosed cut:
+
+- TestCoverageLockCacheTransparency: frob-coverage.lock.json. No
+  in-process cache layer exists for load_coverage_lock today (uncached
+  read-through) -- swept against arbitrary write/delete/corrupt rounds as
+  a regression lock against a future cache layer disagreeing with a raw
+  file read.
+- TestHotgraphSketchCacheTransparency: .frob/hotgraph_sketches.db. This
+  one has a REAL staleness risk -- _sketch_store._connect caches a live
+  sqlite connection per resolved db path for the process lifetime. The
+  sweep forces a cold reconnect (_close_all()) after every put_sketch
+  round and asserts get_sketch reads back exactly what the still-open
+  warm connection just wrote.
+- TestBudgetTimingCacheTransparency: .frob/check-budget-timing.json.
+  Same uncached-read-through shape as the coverage lock, including the
+  "corrupt file degrades to {}, never a crash" contract, swept the same
+  way.
+
+Updated invariants/INV-050.md's inventory table and evidence list to
+reflect all three as harness-covered rather than disclosed cuts -- the
+doc's own closing paragraph now states the full inventory is covered,
+closing out T-1519's original deliverable (3) in full.
+
+### Changed
+```
+ invariants/INV-050.md            |  38 +++--
+ src/frob/tickets/_store.py       | 192 +++++++++++++++++-----
+ tests/test_cache_transparency.py | 204 +++++++++++++++++++++++-
+ tests/test_ticket_land.py        |  85 ++++++++++
+ tests/test_tickets.py            |  57 +++++++
+ tickets.md                       | 336 +++++++++++++++++++++++++++++++++++++--
+ 6 files changed, 848 insertions(+), 64 deletions(-)
+```
+
+### Evidence
+- `tests/test_cache_transparency.py::TestCoverageLockCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+- `tests/test_cache_transparency.py::TestHotgraphSketchCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+- `tests/test_cache_transparency.py::TestBudgetTimingCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 226 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1530 -->
 ```yaml
@@ -181544,3 +183151,192 @@ check`/`ruff format` clean on every touched file. `git diff main
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 1 error(s), 479 warning(s), 799 waived
 - error-findings: PRE001@tickets/T-1537
+
+<!-- ticket:T-1543 -->
+```yaml
+id: T-1543
+title: v2_state_transitions silently drops transitions when git detects a false copy
+  across similar ticket files
+state: done
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/test_tickets.py::TestV2StateTransitions::test_byte_similar_sibling_ticket_does_not_drop_transitions
+threat: null
+component: null
+```
+Discovered while writing T-1330's v1/v2 parity benchmark:
+v2_state_transitions (src/frob/tickets/_store.py, T-1257) calls
+`git log --reverse --follow -p -- tickets/T-####/ticket.md`. When a
+NEW ticket's initial content is >=50% byte-similar to another
+ticket's ticket.md as it exists in that same commit's tree (common,
+since every v2 ticket.md shares the same templated frontmatter --
+id/title/state differ, ~8 other fields identical), git's `-C`-implied
+copy detection under `--follow` attributes the new file's creation
+commit as a "copy from" the other ticket's file instead of a plain
+addition -- and combined with --reverse, git's --follow only reports
+that ONE (creation) commit and silently stops, dropping every
+subsequent state-transition commit for that ticket entirely.
+
+Reproduced directly: two tickets sharing the standard template,
+differing only in id/title/state/body, produced a copy-detected
+creation commit for the second ticket and v2_state_transitions
+returned only its "queued" transition -- "in-progress" and "done"
+(both real, separately committed) were silently missing. This
+explains T-1257's own unclosed acceptance criterion #3 (v1/v2 parity)
+and directly undermines T-1330's fast path: a repo where two tickets'
+files are byte-similar enough (routine for freshly-filed tickets with
+short bodies) can silently under-report DONE transitions for `frob
+ticket flow`/`sprint velocity` in v2 mode, with no error surfaced.
+
+Fix should live in v2_state_transitions itself: disable copy/rename
+detection for this specific git log call (e.g. --no-follow plus a
+manual git log --all -- <path> reconstruction that does not depend on
+--follow's copy heuristic, or pass a --find-copies-harder=0 equivalent
+that suppresses the false attribution) so the mined transition list
+is provably complete regardless of a ticket's content similarity to
+its siblings. Add a regression test reproducing the exact two-similar-
+tickets shape.
+
+## Done report
+
+Replaced v2_state_transitions' single `git log --follow -p` call (whose
+rename detection uses a >=50%-byte-similarity heuristic, not a genuine-
+rename check) with a two-stage miner: `_v2_path_lineage` walks backward
+from the ticket's current path using `_v2_rename_source`, which only
+trusts an `-M100%` (exact-content) `--diff-filter=R` rename -- the only
+kind frob's own git-mv tooling (git_mv_dir / _renumber_v2's directory
+rename) ever produces. Each lineage segment is then mined via plain
+(non-follow) `git log --reverse -p` and the per-commit `+state:` results
+are merged oldest-first, deduped by sha. Two v2 tickets that merely share
+the standard template (id/title/state differ, ~8 other fields identical)
+can never satisfy -M100%, so they can no longer be misattributed as a
+rename source/copy origin of one another -- the exact false-positive
+shape described in the ticket body.
+
+Added a regression test reproducing that shape directly: file T-0001,
+then file a byte-similar T-0002 (same template/body), advance T-0002
+through in-progress/done, and assert v2_state_transitions(root, "T-0002")
+still returns all three transitions instead of dropping the later two.
+
+### Changed
+```
+ src/frob/tickets/_store.py | 172 +++++++++++++++++++++++++++++++++++----------
+ tests/test_tickets.py      |  57 +++++++++++++++
+ tickets.md                 |   3 +-
+ 3 files changed, 193 insertions(+), 39 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 338 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1550 -->
+```yaml
+id: T-1550
+title: attribute branch-history waive deletions to the sibling ticket that landed
+  them (kill the OutOfScopeWaiveDeletion re-declare round)
+state: done
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_git_ops.py
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: 'Narrowing to the waive-deletion attribution scan and its land-check
+
+    callers/tests per the ticket body''s fix description.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'Narrowing to the waive-deletion attribution scan and its land-check
+
+    callers/tests per the ticket body''s fix description.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Narrowing to the waive-deletion attribution scan and its land-check
+
+    callers/tests per the ticket body''s fix description.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+threat: null
+component: null
+```
+The land waive-deletion scan walks ALL branch commits since merge-base and attributes every deletion to the LANDING ticket, so on a multi-ticket branch each subsequent land refuses on deletions its already-landed siblings own (T-1225, T-1444 each burned a full land round on this 2026-08-05). Fix: before refusing, check whether the deletion's containing commit is already an ancestor of main (sibling landed) or the deletion falls inside a ticket that is done on main whose scope covers the file -- if so, log and skip. Kills the declare-in-report boilerplate round entirely.
+
+## Done report
+
+T-1550: `_committed_waive_deletions`/`_committed_out_of_scope_waive_deletions`
+(src/frob/tickets/_land_git_ops.py) and `_check_committed_waive_deletions`
+(src/frob/tickets/_land.py) now diff the branch's committed history against
+`main_branch`'s LIVE tip instead of the stale `merge_base` captured before
+any sibling ticket on the same shared worktree branch had landed. A
+deletion an already-landed sibling committed is, by the time it lands,
+already reflected on `main_branch` itself (squash-apply carries the whole
+diff there) -- diffing from the live tip means that specific line shows no
+delta on either side and is never re-discovered, with no ancestry walk or
+commit-to-ticket message parsing required. A deletion still only present
+on the worktree branch (not yet landed by anyone) is unaffected and still
+refuses exactly as before. New regression test
+`TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted`
+reproduces the T-1225/T-1444 shape directly: ticket A declares and lands
+(real, non-dry-run) an out-of-scope waiver deletion; ticket B, continuing
+on the same worktree branch with no re-merge of main, previously got
+refused re-attributing A's already-landed deletion to itself -- now lands
+clean.
+
+### Changed
+```
+ tickets.md | 40 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 386 warning(s), 790 waived
+- error-findings: none (measured, zero errors)
