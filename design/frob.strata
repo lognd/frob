@@ -413,6 +413,7 @@ node security : trusted {
 // frob:ticket T-1340
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:waive AFFECT001 reason="T-1113: mechanical interface= attr population (measured public-surface metadata for the new mandatory SYS104 check), not a behavioral/architectural change -- the cited affects()-closure doc does not describe this node's public surface and has nothing to update here."
+# frob:ticket T-1548
 node gates : trusted {
 
     attr interface=[
@@ -1711,6 +1712,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-1410
 // frob:ticket T-1433
 // frob:ticket T-1267
+# frob:ticket T-1548
 // frob:ticket T-1501
 node testsuite : trusted {
     may "net.connect" via "tests/unit/strata/test_sync_may.py";

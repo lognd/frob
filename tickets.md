@@ -4853,7 +4853,7 @@ diff introduces.
 ```yaml
 id: T-1548
 title: 'Tier-A auto-fix: COV002 changed-symbol-without-edge insertion'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
