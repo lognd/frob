@@ -8439,7 +8439,7 @@ the shape.
 id: T-1535
 title: 'frob check --land-parity: worktree mode evaluating exactly what the land sweep
   will (parity property-tested)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
