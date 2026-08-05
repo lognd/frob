@@ -4584,3 +4584,22 @@ threat: null
 component: null
 ```
 Refiled from T-draft-c79d54fa (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
+
+<!-- ticket:T-1566 -->
+```yaml
+id: T-1566
+title: 'cli regrouping: help-surface rework -- group verbs in frob --help output'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Refiled from T-draft-96951a81 (T-1238 slice, draft-loss class; also cited by T-1238's Done report). Rework the top-level frob --help output to present the T-1238 verb groups instead of the flat 30+ subcommand list.
