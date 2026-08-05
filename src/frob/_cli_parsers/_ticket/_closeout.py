@@ -256,6 +256,16 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "node id no longer resolves; mutually usable alongside positional "
         "node-id ids/--evidence-cmd in the same invocation",
     )
+    # frob:ticket T-1561
+    ticket_evidence_p.add_argument(
+        "--archived",
+        dest="ticket_evidence_archived",
+        action="store_true",
+        help="with --replace, target an ARCHIVED ticket instead of an "
+        "active one -- COV003 scans tickets-archive.md/tickets/archive/** "
+        "too, so a stale evidence binding on an already-archived ticket "
+        "needs this to be reachable at all (T-1561)",
+    )
     ticket_evidence_p.add_argument(
         "--accepts",
         dest="ticket_accepts",

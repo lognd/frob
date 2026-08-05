@@ -297,7 +297,7 @@ def _ticket_dispatch_table() -> dict:
         "requeue": _requeue,
         "sweep": _sweep_cmd,
         "reconcile": _reconcile_cmd,
-        "migrate": lambda root, _cfg: _migrate(root),
+        "migrate": lambda root, cfg: _migrate(root, to=cfg.ticket_migrate_to),
         "renumber": _renumber,
         "land": _land,
         "merge-driver": _merge_driver,

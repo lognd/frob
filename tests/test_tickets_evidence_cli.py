@@ -387,6 +387,10 @@ class TestDoneReportCli:
         # frob:tests tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes  # noqa: E501
         from frob.app.ticket_runner import _done_report
 
+        # T-1553: this asserts the v1 body-embedded report compose path;
+        # pin single mode now that a bare tmp_path defaults to v2.
+        (tmp_path / "tickets.md").write_text("# Tickets\n", encoding="utf-8")
+
         new_cfg = AppConfig(
             ticket_command="new",
             ticket_title="done-report smoke",
@@ -776,6 +780,106 @@ class TestReplaceEvidenceCli:
                 "tests/x.py::does_not_exist",
                 "tests/x.py::test_new",
             ],
+        )
+        with pytest.raises(SystemExit) as exc:
+            _evidence(tmp_path, replace_cfg)
+        assert exc.value.code == 1
+
+    # frob:ticket T-1561
+    def test_cli_replace_archived_reaches_the_archive(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replace_a\
+        # rchived_reaches_the_archive kind="unit"
+        """T-1561: the 2026-08-05 incident this fixes -- COV003 scans
+        `tickets-archive.md`/`tickets/archive/**` too, but `evidence
+        --replace` (no `--archived`) only ever reaches active storage
+        and answers `NotFound` for an already-archived ticket. `--replace
+        OLD NEW --archived` must rebind the id AND leave the ticket
+        archived (never resurrect it into active storage as a
+        side effect)."""
+        from frob.tickets import TicketState, archive, load_active
+        from frob.tickets._store import load_archive, write_ticket
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_old"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="archived replace target",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_old"],
+        )
+        _new(tmp_path, cfg)
+
+        # Force T-0001 straight to DONE (bypassing the transition-guard
+        # workflow -- this test is about --archived reach, not about
+        # legally EARNING a done state) so `archive()` -- mode-agnostic,
+        # works for both v1 and v2 storage -- moves it out of active.
+        ticket = load_active(tmp_path).danger_ok.tickets["T-0001"]
+        assert write_ticket(
+            tmp_path, ticket.model_copy(update={"state": TicketState.DONE})
+        ).is_ok
+        assert archive(tmp_path).danger_ok == 1
+        assert "T-0001" not in load_active(tmp_path).danger_ok.tickets
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_new"}))
+        _patch_passing(monkeypatch)
+        from frob.app.ticket_runner import _evidence
+
+        replace_cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_replace=["tests/x.py::test_old", "tests/x.py::test_new"],
+            ticket_evidence_archived=True,
+        )
+        _evidence(tmp_path, replace_cfg)
+
+        archived = load_archive(tmp_path).danger_ok
+        assert archived["T-0001"].evidence == ("tests/x.py::test_new",)
+        # Never resurrected into active storage as a side effect.
+        assert "T-0001" not in load_active(tmp_path).danger_ok.tickets
+
+    # frob:ticket T-1561
+    def test_cli_replace_without_archived_flag_cannot_reach_an_archived_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replace_w\
+        # ithout_archived_flag_cannot_reach_an_archived_ticket kind="unit"
+        """Control case: the SAME archived ticket, replaced WITHOUT
+        `--archived`, must fail NotFound -- proving the flag is load-
+        bearing, not a no-op."""
+        from frob.tickets import TicketState, archive, load_active
+        from frob.tickets._store import write_ticket
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_old"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="archived replace target 2",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_old"],
+        )
+        _new(tmp_path, cfg)
+        ticket = load_active(tmp_path).danger_ok.tickets["T-0001"]
+        assert write_ticket(
+            tmp_path, ticket.model_copy(update={"state": TicketState.DONE})
+        ).is_ok
+        assert archive(tmp_path).danger_ok == 1
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_new"}))
+        _patch_passing(monkeypatch)
+        from frob.app.ticket_runner import _evidence
+
+        replace_cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_replace=["tests/x.py::test_old", "tests/x.py::test_new"],
         )
         with pytest.raises(SystemExit) as exc:
             _evidence(tmp_path, replace_cfg)

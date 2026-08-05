@@ -562,7 +562,26 @@ def _render_doable_show_blocked(
         _log.info("%s  %s  held: %s", style_ticket_id(t.id, color), t.title, reasons)
 
 
-def _migrate(root: Path) -> None:
+# frob:ticket T-1492
+def _migrate(root: Path, to: str | None = None) -> None:
+    """Run `frob ticket migrate`: with `to="v2"`, delegate to
+    `migrate_v1_to_v2` (T-1259) to migrate a monofile-mode ledger to
+    per-ticket v2 layout; otherwise keep the original collapse-dir-into-
+    monofile behavior (T-1492 wires the `--to v2` flag onto this
+    dispatch)."""
+    if to == "v2":
+        from frob.tickets._store import migrate_v1_to_v2
+
+        v2_result = migrate_v1_to_v2(root)
+        if v2_result.is_err:
+            _log.error("ticket migrate --to v2 failed: %s", v2_result.danger_err)
+            sys.exit(1)
+        v2_n = v2_result.danger_ok
+        if v2_n == 0:
+            _log.info("tickets: already v2-mode (or nothing to migrate)")
+        else:
+            _log.info("migrated %d ticket(s) to v2 layout", v2_n)
+        return
     from frob.tickets import migrate
 
     result = migrate(root)

@@ -213,6 +213,10 @@ class TestSweepWorktreeCollisionIncident:
     ) -> None:
         # frob:tests src/frob/tickets/_new_renumber.py::renumber_one kind="unit"
         _git_init(tmp_path)
+        # T-1553: pin v1/'single' mode -- this test's occurrence count is
+        # specific to the monofile ledger shape (the fresh-repo default
+        # flipped to v2, which would change the reference count).
+        atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
         collided = new_ticket(tmp_path, _spec("Collided ticket"))
         assert collided.is_ok
         old_id = collided.danger_ok.id
@@ -253,6 +257,8 @@ class TestSweepWorktreeCollisionIncident:
 
     def test_dry_run_reports_without_writing(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_new_renumber.py::renumber_one kind="unit"
+        # T-1553: pin v1/'single' mode -- see the sibling test above.
+        atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
         collided = new_ticket(tmp_path, _spec("Collided ticket"))
         old_id = collided.danger_ok.id
         src = tmp_path / "mod.py"
@@ -556,6 +562,9 @@ class TestFinalizeDraftForLandMainFreshCeiling:
         # kind="unit"
         main_root = tmp_path / "main"
         main_root.mkdir()
+        # T-1553: pin v1/'single' mode -- this test reads/writes
+        # tickets.md directly via ledger_path further below.
+        atomic_write(ledger_path(main_root), "# Tickets\n\n")
         first = new_ticket(main_root, _spec("First on main"))
         assert first.is_ok
         assert first.danger_ok.id == "T-0001"
@@ -634,9 +643,13 @@ class TestSpliceOnlyTicketIdTitleMismatchRefusal:
         )
         main_side = tmp_path / "main"
         main_side.mkdir()
+        # T-1553: pin v1/'single' mode -- this test reads the raw
+        # tickets.md text via ledger_path below.
+        atomic_write(ledger_path(main_side), "# Tickets\n\n")
         assert write_all(main_side, {"T-0042": main_ticket}).is_ok
         worktree_side = tmp_path / "worktree"
         worktree_side.mkdir()
+        atomic_write(ledger_path(worktree_side), "# Tickets\n\n")
         assert write_all(worktree_side, {"T-0042": landing_ticket}).is_ok
         main_text = ledger_path(main_side).read_text(encoding="utf-8")
         worktree_text = ledger_path(worktree_side).read_text(encoding="utf-8")
@@ -670,9 +683,13 @@ class TestSpliceOnlyTicketIdTitleMismatchRefusal:
         )
         main_side = tmp_path / "main"
         main_side.mkdir()
+        # T-1553: pin v1/'single' mode -- this test reads the raw
+        # tickets.md text via ledger_path below.
+        atomic_write(ledger_path(main_side), "# Tickets\n\n")
         assert write_all(main_side, {"T-0042": main_ticket}).is_ok
         worktree_side = tmp_path / "worktree"
         worktree_side.mkdir()
+        atomic_write(ledger_path(worktree_side), "# Tickets\n\n")
         assert write_all(worktree_side, {"T-0042": landing_ticket}).is_ok
         main_text = ledger_path(main_side).read_text(encoding="utf-8")
         worktree_text = ledger_path(worktree_side).read_text(encoding="utf-8")

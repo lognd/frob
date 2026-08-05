@@ -52,6 +52,7 @@ from frob.tickets._store import (
     ledger_path,
     load_all,
     load_archive,
+    sanitize_narrative_for_ledger,
     write_all,
     write_archive,
     write_ticket,
@@ -119,8 +120,14 @@ def _next_ticket_id(existing: dict[str, Ticket]) -> str:
 def _ticket_from_spec(
     ticket_id: str, spec: TicketSpec, evidence: tuple[str, ...]
 ) -> Ticket:
-    """Build a fresh QUEUED ticket from `spec`, applying the incident template."""
-    body = spec.body
+    """Build a fresh QUEUED ticket from `spec`, applying the incident
+    template. T-1541: `spec.body` (`ticket new --body-file`) is
+    caller-authored free text spliced directly into the ticket's body --
+    the same marker-lookalike-corruption class T-1536 defused for the
+    Done-report `why` path -- so it is run through
+    `sanitize_narrative_for_ledger` here too, before the incident-template
+    fallback (an empty/whitespace-only body is unaffected either way)."""
+    body = sanitize_narrative_for_ledger(spec.body)
     if spec.kind == TicketKind.INCIDENT and not body.strip():
         body = _INCIDENT_TEMPLATE
     return Ticket(

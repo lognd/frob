@@ -576,7 +576,12 @@ def record_failure(
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
 
-    line = f"- {entry.date.isoformat()} attempt {entry.attempt}: {entry.summary}"
+    # T-1541: `entry.summary` (`ticket fail`) is caller-authored free
+    # text spliced directly into the body's '## Failure log' section --
+    # the same marker-lookalike-corruption class T-1536 defused for the
+    # Done-report `why` path.
+    summary = sanitize_narrative_for_ledger(entry.summary)
+    line = f"- {entry.date.isoformat()} attempt {entry.attempt}: {summary}"
     new_body = _append_to_section(ticket.body, _FAILURE_LOG_HEADING, line)
     updated = ticket.model_copy(update={"body": new_body})
     write_result = write_ticket(root, updated)
@@ -729,7 +734,11 @@ def drop_ticket(
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
 
-    line = f"- {date.today().isoformat()}: {reason.strip()}"
+    # T-1541: `reason` (`ticket drop --reason`/`--reason-file`) is
+    # caller-authored free text spliced directly into the body's
+    # '## Drop reason' section -- the same marker-lookalike-corruption
+    # class T-1536 defused for the Done-report `why` path.
+    line = f"- {date.today().isoformat()}: {sanitize_narrative_for_ledger(reason.strip())}"
     if absorbed_by:
         line += f" (absorbed by {absorbed_by})"
     new_body = _append_to_section(ticket.body, _DROP_REASON_HEADING, line)

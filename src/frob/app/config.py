@@ -453,6 +453,12 @@ class AppConfig(BaseModel):
     #: binding), atomically. Empty (default) means no `--replace` given --
     #: `[]`/2-element `[old, new]` matches `dup_probe`'s own `nargs=2` shape.
     ticket_evidence_replace: list[str] = []
+    # frob:ticket T-1561
+    # `frob ticket evidence <id> --replace OLD NEW --archived`: target an
+    # archived ticket instead of an active one (COV003 scans the archive
+    # too; the store's default single-ticket load/write only ever sees
+    # active storage without this).
+    ticket_evidence_archived: bool = False
     # frob:ticket T-0572
     # frob:ticket T-0749
     # `frob ticket evidence <id> <node-id>... --accepts N [N ...]` /
@@ -483,6 +489,11 @@ class AppConfig(BaseModel):
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
+    # frob:ticket T-1492
+    # `frob ticket migrate --to v2` -- wires migrate_v1_to_v2 (T-1259) onto
+    # the existing `frob ticket migrate` subcommand; None (the default)
+    # keeps today's collapse-dir-into-monofile behavior unchanged.
+    ticket_migrate_to: str | None = None
     # frob:ticket T-0755
     # `frob ticket land <id> --skip-mutation-evidence` -- documented escape
     # hatch: a TEST016 confirmatory-only-evidence finding is logged but does

@@ -65,7 +65,10 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
 
     if cfg.ticket_evidence_replace:
         replace_result = _apply_replace_evidence(
-            root, cfg.ticket_id, cfg.ticket_evidence_replace
+            root,
+            cfg.ticket_id,
+            cfg.ticket_evidence_replace,
+            archived=cfg.ticket_evidence_archived,
         )
         if replace_result.is_err:
             sys.exit(1)
@@ -921,7 +924,9 @@ def _apply_evidence(
 
 # frob:ticket T-1537
 # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replaces_and_commits  # noqa: E501
-def _apply_replace_evidence(root: Path, ticket_id: str, replace_pair: list[str]):  # noqa: ANN201
+def _apply_replace_evidence(
+    root: Path, ticket_id: str, replace_pair: list[str], *, archived: bool = False
+):  # noqa: ANN201
     """CLI wiring for `frob ticket evidence <id> --replace OLD NEW`
     (T-1537): resolves the SAME `python_ids`/`rust_ids`/`passing` oracle
     `_apply_evidence` uses (so a `--replace` target is held to the exact
@@ -929,7 +934,9 @@ def _apply_replace_evidence(root: Path, ticket_id: str, replace_pair: list[str])
     calls `frob.tickets.replace_evidence`, the single-writer path that
     updates the flat evidence list AND every acceptance binding
     atomically. `replace_pair` is the CLI's own `[old, new]` 2-element
-    list (`nargs=2`)."""
+    list (`nargs=2`). `archived` (T-1561, `--archived`) retargets the
+    load/write at archive storage instead of active -- see
+    `replace_evidence`'s own `archived` parameter."""
     from frob.app import ticket_runner as _ticket_runner
     from frob.tickets import normalize_evidence_separator, replace_evidence
 
@@ -950,7 +957,13 @@ def _apply_replace_evidence(root: Path, ticket_id: str, replace_pair: list[str])
     )
 
     result = replace_evidence(
-        root, ticket_id, old_node, new_node, collected_ids, passed=passing
+        root,
+        ticket_id,
+        old_node,
+        new_node,
+        collected_ids,
+        passed=passing,
+        archived=archived,
     )
     if result.is_err:
         _log.error("ticket evidence --replace failed: %s", result.danger_err)

@@ -20,8 +20,16 @@ from frob.tickets import (
     ticket_flow,
 )
 from frob.tickets._models import SprintTransition, SprintVelocityReport
-from frob.tickets._store import _serialize_ticket, write_ticket
+from frob.tickets._store import _serialize_ticket, atomic_write, ledger_path, write_ticket
 from tests.test_tickets_tiers import _ticket
+
+
+def _seed_v1(root: Path) -> None:
+    """T-1553: pin `root` to v1/'single' store mode by seeding an empty
+    `tickets.md` -- this module's `_commit`/`_commit_on` helpers `git add
+    tickets.md` directly, which requires the monofile ledger to exist (the
+    fresh-repo default flipped to v2, which never creates `tickets.md`)."""
+    atomic_write(ledger_path(root), "# Tickets\n\n")
 
 
 def _commit(tmp_path: Path, message: str) -> None:
@@ -126,6 +134,7 @@ class TestSprintVelocity:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
 
         queued = _ticket(
             ticket_id="T-0001", state=TicketState.QUEUED, sprint="sprint-1"
@@ -162,6 +171,7 @@ class TestSprintVelocity:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
 
         ticket = _ticket(
             ticket_id="T-0002", state=TicketState.IN_PROGRESS, sprint="sprint-2"
@@ -311,6 +321,7 @@ class TestSprintVelocityV2Mode:
         v1_root.mkdir()
         subprocess.run(["git", "init", "-q"], cwd=v1_root, check=True)
         subprocess.run(["git", "checkout", "-q", "-b", "main"], cwd=v1_root, check=True)
+        _seed_v1(v1_root)
         queued = _ticket(ticket_id="T-0001", state=TicketState.QUEUED)
         write_ticket(v1_root, queued)
         _commit(v1_root, "queue T-0001")
@@ -361,6 +372,7 @@ class TestTicketFlow:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
 
         the_day = date(2026, 6, 1)
         ticket = _ticket(ticket_id="T-0001", state=TicketState.QUEUED, created=the_day)
@@ -393,6 +405,7 @@ class TestTicketFlow:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
 
         filed_day = date(2026, 6, 1)
         ticket = _ticket(
@@ -438,6 +451,7 @@ class TestTicketFlow:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
 
         # Every ticket was FILED 5 days before `today` (so `today`'s own
         # trailing window sees zero new filings) and LANDED exactly on
@@ -482,6 +496,7 @@ class TestTicketFlow:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
         filed_day = date(2026, 5, 27)
         today = date(2026, 6, 1)
         # two tickets: cycles of 5 and 3 days -> median 4.0
@@ -508,6 +523,7 @@ class TestTicketFlow:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
         open_ticket = _ticket(
             ticket_id="T-0001", state=TicketState.QUEUED, created=date(2026, 5, 27)
         )
@@ -531,6 +547,7 @@ class TestTicketFlow:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
 
         the_day = date(2026, 7, 26)
         ticket = _ticket(ticket_id="T-0001", state=TicketState.QUEUED, created=the_day)
@@ -578,6 +595,7 @@ class TestTicketFlow:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
+        _seed_v1(tmp_path)
 
         filed_day = date(2026, 7, 20)
         done = _ticket(ticket_id="T-0002", state=TicketState.DONE, created=filed_day)

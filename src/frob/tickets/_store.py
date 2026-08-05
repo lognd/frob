@@ -541,28 +541,22 @@ def _store_mode(root: Path) -> str:
     checked FIRST since a v2 tree takes priority over a stray legacy
     `tickets.md`/`tickets/*.md` left behind mid-migration), else 'single' if
     `tickets.md` exists, else 'dir' if only legacy `tickets/*.md` flat files
-    exist, else 'single' (the default for a fresh repo -- new ledgers are
-    compact, not sprawling).
+    exist, else 'v2' (T-1553, design section 7 deliverable 4, final
+    cutover: the fresh-repo default -- a repo with no ledger content at
+    all now starts on the per-ticket v2 layout, not the v1 monofile).
 
-    T-1491 investigated flipping this final `return` to 'v2' (design
-    section 7 deliverable 4) and found the blast radius too large to land
-    safely in one pass: dozens of existing tests across this suite
-    (`TestArchive`, `TestSingleFileLedger`, and siblings in
-    `tests/test_tickets.py` alone -- `test_new_ticket_id_continues_past_
-    archived_max`, `test_id_present_in_both_active_and_archive_collapses_
-    not_refuses`, `test_blocked_by_archived_ticket_resolves_closed`,
-    `test_new_tickets_land_in_single_tickets_md`, `test_write_ticket_
-    never_touches_a_sibling_ticket_bytes`, `test_new_ticket_corrupt_
-    archive_fails_loudly`, measured failing directly against the flip)
-    rely on a bare `tmp_path` fixture implicitly choosing v1/'single' as
-    the default backend, not on an explicit `tickets.md` seed -- the same
-    hazard T-1259's own LEDGERV1001 docstring flagged for one such
-    fixture. Flipping the default is still the right final step, but it
-    is its own dedicated migration effort (updating every v1-assuming
-    fixture to seed an explicit `tickets.md`, or construct via a helper
-    that pins v1 mode), not a two-line change riding along in this
-    ticket. Tracked as a follow-up (see this ticket's Done report) rather
-    than forced through here.
+    T-1491 investigated this exact flip and found the blast radius too
+    large to land safely in the SAME pass as the flip itself: dozens of
+    existing tests across this suite implicitly relied on a bare
+    `tmp_path` fixture choosing v1/'single' as the default backend, not
+    on an explicit `tickets.md` seed. T-1553 is that dedicated migration
+    effort -- every such fixture across `tests/test_tickets.py`,
+    `tests/test_ticket_land.py`, `tests/test_tickets_migration.py`,
+    `tests/test_tickets_collision.py`, and `tests/test_tickets_velocity.py`
+    now seeds `tickets.md` explicitly (directly, via a per-class autouse
+    fixture, or via a `_seed_v1`/`_seed_single_mode` module helper) before
+    exercising v1-specific behavior, so this flip changes only the
+    fresh-repo default, not what any existing test actually verifies.
 
     T-1256: the archive glob is included alongside the active glob so a v2
     repo whose active tree has been fully drained (every ticket done/
@@ -575,7 +569,7 @@ def _store_mode(root: Path) -> str:
         return "single"
     if _dir_glob(root):
         return "dir"
-    return "single"
+    return "v2"
 
 
 # ---------------------------------------------------------------------------
@@ -1656,6 +1650,80 @@ def _post_splice_integrity_check(
         )
         return Err(TicketError.LedgerIntegrityViolation)
     return Ok(None)
+
+
+# frob:ticket T-1561
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_under_ar\
+# chive_dir kind="unit"
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_splices_int\
+# o_archive_file kind="unit"
+def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
+    """Upsert ONE ticket into ARCHIVE storage (T-1561): the archive-side
+    analog of `write_ticket`, which only ever writes to ACTIVE storage.
+
+    Root cause this exists to close: `frob ticket evidence --replace`
+    (and any other single-ticket mutation) loads via `_load_one` ->
+    `load_all`, which reads ONLY the active tree/ledger -- an archived
+    ticket resolves to `NotFound` there even though COV003 still scans
+    `tickets-archive.md`/`tickets/archive/**` for stale evidence bindings
+    on it. The 2026-08-05 incident this fixes: COV003 fired on archived
+    T-1269/T-1495 after their bound tests were renamed, `evidence
+    --replace` answered `NotFound`, and the coordinator worked around it
+    with a raw string swap directly in `tickets-archive.md` -- exactly
+    the hand-edit-the-ledger hazard this whole CLI exists to make
+    unnecessary. `write_archived_ticket` plus `--archived`-aware callers
+    (see `replace_evidence`'s `archived` parameter) give the CLI a real
+    path to repair what the gate polices, instead of a workaround.
+
+    v2 mode: identical shape to `write_ticket`'s v2 branch, just under
+    `v2_archive_dir` instead of `v2_ticket_path`, still under the
+    per-ticket `ticket_lock` (never the archive's own bulk `ledger_lock`
+    -- writing one archived ticket must not block a concurrent archive of
+    a DIFFERENT ticket). Single mode: the archive-side analog of
+    `_write_ticket_single_mode` -- splices `ticket`'s own marker block
+    into `tickets-archive.md`'s raw text (`_splice_ticket_section`) and
+    refuses (`Err(LedgerIntegrityViolation)`) unless the result re-parses
+    cleanly with no id lost, the SAME T-1536 post-splice integrity
+    posture `write_ticket` already holds for the active ledger. `dir`
+    mode has no archive concept of its own (legacy dir-mode repos have
+    always used `archive()`'s wholesale `write_archive` instead) -- this
+    function refuses with `Err(NotFound)` rather than silently writing
+    somewhere a dir-mode repo would never look."""
+    mode = _store_mode(root)
+    if mode == "v2":
+        with ticket_lock(root, ticket.id):
+            return atomic_write(
+                v2_archive_dir(root, ticket.id) / "ticket.md",
+                _serialize_ticket(ticket),
+            )
+    if mode != "single":
+        _log.error(
+            "tickets: write_archived_ticket refused -- %s mode has no "
+            "single-ticket archive write path (T-1561)",
+            mode,
+        )
+        return Err(TicketError.NotFound)
+    with ledger_lock(root):
+        path = archive_path(root)
+        if not path.exists():
+            fresh = _splice_ticket_section(_ARCHIVE_HEADER, ticket)
+            integrity = _post_splice_integrity_check(frozenset(), ticket.id, fresh)
+            if integrity.is_err:
+                return Err(integrity.danger_err)
+            return atomic_write(path, fresh)
+        text = path.read_text(encoding="utf-8")
+        parsed = _parse_ledger(text)
+        if parsed.is_err:
+            return Err(parsed.danger_err)
+        before_ids = frozenset(parsed.danger_ok)
+        spliced = _splice_ticket_section(text, ticket)
+        integrity = _post_splice_integrity_check(before_ids, ticket.id, spliced)
+        if integrity.is_err:
+            return Err(integrity.danger_err)
+        return atomic_write(path, spliced)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals

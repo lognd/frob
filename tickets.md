@@ -3742,7 +3742,7 @@ grammar-generation delta documentation).
 ```yaml
 id: T-1492
 title: 'ledger v2: wire migrate --to v2 CLI flag onto migrate_v1_to_v2'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-03'
@@ -3758,17 +3758,65 @@ scope:
 - src/frob/app/ticket_runner/__init__.py
 - docs/modules/cli.md
 - tests/test_tickets_migration.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/config.py
+  reason: migrate --to v2 flag needs an AppConfig field (ticket_migrate_to) plus its
+    _config_external whitelist entry, same pattern as every other ticket_* dest; CLI
+    parser alone cannot carry the value through to the runner
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: migrate --to v2 flag needs an AppConfig field (ticket_migrate_to) plus its
+    _config_external whitelist entry, same pattern as every other ticket_* dest; CLI
+    parser alone cannot carry the value through to the runner
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_to_v2_flag_calls_migrate_v1_to_v2
+- tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_without_to_keeps_dir_collapse_behavior
 acceptance:
 - text: GIVEN a monofile-mode repo WHEN frob ticket migrate --to v2 runs THEN it calls
     migrate_v1_to_v2 (T-1259) and reports the migrated count, leaving --to omitted
     behavior (collapse dir into monofile) unchanged
-  evidence: []
+  evidence:
+  - tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_to_v2_flag_calls_migrate_v1_to_v2
+  - tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_without_to_keeps_dir_collapse_behavior
 threat: null
 component: null
 ```
 found while working T-1259: migrate_v1_to_v2 (src/frob/tickets/_store.py) is implemented and golden-round-trip tested, but T-1259's own scope does not cover the CLI parser (_cli_parsers/_ticket/_progress.py) or the ticket_runner dispatch (app/ticket_runner/_query.py, __init__.py) needed to actually expose --to v2 on the existing frob ticket migrate subcommand. This ticket wires that flag.
+
+## Done report
+
+Wired `frob ticket migrate --to v2` onto migrate_v1_to_v2 (T-1259). Added
+AppConfig.ticket_migrate_to (str | None), whitelisted it in
+_config_external.py's _STRING_FIELDS, added the `--to` argparse flag
+(choices=["v2"]) to the ticket-migrate subparser, and updated
+ticket_runner._migrate to dispatch to migrate_v1_to_v2 when to="v2" while
+leaving the default (--to omitted) collapse-dir-into-monofile path
+unchanged. Documented the flag in docs/modules/cli.md. Two new tests
+cover both branches via ticket_runner.run(cfg) end to end.
+
+### Changed
+```
+ tickets.md | 27 ++++++++++++++++++++++++---
+ 1 file changed, 24 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_to_v2_flag_calls_migrate_v1_to_v2` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_without_to_keeps_dir_collapse_behavior` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 334 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1503 -->
 ```yaml
@@ -4445,7 +4493,7 @@ PERF012 fires from src/frob/perf but docs/design/registry/check-coverage.yaml ha
 ```yaml
 id: T-1541
 title: audit non-done-report free-text ledger entry points for marker-lookalike corruption
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -4455,8 +4503,35 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/**
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: new behavior (sanitize_narrative_for_ledger wired onto new_ticket/drop_ticket/record_failure)
+    needs marker-lookalike-corruption regression tests; ticket's own acceptance requires
+    tests proving no free-text write path can corrupt the ledger
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_tickets_acceptance.py
+  reason: new behavior (sanitize_narrative_for_ledger wired onto new_ticket/drop_ticket/record_failure)
+    needs marker-lookalike-corruption regression tests; ticket's own acceptance requires
+    tests proving no free-text write path can corrupt the ledger
+  actor: logan
+  at: '2026-08-05'
+- op: remove
+  glob: tests/test_tickets_acceptance.py
+  reason: amend_acceptance/remove_acceptance route reason/text into structured frontmatter
+    fields (YAML-escaped, never raw body prose) -- confirmed safe by design, no test
+    needed
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_tickets.py::TestNewTicket::test_marker_lookalike_body_line_is_defused
+- tests/test_tickets.py::TestFailureLog::test_marker_lookalike_summary_line_is_defused
+- tests/test_tickets.py::TestDropTicket::test_marker_lookalike_reason_line_is_defused
 threat: null
 component: null
 ```
@@ -4472,6 +4547,73 @@ done-report path per the incident this ticket root-caused). Audit each
 of those write paths for the same vulnerability and apply sanitize_
 narrative_for_ledger (or an equivalent) wherever caller-authored free
 text is spliced into ticket.body before a single-mode ledger write.
+
+## Done report
+
+Audited every non-done-report free-text ledger entry point named in this
+ticket for the T-1536 marker-lookalike-corruption class. Found and fixed
+three vulnerable body-splice paths, all now routed through
+sanitize_narrative_for_ledger:
+
+- new_ticket (ticket new --body-file): _ticket_from_spec sanitizes
+  spec.body before it becomes ticket.body.
+- drop_ticket (ticket drop --reason/--reason-file): the appended
+  "## Drop reason" line now sanitizes reason before splicing.
+- record_failure (ticket fail): the appended "## Failure log" line now
+  sanitizes entry.summary before splicing.
+
+Audited and confirmed SAFE (no fix needed): ticket new --acceptance-file
+(AcceptanceCriterion.text), scope --reason-file (ScopeChangeEntry.reason),
+accept --reason (AcceptanceAmendmentEntry.reason/new_text), review
+--findings-file (ReviewEntry.findings) -- all four route through
+structured Pydantic frontmatter fields, never raw body prose. yaml.safe_dump
+always either prefixes a marker-lookalike line with its own "key: " text
+or indents it under a multi-line block scalar, so it can never round-trip
+as a literal `^<!-- ticket:T-#### -->` line matching _LEDGER_MARKER_RE --
+verified empirically (a bare "<!-- ticket:T-0001 -->" string value dumps
+as "reason: <!-- ticket:T-0001 -->", not a standalone matching line).
+
+_land_finalize.py/_land_verify.py also write ticket.body directly, but
+only via programmatic id-rewrite/claims-block substitution on EXISTING
+body text (renumber_one's reference rewrite, land's captured-claims
+recap) -- neither ingests new caller-authored free text, so neither is
+in this vulnerability class.
+
+Added a marker-lookalike regression test for each of the three fixed
+paths (new_ticket, drop_ticket, record_failure), each proving a
+lookalike line survives as legible text but never as a real
+_LEDGER_MARKER_RE match, and that the ticket round-trips through
+load_queue afterward with no phantom ticket id.
+
+### Changed
+```
+ docs/design/ledger-v2.md                   |  21 ++--
+ docs/modules/cli.md                        |  12 +++
+ docs/modules/tickets.md                    |  18 +++-
+ src/frob/_cli_parsers/_ticket/_progress.py |   9 ++
+ src/frob/app/_config_external.py           |   2 +
+ src/frob/app/config.py                     |   5 +
+ src/frob/app/ticket_runner/__init__.py     |   2 +-
+ src/frob/app/ticket_runner/_query.py       |  21 +++-
+ src/frob/tickets/_store.py                 |  40 +++----
+ tests/test_ticket_land.py                  |  32 ++++++
+ tests/test_tickets.py                      |  22 ++++
+ tests/test_tickets_collision.py            |  17 +++
+ tests/test_tickets_migration.py            |  63 ++++++++++-
+ tests/test_tickets_velocity.py             |  20 +++-
+ tickets.md                                 | 161 ++++++++++++++++++++++++++++-
+ 15 files changed, 402 insertions(+), 43 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestNewTicket::test_marker_lookalike_body_line_is_defused` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestFailureLog::test_marker_lookalike_summary_line_is_defused` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_marker_lookalike_reason_line_is_defused` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 1051 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1542 -->
 ```yaml
@@ -4754,7 +4896,7 @@ precondition) to actually run the migration against this repo's real
 ```yaml
 id: T-1553
 title: 'ledger v2: flip fresh-repo default to v2 (safe, test-fixture-audited)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -4769,8 +4911,31 @@ scope:
 - tests/test_tickets_migration.py
 - tests/test_tickets_collision.py
 - tests/test_tickets_velocity.py
+- docs/design/ledger-v2.md
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: ticket's own plan item 4 requires recording the v1->v2 fresh-repo-default
+    flip as landed in both design docs
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: ticket's own plan item 4 requires recording the v1->v2 fresh-repo-default
+    flip as landed in both design docs
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses
+- tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed
+- tests/test_tickets.py::TestArchive::test_new_ticket_id_continues_past_archived_max
+- tests/test_tickets.py::TestArchive::test_new_ticket_corrupt_archive_fails_loudly
+- tests/test_tickets.py::TestSingleFileLedger::test_new_tickets_land_in_single_tickets_md
+- tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes
+- tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v1_v2_parity_for_equivalent_history
 threat: null
 component: null
 ```
@@ -4820,6 +4985,62 @@ affected the same way, unmeasured here.
       default THEN every previously-passing test still passes (v1-path
       tests updated to seed `tickets.md` explicitly, not broken by the
       flip).
+
+## Done report
+
+Flipped _store_mode's fresh-repo default fallback from "single" to "v2"
+(ledger v2 design section 7, final cutover). Audited every v1-assuming
+test fixture across tests/test_tickets.py, tests/test_ticket_land.py,
+tests/test_tickets_migration.py, tests/test_tickets_collision.py, and
+tests/test_tickets_velocity.py and pinned each to v1/'single' mode
+explicitly (an empty tickets.md header seeded before the v1-specific
+behavior under test), using a per-test seed call, a per-class autouse
+fixture (test_ticket_land.py, scoped to the 7 classes whose tests
+directly exercise splice_ledger/monofile-only logic), or a module helper
+(_seed_v1_fixture in test_tickets_migration.py, _seed_v1 in
+test_tickets_velocity.py). None of the fixes weaken any assertion --
+each pins the SAME v1 behavior the test always exercised, just no longer
+riding on the fresh-repo default by accident.
+
+Updated docs/design/ledger-v2.md section 7 deliverable 4 and
+docs/modules/tickets.md's "Migration to v2" / "v2 backend" sections to
+record the cutover as landed. Left the monofile-mode code path
+(_render_ledger, splice_ledger, _land_merge.py, _land_merge_zones.py)
+and .gitattributes' merge-driver line in place -- deleting those still
+needs a separate follow-up ticket since existing v1 repos still route
+through frob ticket migrate --to v2, not scoped here.
+
+Full targeted run: tests/test_tickets.py, tests/test_ticket_land.py,
+tests/test_tickets_migration.py, tests/test_tickets_collision.py,
+tests/test_tickets_velocity.py -- all pass together (300+ tests, no
+regressions against the pre-flip baseline).
+
+### Changed
+```
+ docs/modules/cli.md                        | 12 +++++
+ src/frob/_cli_parsers/_ticket/_progress.py |  9 ++++
+ src/frob/app/_config_external.py           |  2 +
+ src/frob/app/config.py                     |  5 ++
+ src/frob/app/ticket_runner/__init__.py     |  2 +-
+ src/frob/app/ticket_runner/_query.py       | 21 +++++++-
+ tests/test_tickets_migration.py            | 56 ++++++++++++++++++++++
+ tickets.md                                 | 77 ++++++++++++++++++++++++++++--
+ 8 files changed, 178 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestArchive::test_new_ticket_id_continues_past_archived_max` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestArchive::test_new_ticket_corrupt_archive_fails_loudly` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestSingleFileLedger::test_new_tickets_land_in_single_tickets_md` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v1_v2_parity_for_equivalent_history` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 1178 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1554 -->
 ```yaml
@@ -5154,7 +5375,7 @@ Changed:
 id: T-1561
 title: 'evidence ops cannot reach archived tickets while COV003 still scans them:
   add --archived reach or an unarchive verb'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -5162,17 +5383,205 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/tickets/_store.py
+- src/frob/tickets/_evidence.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- src/frob/app/ticket_runner/_verify.py
+- tests/unit/test_ticket_store.py
+- tests/test_tickets_evidence_cli.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_tickets_evidence_cli.py
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/commands/ticket.md
+  reason: 'evidence --replace --archived: write_archived_ticket in _store.py (per-ticket
+    archive write), replace_evidence archived= param in _evidence.py, --archived CLI
+    flag in _closeout.py, AppConfig field + whitelist, runner wiring in _verify.py,
+    regression tests + docs'
+  actor: logan
+  at: '2026-08-05'
+- op: remove
+  glob: docs/commands/ticket.md
+  reason: docs/commands/ticket.md does not exist in this repo; docs/modules/tickets.md
+    already carries the full evidence --replace/--archived writeup
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_mode_writes_under_archive_dir
+- tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_single_mode_splices_into_archive_file
+- tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_single_mode_preserves_sibling_archived_ticket
+- tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_archived_reaches_the_archive
+- tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_without_archived_flag_cannot_reach_an_archived_ticket
 acceptance:
 - text: GIVEN an archived ticket whose bound evidence id goes stale (test renamed)
     THEN a frob CLI path exists to rebind it (evidence --replace --archived, or ticket
     unarchive) -- the gate never polices records the CLI cannot repair
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_mode_writes_under_archive_dir
+  - tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_single_mode_splices_into_archive_file
+  - tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_single_mode_preserves_sibling_archived_ticket
+  - tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_archived_reaches_the_archive
+  - tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_without_archived_flag_cannot_reach_an_archived_ticket
 threat: null
 component: null
 ```
 2026-08-05: COV003 fired on archived T-1269/T-1495 after their bound tests were renamed by wave-4 unwind-semantics work; frob ticket evidence --replace answered NotFound because the store only reads tickets.md. Gate scans the archive, repair tooling does not reach it -- catalogued-is-not-enforced inverse: enforced-but-not-repairable. Coordinator worked around with an exact-string swap in tickets-archive.md.
+
+## Done report
+
+Added `--archived` reach to `frob ticket evidence <id> --replace OLD NEW`
+(2026-08-05 incident: COV003 fired on archived T-1269/T-1495 after their
+bound tests were renamed; evidence --replace answered NotFound because
+the store only reads active tickets.md/v2 active dirs; the coordinator
+worked around it with a raw string swap directly in
+tickets-archive.md).
+
+Root cause: `_load_one` (via `load_all`) and `write_ticket` both only
+ever see ACTIVE storage. Added `write_archived_ticket` (src/frob/tickets/
+_store.py) -- the archive-side analog of write_ticket: v2 mode writes
+under tickets/archive/T-####/ticket.md via the per-ticket ticket_lock;
+single mode splices into tickets-archive.md's raw text under the same
+T-1536 post-splice integrity check write_ticket already holds for the
+active ledger, so a repair can never itself corrupt a sibling archived
+ticket.
+
+Wired `archived: bool = False` through replace_evidence/
+_prepare_replace_evidence (src/frob/tickets/_evidence.py): archived=True
+loads via load_archive instead of _load_one, and writes back via
+write_archived_ticket instead of write_ticket -- so a repair lands in
+the archive, never resurrecting the ticket into active storage as a
+side effect. Added the --archived CLI flag (parser + AppConfig field +
+_config_external.py whitelist + _verify.py dispatch wiring).
+
+Evidence: 3 direct write_archived_ticket unit tests (v2 mode, single
+mode, sibling-preservation in single mode) plus 2 CLI-level tests
+(archived reach works and rebinds without resurrecting; the same
+scenario WITHOUT --archived still fails NotFound, proving the flag is
+load-bearing).
+
+Out-of-scope discoveries (both T-1553 fallout found while running this
+ticket's own targeted tests, unrelated to this ticket's own changes):
+11 tests across tests/unit/test_ticket_store.py and
+tests/test_tickets_evidence_cli.py asserted v1-mode behavior against a
+bare (now v2-default) tmp_path. Fixed by the coordinator in this same
+worktree before landing (module-level autouse v1 pin, the T-1553
+fixture pattern; fresh-repo default test renamed to assert the v2
+contract) -- no follow-up ticket remains open for this.
+
+### Changed
+```
+ docs/design/ledger-v2.md                   |  21 +-
+ docs/modules/cli.md                        |  12 +
+ docs/modules/tickets.md                    |  54 +++-
+ src/frob/_cli_parsers/_ticket/_closeout.py |  10 +
+ src/frob/_cli_parsers/_ticket/_progress.py |   9 +
+ src/frob/app/_config_external.py           |   4 +
+ src/frob/app/config.py                     |  11 +
+ src/frob/app/ticket_runner/__init__.py     |   2 +-
+ src/frob/app/ticket_runner/_query.py       |  21 +-
+ src/frob/app/ticket_runner/_verify.py      |  21 +-
+ src/frob/tickets/_evidence.py              |  61 +++-
+ src/frob/tickets/_new_renumber.py          |  11 +-
+ src/frob/tickets/_reporting.py             |  13 +-
+ src/frob/tickets/_store.py                 | 114 +++++--
+ tests/test_ticket_land.py                  |  32 ++
+ tests/test_tickets.py                      | 104 ++++++
+ tests/test_tickets_collision.py            |  17 +
+ tests/test_tickets_evidence_cli.py         | 104 ++++++
+ tests/test_tickets_migration.py            |  63 +++-
+ tests/test_tickets_velocity.py             |  20 +-
+ tests/unit/test_ticket_store.py            | 114 ++++++-
+ tickets.md                                 | 495 ++++++++++++++++++++++++++++-
+ 22 files changed, 1245 insertions(+), 68 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_mode_writes_under_archive_dir` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_single_mode_splices_into_archive_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_single_mode_preserves_sibling_archived_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_archived_reaches_the_archive` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_without_archived_flag_cannot_reach_an_archived_ticket` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 610 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1562 -->
 ```yaml
@@ -5399,3 +5808,91 @@ threat: null
 component: null
 ```
 Refiled from worktree draft T-draft-a385ed9f (T-1526 follow-up; drafts cannot be cited by reports that must survive a land preview). make coverage-fast BASE=<ref> was honored by the old shell recipe but frob coverage currently hardcodes the touched-set base; add a --base flag and pass BASE through the Makefile wrapper.
+
+<!-- ticket:T-1573 -->
+```yaml
+id: T-1573
+title: test_tickets_evidence_cli.py TestDoneReportCli assumes v1 body-embedded Done
+  report, broken by T-1553's v2 default flip
+state: dropped
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_tickets_evidence_cli.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+found while working T-1561: tests/test_tickets_evidence_cli.py::TestDoneReportCli::test_cli_composes_and_writes
+constructs a fresh ticket via a bare tmp_path (now v2-mode by T-1553's
+default flip) and asserts "## Done report" appears in ticket.body after
+`frob ticket done-report` -- but v2 mode splits the Done report out into
+its own tickets/T-####/done-report.md file (migrate_v1_to_v2/set_done_report,
+T-1259/T-1536), so ticket.body never contains it there. This is real,
+reproducible breakage (confirmed failing on main at T-1553's tip,
+unrelated to T-1541/T-1561's own changes) -- T-1553's own audit pass
+missed this file. Either seed tickets.md explicitly (pin v1, matching
+T-1553's own fix pattern elsewhere) or update the assertion to read the
+v2-mode done-report.md path when in v2 mode.
+
+## Drop reason
+- 2026-08-05: moot: coordinator fixed the 11 v1-assuming tests in this worktree before landing
+
+<!-- ticket:T-1574 -->
+```yaml
+id: T-1574
+title: tests/unit/test_ticket_store.py has 10 tests broken by T-1553's v1-to-v2 fresh-repo
+  default flip (file not in T-1553's audited scope)
+state: dropped
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/test_ticket_store.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+found while working T-1561: tests/unit/test_ticket_store.py was NOT in
+T-1553's declared scope (test_tickets.py, test_ticket_land.py,
+test_tickets_migration.py, test_tickets_collision.py,
+test_tickets_velocity.py only) and was missed by that audit. 10 tests
+fail against current main (confirmed via `pytest tests/unit/test_ticket_store.py
+-q`, reproducible, unrelated to T-1541/T-1561's own changes):
+
+TestStoreMode::test_fresh_repo_defaults_to_single (asserts the OLD
+default directly -- needs updating to assert v2, or moving to a
+dedicated "pinned v1" fixture if the v1 case still needs its own
+coverage)
+TestWriteTicket::test_marker_lookalike_body_line_refuses_write
+TestArchiveLedger::test_write_then_load_archive_round_trips
+TestLoadArchiveCache::test_reparses_when_archive_content_changes
+TestLoadArchiveCache::test_skips_reparse_when_content_hash_unchanged
+TestSetDoneReport::test_caller_never_touches_markdown
+TestSetDoneReport::test_second_call_replaces_first_report
+TestSetDoneReport::test_composes_and_writes_atomically
+TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty
+TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence
+
+Most fail because a bare tmp_path now defaults to v2 mode, and v2 mode
+splits Done reports into their own done-report.md (never embedded in
+ticket.body) -- the same root cause as T-1573 (filed
+separately for tests/test_tickets_evidence_cli.py, a different file).
+Fix: audit each test, pin v1/'single' mode explicitly (seed an empty
+tickets.md, matching T-1553's own fix pattern) where the test is
+genuinely about v1-specific behavior, or update the assertion to the
+v2-appropriate location/expectation where it is not.
+
+## Drop reason
+- 2026-08-05: moot: coordinator fixed the 11 v1-assuming tests in this worktree before landing

@@ -152,8 +152,13 @@ def _seed_v1_fixture(root: Path) -> dict[str, Ticket]:
     with blocked_by, a ticket with attachments, an archived ticket, and a
     draft-id ticket. Returns the id -> Ticket map as constructed, for the
     caller's own semantic-equality comparison."""
-    from frob.tickets._store import write_all, write_archive
+    from frob.tickets._store import atomic_write, ledger_path, write_all, write_archive
 
+    # T-1553: the fresh-repo default flipped to v2 -- pin v1/'single' mode
+    # explicitly (an unseeded root would now write these fixture tickets
+    # straight into v2 layout, defeating this migrator fixture's whole
+    # point).
+    assert atomic_write(ledger_path(root), "# Tickets\n\n").is_ok
     active = {t.id: t for t in (_done_ticket(), _queued_ticket(), _draft_ticket())}
     assert write_all(root, active).is_ok
     archived = {_archived_ticket().id: _archived_ticket()}
@@ -295,6 +300,62 @@ class TestMigrateV1ToV2:
             else:
                 assert after_report is not None
                 assert before_why in after_report
+
+
+class TestMigrateCliToV2Flag:
+    """T-1492: `frob ticket migrate --to v2` wires onto `migrate_v1_to_v2`
+    via `AppConfig.ticket_migrate_to`/`ticket_runner._migrate`, and `--to`
+    omitted keeps the original collapse-dir-into-monofile behavior."""
+
+    def test_migrate_to_v2_flag_calls_migrate_v1_to_v2(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_migration.py::TestMigrateCliToV2Flag.test_migrate_to_v2_fl\
+        # ag_calls_migrate_v1_to_v2 kind="unit"
+        import logging
+
+        from frob.app import ticket_runner
+        from frob.app.config import AppConfig
+
+        _git_init(tmp_path)
+        _seed_v1_fixture(tmp_path)
+        assert _store_mode(tmp_path) == "single"
+
+        cfg = AppConfig(
+            ticket_command="migrate", ticket_path=tmp_path, ticket_migrate_to="v2"
+        )
+        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+            ticket_runner.run(cfg)
+
+        assert _store_mode(tmp_path) == "v2"
+        assert (v2_ticket_dir(tmp_path, "T-0001") / "ticket.md").is_file()
+        # Original monofiles are left in place (migrate_v1_to_v2 is
+        # reversible, never deletes the v1 ledgers itself).
+        assert ledger_path(tmp_path).exists()
+
+    def test_migrate_without_to_keeps_dir_collapse_behavior(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_migration.py::TestMigrateCliToV2Flag.test_migrate_without_\
+        # to_keeps_dir_collapse_behavior kind="unit"
+        import logging
+
+        from frob.app import ticket_runner
+        from frob.app.config import AppConfig
+
+        _git_init(tmp_path)
+        (tmp_path / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+
+        cfg = AppConfig(ticket_command="migrate", ticket_path=tmp_path)
+        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+            ticket_runner.run(cfg)
+
+        assert "no legacy tickets/*.md files to migrate" in "\n".join(
+            r.getMessage() for r in caplog.records if r.name == "frob.app.ticket_runner"
+        )
+        assert _store_mode(tmp_path) == "single"
 
 
 class TestLedgerV1DeprecationGate:

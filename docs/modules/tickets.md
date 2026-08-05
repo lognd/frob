@@ -2275,6 +2275,42 @@ detecting a bound-evidence reference and offering the `--replace` rebind
 automatically is a separate, not-yet-built ticket -- this ships the CLI
 primitive that follow-up would call, not the detection.
 
+### `--archived` (T-1561)
+
+<!-- frob:describes src/frob/tickets/_store.py::write_archived_ticket -->
+
+`--replace`'s load/write path (`_load_one`/`write_ticket`) only ever
+sees ACTIVE storage -- an already-archived ticket resolves to
+`Err(NotFound)`, even though COV003 still scans `tickets-archive.md`/
+`tickets/archive/**` for stale evidence bindings on it. This is the
+2026-08-05 incident T-1561 closes: COV003 fired on archived T-1269/
+T-1495 after their bound tests were renamed by wave-4 unwind-semantics
+work, `evidence --replace` answered `NotFound`, and the coordinator
+worked around it with a raw string swap directly in
+`tickets-archive.md` -- exactly the hand-edit-the-ledger hazard the
+`frob ticket` CLI exists to make unnecessary.
+
+`frob ticket evidence <id> --replace OLD NEW --archived` retargets both
+halves at archive storage: `ticket_id` is loaded via `load_archive`
+instead of `_load_one`, and the rebound ticket is written back via
+`write_archived_ticket` (the archive-side analog of `write_ticket`)
+instead of `write_ticket` -- so the repair lands in the archive, never
+resurrecting the ticket into active storage as a side effect.
+`write_archived_ticket` mirrors `write_ticket`'s own per-mode shape: v2
+mode writes under `tickets/archive/T-####/ticket.md` via the per-ticket
+`ticket_lock`; single mode splices into `tickets-archive.md`'s raw text
+(`_splice_ticket_section`) under the SAME T-1536 post-splice integrity
+check (`_post_splice_integrity_check`) `write_ticket` already holds for
+the active ledger, so a repair can never itself corrupt a sibling
+archived ticket.
+
+```python
+# frob/tickets/_store.py
+def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]
+    # Upsert ONE ticket into ARCHIVE storage -- the archive-side analog
+    # of write_ticket, which only ever writes to ACTIVE storage.
+```
+
 ## Merge queue (T-1345, first portion)
 
 <!-- frob:describes src/frob/tickets/_land_queue.py::QueueEntry -->
@@ -3041,6 +3077,15 @@ over to v2 by this landing (an active multi-agent drive is in
 progress); the coordinator flips it in a quiet window per this ticket's
 Done report.
 
+**Fresh-repo default cutover (T-1553, LANDED):** `_store_mode`'s final
+fallback now returns `"v2"`, not `"single"` -- a repo with NO ledger
+content at all (no `tickets.md`, no legacy `tickets/*.md`, no
+`tickets/T-####/`) starts on v2 layout from its very first `new_ticket`
+call. This does not affect any EXISTING v1-mode repo (a real
+`tickets.md` on disk still reads as `"single"`, per the mode-detection
+order above) -- only the fresh-repo case changes. `frob ticket migrate
+--to v2` remains the path for an existing v1 repo to opt in.
+
 ### v2 backend (T-1254, docs/design/ledger-v2.md section 1)
 
 A THIRD backend alongside `single`/`dir`: one directory per ticket,
@@ -3049,10 +3094,11 @@ A THIRD backend alongside `single`/`dir`: one directory per ticket,
 legacy dir mode) plus a `done-report.md` split OUT of the body, plus a
 self-contained `attachments/` directory. `_store_mode` detects it FIRST
 (any `tickets/T-*/ticket.md` present) so it takes priority over a stray
-`tickets.md`/legacy `tickets/*.md` left behind mid-migration; v1 (single
-mode) is still every fresh repo's default until a separate migration
-ticket flips it -- this backend is additive, not a replacement, in this
-ticket's scope.
+`tickets.md`/legacy `tickets/*.md` left behind mid-migration. At the
+time this backend was added it was additive only, not yet the
+fresh-repo default -- T-1553 later flipped that default to v2 (see the
+"Fresh-repo default cutover" note above); an EXISTING v1-mode repo is
+unaffected either way, since `ledger_path(root).exists()` still wins.
 
 `write_ticket`'s v2 branch takes the per-ticket `ticket_lock` (not the
 whole-ledger `ledger_lock`) so two callers writing DIFFERENT ticket ids

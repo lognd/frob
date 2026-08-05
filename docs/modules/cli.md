@@ -188,6 +188,18 @@ pipelines, `exports` powers the `exports` gate stage, `gitlog` powers
 `frob stats`/changelog generation, and `serve` (MCP) is valuable for
 no-shell contexts even though it goes unused when an agent has a shell.
 
+## `frob ticket migrate --to v2` (T-1492)
+
+`frob ticket migrate` collapses legacy `tickets/*.md` into a single
+`tickets.md` ledger by default (unchanged). Passing `--to v2` instead
+dispatches to `migrate_v1_to_v2` (`src/frob/tickets/_store.py`, T-1259):
+a one-shot, reversible migrator that writes a monofile-mode ledger's
+tickets into per-ticket `tickets/T-####/ticket.md` (+ `done-report.md`,
++ moved attachments) WITHOUT deleting `tickets.md`/`tickets-archive.md`
+in the same call. See `docs/design/ledger-v2.md` section 7 for the full
+migration design and `docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7`
+for the storage-internals writeup.
+
 ## Generated command reference (T-1011)
 
 <!-- frob:invariant INV-045 -->

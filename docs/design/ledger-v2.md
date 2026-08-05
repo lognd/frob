@@ -416,13 +416,20 @@ must deliver; it does not implement any of it.
    `dict[str, str]` of done-report bodies. This is the reversibility
    guarantee: nothing is lossy in either direction for the length of the
    compatibility window.
-4. **Cutover**: after the compatibility window, `frob ticket migrate --to
-   v2` becomes the DEFAULT for a fresh repo (mirrors today's "fresh repo
-   -> single" default in `_store_mode`), the monofile-mode code path
-   (`_render_ledger`, `splice_ledger`, `_land_merge.py`,
-   `_land_merge_zones.py`) is deleted (a follow-up ticket, not silently
-   folded into the migrator ticket), and `.gitattributes`' merge-driver
-   line is removed.
+4. **Cutover (T-1553, LANDED)**: `_store_mode`'s fresh-repo default is
+   now `"v2"` -- a repo with no `tickets.md`/`tickets/*.md`/
+   `tickets/T-####/` content at all chooses v2 mode, not v1. T-1553
+   audited every v1-assuming test fixture across `tests/test_tickets.py`,
+   `tests/test_ticket_land.py`, `tests/test_tickets_migration.py`,
+   `tests/test_tickets_collision.py`, and `tests/test_tickets_velocity.py`
+   and pinned each to v1/'single' mode explicitly (seeding an empty
+   `tickets.md` before exercising v1-specific behavior) so the flip
+   changed only the default, not what those tests actually verify. The
+   monofile-mode code path (`_render_ledger`, `splice_ledger`,
+   `_land_merge.py`, `_land_merge_zones.py`) is NOT yet deleted -- that
+   removal, plus dropping `.gitattributes`' merge-driver line, remains a
+   separate follow-up ticket (existing repos still on v1 need the
+   monofile path to keep working through `frob ticket migrate --to v2`).
 5. **Rollback**: because step 2 keeps the monofiles as an inert snapshot
    through the whole compatibility window, rollback at any point before
    final cutover is `git rm -r tickets/` (the v2 tree) plus restoring

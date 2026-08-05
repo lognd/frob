@@ -84,6 +84,8 @@ _STRING_FIELDS = (
     "ticket_caption",
     "ticket_old_id",
     "ticket_new_id",
+    # frob:ticket T-1492
+    "ticket_migrate_to",
     "ticket_evidence_cmd",
     "ticket_review_verdict",
     "ticket_reviewer",
@@ -327,6 +329,8 @@ _BOOL_FLAGS = (
     # frob:ticket T-1150
     "sys_check",
     "ticket_dry_run",
+    # frob:ticket T-1561
+    "ticket_evidence_archived",
     # frob:ticket T-1381
     "release_allow_unbumped",
     "ticket_skip_mutation_evidence",

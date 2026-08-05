@@ -125,6 +125,15 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
     ticket_migrate_p = ticket_sub.add_parser(
         "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
     )
+    ticket_migrate_p.add_argument(
+        "--to",
+        dest="ticket_migrate_to",
+        default=None,
+        choices=["v2"],
+        help="migrate a monofile-mode ledger to per-ticket v2 layout "
+        "(migrate_v1_to_v2, T-1259); omit to keep today's "
+        "collapse-dir-into-monofile behavior",
+    )
     ticket_renumber_p = _add_ticket_renumber_parser(ticket_sub)
     ticket_land_p = _add_ticket_land_parser(ticket_sub)
     ticket_merge_driver_p = _add_ticket_merge_driver_parser(ticket_sub)

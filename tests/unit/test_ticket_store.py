@@ -74,6 +74,37 @@ def _ticket(ticket_id: str = "T-0001", title: str = "Sample ticket") -> Ticket:
     )
 
 
+# T-1553: classes below that exercise the single-mode (v1 monofile)
+# store path directly against a bare `tmp_path`; the fresh-repo default
+# flipped to v2, so these pin v1 explicitly via the autouse fixture.
+_V1_PINNED_CLASSES = frozenset(
+    {
+        "TestWriteTicket",
+        "TestArchiveLedger",
+        "TestLoadArchiveCache",
+        "TestSetDoneReport",
+        "TestReplayEvidenceFromDoneReport",
+    }
+)
+
+
+# frob:ticket T-1553
+# frob:waive WIRE001 reason="autouse=True pytest fixture -- invoked implicitly by \
+# pytest's own fixture-injection machinery on every test in this module, never by a \
+# literal name() call WIRE001's text scan looks for; same detector-gap class as \
+# T-1502/T-1527" follow_up="T-1534"
+@pytest.fixture(autouse=True)
+def _pin_v1_mode_on_bare_tmp_path(request: pytest.FixtureRequest, tmp_path: Path) -> None:
+    """T-1553: pin `tmp_path` to v1/'single' mode for the classes in
+    `_V1_PINNED_CLASSES`, which exercise the monofile store path against
+    a bare `tmp_path`; every other class either seeds its own mode
+    explicitly (v2 dirs, legacy dir-mode) or asserts mode detection
+    itself and must see the directory untouched."""
+    cls = request.cls
+    if cls is not None and cls.__name__ in _V1_PINNED_CLASSES:
+        (tmp_path / "tickets.md").write_text("# Tickets\n", encoding="utf-8")
+
+
 class TestSlugify:
     def test_lowercases_and_hyphenates(self) -> None:
         # frob:tests src/frob/tickets/_store.py::slugify kind="unit"
@@ -167,9 +198,11 @@ class TestV2Attachments:
 
 
 class TestStoreMode:
-    def test_fresh_repo_defaults_to_single(self, tmp_path: Path) -> None:
+    def test_fresh_repo_defaults_to_v2(self, tmp_path: Path) -> None:
+        """T-1553 flipped the fresh-repo fallback: a directory with no
+        store markers at all now defaults to v2."""
         # frob:tests src/frob/tickets/_store.py::_store_mode kind="unit"
-        assert _store_mode(tmp_path) == "single"
+        assert _store_mode(tmp_path) == "v2"
 
     def test_ledger_present_is_single(self, tmp_path: Path) -> None:
         (tmp_path / "tickets.md").write_text("# Tickets\n")
@@ -373,6 +406,83 @@ class TestV2WriteTicket:
         assert result.is_ok
         assert v2_ticket_path(tmp_path, "T-0001").exists()
         assert not v2_ticket_dir(tmp_path, "T-0002").exists()
+
+
+# frob:ticket T-1561
+class TestWriteArchivedTicket:
+    """`write_archived_ticket` (T-1561): the archive-side analog of
+    `write_ticket` -- the primitive `evidence --replace --archived`
+    needs to repair a stale binding on an already-archived ticket
+    without resurrecting it into active storage."""
+
+    def test_v2_mode_writes_under_archive_dir(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_\
+        # under_archive_dir kind="unit"
+        from frob.tickets._store import v2_archive_dir, write_archived_ticket
+
+        # Any v2 marker (active or archived) flips _store_mode to v2.
+        (tmp_path / "tickets" / "archive" / "T-0099").mkdir(parents=True)
+        (tmp_path / "tickets" / "archive" / "T-0099" / "ticket.md").write_text(
+            _serialize_ticket(_ticket("T-0099"))
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        ticket = _ticket()
+        result = write_archived_ticket(tmp_path, ticket)
+        assert result.is_ok
+        assert (v2_archive_dir(tmp_path, "T-0001") / "ticket.md").exists()
+        assert not v2_ticket_dir(tmp_path, "T-0001").exists()
+
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok.keys() == {"T-0001", "T-0099"}
+
+    def test_single_mode_splices_into_archive_file(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_spl\
+        # ices_into_archive_file kind="unit"
+        from frob.tickets._store import write_archived_ticket
+
+        # Pin v1/'single' mode explicitly (fresh-repo default is v2,
+        # T-1553).
+        atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
+        assert _store_mode(tmp_path) == "single"
+
+        ticket = _ticket()
+        result = write_archived_ticket(tmp_path, ticket)
+        assert result.is_ok
+        assert "<!-- ticket:" not in ledger_path(tmp_path).read_text(encoding="utf-8")
+        text = archive_path(tmp_path).read_text(encoding="utf-8")
+        assert "<!-- ticket:T-0001 -->" in text
+
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok.keys() == {"T-0001"}
+        # The active ledger is never touched -- nothing resurrected there.
+        active = load_all(tmp_path)
+        assert active.is_ok
+        assert active.danger_ok == {}
+
+    def test_single_mode_preserves_sibling_archived_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_single_mode_pre\
+        # serves_sibling_archived_ticket kind="unit"
+        from frob.tickets._store import write_archive, write_archived_ticket
+
+        atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
+        assert write_archive(tmp_path, {"T-0002": _ticket("T-0002")}).is_ok
+
+        updated = _ticket().model_copy(update={"title": "T-0001 rebound"})
+        result = write_archived_ticket(tmp_path, updated)
+        assert result.is_ok
+
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok.keys() == {"T-0001", "T-0002"}
+        assert archived.danger_ok["T-0001"].title == "T-0001 rebound"
 
 
 class TestMigrateToLedger:

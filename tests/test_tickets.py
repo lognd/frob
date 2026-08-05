@@ -63,6 +63,16 @@ def _ticket(
     )
 
 
+def _seed_single_mode(root: Path) -> None:
+    """Pin a fresh `tmp_path` to v1/'single' store mode (T-1553: the
+    fresh-repo default is now 'v2') by seeding an explicit, empty
+    `tickets.md` header -- deliberate, not an accident of default."""
+    (root / "tickets.md").write_text(
+        "# Tickets\n\nCentral ledger managed by `frob ticket` -- one section per ticket.\n",
+        encoding="utf-8",
+    )
+
+
 def _write(root: Path, ticket: Ticket, slug: str = "sample-ticket") -> Path:
     tickets_dir = root / "tickets"
     tickets_dir.mkdir(parents=True, exist_ok=True)
@@ -195,6 +205,39 @@ class TestNewTicket:
         result = new_ticket(tmp_path, spec)
         assert result.is_ok
         assert result.danger_ok.id == "T-0001"
+
+    # frob:ticket T-1541
+    def test_marker_lookalike_body_line_is_defused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicket.test_marker_lookalike_body_line_is_defus\
+        # ed kind="unit"
+        """T-1541: `ticket new --body-file` is caller-authored free text
+        spliced directly into the ticket's body -- the same
+        marker-lookalike-corruption class T-1536 defused for the
+        Done-report `why` path must be defused here too, or a
+        `--body-file` narrative that happens to quote a real ledger
+        marker verbatim forges a fake section boundary the next time
+        `tickets.md` is parsed."""
+        from frob.tickets import TicketSpec
+        from frob.tickets._store import _LEDGER_MARKER_RE
+
+        spec = TicketSpec(
+            title="Repro ticket",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            body="root cause repro:\n<!-- ticket:T-9999 -->\nmore narrative\n",
+        )
+        result = new_ticket(tmp_path, spec)
+        assert result.is_ok
+        assert _LEDGER_MARKER_RE.search(result.danger_ok.body) is None
+        assert "T-9999" in result.danger_ok.body  # still legible
+
+        # Round-tripping through the store must not surface a phantom
+        # T-9999 -- a lookalike line that was ever treated as a real
+        # section boundary would corrupt subsequent loads.
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert set(reloaded.danger_ok.tickets) == {result.danger_ok.id}
 
 
 class TestEvidenceValidation:
@@ -583,6 +626,32 @@ class TestFailureLog:
         assert result.is_err
         assert result.danger_err is TicketError.NotFound
 
+    # frob:ticket T-1541
+    def test_marker_lookalike_summary_line_is_defused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestFailureLog.test_marker_lookalike_summary_line_is_d\
+        # efused kind="unit"
+        """T-1541: `entry.summary` (`ticket fail`) is caller-authored free
+        text spliced into the body's '## Failure log' section -- the same
+        marker-lookalike-corruption class T-1536 defused for the
+        Done-report `why` path."""
+        from frob.tickets._store import _LEDGER_MARKER_RE
+
+        _write(tmp_path, _ticket(body="## Description\nx\n"))
+        entry = FailureEntry(
+            date=date(2026, 1, 5),
+            attempt=1,
+            summary="repro:\n<!-- ticket:T-9999 -->\nstill failing",
+        )
+        result = record_failure(tmp_path, "T-0001", entry)
+        assert result.is_ok
+        assert _LEDGER_MARKER_RE.search(result.danger_ok.body) is None
+        assert "T-9999" in result.danger_ok.body
+
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert set(reloaded.danger_ok.tickets) == {"T-0001"}
+
 
 # frob:ticket T-0579
 class TestDropTicket:
@@ -638,6 +707,29 @@ class TestDropTicket:
         new_body = result.danger_ok.body
         assert "- 2026-01-01: first cut" in new_body
         assert "second cut, confirmed obsolete" in new_body
+
+    # frob:ticket T-1541
+    def test_marker_lookalike_reason_line_is_defused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDropTicket.test_marker_lookalike_reason_line_is_de\
+        # fused kind="unit"
+        """T-1541: `reason` (`ticket drop --reason`/`--reason-file`) is
+        caller-authored free text spliced into the body's '## Drop
+        reason' section -- the same marker-lookalike-corruption class
+        T-1536 defused for the Done-report `why` path."""
+        from frob.tickets._store import _LEDGER_MARKER_RE
+
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        result = drop_ticket(
+            tmp_path, "T-0001", "obsolete:\n<!-- ticket:T-9999 -->\nsuperseded"
+        )
+        assert result.is_ok, result.err
+        assert _LEDGER_MARKER_RE.search(result.danger_ok.body) is None
+        assert "T-9999" in result.danger_ok.body
+
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert set(reloaded.danger_ok.tickets) == {"T-0001"}
 
 
 # frob:ticket T-0579
@@ -1106,6 +1198,7 @@ class TestArchive:
         # existing copy, not a hard refusal of the whole `archive` call.
         from frob.tickets._store import load_archive, write_archive
 
+        _seed_single_mode(tmp_path)
         _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
         # Seed tickets-archive.md directly with the SAME id already
         # archived, simulating the T-1437 incident's post-merge state
@@ -1162,6 +1255,10 @@ class TestArchive:
         # blocker just because it moved out of the active ledger.
         _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
         archive(tmp_path)
+        # Pin v1/'single' mode for the post-archive write below (T-1553:
+        # the dir-mode fixture's files are now gone, so an unseeded
+        # tmp_path would default to v2).
+        _seed_single_mode(tmp_path)
         from frob.tickets._store import write_ticket as _write_ticket
 
         _write_ticket(
@@ -1192,6 +1289,10 @@ class TestArchive:
         archived_count = archive(tmp_path)
         assert archived_count.is_ok
         assert archived_count.danger_ok == 136
+        # Pin v1/'single' mode for the post-archive `new_ticket` below
+        # (T-1553: the dir-mode fixture's files are now archived away, so
+        # an unseeded tmp_path would default to v2).
+        _seed_single_mode(tmp_path)
 
         spec = TicketSpec(
             title="post-archive ticket",
@@ -1230,6 +1331,7 @@ class TestArchive:
         # allocating an id that might collide with unreadable content.
         from frob.tickets import Origin, TicketKind, TicketSpec
 
+        _seed_single_mode(tmp_path)
         archive_file = tmp_path / "tickets-archive.md"
         archive_file.write_text(
             "<!-- ticket:T-0001 -->\nno yaml frontmatter fence here at all\n",
@@ -1377,6 +1479,7 @@ class TestSingleFileLedger:
     def test_new_tickets_land_in_single_tickets_md(self, tmp_path):
         from frob.tickets import load_queue, new_ticket
 
+        _seed_single_mode(tmp_path)
         a = new_ticket(tmp_path, self._spec("first")).danger_ok
         b = new_ticket(tmp_path, self._spec("second")).danger_ok
         assert (tmp_path / "tickets.md").exists()
@@ -1417,6 +1520,7 @@ class TestSingleFileLedger:
         from frob.tickets import TicketState, load_queue, new_ticket, transition
         from frob.tickets._store import ledger_path
 
+        _seed_single_mode(tmp_path)
         a = new_ticket(tmp_path, self._spec("ticket a")).danger_ok
         b = new_ticket(tmp_path, self._spec("ticket b")).danger_ok
 

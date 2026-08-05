@@ -932,6 +932,8 @@ def replace_evidence(
     new_node: str,
     collected: frozenset[str] | None = None,
     passed: frozenset[str] | None = None,
+    *,
+    archived: bool = False,
 ) -> Result[Ticket, TicketError]:
     """T-1537: rebind one evidence id everywhere it appears -- the flat
     `ticket.evidence` list AND every acceptance criterion's own `evidence`
@@ -957,15 +959,25 @@ def replace_evidence(
     criterion's evidence tuple -- a typo'd source id must never silently
     no-op. `old_node == new_node` (after normalization) is a no-op success
     (the ticket is returned unchanged, no write performed) rather than an
-    error -- nothing to replace is not a failure."""
-    from frob.tickets import normalize_evidence_separator, write_ticket
+    error -- nothing to replace is not a failure.
+
+    T-1561: `archived=True` retargets both halves of this at ARCHIVE
+    storage instead of active -- `ticket_id` is loaded via `load_archive`
+    and written back via `write_archived_ticket`, never `_load_one`/
+    `write_ticket` (which only ever see the active tree and would
+    silently duplicate the id there instead of repairing the archived
+    copy). Use this when COV003 fires on an archived ticket's stale
+    evidence binding -- the gate scans `tickets-archive.md`/`tickets/
+    archive/**` too, so the repair path must reach the same place."""
+    from frob.tickets import normalize_evidence_separator
+    from frob.tickets._store import write_archived_ticket, write_ticket
 
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
 
     prepared = _prepare_replace_evidence(
-        root, ticket_id, old_node, new_node, collected, passed
+        root, ticket_id, old_node, new_node, collected, passed, archived=archived
     )
     if prepared.is_err:
         return Err(prepared.danger_err)
@@ -975,7 +987,11 @@ def replace_evidence(
 
     normalized_new = normalize_evidence_separator(new_node)
     updated = _rebind_evidence(ticket, normalized_old, normalized_new)
-    write_result = write_ticket(root, updated)
+    write_result = (
+        write_archived_ticket(root, updated)
+        if archived
+        else write_ticket(root, updated)
+    )
     if write_result.is_err:
         return Err(write_result.danger_err)
     _log.info(
@@ -998,6 +1014,8 @@ def _prepare_replace_evidence(
     new_node: str,
     collected: frozenset[str] | None,
     passed: frozenset[str] | None,
+    *,
+    archived: bool = False,
 ) -> Result[tuple[str, Ticket, bool], TicketError]:
     """The validate-and-load half of `replace_evidence` (ARCH001 split):
     normalizes/validates both ids, loads `ticket_id`, confirms
@@ -1005,12 +1023,13 @@ def _prepare_replace_evidence(
     new_node`, the no-op case) checks `new_node` resolves/passes exactly
     like a fresh `add_evidence` call. Returns `(normalized_old, ticket,
     no_op)` -- `no_op=True` short-circuits the caller straight to
-    `Ok(ticket)`, no write."""
-    from frob.tickets import (
-        _load_one,
-        _validate_evidence_list,
-        normalize_evidence_separator,
-    )
+    `Ok(ticket)`, no write.
+
+    T-1561: `archived=True` loads `ticket_id` via `load_archive` instead
+    of `_load_one` (which only ever sees active storage) -- the archive-
+    reach half of `replace_evidence`'s own `archived` parameter."""
+    from frob.tickets import _validate_evidence_list, normalize_evidence_separator
+    from frob.tickets._store import load_archive
 
     normalized_old = normalize_evidence_separator(old_node)
     validated_new = _validate_evidence_list((new_node,))
@@ -1018,10 +1037,24 @@ def _prepare_replace_evidence(
         return Err(validated_new.danger_err)
     normalized_new = validated_new.danger_ok[0]
 
-    loaded = _load_one(root, ticket_id)
-    if loaded.is_err:
-        return Err(loaded.danger_err)
-    ticket = loaded.danger_ok
+    if archived:
+        archive_loaded = load_archive(root)
+        if archive_loaded.is_err:
+            return Err(archive_loaded.danger_err)
+        ticket = archive_loaded.danger_ok.get(ticket_id)
+        if ticket is None:
+            _log.warning(
+                "tickets: %s not found in the archive (T-1561 --archived)",
+                ticket_id,
+            )
+            return Err(TicketError.NotFound)
+    else:
+        from frob.tickets import _load_one
+
+        loaded = _load_one(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket = loaded.danger_ok
 
     present_in_flat = normalized_old in ticket.evidence
     present_in_acceptance = any(normalized_old in c.evidence for c in ticket.acceptance)
