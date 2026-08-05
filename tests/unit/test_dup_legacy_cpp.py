@@ -142,6 +142,9 @@ def test_collect_locals_cpp_method_params_too(tmp_path: Path) -> None:
 # frob:tests \
 # tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_param_folds_to_positional_\
 # token
+# frob:waive PII012 reason="'token' here is a tree-sitter/dup-fingerprint lexer token \
+# (positional _vN placeholder), not a credential or personal-data surface; test name \
+# and prose describe token-folding semantics"
 def test_collect_locals_cpp_param_folds_to_positional_token(
     tmp_path: Path,
 ) -> None:
@@ -169,6 +172,9 @@ def test_collect_locals_cpp_param_folds_to_positional_token(
 # frob:tests \
 # tests/unit/test_dup_legacy_cpp.py::test_serialize_cpp_body_normalizes_locals_strings_\
 # and_numbers
+# frob:waive PII012 reason="'token' here is a dup-fingerprint lexer token (positional \
+# _vN placeholder) named in assertion comments, not a credential or personal-data \
+# surface"
 def test_serialize_cpp_body_normalizes_locals_strings_and_numbers(
     tmp_path: Path,
 ) -> None:

@@ -50,7 +50,7 @@ _FIXTURE_ATTACHMENT = (
 # (conftest.py::_install_stackdump_handler's WIRE001/T-1466 precedent), so any helper \
 # reached only from within its own test file always reads as unwired; filed T-1490 to \
 # evaluate/record disposition rather than a bare waiver with no accountable follow-up" \
-# follow_up="T-1490"
+# follow_up="T-1558"
 def _git_init(root: Path) -> None:
     import subprocess
 
@@ -63,7 +63,7 @@ def _git_init(root: Path) -> None:
 
 
 # frob:waive WIRE001 reason="test-fixture builder, same shape/precedent as _git_init \
-# above" follow_up="T-1490"
+# above" follow_up="T-1558"
 def _done_ticket() -> Ticket:
     """A closed ticket carrying a real embedded '## Done report' section
     (the T-1259 case this migrator must split into done-report.md)."""
@@ -92,7 +92,7 @@ def _done_ticket() -> Ticket:
 
 
 # frob:waive WIRE001 reason="test-fixture builder, same shape/precedent as _git_init \
-# above" follow_up="T-1490"
+# above" follow_up="T-1558"
 def _queued_ticket() -> Ticket:
     """A queued ticket blocked on the done ticket above -- exercises
     `blocked_by` round-tripping unchanged."""
@@ -112,7 +112,7 @@ def _queued_ticket() -> Ticket:
 
 
 # frob:waive WIRE001 reason="test-fixture builder, same shape/precedent as _git_init \
-# above" follow_up="T-1490"
+# above" follow_up="T-1558"
 def _draft_ticket() -> Ticket:
     """A draft-id ticket (filed mid-worktree, never yet renumbered) --
     T-1259 acceptance explicitly calls out a draft-id ticket as one of the
@@ -129,7 +129,7 @@ def _draft_ticket() -> Ticket:
 
 
 # frob:waive WIRE001 reason="test-fixture builder, same shape/precedent as _git_init \
-# above" follow_up="T-1490"
+# above" follow_up="T-1558"
 def _archived_ticket() -> Ticket:
     """An already-archived ticket -- migration must place it under
     tickets/archive/T-####/, not tickets/T-####/."""
@@ -145,7 +145,7 @@ def _archived_ticket() -> Ticket:
 
 
 # frob:waive WIRE001 reason="test-fixture builder, same shape/precedent as _git_init \
-# above" follow_up="T-1490"
+# above" follow_up="T-1558"
 def _seed_v1_fixture(root: Path) -> dict[str, Ticket]:
     """Write a v1-mode monofile ledger + archive covering every shape T-1259
     acceptance[3] names: a done ticket with a Done report, a queued ticket

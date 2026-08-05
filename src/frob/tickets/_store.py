@@ -784,12 +784,14 @@ def _v2_path_lineage(root: Path, rel_path: str) -> list[str]:
     (should never occur; git mv never round-trips a path back to itself
     in this codebase) cannot loop forever."""
     lineage = [rel_path]
+    seen = {rel_path}
     current = rel_path
     for _ in range(64):
         prev = _v2_rename_source(root, current)
-        if prev is None or prev in lineage:
+        if prev is None or prev in seen:
             break
         lineage.insert(0, prev)
+        seen.add(prev)
         current = prev
     return lineage
 
@@ -834,51 +836,61 @@ def v2_state_transitions(
     matching `_setters._ledger_commit_history`'s existing best-effort git
     contract for the v1 monofile path."""
     rel_path = f"{tickets_dir(root).name}/{ticket_id}/ticket.md"
-    lineage = _v2_path_lineage(root, rel_path)
     transitions: list[tuple[str, str, str]] = []
     seen_shas: set[str] = set()
-    for path in lineage:
-        spawned = run_argv(
-            [
-                "git",
-                "-C",
-                str(root),
-                "log",
-                "--reverse",
-                "-p",
-                "--format=--frob-v2-commit-- %H%x1f%aI",
-                "--",
-                path,
-            ]
-        )
-        if spawned.is_err or spawned.danger_ok.returncode != 0:
-            continue
-        current: tuple[str, str] | None = None
-        pending_state: str | None = None
-        for line in spawned.danger_ok.stdout.splitlines():
-            if line.startswith("--frob-v2-commit-- "):
-                if (
-                    current is not None
-                    and pending_state is not None
-                    and current[0] not in seen_shas
-                ):
-                    transitions.append((current[0], current[1], pending_state))
-                    seen_shas.add(current[0])
-                sha, _, iso = line[len("--frob-v2-commit-- ") :].partition("\x1f")
-                current = (sha, iso)
-                pending_state = None
-                continue
-            match = _V2_STATE_ADD_RE.match(line)
-            if match is not None:
-                pending_state = match.group(1)
-        if (
-            current is not None
-            and pending_state is not None
-            and current[0] not in seen_shas
-        ):
-            transitions.append((current[0], current[1], pending_state))
-            seen_shas.add(current[0])
+    for path in _v2_path_lineage(root, rel_path):
+        _mine_v2_path_transitions(root, path, transitions, seen_shas)
     return tuple(transitions)
+
+
+# frob:ticket T-1560
+def _mine_v2_path_transitions(
+    root: Path,
+    path: str,
+    transitions: list[tuple[str, str, str]],
+    seen_shas: set[str],
+) -> None:
+    """One lineage segment's worth of `v2_state_transitions` mining:
+    plain (non-`--follow`) `git log --reverse -p` over `path`, appending
+    each commit's LAST added `+state: X` line to `transitions` (skipping
+    shas already in `seen_shas`, which a rename commit shares across two
+    adjacent lineage segments). Appends in place so the caller's
+    oldest-first ordering across segments is preserved as-is."""
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--reverse",
+            "-p",
+            "--format=--frob-v2-commit-- %H%x1f%aI",
+            "--",
+            path,
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return
+    current: tuple[str, str] | None = None
+    pending_state: str | None = None
+
+    def flush() -> None:
+        if current is not None and pending_state is not None:
+            if current[0] not in seen_shas:
+                transitions.append((current[0], current[1], pending_state))
+                seen_shas.add(current[0])
+
+    for line in spawned.danger_ok.stdout.splitlines():
+        if line.startswith("--frob-v2-commit-- "):
+            flush()
+            sha, _, iso = line[len("--frob-v2-commit-- ") :].partition("\x1f")
+            current = (sha, iso)
+            pending_state = None
+            continue
+        match = _V2_STATE_ADD_RE.match(line)
+        if match is not None:
+            pending_state = match.group(1)
+    flush()
 
 
 # frob:ticket T-1256

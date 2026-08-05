@@ -1264,6 +1264,31 @@ def _land_plan_locked(
                 unwound.danger_err if unwound.is_err else LandError.PlanTickGateDirty
             )
 
+    return _land_plan_finish(
+        root,
+        pre_merge_sha,
+        own_commits,
+        merge_commit=merge_commit,
+        finalized_ids=finalized_ids,
+        dry_run=dry_run,
+    )
+
+
+# frob:ticket T-1560
+def _land_plan_finish(
+    root: Path,
+    pre_merge_sha: str,
+    own_commits: Sequence[str],
+    *,
+    merge_commit: str,
+    finalized_ids: tuple[tuple[str, str], ...],
+    dry_run: bool,
+) -> Result[LandPlanReport, LandError]:
+    """`_land_plan_locked`'s success tail: build the `LandPlanReport` and,
+    for a dry run, always reset back to `pre_merge_sha` (a dry run is
+    deliberately "run it, then always revert" -- see the caller's T-1522
+    docstring note; this full reset is NOT the failure-path unwind, which
+    stops at the merge commit)."""
     if dry_run:
         report = LandPlanReport(
             dry_run=True,

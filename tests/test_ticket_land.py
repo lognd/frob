@@ -7773,7 +7773,7 @@ class TestLandSquashHelpersMutationCoverage:
 # frob:ticket T-1269
 # frob:waive WIRE001 reason="test-only fixture helper used by TestLandPlan's own five \
 # test methods below, in this same file -- a test fixture calling itself is not the \
-# class of orphaned-production-code WIRE001 exists to catch" follow_up="T-1488"
+# class of orphaned-production-code WIRE001 exists to catch" follow_up="T-1558"
 def _make_design_worktree(
     main_repo: Path, tmp_path: Path, *, branch: str = "design"
 ) -> Path:
