@@ -4493,7 +4493,7 @@ PERF012 fires from src/frob/perf but docs/design/registry/check-coverage.yaml ha
 ```yaml
 id: T-1541
 title: audit non-done-report free-text ledger entry points for marker-lookalike corruption
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
