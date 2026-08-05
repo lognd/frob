@@ -1817,6 +1817,18 @@ class LandError(ErrorSet):
         "this refusal free -- see the post-land sweep, T-1456, for the "
         "cheap post-commit assertion this complements)"
     )
+    # frob:ticket T-1444
+    PostLandUnscopedSweepFailed = (
+        "the post-land unscoped error sweep (T-1456) found residue no "
+        "Tier-A auto-fix could resolve -- the commit already landed on "
+        "main and was reverted via `git reset --hard` back to its "
+        "pre-land state; a single interactive `frob ticket land` call "
+        "reports this via sys.exit(1) directly (see "
+        "_run_post_land_sweep_or_exit), this member exists so a drain "
+        "loop (T-1444) processing several queued lands in one process "
+        "can attribute the failure to its own ticket and continue "
+        "draining the rest instead of the whole loop dying with it"
+    )
 
 
 # frob:ticket T-0176

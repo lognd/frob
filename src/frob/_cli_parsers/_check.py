@@ -156,6 +156,17 @@ def _add_check_delta_and_verbose_args(check_p) -> None:
             "degrades to the full set with a warning"
         ),
     )
+    # frob:ticket T-1445
+    check_p.add_argument(
+        "--no-cache",
+        dest="check_no_cache",
+        action="store_true",
+        help=(
+            "bypass the gate-result cache (.frob/gate-cache.db) and force "
+            "every cacheable gate to recompute in full, same as the "
+            "FROB_NO_GATE_CACHE=1 env var (T-1346)"
+        ),
+    )
     check_p.add_argument(
         "-v",
         "--verbose",

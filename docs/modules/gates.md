@@ -4444,6 +4444,56 @@ mean a directive line specifically).
   Raising a floor is a reviewed `frob.toml` commit; lowering one is too,
   and shows up in diff review.
 
+## Root-scanning process-pool gate cache (T-1445)
+
+`docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602`
+documents T-0602's `TrackedSnapshot`/`evaluate_cacheable_gate` cache for
+the thread-pool `_CACHEABLE_GATES` allowlist -- gates that read only
+`GraphSnapshot`-derived state. T-1445 extends the SAME `.frob/gate-cache.db`
+storage to `_CACHEABLE_PROCESS_GATES`, the `_ProcessJob` gates (T-0415's
+CPU-bound giants) that read `st.root`/`st.repo_root` directly instead:
+`perf`, `clones`, `sys`, `secrets`, `taint`, `opaque`, `archgate`,
+`exhaustive_handling`, `ffi_boundary`, `pii_structural`, `walk_lint`,
+`cve_fingerprint_scan`, `render_lint`, `dead_symbols`, `wire`, `cache`,
+`protocol_summary` -- effectively every `_build_process_jobs` entry.
+
+- **Key**: `frob.gates._gate_cache.root_content_key` -- a sha256 over
+  `git ls-files -s`'s full output (mode, blob sha, path per tracked file),
+  the whole-tree analogue of `_membership_key`'s `GraphSnapshot`-scoped
+  membership guard. Any add/remove/edit of any tracked file anywhere
+  invalidates every `_CACHEABLE_PROCESS_GATES` entry -- WHOLE-GATE
+  granularity, not per-touched-file like T-0602's thread-pool cache (a
+  process-pool gate's `_ProcessJob.args` never touches the indexed
+  `GraphSnapshot` at all for most members, so there is no cheap way to
+  observe a finer-grained read set without splitting each gate's body
+  into a per-file callable -- out of this ticket's scope; see the T-1445
+  Done report in `tickets-archive.md` for the follow-up ticket tracking
+  true per-file decomposition).
+- **Storage**: `load_root_gate_cache`/`store_root_gate_cache`
+  (`frob.gates._gate_cache`) read/write the SAME `gate_results` table
+  T-0602's `evaluate_cacheable_gate` already owns, with
+  `membership_key == touched_key == root_content_key(...)` and no
+  per-file `touched_files` set (there is none at this granularity).
+- **Side inputs**: `clones` (`st.diff`) and `wire` (`st.diff`, `st.queue`)
+  are the only two `_CACHEABLE_PROCESS_GATES` members with an argument
+  beyond `root`/`repo_root`/`snapshot` -- `frob.gates._process_gate_extra`
+  folds them into the same `extra_key` T-1454's `model_side_channel_key`
+  already established for the thread-pool side.
+- **Dispatch**: `frob.gates._split_process_cache` partitions a run's
+  selected `_ProcessJob`s into cache HITS (served without spawning a
+  worker process, `_seed_preloaded_process_cache`) and MISSES (submitted
+  to the `ProcessPoolExecutor` as before, with the fresh result persisted
+  after draining via `_store_pending_process_cache`) -- `run_gates(...,
+  use_cache=True)` opts in, same flag T-0602's thread-pool substitution
+  already uses; `use_cache=False` (every pre-T-1445 call site) is
+  unaffected.
+- **`frob check --no-cache`**: a first-class CLI flag (`AppConfig.
+  check_no_cache`, threaded through `run_check`/`run_check_cpp`/
+  `run_check_rust`/`run_check_ts`) bypassing the WHOLE gate-result cache
+  (thread- and process-pool halves alike) for one invocation -- the same
+  effect as the pre-existing `FROB_NO_GATE_CACHE=1` env var (T-1346),
+  now also reachable without setting an env var.
+
 ## Dependencies
 
 - `frob.graph` (snapshot, lock, drift), `frob.tickets` (queue),

@@ -100,6 +100,8 @@ from pathlib import Path
 from typing import Any, cast
 
 from frob.gates._models import Violation
+from frob.gates._tracked_files import tracked_files
+from frob.gitio import run_argv
 from frob.graph._models import GraphSnapshot
 from frob.logging import get_logger
 from frob.process._lock import derived_state_write_lock
@@ -259,8 +261,10 @@ def _edge_files(edge: object) -> tuple[str, ...]:
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
-# frob:tests tests/test_gate_cache.py::TestTrackedSnapshot.test_symbol_iteration_records_file  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestTrackedSnapshot.test_getitem_records_only_accessed_key  # noqa: E501
+# frob:tests \
+# tests/test_gate_cache.py::TestTrackedSnapshot.test_symbol_iteration_records_file
+# frob:tests \
+# tests/test_gate_cache.py::TestTrackedSnapshot.test_getitem_records_only_accessed_key
 class TrackedSnapshot:
     """Read-only proxy over a `GraphSnapshot` recording every file path a
     cacheable gate actually dereferences through `.symbols`/`.edges`/
@@ -389,8 +393,12 @@ def extra_key(values: Iterable[str]) -> str:
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-1454
-# frob:tests tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_changes_on_field_edit  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_stable_for_equal_content  # noqa: E501
+# frob:tests \
+# tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_changes_on_f\
+# ield_edit
+# frob:tests \
+# tests/test_gate_cache.py::TestSideChannelKey.test_model_side_channel_key_stable_for_e\
+# qual_content
 def model_side_channel_key(*models: object) -> str:
     """Fingerprint one or more pydantic `BaseModel` (or model-tuple) SIDE
     INPUTS a cacheable gate reads OUTSIDE the tracked `GraphSnapshot` --
@@ -540,7 +548,9 @@ def _store_entry(
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
-# frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_invalidate_forces_next_call_to_miss  # noqa: E501
+# frob:tests \
+# tests/test_gate_cache.py::TestEvaluateCacheableGate.test_invalidate_forces_next_call_\
+# to_miss
 def invalidate(root: Path) -> None:
     """Drop the whole gate-result cache (used by the cold-diff oracle test
     and by any caller that wants a guaranteed-fresh next evaluation) -- a
@@ -559,12 +569,23 @@ def invalidate(root: Path) -> None:
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
-# frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_miss_then_hit_skips_second_call  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_edit_to_untouched_file_stays_a_hit  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_edit_to_touched_file_forces_miss  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_new_untouched_file_forces_miss_membership_guard  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestEvaluateCacheableGate.test_extra_change_forces_miss  # noqa: E501
-# frob:tests tests/test_gate_cache.py::TestColdDiffOracle.test_cache_agrees_with_cold_across_random_edits  # noqa: E501
+# frob:tests \
+# tests/test_gate_cache.py::TestEvaluateCacheableGate.test_miss_then_hit_skips_second_c\
+# all
+# frob:tests \
+# tests/test_gate_cache.py::TestEvaluateCacheableGate.test_edit_to_untouched_file_stays\
+# _a_hit
+# frob:tests \
+# tests/test_gate_cache.py::TestEvaluateCacheableGate.test_edit_to_touched_file_forces_\
+# miss
+# frob:tests \
+# tests/test_gate_cache.py::TestEvaluateCacheableGate.test_new_untouched_file_forces_mi\
+# ss_membership_guard
+# frob:tests \
+# tests/test_gate_cache.py::TestEvaluateCacheableGate.test_extra_change_forces_miss
+# frob:tests \
+# tests/test_gate_cache.py::TestColdDiffOracle.test_cache_agrees_with_cold_across_rando\
+# m_edits
 def evaluate_cacheable_gate(
     root: Path,
     gate: str,
@@ -619,10 +640,151 @@ def evaluate_cacheable_gate(
     return violations
 
 
+# --- T-1445: whole-tree cache for root-scanning process-pool gates -------
+
+
+# frob:doc docs/modules/gates.md#root-scanning-process-pool-gate-cache-t-1445
+# frob:ticket T-1445
+# frob:tests \
+# tests/test_gate_cache.py::TestRootContentKey.test_stable_when_nothing_changes
+# frob:tests \
+# tests/test_gate_cache.py::TestRootContentKey.test_changes_on_tracked_file_edit
+# frob:tests tests/test_gate_cache.py::TestRootContentKey.test_none_outside_a_git_repo
+def root_content_key(root: Path) -> str | None:
+    """The whole-tree conservative dependency key for a gate that reads
+    `st.root`/`st.repo_root` DIRECTLY (an unbounded filesystem walk, not
+    the `GraphSnapshot` index `TrackedSnapshot`/`evaluate_cacheable_gate`
+    above can observe) -- T-1445's extension of T-0602 to the
+    `_ProcessJob` root-scanning gates the module docstring's "What it does
+    NOT cover" section originally disclosed as out of reach.
+
+    `git ls-files` names the ENTIRE git-tracked tree under `root`; each
+    tracked path's CURRENT ON-DISK CONTENT (a plain read, not `git
+    ls-files -s`'s INDEX blob sha) is hashed and folded in, sorted by
+    path. Any add, remove, or content edit of any tracked file anywhere
+    changes the returned digest -- this is exactly `_membership_key`'s
+    existing membership-guard posture (T-0602's module docstring) applied
+    to the whole tree instead of just `GraphSnapshot.file_hashes`'s
+    narrower index, coarser-grained than `evaluate_cacheable_gate`'s
+    per-touched-file key (a change ANYWHERE forces every gate keyed on
+    this to re-run in full, never a partial one -- the honest, disclosed
+    scope-cut this increment ships; see the T-1445 Done report for the
+    follow-up ticket tracking true per-file decomposition, out of this
+    ticket's `src/frob/gates/__init__.py`+`_gate_cache.py` scope).
+
+    Reading disk content (T-1445 fix, not `git ls-files -s`'s blob sha)
+    is LOAD-BEARING, not a style choice: `git ls-files -s` reports the
+    INDEX's blob sha -- a tracked file edited on disk but never `git
+    add`ed still reports its OLD (pre-edit) blob sha, so a key built from
+    it would silently serve a STALE cached result for any uncommitted
+    working-tree edit (the exact everyday state of an in-progress
+    worktree agent's own checkout). A plain content read has no such
+    staleness window.
+
+    Returns `None` (never a value that could accidentally collide with a
+    real digest) when `git ls-files` fails -- no repo, git missing, or any
+    other git error -- so a caller can degrade to running the gate
+    uncached rather than risk keying a cache entry on an unverifiable
+    tree state."""
+    tracked = tracked_files(root, caller="root_content_key")
+    if not tracked:
+        # `tracked_files` degrades to `()` on any git failure (its own
+        # docstring) -- indistinguishable here from a genuinely empty
+        # repo. A truly empty tracked set is a legitimate (if unusual)
+        # state, not a git failure -- confirm which one this is before
+        # deciding whether `None` (unverifiable) is warranted.
+        probe = run_argv(("git", "-C", str(root), "rev-parse", "--git-dir"))
+        if probe.is_err or probe.danger_ok.returncode != 0:
+            _log.warning("root_content_key: not a git repository under %s", root)
+            return None
+    parts: list[str] = []
+    for rel_path in sorted(tracked):
+        try:
+            digest = hashlib.sha256((root / rel_path).read_bytes()).hexdigest()
+        except OSError as exc:
+            # A tracked path git reports but this process cannot read
+            # (deleted-but-not-`git rm`ed, a symlink to nowhere, a
+            # permissions race) still needs a digest that changes if the
+            # unreadable state itself changes -- fold the error string in
+            # rather than skip the path silently (skipping would make an
+            # unreadable-vs-readable transition invisible to the key).
+            digest = f"<unreadable:{exc}>"
+        parts.append(f"{rel_path}={digest}")
+    return _hash_parts(parts)
+
+
+# frob:doc docs/modules/gates.md#root-scanning-process-pool-gate-cache-t-1445
+# frob:ticket T-1445
+# frob:tests \
+# tests/test_gate_cache.py::TestRootGateCache.test_miss_then_hit_skips_second_call
+# frob:tests tests/test_gate_cache.py::TestRootGateCache.test_tree_edit_forces_miss
+# frob:tests tests/test_gate_cache.py::TestRootGateCache.test_extra_change_forces_miss
+def load_root_gate_cache(
+    root: Path, gate: str, key: str | None, extra: tuple[str, ...] = ()
+) -> tuple[Violation, ...] | None:
+    """Return `gate`'s cached violations if `key` (a `root_content_key`
+    result) and `extra` (the gate's non-file scalar inputs, folded via
+    `extra_key` exactly like `evaluate_cacheable_gate`'s own `extra`) both
+    match the stored entry -- `None` on any miss, including `key is None`
+    (an unverifiable tree state must never read as a hit). Reuses the same
+    `gate_results` table/storage discipline `evaluate_cacheable_gate`
+    already owns (`_load_entry`) -- one cache, one schema, just two
+    different callers keying it differently (per-touched-file vs
+    whole-tree)."""
+    if key is None:
+        return None
+    extra_k = extra_key(extra)
+    cached = _load_entry(root, gate)
+    if cached is None or cached.membership_key != key or cached.extra_key != extra_k:
+        return None
+    if cached.touched_key != key:
+        return None
+    _log.info(
+        "gate-cache: HIT (root-scanning) gate=%s (whole-tree key match)", gate
+    )
+    return cached.violations
+
+
+# frob:doc docs/modules/gates.md#root-scanning-process-pool-gate-cache-t-1445
+# frob:ticket T-1445
+# frob:tests \
+# tests/test_gate_cache.py::TestRootGateCache.test_miss_then_hit_skips_second_call
+def store_root_gate_cache(
+    root: Path,
+    gate: str,
+    key: str | None,
+    extra: tuple[str, ...],
+    violations: tuple[Violation, ...],
+) -> None:
+    """Persist `gate`'s freshly computed `violations` under `key`/`extra` --
+    a no-op when `key is None` (an unverifiable tree state must never be
+    cached, matching `load_root_gate_cache`'s never-hit posture for the
+    same case). Stores `membership_key == touched_key == key` (T-1445's
+    whole-tree design: this cache has no finer-grained touched-file set to
+    record, unlike `evaluate_cacheable_gate`'s per-gate observed reads)."""
+    if key is None:
+        _log.debug(
+            "gate-cache: not storing gate=%s (root_content_key unavailable)", gate
+        )
+        return
+    _store_entry(
+        root,
+        gate,
+        membership_key=key,
+        touched_key=key,
+        extra=extra_key(extra),
+        touched_files=(),
+        violations=violations,
+    )
+
+
 __all__ = [
     "TrackedSnapshot",
     "evaluate_cacheable_gate",
     "extra_key",
     "invalidate",
+    "load_root_gate_cache",
     "model_side_channel_key",
+    "root_content_key",
+    "store_root_gate_cache",
 ]

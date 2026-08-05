@@ -2282,6 +2282,9 @@ primitive that follow-up would call, not the detection.
 <!-- frob:describes src/frob/tickets/_land_queue.py::enqueue -->
 <!-- frob:describes src/frob/tickets/_land_queue.py::drain_next -->
 <!-- frob:describes src/frob/tickets/_land_queue.py::queue_status -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_enqueue -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_drain -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_core -->
 
 `frob.tickets._land_queue` formalizes the coordinator-lands-serially
 discipline `docs/guides/agent-playbook.md` already documents as process
@@ -2295,16 +2298,39 @@ it through a caller-supplied `land_fn` (normally a thin wrapper around
 dropping it. `queue_status(root)` is a read-only snapshot of the full
 queue, any status, for a caller that wants to show state.
 
-This is a deliberately partial delivery of T-1345's full title ("agents
-enqueue verified branches, one drainer merges onto main"): the queue data
-structure plus `enqueue`/`drain_next` are real and tested
-(`tests/unit/test_land_queue.py`), but there is no <!-- frob:waive DOC006 reason="disclosed-not-done narrative naming a CLI flag/paths that do not exist yet" -->`frob ticket land
---queue` CLI flag and no drainer subcommand yet -- both need
-`src/frob/_cli_parsers/_ticket/**`/`src/frob/app/ticket_runner/**`,
-outside this ticket's declared scope (`src/frob/tickets/**`,
-`docs/modules/tickets.md`, `docs/guides/agent-playbook.md`). Filed as
-T-draft-2f611252 (renumbers at land -- see T-1345's Done report for the
-real id).
+**CLI surface (T-1444, the follow-up T-1345 disclosed):**
+
+- `frob ticket land <id> --worktree <path> --queue` -- enqueue instead of
+  landing immediately (`_land_enqueue`); prints the assigned queue
+  position and returns right away.
+- `frob ticket land --drain` -- serially process every `queued` entry,
+  one process, one invocation (`_land_drain`), not a long-running poll
+  loop; call it repeatedly (a scheduler, a coordinator loop) to keep
+  draining. Needs neither `<id>` nor `--worktree` -- both are no longer
+  argparse-`required`, enforced instead in the app layer for every OTHER
+  mode (`_require_land_args`/`_land_plan_cmd`'s own check).
+- `_land_core` is the shared merge-check-splice-close-commit-sweep chain
+  both a direct `frob ticket land <id>` call and `_land_drain`'s per-entry
+  `land_fn` run -- the SAME `LAND-PROOF:` line prints on every real,
+  non-dry-run success either way (T-1345's own acceptance criterion,
+  "preserve the existing LAND-PROOF contract"). Unlike the old inline
+  `_land` body, `_land_core` never calls `sys.exit`: a post-land
+  unscoped-error-sweep revert returns
+  `LandError.PostLandUnscopedSweepFailed` instead, so `_land_drain` can
+  attribute a mid-batch failure to the one ticket that caused it
+  (dequeued, logged, NOT retried -- `drain_next`'s own policy, unchanged)
+  and continue draining the rest of the queue.
+
+**Deferred (disclosed, not silently dropped -- see T-1444's Done report
+for the real follow-up ticket id):** `_land_core`'s pre-/post-land
+unscoped-error sweep and baseline capture still run PER TICKET inside
+`_land_drain`'s loop, exactly as a direct `frob ticket land <id>` call
+would -- this ticket's acceptance criterion also asked for "one baseline
+capture + one full sweep per drain of N tickets" (shared across the whole
+batch) and "sublinear total verification wall-clock", neither of which
+this increment implements. Every entry's own delta validation is real and
+attribution is preserved; the batch-level sharing optimization is the
+scoped-out remainder.
 
 **Policy decisions, recorded here per the ticket's own design questions:**
 

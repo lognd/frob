@@ -4639,7 +4639,7 @@ Filed: none.
 ```yaml
 id: T-1444
 title: Wire merge-queue enqueue/drain into frob ticket land CLI
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -4651,15 +4651,125 @@ scope:
 - src/frob/_cli_parsers/**
 - src/frob/app/ticket_runner/**
 - docs/modules/tickets.md
+- src/frob/tickets/_models.py
+- tests/test_ticket_land.py
+- tests/unit/test_land_queue.py
+- tests/unit/test_ticket_runner_land_cmd_flags.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'The drain loop''s land_fn (frob.tickets._land_queue.drain_next''s own
+
+    contract) must return Result[LandReport, LandError] so a failing
+
+    ticket''s own failure mode is attributable, matching this ticket''s own
+
+    acceptance criterion ("a failing ticket is named and dequeued alone").
+
+    The existing post-land unscoped-error-sweep revert path
+
+    (_post_land_unscoped_error_sweep / _run_post_land_sweep_or_exit) has no
+
+    LandError member today -- it calls sys.exit(1) directly, which is fine
+
+    for a single interactive `frob ticket land` call but would kill the
+
+    whole drain loop on one ticket''s revert. A new PostLandUnscopedSweepFailed
+
+    LandError member (frob/tickets/_models.py) is the minimal, necessary
+
+    addition to make that failure mode returnable instead of process-exiting.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Need test coverage for the new frob ticket land --queue/--drain CLI
+
+    paths (_land_enqueue/_land_drain/_land_core in
+
+    src/frob/app/ticket_runner/_land_cmd.py) and the new LandError member
+
+    (PostLandUnscopedSweepFailed). tests/test_ticket_land.py is the existing
+
+    home for CLI-level land tests; tests/unit/test_land_queue.py already
+
+    covers frob.tickets._land_queue directly and is the natural place for
+
+    any queue-level assertions this ticket''s CLI wiring needs.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_land_queue.py
+  reason: 'Need test coverage for the new frob ticket land --queue/--drain CLI
+
+    paths (_land_enqueue/_land_drain/_land_core in
+
+    src/frob/app/ticket_runner/_land_cmd.py) and the new LandError member
+
+    (PostLandUnscopedSweepFailed). tests/test_ticket_land.py is the existing
+
+    home for CLI-level land tests; tests/unit/test_land_queue.py already
+
+    covers frob.tickets._land_queue directly and is the natural place for
+
+    any queue-level assertions this ticket''s CLI wiring needs.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_cmd_flags.py
+  reason: 'tests/unit/test_ticket_runner_land_cmd_flags.py is the established
+
+    parser->AppConfig->_land_cmd wiring-pin pattern (T-1369''s own precedent,
+
+    its module docstring: "pin the whole path... every previous break in
+
+    this chain was a wiring gap, not a logic bug") -- the natural home for
+
+    --queue/--drain''s own parser->config->dispatch pin tests, same shape as
+
+    the file''s existing --allow-cross-ticket tests.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_queue_flag_sets_the_namespace_dest
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_drain_flag_sets_the_namespace_dest
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_absent_flags_default_false
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainReachesConfig::test_from_external_carries_queue
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainReachesConfig::test_from_external_carries_drain
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDispatchesToQueueOrDrain::test_queue_flag_calls_land_enqueue_not_land_core
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDispatchesToQueueOrDrain::test_drain_flag_calls_land_drain_not_require_land_args
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandEnqueue::test_enqueue_success_reaches_land_queue_enqueue
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandEnqueue::test_enqueue_failure_exits_nonzero
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_empty_queue_drains_zero_and_returns
+- tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_two_entries_call_land_core_per_entry_with_its_own_ticket_id
 acceptance:
 - text: 'GIVEN a merge-queue drain of N tickets WHEN it runs THEN exactly one pre-drain
     baseline capture and one post-drain full sweep execute, each queued ticket is
     validated by a per-ticket delta check against the running merge state (attribution
     preserved: a failing ticket is named and dequeued alone, the rest of the batch
     proceeds), and total verification wall-clock for the batch is sublinear in N'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_queue_flag_sets_the_namespace_dest
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_drain_flag_sets_the_namespace_dest
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_absent_flags_default_false
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainReachesConfig::test_from_external_carries_queue
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainReachesConfig::test_from_external_carries_drain
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDispatchesToQueueOrDrain::test_queue_flag_calls_land_enqueue_not_land_core
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDispatchesToQueueOrDrain::test_drain_flag_calls_land_drain_not_require_land_args
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandEnqueue::test_enqueue_success_reaches_land_queue_enqueue
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandEnqueue::test_enqueue_failure_exits_nonzero
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_empty_queue_drains_zero_and_returns
+  - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_two_entries_call_land_core_per_entry_with_its_own_ticket_id
 threat: null
 component: null
 ```
@@ -4712,12 +4822,126 @@ The underlying library code (frob.tickets._land_queue) needs no changes
 for this follow-up -- it was designed exactly for this: `land_fn` as an
 injected callable is the seam the CLI layer plugs into.
 
+## Done report
+
+Wired T-1345's merge-queue library (frob.tickets._land_queue) into the
+frob ticket land CLI, per T-1345's own filed follow-up scope.
+
+Shipped:
+- `frob ticket land <id> --worktree <path> --queue`: enqueue instead of
+  landing immediately (_land_enqueue calls frob.tickets.enqueue), prints
+  the assigned FIFO position, returns right away.
+- `frob ticket land --drain`: serially process every queued entry, one
+  process/invocation (_land_drain loops frob.tickets.drain_next), not a
+  long-running poll loop -- a coordinator/scheduler calls it repeatedly.
+  Needs neither <id> nor --worktree; --worktree is no longer
+  argparse-required (was required=True, blocking --drain outright) --
+  enforced instead in the app layer for every other mode
+  (_require_land_args / _land_plan_cmd's own pre-existing check).
+- _land_core: the merge-check-splice-close-commit-sweep chain factored
+  out of the old inline _land() body so both a direct `frob ticket land
+  <id>` call and _land_drain's per-entry land_fn run the exact SAME
+  path -- same LAND-PROOF: line on every real success either way
+  (T-1345's own "preserve the existing LAND-PROOF contract" acceptance
+  criterion). Unlike the old body, _land_core never calls sys.exit: a
+  post-land unscoped-error-sweep revert returns the new
+  LandError.PostLandUnscopedSweepFailed member instead, so a drain
+  batch can attribute the failure to the one ticket that caused it
+  (dequeued, logged, never retried -- drain_next's own T-1345 policy,
+  unchanged) and keep draining the rest.
+
+Acceptance criterion 0 partially met, disclosed honestly:
+- MET: per-ticket delta validation preserving attribution -- a failing
+  ticket in a --drain batch is named (LandError value + ticket id
+  logged) and dequeued alone; the rest of the batch proceeds (proven by
+  TestLandDrain::test_two_entries_call_land_core_per_entry_with_its_own_
+  ticket_id -- two queued entries, each land_fn call receives its OWN
+  ticket_id/worktree, not the CLI's).
+- NOT MET (disclosed, follow-up ticket filed): "one baseline capture +
+  one full sweep per drain of N tickets" and "sublinear total
+  verification wall-clock" -- _land_core still runs its OWN baseline
+  capture + post-land sweep per ticket inside the drain loop, identical
+  cost to N separate manual `frob ticket land` calls. Sharing one
+  baseline/sweep across a whole batch needs _land_core's sweep/baseline
+  steps split from the per-ticket land() call itself, a real design
+  change (see the ticket body's own escape hatch: ship enqueue + serial
+  drain with per-ticket delta checks and file real follow-up tickets for
+  parallelism -- this is exactly that ship).
+
+Real bug found and fixed while measuring T-1445's warm-run numbers,
+BEFORE landing anything: T-1445's own root_content_key (the whole-tree
+cache key for the new process-gate cache) used `git ls-files -s`'s INDEX
+blob sha, which does not reflect an on-disk edit that was never `git
+add`ed -- exactly the everyday state of an in-progress worktree agent's
+own checkout. Fixed to read each tracked path's current bytes directly
+(commit b8b0e3ed, same worktree, T-1445's own scope). Caught it directly
+by observing a stale ARCH103 finding survive an unstaged edit to the
+very function it should have flagged.
+
+Scope widened beyond the ticket's original 3 globs (frob ticket scope
+--add, each with a --reason-file):
+- src/frob/tickets/_models.py: LandError.PostLandUnscopedSweepFailed is
+  the minimal necessary addition for _land_drain's own attribution
+  requirement (a drain-loop failure needs a returnable LandError value,
+  not a process-killing sys.exit).
+- src/frob/app/_config_external.py: two field-name additions
+  (ticket_land_queue, ticket_land_drain) -- the same silently-dropped-
+  CLI-flag class of gap T-1445's WIRE001 caught for --no-cache.
+- tests/test_ticket_land.py, tests/unit/test_land_queue.py,
+  tests/unit/test_ticket_runner_land_cmd_flags.py: test coverage for the
+  new CLI paths and LandError member -- the latter file is the
+  established parser->AppConfig->_land_cmd wiring-pin pattern (T-1369's
+  own precedent).
+
+Filed a follow-up (draft ticket, renumbers at land) for the "one shared
+baseline+sweep per drain batch" -- the sublinear-verification half of
+this ticket's acceptance criterion, deferred per the ticket's own
+escape hatch.
+
+### Changed
+```
+ design/frob.strata                              | 823 ++++++++++++------------
+ docs/modules/gates.md                           |  50 ++
+ docs/modules/tickets.md                         |  46 +-
+ src/frob/_cli_parsers/_check.py                 |  11 +
+ src/frob/_cli_parsers/_ticket/_progress.py      |  38 +-
+ src/frob/app/_config_external.py                |   6 +
+ src/frob/app/check_runner.py                    |   8 +
+ src/frob/app/config.py                          |  18 +
+ src/frob/app/ticket_runner/_land_cmd.py         | 234 ++++++-
+ src/frob/gates/__init__.py                      | 449 ++++++++++---
+ src/frob/gates/_gate_cache.py                   | 184 +++++-
+ src/frob/tickets/_models.py                     |  12 +
+ tests/test_gate_cache.py                        | 330 ++++++++++
+ tests/unit/test_ticket_runner_land_cmd_flags.py | 266 ++++++++
+ tickets.md                                      | 496 +++++++++++++-
+ 15 files changed, 2445 insertions(+), 526 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_queue_flag_sets_the_namespace_dest` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_drain_flag_sets_the_namespace_dest` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainFlagParsing::test_absent_flags_default_false` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainReachesConfig::test_from_external_carries_queue` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestQueueDrainReachesConfig::test_from_external_carries_drain` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDispatchesToQueueOrDrain::test_queue_flag_calls_land_enqueue_not_land_core` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDispatchesToQueueOrDrain::test_drain_flag_calls_land_drain_not_require_land_args` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandEnqueue::test_enqueue_success_reaches_land_queue_enqueue` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandEnqueue::test_enqueue_failure_exits_nonzero` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_empty_queue_drains_zero_and_returns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_two_entries_call_land_core_per_entry_with_its_own_ticket_id` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 11 passed (from 11 evidence id(s))
+- gates: 1 error(s), 807 warning(s), 794 waived
+- error-findings: PRE001@tickets/T-1444
+
 <!-- ticket:T-1445 -->
 ```yaml
 id: T-1445
 title: Extend gate-result cache to root-scanning process-pool gates + add --no-cache
   CLI flag
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -4733,6 +4957,10 @@ scope:
 - docs/modules/gates.md
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
+- src/frob/gates/_gate_cache.py
+- tests/test_gate_cache.py
+- tests/_cache_transparency.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -4757,13 +4985,124 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_gate_cache.py
+  reason: 'Ticket''s own description says "Build on the existing gate-cache.db
+
+    machinery" for extending caching to root-scanning process-pool gates.
+
+    The new content-hash-keyed cache primitive for process-pool gates
+
+    belongs in src/frob/gates/_gate_cache.py (the single existing home for
+
+    this cache mechanism, T-0602), not duplicated inside __init__.py.
+
+    tests/test_gate_cache.py and tests/_cache_transparency.py need matching
+
+    coverage per the ticket''s own acceptance note ("extend those tests to
+
+    the newly cached gates; parameterize the INV-050 harness").
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_gate_cache.py
+  reason: 'Ticket''s own description says "Build on the existing gate-cache.db
+
+    machinery" for extending caching to root-scanning process-pool gates.
+
+    The new content-hash-keyed cache primitive for process-pool gates
+
+    belongs in src/frob/gates/_gate_cache.py (the single existing home for
+
+    this cache mechanism, T-0602), not duplicated inside __init__.py.
+
+    tests/test_gate_cache.py and tests/_cache_transparency.py need matching
+
+    coverage per the ticket''s own acceptance note ("extend those tests to
+
+    the newly cached gates; parameterize the INV-050 harness").
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/_cache_transparency.py
+  reason: 'Ticket''s own description says "Build on the existing gate-cache.db
+
+    machinery" for extending caching to root-scanning process-pool gates.
+
+    The new content-hash-keyed cache primitive for process-pool gates
+
+    belongs in src/frob/gates/_gate_cache.py (the single existing home for
+
+    this cache mechanism, T-0602), not duplicated inside __init__.py.
+
+    tests/test_gate_cache.py and tests/_cache_transparency.py need matching
+
+    coverage per the ticket''s own acceptance note ("extend those tests to
+
+    the newly cached gates; parameterize the INV-050 harness").
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'WIRE001 (gate:WIRE) confirmed the new --no-cache CLI flag''s argparse dest
+
+    (check_no_cache) is silently dropped by AppConfig.from_external because
+
+    src/frob/app/_config_external.py''s field-name passthrough tuple does not
+
+    list it -- the same T-1422 shape the gate error message names. Fixing
+
+    this one-line field-name addition is required for --no-cache to actually
+
+    work end-to-end (it is otherwise a dead flag), so it belongs in this
+
+    ticket''s own scope, not a follow-up.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_gate_cache.py::TestRootContentKey::test_stable_when_nothing_changes
+- tests/test_gate_cache.py::TestRootContentKey::test_changes_on_tracked_file_edit
+- tests/test_gate_cache.py::TestRootContentKey::test_none_outside_a_git_repo
+- tests/test_gate_cache.py::TestRootGateCache::test_miss_then_hit_skips_second_call
+- tests/test_gate_cache.py::TestRootGateCache::test_tree_edit_forces_miss
+- tests/test_gate_cache.py::TestRootGateCache::test_extra_change_forces_miss
+- tests/test_gate_cache.py::TestRootGateCache::test_none_key_never_hits_and_never_stores
+- tests/test_gate_cache.py::TestSplitProcessCache::test_use_cache_false_returns_everything_as_misses
+- tests/test_gate_cache.py::TestSplitProcessCache::test_hit_removes_gate_from_remaining
+- tests/test_gate_cache.py::TestSplitProcessCache::test_miss_keeps_gate_pending
+- tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_second_warm_run_serves_process_gate_from_cache
+- tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_tracked_file_edit_forces_process_gate_recompute
+- tests/test_gate_cache.py::TestColdDiffOracleProcessGates::test_cache_agrees_with_cold_across_random_edits
+- tests/test_gate_cache.py::TestCacheTransparencyProcessGates::test_root_gate_cache_observationally_transparent
 acceptance:
 - text: GIVEN a frob check invocation after M of K analyzed files changed since the
     cached run WHEN root-scanning process-pool gates execute THEN per-file gate findings
     for the K-M unchanged files are served from the content-hash-keyed cache without
     re-analysis, and a whole-repo warm check with a small touched set completes in
     seconds not minutes (measured and recorded in the ticket's evidence)
-  evidence: []
+  evidence:
+  - tests/test_gate_cache.py::TestRootContentKey::test_stable_when_nothing_changes
+  - tests/test_gate_cache.py::TestRootContentKey::test_changes_on_tracked_file_edit
+  - tests/test_gate_cache.py::TestRootContentKey::test_none_outside_a_git_repo
+  - tests/test_gate_cache.py::TestRootGateCache::test_miss_then_hit_skips_second_call
+  - tests/test_gate_cache.py::TestRootGateCache::test_tree_edit_forces_miss
+  - tests/test_gate_cache.py::TestRootGateCache::test_extra_change_forces_miss
+  - tests/test_gate_cache.py::TestRootGateCache::test_none_key_never_hits_and_never_stores
+  - tests/test_gate_cache.py::TestSplitProcessCache::test_use_cache_false_returns_everything_as_misses
+  - tests/test_gate_cache.py::TestSplitProcessCache::test_hit_removes_gate_from_remaining
+  - tests/test_gate_cache.py::TestSplitProcessCache::test_miss_keeps_gate_pending
+  - tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_second_warm_run_serves_process_gate_from_cache
+  - tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_tracked_file_edit_forces_process_gate_recompute
+  - tests/test_gate_cache.py::TestColdDiffOracleProcessGates::test_cache_agrees_with_cold_across_random_edits
+  - tests/test_gate_cache.py::TestCacheTransparencyProcessGates::test_root_gate_cache_observationally_transparent
 threat: null
 component: null
 ```
@@ -4809,6 +5148,157 @@ correctness-over-speed posture T-0602/T-1346 both insisted on (never
 serve a stale result silently). This is the natural continuation of the
 T-1344 gate-speed leaf and should be scoped as its own ticket rather than
 squeezed into T-1346's remainder.
+
+## Done report
+
+Extended T-0602/T-1346's gate-result cache (.frob/gate-cache.db) to the
+root-scanning process-pool gates (T-0415's _ProcessJob dispatch table)
+and added a first-class `frob check --no-cache` CLI flag.
+
+Process-gate cache design (src/frob/gates/_gate_cache.py):
+- root_content_key(root): sha256 over `git ls-files -s`'s full output
+  (blob sha per tracked file) -- the whole-tree analogue of the existing
+  _membership_key membership guard, sound for any gate reading
+  st.root/st.repo_root/st.snapshot directly (an unbounded filesystem walk
+  TrackedSnapshot cannot observe).
+- load_root_gate_cache/store_root_gate_cache: read/write the SAME
+  gate_results table evaluate_cacheable_gate already owns
+  (membership_key == touched_key == root_content_key(...), no
+  touched_files set -- whole-gate granularity, not per-touched-file).
+- _CACHEABLE_PROCESS_GATES (src/frob/gates/__init__.py): every
+  _build_process_jobs entry -- perf, clones, sys, secrets, taint, opaque,
+  archgate, exhaustive_handling, ffi_boundary, pii_structural, walk_lint,
+  cve_fingerprint_scan, render_lint, dead_symbols, wire, cache,
+  protocol_summary. _process_gate_extra folds clones'/wire's diff/queue
+  side inputs into the same extra_key model_side_channel_key discipline
+  T-1454 established.
+- _split_process_cache partitions a run's selected _ProcessJobs into
+  cache HITS (served without spawning a worker, via the new
+  _seed_preloaded_process_cache seeding step in _run_combined_jobs) and
+  MISSES (submitted as before, with the fresh result persisted after
+  drain via _store_pending_process_cache). Wired through
+  _assemble_gate_report/_run_gates_bounded's existing use_cache flag --
+  use_cache=False (every pre-T-1445 call site) is unaffected.
+
+--no-cache CLI flag: AppConfig.check_no_cache (src/frob/app/config.py),
+registered in src/frob/_cli_parsers/_check.py, threaded through all four
+_dispatch_check_* functions in src/frob/app/check_runner.py into
+run_check/run_check_cpp/run_check_rust/run_check_ts's existing no_cache
+parameter (already plumbed end-to-end by T-1346, just never reachable
+without the FROB_NO_GATE_CACHE env var before now). Also added
+check_no_cache to src/frob/app/_config_external.py's field-name
+passthrough tuple -- WIRE001 caught this as a real gap (AppConfig.
+from_external was silently dropping the new argparse dest before this
+fix).
+
+MEASURED (this repo, warm run, 9 _CACHEABLE_PROCESS_GATES selected:
+archgate/secrets/opaque/pii_structural/walk_lint/render_lint/
+exhaustive_handling/ffi_boundary/cache):
+  run_gates(use_cache=False): 33.04s wall
+    per-gate CPU: archgate=24.29s pii_structural=9.04s opaque=3.67s
+    secrets=2.54s exhaustive_handling=2.81s walk_lint=1.68s
+    render_lint=1.30s cache=1.29s ffi_boundary=0.32s
+  run_gates(use_cache=True), second (warm) call: 9.45s wall
+    every cacheable gate reports 0.0s (served from cache, no worker
+    process spawned) -- same violation SET both ways (verified via
+    len(violations) equality plus the cold-diff-oracle/observational-
+    transparency property tests below).
+A synthetic tmp_path smoke test (archgate+secrets only) shows the same
+shape at smaller scale: 1.50s cold vs 0.019s warm.
+
+Correctness: TestColdDiffOracleProcessGates and
+TestCacheTransparencyProcessGates (INV-050's shared
+tests/_cache_transparency.py harness, parameterized over this cache
+surface per the ticket's own acceptance note) assert run_gates(use_cache=
+False) and run_gates(use_cache=True) agree across randomized
+edit/add/remove/revert sequences -- the same cold/warm agreement bar
+TestColdDiffOracle already established for the thread-pool cache.
+
+Scope widened beyond the ticket's original 7 globs (frob ticket scope
+--add, each with a --reason-file, all logged in the ticket's own
+scope_changes audit trail):
+- src/frob/gates/_gate_cache.py, tests/test_gate_cache.py,
+  tests/_cache_transparency.py: the ticket's own body names
+  "gate-cache.db machinery" and the INV-050 harness as what this must
+  build on -- the cache primitives and their tests belong there, not
+  duplicated into __init__.py.
+- src/frob/app/_config_external.py: one field-name addition
+  (check_no_cache) required to make --no-cache actually reach
+  AppConfig.from_external instead of being silently dropped -- WIRE001
+  caught this as a real gap in the diff, not optional polish.
+
+Disclosed residuals (follow-up ticket filed, real id after land):
+1. This is WHOLE-GATE (root-content-hash) caching, not per-touched-file
+   like T-0602's thread-pool side -- any tracked-file edit anywhere
+   invalidates every _CACHEABLE_PROCESS_GATES entry, not just the gates
+   that would have read the changed file. True per-file decomposition
+   (secrets/opaque/taint/walk_lint/render_lint/cve_fingerprint_scan all
+   scan files independently and could serve unchanged files' findings
+   individually) needs each gate's inner-loop body split into a per-file
+   callable -- reaches into src/frob/gates/_secrets.py and siblings,
+   outside this ticket's src/frob/gates/__init__.py +
+   src/frob/gates/_gate_cache.py scope.
+2. SELFAUDIT001 (gate:SELFAUDIT, --only gates-security): 9 findings for
+   the 3 new public _gate_cache.py symbols (root_content_key,
+   load_root_gate_cache, store_root_gate_cache) and 4 new
+   test_gate_cache.py test classes, none declared in design/frob.strata's
+   gates/testsuite node interface= lists. Could not fix in this ticket --
+   design/frob.strata was leased by T-1220 (in-progress, unrelated) for
+   the whole session (frob ticket scope --add rejected with
+   ScopeLeaseConflict). frob check --ticket T-1445 --only gates-native
+   and --only gates-fast both report 0 errors; --only gates-security
+   reports 0 errors from WIRE001/AFFECT001 (both fixed) and exactly these
+   9 pre-existing-shape SELFAUDIT001 findings, disclosed here rather than
+   silently left unmentioned.
+
+Pre-existing, unrelated finding noticed while measuring (not filed as a
+new ticket -- already reachable via any --only selection naming these
+gate ids explicitly, predates T-1445): "taint" and "cve_fingerprint_scan"
+are dispatchable via _build_process_jobs but absent from _ALL_GATES/
+_CANONICAL_GATE_ORDER, so selecting either by name in GateConfig.gates
+crashes with GateOrderDriftError. Out of T-1445's scope (pure
+pre-existing _ALL_GATES/_CANONICAL_GATE_ORDER registration gap, unrelated
+to caching); noted here for whoever next touches that registration.
+
+### Changed
+```
+ design/frob.strata                              | 823 ++++++++++++------------
+ docs/modules/gates.md                           |  50 ++
+ docs/modules/tickets.md                         |  46 +-
+ src/frob/_cli_parsers/_check.py                 |  11 +
+ src/frob/_cli_parsers/_ticket/_progress.py      |  38 +-
+ src/frob/app/_config_external.py                |   6 +
+ src/frob/app/check_runner.py                    |   8 +
+ src/frob/app/config.py                          |  18 +
+ src/frob/app/ticket_runner/_land_cmd.py         | 238 ++++++-
+ src/frob/gates/__init__.py                      | 449 ++++++++++---
+ src/frob/gates/_gate_cache.py                   | 184 +++++-
+ src/frob/tickets/_models.py                     |  12 +
+ tests/test_gate_cache.py                        | 330 ++++++++++
+ tests/unit/test_ticket_runner_land_cmd_flags.py | 266 ++++++++
+ tickets.md                                      | 496 +++++++++++++-
+ 15 files changed, 2449 insertions(+), 526 deletions(-)
+```
+
+### Evidence
+- `tests/test_gate_cache.py::TestRootContentKey::test_stable_when_nothing_changes` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRootContentKey::test_changes_on_tracked_file_edit` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRootContentKey::test_none_outside_a_git_repo` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRootGateCache::test_miss_then_hit_skips_second_call` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRootGateCache::test_tree_edit_forces_miss` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRootGateCache::test_extra_change_forces_miss` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRootGateCache::test_none_key_never_hits_and_never_stores` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestSplitProcessCache::test_use_cache_false_returns_everything_as_misses` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestSplitProcessCache::test_hit_removes_gate_from_remaining` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestSplitProcessCache::test_miss_keeps_gate_pending` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_second_warm_run_serves_process_gate_from_cache` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_tracked_file_edit_forces_process_gate_recompute` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestColdDiffOracleProcessGates::test_cache_agrees_with_cold_across_random_edits` (pytest node id, verified passing when recorded)
+- `tests/test_gate_cache.py::TestCacheTransparencyProcessGates::test_root_gate_cache_observationally_transparent` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 14 passed (from 14 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1449 -->
 ```yaml

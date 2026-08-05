@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.338.0] - unreleased
+
+- T-1445: Extend gate-result cache to root-scanning process-pool gates + add --no-cache CLI flag
+
 ## [0.337.0] - unreleased
 
 - T-1531: auto-repair the recurring land-refusal classes via Tier-A/B fix handlers (strata declarations, ticket edges, report refresh, draft renumber)

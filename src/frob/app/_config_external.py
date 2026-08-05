@@ -291,6 +291,8 @@ _BOOL_FLAGS = (
     "check_stamp_baseline",
     "check_delta",
     "check_fix",
+    # frob:ticket T-1445
+    "check_no_cache",
     # frob:ticket T-1535
     "check_land_parity",
     "graph_json",
@@ -333,6 +335,10 @@ _BOOL_FLAGS = (
     "ticket_land_finish",
     # frob:ticket T-1269
     "ticket_land_plan",
+    # frob:ticket T-1444
+    "ticket_land_queue",
+    # frob:ticket T-1444
+    "ticket_land_drain",
     "ticket_close_strict",
     "ticket_foreground",
     "ticket_steal",

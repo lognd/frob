@@ -193,8 +193,15 @@ def _add_ticket_land_parser(ticket_sub):
         "--worktree",
         dest="ticket_worktree",
         metavar="PATH",
-        required=True,
-        help="path to the worktree checked out to the ticket's branch",
+        # frob:ticket T-1444
+        # T-1444: no longer argparse-`required` -- `--drain` needs neither
+        # <id> nor --worktree (it processes the whole queue, not one
+        # ticket). Every OTHER mode (plain land, --plan, --queue) still
+        # requires it, enforced in the app layer instead
+        # (_require_land_args / _land_plan_cmd's own check), the same
+        # place <id> itself (already `nargs="?"`) is enforced.
+        help="path to the worktree checked out to the ticket's branch "
+        "(required unless --drain)",
     )
     # frob:ticket T-1269
     ticket_land_p.add_argument(
@@ -252,6 +259,33 @@ def _add_ticket_land_parser(ticket_sub):
             "made), push root's current branch to its upstream remote. "
             "Never pushes on a dry run, and never pushes if landing "
             "itself failed."
+        ),
+    )
+    # frob:ticket T-1444
+    ticket_land_p.add_argument(
+        "--queue",
+        dest="ticket_land_queue",
+        action="store_true",
+        help=(
+            "T-1444: enqueue <id>'s --worktree branch instead of landing "
+            "it immediately (frob.tickets._land_queue.enqueue) -- prints "
+            "the assigned queue position and returns right away; a "
+            "separate `frob ticket land --drain` call processes it later, "
+            "in FIFO order. Mutually exclusive with --plan/--drain."
+        ),
+    )
+    # frob:ticket T-1444
+    ticket_land_p.add_argument(
+        "--drain",
+        dest="ticket_land_drain",
+        action="store_true",
+        help=(
+            "T-1444: serially process every queued entry in "
+            ".frob/land-queue.json (frob.tickets._land_queue.drain_next), "
+            "one process, one invocation -- not a long-running poll loop; "
+            "call this repeatedly (e.g. from a scheduler) to keep draining. "
+            "Needs neither <id> nor --worktree. Mutually exclusive with "
+            "--plan/--queue."
         ),
     )
     # frob:ticket T-1175

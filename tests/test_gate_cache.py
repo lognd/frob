@@ -356,3 +356,333 @@ class TestColdDiffOracle:
                 f"round {round_} ({action}): cold/cache-aware evaluation disagree "
                 f"symdiff={cold_fp ^ warm_fp}"
             )
+
+
+# frob:ticket T-1445
+class TestRootContentKey:
+    """`root_content_key` (T-1445): the whole-tree conservative dependency
+    key `_CACHEABLE_PROCESS_GATES` keys off of -- each git-tracked path's
+    CURRENT ON-DISK CONTENT (a plain read), not `git ls-files -s`'s INDEX
+    blob sha."""
+
+    def test_stable_when_nothing_changes(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::root_content_key"""
+        from frob.gates._gate_cache import root_content_key
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        assert root_content_key(tmp_path) == root_content_key(tmp_path)
+
+    def test_changes_on_tracked_file_edit(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::root_content_key"""
+        from frob.gates._gate_cache import root_content_key
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        before = root_content_key(tmp_path)
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        after = root_content_key(tmp_path)
+        assert before != after
+
+    def test_changes_on_uncommitted_edit_never_git_added(
+        self, tmp_path: Path
+    ) -> None:
+        """Regression test for the real incident this fixed: an edit to a
+        git-TRACKED file that was never `git add`ed (the everyday state of
+        an in-progress worktree agent's own checkout) MUST still change
+        the key -- `git ls-files -s`'s INDEX blob sha would not see this
+        edit at all, silently serving a stale cached result for every
+        cacheable process-pool gate until the next `git add`."""
+        from frob.gates._gate_cache import root_content_key
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        before = root_content_key(tmp_path)
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")
+        # Deliberately NO `git add` here.
+        after = root_content_key(tmp_path)
+        assert before != after
+
+    def test_none_outside_a_git_repo(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::root_content_key"""
+        from frob.gates._gate_cache import root_content_key
+
+        assert root_content_key(tmp_path) is None
+
+
+# frob:ticket T-1445
+class TestRootGateCache:
+    """`load_root_gate_cache`/`store_root_gate_cache` (T-1445): the
+    whole-tree cache primitives `_CACHEABLE_PROCESS_GATES` gates use in
+    place of `evaluate_cacheable_gate`'s per-touched-file tracking, since a
+    process-pool gate reads `st.root`/`st.repo_root` directly rather than
+    the indexed `GraphSnapshot`."""
+
+    def test_miss_then_hit_skips_second_call(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::load_root_gate_cache
+        frob:tests src/frob/gates/_gate_cache.py::store_root_gate_cache"""
+        from frob.gates._gate_cache import (
+            load_root_gate_cache,
+            root_content_key,
+            store_root_gate_cache,
+        )
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        key = root_content_key(tmp_path)
+        assert load_root_gate_cache(tmp_path, "fake_root_gate", key) is None
+        store_root_gate_cache(tmp_path, "fake_root_gate", key, (), ())
+        assert load_root_gate_cache(tmp_path, "fake_root_gate", key) == ()
+
+    def test_tree_edit_forces_miss(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::load_root_gate_cache"""
+        from frob.gates._gate_cache import (
+            load_root_gate_cache,
+            root_content_key,
+            store_root_gate_cache,
+        )
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        key1 = root_content_key(tmp_path)
+        store_root_gate_cache(tmp_path, "fake_root_gate", key1, (), ())
+
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        key2 = root_content_key(tmp_path)
+        assert key2 != key1
+        assert load_root_gate_cache(tmp_path, "fake_root_gate", key2) is None
+
+    def test_extra_change_forces_miss(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::load_root_gate_cache"""
+        from frob.gates._gate_cache import (
+            load_root_gate_cache,
+            root_content_key,
+            store_root_gate_cache,
+        )
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        key = root_content_key(tmp_path)
+        store_root_gate_cache(tmp_path, "fake_root_gate", key, ("v1",), ())
+        assert load_root_gate_cache(tmp_path, "fake_root_gate", key, ("v2",)) is None
+        assert load_root_gate_cache(tmp_path, "fake_root_gate", key, ("v1",)) == ()
+
+    def test_none_key_never_hits_and_never_stores(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::load_root_gate_cache
+        frob:tests src/frob/gates/_gate_cache.py::store_root_gate_cache"""
+        from frob.gates._gate_cache import load_root_gate_cache, store_root_gate_cache
+
+        _git_init(tmp_path)
+        store_root_gate_cache(tmp_path, "fake_root_gate", None, (), ())
+        assert not (tmp_path / ".frob" / "gate-cache.db").exists()
+        assert load_root_gate_cache(tmp_path, "fake_root_gate", None) is None
+
+
+# frob:ticket T-1445
+class TestSplitProcessCache:
+    """`_split_process_cache` (T-1445): `_build_jobs`'s process-pool
+    counterpart to `_substitute_cacheable_jobs`."""
+
+    def test_use_cache_false_returns_everything_as_misses(
+        self, tmp_path: Path
+    ) -> None:
+        """frob:tests src/frob/gates/__init__.py::_split_process_cache"""
+        from frob.gates import _build_jobs, _load_inputs, _split_process_cache
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        selected = frozenset({"drift", "secrets"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+        st = _load_inputs(cfg).danger_ok
+        _thread_jobs, process_jobs, _skipped = _build_jobs(selected, st)
+
+        remaining, hits, pending = _split_process_cache(
+            process_jobs, st, use_cache=False
+        )
+        assert remaining == process_jobs
+        assert hits == {}
+        assert pending == {}
+
+    def test_hit_removes_gate_from_remaining(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/__init__.py::_split_process_cache"""
+        from frob.gates import _build_jobs, _load_inputs, _split_process_cache
+        from frob.gates._gate_cache import root_content_key, store_root_gate_cache
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        selected = frozenset({"drift", "secrets"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+        st = _load_inputs(cfg).danger_ok
+        _thread_jobs, process_jobs, _skipped = _build_jobs(selected, st)
+        key = root_content_key(st.repo_root)
+        store_root_gate_cache(st.repo_root, "secrets", key, (), ())
+
+        remaining, hits, pending = _split_process_cache(
+            process_jobs, st, use_cache=True
+        )
+        assert "secrets" not in remaining
+        assert hits["secrets"] == ()
+        assert "secrets" not in pending
+
+    def test_miss_keeps_gate_pending(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/__init__.py::_split_process_cache"""
+        from frob.gates import _build_jobs, _load_inputs, _split_process_cache
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        selected = frozenset({"drift", "secrets"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+        st = _load_inputs(cfg).danger_ok
+        _thread_jobs, process_jobs, _skipped = _build_jobs(selected, st)
+
+        remaining, hits, pending = _split_process_cache(
+            process_jobs, st, use_cache=True
+        )
+        assert "secrets" in remaining
+        assert "secrets" not in hits
+        assert "secrets" in pending
+
+
+# frob:ticket T-1445
+class TestRunGatesUseCacheProcessGates:
+    """`run_gates(..., use_cache=True)` end-to-end over a
+    `_CACHEABLE_PROCESS_GATES` member -- the CLI-facing behavior
+    `TestSplitProcessCache`/`TestRootGateCache` verify piecewise."""
+
+    def test_second_warm_run_serves_process_gate_from_cache(
+        self, tmp_path: Path
+    ) -> None:
+        """frob:tests src/frob/gates/__init__.py::run_gates"""
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"drift", "archgate"})
+        )
+        first = run_gates(cfg, use_cache=True).danger_ok
+        second = run_gates(cfg, use_cache=True).danger_ok
+        assert first.violations == second.violations
+        assert second.stats.timing_s["archgate"] == 0.0
+
+    def test_tracked_file_edit_forces_process_gate_recompute(
+        self, tmp_path: Path
+    ) -> None:
+        """A real tree edit must force a fresh `archgate` result, not a
+        stale cached one -- the T-1445 correctness bar mirrored from
+        `TestEvaluateCacheableGate.test_edit_to_touched_file_forces_miss`."""
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"drift", "archgate"})
+        )
+        run_gates(cfg, use_cache=True)
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        second = run_gates(cfg, use_cache=True).danger_ok
+        assert second.stats.timing_s["archgate"] != 0.0, (
+            "a tracked-file edit must force a real archgate re-run, not a "
+            "stale cache hit"
+        )
+
+
+# frob:ticket T-1445
+class TestColdDiffOracleProcessGates:
+    """T-1445's own cold-diff oracle, `TestColdDiffOracle`'s shape widened
+    to a `_CACHEABLE_PROCESS_GATES` selection: `run_gates(use_cache=False)`
+    and `run_gates(use_cache=True)` must agree across random edits for the
+    process-pool gates too, not just the thread-pool `_CACHEABLE_GATES`."""
+
+    def test_cache_agrees_with_cold_across_random_edits(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/__init__.py::run_gates"""
+        rng = random.Random(4104)
+        _git_init(tmp_path)
+        selected = frozenset({"drift", "secrets", "archgate", "opaque"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+        files = [f"pkg/mod{i}.py" for i in range(3)]
+
+        for round_ in range(6):
+            action = rng.choice(["edit", "add", "remove", "noop"])
+            if action == "edit" and files:
+                target = rng.choice(files)
+                _write(
+                    tmp_path,
+                    target,
+                    f"def f_{round_}(x):\n    return x + {round_}\n",
+                )
+            elif action == "add":
+                new_file = f"pkg/extra{round_}.py"
+                _write(tmp_path, new_file, f"def g_{round_}():\n    pass\n")
+                files.append(new_file)
+            elif action == "remove" and files:
+                target = rng.choice(files)
+                path = tmp_path / target
+                if path.exists():
+                    path.unlink()
+                files.remove(target)
+            subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+
+            cold = run_gates(cfg, use_cache=False).danger_ok
+            warm = run_gates(cfg, use_cache=True).danger_ok
+            cold_fp = frozenset(
+                (v.rule, v.file, v.line, v.message) for v in cold.violations
+            )
+            warm_fp = frozenset(
+                (v.rule, v.file, v.line, v.message) for v in warm.violations
+            )
+            assert cold_fp == warm_fp, (
+                f"round {round_} ({action}): cold/cache-aware evaluation disagree "
+                f"symdiff={cold_fp ^ warm_fp}"
+            )
+
+
+# frob:ticket T-1445
+class TestCacheTransparencyProcessGates:
+    """INV-050's shared observational-transparency harness
+    (`tests/_cache_transparency.py`), parameterized over the T-1445
+    process-gate cache surface -- the ticket's own acceptance note asking
+    for exactly this."""
+
+    def test_root_gate_cache_observationally_transparent(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/__init__.py::run_gates"""
+        from tests._cache_transparency import run_cold_warm_sweep
+
+        _git_init(tmp_path)
+        rng = random.Random(2718)
+        selected = frozenset({"drift", "secrets", "archgate"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+        files = [f"pkg/mod{i}.py" for i in range(3)]
+
+        def mutate(rng: random.Random, round_: int) -> None:
+            kind = rng.choice(("edit", "add", "remove", "revert"))
+            if kind == "edit" and files:
+                target = rng.choice(files)
+                _write(tmp_path, target, f"def f_{round_}():\n    return {round_}\n")
+            elif kind == "add":
+                new_file = f"pkg/extra{round_}.py"
+                _write(tmp_path, new_file, f"def g_{round_}():\n    pass\n")
+                files.append(new_file)
+            elif kind == "remove" and files:
+                target = rng.choice(files)
+                path = tmp_path / target
+                if path.exists():
+                    path.unlink()
+                files.remove(target)
+            # "revert" (and any branch that found nothing to act on) is a
+            # deliberate no-op round -- the transparency property must also
+            # hold when nothing changed between two calls.
+            subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+
+        def cold_fingerprint() -> frozenset:
+            report = run_gates(cfg, use_cache=False).danger_ok
+            return frozenset(
+                (v.rule, v.file, v.line, v.message) for v in report.violations
+            )
+
+        def warm_fingerprint() -> frozenset:
+            report = run_gates(cfg, use_cache=True).danger_ok
+            return frozenset(
+                (v.rule, v.file, v.line, v.message) for v in report.violations
+            )
+
+        run_cold_warm_sweep(rng, 6, mutate, cold_fingerprint, warm_fingerprint)

@@ -115,7 +115,13 @@ from frob.gates._fmt_directives import (
     format_paths,
 )
 from frob.gates._fuzz import fuzz_gate
-from frob.gates._gate_cache import evaluate_cacheable_gate, model_side_channel_key
+from frob.gates._gate_cache import (
+    evaluate_cacheable_gate,
+    load_root_gate_cache,
+    model_side_channel_key,
+    root_content_key,
+    store_root_gate_cache,
+)
 from frob.gates._gate_cache import invalidate as invalidate_gate_cache
 from frob.gates._inv import (  # noqa: F401 -- INV006_SRC_DIRS/INV006_SRC_SUFFIXES
     # re-exported as _fix_engine.py's direct `from frob.gates import ...` surface
@@ -494,7 +500,9 @@ def _is_path_level_evidence(evidence: str) -> bool:
 # frob:ticket T-0298
 # frob:invariant INV-013
 # invariant spec: [INV-013](invariants/INV-013.md)
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov003_rejects_empty_directory_level_evidence  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov003_rejects_empty_directory_level_evide\
+# nce
 def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """COV003 file-/directory-level evidence resolution: `evidence` (a bare
     path with no `::`) resolves iff at least one collected node id lives
@@ -567,7 +575,9 @@ def _evidence_valid_for_ticket(
 
 # frob:ticket T-0398
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bound_test  # noqa: E501
+# frob:tests \
+# tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true\
+# _for_bound_test
 def evidence_covers_scope(ticket: Ticket, snapshot: GraphSnapshot) -> bool:
     """D-02: whether at least one of `ticket`'s non-cmd evidence ids binds
     to a symbol/file under `ticket.scope`, via EITHER of two routes:
@@ -1142,10 +1152,16 @@ def _affect002_violation(
 
 # frob:doc docs/modules/gates.md#affect001-affect002-t-0628
 # frob:ticket T-0628
-# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_doc_flagged  # noqa: E501
-# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_code_flagged  # noqa: E501
-# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_clean_when_closure_also_touched  # noqa: E501
-# frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_no_closure_is_silent  # noqa: E501
+# frob:tests \
+# tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_doc_flagged
+# frob:tests \
+# tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_code_flagg\
+# ed
+# frob:tests \
+# tests/test_gates_affect_drift.py::TestAffectDriftGate.test_clean_when_closure_also_to\
+# uched
+# frob:tests \
+# tests/test_gates_affect_drift.py::TestAffectDriftGate.test_no_closure_is_silent
 # frob:enforces CHK-GATE-AFFECT001
 # frob:enforces CHK-GATE-AFFECT002
 def affect_drift_gate(snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
@@ -1313,7 +1329,9 @@ def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
 
 
 # frob:ticket T-0553
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_si\
+# bling_symbol
 # frob:enforces CHK-GATE-COV001
 # frob:enforces CHK-THEME-PYTHON-ONLY
 # frob:enforces CHK-SUBSYS-LANG-CHECK-DOCS
@@ -1373,7 +1391,9 @@ def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0965
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_scope_grace_covers_ticket_created_a\
+# nd_closed_in_same_diff
 def _open_scopes(
     queue: TicketQueue, root: str | None = None, diff: Diff | None = None
 ) -> list[tuple[str, tuple[str, ...]]]:
@@ -1479,11 +1499,20 @@ def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
 # frob:ticket T-0214
 # frob:ticket T-0320
 # frob:ticket T-0590
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_marker_touch_without_state_transition_still_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fir\
+# es
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets\
+# _md_touch_still_fires
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_marker_touch_without_state_transiti\
+# on_still_fires
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_clo\
+# sed_in_same_diff
 def _bound_to_open_ticket(
     snapshot: GraphSnapshot, queue: TicketQueue, symref: str, diff: Diff | None = None
 ) -> bool:
@@ -1542,7 +1571,9 @@ def _bound_to_open_ticket(
 
 
 # frob:ticket T-0590
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_clo\
+# sed_in_same_diff
 def _base_state_permits_grace(state_at_base: TicketState | None) -> bool:
     """True if a ticket's state at the diff's base commit is consistent with
     a genuine open -> DONE transition happening WITHIN this diff, including
@@ -1600,7 +1631,9 @@ def _ledger_states_at_base(root: str, base: str) -> Mapping[str, TicketState]:
 
 
 # frob:ticket T-0564
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_grace_matches_hunk_anywhere_in_ticket_block  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov002_grace_matches_hunk_anywhere_in_tick\
+# et_block
 def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
     """True if any of `diff`'s `tickets.md` hunk spans overlaps `ticket_id`'s
     whole YAML block (from its `<!-- ticket:<ticket_id> -->` marker line
@@ -1722,7 +1755,9 @@ def _cov002(
 
 
 # frob:ticket T-0553
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_si\
+# bling_symbol
 # frob:enforces CHK-GATE-COV002
 def _cov002_check_symref(
     snapshot: GraphSnapshot,
@@ -1919,8 +1954,11 @@ def _cov004_one(
 
 
 # frob:ticket T-0297
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov005_directive_rebound_to_private_symbol_flags  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageGate.test_cov005_same_symbol_no_rebind_is_clean  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov005_directive_rebound_to_private_symbol\
+# _flags
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov005_same_symbol_no_rebind_is_clean
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov005_no_old_blob_is_clean
 def _cov005(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
     """COV005: a `frob:` directive whose (kind, target) pair now binds a
@@ -2198,7 +2236,12 @@ def _cov006_decorator_names(source_lines: list[str], start_line: int) -> list[st
 
 
 # frob:ticket T-0528
-# frob:waive ARCH001 reason="a multi-stage heuristic (dunder-check, then validator-decorator check, then receiver derivation, then an optional graph-closure fallback) where each stage's guard depends on locals the prior stage bound (target_sym, is_dunder/is_validator, receiver); splitting stages into helpers would thread 4-5 locals across new boundaries, adding indirection without reducing the sequential logic itself"  # noqa: E501
+# frob:waive ARCH001 reason="a multi-stage heuristic (dunder-check, then \
+# validator-decorator check, then receiver derivation, then an optional graph-closure \
+# fallback) where each stage's guard depends on locals the prior stage bound \
+# (target_sym, is_dunder/is_validator, receiver); splitting stages into helpers would \
+# thread 4-5 locals across new boundaries, adding indirection without reducing the \
+# sequential logic itself"
 def _cov006_implicit_dispatch_reachable(root: Path, edge: Edge) -> bool:
     """COV006 rescue for Class 1's dunder/validator shapes (T-0528): a
     private target invoked IMPLICITLY by the Python runtime (a protocol
@@ -2667,7 +2710,11 @@ def _cov006_dispatch_table_wrapper_names(
 # frob:ticket T-0506
 # frob:ticket T-0516
 # frob:ticket T-0528
-# frob:waive ARCH001 reason="a multi-stage same-file-wrapper heuristic (resolve the target's own file, find every public symbol in it, check each calls the target, then check the test's own body calls that public symbol by name or import alias) with each stage feeding the next's candidate set; splitting would thread that same candidate-narrowing chain across new boundaries without reducing it"  # noqa: E501
+# frob:waive ARCH001 reason="a multi-stage same-file-wrapper heuristic (resolve the \
+# target's own file, find every public symbol in it, check each calls the target, then \
+# check the test's own body calls that public symbol by name or import alias) with \
+# each stage feeding the next's candidate set; splitting would thread that same \
+# candidate-narrowing chain across new boundaries without reducing it"
 def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
     """COV006 rescue: True if a PUBLIC symbol in the bound private target's
     own file is itself called, by name (or by a Python `X as Y` import
@@ -2960,7 +3007,9 @@ def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0355
-# frob:tests tests/test_prework_parity.py::TestScopeDigestParity.test_digest_is_content_only_portable_across_checkouts  # noqa: E501
+# frob:tests \
+# tests/test_prework_parity.py::TestScopeDigestParity.test_digest_is_content_only_porta\
+# ble_across_checkouts
 def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     """Sha256 over the sorted `(file, hash)` pairs of files matching `scope`.
 
@@ -3132,8 +3181,11 @@ def _scope_exempt_file(
 # frob:doc docs/modules/gates.md#public-api
 # frob:doc docs/modules/gates.md#scope002-t-0998
 # frob:ticket T-0906
-# frob:tests tests/test_gates.py::TestScopePrework.test_scope001_fires_when_no_scope_declared  # noqa: E501
-# frob:tests tests/test_gates.py::TestScopePrework.test_scope001_empty_scope_ledger_still_implicitly_in_scope  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestScopePrework.test_scope001_fires_when_no_scope_declared
+# frob:tests \
+# tests/test_gates.py::TestScopePrework.test_scope001_empty_scope_ledger_still_implicit\
+# ly_in_scope
 def scope_gate(
     diff: Diff,
     ticket: Ticket,
@@ -3188,10 +3240,13 @@ def _scope002_violation(message: str) -> Violation:
 
 
 # frob:ticket T-0998
-# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_doc_target  # noqa: E501
-# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_private_helper  # noqa: E501
-# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_test_target  # noqa: E501
-# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_silent_on_closed_scope  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_doc_target
+# frob:tests \
+# tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_private_helper
+# frob:tests \
+# tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_test_target
+# frob:tests tests/test_gates.py::TestScope002ClosureGate.test_silent_on_closed_scope
 # frob:enforces CHK-GATE-SCOPE002
 def _scope002_violations(
     ticket: Ticket, snapshot: GraphSnapshot, root: Path | None
@@ -3559,6 +3614,7 @@ def _test001_002(
 
 
 # frob:ticket T-0598
+# frob:ticket T-1445
 def _test014_group_by_leaf(
     snapshot: GraphSnapshot,
     tests: CollectedTests,
@@ -3588,11 +3644,10 @@ def _test014_group_by_leaf(
         # id for every symbol (this loop's own outer iteration).
         # frob:waive PERF008 reason="token is a compiled re.Pattern built once just \
         # above (per outer leaf); .search(node_leaf) is a plain regex match with no \
-        # I/O. PERF008 resolves the bare method name 'search' by name-only \
-        # coincidence to an unrelated same-named function that genuinely reaches \
-        # walk_pruned elsewhere in the repo -- a resolver ambiguity, not a real \
-        # fs-walk on this call. Tracked as a resolver precision follow-up \
-        # (T-1041's Done report)"  # noqa: E501
+        # I/O. PERF008 resolves the bare method name 'search' by name-only coincidence \
+        # to an unrelated same-named function that genuinely reaches walk_pruned \
+        # elsewhere in the repo -- a resolver ambiguity, not a real fs-walk on this \
+        # call. Tracked as a resolver precision follow-up (T-1041's Done report)"
         matched = frozenset(
             node
             for node, node_leaf in _leaf_snake_index(tests)
@@ -3606,10 +3661,17 @@ def _test014_group_by_leaf(
 
 
 # frob:ticket T-0547
-# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
-# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
-# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_sam\
+# e_test_collision
+# frob:tests \
+# tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_\
+# explicit_edge
+# frob:tests \
+# tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_nam\
+# e_collision
 # frob:enforces CHK-GATE-TEST014
+# frob:ticket T-1445
 def _test014_ambiguous_convention(
     snapshot: GraphSnapshot, tests: CollectedTests
 ) -> tuple[Violation, ...]:
@@ -3643,7 +3705,7 @@ def _test014_ambiguous_convention(
             continue  # same leaf, but all in one file -- not the B6 shape
         for i, (symref_a, _, matched_a) in enumerate(entries):
             for symref_b, _, matched_b in entries[i + 1 :]:
-                # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"  # noqa: E501
+                # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"
                 shared = sorted(matched_a & matched_b)
                 if not shared:
                     continue
@@ -3672,9 +3734,12 @@ def _test014_ambiguous_convention(
 
 
 # frob:ticket T-0548
-# frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
-# frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
-# frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body
+# frob:tests \
+# tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asse\
+# rts
+# frob:tests \
+# tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all
 # frob:enforces CHK-GATE-TEST015
 def _test015_vacuous_credit(
     snapshot: GraphSnapshot, tests: CollectedTests
@@ -4081,8 +4146,11 @@ def _test004(
 
 
 # frob:ticket T-0557
-# frob:tests tests/test_gates.py::TestTestGate.test_test005_unmeasured_symbol_in_measured_file_flags_as_zero  # noqa: E501
-# frob:tests tests/test_gates.py::TestTestGate.test_test005_symbol_in_unmeasured_file_still_skipped  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestTestGate.test_test005_unmeasured_symbol_in_measured_file_fla\
+# gs_as_zero
+# frob:tests \
+# tests/test_gates.py::TestTestGate.test_test005_symbol_in_unmeasured_file_still_skipped
 # frob:ticket T-1205
 # T-1205 acceptance[1]: a TEST005 finding computed against a stale
 # coverage.xml (`data.stale_by_mtime` -- the report predates a tracked
@@ -4402,9 +4470,9 @@ _COVERAGE_LOCK_REL = "frob-coverage.lock.json"
 
 
 # frob:ticket T-0545
-# frob:tests tests/test_gates.py::TestTestGate.test_test012_missing_lock_warns  # noqa: E501
-# frob:tests tests/test_gates.py::TestTestGate.test_test012_drifted_module_warns  # noqa: E501
-# frob:tests tests/test_gates.py::TestTestGate.test_test012_matching_lock_is_clean  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_missing_lock_warns
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_drifted_module_warns
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_matching_lock_is_clean
 # frob:enforces CHK-GATE-TEST012
 def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violation, ...]:
     """TEST012 (warn): the committed `frob-coverage.lock.json` (docs/audits/
@@ -4480,7 +4548,8 @@ def _test006_missing() -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0403
-# frob:tests tests/test_gates.py::TestTestGate.test_test006_stale_on_new_file_not_in_stamp  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestTestGate.test_test006_stale_on_new_file_not_in_stamp
 def _test006_stale(
     stamped_hashes: dict, snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
@@ -4586,8 +4655,10 @@ def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0552
-# frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
-# frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge
+# frob:tests \
+# tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge
 # frob:enforces CHK-GATE-TEST013
 # frob:enforces CHK-SUBSYS-GATES-ACCOUNTING
 # frob:ticket T-1374
@@ -4718,14 +4789,17 @@ def _current_version(root: Path) -> str | None:
 
 
 # frob:ticket T-0403
-# frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_rejects_substring_in_prose  # noqa: E501
-# frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_accepts_real_heading_entry  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestTestGate.test_changelog_mentions_rejects_substring_in_prose
+# frob:tests \
+# tests/test_gates.py::TestTestGate.test_changelog_mentions_accepts_real_heading_entry
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this finding traces to an unresolved-callee resolution gap \
 # instead (T-1056: leaked Unknown traces to pattern.search(text) against a re.Pattern \
 # compiled from a version string via re.escape, on text already caught via \
 # read_text()'s own OSError handling; a compiled-pattern search over an \
 # already-decoded str cannot raise)"
+# frob:ticket T-1445
 def _changelog_mentions(root: Path, version: str) -> bool:
     """Whether CHANGELOG.md (if present) has a HEADING entry for `version`;
     absent file passes.
@@ -4751,8 +4825,8 @@ def _changelog_mentions(root: Path, version: str) -> bool:
             # PERF008 resolves the bare method name 'search' by name-only coincidence \
             # to an unrelated same-named function that genuinely reaches walk_pruned \
             # elsewhere in the repo -- a resolver ambiguity, not a real fs-walk on \
-            # this call. Tracked as a resolver precision follow-up \
-            # (T-1041's Done report)"  # noqa: E501
+            # this call. Tracked as a resolver precision follow-up (T-1041's Done \
+            # report)"
             return any(
                 line.lstrip().startswith("#") and pattern.search(line)
                 for line in text.splitlines()
@@ -4785,8 +4859,10 @@ def _rel001_version(manifest, snapshot, current_version):  # noqa: ANN001
 
 
 # frob:ticket T-0731
-# frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_suppressed_under_frob_agent  # noqa: E501
-# frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_fires_without_frob_agent  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestDebtGate.test_release_gate_bump_suppressed_under_frob_agent
+# frob:tests \
+# tests/test_gates.py::TestDebtGate.test_release_gate_bump_fires_without_frob_agent
 def _rel001_bump_suppressed_under_agent() -> bool:
     """T-0731: whether the bump/changelog half of REL001 is suppressed
     because `FROB_AGENT` (T-0574) names this an explicitly-flagged agent
@@ -4805,7 +4881,7 @@ def _rel001_bump_suppressed_under_agent() -> bool:
 
 
 # frob:ticket T-0807
-# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_linked_worktree_detected  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_linked_worktree_detected
 def _rel001_is_linked_worktree(root: Path) -> bool:
     """T-0807: whether `root` is a LINKED git worktree (as opposed to the
     repo's main/root checkout) -- `git rev-parse --git-dir` resolves to a
@@ -4836,9 +4912,11 @@ def _rel001_is_linked_worktree(root: Path) -> bool:
 
 
 # frob:ticket T-0807
-# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
-# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
-# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_not_land_owned_root_checkout_no_ticket  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease
+# frob:tests \
+# tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket
+# frob:tests \
+# tests/test_gates.py::TestDebtGate.test_rel001_not_land_owned_root_checkout_no_ticket
 def _rel001_land_owned(root: Path, ticket_id: str | None) -> bool:
     """T-0807: whether REL001's bump/changelog half is land-owned in THIS
     check run, derived from CONTEXT rather than the `FROB_AGENT` env var
@@ -5002,7 +5080,9 @@ def _uv_lock_version(root: Path) -> str | None:
 # frob:ticket T-1009
 # frob:invariant INV-044
 # invariant spec: [INV-044](invariants/INV-044.md)
-# frob:tests tests/test_release.py::TestReleaseGateCoherence.test_hand_edited_pyproject_fires_rel002  # noqa: E501
+# frob:tests \
+# tests/test_release.py::TestReleaseGateCoherence.test_hand_edited_pyproject_fires_rel0\
+# 02
 # frob:enforces CHK-GATE-REL002
 def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # noqa: ANN001
     """REL002 (T-1009): `.frob-release.json`'s `version` is the ONE version
@@ -5040,8 +5120,9 @@ def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # no
 
 
 # frob:ticket T-0807
-# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
-# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease
 def _rel001_land_note(bump, manifest, current_version: str) -> list[Violation]:  # noqa: ANN001
     """REL001, land-owned case (T-0807): a `WARN`-severity note naming the
     API-diff `bump` class AND the target version (mirroring `_rel001_version`'s
@@ -5682,6 +5763,73 @@ _CACHEABLE_GATES: frozenset[str] = frozenset(
 )
 
 
+# frob:ticket T-1445
+# T-1445: the "bigger lever" T-1346's own Done report deferred -- every
+# `_ProcessJob` gate (T-0415's CPU-bound giants, `_build_process_jobs`
+# below) is ALSO a pure function of (a) the git-tracked tree's content
+# (`root`/`repo_root` reads, `root_content_key`'s whole-tree fingerprint
+# covers both since `repo_root`'s tracked-file set is always a superset of
+# any possibly-scoped `root`'s) and (b) at most a short tuple of
+# already-hashable scalars (`diff`, `queue`) folded through the SAME
+# `extra_key` helper `_CACHEABLE_GATES` already uses -- see
+# `_process_gate_extra` below for the two members (`clones`, `wire`) that
+# actually have one. Every OTHER `_build_process_jobs` entry is included
+# here: this is deliberately the full set, not a hand-picked subset, since
+# `root_content_key` covers the whole tree regardless of which slice of it
+# a given gate actually reads (the same conservative "membership guard"
+# posture `_membership_key` already applies at `GraphSnapshot` scale, just
+# widened to cover an unbounded filesystem walk `TrackedSnapshot` cannot
+# observe at all). Coarser than `_CACHEABLE_GATES`'s per-touched-file
+# granularity by construction (ANY tracked-file change anywhere forces
+# every gate here to fully re-run, never a partial one) -- true per-file
+# decomposition would need each gate body split into a per-file callable,
+# which reaches into the individual gate modules
+# (`src/frob/gates/_secrets.py` and siblings) outside this ticket's
+# declared scope; see the T-1445 Done report for the follow-up ticket.
+_CACHEABLE_PROCESS_GATES: frozenset[str] = frozenset(
+    {
+        "perf",
+        "clones",
+        "sys",
+        "secrets",
+        "taint",
+        "opaque",
+        "archgate",
+        "exhaustive_handling",
+        "ffi_boundary",
+        "pii_structural",
+        "walk_lint",
+        "cve_fingerprint_scan",
+        "render_lint",
+        "dead_symbols",
+        "wire",
+        "cache",
+        "protocol_summary",
+    }
+)
+
+
+# frob:ticket T-1445
+def _process_gate_extra(name: str, st: _GateInputs) -> tuple[str, ...]:
+    """The `extra` scalar-key tuple for one `_CACHEABLE_PROCESS_GATES`
+    member -- every gate not named here reads nothing beyond the tracked
+    tree `root_content_key` already covers, so it correctly gets `()`.
+    `clones` (`dup_gate(root, snapshot, diff)`) and `wire`
+    (`wire_gate(root, snapshot, diff, queue)`) are the only two
+    `_build_process_jobs` entries with a side input beyond `root`/
+    `repo_root`/`snapshot` (itself covered by `root_content_key`, see
+    `_CACHEABLE_PROCESS_GATES`'s own docstring) -- `st.diff`/`st.queue`
+    fold in via `model_side_channel_key`, the SAME side-channel discipline
+    T-1454 established for `_CACHEABLE_GATES`, so a diff/queue change
+    alone (no tracked-file edit) still forces a miss instead of serving a
+    result computed against stale diff/queue state."""
+    if name == "clones":
+        return (model_side_channel_key(st.diff),)
+    if name == "wire":
+        return (model_side_channel_key(st.diff, st.queue),)
+    return ()
+
+
 # frob:ticket T-1454
 def _cacheable_gate_factories(
     st: _GateInputs, current_date: str
@@ -6174,7 +6322,9 @@ def _build_ticket_scoped_jobs(
 
 
 # frob:ticket T-0232
-# frob:tests tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_in\
+# flate_a_cheap_jobs_timing
 def _timed_job(
     job: Callable[[], tuple[Violation, ...]],
 ) -> Callable[[], tuple[tuple[Violation, ...], float]]:
@@ -6206,7 +6356,9 @@ def _timed_job(
     return run
 
 
-# frob:tests tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_in\
+# flate_a_cheap_jobs_timing
 def _run_jobs(
     jobs: dict[str, Callable[[], tuple[Violation, ...]]],
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
@@ -6407,7 +6559,9 @@ def _process_pool_start_method() -> str:
 
 # frob:ticket T-0806
 # frob:ticket T-0990
-# frob:tests tests/test_gates.py::TestProcessPoolGates.test_open_process_pool_preloads_forkserver_when_available  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestProcessPoolGates.test_open_process_pool_preloads_forkserver_\
+# when_available
 def _stamp_worker_stdout_log_level_env() -> None:
     """Stamp `_WORKER_STDOUT_LOG_LEVEL_ENV` with the parent's current
     stdout log handler level, BEFORE `_open_process_pool` constructs its
@@ -6431,7 +6585,9 @@ def _stamp_worker_stdout_log_level_env() -> None:
 
 # frob:ticket T-0982
 # frob:ticket T-0990
-# frob:tests tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worker_under_parent_shared_holder_completes  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worke\
+# r_under_parent_shared_holder_completes
 def _stamp_worker_lock_keys_env() -> None:
     """Stamp `frob.process._lock._INHERITED_LOCK_KEYS_ENV` with this (the
     pool OWNER's) own `held_registry_keys()` snapshot, BEFORE
@@ -6619,13 +6775,122 @@ def _run_thread_jobs(
         _drain_futures(thread_futures, raw, counts, timing, pool_label="")
 
 
+# frob:ticket T-1445
+# frob:tests \
+# tests/test_gate_cache.py::TestSplitProcessCache.test_use_cache_false_returns_everythi\
+# ng_as_misses
+# frob:tests \
+# tests/test_gate_cache.py::TestSplitProcessCache.test_hit_removes_gate_from_remaining
+# frob:tests \
+# tests/test_gate_cache.py::TestSplitProcessCache.test_miss_keeps_gate_pending
+def _split_process_cache(
+    process_jobs: dict[str, _ProcessJob], st: _GateInputs, *, use_cache: bool
+) -> tuple[
+    dict[str, _ProcessJob],
+    dict[str, tuple[Violation, ...]],
+    dict[str, tuple[str | None, tuple[str, ...]]],
+]:
+    """`_build_jobs`'s process-pool counterpart to `_substitute_cacheable_jobs`
+    (T-0602's thread-pool cache substitution): when `use_cache=True`,
+    partitions `process_jobs` into (a) `remaining` -- jobs that still need
+    to run for real, unchanged from `process_jobs` minus every whole-tree
+    cache HIT, (b) `hits` -- a `name -> violations` map for every
+    `_CACHEABLE_PROCESS_GATES` member `_gate_cache.load_root_gate_cache`
+    already has a fresh answer for, served without ever spawning a worker
+    process, and (c) `pending` -- a `name -> (key, extra)` map for every
+    remaining (miss) cacheable gate, so `_run_combined_jobs`'s
+    `process_cache_pending` can persist its fresh result once the future
+    resolves. `root_content_key` is computed exactly ONCE per call (one
+    `git ls-files -s` subprocess, not one per gate) and reused for every
+    `_CACHEABLE_PROCESS_GATES` member this call considers.
+
+    `use_cache=False` (the default, and every pre-T-1445 caller) returns
+    `process_jobs` unchanged, `{}`, `{}` -- byte-identical to before this
+    ticket."""
+    if not use_cache:
+        return process_jobs, {}, {}
+    remaining: dict[str, _ProcessJob] = {}
+    hits: dict[str, tuple[Violation, ...]] = {}
+    pending: dict[str, tuple[str | None, tuple[str, ...]]] = {}
+    root_key = root_content_key(st.repo_root)
+    for name, job in process_jobs.items():
+        if name not in _CACHEABLE_PROCESS_GATES:
+            remaining[name] = job
+            continue
+        extra = _process_gate_extra(name, st)
+        cached = load_root_gate_cache(st.repo_root, name, root_key, extra)
+        if cached is not None:
+            hits[name] = cached
+        else:
+            remaining[name] = job
+            pending[name] = (root_key, extra)
+    return remaining, hits, pending
+
+
+# frob:ticket T-1445
+def _seed_preloaded_process_cache(
+    preloaded: dict[str, tuple[Violation, ...]] | None,
+    raw: dict[str, tuple[Violation, ...]],
+    counts: dict[str, int],
+    timing: dict[str, float],
+) -> None:
+    """`_run_combined_jobs`'s `preloaded` seeding step, split out to keep
+    that function under ARCH001's line threshold: writes every whole-tree
+    cache HIT (`_split_process_cache`'s `hits`) into `raw`/`counts`/
+    `timing` at zero elapsed time, before either pool runs. A no-op for
+    `preloaded=None`/`{}` -- every pre-T-1445 call site."""
+    for name, violations in (preloaded or {}).items():
+        raw[name] = violations
+        counts[name] = len(violations)
+        timing[name] = 0.0
+        _log.info(
+            "run_gates: %s -> %d violation(s) in 0.000s cpu (cached, root-scanning)",
+            name,
+            len(violations),
+        )
+
+
+# frob:ticket T-1445
+def _store_pending_process_cache(
+    root: Path | None,
+    raw: dict[str, tuple[Violation, ...]],
+    pending: dict[str, tuple[str | None, tuple[str, ...]]] | None,
+) -> None:
+    """`_run_combined_jobs`'s post-drain write step, split out to keep that
+    function under ARCH001's line threshold: persists every cache-MISS
+    cacheable gate's freshly computed `raw[name]` result under its
+    `(key, extra)` pair (`_split_process_cache`'s `pending`), so the NEXT
+    call with an unchanged tree serves it via `_seed_preloaded_process_cache`
+    instead of re-running it. A no-op for `pending=None`/`{}` or
+    `root=None` -- every pre-T-1445 call site."""
+    if not pending or root is None:
+        return
+    for name, (key, extra) in pending.items():
+        if name in raw:
+            store_root_gate_cache(root, name, key, extra, raw[name])
+
+
 # frob:ticket T-0581
+# frob:ticket T-1445
+# frob:waive ARCH001 reason="the function's own executable body is a dozen lines (seed \
+# cache -> submit process pool -> run thread pool -> drain -> store cache -> merge); \
+# the length is the T-0581 fork-safety docstring, which documents a real \
+# 6-hour-CI-hang root cause and the exact ordering that prevents it recurring -- \
+# diluting or relocating that explanation to fix a line-count threshold would make the \
+# one place a future editor MUST read before reordering this function's calls harder \
+# to find, not easier; T-1445's own read/write cache steps are already split into \
+# _seed_preloaded_process_cache/_store_pending_process_cache, same disposition as \
+# src/frob/gates/_lang_conformance.py's project_lang_conformance_gate ARCH001 waiver \
+# precedent (a second extraction would re-fragment an already-minimal orchestrator)"
 def _run_combined_jobs(
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
     process_jobs: dict[str, _ProcessJob],
     *,
     root: Path | None = None,
     max_process_workers: int | None = None,
+    preloaded: dict[str, tuple[Violation, ...]] | None = None,
+    process_cache_pending: dict[str, tuple[str | None, tuple[str, ...]]]
+    | None = None,
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
     """Run `thread_jobs` on a `ThreadPoolExecutor` and `process_jobs`
     (the CPU-bound giants, T-0415/docs/audits/perf.md H3) on a
@@ -6670,11 +6935,17 @@ def _run_combined_jobs(
 
     T-1464: `root` passes straight through to `_open_process_pool`'s own
     `root` (the parse-artifact-cache env stamp); see that docstring.
-    """
+
+    T-1445: `preloaded`/`process_cache_pending` are the read/write halves
+    of the whole-tree process-gate cache -- see
+    `_seed_preloaded_process_cache`/`_store_pending_process_cache`'s own
+    docstrings for what each does. Both default to `None`/empty and are
+    no-ops for every existing (non-T-1445) call site."""
     counts: dict[str, int] = {}
     timing: dict[str, float] = {}
     raw: dict[str, tuple[Violation, ...]] = {}
-    if not thread_jobs and not process_jobs:
+    _seed_preloaded_process_cache(preloaded, raw, counts, timing)
+    if not thread_jobs and not process_jobs and not raw:
         return [], counts, timing
 
     ppool: ProcessPoolExecutor | None = None
@@ -6695,11 +6966,15 @@ def _run_combined_jobs(
         if ppool is not None:
             ppool.shutdown(wait=True)
 
+    _store_pending_process_cache(root, raw, process_cache_pending)
+
     return _merge_canonical_order(raw), counts, timing
 
 
 # frob:ticket T-1148
-# frob:tests tests/test_gates.py::TestNativeAvailabilityGate.test_unimportable_native_short_circuits_run_gates_with_one_finding  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestNativeAvailabilityGate.test_unimportable_native_short_circui\
+# ts_run_gates_with_one_finding
 def _native_unavailable_report(root: Path) -> GateReport | None:
     """T-1148: ONE `NATIVE001` `GateReport` naming every declared native
     that fails to import right now under `root` (`frob.strata.
@@ -6770,10 +7045,17 @@ def _native_autorebuild_disabled(root: Path) -> bool:
 
 
 # frob:ticket T-1213
-# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_stale_native_triggers_autorebuild  # noqa: E501
-# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_missing_but_buildable_native_triggers_autorebuild  # noqa: E501
-# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_disabled_via_env_var_skips_autorebuild  # noqa: E501
-# frob:tests tests/test_natives.py::TestNativeAutorebuild.test_build_failure_falls_through_to_native001  # noqa: E501
+# frob:tests \
+# tests/test_natives.py::TestNativeAutorebuild.test_stale_native_triggers_autorebuild
+# frob:tests \
+# tests/test_natives.py::TestNativeAutorebuild.test_missing_but_buildable_native_trigge\
+# rs_autorebuild
+# frob:tests \
+# tests/test_natives.py::TestNativeAutorebuild.test_disabled_via_env_var_skips_autorebu\
+# ild
+# frob:tests \
+# tests/test_natives.py::TestNativeAutorebuild.test_build_failure_falls_through_to_nati\
+# ve001
 def _maybe_autorebuild_natives(root: Path) -> None:
     """T-1213: the fix for the recurring worktree-natives false-failure
     class this ticket's Description names -- a source-newer-than-artifact
@@ -6847,7 +7129,8 @@ def _maybe_autorebuild_natives(root: Path) -> None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:doc docs/modules/gates.md#native001-t-1148
-# frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602  # noqa: E501
+# frob:doc \
+# docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0021
 # frob:ticket T-0602
 def run_gates(
@@ -6862,6 +7145,7 @@ def run_gates(
 
 
 # frob:ticket T-1501
+# frob:ticket T-1445
 def _run_gates_bounded(
     cfg: GateConfig, *, use_cache: bool = False, max_process_workers: int | None = None
 ) -> Result[GateReport, GateError]:
@@ -6928,6 +7212,7 @@ def _run_gates_bounded(
         skipped,
         start_all,
         max_process_workers=max_process_workers,
+        use_cache=use_cache,
     )
     return Ok(report)
 
@@ -6954,6 +7239,7 @@ def _parse_artifact_cache_path(root: Path) -> Path:
     return (root / _PARSE_ARTIFACT_CACHE_REL).resolve()
 
 
+# frob:ticket T-1445
 def _assemble_gate_report(
     cfg: GateConfig,
     st: _GateInputs,
@@ -6963,13 +7249,21 @@ def _assemble_gate_report(
     start_all: float,
     *,
     max_process_workers: int | None = None,
+    use_cache: bool = False,
 ) -> GateReport:
     """Run `thread_jobs`/`process_jobs` (T-0415), fold in the WAIVE001/
     WAIVE002/DSL001 self-checks, apply waivers and severity overrides, and
     log the run's final tally.
 
     T-1436: `max_process_workers` passes straight through to
-    `_run_combined_jobs`'s own `max_process_workers`."""
+    `_run_combined_jobs`'s own `max_process_workers`.
+
+    T-1445: `use_cache=True` (mirroring `_build_jobs`'s own thread-side
+    flag) runs `process_jobs` through `_split_process_cache` first --
+    whole-tree cache HITS from `_CACHEABLE_PROCESS_GATES` are served
+    without ever touching the `ProcessPoolExecutor`, and every MISS's
+    fresh result is persisted after `_run_combined_jobs` drains it. See
+    `_split_process_cache`'s own docstring for the design."""
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
@@ -6987,11 +7281,16 @@ def _assemble_gate_report(
         *waive007_gate(st.repo_root, st.snapshot, st.queue),
         *_dsl001_violations(st.snapshot),
     ]
+    process_jobs_remaining, process_cache_hits, process_cache_pending = (
+        _split_process_cache(process_jobs, st, use_cache=use_cache)
+    )
     job_violations, counts, timing = _run_combined_jobs(
         thread_jobs,
-        process_jobs,
+        process_jobs_remaining,
         root=st.repo_root,
         max_process_workers=max_process_workers,
+        preloaded=process_cache_hits,
+        process_cache_pending=process_cache_pending,
     )
     counts["waive"] = len(all_violations)
     all_violations.extend(job_violations)

@@ -225,6 +225,7 @@ def _warn_if_polyglot(root: Path, chosen: str, others: list[str]) -> None:
         )
 
 
+# frob:ticket T-1445
 def _dispatch_check_cpp(cfg: AppConfig, root: Path):
     """Run `run_check_cpp` with `cfg`'s C++-toolchain skip flags and gate selectors.
 
@@ -245,9 +246,11 @@ def _dispatch_check_cpp(cfg: AppConfig, root: Path):
         ticket=cfg.check_ticket,
         base=cfg.check_base,
         delta=cfg.check_delta,
+        no_cache=cfg.check_no_cache,
     )
 
 
+# frob:ticket T-1445
 def _dispatch_check_rust(cfg: AppConfig, root: Path):
     """Run `run_check_rust` with `cfg`'s Rust-toolchain skip flags and gate selectors.
 
@@ -265,9 +268,11 @@ def _dispatch_check_rust(cfg: AppConfig, root: Path):
         ticket=cfg.check_ticket,
         base=cfg.check_base,
         delta=cfg.check_delta,
+        no_cache=cfg.check_no_cache,
     )
 
 
+# frob:ticket T-1445
 def _dispatch_check_ts(cfg: AppConfig, root: Path):
     """Run `run_check_ts` with `cfg`'s TypeScript-toolchain skip flags and
     gate selectors.
@@ -285,9 +290,11 @@ def _dispatch_check_ts(cfg: AppConfig, root: Path):
         ticket=cfg.check_ticket,
         base=cfg.check_base,
         delta=cfg.check_delta,
+        no_cache=cfg.check_no_cache,
     )
 
 
+# frob:ticket T-1445
 def _dispatch_check_python(cfg: AppConfig, root: Path):
     """Run `run_check` with `cfg`'s Python-toolchain skip flags and gate selectors."""
     return run_check(
@@ -304,6 +311,7 @@ def _dispatch_check_python(cfg: AppConfig, root: Path):
         ticket=cfg.check_ticket,
         base=cfg.check_base,
         delta=cfg.check_delta,
+        no_cache=cfg.check_no_cache,
     )
 
 

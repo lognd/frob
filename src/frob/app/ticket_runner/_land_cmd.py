@@ -1707,6 +1707,7 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
 # the post-land sweep, report, push, finish. Each step is already its own extracted \
 # helper/closure; the sequencing and exit-code decisions themselves ARE this \
 # function's one job, not a separate concern to split out further"  # noqa: E501
+# frob:ticket T-1444
 def _land(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
     merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
@@ -1760,16 +1761,59 @@ def _land(root: Path, cfg: AppConfig) -> None:
     real commit (`_verified_reset_root` on a staged-but-uncommitted tree),
     unlike `_run_post_land_sweep_or_exit`'s post-commit `git reset --hard`
     below, which stays wired in unchanged as a cheap final assertion."""
-    import threading
-
-    from frob.tickets import land
-
     if cfg.ticket_land_plan:
         _land_plan_cmd(root, cfg)
         return
 
+    if cfg.ticket_land_queue:
+        _land_enqueue(root, cfg)
+        return
+
+    if cfg.ticket_land_drain:
+        _land_drain(root, cfg)
+        return
+
     _require_land_args(cfg)
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
+    assert cfg.ticket_worktree is not None
+    worktree = cfg.ticket_worktree
+
+    result = _land_core(root, cfg)
+    if result.is_err:
+        _log.error("ticket land failed: %s", result.danger_err)
+        sys.exit(1)
+    report = result.danger_ok
+
+    _report_land_result(root, report)
+
+    if cfg.ticket_land_push:
+        _push_after_land(root, report)
+
+    _finish_land_after_success(root, worktree, report, cfg)
+
+
+# frob:ticket T-1444
+def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
+    """The whole merge-check-splice-close-commit-sweep chain
+    (`frob.tickets.land` plus T-1456's post-land unscoped-error sweep),
+    WITHOUT any of `_land`'s CLI-only tail (report/push/finish) -- the
+    reusable core both the single-ticket `frob ticket land <id>` path and
+    T-1444's `_land_drain` loop call, parametrized entirely by `cfg`
+    (`cfg.ticket_id`/`cfg.ticket_worktree`/`cfg.ticket_dry_run`, etc.)
+    rather than a specific ticket baked in at the call site. Returns
+    `Result[LandReport, LandError]` -- unlike `_land`'s old inline body,
+    this NEVER calls `sys.exit`: a post-land sweep revert reports
+    `LandError.PostLandUnscopedSweepFailed` instead of killing the
+    process, so a caller looping over several tickets (`_land_drain`) can
+    attribute the failure to the one ticket that caused it and continue
+    with the rest, matching this ticket's own acceptance criterion
+    ("a failing ticket is named and dequeued alone")."""
+    import threading
+
+    from frob.tickets import land
+    from frob.tickets._models import LandError
+
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
     assert cfg.ticket_worktree is not None
     worktree = cfg.ticket_worktree
 
@@ -1785,8 +1829,14 @@ def _land(root: Path, cfg: AppConfig) -> None:
     _warn_land_override_flags(cfg)
 
     # T-1463: run concurrently with land()'s own merge/checks below -- see
-    # this function's docstring and _capture_pre_land_baseline's for why
-    # this is safe (snapshot-isolated, not a read of root's live tree).
+    # `_capture_pre_land_baseline`'s docstring for why this is safe
+    # (snapshot-isolated, not a read of root's live tree). T-1444: this is
+    # still a PER-TICKET baseline capture even from inside `_land_drain`'s
+    # loop -- sharing one baseline capture (and one post-drain sweep)
+    # across a whole batch of N tickets is the "sublinear total
+    # verification wall-clock" half of this ticket's acceptance criterion
+    # and is disclosed as deferred follow-up work, not implemented here;
+    # see the T-1444 Done report.
     _baseline_holder: list[tuple[str | None, frozenset[tuple[str, str]] | None]] = []
     _baseline_thread = threading.Thread(
         target=lambda: _baseline_holder.append(_capture_pre_land_baseline(root, cfg)),
@@ -1823,8 +1873,8 @@ def _land(root: Path, cfg: AppConfig) -> None:
         ),
     )
     if result.is_err:
-        _log.error("ticket land failed: %s", result.danger_err)
-        sys.exit(1)
+        _baseline_thread.join()
+        return result
 
     report = result.danger_ok
 
@@ -1836,14 +1886,176 @@ def _land(root: Path, cfg: AppConfig) -> None:
         _baseline_holder[0] if _baseline_holder else (None, None)
     )
 
-    _run_post_land_sweep_or_exit(root, cfg, report, pre_land_sha, pre_land_findings)
+    if not report.dry_run and pre_land_sha is not None:
+        swept = _post_land_unscoped_error_sweep(
+            root, cfg.ticket_id, report.final_id, pre_land_sha, pre_land_findings
+        )
+        if not swept:
+            _log.error(
+                "ticket land failed: %s post-land unscoped error sweep "
+                "found residue no Tier-A auto-fix could resolve -- %s "
+                "reverted to its pre-land state, land refused",
+                report.final_id,
+                root,
+            )
+            return Err(LandError.PostLandUnscopedSweepFailed)
 
-    _report_land_result(root, report)
+    return result
 
-    if cfg.ticket_land_push:
-        _push_after_land(root, report)
 
-    _finish_land_after_success(root, worktree, report, cfg)
+# frob:ticket T-1444
+def _log_enqueue_failure(ticket_id: str, err: object) -> None:
+    """`_land_enqueue`'s error-reporting branch, split out to keep that
+    function's own decision-point count under ARCH103's threshold."""
+    from frob.tickets import QueueError
+
+    if err == QueueError.AlreadyQueued:
+        _log.error(
+            "ticket land --queue: %s already has a queued/landing entry "
+            "-- inspect .frob/land-queue.json before re-enqueuing",
+            ticket_id,
+        )
+    else:
+        _log.error("ticket land --queue: %s failed to enqueue: %s", ticket_id, err)
+
+
+# frob:ticket T-1444
+def _queued_position(root: Path, ticket_id: str) -> str:
+    """1-based position of `ticket_id`'s `queued` entry among every OTHER
+    still-`queued` entry (FIFO order), or `"?"` if the queue file cannot
+    be read -- split out of `_land_enqueue` for the same ARCH103 reason as
+    `_log_enqueue_failure` above."""
+    from frob.tickets import queue_status
+
+    status = queue_status(root)
+    if status.is_err:
+        return "?"
+    queued_ahead = [e for e in status.danger_ok if e.status == "queued"]
+    for i, entry in enumerate(queued_ahead, start=1):
+        if entry.ticket_id == ticket_id:
+            return str(i)
+    return "?"
+
+
+# frob:ticket T-1444
+def _land_enqueue(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket land <id> --worktree <path> --queue`: enqueue instead
+    of landing immediately -- appends a `queued` entry to
+    `.frob/land-queue.json` (`frob.tickets._land_queue.enqueue`) and
+    returns right away; a `--drain` invocation (`_land_drain`) processes
+    it later, in FIFO order. Prints the assigned queue position
+    (`_queued_position`) so the caller has some signal without having to
+    poll `frob ticket land --queue-status`."""
+    from frob.tickets import enqueue
+
+    _require_land_args(cfg)
+    assert cfg.ticket_id is not None
+    assert cfg.ticket_worktree is not None
+    worktree = cfg.ticket_worktree
+
+    branch = worktree.name
+    result = enqueue(root, cfg.ticket_id, worktree, branch)
+    if result.is_err:
+        _log_enqueue_failure(cfg.ticket_id, result.danger_err)
+        sys.exit(1)
+
+    _log.info(
+        "ticket land --queue: %s enqueued (branch=%s), position %s -- "
+        "run `frob ticket land --drain` to process the queue",
+        cfg.ticket_id,
+        branch,
+        _queued_position(root, cfg.ticket_id),
+    )
+
+
+# frob:ticket T-1444
+def _land_drain(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket land --drain`: serially process every `queued` entry
+    in `.frob/land-queue.json` via `frob.tickets._land_queue.drain_next`,
+    calling `_land_core` (the SAME merge-check-splice-close-commit-sweep
+    chain a direct `frob ticket land <id>` call runs) as its `land_fn`.
+    Loops until the queue reports no more `queued` entries (`Ok(None)`)
+    -- a single process, single invocation drain, not a long-running
+    poll loop (see T-1444's own ticket body, design question 3: a
+    long-running daemon needs its own lifecycle story and is deliberately
+    NOT what this ships; a coordinator/scheduler calling `--drain`
+    repeatedly is this increment's answer).
+
+    Attribution: each entry's own `_print_land_proof` line (on success)
+    or logged `LandError` (on failure) is printed as it resolves, so a
+    caller reading this command's own log output can tell exactly which
+    ticket landed and which was rejected back -- `drain_next`'s own
+    policy (this module's docstring precedent, T-1345) never auto-retries
+    a failed entry; it is dequeued and the loop moves to the next
+    `queued` entry."""
+    from frob.tickets import drain_next
+
+    landed = 0
+    failed = 0
+    while True:
+
+        def land_fn(entry):  # noqa: ANN001, ANN202
+            per_entry_cfg = cfg.model_copy(
+                update={
+                    "ticket_id": entry.ticket_id,
+                    "ticket_worktree": Path(entry.worktree),
+                }
+            )
+            return _land_core(root, per_entry_cfg)
+
+        outcome = drain_next(root, land_fn)
+        if outcome.is_err:
+            _log.error(
+                "ticket land --drain: queue-level failure: %s", outcome.danger_err
+            )
+            sys.exit(1)
+        entry = outcome.danger_ok
+        if entry is None:
+            break
+        if entry.status == "landed" and entry.commit_sha is not None:
+            landed += 1
+            # T-1444: same LAND-PROOF contract a direct `frob ticket land
+            # <id>` call prints -- report/finish (worktree removal) are
+            # deliberately NOT run here, matching `--drain`'s own scope
+            # (landing, not cleanup); a caller still runs `--finish`
+            # per-ticket once it has verified the drain's own output.
+            report = _LandReportShim(entry.commit_sha, entry.ticket_id)
+            _print_land_proof(root, report)
+            _log.info(
+                "ticket land --drain: %s landed (commit=%s)",
+                entry.ticket_id,
+                entry.commit_sha,
+            )
+        else:
+            failed += 1
+            _log.warning(
+                "ticket land --drain: %s failed to land (%s) -- rejected "
+                "back, not retried; re-enqueue after fixing",
+                entry.ticket_id,
+                entry.error,
+            )
+
+    _log.info("ticket land --drain: done, %d landed, %d failed", landed, failed)
+
+
+# frob:ticket T-1444
+class _LandReportShim:
+    """A minimal stand-in for `LandReport`'s two fields `_print_land_proof`
+    actually reads (`commit_sha`, `final_id`) -- `drain_next`'s
+    `QueueEntry` only carries `commit_sha` on a landed entry, not the full
+    `LandReport` `land_fn` originally produced (the report itself is not
+    threaded back through `drain_next`'s `QueueEntry`, by T-1345's own
+    design: the queue's persisted record is a summary, not the full
+    result object). Constructing this tiny shim is cheaper and less
+    invasive than widening `QueueEntry`'s schema (outside this ticket's
+    `src/frob/tickets/**`-adjacent-but-not-`_land_queue.py` scope) just to
+    carry a report `_print_land_proof` only reads two fields of."""
+
+    # frob:ticket T-1444
+    def __init__(self, commit_sha: str | None, final_id: str) -> None:
+        """Store the two fields `_print_land_proof` reads."""
+        self.commit_sha = commit_sha
+        self.final_id = final_id
 
 
 # frob:ticket T-0631

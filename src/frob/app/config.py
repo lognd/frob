@@ -232,6 +232,13 @@ class AppConfig(BaseModel):
     #: a visible SKIPPED (unchanged) line instead of silently re-running an
     #: untouched language every time.
     check_skip_unchanged: bool = False
+    # frob:ticket T-1445
+    #: `frob check --no-cache`: bypass `.frob/gate-cache.db` (T-0602/T-1346)
+    #: and force every cacheable gate to recompute in full this run, a
+    #: first-class CLI twin of the existing `FROB_NO_GATE_CACHE=1` env-var
+    #: escape hatch. `False` (default) leaves normal cached behavior
+    #: unchanged.
+    check_no_cache: bool = False
     # -v/-vv count (T-0202): 0=summary+violations only, 1=INFO firehose,
     # 2+=full per-symbol DEBUG.
     check_verbose: int = 0
@@ -472,6 +479,17 @@ class AppConfig(BaseModel):
     # worktree (docs + ledger changes, no closeable worked ticket)
     # atomically instead of a single ticket's own squash-land.
     ticket_land_plan: bool = False
+    # frob:ticket T-1444
+    # `frob ticket land <id> --worktree PATH --queue`: enqueue instead of
+    # landing immediately (frob.tickets._land_queue.enqueue) -- returns
+    # right away, does not wait for a drainer.
+    ticket_land_queue: bool = False
+    # frob:ticket T-1444
+    # `frob ticket land --drain`: serially process every queued entry in
+    # .frob/land-queue.json via frob.tickets._land_queue.drain_next, one
+    # process, one invocation (not a long-running poll loop -- see
+    # _land_drain's own docstring for why).
+    ticket_land_drain: bool = False
     ticket_worktree: Path | None = None
     # frob:ticket T-1243
     # `frob ticket brief --cluster <id>` / `frob ticket work --cluster <id>`
