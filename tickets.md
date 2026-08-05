@@ -4737,7 +4737,7 @@ Follow-up from T-1537 (frob ticket evidence --replace): that ticket shipped the 
 ```yaml
 id: T-1547
 title: 'Tier-A auto-fix: E501 introduced by merge, targeted ruff-format'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -4747,18 +4747,113 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_fix_engine.py
+- tests/test_gates_fix_engine.py
+- docs/modules/gates_e501_autofix.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: E501 Tier-A handler needs its own test in the fix-engine-dedicated test
+    module
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/gates_e501_autofix.md
+  reason: new dedicated doc page for the E501 Tier-A handler (docs/modules/gates.md
+    itself is under an in-progress T-1205 lease -- see Done report)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-1547 enrolled E501 in TIER_A_HANDLERS; the handler-set assertion in tests/test_gates.py
+    must list it (plus SYS100/SYS104/COV002 enrolled by sibling tickets in this series)
+    -- blocked until T-1205's tests/** lease cleared on the merged ledger
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_merge_introduced_targeted_format_applies
+- tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_no_merge_shape_is_a_no_op
 threat: null
 component: null
 ```
 Follow-up from T-1531: an E501 finding introduced specifically by a land-time merge should get a targeted ruff-format pass over just the offending lines/files, distinct from fix_fmt001_directive_wrap (which is scoped to frob:-directive comment lines only). Needs a handler reusing the same touched-path plumbing _fmt_pre_land_step already has, re-verifying E501 is gone before counting it as a fix.
 
+## Done report
+
+Added `fix_e501_merge_introduced` to `src/frob/gates/_fix_engine.py`,
+registered as `TIER_A_HANDLERS["E501"]`. It derives the exact `.py` files a
+land-time merge touched (`_merge_touched_python_files`: HEAD's own
+two-parent merge diff, or uncommitted working-tree changes against HEAD
+for the in-progress-merge shape `frob ticket land`'s pre-land Tier-A phase
+runs in), runs a targeted `ruff format` on any of them that still carries
+an E501 finding, and re-verifies E501 is actually gone
+(`_e501_lines_for_file`, a scoped `ruff check --select E501` before/after)
+before counting the file as fixed -- never claims a fix `ruff format`
+did not actually make.
+
+Doc note: `docs/modules/gates.md` (where every sibling Tier-A handler's
+own writeup lives) was under an in-progress lease held by T-1205 for the
+whole duration of this ticket, so per playbook ScopeLeaseConflict
+guidance the doc content lives in a new page,
+`docs/modules/gates_e501_autofix.md`, instead -- disclosed inside that
+page itself, with a named follow-up (T-1580, filed; renumbers
+at land) to fold it into `gates.md` proper once T-1205's lease clears. `tests/test_gates.py` was
+under the same lease (T-1205); the two new tests live in the sibling
+`tests/test_gates_fix_engine.py` module instead (already the home of the
+SUPPRESS001/FMT001 Tier-A handler tests, so this is not a new
+convention). While there I also fixed
+`TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule`'s
+stale `TIER_A_HANDLERS` key-set assertion -- but reverted that edit once I
+confirmed `tests/test_gates.py` is leased; it stays broken on the
+`E501`/`SYS100`/`SYS104` keys until T-1205's lease clears and someone can
+touch that file (noting this here rather than leaving it silent; it was
+ALREADY broken on `SYS100`/`SYS104` before this ticket, T-1531 never
+updated it, so this ticket does not newly break a passing test -- it
+would newly reveal `E501` was missing too, on the same already-red
+assertion).
+
+Residue at `frob check --ticket T-1547`: 3 SELFAUDIT001 findings (SYS100
+exec-capability + 2x SYS104 undeclared-public-symbol, for
+`fix_e501_merge_introduced`/`TestFixE501MergeIntroduced`) against
+`design/frob.strata` -- expected to self-heal via `frob ticket land`'s own
+pre-land `fix_sys100_may_via_union`/`fix_sys104_interface_union` Tier-A
+handlers (T-1531 precedent every other new Tier-A symbol in this module
+relies on); I could not hand-edit `design/frob.strata` myself since it
+sits under an in-progress T-1220 lease. 4 pre-existing TICK006 findings
+(T-1238 phantom draft citations) are unrelated repo-wide debt, not
+introduced by this ticket.
+
+Filed: T-1580 (fold docs/modules/gates_e501_autofix.md into
+docs/modules/gates.md once T-1205's lease clears; renumbers at land).
+
+Gates: `frob check --ticket T-1547` -- 0 SCOPE/PRE/COV/FMT errors; the 3
+SELFAUDIT001 + 4 TICK006 residue above are the only errors, both
+disclosed and out of this ticket's own reach (lease conflicts / land-time
+self-heal / pre-existing debt), not new regressions this ticket's own
+diff introduces.
+
+### Changed
+```
+ tickets.md | 44 ++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 42 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_merge_introduced_targeted_format_applies` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_no_merge_shape_is_a_no_op` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 320 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1548 -->
 ```yaml
 id: T-1548
 title: 'Tier-A auto-fix: COV002 changed-symbol-without-edge insertion'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -4768,12 +4863,105 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_fix_engine.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- docs/modules/gates_e501_autofix.md
+- tests/test_gates_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: the COV002 Tier-A handler needs the landing ticket id, which only the _land_cmd.py
+    call sites (_tier_a_pre_land_step / _apply_root_tier_a_fixes) have -- apply_tier_a_fixes
+    needs a threaded ticket_id parameter and both call sites need to pass it through
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/gates_e501_autofix.md
+  reason: COV002 handler doc anchor added to the shared T-1547/T-1548 pending-fold-in
+    page (already owned by T-1547 in this same worktree)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: COV002 handler tests live in the fix-engine-dedicated test module (already
+    owned by T-1547 in this same worktree)
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean
+- tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_no_ticket_id_is_a_no_op
 threat: null
 component: null
 ```
 Follow-up from T-1531: insert '# frob:ticket <landing-id>' above a symbol when COV002 (changed-symbol-without-edge) fires and the diff producing it belongs to the landing ticket itself. Needs a Tier-A handler that reads COV002's finding (symbol + file:line) plus the landing ticket id from the caller (both _tier_a_pre_land_step and _apply_root_tier_a_fixes already have it), confirms the changed hunk actually belongs to that ticket's own diff, and inserts the directive line above the symbol.
+
+## Done report
+
+Added `fix_cov002_ticket_directive_insertion` to `src/frob/gates/_fix_engine.py`,
+registered as `TIER_A_HANDLERS["COV002"]`. It inserts `# frob:ticket
+<landing-id>` (or `//` for a `.rs` source) directly above a symbol COV002
+flags as changed-with-no-coverage, but ONLY when the caller supplies a
+real, currently OPEN `ticket_id` and the finding is against `working_diff
+(root, "main")` -- this land's own diff, the only diff the handler has
+any basis to attribute a fix to. A `ticket_id` of `None` (bare `frob check
+--fix` outside a land) is a whole-handler no-op.
+
+This handler needed the landing ticket id, which no other Tier-A handler
+does -- `TIER_A_HANDLERS`'s callable shape and `apply_tier_a_fixes`'s own
+signature both grew a `ticket_id: str | None = None` parameter (backward
+compatible; every existing handler ignores it). `src/frob/app/
+ticket_runner/_land_cmd.py`'s two `apply_tier_a_fixes` call sites
+(`_tier_a_pre_land_step`, `_apply_root_tier_a_fixes`) now pass their own
+`ticket_id` argument through -- both already had it, per the ticket's own
+plan. Scope was widened to include this file
+(`frob ticket scope T-1548 --add`, both call sites were `queued`, not
+leased).
+
+Doc note: same T-1205 lease situation as T-1547 (worked in this same
+worktree) -- `docs/modules/gates_e501_autofix.md` (T-1547's own
+standalone page, since renamed in spirit to a shared "pending fold-in"
+page) now also carries this handler's writeup, with the same disclosed
+follow-up (T-1580, already filed by T-1547) to fold both
+sections into `docs/modules/gates.md` once T-1205's lease clears.
+
+Residue at `frob check --ticket T-1548`: 4 SELFAUDIT001 findings (SYS100
+exec-capability for the test module + 3x SYS104 undeclared-public-symbol
+for `fix_cov002_ticket_directive_insertion`/`fix_e501_merge_introduced`/
+the two new test classes) against `design/frob.strata` -- expected to
+self-heal via `frob ticket land`'s own pre-land
+`fix_sys100_may_via_union`/`fix_sys104_interface_union` Tier-A handlers
+(same T-1531 precedent noted in T-1547's Done report); `design/frob.strata`
+sits under an in-progress T-1220 lease so I could not hand-edit it. 4
+pre-existing TICK006 findings (T-1238 phantom draft citations) are
+unrelated repo-wide debt, not introduced by this ticket.
+
+Gates: `frob check --ticket T-1548` -- 0 SCOPE/PRE/COV/DOC/WIRE/FMT
+errors after two fix-forward passes (an initial run caught a stale doc
+anchor slug and a WIRE001 finding on the bare function reference in
+`TIER_A_HANDLERS`, both fixed: the doc anchor slug corrected, the dict
+entry wrapped in a calling lambda matching every sibling handler's own
+shape). The 4 SELFAUDIT001 + 4 TICK006 residue above are the only
+remaining errors, both disclosed and out of this ticket's own reach
+(lease conflict / land-time self-heal / pre-existing debt).
+
+### Changed
+```
+ docs/modules/gates_e501_autofix.md |  43 ++++++++++++
+ src/frob/gates/_fix_engine.py      | 139 ++++++++++++++++++++++++++++++++++++
+ tests/test_gates_fix_engine.py     |  94 +++++++++++++++++++++++++
+ tickets.md                         | 140 ++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 413 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_no_ticket_id_is_a_no_op` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 385 warning(s), 786 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1549 -->
 ```yaml

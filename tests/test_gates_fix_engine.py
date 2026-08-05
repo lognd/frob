@@ -323,3 +323,202 @@ class TestFmt001OnlyPathsLandScoping:
             tmp_path, _SNAPSHOT, only_paths=frozenset({"src/gone.py"})
         )
         assert applied == []
+
+
+def _git(root: Path, *args: str) -> None:
+    """Run one `git -C root <args>` step for a fixture, raising on failure --
+    the E501-from-merge tests below need a real git history, not a mocked
+    diff, since `fix_e501_merge_introduced` reads `HEAD`'s own merge
+    shape directly (`_merge_touched_python_files`)."""
+    import subprocess
+
+    subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+class TestFixE501MergeIntroduced:
+    """`fix_e501_merge_introduced` (T-1547): a targeted `ruff format` pass
+    over exactly the `.py` files a land-time merge touched, applied ONLY
+    when a resulting E501 finding is actually resolved by the format
+    pass."""
+
+    def test_e501_merge_introduced_targeted_format_applies(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_in\
+        # troduced_targeted_format_applies kind="unit"
+        """GIVEN a merge commit that introduces an over-long line in a
+        `.py` file it touches, WHEN `fix_e501_merge_introduced` runs,
+        THEN it applies a targeted `ruff format` to that file and the
+        E501 finding is gone afterward."""
+        import shutil
+
+        from frob.gates._fix_engine import fix_e501_merge_introduced
+
+        if shutil.which("ruff") is None:
+            pytest.skip("ruff binary not available")
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        _write(root, "pkg/mod.py", "def f(a, b):\n    return a + b\n\n\nf(1, 2)\n")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "init")
+        _git(root, "checkout", "-q", "-b", "feature")
+
+        # Over ruff's default 88-char limit, but a call `ruff format`
+        # CAN shorten by wrapping its arguments one per line.
+        long_call = (
+            "f(1111111111, 1111111112, 1111111113, 1111111114, 1111111115, "
+            "1111111116, 1111111117, 1111111118, 1111111119, 1111111120)\n"
+        )
+        _write(
+            root,
+            "pkg/mod.py",
+            "def f(a, b, c=1, d=2, e=3, g=4, h=5, i=6, j=7, k=8):\n"
+            f"    return a\n\n\n{long_call}",
+        )
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "introduce long line")
+        _git(root, "checkout", "-q", "main")
+        _git(root, "merge", "-q", "--no-ff", "feature", "-m", "merge feature")
+
+        applied = fix_e501_merge_introduced(root, _SNAPSHOT)
+        assert len(applied) == 1
+        assert applied[0].rule == "E501"
+        assert applied[0].file == "pkg/mod.py"
+
+        rewritten = (root / "pkg" / "mod.py").read_text(encoding="utf-8")
+        assert all(len(line) <= 88 for line in rewritten.splitlines())
+
+    def test_e501_no_merge_shape_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge\
+        # _shape_is_a_no_op kind="unit"
+        """GIVEN a repo whose `HEAD` is a single-parent commit with no
+        uncommitted changes, WHEN `fix_e501_merge_introduced` runs, THEN
+        it makes no changes -- there is no merge-shaped touched set to
+        act on, and Tier-A never guesses at one."""
+        from frob.gates._fix_engine import fix_e501_merge_introduced
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        _write(root, "pkg/mod.py", "x = 1\n")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "init, single-parent HEAD, no diff")
+
+        applied = fix_e501_merge_introduced(root, _SNAPSHOT)
+        assert applied == []
+
+
+class TestFixCov002TicketDirectiveInsertion:
+    """`fix_cov002_ticket_directive_insertion` (T-1548): insert
+    `# frob:ticket <landing-id>` above a changed symbol COV002 flags as
+    uncovered, but ONLY when a real, open landing ticket id is supplied."""
+
+    def _snap(self, root: Path) -> GraphSnapshot:
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    def test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_op\
+        # en_landing_ticket_gets_directive_inserted_and_reverifies_clean kind="unit"
+        """GIVEN a symbol changed on a branch with no `frob:ticket` edge
+        and no covering ticket scope, WHEN `fix_cov002_ticket_directive_
+        insertion` runs with a real, OPEN landing ticket id, THEN a
+        `# frob:ticket <id>` directive is inserted directly above the
+        symbol and a fresh COV002 pass no longer flags it."""
+        from datetime import date
+
+        from frob.gates import _cov002
+        from frob.gates._fix_engine import fix_cov002_ticket_directive_insertion
+        from frob.gitio import working_diff
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+        (root / "tickets-archive.md").write_text("# Archive\n\n", encoding="utf-8")
+        _write(root, "pkg/mod.py", "def f():\n    return 1\n")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "init")
+
+        _write(root, "pkg/mod.py", "def f():\n    return 2\n")
+
+        ticket = Ticket(
+            id="T-9001",
+            title="landing ticket",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.FEATURE,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        queue = TicketQueue(tickets={"T-9001": ticket})
+        snapshot = self._snap(root)
+
+        diff = working_diff(root, "main").danger_ok
+        before = _cov002(snapshot, queue, diff, active_ticket="T-9001")
+        assert any(v.file == "pkg/mod.py" for v in before)
+
+        applied = fix_cov002_ticket_directive_insertion(root, snapshot, queue, "T-9001")
+        assert len(applied) == 1
+        assert applied[0].rule == "COV002"
+        assert applied[0].file == "pkg/mod.py"
+
+        rewritten = (root / "pkg" / "mod.py").read_text(encoding="utf-8")
+        assert "# frob:ticket T-9001" in rewritten
+        assert rewritten.index("# frob:ticket T-9001") < rewritten.index("def f():")
+
+        after_snapshot = self._snap(root)
+        after_diff = working_diff(root, "main").danger_ok
+        after = _cov002(after_snapshot, queue, after_diff, active_ticket="T-9001")
+        assert not [v for v in after if v.file == "pkg/mod.py"]
+
+    def test_no_ticket_id_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no\
+        # _ticket_id_is_a_no_op kind="unit"
+        """GIVEN `fix_cov002_ticket_directive_insertion` is invoked with
+        `ticket_id=None` (outside a landing context), WHEN it runs, THEN
+        it makes no changes at all -- there is no id to cite, and Tier-A
+        never guesses one."""
+        from frob.gates._fix_engine import fix_cov002_ticket_directive_insertion
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git(root, "init", "-q", "-b", "main")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+        (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+        (root / "tickets-archive.md").write_text("# Archive\n\n", encoding="utf-8")
+        _write(root, "pkg/mod.py", "def f():\n    return 1\n")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", "init")
+        _write(root, "pkg/mod.py", "def f():\n    return 2\n")
+
+        snapshot = self._snap(root)
+        applied = fix_cov002_ticket_directive_insertion(
+            root, snapshot, TicketQueue(tickets={}), None
+        )
+        assert applied == []
+        assert (root / "pkg" / "mod.py").read_text(encoding="utf-8") == (
+            "def f():\n    return 2\n"
+        )

@@ -567,11 +567,13 @@
     "src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate": "6c7ec22130f8c90cb92b90d3fce38a0199edfb4b091febd3589ca43fcd1008d1",
     "src/frob/gates/_ffi_boundary.py::ffi_boundary_gate": "57923ca6fb8c668ab7741001a25337f6bf5d0a682f72388274002baad2bd4eac",
     "src/frob/gates/_fix_engine.py::FixApplied": "118127394ff1c3d576771cf12fd949714186471776c13ac5cc78b273414473cc",
-    "src/frob/gates/_fix_engine.py::TIER_A_HANDLERS": "20275a88532c4ca7131b1906771dab44720a4bb32f6a1f0ad628d451fe1fdd7c",
-    "src/frob/gates/_fix_engine.py::apply_tier_a_fixes": "9b7cbea88229792cadd5929dd11734844d6a78fc0a061b1019825cd994aec317",
+    "src/frob/gates/_fix_engine.py::TIER_A_HANDLERS": "ecbbdaf02bf2bf6a6175539a5139a1873552176ab0cf13fb9b88ed9318cd4df4",
+    "src/frob/gates/_fix_engine.py::apply_tier_a_fixes": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
     "src/frob/gates/_fix_engine.py::clear_autofix_manifest": "b3dfeb490f20ededd6f239d9d9cee29df254d6e05eacf47b0e8b54c721866d66",
+    "src/frob/gates/_fix_engine.py::fix_cov002_ticket_directive_insertion": "569e7a2538f9b10bd2d0b0c6f5314bcc5fa2baab7963f9093e9115a17c440cc7",
     "src/frob/gates/_fix_engine.py::fix_doc002_unique_slug": "7ef8d8ae7a08a3d93bc18dc16223b448c204ff22108ce82b571ff3a9bd779892",
     "src/frob/gates/_fix_engine.py::fix_doc007_dotted_form": "327da98ed7d5183d7687e61242a3ef58b030cd5fb58e4eb335b441e918bb0024",
+    "src/frob/gates/_fix_engine.py::fix_e501_merge_introduced": "41b35b98e0b764b89a7aa808ab30035da2ab2423bd3187bcafa3111b0386a256",
     "src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap": "1b315b742f19d4711e81c022a37a36a787316a79de736af643361b494990cc8f",
     "src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver": "c7076e6aeef11ba2582b512a8618cf6e4ef49ff30539c246e63afb7cb0cc3f5d",
     "src/frob/gates/_fix_engine.py::fix_reg010_registry_sync": "2d012f73d3d94915a44e8f0a7731e07833df2fa6a2cdba6b8566b8600e1922ff",
@@ -2049,5 +2051,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.342.0"
+  "version": "0.343.0"
 }

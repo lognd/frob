@@ -270,6 +270,7 @@ def _tier_a_pre_land_step(
         snapshot_result.danger_ok,
         queue_result.danger_ok,
         exclude=("FMT001",) if touched_paths is not None else (),
+        ticket_id=ticket_id,
     )
     if applied:
         _log.info(
@@ -391,7 +392,7 @@ def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> list[str]:
         )
         return []
     applied = apply_tier_a_fixes(
-        root, snapshot_result.danger_ok, queue_result.danger_ok
+        root, snapshot_result.danger_ok, queue_result.danger_ok, ticket_id=ticket_id
     )
     return sorted({entry.file for entry in applied})
 

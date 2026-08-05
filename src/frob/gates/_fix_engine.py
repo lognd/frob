@@ -1233,6 +1233,249 @@ def fix_sys100_may_via_union(root: Path, snapshot: GraphSnapshot) -> list[FixApp
 
 
 # ---------------------------------------------------------------------------
+# E501 (T-1547): a line-too-long finding introduced specifically by a
+# land-time merge -- a targeted `ruff format` over just the merge-touched
+# files, distinct from fix_fmt001_directive_wrap (scoped to `frob:`-
+# directive comment lines only, never ordinary code).
+# ---------------------------------------------------------------------------
+
+
+def _merge_touched_python_files(root: Path) -> list[str]:
+    """Repo-relative `.py` paths touched by the most recent MERGE commit at
+    `root`'s `HEAD` (a real two-parent commit, `git diff --name-only
+    HEAD^1 HEAD^2`), or -- when `HEAD` is not itself a merge -- the `.py`
+    files with uncommitted working-tree changes against `HEAD` (`git diff
+    --name-only HEAD`), covering the in-progress-merge shape `frob ticket
+    land`'s own pre-land Tier-A phase runs in (T-1175: `_tier_a_pre_land_
+    step` fires on an already `git merge`-d, not-yet-committed worktree).
+    Empty on any git failure or when neither shape applies -- this handler
+    only ever acts on a genuinely merge-shaped touched set, never guesses
+    at "everything E501 currently flags", per this ticket's own targeted
+    scope."""
+    parents = guarded_subprocess_run(
+        ["git", "-C", str(root), "rev-list", "--parents", "-n", "1", "HEAD"],
+        capture_output=True,
+        text=True,
+    )
+    if parents.is_err or parents.danger_ok.returncode != 0:
+        return []
+    fields = parents.danger_ok.stdout.split()
+    diff_argv: list[str]
+    if len(fields) >= 3:
+        # HEAD itself is a merge commit: diff between its two parents.
+        diff_argv = [
+            "git",
+            "-C",
+            str(root),
+            "diff",
+            "--name-only",
+            fields[1],
+            fields[2],
+        ]
+    else:
+        # Not a committed merge yet -- the T-1175 in-progress-merge shape:
+        # uncommitted working-tree changes against HEAD.
+        diff_argv = ["git", "-C", str(root), "diff", "--name-only", "HEAD"]
+    diffed = guarded_subprocess_run(diff_argv, capture_output=True, text=True)
+    if diffed.is_err or diffed.danger_ok.returncode != 0:
+        return []
+    return [
+        line.strip()
+        for line in diffed.danger_ok.stdout.splitlines()
+        if line.strip().endswith(".py")
+    ]
+
+
+def _e501_lines_for_file(root: Path, rel_file: str) -> set[int] | None:
+    """1-indexed line numbers `ruff check --select E501` reports for
+    `rel_file`, or `None` on any spawn/parse failure -- distinguishing
+    "genuinely clean" (empty set) from "could not measure" (`None`) so the
+    caller never counts an unmeasurable file as fixed."""
+    result = guarded_subprocess_run(
+        [
+            "ruff",
+            "check",
+            "--select",
+            "E501",
+            "--output-format",
+            "json",
+            rel_file,
+        ],
+        capture_output=True,
+        text=True,
+        cwd=root,
+    )
+    if result.is_err:
+        return None
+    try:
+        items = json.loads(result.danger_ok.stdout)
+    except json.JSONDecodeError:
+        return None
+    lines: set[int] = set()
+    for item in items:
+        loc = item.get("location", {})
+        row = loc.get("row")
+        if isinstance(row, int):
+            lines.add(row)
+    return lines
+
+
+# frob:doc docs/modules/gates_e501_autofix.md#fix_e501_merge_introduced-auto-fix
+# frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_introduced_targeted_format_applies  # noqa: E501
+# frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op  # noqa: E501
+# frob:ticket T-1547
+def fix_e501_merge_introduced(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+    """Tier-A fix (T-1547): run a targeted `ruff format` over exactly the
+    `.py` files a land-time merge touched (`_merge_touched_python_files`)
+    that still carry an E501 (line-too-long) finding afterward, then
+    re-verify E501 is actually gone from that file before counting it as
+    fixed -- never claims a fix `ruff format` did not actually make (a
+    `ruff format` pass cannot always shorten every over-long line, e.g. an
+    unbreakable string literal). Distinct from `fix_fmt001_directive_wrap`,
+    which only ever rewraps `frob:`-directive comment lines, never
+    ordinary code -- this handler's own targeted scope is the merge-
+    touched set specifically, never a whole-tree `ruff format` sweep
+    (that would re-litigate every pre-existing E501 finding in the repo,
+    not just ones this land's own merge introduced)."""
+    del snapshot  # signature uniformity only; this handler reads git + ruff directly
+    touched = _merge_touched_python_files(root)
+    if not touched:
+        return []
+    applied: list[FixApplied] = []
+    for rel_file in touched:
+        path = root / rel_file
+        if not path.is_file():
+            continue
+        before = _e501_lines_for_file(root, rel_file)
+        if not before:
+            continue
+        _run_ruff_format(path)
+        after = _e501_lines_for_file(root, rel_file)
+        if after is None:
+            continue
+        fixed_lines = before - after
+        if not fixed_lines:
+            continue
+        applied.append(
+            FixApplied(
+                rule="E501",
+                file=rel_file,
+                line=min(fixed_lines),
+                detail=(
+                    f"targeted ruff format resolved {len(fixed_lines)} E501 "
+                    f"line(s) introduced by this land's merge"
+                ),
+            )
+        )
+    return applied
+
+
+# ---------------------------------------------------------------------------
+# COV002 (T-1548): a changed symbol with no `frob:ticket` edge to an open
+# ticket AND no covering ticket scope -- insert `# frob:ticket
+# <landing-id>` above the symbol, but ONLY when the caller identifies a
+# real landing ticket id and that finding is against the CURRENT working
+# diff (this land's own diff, never a guess at some other ticket's
+# unrelated change).
+# ---------------------------------------------------------------------------
+
+#: Per-suffix line-comment marker for the inserted `frob:ticket` directive
+#: -- same two-language table `fix_inv006_carried_waiver` already uses
+#: (`_INV006_LINE_COMMENT`), duplicated narrowly here rather than shared
+#: since the two tables' own docstrings describe different obligations
+#: (a carried waiver vs. a coverage directive) and could reasonably drift
+#: independently later.
+_COV002_LINE_COMMENT: dict[str, str] = {".py": "#", ".rs": "//"}
+
+
+def _insert_ticket_directive_above(
+    root: Path, rel_file: str, line: int, ticket_id: str
+) -> bool:
+    """Insert `# frob:ticket <ticket_id>` (or `//` for a `.rs` source, per
+    `_COV002_LINE_COMMENT`) as the new physical line immediately BEFORE
+    1-indexed `line` of `root/rel_file` -- the directive attaches to the
+    symbol whose definition starts at `line`, exactly where every other
+    hand-written `frob:ticket` directive in this repo already sits.
+    Returns `False` (a no-op) on any read/write failure or an
+    out-of-range `line`, never raises -- matching every other Tier-A
+    handler's "no rewrite is better than a bad one" posture."""
+    path = root / rel_file
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    lines = text.splitlines(keepends=True)
+    idx = line - 1
+    if idx < 0 or idx > len(lines):
+        return False
+    suffix = path.suffix
+    marker = _COV002_LINE_COMMENT.get(suffix, "#")
+    newline = "\n"
+    if lines and not lines[-1].endswith("\n"):
+        newline = "\n"  # last-line-no-trailing-newline files still get one
+    directive_line = f"{marker} frob:ticket {ticket_id}{newline}"
+    lines.insert(idx, directive_line)
+    return _write_text(path, "".join(lines))
+
+
+# frob:doc docs/modules/gates_e501_autofix.md#fix_cov002_ticket_directive_insertion-auto-fix-t-1548  # noqa: E501
+# frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean  # noqa: E501
+# frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no_ticket_id_is_a_no_op  # noqa: E501
+# frob:ticket T-1548
+def fix_cov002_ticket_directive_insertion(
+    root: Path,
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    ticket_id: str | None,
+) -> list[FixApplied]:
+    """Tier-A fix (T-1548): for every COV002 finding (a changed symbol
+    accounted for by neither a direct `frob:ticket` edge nor an open
+    ticket's scope) against the CURRENT working diff, insert `# frob:ticket
+    <ticket_id>` directly above the symbol -- but only when `ticket_id`
+    names a REAL, currently OPEN ticket in `queue` (never guesses at which
+    ticket "should" cover an orphaned symbol) and the diff producing the
+    finding is this call's own `working_diff(root, "main")` -- i.e. this
+    land's own diff, never some other ticket's unrelated change (there is
+    no other diff this handler could read `git`-side that would mean
+    anything else). A `ticket_id` of `None` (this handler invoked outside
+    a landing context, e.g. a bare `frob check --fix`) is a whole-handler
+    no-op -- there is no id to cite, and Tier-A never guesses one."""
+    if ticket_id is None or ticket_id not in queue.tickets:
+        return []
+    from frob.gates import _OPEN_STATES, _cov002
+    from frob.gitio import working_diff
+
+    if queue.tickets[ticket_id].state not in _OPEN_STATES:
+        return []
+
+    diff_result = working_diff(root, "main")
+    if diff_result.is_err:
+        _log.warning(
+            "COV002 auto-fix: working_diff against main failed (%s), skipping",
+            diff_result.danger_err,
+        )
+        return []
+    diff = diff_result.danger_ok
+    violations = _cov002(snapshot, queue, diff, active_ticket=ticket_id)
+    applied: list[FixApplied] = []
+    for violation in violations:
+        if _insert_ticket_directive_above(
+            root, violation.file, violation.line, ticket_id
+        ):
+            applied.append(
+                FixApplied(
+                    rule="COV002",
+                    file=violation.file,
+                    line=violation.line,
+                    detail=(
+                        f"inserted 'frob:ticket {ticket_id}' above {violation.symref}"
+                    ),
+                )
+            )
+    return applied
+
+
+# ---------------------------------------------------------------------------
 # WAIVE004 (T-1261): a `frob:waive` matching zero findings -- ONLY ever
 # trustworthy on a genuine full, unscoped run (T-1133's own disclaimer);
 # this handler independently manufactures that full run itself rather
@@ -1520,22 +1763,58 @@ def _waive004_target_rule(message: str) -> str | None:
 #: _sweep_apply_tier_a_and_commit`) able to auto-repair them too.
 # frob:ticket T-1531
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+#: T-1548: every handler now takes a 4th `ticket_id: str | None` argument
+#: (the landing ticket's id, when `apply_tier_a_fixes` is called from a
+#: land context -- `None` for a bare `frob check --fix`) -- every existing
+#: handler simply ignores it, only `fix_cov002_ticket_directive_insertion`
+#: reads it, since inserting a `frob:ticket <id>` directive is the one
+#: Tier-A fix that structurally needs to know WHICH ticket is landing
+#: (there is no other way to derive that from `root`/`snapshot`/`queue`
+#: alone -- multiple tickets can be simultaneously open).
 TIER_A_HANDLERS: dict[
-    str, Callable[[Path, GraphSnapshot, TicketQueue], list[FixApplied]]
+    str, Callable[[Path, GraphSnapshot, TicketQueue, "str | None"], list[FixApplied]]
 ] = {
-    "DOC007": lambda root, snapshot, queue: fix_doc007_dotted_form(root, snapshot),
-    "DOC002": lambda root, snapshot, queue: fix_doc002_unique_slug(root, snapshot),
-    "INV006": lambda root, snapshot, queue: fix_inv006_carried_waiver(root, snapshot),
-    "FMT001": lambda root, snapshot, queue: fix_fmt001_directive_wrap(root, snapshot),
-    "SUPPRESS001": lambda root, snapshot, queue: fix_suppress001_paired_suppression(
+    "DOC007": lambda root, snapshot, queue, ticket_id: fix_doc007_dotted_form(
         root, snapshot
     ),
-    "REG010": lambda root, snapshot, queue: fix_reg010_registry_sync(root, snapshot),
-    "REL002": lambda root, snapshot, queue: fix_rel002_release_sync(root, snapshot),
-    "SYS104": lambda root, snapshot, queue: fix_sys104_interface_union(root, snapshot),
-    "SYS100": lambda root, snapshot, queue: fix_sys100_may_via_union(root, snapshot),
-    "TICK002": lambda root, snapshot, queue: fix_tick002_renumber(root, queue),
-    "WAIVE004": lambda root, snapshot, queue: fix_waive004_stale_waiver(
+    "DOC002": lambda root, snapshot, queue, ticket_id: fix_doc002_unique_slug(
+        root, snapshot
+    ),
+    "INV006": lambda root, snapshot, queue, ticket_id: fix_inv006_carried_waiver(
+        root, snapshot
+    ),
+    "FMT001": lambda root, snapshot, queue, ticket_id: fix_fmt001_directive_wrap(
+        root, snapshot
+    ),
+    "SUPPRESS001": (
+        lambda root, snapshot, queue, ticket_id: fix_suppress001_paired_suppression(
+            root, snapshot
+        )
+    ),
+    "REG010": lambda root, snapshot, queue, ticket_id: fix_reg010_registry_sync(
+        root, snapshot
+    ),
+    "REL002": lambda root, snapshot, queue, ticket_id: fix_rel002_release_sync(
+        root, snapshot
+    ),
+    "SYS104": lambda root, snapshot, queue, ticket_id: fix_sys104_interface_union(
+        root, snapshot
+    ),
+    "SYS100": lambda root, snapshot, queue, ticket_id: fix_sys100_may_via_union(
+        root, snapshot
+    ),
+    "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(
+        root, snapshot
+    ),
+    "COV002": (
+        lambda root, snapshot, queue, ticket_id: fix_cov002_ticket_directive_insertion(
+            root, snapshot, queue, ticket_id
+        )
+    ),
+    "TICK002": lambda root, snapshot, queue, ticket_id: fix_tick002_renumber(
+        root, queue
+    ),
+    "WAIVE004": lambda root, snapshot, queue, ticket_id: fix_waive004_stale_waiver(
         root, snapshot, queue
     ),
 }
@@ -1548,6 +1827,7 @@ def apply_tier_a_fixes(
     snapshot: GraphSnapshot,
     queue: TicketQueue,
     exclude: tuple[str, ...] = (),
+    ticket_id: str | None = None,
 ) -> list[FixApplied]:
     """Apply every Tier-A deterministic fix this batch ships (T-1138,
     T-1177, T-1261) via `TIER_A_HANDLERS`, in that dict's declared order
@@ -1573,13 +1853,20 @@ def apply_tier_a_fixes(
     from "this is my own uncommitted work" without a blanket `git checkout
     --`. Cleared (`clear_autofix_manifest`) once the whole loop finishes
     successfully, since a completed pass needs no recovery breadcrumb --
-    its rewrites are now ordinary uncommitted changes like any other."""
+    its rewrites are now ordinary uncommitted changes like any other.
+
+    T-1548: `ticket_id` (the landing ticket's id, `None` outside a land
+    context) is threaded to every handler -- every handler except
+    `fix_cov002_ticket_directive_insertion` ignores it, matching this
+    module's existing precedent of a uniform handler call shape even when
+    most handlers do not need every argument (`queue` itself is ignored
+    by most pure-`.strata`/doc rewrites already)."""
     applied: list[FixApplied] = []
     for rule_id, handler in TIER_A_HANDLERS.items():
         if rule_id in exclude:
             _log.info("tier-a fixes: %s excluded by caller", rule_id)
             continue
-        applied.extend(handler(root, snapshot, queue))
+        applied.extend(handler(root, snapshot, queue, ticket_id))
         write_autofix_manifest(root, applied)
     clear_autofix_manifest(root)
     return applied

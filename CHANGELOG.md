@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.343.0] - unreleased
+
+- T-1547: Tier-A auto-fix: E501 introduced by merge, targeted ruff-format
+
 ## [0.342.0] - unreleased
 
 - T-1492: ledger v2: wire migrate --to v2 CLI flag onto migrate_v1_to_v2

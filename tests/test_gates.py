@@ -10158,7 +10158,7 @@ class TestAutofixManifest:
         root = tmp_path / "repo"
         root.mkdir(parents=True)
 
-        def _boom(root, snapshot, queue):  # noqa: ANN001, ANN202
+        def _boom(root, snapshot, queue, ticket_id=None):  # noqa: ANN001, ANN202
             raise RuntimeError("simulated kill mid-handler")
 
         monkeypatch.setitem(fix_engine.TIER_A_HANDLERS, "DOC007", _boom)
@@ -10495,6 +10495,10 @@ class TestFixEngineTierABatch2:
             "REL002",
             "TICK002",
             "WAIVE004",
+            "SYS100",  # T-1531
+            "SYS104",  # T-1531
+            "E501",  # T-1547
+            "COV002",  # T-1548
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
