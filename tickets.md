@@ -2487,7 +2487,7 @@ T-1203's mutation-audit harness (src/frob/strata/_mutation_audit.py, SecondDetec
 ```yaml
 id: T-1330
 title: Wire v2 git-history mining into frob ticket flow/sprint velocity
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
