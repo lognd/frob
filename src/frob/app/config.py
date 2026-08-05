@@ -130,6 +130,11 @@ class Subcommand(str, enum.Enum):
     natives = "natives"
     # T-0638: list outstanding frob:deprecated entries.
     deprecated = "deprecated"
+    # frob:ticket T-1525
+    # T-1525: user-facing entrypoint for `frob.testing._coverage_refresh.
+    # native_coverage_refresh` -- the frob-native coverage orchestration
+    # T-1516 built as a library call with no CLI verb of its own.
+    coverage = "coverage"
 
 
 # frob:doc docs/modules/app.md#config
@@ -145,6 +150,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-0115
 # frob:ticket T-0877
 # frob:ticket T-1150
+# frob:ticket T-1525
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -732,6 +738,12 @@ class AppConfig(BaseModel):
     # frob natives (T-0864): frob-owned maturin-develop-per-crate build.
     natives_command: str | None = None  # build
     natives_path: Path | None = None
+
+    # frob coverage (T-1525): user-facing CLI verb over `native_coverage_
+    # refresh` (T-1516) -- `--full` forces a cold-start-style whole-suite
+    # run instead of the default touched-set incremental refresh.
+    coverage_full: bool = False
+    coverage_path: Path | None = None
 
     # frob:ticket T-1271
     # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values kind="unit"  # noqa: E501

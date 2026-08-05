@@ -14,6 +14,7 @@ from frob._cli_parsers import (
     _add_bind_parser,
     _add_check_parser,
     _add_clean_parser,
+    _add_coverage_parser,
     _add_cycle_parser,
     _add_debt_parser,
     _add_deploy_parser,
@@ -216,6 +217,7 @@ def _add_analysis_subparsers(sub) -> None:
 
 
 # frob:ticket T-0441
+# frob:ticket T-1525
 def _add_workflow_subparsers(sub) -> None:
     """Register the workflow/CI subcommand group: check through deploy."""
     _add_check_parser(sub)
@@ -241,6 +243,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_clean_parser(sub)
     _add_fmt_parser(sub)
     _add_natives_parser(sub)
+    _add_coverage_parser(sub)
 
 
 # frob:doc docs/modules/app.md#entry-point

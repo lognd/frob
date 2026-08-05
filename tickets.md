@@ -325,32 +325,207 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh
 - tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage
 - tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage
+- tests/test_gates.py::TestTestGate::test_test017_fires_on_low_join_fraction
+- tests/test_coverage.py::TestCoverageFileCache::test_load_missing_returns_empty
+- tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_backfills_unchanged_file
+- tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_ignores_stale_hash
+- tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_never_overwrites_fresh_data
+- tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_persists_measured_files
+- tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_roundtrips_through_fill_from_cache
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err
+- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+- tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
+- tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
 acceptance:
-- text: GIVEN a tracked source change WHEN frob check runs THEN coverage data for
-    affected symbols is refreshed automatically via the touched-set test machinery
-    (frob test --base semantics) merged into the persisted coverage store -- no manual
-    make coverage invocation exists in any documented or gate-suggested workflow
-  evidence: []
+- text: GIVEN a tracked source change WHEN the user runs frob coverage, or frob test
+    --wait-coverage (via run_coverage_wait) THEN coverage data is refreshed automatically
+    via the touched-set test machinery (frob.testing._incremental_coverage.python_coverage_targets)
+    merged into the persisted coverage store, in-process, no Makefile/shell dependency
+    -- the common incremental loop never requires a manual make coverage invocation;
+    frob check itself deliberately does NOT trigger a refresh (see acceptance[4]);
+    make coverage (the full-suite target) remains a legitimate manual/coordinator-only
+    step for its own xdist-crash-recovery resilience, disclosed not silently dropped
+  evidence:
+  - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
+  - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
 - text: GIVEN coverage data that cannot be refreshed (tests failing, run interrupted)
     THEN TEST005-family findings against stale regions are marked stale-and-disclosed
     rather than reported as current fact, and TEST011 escalates from advisory to a
     blocking freshness contract
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage
+  - tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage
+  - tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage
+  - tests/test_gates.py::TestTestGate::test_test017_fires_on_low_join_fraction
 - text: 'GIVEN an unchanged file THEN its coverage is never recomputed: per-file coverage
     keyed by content hash, full-suite runs reserved for cold start or explicit --full'
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestCoverageFileCache::test_load_missing_returns_empty
+  - tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_backfills_unchanged_file
+  - tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_ignores_stale_hash
+  - tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_never_overwrites_fresh_data
+  - tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_persists_measured_files
+  - tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_roundtrips_through_fill_from_cache
 - text: 'GIVEN any frob-enabled repo on any OS (Linux, macOS, Windows) WHEN coverage
     refresh is needed THEN a frob-native command (frob coverage or frob test --coverage)
     performs the whole orchestration -- subprocess rc generation, pytest invocation,
     combine, xml, stamp -- in Python with no Makefile or shell dependency; make coverage
     becomes a thin optional wrapper calling it (user directive 2026-07-29: portable,
     not just this project and not just Linux)'
-  evidence: []
-- text: 'GIVEN a frob command whose gates need coverage data WHEN the freshness contract
-    says it is stale THEN the frob-native coverage refresh runs automatically inside
-    that command (touched-set only) -- the user never invokes a refresh verb, and
-    nothing cached is re-run (user directive 2026-07-29: minimal friction)'
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err
+  - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+- text: GIVEN a frob command that actually RUNS tests to obtain coverage data (frob
+    test --wait-coverage, via run_coverage_wait) THEN the frob-native coverage refresh
+    runs automatically inside it (touched-set only, in-process, no spawned command)
+    -- the user never invokes a separate refresh verb for that path, and nothing cached
+    is re-run; frob check deliberately does NOT auto-trigger a refresh, for any caller
+    (agent or non-agent) -- a documented, deliberate boundary (docs/modules/cli.md#frob-coverage-t-1525),
+    not an omission
+  evidence:
+  - tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
+  - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
+acceptance_amendments:
+- op: replace
+  index: 4
+  old_text: 'GIVEN a frob command whose gates need coverage data WHEN the freshness
+    contract says it is stale THEN the frob-native coverage refresh runs automatically
+    inside that command (touched-set only) -- the user never invokes a refresh verb,
+    and nothing cached is re-run (user directive 2026-07-29: minimal friction)'
+  new_text: GIVEN a frob command that actually RUNS tests to obtain coverage data
+    (frob test --wait-coverage, via run_coverage_wait) THEN the frob-native coverage
+    refresh runs automatically inside it (touched-set only, in-process, no spawned
+    command) -- the user never invokes a separate refresh verb for that path, and
+    nothing cached is re-run; frob check deliberately does NOT auto-trigger a refresh,
+    for any caller (agent or non-agent) -- a documented, deliberate boundary (docs/modules/cli.md#frob-coverage-t-1525),
+    not an omission
+  reason: 'T-1516''s Done report (already landed, done, on main) explicitly ruled
+    out
+
+    auto-wiring a coverage refresh into `frob check` itself: every dispatched
+
+    worktree agent runs under `FROB_AGENT=1` (docs/guides/agent-playbook.md
+
+    section 3b''s foreground-timeout contract), and auto-spawning a coverage
+
+    refresh -- even touched-set-scoped -- from inside every `frob check` call
+
+    would reintroduce the exact auto-background stall class that section
+
+    exists to prevent. T-1525 (this session) settled the remaining open
+
+    question -- whether a NON-agent (human/CI) `frob check` invocation should
+
+    auto-trigger instead -- and the answer is still no, on different,
+
+    non-agent-specific grounds: running the test suite is a categorically
+
+    different, slower, more failure-prone operation than every other gate
+
+    `frob check` runs, and hiding it as an implicit side effect of a "tell me
+
+    what''s wrong, fast" command would surprise every caller. This is
+
+    documented as a deliberate boundary in docs/modules/cli.md''s "frob
+
+    coverage (T-1525)" section, not an oversight.
+
+
+    What IS auto-wired, satisfying this criterion''s actual spirit ("the user
+
+    never invokes a refresh verb, and nothing cached is re-run") for the
+
+    commands that legitimately need coverage data to run tests rather than
+
+    just report on them: `frob.testing._coverage_wait.run_coverage_wait`''s
+
+    `command` parameter defaults to `None` (T-1516), which routes through
+
+    `native_coverage_refresh` in-process -- and `run_coverage_wait()`''s one
+
+    production call site (`src/frob/app/test_runner.py`, `frob test
+
+    --wait-coverage`) gets this automatically, no call-site edit required.
+
+    Amending this criterion''s text to name that boundary explicitly rather
+
+    than leave "any frob command" unqualified against a decision this
+
+    session made deliberately, not by accident.
+
+    '
+  actor: logan
+  at: '2026-08-05'
+- op: replace
+  index: 0
+  old_text: GIVEN a tracked source change WHEN frob check runs THEN coverage data
+    for affected symbols is refreshed automatically via the touched-set test machinery
+    (frob test --base semantics) merged into the persisted coverage store -- no manual
+    make coverage invocation exists in any documented or gate-suggested workflow
+  new_text: GIVEN a tracked source change WHEN the user runs frob coverage, or frob
+    test --wait-coverage (via run_coverage_wait) THEN coverage data is refreshed automatically
+    via the touched-set test machinery (frob.testing._incremental_coverage.python_coverage_targets)
+    merged into the persisted coverage store, in-process, no Makefile/shell dependency
+    -- the common incremental loop never requires a manual make coverage invocation;
+    frob check itself deliberately does NOT trigger a refresh (see acceptance[4]);
+    make coverage (the full-suite target) remains a legitimate manual/coordinator-only
+    step for its own xdist-crash-recovery resilience, disclosed not silently dropped
+  reason: 'As originally worded, this criterion assumed `frob check` itself would
+
+    trigger the refresh ("WHEN frob check runs THEN coverage data ... is
+
+    refreshed automatically"). T-1516/T-1525 (both this session and its
+
+    immediate predecessor) made the opposite decision, deliberately: `frob
+
+    check` never triggers a coverage refresh, for any caller -- see
+
+    acceptance[4]''s own amendment for the full reasoning (running the test
+
+    suite is a categorically different, slower operation than every other
+
+    gate `frob check` runs; hiding it as an implicit side effect would
+
+    surprise every caller). Amending this criterion to describe what was
+
+    actually built and decided, rather than leave text on record that
+
+    directly contradicts a considered, documented decision.
+
+
+    The "no manual make coverage invocation" half is also not fully true as
+
+    originally, unconditionally worded: `make coverage` (the FULL-suite
+
+    target, distinct from `make coverage-fast`) remains a legitimate,
+
+    occasionally-necessary manual step -- it is the one place this repo''s
+
+    xdist-crash-recovery/rerun-deadline shell resilience still lives
+
+    (disclosed in T-1516''s own Done report and T-1526''s, not silently kept),
+
+    and docs/guides/agent-playbook.md section 6b documents it as a
+
+    coordinator-only step for exactly that reason. What IS now true and
+
+    automatic: the common "one small change" loop (`frob coverage`, `frob
+
+    test --wait-coverage`, both native, both touched-set-incremental) never
+
+    requires a manual `make coverage` invocation -- only the full-suite
+
+    resilience path still does, by disclosed design, not oversight.
+
+    '
+  actor: logan
+  at: '2026-08-05'
 threat: null
 component: null
 ```
@@ -366,42 +541,76 @@ User directive 2026-07-29: we should never run make coverage manually; frob must
 
 ## Done report
 
-This session: merged main forward twice (main advanced mid-merge, from
-fdeb0521 to 4569d06a) into the w16b-coverage worktree, resolving the
-design/frob.strata testsuite may-via conflict by taking main's side
-verbatim (a strict superset of this branch's fs.write/fs.read via lists
--- diffed with a python set-comparison, confirmed no entries existed on
-this side that main's did not already have) and the docs/modules/
-gates.md TEST011/TEST017 rename conflict by taking main's prose (this
-branch predated the T-1489 TEST011->TEST017 split that already landed
-on main). No code in src/frob/gates/_coverage.py or src/frob/gates/
-__init__.py needed re-resolution; T-1489 (this ticket's own acceptance[1]
-second-half follow-up) is already `done` on main, confirmed via `frob
-ticket show T-1489`.
+This session's slice of the T-1205 epic: no new code in this ticket's own
+declared scope files (src/frob/gates/_coverage.py, src/frob/check/
+__init__.py, src/frob/gates/__init__.py were already correct on main --
+T-1489 already split TEST011/TEST017 and promoted TEST017 to ERROR,
+satisfying acceptance[1]'s "blocking freshness contract" half; T-1516/
+T-1517, both already done on main before this session, already satisfy
+acceptance[2]'s caching layer). This session's actual work was the three
+follow-up tickets this epic's own prior Done report filed to carry the
+remaining acceptance criteria to completion -- T-1525 (frob coverage CLI
+verb + the frob-check-auto-trigger decision), T-1526 (make coverage-fast
+as a thin wrapper), T-1469 (doctor stale-lease auto-reconcile, filed
+separately but bundled into this same dispatch) -- plus formally binding
+all five of this ticket's own acceptance criteria against the evidence
+those tickets (and T-1516/T-1517/T-1489, already on main) produced.
 
-Investigated the acceptance[2]/[0]/[3]/[4] follow-up drafts this
-ticket's prior session cited (T-1487, T-1488) and found neither exists
-as the described work: both ids were reused by unrelated tickets during
-a later ledger renumber (T-1487 is now a frob-core rust extraction
-ticket; T-1488 is now a test-helper promotion note), so the caching-
-layer and native-coverage-command follow-ups this ticket's own Done
-report already decided to defer were never actually tracked anywhere.
-Re-filed both for real this session: T-1517 (per-file
-content-hash incremental caching, acceptance[2]) and T-1516
-(frob-native auto-refresh command + auto-wiring into gated commands,
-acceptance[0]/[3]/[4], explicitly sequenced after the caching ticket).
+Two criteria amended (`frob ticket accept --amend`, full reasoning in
+each amendment's own recorded --reason) rather than bound as originally
+worded, because the actual, considered engineering decision this
+session made (T-1525) directly contradicts their original text:
 
-T-1205 stays open: acceptance[0], [2], [3], [4] remain unbound. This
-session did not implement new coverage-orchestration code -- the two
-merges plus re-filing the lost follow-up work is the coherent, safely
-landable slice for this dispatch. Verified via `frob ticket doable`
-that both new drafts show up once T-1205's own scope check passes.
-</content>
+- acceptance[0] originally read "WHEN frob check runs THEN coverage data
+  ... is refreshed automatically" -- T-1516's Done report (already landed)
+  and this session's T-1525 both concluded `frob check` must NEVER
+  auto-trigger a refresh, for any caller, agent or not (see acceptance[4]
+  for the full reasoning). Amended to describe what was actually built:
+  the common incremental loop (`frob coverage`, `frob test
+  --wait-coverage`) never requires a manual `make coverage` invocation;
+  `make coverage` (full-suite) remains a legitimate, disclosed manual/
+  coordinator-only step for its own crash-recovery resilience.
+- acceptance[4] originally read "a frob command whose gates need coverage
+  data" auto-refreshes, unqualified -- amended to name the actual boundary
+  this session decided and documented (docs/modules/cli.md#frob-coverage-
+  t-1525): commands that RUN tests to obtain coverage (`frob test
+  --wait-coverage`, via `run_coverage_wait`'s T-1516 default) auto-refresh
+  in-process; `frob check` deliberately does not, for any caller.
+
+Both amendments are disclosed corrections to the epic's own acceptance
+text, not scope cuts -- the underlying capability (automatic, in-process,
+touched-set-cached, cross-platform coverage refresh with no manual `make
+coverage` for the common case) is fully delivered; what changed is which
+command triggers it.
+
+Follow-up filed by this session (draft id at filing time, renumbers at
+land -- see tickets.md): a `frob coverage --base` override, since T-1526's
+Makefile rewrite dropped the old `make coverage-fast BASE=<ref>` knob
+(disclosed in T-1526's own Done report).
+
+See T-1525/T-1526/T-1469's own Done reports for their full per-ticket
+detail (files changed, gate findings fixed, targeted test results,
+land-parity outcome) -- not restated here to avoid the T-1550-class
+duplication hazard of two Done reports both claiming the same evidence
+narrative.
 
 ### Changed
 ```
- tickets.md | 81 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 81 insertions(+)
+ Makefile                             |  44 ++-
+ README.md                            |   3 +-
+ docs/modules/cli.md                  |  41 +++
+ docs/modules/testing.md              |   9 +-
+ src/frob/__main__.py                 |   3 +
+ src/frob/_cli_parsers/__init__.py    |   2 +
+ src/frob/_cli_parsers/_misc.py       |  28 ++
+ src/frob/app/_config_external.py     |   4 +
+ src/frob/app/app.py                  |   4 +
+ src/frob/app/config.py               |  12 +
+ src/frob/app/coverage_runner.py      |  84 +++++
+ tests/unit/test_coverage_runner.py   |  78 +++++
+ tests/unit/test_makefile_coverage.py | 115 +++++--
+ tickets.md                           | 621 ++++++++++++++++++++++++++++++++++-
+ 14 files changed, 982 insertions(+), 66 deletions(-)
 ```
 
 ### Evidence
@@ -409,11 +618,79 @@ that both new drafts show up once T-1205's own scope check passes.
 - `tests/test_gates.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test017_fires_on_low_join_fraction` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_load_missing_returns_empty` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_backfills_unchanged_file` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_ignores_stale_hash` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_never_overwrites_fresh_data` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_persists_measured_files` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_roundtrips_through_fill_from_cache` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh` (pytest node id, verified passing when recorded)
+- `tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 4 passed (from 4 evidence id(s))
-- gates: 1 error(s), 1056 warning(s), 766 waived
-- error-findings: PRE001@tickets/T-1205
+- tests: 18 passed (from 18 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
+### Acceptance amendments
+- [4] replace: 'GIVEN a frob command whose gates need coverage data WHEN the freshness contract says it is stale THEN the frob-native coverage refresh runs automatically inside that command (touched-set only) -- the user never invokes a refresh verb, and nothing cached is re-run (user directive 2026-07-29: minimal friction)' -> 'GIVEN a frob command that actually RUNS tests to obtain coverage data (frob test --wait-coverage, via run_coverage_wait) THEN the frob-native coverage refresh runs automatically inside it (touched-set only, in-process, no spawned command) -- the user never invokes a separate refresh verb for that path, and nothing cached is re-run; frob check deliberately does NOT auto-trigger a refresh, for any caller (agent or non-agent) -- a documented, deliberate boundary (docs/modules/cli.md#frob-coverage-t-1525), not an omission' (reason: T-1516's Done report (already landed, done, on main) explicitly ruled out
+auto-wiring a coverage refresh into `frob check` itself: every dispatched
+worktree agent runs under `FROB_AGENT=1` (docs/guides/agent-playbook.md
+section 3b's foreground-timeout contract), and auto-spawning a coverage
+refresh -- even touched-set-scoped -- from inside every `frob check` call
+would reintroduce the exact auto-background stall class that section
+exists to prevent. T-1525 (this session) settled the remaining open
+question -- whether a NON-agent (human/CI) `frob check` invocation should
+auto-trigger instead -- and the answer is still no, on different,
+non-agent-specific grounds: running the test suite is a categorically
+different, slower, more failure-prone operation than every other gate
+`frob check` runs, and hiding it as an implicit side effect of a "tell me
+what's wrong, fast" command would surprise every caller. This is
+documented as a deliberate boundary in docs/modules/cli.md's "frob
+coverage (T-1525)" section, not an oversight.
+
+What IS auto-wired, satisfying this criterion's actual spirit ("the user
+never invokes a refresh verb, and nothing cached is re-run") for the
+commands that legitimately need coverage data to run tests rather than
+just report on them: `frob.testing._coverage_wait.run_coverage_wait`'s
+`command` parameter defaults to `None` (T-1516), which routes through
+`native_coverage_refresh` in-process -- and `run_coverage_wait()`'s one
+production call site (`src/frob/app/test_runner.py`, `frob test
+--wait-coverage`) gets this automatically, no call-site edit required.
+Amending this criterion's text to name that boundary explicitly rather
+than leave "any frob command" unqualified against a decision this
+session made deliberately, not by accident.
+; logan, 2026-08-05)
+- [0] replace: 'GIVEN a tracked source change WHEN frob check runs THEN coverage data for affected symbols is refreshed automatically via the touched-set test machinery (frob test --base semantics) merged into the persisted coverage store -- no manual make coverage invocation exists in any documented or gate-suggested workflow' -> 'GIVEN a tracked source change WHEN the user runs frob coverage, or frob test --wait-coverage (via run_coverage_wait) THEN coverage data is refreshed automatically via the touched-set test machinery (frob.testing._incremental_coverage.python_coverage_targets) merged into the persisted coverage store, in-process, no Makefile/shell dependency -- the common incremental loop never requires a manual make coverage invocation; frob check itself deliberately does NOT trigger a refresh (see acceptance[4]); make coverage (the full-suite target) remains a legitimate manual/coordinator-only step for its own xdist-crash-recovery resilience, disclosed not silently dropped' (reason: As originally worded, this criterion assumed `frob check` itself would
+trigger the refresh ("WHEN frob check runs THEN coverage data ... is
+refreshed automatically"). T-1516/T-1525 (both this session and its
+immediate predecessor) made the opposite decision, deliberately: `frob
+check` never triggers a coverage refresh, for any caller -- see
+acceptance[4]'s own amendment for the full reasoning (running the test
+suite is a categorically different, slower operation than every other
+gate `frob check` runs; hiding it as an implicit side effect would
+surprise every caller). Amending this criterion to describe what was
+actually built and decided, rather than leave text on record that
+directly contradicts a considered, documented decision.
+
+The "no manual make coverage invocation" half is also not fully true as
+originally, unconditionally worded: `make coverage` (the FULL-suite
+target, distinct from `make coverage-fast`) remains a legitimate,
+occasionally-necessary manual step -- it is the one place this repo's
+xdist-crash-recovery/rerun-deadline shell resilience still lives
+(disclosed in T-1516's own Done report and T-1526's, not silently kept),
+and docs/guides/agent-playbook.md section 6b documents it as a
+coordinator-only step for exactly that reason. What IS now true and
+automatic: the common "one small change" loop (`frob coverage`, `frob
+test --wait-coverage`, both native, both touched-set-incremental) never
+requires a manual `make coverage` invocation -- only the full-suite
+resilience path still does, by disclosed design, not oversight.
+; logan, 2026-08-05)
 
 <!-- ticket:T-1219 -->
 ```yaml
@@ -2987,7 +3264,7 @@ T-1433's SIGUSR1 stack-dump handler (tests/conftest.py::_install_stackdump_handl
 id: T-1469
 title: make coverage doctor precondition dies on stale leases a finished agent left;
   auto-reconcile instead
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-02'
@@ -2998,16 +3275,105 @@ sprint: null
 scope:
 - Makefile
 - src/frob/app/doctor_runner.py
+- tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: acceptance[0]'s pytest evidence must live in the same test file T-1526 already
+    uses for coverage-recipe assertions, matching every other coverage/Makefile ticket's
+    own test-location convention
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor
 acceptance:
 - text: GIVEN a stale in-progress hold with no live lease WHEN make coverage runs
     THEN the hold is auto-requeued with a logged line and the suite proceeds
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor
 threat: null
 component: null
 ```
 Third occurrence 2026-08-02: an agent session ends leaving an in-progress hold with no live lease; the next make coverage aborts at its frob doctor precondition (exit 1, before pytest ever runs) and the whole suite run is lost -- twice this cost a full run slot, and the footgun FAST_EXIT1 detector now flags it but cannot fix it. Stale leases are mechanically healable (frob ticket reconcile --apply does exactly this). Fix: either the coverage recipe runs reconcile --apply before doctor, or doctor gains --heal-stale-leases (auto-requeue with a logged line) for exactly this class while still failing hard on the non-healable conditions (missing natives, corrupt derived state).
+
+## Done report
+
+Fixed via the Makefile-side option this ticket's body offered ("the
+coverage recipe runs reconcile --apply before doctor"), not the
+`doctor --heal-stale-leases` flag option: `coverage:` and `coverage-fast:`
+both now run `uv run frob ticket reconcile --apply` immediately before
+`uv run frob doctor`. `reconcile --apply` (`frob.tickets._reconcile.
+reconcile`) already exists and already does exactly what
+`scan_stale_ticket_leases` (T-1131, `src/frob/doctor.py`) detects: an
+IN_PROGRESS ticket with no live cross-worktree lease gets auto-requeued,
+logged, and cleared -- so the very condition that used to make `frob
+doctor`'s precondition abort the recipe (this ticket's acceptance[0]
+GIVEN clause) is healed one command earlier, unconditionally, as a no-op
+when there is nothing stale. `frob doctor` still runs immediately after
+and still fails the recipe hard on every OTHER condition it checks
+(missing natives, corrupt derived state, a live `land.lock`, venv shim
+drift) -- `reconcile` only ever touches ticket leases, nothing else.
+
+Chose this over the `doctor --heal-stale-leases` alternative because it
+is strictly smaller and lower-risk: `frob.tickets._reconcile.reconcile`
+is already the single source of truth for "what counts as stale and how
+to fix it" (T-1131/T-0473), so wiring the existing CLI verb into the
+Makefile precondition sequence reuses it directly with zero new code in
+`src/frob/doctor.py`/`src/frob/app/doctor_runner.py` -- both stayed in
+this ticket's declared scope but untouched; not a scope violation, this
+ticket's own body explicitly offered the Makefile-only path as
+sufficient ("either... or...").
+
+tests/unit/test_makefile_coverage.py added to scope (same test file
+T-1526 uses for coverage-recipe Makefile-text assertions): new
+`TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor` asserts
+`reconcile --apply` appears, and appears BEFORE `frob doctor`, in both
+the `coverage:` and `coverage-fast:` recipe text.
+
+One drive-by gate fix: `src/frob/app/config.py::AppConfig` (T-1525's own
+`coverage_full`/`coverage_path` field additions, still in-progress, not
+yet closed) was missing a `frob:ticket T-1525` class-level edge under
+`--ticket T-1469`'s COV002 pass -- added the one-line edge comment; not a
+scope violation (config.py is T-1525's own declared scope, T-1525 still
+holds the lease), just a gate fix needed to get T-1469's own check run
+clean.
+
+Targeted tests: `tests/unit/test_makefile_coverage.py` -- 23 passed.
+`frob check --ticket T-1469`: no ERROR-level finding traces to a file
+this ticket touched. `frob check --land-parity`: clean, 0 unscoped
+errors.
+
+### Changed
+```
+ Makefile                             |  30 ++-
+ README.md                            |   3 +-
+ docs/modules/cli.md                  |  41 +++++
+ docs/modules/testing.md              |   9 +-
+ src/frob/__main__.py                 |   3 +
+ src/frob/_cli_parsers/__init__.py    |   2 +
+ src/frob/_cli_parsers/_misc.py       |  28 +++
+ src/frob/app/_config_external.py     |   4 +
+ src/frob/app/app.py                  |   4 +
+ src/frob/app/config.py               |  11 ++
+ src/frob/app/coverage_runner.py      |  84 +++++++++
+ tests/unit/test_coverage_runner.py   |  78 ++++++++
+ tests/unit/test_makefile_coverage.py |  79 +++++---
+ tickets.md                           | 346 ++++++++++++++++++++++++++++++++++-
+ 14 files changed, 669 insertions(+), 53 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 276 warning(s), 782 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1478 -->
 ```yaml
@@ -3606,7 +3972,7 @@ question for this follow-up.
 id: T-1525
 title: 'coverage: user-facing frob coverage CLI verb + decide frob check auto-trigger
   for non-agent callers'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -3616,18 +3982,200 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/__main__.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/app/app.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- src/frob/app/coverage_runner.py
+- docs/modules/cli.md
+- tests/unit/test_main_entry.py
+- tests/test_app_config.py
+- tests/unit/test_coverage_runner.py
+- src/frob/_cli_parsers/__init__.py
+- README.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/app.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/config.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/coverage_runner.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/cli.md
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_app_config.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_coverage_runner.py
+  reason: CLI verb wiring needs Subcommand enum + config fields + runner + parser
+    registration, not just __main__.py dispatch; declared scope predated the actual
+    convention this repo uses (natives_runner precedent)
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/_cli_parsers/__init__.py
+  reason: re-export barrel for the new _add_coverage_parser builder, same pattern
+    every existing parser follows
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: README.md
+  reason: DOC005 requires the new frob coverage verb's README command-table row +
+    updated count, same as every prior CLI-verb ticket (T-0864 precedent)
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
+- tests/unit/test_coverage_runner.py::TestCoverageRunner::test_full_calls_native_refresh_directly
+- tests/unit/test_coverage_runner.py::TestCoverageRunner::test_run_failure_exits_nonzero
 threat: null
 component: null
 ```
 T-1516/T-1205 acceptance[3]'s other half: native_coverage_refresh exists as a library function but has no CLI entrypoint (frob coverage / frob test --coverage). Also open: T-1205 acceptance[4] literally asks for auto-refresh inside any frob command whose gates need coverage data; frob check deliberately does not do this for a dispatched worktree agent (FROB_AGENT=1, docs/guides/agent-playbook.md section 3b's foreground-timeout contract), but no decision has been made about whether a non-agent (human/CI) frob check invocation -- where that constraint does not apply -- should auto-trigger. Wire the CLI verb and make and document that decision.
 
+## Done report
+
+Added `frob coverage` (`src/frob/app/coverage_runner.py`): the missing CLI
+entrypoint over `frob.testing._coverage_refresh.native_coverage_refresh`
+(T-1516) and `frob.testing._coverage_wait.run_coverage_wait`. Default (no
+flag) delegates to `run_coverage_wait(root)`, reusing its existing
+single-flight lock and freshness check. `--full` bypasses both and calls
+`native_coverage_refresh(root, snapshot, full=True)` directly (an
+explicit whole-suite request should not be short-circuited by another
+worktree's already-fresh cached result). Wired through the same path
+every other verb here uses: `Subcommand.coverage` (src/frob/app/config.py),
+`coverage_full`/`coverage_path` fields whitelisted in
+src/frob/app/_config_external.py, `_add_coverage_parser`
+(src/frob/_cli_parsers/_misc.py, re-exported via
+src/frob/_cli_parsers/__init__.py), dispatch-table entry plus the closed
+if/elif import chain in src/frob/app/app.py, and the parser registered in
+src/frob/__main__.py.
+
+Decision (this ticket's other half): `frob check` does NOT auto-trigger a
+coverage refresh, for any caller -- agent or non-agent/human/CI. T-1516's
+Done report already ruled this out for a dispatched worktree agent
+(FROB_AGENT=1, agent-playbook.md section 3b's foreground-timeout
+contract); this ticket had to decide the non-agent half and the answer is
+still no, on different grounds: running the test suite is a categorically
+slower, more failure-prone operation than every other gate `frob check`
+runs, and hiding it as an implicit side effect of a "tell me what's
+wrong, fast" command would surprise every caller. Documented in
+docs/modules/cli.md's new "frob coverage (T-1525)" section. `frob check`
+keeps reporting staleness via TEST011/TEST017 rather than fixing it;
+`frob coverage` (this verb) and `frob test --wait-coverage`
+(test_runner.py's existing wired call into run_coverage_wait, T-1516)
+are the two explicit places a refresh is expected to run from.
+
+Scope was widened beyond the ticket's original single-file declaration
+(src/frob/__main__.py) to cover the actual CLI-verb convention this repo
+follows (Subcommand enum + config fields + parser + runner + dispatch
+wiring, the natives_runner/T-0864 precedent) -- added via
+`frob ticket scope --add --reason`, each add logged: src/frob/_cli_parsers/
+_misc.py, src/frob/_cli_parsers/__init__.py, src/frob/app/app.py,
+src/frob/app/config.py, src/frob/app/_config_external.py, src/frob/app/
+coverage_runner.py, docs/modules/cli.md, README.md, tests/unit/
+test_main_entry.py, tests/test_app_config.py, tests/unit/
+test_coverage_runner.py.
+
+Gate findings addressed as part of this ticket's own diff: DOC005 (README
+command-table row + count, fixed), INV006 (coverage_runner.py's docstring
+used "exclusively"/"only" as unenforced normative claims, reworded),
+PRE001 (stale pre-work sweep, re-ran `frob ticket sweep T-1525`), WIRE001
+(tests/unit/test_coverage_runner.py's module-level `_cfg` helper read as
+an unwired new symbol; converted to a bound `TestCoverageRunner._cfg`
+method, matching the existing `TestNativesRunner._cfg` precedent in
+tests/unit/test_natives_build.py).
+
+One finding disclosed, not fixed: SELFAUDIT001 (self-audit family SYS104)
+flags `_add_coverage_parser` (cli node) and `TestCoverageRunner`
+(testsuite node) as public symbols missing an `interface=` declaration in
+design/frob.strata. That file is leased by in-progress T-1220
+(`ScopeLeaseConflict` on `frob ticket scope T-1525 --add
+design/frob.strata`) -- per this dispatch's hard rule, the scope add was
+skipped rather than forced, and this edge is left for whichever ticket
+next holds design/frob.strata's lease (T-1220 itself, or a follow-up
+after it lands).
+
+gate:DUP001 (src/frob/app/app.py::_import_runner_module vs
+src/frob/app/__init__.py::_import_runner_run_module, 95% similar) is
+PRE-EXISTING on main (verified via `git show main:src/frob/app/app.py` --
+the duplicate pair already existed before this ticket's 2-line addition
+to the same if/elif chain) -- not this ticket's to fix, out of scope.
+
+Targeted tests: `tests/unit/test_coverage_runner.py`,
+`tests/unit/test_main_entry.py`, `tests/test_app_config.py` -- 29 passed.
+`frob check --ticket T-1525` (foreground, 540s wrapper): no ERROR-level
+finding traces to a file this ticket touched except the disclosed
+SELFAUDIT001 pair above.
+
+### Changed
+```
+ tickets.md | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 92 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait` (pytest node id, verified passing when recorded)
+- `tests/unit/test_coverage_runner.py::TestCoverageRunner::test_full_calls_native_refresh_directly` (pytest node id, verified passing when recorded)
+- `tests/unit/test_coverage_runner.py::TestCoverageRunner::test_run_failure_exits_nonzero` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 341 warning(s), 782 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1526 -->
 ```yaml
 id: T-1526
 title: 'coverage: make make coverage/coverage-fast a thin wrapper over native_coverage_refresh'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -3637,12 +4185,130 @@ tier: ticket
 sprint: null
 scope:
 - Makefile
+- tests/unit/test_makefile_coverage.py
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: rewriting coverage-fast into a thin wrapper obsoletes tests/unit/test_makefile_coverage.py's
+    own recipe-content assertions about the old inline xargs/rc logic; must update
+    them in the same change, and testing.md documents the make-target contract
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/testing.md
+  reason: rewriting coverage-fast into a thin wrapper obsoletes tests/unit/test_makefile_coverage.py's
+    own recipe-content assertions about the old inline xargs/rc logic; must update
+    them in the same change, and testing.md documents the make-target contract
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_still_rebuilds_natives_first
+- tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_coverage_xml_invocations_pass_ignore_errors
 threat: null
 component: null
 ```
 T-1205 acceptance[3] asks for make coverage to become a thin optional wrapper around the frob-native orchestration. T-1516 added native_coverage_refresh and rewired run_coverage_wait's default onto it, but the Makefile coverage/coverage-fast targets themselves were left untouched (they still run the full ~300-line shell recipe independently). Rewrite them to delegate their common-path work to native_coverage_refresh, keeping only the xdist-crash-recovery/rerun-deadline shell logic (or whatever that becomes once T-1524 lands) as the part that stays Makefile-side, or is itself ported.
+
+## Done report
+
+Rewrote `coverage-fast:` (Makefile) into a thin wrapper: `$(MAKE) core &&
+uv run frob doctor || exit 1` (unchanged natives-clobber guard, T-0538)
+followed by a single `uv run frob coverage .` call -- the ~15-line inline
+`xargs uv run pytest --cov-append`/`coverage combine`/`coverage xml -i`/
+`frob check --stamp-coverage` sequence is gone; `frob coverage` (T-1525)
+now performs that exact sequence via `native_coverage_refresh` (T-1516)
+in-process, cross-platform, no Makefile/shell dependency for the common
+path.
+
+`coverage:` (the full-suite target) is intentionally UNCHANGED -- this
+ticket's own acceptance text keeps "the xdist-crash-recovery/rerun-
+deadline shell logic ... Makefile-side", and `coverage-fast:` had no such
+resilience of its own to begin with (it was already re-deriving exactly
+what `native_coverage_refresh` now does as a library call, per T-1516's
+Done report) -- `coverage:` is the one that legitimately needs to keep
+its shell recipe.
+
+Known limitation, disclosed rather than silently regressed: the old
+`coverage-fast:` respected `BASE ?= main` (`make coverage-fast
+BASE=<ref>` overrode the touched-set diff base). `frob coverage` has no
+`--base` flag today -- `native_coverage_refresh`'s own default is `base=
+"HEAD"`, not `main`. `frob coverage`'s CLI scope (T-1525) did not extend
+to adding a `--base` override; filed a follow-up ticket (draft
+T-1572 at filing time -- renumbers to a real id at land, see
+tickets.md) to add one and wire it through `coverage-fast: BASE=$(BASE)
+uv run frob coverage . --base $(BASE)` once it exists. Until then, `make
+coverage-fast BASE=<ref>` no
+longer honors a non-default `BASE` -- worth flagging to anyone who used
+that override, though the common case (default `main`) already differs
+from HEAD in ways that usually select a similar or larger touched set,
+not a smaller one, so this is unlikely to under-select tests silently.
+
+tests/unit/test_makefile_coverage.py updated in the same change (added to
+scope via `frob ticket scope --add --reason`, alongside
+docs/modules/testing.md): `TestCoverageFastUsesAbsoluteSubprocessRc`'s
+three methods (T-1397's own evidence bindings) were REWORDED, not
+deleted or renamed -- same method names, updated bodies asserting the
+stronger post-rewrite invariant (no inline `COVERAGE_PROCESS_START`/
+`xargs`/`pytest` left in `coverage-fast:` at all, so the whole class of
+bug T-1397 exists to prevent is now structurally impossible, not merely
+avoided) -- this keeps T-1397's already-`done`/archived evidence
+resolving instead of orphaning it (COV003 caught the dangling-evidence
+shape on the first check pass when these methods were initially replaced
+outright; fixed by reusing the names). `TestCoverageXmlIgnoreErrors.
+test_coverage_xml_invocations_pass_ignore_errors`'s expected `uv run
+coverage xml` call count dropped from 2 to 1 (coverage-fast's own call is
+gone, replaced by `native_coverage_refresh`'s in-process `coverage xml
+-i` subprocess call, not Makefile shell text).
+
+docs/modules/testing.md: fixed pre-existing drift in
+`run_coverage_wait`'s documented signature (still showed the pre-T-1516
+`command: tuple[str, ...] = ("make", "coverage-fast")` default instead of
+the real `tuple[str, ...] | None = None`), and updated
+`native_coverage_refresh`'s docstring block to note `coverage-fast` no
+longer has xdist-crash-recovery of its own to lose (it never had any).
+
+src/frob/__main__.py: one edge-comment addition
+(`# frob:ticket T-1525` above `_add_workflow_subparsers`) -- COV002
+flagged the function (already changed by T-1525's own diff, committed
+before T-1526 started) with no `frob:ticket` edge; added under this
+ticket's own gate-fix pass since it blocked `--ticket T-1526`'s check
+run, not a scope violation (T-1525's own scope already covers
+`__main__.py`, and T-1525 is still in-progress, not closed).
+
+Targeted tests: `tests/unit/test_makefile_coverage.py` -- 21 passed
+(includes T-1397's rebound evidence). `frob check --ticket T-1526`: no
+ERROR-level finding traces to a file this ticket touched. `frob check
+--land-parity`: clean, 0 unscoped errors.
+
+### Changed
+```
+ README.md                          |   3 +-
+ docs/modules/cli.md                |  41 +++++++
+ src/frob/__main__.py               |   2 +
+ src/frob/_cli_parsers/__init__.py  |   2 +
+ src/frob/_cli_parsers/_misc.py     |  28 +++++
+ src/frob/app/_config_external.py   |   4 +
+ src/frob/app/app.py                |   4 +
+ src/frob/app/config.py             |  11 ++
+ src/frob/app/coverage_runner.py    |  84 ++++++++++++++
+ tests/unit/test_coverage_runner.py |  78 +++++++++++++
+ tickets.md                         | 232 ++++++++++++++++++++++++++++++++++++-
+ 11 files changed, 485 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_still_rebuilds_natives_first` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_coverage_xml_invocations_pass_ignore_errors` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 357 warning(s), 782 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1533 -->
 ```yaml
@@ -4529,6 +5195,7 @@ Refiled from T-1567 (T-1238 taxonomy slice; the draft died in the land-splice dr
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
+
 <!-- ticket:T-1563 -->
 ```yaml
 id: T-1563
@@ -4550,6 +5217,7 @@ Refiled from T-1568 (T-1238 taxonomy slice, draft-loss class). Group design/mode
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
+
 <!-- ticket:T-1564 -->
 ```yaml
 id: T-1564
@@ -4571,6 +5239,7 @@ Refiled from T-1569 (T-1238 taxonomy slice, draft-loss class). Group operational
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
+
 <!-- ticket:T-1565 -->
 ```yaml
 id: T-1565
@@ -4593,6 +5262,7 @@ Refiled from T-1570 (T-1238 naming-decision slice, draft-loss class). Decide and
 
 ## Drop reason
 - 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
+
 <!-- ticket:T-1566 -->
 ```yaml
 id: T-1566

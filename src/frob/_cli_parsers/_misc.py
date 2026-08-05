@@ -436,6 +436,34 @@ def _add_natives_parser(sub) -> None:
     )
 
 
+# frob:ticket T-1525
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
+# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
+# does not trace this cross-package private import -- same class of gap as this repo's \
+# other cross-package DEAD001 waivers (T-1024 precedent)"
+def _add_coverage_parser(sub) -> None:
+    """Register the `frob coverage` subcommand (T-1525): user-facing CLI
+    entrypoint over `frob.testing._coverage_refresh.native_coverage_refresh`
+    (T-1516) -- the frob-native, cross-platform touched-set coverage
+    refresh orchestration, previously only reachable as a library call
+    with no verb of its own. `--full` forces a whole-suite run instead of
+    the default touched-set incremental refresh."""
+    # -- coverage ------------------------------------------------------
+    coverage_p = sub.add_parser(
+        "coverage",
+        help="refresh coverage.xml / the coverage stamp via native_coverage_refresh "
+        "(T-1516/T-1525) -- touched-set incremental by default",
+    )
+    coverage_p.add_argument("coverage_path", metavar="path", nargs="?", default=".")
+    coverage_p.add_argument(
+        "--full",
+        dest="coverage_full",
+        action="store_true",
+        help="run the whole suite under coverage instead of the touched-set "
+        "incremental refresh",
+    )
+
+
 # frob:ticket T-0030
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \

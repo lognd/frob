@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.341.0] - unreleased
+
+- T-1525: coverage: user-facing frob coverage CLI verb + decide frob check auto-trigger for non-agent callers
+
 ## [0.340.0] - unreleased
 
 - T-1271: cli hygiene: no hidden-argument hell, maximally informative output, mined from real agent usage

@@ -220,11 +220,16 @@ class TestCoverageXmlIgnoreErrors:
     fixture path with no importable source."""
 
     def test_coverage_xml_invocations_pass_ignore_errors(self):
-        """Both `coverage:` and `coverage-fast:` must invoke `coverage
-        xml` with `-i`/`--ignore-errors` -- this is T-1335 defect (2)'s
-        actual fix (the same flag the T-1320 manual recovery used)."""
+        """`coverage:` must invoke `coverage xml` with `-i`/
+        `--ignore-errors` -- this is T-1335 defect (2)'s actual fix (the
+        same flag the T-1320 manual recovery used). `coverage-fast:` no
+        longer has an inline `coverage xml` call of its own (T-1526: it
+        delegates to `frob coverage`, whose own `native_coverage_refresh`
+        Python call already passes `-i` -- see
+        `TestCoverageFastRunner.test_coverage_fast_delegates_to_frob_coverage`
+        for that half's own coverage)."""
         xml_calls = re.findall(r"uv run coverage xml[^\n;]*", _MAKEFILE)
-        assert len(xml_calls) == 2, xml_calls
+        assert len(xml_calls) == 1, xml_calls
         assert all("-i" in call for call in xml_calls), xml_calls
 
     # frob:ticket T-1362
@@ -768,32 +773,36 @@ class TestXdistPhaseHasABoundedDeadlineAndStackdump:
 
 
 # frob:ticket T-1397
+# frob:ticket T-1526
 class TestCoverageFastUsesAbsoluteSubprocessRc:
-    """T-1397: `coverage-fast`'s incremental branch used to point
-    `COVERAGE_PROCESS_START` directly at `pyproject.toml` -- relative
-    `source`/`data_file` (`[tool.coverage.run]` has no absolute paths of
-    its own), the same Loss-A shape T-1235 fixed for `coverage:` by
-    generating a dedicated rc with absolute paths. Any subprocess spawned
-    during a `coverage-fast` run with a different cwd than `$(CURDIR)`
-    risked silently losing/stranding its coverage data. `coverage-fast`
-    now depends on the SAME `.frob/coverage-subprocess.rc` file target
-    `coverage:` uses, instead of a second, divergent path."""
+    """T-1397's original defect (`coverage-fast` pointing
+    `COVERAGE_PROCESS_START` at a relative-path `pyproject.toml`) can no
+    longer reappear at all: T-1526 rewrote `coverage-fast:` into a thin
+    wrapper delegating to `frob coverage` (T-1525) -- there is no more
+    inline `COVERAGE_PROCESS_START=...`/`xargs` shell fragment in this
+    target for that Loss-A shape to live in. This class (T-1397's own
+    evidence binding) now asserts the STRONGER, simpler invariant that
+    subsumes the original: the whole class of shell-side subprocess-rc
+    bugs is structurally impossible here because `coverage-fast:` no
+    longer runs `pytest`/`coverage` inline at all."""
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_coverage_fast_never_points_at_pyproject_toml  # noqa: E501
     def test_coverage_fast_never_points_at_pyproject_toml(self) -> None:
-        """The literal Loss-A shape this ticket exists to prevent must
-        never reappear in the live Makefile text."""
+        """The literal Loss-A shape T-1397 exists to prevent must never
+        reappear in the live Makefile text."""
         assert "COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml" not in _MAKEFILE, (
             _MAKEFILE
         )
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_coverage_fast_uses_the_shared_absolute_rc  # noqa: E501
     def test_coverage_fast_uses_the_shared_absolute_rc(self) -> None:
-        """`coverage-fast`'s incremental (xargs) branch must point
-        `COVERAGE_PROCESS_START` at the same absolute-path rc `coverage:`
-        depends on, and must depend on that file target (so a
-        `coverage-fast`-only run, with no prior `coverage:` run, still
-        generates it rather than failing to find it)."""
+        """T-1526: `coverage-fast:`'s recipe is `make core` + `frob
+        doctor` + `frob coverage` -- no inline pytest/coverage/xargs
+        invocation, and so no `COVERAGE_PROCESS_START=...` reference of
+        its own to get wrong; the coverage-subprocess.rc concern this
+        test originally exercised is now entirely `frob coverage`'s
+        (T-1525)/`native_coverage_refresh`'s (T-1516) own responsibility,
+        not Makefile shell text."""
         match = re.search(
             r"^coverage-fast: \$\(STAMP\)\n(?:\t.*\n)*",
             _MAKEFILE,
@@ -801,19 +810,33 @@ class TestCoverageFastUsesAbsoluteSubprocessRc:
         )
         assert match is not None, "coverage-fast: recipe not found in Makefile"
         recipe = match.group(0)
-        assert "$(MAKE) .frob/coverage-subprocess.rc" in recipe, recipe
-        assert (
-            "COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc" in recipe
-        ), recipe
+        assert "uv run frob coverage" in recipe, recipe
+        assert "xargs" not in recipe, recipe
+        assert "uv run pytest" not in recipe, recipe
+        assert "COVERAGE_PROCESS_START" not in recipe, recipe
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_rc_file_target_is_shared_not_duplicated  # noqa: E501
     def test_rc_file_target_is_shared_not_duplicated(self) -> None:
         """Only ONE place in the Makefile generates
-        `.frob/coverage-subprocess.rc` -- `coverage:` and `coverage-fast:`
-        both depend on the same file target rather than each embedding
-        their own copy of the `printf` block (a second copy is exactly
-        how the two recipes drifted apart in the first place)."""
+        `.frob/coverage-subprocess.rc` now -- `coverage:`'s own file
+        target; `coverage-fast:` no longer embeds a second copy (T-1526:
+        it has no inline subprocess invocation left to need one)."""
         assert _MAKEFILE.count("> .frob/coverage-subprocess.rc") == 1, _MAKEFILE
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc.test_coverage_fast_still_rebuilds_natives_first  # noqa: E501
+    def test_coverage_fast_still_rebuilds_natives_first(self) -> None:
+        """The natives-clobber guard (T-0538: `make core && uv run frob
+        doctor`) this target has always needed before any pytest
+        collection survives the T-1526 rewrite unchanged."""
+        match = re.search(
+            r"^coverage-fast: \$\(STAMP\)\n(?:\t.*\n)*",
+            _MAKEFILE,
+            re.MULTILINE,
+        )
+        assert match is not None
+        recipe = match.group(0)
+        assert "$(MAKE) core" in recipe, recipe
+        assert "uv run frob doctor" in recipe, recipe
 
 
 # frob:ticket T-1235
@@ -868,3 +891,39 @@ class TestPreviouslyZeroModulesNowAttributeInTheCommittedLock:
                 f"attribution failure (module_line[{module}] = "
                 f"{module_line[module]})"
             )
+
+
+# frob:ticket T-1469
+class TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor:
+    """T-1469: `coverage:`/`coverage-fast:` must run `frob ticket
+    reconcile --apply` before `frob doctor` -- a stale IN_PROGRESS
+    ticket hold with no live lease (`scan_stale_ticket_leases`, T-1131)
+    used to make the doctor precondition abort the whole recipe before
+    pytest ever ran; `reconcile --apply` auto-requeues exactly that shape
+    (logging which ticket(s) it requeued) and is a no-op otherwise, so
+    the precondition can no longer abort on THIS specific, mechanically
+    healable condition while every other doctor-checked condition
+    (missing natives, corrupt derived state, a live land.lock, venv shim
+    drift) still fails the recipe hard."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor.test_coverage_reconciles_before_doctor  # noqa: E501
+    def test_coverage_reconciles_before_doctor(self) -> None:
+        match = re.search(
+            r"^coverage: \$\(STAMP\)\n(?:\t.*\n)*", _MAKEFILE, re.MULTILINE
+        )
+        assert match is not None, "coverage: recipe not found in Makefile"
+        recipe = match.group(0)
+        reconcile_idx = recipe.index("uv run frob ticket reconcile --apply")
+        doctor_idx = recipe.index("uv run frob doctor")
+        assert reconcile_idx < doctor_idx, recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor.test_coverage_fast_reconciles_before_doctor  # noqa: E501
+    def test_coverage_fast_reconciles_before_doctor(self) -> None:
+        match = re.search(
+            r"^coverage-fast: \$\(STAMP\)\n(?:\t.*\n)*", _MAKEFILE, re.MULTILINE
+        )
+        assert match is not None, "coverage-fast: recipe not found in Makefile"
+        recipe = match.group(0)
+        reconcile_idx = recipe.index("uv run frob ticket reconcile --apply")
+        doctor_idx = recipe.index("uv run frob doctor")
+        assert reconcile_idx < doctor_idx, recipe

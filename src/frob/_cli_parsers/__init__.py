@@ -38,6 +38,7 @@ from ._core import (
 from ._explore import _add_explore_parser
 from ._misc import (
     _add_clean_parser,
+    _add_coverage_parser,
     _add_deploy_audit_parser,
     _add_deploy_audit_ssh_and_output_args,
     _add_deploy_generate_parser,
@@ -113,6 +114,7 @@ __all__ = [
     "_add_check_skip_args_python",
     "_add_check_skip_args_rust_ts",
     "_add_clean_parser",
+    "_add_coverage_parser",
     "_add_cycle_parser",
     "_add_debt_parser",
     "_add_deploy_audit_parser",

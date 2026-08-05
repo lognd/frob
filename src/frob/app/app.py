@@ -14,6 +14,7 @@ _RUNNER_MODULE_NAMES = (
     "arch_runner",
     "check_runner",
     "clean_runner",
+    "coverage_runner",
     "cycle_runner",
     "debt_runner",
     "deprecated_runner",
@@ -87,6 +88,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.clean: "clean_runner",
     Subcommand.fmt: "fmt_runner",
     Subcommand.natives: "natives_runner",
+    Subcommand.coverage: "coverage_runner",
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
 mapped to the runner module name that serves it. `bind` is excluded: it takes
@@ -113,6 +115,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
     module (and its own import graph) is ever imported."""
     if name == "ack_runner":
         import frob.app.ack_runner as module
+    elif name == "coverage_runner":
+        import frob.app.coverage_runner as module
     elif name == "arch_runner":
         import frob.app.arch_runner as module
     elif name == "check_runner":

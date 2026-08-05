@@ -140,6 +140,46 @@ def build_natives(root: Path) -> Result[BuildReport, NativesError]
 This repo's own `Makefile` `core:` target is now the one-line shim `uv run
 frob natives build` -- no cache logic lives in the Makefile anymore.
 
+## frob coverage (T-1525)
+
+`frob coverage` is the user-facing CLI verb over
+`frob.testing._coverage_refresh.native_coverage_refresh` (T-1516): the
+frob-native, cross-platform (Linux/macOS/Windows, no `Makefile`/shell
+dependency) coverage refresh orchestration T-1205 introduced as a library
+function with no entrypoint of its own. Default (no flag): a touched-set
+incremental refresh through `run_coverage_wait`'s existing single-flight
+lock and freshness check (T-1095/T-1516/T-1126) -- a caller racing another
+worktree on the same tree digest adopts its settled result instead of
+re-running. `--full`: bypasses that freshness check entirely and calls
+`native_coverage_refresh(..., full=True)` directly, for a caller who
+explicitly wants a whole-suite run regardless of what is already cached.
+
+```
+frob coverage            # touched-set incremental refresh (or a no-op if already fresh)
+frob coverage --full     # whole-suite run under coverage, unconditionally
+```
+
+**Decision: `frob check` does not auto-trigger this refresh, for any
+caller, agent or not (T-1525).** T-1516's own Done report already ruled
+this out for a dispatched worktree agent specifically (`FROB_AGENT=1`,
+`docs/guides/agent-playbook.md` section 3b's foreground-timeout contract
+-- auto-spawning a coverage refresh from inside every `frob check` call
+would reintroduce the exact auto-background stall class that section
+exists to prevent). T-1525 had to settle the OTHER half: should a
+non-agent (human/CI) `frob check` invocation, where that specific
+constraint does not apply, auto-trigger a refresh anyway? The answer is
+still no, for a reason that is not agent-specific: running the test suite
+(even touched-set-scoped) is a categorically different, much slower and
+more failure-prone operation than every other gate `frob check` runs, and
+hiding it as an implicit side effect of a command whose whole contract is
+"tell me what's wrong, fast" would surprise every caller, not just a
+dispatched agent watching a clock. `frob check` keeps reporting
+staleness via TEST011/TEST017 (`docs/modules/gates.md`'s "TEST011/TEST017"
+section) rather than fixing it; `frob coverage` (this verb) and `frob
+test --wait-coverage` (`frob.app.test_runner`'s existing, already-wired
+call into `run_coverage_wait`, T-1516) are the two places a refresh is
+expected to run from, both explicit, neither hidden inside a check.
+
 ## Plumbing tier -- kept, unchanged (T-0580)
 
 `frob parse`, `frob exports`, `frob gitlog`, and `frob serve` were
@@ -174,6 +214,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob bind` | verify binding declarations match source signatures |
 | `frob check` | aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; errors first, easy to hand to subagents |
 | `frob clean` | remove build/test/cache artifacts (tiered, dry-run by default) |
+| `frob coverage` | refresh coverage.xml / the coverage stamp via native_coverage_refresh (T-1516/T-1525) -- touched-set incremental by default |
 | `frob cycle` | detect dependency cycles |
 | `frob debt` | list outstanding frob:debt entries (rule, site, ticket, until) |
 | `frob deploy` | compile std.host manifests into install/status/uninstall bash |

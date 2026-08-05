@@ -190,6 +190,8 @@ _PATH_FIELDS = (
     "fmt_path",
     # frob:ticket T-0864
     "natives_path",
+    # frob:ticket T-1525
+    "coverage_path",
 )
 
 _INT_FIELDS = (
@@ -356,6 +358,8 @@ _BOOL_FLAGS = (
     "fleet_skip_gates",
     "fmt_check",
     "fmt_json",
+    # frob:ticket T-1525
+    "coverage_full",
 )
 
 

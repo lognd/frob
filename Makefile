@@ -299,9 +299,23 @@ COVERAGE_STACKDUMP_ENV = FROB_COVERAGE_STACKDUMP=1
 		'    */src/frob' \
 		> .frob/coverage-subprocess.rc
 
+# T-1469: `frob doctor` reports (never repairs) an IN_PROGRESS ticket with
+# no live cross-worktree lease as unhealthy (`scan_stale_ticket_leases`,
+# T-1131) -- a session that ends leaving exactly that shape (agent process
+# killed/timed out mid-ticket) previously made every SUBSEQUENT `make
+# coverage`/`make coverage-fast` abort at this precondition before pytest
+# ever ran, costing a full run slot (third occurrence 2026-08-02). `frob
+# ticket reconcile --apply` mechanically heals precisely this class
+# (auto-requeues the stale hold, logs which ticket(s) it requeued) and is
+# a NO-OP when there is nothing stale to fix -- running it unconditionally
+# right before `frob doctor` means the doctor precondition can no longer
+# abort on a stale lease specifically, while still failing hard on every
+# OTHER doctor-checked condition (missing natives, corrupt derived state,
+# a live land.lock, venv shim drift) that `reconcile` does not touch.
 coverage: $(STAMP)
 	rm -f .coverage .coverage.* .frob/coverage-subprocess.rc
 	$(MAKE) core
+	uv run frob ticket reconcile --apply
 	uv run frob doctor
 	$(MAKE) .frob/coverage-subprocess.rc
 	timeout -k 30 $(COVERAGE_XDIST_DEADLINE) env $(COVERAGE_STACKDUMP_ENV) COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q -n $(COVERAGE_WORKERS) --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
@@ -376,24 +390,22 @@ coverage: $(STAMP)
 # `coverage:` itself. `$(MAKE) core && uv run frob doctor || exit 1`
 # restores the natives and fails the whole recipe on one clear `frob
 # doctor` line before any pytest collection is attempted.
+# T-1526: `coverage-fast` had no xdist-crash-recovery/rerun-deadline
+# resilience of its own -- it was ~15 lines re-deriving exactly what
+# `frob.testing._coverage_refresh.native_coverage_refresh` (T-1516) now
+# does as a frob-native, cross-platform library call (decide cold-start-
+# full vs. touched-set-incremental vs. nothing-to-do, spawn pytest/
+# coverage directly, always finish with stamp_coverage). `frob coverage`
+# (T-1525) is the CLI entrypoint over that same call, so this target is
+# now a genuinely thin wrapper -- `coverage:` below is NOT rewritten the
+# same way, since IT is the one that owns the crash-recovery/rerun-
+# deadline shell logic this ticket's acceptance explicitly keeps
+# Makefile-side (T-1516's own Done report already disclosed that
+# resilience as deliberately not re-derived in Python).
 BASE ?= main
 coverage-fast: $(STAMP)
-	@if [ ! -f .coverage ]; then \
-		echo "coverage-fast: no prior .coverage data to append onto -- running full make coverage"; \
-		$(MAKE) coverage; \
-	else \
-		$(MAKE) core && uv run frob doctor || exit 1; \
-		$(MAKE) .frob/coverage-subprocess.rc; \
-		targets="$$(uv run python -c "from pathlib import Path; from frob.graph import build_graph, load_graph; from frob.testing import python_coverage_targets; root = Path('.'); cache = root / '.frob' / 'cache.db'; loaded = load_graph(cache); snap = (loaded if loaded.is_ok else build_graph(root, cache)).danger_ok; print('\n'.join(t for t in python_coverage_targets(root, snap, '$(BASE)') if t != '*'))" 2>/dev/null)"; \
-		if [ -z "$$targets" ]; then \
-			echo "coverage-fast: touched set selects no python target against $(BASE) -- nothing incremental to run"; \
-		else \
-			echo "$$targets" | COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc xargs uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q; \
-		fi; \
-		uv run coverage combine --append; \
-		uv run coverage xml -i; \
-		uv run frob check --stamp-coverage; \
-	fi
+	$(MAKE) core && uv run frob ticket reconcile --apply && uv run frob doctor || exit 1
+	uv run frob coverage .
 
 # VirtualBox snapshot-diff harness proving artifact-free install/uninstall
 # (T-0259, deploy epic T-0254 child 5). NOT part of `check`/`all` -- it

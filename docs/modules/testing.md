@@ -348,7 +348,7 @@ def python_coverage_targets(root: Path, snapshot: GraphSnapshot,
     # () on a diff/selection failure or an empty selection; never raises.
 
 # frob/testing/_coverage_wait.py (T-0322, cross-worktree layer T-1095)
-def run_coverage_wait(root: Path, *, command: tuple[str, ...] = ("make", "coverage-fast")
+def run_coverage_wait(root: Path, *, command: tuple[str, ...] | None = None
                       ) -> Result[CoverageWaitOutcome, CoverageWaitError]
     # Blocks in the foreground under a single-flight file lock
     # (.frob/coverage.lock) until the coverage stamp is fresh, running
@@ -436,8 +436,11 @@ def native_coverage_refresh(root: Path, snapshot: GraphSnapshot, *,
     # Makefile/shell dependency. Deliberately does NOT port the Makefile
     # recipe's xdist-crash serial-rerun recovery or its configurable
     # rerun-deadline knobs (disclosed, not silently dropped) -- a caller
-    # that needs that resilience still has it via `make coverage`/
-    # `make coverage-fast` directly.
+    # that needs that resilience still has it via `make coverage` (T-1526:
+    # `make coverage-fast` is now a thin wrapper delegating to this
+    # function's own `frob coverage` CLI entrypoint, so it no longer has
+    # xdist-crash-recovery of its own; only `make coverage`'s full-suite
+    # target keeps that shell-side resilience).
 
 class CoverageRefreshError(ErrorSet):
     PytestFailed = "the pytest subprocess exited non-zero"
