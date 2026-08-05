@@ -8046,3 +8046,22 @@ threat: null
 component: null
 ```
 Refiled: original draft T-1539 (filed during T-1225's perf-detector work) died in the t-1350 ledger corruption spans. PERF012 fires from src/frob/perf but docs/design/registry/check-coverage.yaml has no CHK-GATE-PERF012 entry -- pre-existing gap found (not caused) by T-1225.
+
+<!-- ticket:T-1540 -->
+```yaml
+id: T-1540
+title: 'PERF012 registry-entry gap: detector exists with no CHK-GATE-PERF012 row'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+PERF012 fires from src/frob/perf but docs/design/registry/check-coverage.yaml has no CHK-GATE-PERF012 entry -- pre-existing gap found (not caused) by T-1225's PERF01x work. Originally tracked as worktree draft T-draft-7858da45, which the tickets.md splice drops from merge previews (land-splice-regression class), so refiled as a real ticket.
