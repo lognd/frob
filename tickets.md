@@ -4533,7 +4533,7 @@ Refiled from T-draft-48c9ced6 (T-1238 taxonomy slice; the draft died in the land
 ```yaml
 id: T-1563
 title: 'cli regrouping: frob design verb group (sys/registry/docs/graph/exports)'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -4548,6 +4548,8 @@ component: null
 ```
 Refiled from T-draft-ea75efc3 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
 
+## Drop reason
+- 2026-08-05: refiled immediately with --parent T-1238 (parent is only settable at new time)
 <!-- ticket:T-1564 -->
 ```yaml
 id: T-1564
