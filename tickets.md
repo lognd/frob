@@ -3879,3 +3879,23 @@ open:
 
 Needs its own design doc before implementation, same as T-1523's body
 said before it was scoped down.
+
+<!-- ticket:T-1555 -->
+```yaml
+id: T-1555
+title: 'type-debt pass: clear all ty diagnostics (incl. signature drift in landed
+  land-machinery) + ruff format/check backlog'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Post-wave-4 full check reports the ty tool's diagnostics in ## Errors (26 gate-summary errors, 53 tool-level): includes REAL signature drift in freshly-landed code (_land_cmd.py:1630 _pre_commit_unscoped_error_sweep arg, :1965 _write_post_land_verify_marker arg -- wave-3/4 integration seams) plus accumulated debt in refactor/_directives, _prose, strata/_mutation_audit, tests/test_coverage.py (T-1516/17 signature evolution). Also owed: ruff-format ~34 files, ruff-check ~6. One dedicated quiet-window pass: fix every ty diagnostic properly (no type: ignore unless argued), run repo-wide ruff format + check --fix, verify affected tests, land.
