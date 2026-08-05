@@ -4545,3 +4545,22 @@ threat: null
 component: null
 ```
 Refiled from T-draft-ea75efc3 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
+
+<!-- ticket:T-1564 -->
+```yaml
+id: T-1564
+title: 'cli regrouping: frob ops verb group (release/natives/doctor/clean/fleet/deploy/scaffold/gitlog/stats)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Refiled from T-draft-9dc767d0 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
