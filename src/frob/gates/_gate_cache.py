@@ -107,6 +107,9 @@ from frob.process._lock import derived_state_write_lock
 _log = get_logger(__name__)
 
 # frob:ticket T-0602
+# frob:invariant INV-050
+# invariant spec: [INV-050](invariants/INV-050.md)
+# frob:ticket T-1519
 #: the gate-result cache, a new table in a new file under the SAME
 #: `.frob/` derived-state directory `cache.db`/`baseline` already live in --
 #: not merged into `cache.db` itself since that schema (`frob.graph.cache`)

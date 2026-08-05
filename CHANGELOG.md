@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.334.0] - unreleased
+
+- T-1520: CACHE001 static gate: a cached computation's observed read-set must be covered by its cache-key inputs
+
 ## [0.333.0] - unreleased
 
 - T-1517: coverage: per-file content-hash incremental caching layer

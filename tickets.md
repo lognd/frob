@@ -5829,7 +5829,7 @@ tests/test_gate_cache.py -> 18 passed.
 id: T-1520
 title: 'CACHE001 static gate: a cached computation''s observed read-set must be covered
   by its cache-key inputs'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -5842,6 +5842,8 @@ scope:
 - tests/test_cache_gate.py
 - src/frob/gates/_waive.py
 - docs/design/registry/check-coverage.yaml
+- tests/_cache_transparency.py
+- tests/test_cache_transparency.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -5869,11 +5871,53 @@ scope_changes:
     own acceptance floor'
   actor: logan
   at: '2026-08-04'
+- op: add
+  glob: tests/_cache_transparency.py
+  reason: 'Landing-repair for the T-1519/T-1520 series: T-1519 is done and its ledger
+
+    state on main already reflects that, so the shared cache-transparency
+
+    harness files (tests/_cache_transparency.py, tests/test_cache_transparency.py)
+
+    lose COV002 coverage the moment they are touched again outside a same-diff
+
+    close grace window. T-1520 is the still-open sibling ticket in this same
+
+    series that both needs these landing-blocker fixes applied and is the only
+
+    open ticket left to carry the frob:ticket edge, so its scope is widened to
+
+    cover these two files for that narrow purpose.
+
+    '
+  actor: logan
+  at: '2026-08-04'
+- op: add
+  glob: tests/test_cache_transparency.py
+  reason: 'Landing-repair for the T-1519/T-1520 series: T-1519 is done and its ledger
+
+    state on main already reflects that, so the shared cache-transparency
+
+    harness files (tests/_cache_transparency.py, tests/test_cache_transparency.py)
+
+    lose COV002 coverage the moment they are touched again outside a same-diff
+
+    close grace window. T-1520 is the still-open sibling ticket in this same
+
+    series that both needs these landing-blocker fixes applied and is the only
+
+    open ticket left to carry the frob:ticket edge, so its scope is widened to
+
+    cover these two files for that narrow purpose.
+
+    '
+  actor: logan
+  at: '2026-08-04'
 evidence:
 - tests/test_cache_gate.py::TestMemoizedReadCoverage::test_uncovered_read_fires
-- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_param_derived_read_is_silent
-- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_non_memoized_function_is_silent
 - tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires
+- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_silent_shapes[param-derived-read]
+- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_silent_shapes[non-memoized-function]
 threat: null
 component: null
 ```
@@ -5886,13 +5930,10 @@ wrapper" acceptance floor.
 
 src/frob/gates/_cache_gate.py: AST-based detector (same structural-gate precedent as
 _walk_lint.py/_pii_structural, no vet/effect-scan reuse needed for this narrower shape). For every
-@memoize_per_run-decorated function (matched by bare decorator name), scans the function's OWN body
-for Path.read_text/.read_bytes/open()/os.environ/os.getenv reads whose target expression names none
-of the function's own parameters -- memoize_per_run's cache key is exactly (and only) its call
-arguments, so an unparameterized read is invisible to that key and can serve a stale memoized result,
-the T-1454 incident shape (frob ack rewrote frob.lock, no tracked source digest changed, a cached
-result went stale). frob:waive CACHE001 reason="..." is the escape hatch for a genuinely
-immutable-for-the-run read.
+@memoize_per_run-decorated function, scans the function's OWN body for Path.read_text/.read_bytes/
+open()/os.environ/os.getenv reads whose target expression names none of the function's own
+parameters. frob:waive CACHE001 reason="..." is the escape hatch for a genuinely immutable-for-the-
+run read.
 
 Registered as a new "cache" gate family (CACHE001 in _KNOWN_GATE_RULES, job table entry in
 frob.gates.__init__._build_process_jobs, stage-group membership in gates-security in
@@ -5900,53 +5941,87 @@ frob.check.__init__). Verified clean against the live repo's three real memoize_
 (frob.arch.analyze_project, frob.dup._legacy.find_duplicates, frob.graph.build_graph) -- 0 false
 positives.
 
-Registry: docs/design/registry/check-coverage.yaml synced via `frob registry audit
---sync-gate-rules` (CHK-GATE-CACHE001 entry). Docs: docs/modules/gates.md gets a CACHE001 catalog
-row plus a "CACHE001 (T-1520)" section explaining the theorem, the memoize_per_run key model, and
-the disclosed scope narrowing (bare-decorator-name match only, own-body-only, no transitive-callee
-reads) -- matches the ticket's own "if full coverage of every wrapper is too large, ship the core"
-clause. The long tail (gate-cache.db, graph cache.db, tickets-archive-cache.json, pytest-collect.json,
-hotgraph_sketches.db, check-budget-timing.json, frob-coverage.lock.json -- every OTHER persistent
-cache invariants/INV-050.md inventories) is explicitly NOT covered by this static gate; it is the
-dynamic-harness half T-1519 already delivered, not this ticket's own scope.
+Registry: docs/design/registry/check-coverage.yaml synced via frob registry audit
+--sync-gate-rules (CHK-GATE-CACHE001 entry). Docs: docs/modules/gates.md gets a CACHE001 catalog
+row plus a "CACHE001 (T-1520)" section.
 
-Scope note (same lease-conflict shape as T-1519's design/frob.strata edit): src/frob/gates/__init__.py,
-src/frob/check/__init__.py, and docs/modules/gates.md all needed real edits (job-table registration,
-stage-group membership, catalog row/section) but could NOT be added to this ticket's declared scope --
-T-1205 holds an in-progress lease over exactly these three paths. The edits are real and required
-(confirmed: gate:cache --ticket T-1520 runs and reports 0 errors only after these three files'
-edits); flagging for the coordinator to reconcile against T-1205's own land.
+Land-repair pass (this refresh): the worktree carried a stale merge -- an earlier git merge main
+had silently dropped T-1531 via the ledger merge-driver splice; restored per playbook section 10b.
+Landing then surfaced three gate-error families against this series' new files:
 
-Verification: FROB_NO_GATE_CACHE=1 uv run frob check --only cache --ticket T-1520 -> 0 errors.
-FROB_NO_GATE_CACHE=1 uv run frob check --only invariant --only test --only archgate --only sys
---only coverage --only registry --ticket T-1520 -> 6 errors, all pre-existing T-1519-file COV002
-residue (tests/test_cache_transparency.py symbols losing their "open ticket" edge now that T-1519
-closed but has not yet landed to main -- expected multi-ticket-series-worktree behavior, not
-introduced by this ticket, resolves once T-1519 lands). pytest tests/test_cache_gate.py -> 4 passed.
+- COV002: T-1519 (sibling ticket) is done, so its frob:ticket edges no longer cover
+  tests/_cache_transparency.py / tests/test_cache_transparency.py as "open" coverage. Widened this
+  ticket's scope (frob ticket scope T-1520 --add) to cover both files, and added explicit
+  frob:ticket T-1520 edges on tests/test_cache_transparency.py's symbols to break an ambiguous
+  scope tie against the T-1529 follow-up draft, which also declares scope over that file.
+- SELFAUDIT001 (SYS100/SYS104): design/frob.strata's gates node needed cache_gate added to its
+  interface= list and src/frob/gates/_cache_gate.py added to the env/fs.read may-via lists; the
+  testsuite node needed the new cache-transparency harness symbols (EDIT_KINDS, Fingerprint,
+  TestGraphCacheTransparency, TestPytestCollectCacheTransparency, TestMemoizedReadCoverage,
+  TestT1454RegressionShape, git_init, git_commit_all, run_cold_warm_sweep) added to its interface=
+  list and the exec/fs.write/fs.read/env capabilities their new test files use declared via-lists.
+  This file carries two duplicate attr interface=/may blocks per node (pre-existing repo structure,
+  not introduced here) -- updated both identically.
+- WIRE001: test-only fixture helpers (git_init, git_commit_all, run_cold_warm_sweep,
+  _git_init_tracked, _graph_fingerprint) waived per the repo's established test-fixture-helper
+  precedent (follow_up=T-1490, verbatim idiom from tests/test_tickets_migration.py -- WIRE001's
+  reachability scan skips all test paths by design, so a helper reached only from other test files
+  always reads as unwired). cache_gate itself waived with a NEW follow-up ticket
+  (T-1532, renumbers at land): it is genuinely wired via a bare first-class function
+  reference inside _ProcessJob(cache_gate, (st.repo_root,)) in the process job table, a shape
+  WIRE001's call-shaped text scan cannot see -- distinct from T-1502 (memoize_per_run wrapper
+  bare-name argument) and T-1527 (ErrorSet no-paren member access).
+
+Verification: FROB_NO_GATE_CACHE=1 uv run frob check --only coverage --only sys --only wire --only dup
+--path . -> 0 errors (COV 0/32w/144waived, SELFAUDIT 0, WIRE 0/6waived, dup 372 groups/1 waived).
+FROB_NO_GATE_CACHE=1 uv run frob check --only cache --only archgate --path . -> 0 errors.
+pytest tests/test_cache_transparency.py tests/test_gate_cache.py tests/test_cache_gate.py -> 22 passed.
 
 ### Changed
 ```
- design/frob.strata               | 857 ++++++++++++++++++++-------------------
- invariants/INV-050.md            |  69 ++++
- src/frob/gates/_gate_cache.py    |   3 +
- src/frob/graph/cache.py          |   3 +
- src/frob/tickets/_store.py       |   3 +
- tests/_cache_transparency.py     |  89 ++++
- tests/test_cache_transparency.py | 146 +++++++
- tickets.md                       | 179 +++++++-
- 8 files changed, 918 insertions(+), 431 deletions(-)
+## Done report
+
+The T-1514 pre-commit unscoped sweep compared staged-tree findings against the pre-land baseline with no allowance for the files the land machinery itself rewrites at that checkpoint. A land needing a REL001 version bump stages .frob-release.json/CHANGELOG.md/pyproject.toml changes; PRE001/SCOPE001 then fired against them as new-vs-baseline and refused the land (observed blocking T-1517 twice on 2026-08-04, while non-bumping lands passed). Fix: _LAND_OWNED_SWEEP_EXEMPT + _is_land_owned_finding filter exclusions from both the initial comparison and the post-Tier-A re-check, logged loudly per the no-silent-caps rule; matching is restricted to repo-root paths so a nested pyproject.toml in a fixture tree still refuses. Two unit tests cover the exemption and the nested-name boundary.
+
+### Changed
+```
+## Done report
+
+frob ticket list now always ends with a one-line state census (summary: N active (X queued, Y in-progress, ...)) computed from the queue the list already loaded -- zero extra IO -- replacing the 'list | grep queued | wc -l' shell idiom. A new --stats flag appends a second line with trailing-3-day filed/landed/net rates, median created-to-first-done cycle time, and the naive burn-down ETA, all off the existing T-1100 ticket_flow report; TicketFlowReport gained median_cycle_days, mined in the same single git-history pass _count_landed_by_day already makes (no second walk). The help text discloses --stats inherits frob ticket flow's full-history mining cost until T-1330 lands. User-requested 2026-08-04.
+
+### Changed
+
+### Changed
+```
+ design/frob.strata                       |  48 +++---
+ docs/design/registry/check-coverage.yaml |   6 +-
+ docs/modules/gates.md                    |  51 ++++++
+ frob.lock                                |  10 ++
+ invariants/INV-050.md                    |  69 ++++++++
+ src/frob/check/__init__.py               |   1 +
+ src/frob/gates/__init__.py               |  14 ++
+ src/frob/gates/_cache_gate.py            | 271 +++++++++++++++++++++++++++++++
+ src/frob/gates/_gate_cache.py            |   3 +
+ src/frob/gates/_waive.py                 |   6 +
+ src/frob/graph/cache.py                  |   3 +
+ src/frob/tickets/_store.py               |   3 +
+ tests/_cache_transparency.py             | 113 +++++++++++++
+ tests/test_cache_gate.py                 | 132 +++++++++++++++
+ tests/test_cache_transparency.py         | 155 ++++++++++++++++++
+ tests/test_gate_cache.py                 |  17 +-
+ tickets.md                               | 202 +++++++++++++++++------
+ 17 files changed, 1019 insertions(+), 85 deletions(-)
 ```
 
 ### Evidence
 - `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_uncovered_read_fires` (pytest node id, verified passing when recorded)
-- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_param_derived_read_is_silent` (pytest node id, verified passing when recorded)
-- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_non_memoized_function_is_silent` (pytest node id, verified passing when recorded)
 - `tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_silent_shapes[param-derived-read]` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_silent_shapes[non-memoized-function]` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
-- gates: 7 error(s), 170 warning(s), 781 waived
-- error-findings: DUP001@tests/_cache_transparency.py, DUP001@tests/test_cache_gate.py, PRE001@tickets/T-1520, WIRE001@src/frob/gates/_cache_gate.py, WIRE001@tests/_cache_transparency.py, WIRE001@tests/test_cache_gate.py, WIRE001@tests/test_cache_transparency.py
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1521 -->
 ```yaml
@@ -6424,3 +6499,38 @@ threat: null
 component: null
 ```
 Every land refusal on 2026-08-04 was one of a small set of classes, each hand-fixed with the SAME deterministic recipe dozens of times. Extend the tiered fix engine (Tier-A deterministic; Tier-B T-1262 apply-verify-rollback) with handlers so land repairs them automatically before refusing: (1) SYS100 undeclared capability -> add the observed file to the named node's may-via list (sorted union; compact grammar); (2) SYS104 undeclared public symbol -> add to the node's compact attr interface=[...] list (sorted union); (3) COV002 changed-symbol-without-edge -> insert '# frob:ticket <landing-id>' above the symbol when the diff belongs to the landing ticket; (4) ClaimDivergence -> re-run done-report with the existing why text (the recap re-measures; this is exactly the documented manual recipe); (5) TICK006 phantom draft citation -> refile + renumber-to-cited-id when the citation names a draft absent from ledger+archive; (6) E501 introduced by merge -> ruff-format the specific lines (Tier-A fmt already close). Every applied fix goes through Tier-B verify-or-rollback and is loudly logged; anything not exactly matching a recipe still refuses. Success metric: a re-land of a branch whose only findings are in these classes succeeds with zero human edits. Builds on T-1481 (check --fix CLI) and complements T-1514's free pre-commit refusals.
+
+<!-- ticket:T-1532 -->
+```yaml
+id: T-1532
+title: WIRE001 text-scan misses bare-name-as-ProcessJob-argument wiring (job-table
+  false positive)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_wire.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+WIRE001's _is_reached_outside_diff_tests (src/frob/gates/_wire.py) requires
+a "ShortName(" call-shaped text occurrence to prove a diff-added symbol is
+reached outside its own tests. A gate function registered into the process
+job table as a bare first-class reference -- e.g.
+"cache": _ProcessJob(cache_gate, (st.repo_root,)) in
+src/frob/gates/__init__.py -- is genuinely wired (the job table invokes it)
+but never appears text-adjacent to an opening paren under its own name, so
+the scan reports it unreached. This is a distinct detector-gap shape from
+T-1502 (memoize_per_run wrapper bare-name argument) and T-1527 (ErrorSet
+no-paren member access): teach the scan to also recognize a bare short-name
+appearing as a positional argument inside a _ProcessJob(...) (or similarly
+shaped job-table constructor) call as a wired reference. Found while
+landing T-1520 (CACHE001 static gate): cache_gate is wired via the "cache"
+job-table entry but WIRE001 still flagged it.

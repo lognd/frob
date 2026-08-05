@@ -148,6 +148,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # as before this ticket.
 # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
 # frob-zone-start known-gate-rules T-1002
+# frob:ticket T-1520
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -833,6 +834,11 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS201",
         "SYS202",
         "SYS203",
+        # T-1520: CACHE001 -- a `@memoize_per_run`-decorated computation's
+        # observed read-set (a file/env read inside its own body) is not
+        # covered by any of its declared cache-key inputs (its own
+        # parameters) -- see src/frob/gates/_cache_gate.py.
+        "CACHE001",
     }
 )
 # frob-zone-end known-gate-rules T-1002

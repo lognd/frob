@@ -1188,6 +1188,9 @@ def _archive_cache_path(root: Path) -> Path:
 
 
 # frob:ticket T-1206
+# frob:invariant INV-050
+# invariant spec: [INV-050](invariants/INV-050.md)
+# frob:ticket T-1519
 # frob:tests tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_reparses_when_archive_content_changes  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestLoadArchiveCache.test_skips_reparse_when_content_hash_unchanged  # noqa: E501
 def _read_archive_cache(

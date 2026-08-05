@@ -136,6 +136,16 @@
       "ref": "src/frob/gates/__init__.py::test_gate"
     },
     {
+      "digest": "20841f4ddb139b626c8c4ce24d468cf2e5c2dfe3ef8b7f4ade04a76af8986f9e",
+      "facet": "body",
+      "ref": "src/frob/gates/_cache_gate.py::cache_gate"
+    },
+    {
+      "digest": "c6d0c4357a0810c8fdcca40555ef3d8cfbd8078ba69f611c9fb85baabb254608",
+      "facet": "sig",
+      "ref": "src/frob/gates/_cache_gate.py::cache_gate"
+    },
+    {
       "digest": "11c8be26f27b5dc5f7fedb8bd72404b05212131cff0dec4602e153ff01745296",
       "facet": "sig",
       "ref": "src/frob/gates/_coverage.py::load_coverage"

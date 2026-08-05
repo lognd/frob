@@ -103,6 +103,7 @@ declaration).
 | PROTO003 | protocol_summary | (error) a `frob:transition` symbol's precondition state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
 | WIRE001 | wire | (error) a ticket's own diff adds a function/method/class with no non-test caller, a gate `rule="..."` literal absent from `_KNOWN_GATE_RULES`, or a CLI `dest=` absent from `_config_external.py`'s copy lists -- code that landed, passed every gate, and does nothing; see "WIRE001/WIRE002 (T-1428)" below |
 | WIRE002 | wire | (error, unwaivable) a `frob:waive WIRE001` present without a `follow_up="T-####"` attribute naming a real, still-open ticket -- see "WIRE001/WIRE002 (T-1428)" below |
+| CACHE001 | cache | (error) a `@memoize_per_run`-decorated function reads a file (`Path.read_text`/`.read_bytes`/`open()`) or `os.environ`/`os.getenv` whose target expression names none of the function's own parameters -- the read is invisible to `memoize_per_run`'s args-only cache key, the T-1454 incident shape; see "CACHE001 (T-1520)" below |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
 "does this evidence id resolve to a currently-collected test" -- it does
@@ -1983,6 +1984,56 @@ Detection only -- `suppress001_gate` itself never edits a source file. The
 Tier-A auto-fix that WRITES the paired suppression is
 `fix_suppress001_paired_suppression` (T-1341), documented under "`--fix`:
 Tier-A deterministic auto-fix handlers (T-1138)" below.
+
+## CACHE001 (T-1520)
+
+<a id="cache001-t-1520"></a>
+<!-- frob:describes src/frob/gates/_cache_gate.py::cache_gate -->
+
+The recurring cache-bug class is key incompleteness: a cached computation
+reads an input its declared cache key does not cover, so a change to that
+input serves a stale result -- the real T-1454 incident (`frob ack`
+rewrote `frob.lock`, no tracked source digest changed, a previously cached
+DRIFT001 result stayed stale and kept being served). `invariants/
+INV-050.md` states the correctness theorem this is one enforcement half
+of (`check(S, C) == check(S, empty)` for every persistent cache); CACHE001
+is the STATIC half, catching the key-incompleteness shape before a test
+run ever has to observe the staleness.
+
+`frob.check._memo.memoize_per_run` is the narrowest, most mechanical case:
+its cache key is exactly (and only) the decorated function's own,
+`_freeze`d call arguments (T-0423). If the function's BODY reads something
+no argument derives from -- a hardcoded path, `os.environ`, a module-level
+global -- that read is invisible to the key, and a second call with
+identical arguments inside the same `run_memo_scope()` can serve a stale
+result even though the thing it silently read changed underneath it.
+CACHE001 flags exactly this: an AST scan (same structural-gate precedent
+as WALK001/`_pii_structural`, module docstring) over every
+`@memoize_per_run`-decorated function, checking that every `Path.
+read_text`/`.read_bytes`/`open()` call's target, and every `os.environ`/
+`os.getenv` access, names at least one of the function's own parameters
+somewhere in its expression tree. A read with no such reference is an
+uncovered read: `frob:waive CACHE001 reason="..."` is the escape hatch for
+a genuinely immutable-for-the-run's-duration read (dynamic reads the
+detector cannot statically rule safe).
+
+**Scope, disclosed rather than silent (T-1520's own acceptance floor):**
+this first cut only recognizes the `@memoize_per_run` decorator by bare
+name (matching this repo's three real call sites --
+`frob.arch.analyze_project`, `frob.dup._legacy.find_duplicates`,
+`frob.graph.build_graph` -- all clean, zero CACHE001 findings against the
+live tree at introduction), and only a function's OWN body, not callees it
+transitively reaches. `frob.lang.parse_file`'s dynamically-wrapped
+content-hash-keyed artifact cache is a DIFFERENT, already-correct
+cache-key discipline (a real content digest, not `memoize_per_run`'s
+args-only key) this detector's decorator-name match structurally cannot
+see, by design -- not a gap in the same family. The long tail (every other
+persistent-cache-backed computation this repo has -- `.frob/gate-cache.db`,
+`.frob/cache.db`'s own writers, `.frob/tickets-archive-cache.json`,
+`.frob/pytest-collect.json`, `.frob/hotgraph_sketches.db`,
+`.frob/check-budget-timing.json`, `frob-coverage.lock.json` -- see
+`invariants/INV-050.md`'s inventory) is tracked as follow-up work, not
+silently dropped.
 
 ## WIRE001/WIRE002 (T-1428)
 

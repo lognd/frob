@@ -490,8 +490,11 @@ def _apply_schema_with_recovery(
 
 # frob:invariant INV-003
 # invariant spec: [INV-003](invariants/INV-003.md)
+# frob:invariant INV-050
+# invariant spec: [INV-050](invariants/INV-050.md)
 # frob:ticket T-0029
 # frob:ticket T-0141
+# frob:ticket T-1519
 # frob:doc docs/modules/graph.md#cache
 def connect(path: Path) -> sqlite3.Connection:
     """Open (creating parent dirs) the cache db; wipe and rebuild on schema mismatch.

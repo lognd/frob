@@ -62,6 +62,7 @@ from frob.gates._baseline import (
     stamp_baseline,
     violation_fingerprint,
 )
+from frob.gates._cache_gate import cache_gate
 from frob.gates._coverage import (
     coverage_lock_diff,
     load_coverage,
@@ -5166,6 +5167,7 @@ def _perf_gate_parse_files(root: Path, candidate_paths: list[str]) -> list[Parse
 _CACHE_REL = Path(".frob") / "cache.db"
 
 # frob:ticket T-1340
+# frob:ticket T-1520
 _ALL_GATES = frozenset(
     {
         "drift",
@@ -5208,6 +5210,9 @@ _ALL_GATES = frozenset(
         # T-1428: WIRE001/WIRE002, a ticket's own diff adding code nothing
         # outside its own tests can reach.
         "wire",
+        # T-1520: CACHE001, a memoize_per_run computation's observed
+        # read-set not covered by its declared cache-key (parameter) inputs.
+        "cache",
         # T-0405: LANG001, language-extension conformance drift-lock.
         "lang_conformance",
         # T-0406: LANG002/LANG003, per-project language conformance.
@@ -5593,6 +5598,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "dead_symbols",
     # frob:ticket T-1428
     "wire",
+    # frob:ticket T-1520
+    "cache",
     # frob:ticket T-0813
     "protocol_summary",
     # frob:ticket T-0788
@@ -5977,6 +5984,7 @@ def _build_thread_jobs(
 
 
 # frob:ticket T-1049
+# frob:ticket T-1520
 def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
     """The process-pool half of `_build_jobs`'s gate-job registry (the
     CPU-bound giants in `_PROCESS_POOL_GATES`), split out alongside
@@ -6030,6 +6038,12 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # repo-wide text scan (see wire_gate's own docstring for why it is
         # a scan, not a call-graph query) plus a small waive-edge pass.
         "wire": _ProcessJob(wire_gate, (st.root, st.snapshot, st.diff, st.queue)),
+        # T-1520: CACHE001 -- same CPU-bound tracked-file AST-scan posture
+        # as wire/walk_lint above, always against repo_root (never the
+        # possibly-scoped st.root) since a memoize_per_run function with an
+        # uncovered read anywhere in src/frob/ is a repo-wide correctness
+        # concern, not a subdir-scoped one.
+        "cache": _ProcessJob(cache_gate, (st.repo_root,)),
         # T-0813: same CPU-bound per-package build_call_graph posture as
         # dead_symbols above, plus a fixpoint pass over each package's
         # protocol-tagged symbols.

@@ -32,19 +32,10 @@ def _write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
-def _git_init(root: Path) -> None:
-    """A minimal git repo, matching `tests/test_gates.py`'s own helper."""
-    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
-    subprocess.run(
-        ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
-    )
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
-    if not any(root.iterdir()):
-        (root / ".gitkeep").write_text("")
-    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-    subprocess.run(
-        ["git", "commit", "-q", "-m", "base", "--allow-empty"], cwd=root, check=True
-    )
+# frob:ticket T-1520
+# T-1520 dedup: the shared cache-transparency harness (tests/
+# _cache_transparency.py) is the one home for this fixture now.
+from tests._cache_transparency import git_init as _git_init  # noqa: E402
 
 
 def _snapshot(root: Path) -> GraphSnapshot:

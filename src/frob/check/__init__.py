@@ -335,6 +335,7 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "secrets",
             "dead_symbols",
             "wire",
+            "cache",
             "protocol_summary",
             # T-0665: OPAQUE001's tracked-file scan is the same shape/cost
             # class as secrets' own, belongs in the same security group.
