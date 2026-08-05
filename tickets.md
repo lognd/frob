@@ -6011,3 +6011,30 @@ component: null
 Every land's pre-land Tier-A pass runs fix_waive004_stale_waiver's self-manufactured run_gates() inside the WORKTREE, where native builds (frob_core/strata_core) are routinely stale/missing. The perf/reach substrate then silently under-reports to ZERO findings, all 73 PERF004 (+PERF001/2/3/8) waivers read stale, and only the T-1323 mass-invalidation COUNT heuristic saves the waivers -- _degraded_verification_reason's structural natives check does NOT fire, which is the gap: the run looks healthy while its analysis layer is dead.
 
 Fix, two layers: (1) the perf/reach substrate must emit a structural degraded-run signal (skipped-stage / import-failure marker on the report) when its native deps fail to import or are content-stale, so _degraded_verification_reason catches it BEFORE the count heuristic -- 'zero findings' and 'could not analyze' must be distinguishable everywhere, not just for perf; (2) the pre-land Tier-A pass in _land_cmd.py should preflight-check worktree natives and skip the WAIVE004 self-run entirely when stale -- today it burns a full run_gates() per land whose verdict is guaranteed untrustworthy, then logs a scary ERROR. Expected effect: the per-land 'WAIVE004 auto-fix: 73 directives went stale' ERROR disappears and each land gets a full gates-run cheaper.
+
+<!-- ticket:T-1579 -->
+```yaml
+id: T-1579
+title: 'WAIVE004 auto-fix: mass-stale states can never self-heal -- add detector-proven
+  escape from the count guard'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fix_engine.py
+- docs/modules/gates.md
+- docs/design/check-fix-engine.md
+- tests/test_gates.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The T-1323 mass-invalidation guard refuses to delete when >= 5 waivers of one rule go stale in one run. Correct for degraded runs -- but it also means a rule whose waivers become GENUINELY mass-stale (detector tightened, mass refactor) is permanently uncleanable: every run re-flags them, the auto-fix always refuses, warnings never drain. The guard cannot currently tell 'detector died' from 'detector ran and they really are all stale'.
+
+Refinement: when the SAME self-manufactured run produced >= 1 live finding of the target rule elsewhere in the tree, the detector demonstrably ran and can find that rule -- mass-staleness is then trustworthy, and deletion may proceed (still capped per run, still one rule at a time, still logged per waiver). When the rule has ZERO findings anywhere (the degraded signature, exactly what T-1578's structural signal also targets), keep refusing as today. Depends on T-1578 conceptually but is independently implementable; blocked_by is intentionally not set.
