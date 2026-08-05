@@ -7371,3 +7371,23 @@ threat: null
 component: null
 ```
 Every blind repair round on 2026-08-04/05 came from worktree-check vs land-sweep divergence: DUP001 passed committed in the worktree but erred on the staged merge preview; gate caches hid findings until FROB_NO_GATE_CACHE=1; scoped --ticket runs skip the families that actually refuse lands (SELFAUDIT whole-design, diff-driven DUP, registry-level PII012). Deliver: (1) a --land-parity mode running the same unscoped errors-only evaluation _unscoped_error_findings performs, against the current tree, cache-bypassed, with the T-1524 checkpoint exemptions applied -- so an agent can converge in the worktree before the coordinator ever lands; (2) a parity property test: for a fixed tree, check --land-parity findings == the pre-commit sweep findings (same parser, same exclusions); (3) the agent playbook gains 'run --land-parity before writing your Done report'.
+
+<!-- ticket:T-1536 -->
+```yaml
+id: T-1536
+title: 'ledger self-corruption: done-report section replacement can duplicate a foreign
+  ticket block and break whole-store YAML load'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+2026-08-05 ~00:55 in worktree t-1350: after done-report refreshes for T-1318/T-1350/T-1225, tickets.md held a DUPLICATE T-1315 anchor whose block body was T-1318's report text with no frontmatter -- the whole store refused to load (T-1315 frontmatter is not valid YAML), 155336 chars / 2605 lines of the ledger were inside the corrupt span, and land failed NotFound for every ticket. Repaired by deleting the corrupt duplicate span (real blocks below it were intact). Root-cause replace_done_report_section/write path for how a section write can (a) target a foreign ticket's region and (b) duplicate an anchor. Independent hardening regardless of root cause: every ledger write (write_ticket/done-report/splice) MUST re-parse the full ledger post-write and refuse to persist on any load failure or duplicate anchor -- fail loudly before the corruption is durable. Also raises priority of the ledger v2 final cutover (per-ticket files structurally eliminate the shared-file blast radius).
