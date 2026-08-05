@@ -791,7 +791,7 @@ component: null
 id: T-1238
 title: 'EPIC cli regrouping: verb groups to shrink the top-level surface -- frob explore
   first'
-state: in-progress
+state: queued
 kind: ux
 origin: human
 created: '2026-07-29'
@@ -960,7 +960,6 @@ interface= fix, which is within this ticket's own (now-widened) scope.
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 2 error(s), 7598 warning(s), 755 waived
 - error-findings: DUP001@src/frob/app/app.py, DUP001@tests/unit/test_app_runners.py
-
 <!-- ticket:T-1264 -->
 ```yaml
 id: T-1264
