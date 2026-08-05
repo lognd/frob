@@ -2030,3 +2030,60 @@ class TestV2StateTransitions:
 
         root = self._repo(tmp_path)
         assert v2_state_transitions(root, "T-9999") == ()
+
+    def test_byte_similar_sibling_ticket_does_not_drop_transitions(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1543 regression: two v2 tickets sharing the standard template
+        (id/title/state/body differ, ~8 other frontmatter fields
+        identical) clear git's --follow >=50%-byte-similarity threshold
+        for copy detection, which used to make git misattribute the
+        second ticket's creation commit as a "copy from" the first
+        ticket's file -- silently dropping every subsequent real
+        transition for the second ticket. Reproduces the exact shape:
+        file T-0001, file a near-identical T-0002 (same template, same
+        body, differing only in id/title/state), then advance BOTH
+        through in-progress/done and assert neither loses a transition."""
+        # frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
+        from frob.tickets._store import v2_state_transitions
+
+        root = self._repo(tmp_path)
+        self._commit_ticket(
+            root,
+            _ticket(
+                ticket_id="T-0001", title="Sample ticket", state=TicketState.QUEUED
+            ),
+            "file T-0001",
+        )
+        # Byte-similar sibling: same template, same body, only
+        # id/title/state differ -- clears git's --follow similarity
+        # threshold without being any kind of real rename/copy of T-0001.
+        self._commit_ticket(
+            root,
+            _ticket(
+                ticket_id="T-0002", title="Sample ticket", state=TicketState.QUEUED
+            ),
+            "file T-0002",
+        )
+        self._commit_ticket(
+            root,
+            _ticket(
+                ticket_id="T-0002",
+                title="Sample ticket",
+                state=TicketState.IN_PROGRESS,
+            ),
+            "start T-0002",
+        )
+        self._commit_ticket(
+            root,
+            _ticket(ticket_id="T-0002", title="Sample ticket", state=TicketState.DONE),
+            "close T-0002",
+        )
+
+        transitions = v2_state_transitions(root, "T-0002")
+        assert [state for _, _, state in transitions] == [
+            "queued",
+            "in-progress",
+            "done",
+        ]
+        assert len(transitions) == 3

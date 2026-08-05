@@ -543,6 +543,26 @@ def _store_mode(root: Path) -> str:
     exist, else 'single' (the default for a fresh repo -- new ledgers are
     compact, not sprawling).
 
+    T-1491 investigated flipping this final `return` to 'v2' (design
+    section 7 deliverable 4) and found the blast radius too large to land
+    safely in one pass: dozens of existing tests across this suite
+    (`TestArchive`, `TestSingleFileLedger`, and siblings in
+    `tests/test_tickets.py` alone -- `test_new_ticket_id_continues_past_
+    archived_max`, `test_id_present_in_both_active_and_archive_collapses_
+    not_refuses`, `test_blocked_by_archived_ticket_resolves_closed`,
+    `test_new_tickets_land_in_single_tickets_md`, `test_write_ticket_
+    never_touches_a_sibling_ticket_bytes`, `test_new_ticket_corrupt_
+    archive_fails_loudly`, measured failing directly against the flip)
+    rely on a bare `tmp_path` fixture implicitly choosing v1/'single' as
+    the default backend, not on an explicit `tickets.md` seed -- the same
+    hazard T-1259's own LEDGERV1001 docstring flagged for one such
+    fixture. Flipping the default is still the right final step, but it
+    is its own dedicated migration effort (updating every v1-assuming
+    fixture to seed an explicit `tickets.md`, or construct via a helper
+    that pins v1 mode), not a two-line change riding along in this
+    ticket. Tracked as a follow-up (see this ticket's Done report) rather
+    than forced through here.
+
     T-1256: the archive glob is included alongside the active glob so a v2
     repo whose active tree has been fully drained (every ticket done/
     dropped and archived) still reads as 'v2', not 'single' -- without this
@@ -701,21 +721,107 @@ def read_done_report(root: Path, ticket_id: str) -> str | None:
 _V2_STATE_ADD_RE = re.compile(r"^\+state:\s*(\S+)\s*$")
 
 
-# frob:ticket T-1257
+# frob:ticket T-1543
+# frob:doc docs/design/ledger-v2.md#44-flow--velocity-mining
+# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
+def _v2_rename_source(root: Path, rel_path: str) -> str | None:
+    """Find the single genuine git-mv predecessor path of `rel_path`, if
+    any (T-1543). Restricted to `-M100%` (exact-content rename detection,
+    `--diff-filter=R` only) rather than `--follow`'s broader byte-
+    similarity copy heuristic: frob's own directory-rename tooling
+    (`git_mv_dir` / `_renumber_v2._git_mv_ticket_dir`) always performs a
+    content-preserving `git mv`, so a REAL predecessor is always exactly
+    100% similar. Two v2 tickets that merely share the same templated
+    frontmatter (id/title/state/body differ) are never byte-identical, so
+    they can never satisfy `-M100%` and are never mistaken for a rename
+    -- this is what eliminates the false-copy false positive the old
+    `--follow`-based miner was vulnerable to. Returns None (never raises)
+    on any git failure, no rename found, or an ambiguous/ multi-line
+    match (never guess)."""
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--diff-filter=R",
+            "-M100%",
+            "--name-status",
+            "--format=--frob-v2-rename-commit--",
+            "--",
+            rel_path,
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    sources: set[str] = set()
+    for line in spawned.danger_ok.stdout.splitlines():
+        if not line.startswith("R"):
+            continue
+        parts = line.split("\t")
+        if len(parts) != 3:
+            continue
+        _status, old_path, new_path = parts
+        if new_path == rel_path:
+            sources.add(old_path)
+    if len(sources) != 1:
+        return None
+    return next(iter(sources))
+
+
+# frob:ticket T-1543
+# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
+def _v2_path_lineage(root: Path, rel_path: str) -> list[str]:
+    """Reconstruct the FULL sequence of paths a v2 ticket's `ticket.md`
+    has ever lived at, oldest-first (T-1543). Walks backward from
+    `rel_path` through `_v2_rename_source`'s exact-100%-similarity rename
+    detection only -- never git's `--follow` byte-similarity heuristic --
+    so a renumber (`T-draft-<hex>` -> `T-####`) or archive `git mv` is
+    still followed correctly while an unrelated ticket file that merely
+    shares template boilerplate is never mistaken for a predecessor.
+    Bounded to a generous fixed depth so a pathological rename cycle
+    (should never occur; git mv never round-trips a path back to itself
+    in this codebase) cannot loop forever."""
+    lineage = [rel_path]
+    current = rel_path
+    for _ in range(64):
+        prev = _v2_rename_source(root, current)
+        if prev is None or prev in lineage:
+            break
+        lineage.insert(0, prev)
+        current = prev
+    return lineage
+
+
+# frob:ticket T-1543
 # frob:doc docs/design/ledger-v2.md#44-flow--velocity-mining
 # frob:tests tests/test_tickets.py::TestV2StateTransitions.test_transitions_mined_oldest_first  # noqa: E501
 # frob:tests tests/test_tickets.py::TestV2StateTransitions.test_no_history_returns_empty_tuple  # noqa: E501
+# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
 def v2_state_transitions(
     root: Path, ticket_id: str
 ) -> tuple[tuple[str, str, str], ...]:
     """Every `state:` transition a v2-mode ticket's OWN file has ever
     recorded, oldest-first, as `(commit_sha, author-date-iso, new_state)`
-    triples -- mined purely from `git log --follow -p` over
-    `tickets/T-####/ticket.md` (design section 4.4), no separate event log
-    required. `--follow` means a renumbered/renamed ticket directory
-    (`T-draft-<hex>` -> `T-####`, or an archive `git mv`) still yields its
-    full pre-rename history in one call, mirroring how `git log --follow`
-    already works for any other tracked file.
+    triples -- mined purely from `git log -p` over each path in the
+    ticket's `_v2_path_lineage` (design section 4.4), no separate event
+    log required. A renumbered/renamed ticket directory (`T-draft-<hex>`
+    -> `T-####`, or an archive `git mv`) still yields its full pre-rename
+    history, mirroring how `git log --follow` used to.
+
+    T-1543 fix: this used to run a single `git log --follow -p` call.
+    `--follow`'s rename detection uses a >=50%-byte-similarity heuristic
+    that is NOT restricted to genuine renames -- two unrelated v2 tickets
+    routinely clear 50% similarity purely from sharing the same templated
+    frontmatter (id/title/state differ, ~8 other fields identical), so
+    `--follow` would misattribute a brand-new ticket's creation commit as
+    a "copy from" a sibling ticket's file. Combined with `--reverse`, git
+    then reports only that ONE (mis-detected) commit and stops, silently
+    dropping every real subsequent transition for the ticket. Mining each
+    lineage segment separately via plain (non-`--follow`) `git log -p`,
+    with lineage boundaries found only through `_v2_path_lineage`'s exact
+    100%-similarity rename check, cannot misattribute a merely-similar
+    sibling file as a predecessor.
 
     Every commit that touches this file contributes at most one entry:
     the LAST added `+state: X` line the diff shows for that commit (a
@@ -727,38 +833,50 @@ def v2_state_transitions(
     matching `_setters._ledger_commit_history`'s existing best-effort git
     contract for the v1 monofile path."""
     rel_path = f"{tickets_dir(root).name}/{ticket_id}/ticket.md"
-    spawned = run_argv(
-        [
-            "git",
-            "-C",
-            str(root),
-            "log",
-            "--reverse",
-            "--follow",
-            "-p",
-            "--format=--frob-v2-commit-- %H%x1f%aI",
-            "--",
-            rel_path,
-        ]
-    )
-    if spawned.is_err or spawned.danger_ok.returncode != 0:
-        return ()
+    lineage = _v2_path_lineage(root, rel_path)
     transitions: list[tuple[str, str, str]] = []
-    current: tuple[str, str] | None = None
-    pending_state: str | None = None
-    for line in spawned.danger_ok.stdout.splitlines():
-        if line.startswith("--frob-v2-commit-- "):
-            if current is not None and pending_state is not None:
-                transitions.append((current[0], current[1], pending_state))
-            sha, _, iso = line[len("--frob-v2-commit-- ") :].partition("\x1f")
-            current = (sha, iso)
-            pending_state = None
+    seen_shas: set[str] = set()
+    for path in lineage:
+        spawned = run_argv(
+            [
+                "git",
+                "-C",
+                str(root),
+                "log",
+                "--reverse",
+                "-p",
+                "--format=--frob-v2-commit-- %H%x1f%aI",
+                "--",
+                path,
+            ]
+        )
+        if spawned.is_err or spawned.danger_ok.returncode != 0:
             continue
-        match = _V2_STATE_ADD_RE.match(line)
-        if match is not None:
-            pending_state = match.group(1)
-    if current is not None and pending_state is not None:
-        transitions.append((current[0], current[1], pending_state))
+        current: tuple[str, str] | None = None
+        pending_state: str | None = None
+        for line in spawned.danger_ok.stdout.splitlines():
+            if line.startswith("--frob-v2-commit-- "):
+                if (
+                    current is not None
+                    and pending_state is not None
+                    and current[0] not in seen_shas
+                ):
+                    transitions.append((current[0], current[1], pending_state))
+                    seen_shas.add(current[0])
+                sha, _, iso = line[len("--frob-v2-commit-- ") :].partition("\x1f")
+                current = (sha, iso)
+                pending_state = None
+                continue
+            match = _V2_STATE_ADD_RE.match(line)
+            if match is not None:
+                pending_state = match.group(1)
+        if (
+            current is not None
+            and pending_state is not None
+            and current[0] not in seen_shas
+        ):
+            transitions.append((current[0], current[1], pending_state))
+            seen_shas.add(current[0])
     return tuple(transitions)
 
 

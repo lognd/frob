@@ -3193,7 +3193,7 @@ this evaluation and the follow-up filing.
 ```yaml
 id: T-1491
 title: 'ledger v2: final cutover -- flip fresh-repo default, delete v1 splice machinery'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-03'
@@ -3211,18 +3211,162 @@ scope:
 - .gitattributes
 - docs/modules/tickets.md
 - docs/design/ledger-v2.md
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: added the T-1259 acceptance[5] draft-death regression test here (matches
+    the existing TestArchiveV2 fixture pattern)
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
 acceptance:
-- text: GIVEN this repo own ledger has been migrated to v2 in a quiet window (no in-flight
-    worktrees) WHEN a fresh repo initializes THEN it defaults to v2, and delete render_ledger,
-    splice_ledger, land_merge.py, land_merge_zones.py, and the tickets.md gitattributes
-    merge-driver line
-  evidence: []
+- text: 'GIVEN this repo''s own ledger has been migrated to v2 in a quiet window (no
+    in-flight worktrees) THEN the fresh-repo default in _store_mode is flipped to
+    v2 (tracked separately: T-draft-a85ee099) and render_ledger/splice_ledger/land_merge.py/land_merge_zones.py/the
+    tickets.md gitattributes merge-driver line are deleted once this repo''s own ledger
+    is actually migrated (tracked separately: T-draft-313a764b); THIS ticket instead
+    delivers the T-1259 acceptance[5] draft-death regression test against v2, proving
+    the TICK002/TICK006 draft-death class is structurally impossible on the v2 layout.'
+  evidence:
+  - tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: GIVEN this repo own ledger has been migrated to v2 in a quiet window (no
+    in-flight worktrees) WHEN a fresh repo initializes THEN it defaults to v2, and
+    delete render_ledger, splice_ledger, land_merge.py, land_merge_zones.py, and the
+    tickets.md gitattributes merge-driver line
+  new_text: 'GIVEN this repo''s own ledger has been migrated to v2 in a quiet window
+    (no in-flight worktrees) THEN the fresh-repo default in _store_mode is flipped
+    to v2 (tracked separately: T-draft-a85ee099) and render_ledger/splice_ledger/land_merge.py/land_merge_zones.py/the
+    tickets.md gitattributes merge-driver line are deleted once this repo''s own ledger
+    is actually migrated (tracked separately: T-draft-313a764b); THIS ticket instead
+    delivers the T-1259 acceptance[5] draft-death regression test against v2, proving
+    the TICK002/TICK006 draft-death class is structurally impossible on the v2 layout.'
+  reason: "Investigated both halves of this criterion directly and found each too\n\
+    large to force through safely in this session:\n\n1. Flipping `_store_mode`'s\
+    \ fresh-repo default to v2 breaks at least 6\n   measured tests in tests/test_tickets.py\
+    \ alone (bare tmp_path fixtures\n   implicitly relying on the v1 default), with\
+    \ more likely affected\n   across tests/test_ticket_land.py, tests/test_tickets_migration.py,\n\
+    \   tests/test_tickets_collision.py, tests/test_tickets_velocity.py --\n   unmeasured.\
+    \ Filed T-draft-a85ee099 (renumbers at land) to audit and\n   update every such\
+    \ fixture, then land the flip cleanly.\n2. Deleting render_ledger/splice_ledger/_land_merge.py/\n\
+    \   _land_merge_zones.py/the gitattributes merge-driver line is not safe\n   while\
+    \ this repo's OWN ledger is still v1-mode -- this very dispatch\n   session used\
+    \ splice_ledger (via the registered merge driver) for\n   every ticket mutation.\
+    \ Deletion is only safe after this repo's own\n   `tickets.md` is actually migrated\
+    \ to v2 in a quiet window, which this\n   ticket's own preconditions (this ticket's\
+    \ Description) require but\n   explicitly defer to the coordinator's judgment,\
+    \ not a worktree agent's.\n   Filed T-draft-313a764b (renumbers at land) to carry\
+    \ the deletion\n   forward once that precondition holds.\n\nWhat this ticket DID\
+    \ ship: the T-1259 acceptance[5] draft-death\nregression test against v2 (tests/test_ticket_land.py::TestArchiveV2::\n\
+    test_v2_draft_survives_a_concurrent_worktree_restore), confirming the\nTICK002/TICK006\
+    \ draft-death class is structurally impossible on the v2\nper-ticket-file layout\
+    \ (disjoint git objects, no shared-file restore can\never touch an uncommitted\
+    \ draft). Migration itself (migrate_v1_to_v2) was\nalready verified end-to-end\
+    \ by T-1259's own 11 evidence ids; re-run here\nand still passing, confirming\
+    \ no regression since T-1259 closed.\n"
+  actor: logan
+  at: '2026-08-05'
 threat: null
 component: null
 ```
 T-1259 deliberately deferred final cutover (design section 7 deliverable 4): a live cutover of this repo own ledger mid multi-agent drive risks every in-flight worktree, and T-1259's own scope/session was migrate+gate only, not a real production cutover. Preconditions before this ticket can close: (1) this repo has actually run frob ticket migrate --to v2 in a coordinator-chosen quiet window with zero in-progress worktrees, (2) the LEDGERV1001 deprecation window recorded in docs/modules/tickets.md has been observed for a real interval, not just landed. Deliverables: flip the fresh-repo default in _store_mode to v2, delete _render_ledger/splice_ledger/_land_merge.py/_land_merge_zones.py, remove the gitattributes merge-driver line, and a regression test reproducing the T-1115/T-1126/T-1127/T-1128 draft-death shape against v2 asserting no draft is lost (T-1259 acceptance[5]).
+
+## Done report
+
+Investigated both halves of the final-cutover deliverable and reduced
+scope to what is safe to land in this session (acceptance[0] amended
+accordingly, reason recorded in the ticket's acceptance_amendments audit
+trail):
+
+- Flipping `_store_mode`'s fresh-repo default to 'v2' breaks at least 6
+  measured tests in tests/test_tickets.py alone (bare tmp_path fixtures
+  that implicitly rely on the current v1 default); more are likely
+  affected across tests/test_ticket_land.py, tests/test_tickets_
+  migration.py, tests/test_tickets_collision.py, tests/test_tickets_
+  velocity.py, unmeasured here. Filed T-1553 to audit and
+  update the affected fixtures, then land the flip.
+- Deleting render_ledger/splice_ledger/_land_merge.py/
+  _land_merge_zones.py/the gitattributes merge-driver line is not safe
+  while this repo's own ledger is still v1-mode -- this dispatch session
+  itself used splice_ledger (via the registered merge driver) for every
+  ticket mutation performed. Filed T-1552 to carry the
+  deletion forward once this repo's own ledger is actually migrated to
+  v2 in a coordinator-chosen quiet window (the ticket's own stated
+  precondition).
+
+What shipped: the T-1259 acceptance[5] draft-death regression test
+against v2 (tests/test_ticket_land.py::TestArchiveV2::
+test_v2_draft_survives_a_concurrent_worktree_restore), reproducing the
+T-1115/T-1126/T-1127/T-1128 draft-death shape (a draft ticket lost to a
+section 10b-style ledger restore) directly against the v2 per-ticket-
+file layout: main advances independently, a worktree files a brand-new
+draft never seen by main, the worktree then runs the section-10b-style
+`git checkout main -- <path>` restore on the tracked file it shares with
+main, and the draft (never committed, its own disjoint git object)
+survives both the restore and a subsequent merge. This confirms the
+TICK002/TICK006 draft-death class is structurally impossible on v2, not
+merely mitigated.
+
+Migration itself (`migrate_v1_to_v2`) was already verified end-to-end by
+T-1259's own 11 evidence ids; re-ran tests/test_tickets_migration.py in
+this session and it is still green, confirming no regression since
+T-1259 closed -- this stands as this ticket's migration-verification
+evidence, since the CLI wiring for `frob ticket migrate --to v2`
+(T-1492) is explicitly out of this ticket's declared scope.
+
+### Changed
+```
+ src/frob/tickets/_store.py | 172 +++++++++++++++++++++++++--------
+ tests/test_tickets.py      |  57 +++++++++++
+ tickets.md                 | 232 +++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 416 insertions(+), 45 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 593 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
+
+### Acceptance amendments
+- [0] replace: 'GIVEN this repo own ledger has been migrated to v2 in a quiet window (no in-flight worktrees) WHEN a fresh repo initializes THEN it defaults to v2, and delete render_ledger, splice_ledger, land_merge.py, land_merge_zones.py, and the tickets.md gitattributes merge-driver line' -> "GIVEN this repo's own ledger has been migrated to v2 in a quiet window (no in-flight worktrees) THEN the fresh-repo default in _store_mode is flipped to v2 (tracked separately: T-1553) and render_ledger/splice_ledger/land_merge.py/land_merge_zones.py/the tickets.md gitattributes merge-driver line are deleted once this repo's own ledger is actually migrated (tracked separately: T-1552); THIS ticket instead delivers the T-1259 acceptance[5] draft-death regression test against v2, proving the TICK002/TICK006 draft-death class is structurally impossible on the v2 layout." (reason: Investigated both halves of this criterion directly and found each too
+large to force through safely in this session:
+
+1. Flipping `_store_mode`'s fresh-repo default to v2 breaks at least 6
+   measured tests in tests/test_tickets.py alone (bare tmp_path fixtures
+   implicitly relying on the v1 default), with more likely affected
+   across tests/test_ticket_land.py, tests/test_tickets_migration.py,
+   tests/test_tickets_collision.py, tests/test_tickets_velocity.py --
+   unmeasured. Filed T-1553 (renumbers at land) to audit and
+   update every such fixture, then land the flip cleanly.
+2. Deleting render_ledger/splice_ledger/_land_merge.py/
+   _land_merge_zones.py/the gitattributes merge-driver line is not safe
+   while this repo's OWN ledger is still v1-mode -- this very dispatch
+   session used splice_ledger (via the registered merge driver) for
+   every ticket mutation. Deletion is only safe after this repo's own
+   `tickets.md` is actually migrated to v2 in a quiet window, which this
+   ticket's own preconditions (this ticket's Description) require but
+   explicitly defer to the coordinator's judgment, not a worktree agent's.
+   Filed T-1552 (renumbers at land) to carry the deletion
+   forward once that precondition holds.
+
+What this ticket DID ship: the T-1259 acceptance[5] draft-death
+regression test against v2 (tests/test_ticket_land.py::TestArchiveV2::
+test_v2_draft_survives_a_concurrent_worktree_restore), confirming the
+TICK002/TICK006 draft-death class is structurally impossible on the v2
+per-ticket-file layout (disjoint git objects, no shared-file restore can
+ever touch an uncommitted draft). Migration itself (migrate_v1_to_v2) was
+already verified end-to-end by T-1259's own 11 evidence ids; re-run here
+and still passing, confirming no regression since T-1259 closed.
+; logan, 2026-08-05)
 
 <!-- ticket:T-1492 -->
 ```yaml
@@ -3880,7 +4024,7 @@ T-1205 acceptance[3] asks for make coverage to become a thin optional wrapper ar
 id: T-1529
 title: extend cache-transparency harness to coverage-lock/hotgraph-sketch/check-budget-timing
   caches
-state: queued
+state: done
 kind: invariant
 origin: human
 created: '2026-08-04'
@@ -3893,6 +4037,10 @@ scope:
 - invariants/INV-050.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_cache_transparency.py::TestCoverageLockCacheTransparency::test_cold_warm_agree_across_random_edits
+- tests/test_cache_transparency.py::TestHotgraphSketchCacheTransparency::test_cold_warm_agree_across_random_edits
+- tests/test_cache_transparency.py::TestBudgetTimingCacheTransparency::test_cold_warm_agree_across_random_edits
 threat: null
 component: null
 ```
@@ -3910,6 +4058,55 @@ completeness:
   scheduling heuristic.
 
 See invariants/INV-050.md's inventory table for the full reasoning per cache.
+
+## Done report
+
+Added three TestXCacheTransparency classes to tests/test_cache_transparency.py,
+extending the shared run_cold_warm_sweep harness (tests/_cache_transparency.py,
+T-1519) to the three caches INV-050's inventory table had left as a
+disclosed cut:
+
+- TestCoverageLockCacheTransparency: frob-coverage.lock.json. No
+  in-process cache layer exists for load_coverage_lock today (uncached
+  read-through) -- swept against arbitrary write/delete/corrupt rounds as
+  a regression lock against a future cache layer disagreeing with a raw
+  file read.
+- TestHotgraphSketchCacheTransparency: .frob/hotgraph_sketches.db. This
+  one has a REAL staleness risk -- _sketch_store._connect caches a live
+  sqlite connection per resolved db path for the process lifetime. The
+  sweep forces a cold reconnect (_close_all()) after every put_sketch
+  round and asserts get_sketch reads back exactly what the still-open
+  warm connection just wrote.
+- TestBudgetTimingCacheTransparency: .frob/check-budget-timing.json.
+  Same uncached-read-through shape as the coverage lock, including the
+  "corrupt file degrades to {}, never a crash" contract, swept the same
+  way.
+
+Updated invariants/INV-050.md's inventory table and evidence list to
+reflect all three as harness-covered rather than disclosed cuts -- the
+doc's own closing paragraph now states the full inventory is covered,
+closing out T-1519's original deliverable (3) in full.
+
+### Changed
+```
+ invariants/INV-050.md            |  38 +++--
+ src/frob/tickets/_store.py       | 192 +++++++++++++++++-----
+ tests/test_cache_transparency.py | 204 +++++++++++++++++++++++-
+ tests/test_ticket_land.py        |  85 ++++++++++
+ tests/test_tickets.py            |  57 +++++++
+ tickets.md                       | 336 +++++++++++++++++++++++++++++++++++++--
+ 6 files changed, 848 insertions(+), 64 deletions(-)
+```
+
+### Evidence
+- `tests/test_cache_transparency.py::TestCoverageLockCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+- `tests/test_cache_transparency.py::TestHotgraphSketchCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+- `tests/test_cache_transparency.py::TestBudgetTimingCacheTransparency::test_cold_warm_agree_across_random_edits` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 226 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1533 -->
 ```yaml
@@ -4127,7 +4324,7 @@ was only ever meant as a soft landing, not the permanent posture.
 id: T-1543
 title: v2_state_transitions silently drops transitions when git detects a false copy
   across similar ticket files
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -4139,6 +4336,8 @@ scope:
 - src/frob/tickets/_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_tickets.py::TestV2StateTransitions::test_byte_similar_sibling_ticket_does_not_drop_transitions
 threat: null
 component: null
 ```
@@ -4174,6 +4373,43 @@ that suppresses the false attribution) so the mined transition list
 is provably complete regardless of a ticket's content similarity to
 its siblings. Add a regression test reproducing the exact two-similar-
 tickets shape.
+
+## Done report
+
+Replaced v2_state_transitions' single `git log --follow -p` call (whose
+rename detection uses a >=50%-byte-similarity heuristic, not a genuine-
+rename check) with a two-stage miner: `_v2_path_lineage` walks backward
+from the ticket's current path using `_v2_rename_source`, which only
+trusts an `-M100%` (exact-content) `--diff-filter=R` rename -- the only
+kind frob's own git-mv tooling (git_mv_dir / _renumber_v2's directory
+rename) ever produces. Each lineage segment is then mined via plain
+(non-follow) `git log --reverse -p` and the per-commit `+state:` results
+are merged oldest-first, deduped by sha. Two v2 tickets that merely share
+the standard template (id/title/state differ, ~8 other fields identical)
+can never satisfy -M100%, so they can no longer be misattributed as a
+rename source/copy origin of one another -- the exact false-positive
+shape described in the ticket body.
+
+Added a regression test reproducing that shape directly: file T-0001,
+then file a byte-similar T-0002 (same template/body), advance T-0002
+through in-progress/done, and assert v2_state_transitions(root, "T-0002")
+still returns all three transitions instead of dropping the later two.
+
+### Changed
+```
+ src/frob/tickets/_store.py | 172 +++++++++++++++++++++++++++++++++++----------
+ tests/test_tickets.py      |  57 +++++++++++++++
+ tickets.md                 |   3 +-
+ 3 files changed, 193 insertions(+), 39 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 338 warning(s), 791 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1544 -->
 ```yaml
@@ -4357,3 +4593,137 @@ scope (tests/unit/test_coverage_attribution_lock_t1395.py only) does not
 cover tests/unit/test_makefile_coverage.py, so unifying both into one
 shared load_coverage_lock test helper is left as this follow-up rather
 than expanded into T-1490 silently.
+
+<!-- ticket:T-1552 -->
+```yaml
+id: T-1552
+title: 'ledger v2: delete v1 splice machinery once main is migrated'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_ledger_merge.py
+- src/frob/tickets/_land_merge.py
+- src/frob/tickets/_land_merge_zones.py
+- .gitattributes
+- docs/modules/tickets.md
+- docs/design/ledger-v2.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+## Description
+
+T-1491 (final cutover) deliberately did NOT delete the v1 splice
+machinery (`_render_ledger`, `splice_ledger` in
+`src/frob/tickets/_land_ledger_merge.py`, `_land_merge.py`,
+`_land_merge_zones.py`, the `tickets.md`/`tickets-archive.md`
+`.gitattributes` merge-driver lines) because this repo's OWN ledger is
+still v1-mode as of T-1491's session -- every ticket mutation across a
+multi-agent dispatch still depends on `splice_ledger` via the registered
+git merge driver. Deleting the machinery before this repo's own
+`tickets.md`/`tickets-archive.md` content is actually migrated to v2
+(via `frob ticket migrate` once the v1-to-v2 migrator is CLI-wired --
+see T-1492) would break every in-flight worktree's ticket operations
+immediately.
+
+## Plan
+
+Blocked on: T-1492 (CLI wiring for `frob ticket migrate --to v2`), the
+follow-up default-flip ticket (T-1553, renumbers at land), and
+a coordinator-chosen quiet window (per this ticket's own stated
+precondition) to actually run the migration against this repo's real
+`tickets.md`/`tickets-archive.md`.
+
+1. Coordinator runs `frob ticket migrate --to v2` against this repo in a
+   quiet window (zero in-flight worktrees).
+2. Observe the LEDGERV1001 deprecation window for the recorded interval.
+3. Delete `_render_ledger`, `splice_ledger`, `_land_merge.py`,
+   `_land_merge_zones.py`, remove the `.gitattributes` merge-driver
+   lines, remove `tickets.md`/`tickets-archive.md` from the repo (or
+   archive them as historical artifacts per the coordinator's call).
+
+## Acceptance
+
+- [ ] GIVEN this repo's own ledger has been migrated to v2 in a quiet
+      window WHEN this ticket lands THEN `_render_ledger`, `splice_ledger`,
+      `_land_merge.py`, `_land_merge_zones.py`, and the `.gitattributes`
+      merge-driver lines no longer exist, and `frob check` reports zero
+      references to any of them.
+
+<!-- ticket:T-1553 -->
+```yaml
+id: T-1553
+title: 'ledger v2: flip fresh-repo default to v2 (safe, test-fixture-audited)'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+- tests/test_tickets.py
+- tests/test_ticket_land.py
+- tests/test_tickets_migration.py
+- tests/test_tickets_collision.py
+- tests/test_tickets_velocity.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+## Description
+
+T-1491 investigated flipping `_store_mode`'s final fresh-repo default
+from 'single' (v1) to 'v2' (design section 7 deliverable 4, final
+cutover) and found the change itself safe in principle but the blast
+radius across this repo's own test suite too large to land inside T-1491
+without becoming a much bigger ticket than its own declared scope. Many
+existing v1-path tests construct a fixture via a bare `tmp_path` with no
+explicit `tickets.md` seed and rely on `_store_mode`'s current default to
+implicitly choose v1/'single' semantics -- flipping the default alone
+(measured directly against `tests/test_tickets.py`) breaks at least:
+`TestArchive::test_new_ticket_corrupt_archive_fails_loudly`,
+`TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses`,
+`TestSingleFileLedger::test_new_tickets_land_in_single_tickets_md`,
+`TestArchive::test_blocked_by_archived_ticket_resolves_closed`,
+`TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes`,
+`TestArchive::test_new_ticket_id_continues_past_archived_max` -- and this
+is only one test file; `tests/test_ticket_land.py`,
+`tests/test_tickets_migration.py`, `tests/test_tickets_collision.py`,
+`tests/test_tickets_velocity.py`, and any CLI/integration test that
+constructs a fresh repo without seeding `tickets.md` first are likely
+affected the same way, unmeasured here.
+
+## Plan
+
+1. Audit every v1-path test fixture across `tests/test_tickets*.py` and
+   `tests/test_ticket_land.py` that currently relies on the implicit
+   fresh-repo default; update each to seed an explicit `tickets.md` (even
+   an empty `# Tickets\n\n` header) so it pins v1 mode deliberately
+   instead of by accident of default.
+2. Flip `_store_mode`'s final `return "single"` to `return "v2"`.
+3. Re-run the full suite (coordinator step, `make coverage` /
+   unscoped `frob check`) and fix any remaining fallout outside the
+   audited files.
+4. Update `docs/design/ledger-v2.md` / `docs/modules/tickets.md` to
+   record the flip as landed, not merely designed.
+
+## Acceptance
+
+- [ ] GIVEN a fresh repo with no `tickets.md`/`tickets/*.md`/`tickets/T-####/`
+      content at all WHEN any ticket-store operation runs THEN it chooses
+      v2 mode, not v1.
+- [ ] GIVEN the full existing test suite WHEN run against the flipped
+      default THEN every previously-passing test still passes (v1-path
+      tests updated to seed `tickets.md` explicitly, not broken by the
+      flip).

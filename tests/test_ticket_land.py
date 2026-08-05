@@ -186,8 +186,7 @@ def _make_closeable(root: Path, ticket_id: str) -> None:
 # frob:waive WIRE001 reason="autouse=True pytest fixture -- invoked implicitly by \
 # pytest's own fixture-injection machinery on every test in this module, never by a \
 # literal name() call WIRE001's text scan looks for; same detector-gap class as \
-# T-1502/T-1527 (a real-but-non-call-shaped wiring mechanism)" \
-# follow_up="T-1534"
+# T-1502/T-1527 (a real-but-non-call-shaped wiring mechanism)" follow_up="T-1534"
 @pytest.fixture(autouse=True)
 def _isolate_from_host_git_config(monkeypatch: pytest.MonkeyPatch) -> None:
     """T-1393: every fixture repo in this module sets its own LOCAL
@@ -7150,6 +7149,91 @@ class TestArchiveV2:
         assert merged["T-0400"].state == TicketState.DONE
         assert "T-0500" in merged
         assert merged["T-0500"].blocked_by == ("T-0400",)
+
+    # frob:ticket T-1491
+    def test_v2_draft_survives_a_concurrent_worktree_restore(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestArchiveV2.test_v2_draft_survives_a_concurrent_worktree_restore  # noqa: E501
+        """Regression for the T-1115/T-1126/T-1127/T-1128 draft-death
+        shape (T-1259 acceptance[5], carried forward by this ticket): a
+        draft ticket filed into a worktree, followed by the section 10b
+        ledger-restore recipe (`git checkout main -- <ledger>`) another
+        ticket in the SAME worktree runs before finalizing, used to WIPE
+        the draft outright on the v1 monofile path -- because the whole
+        ledger lives in one file, restoring main's copy of that file
+        discards anything the worktree alone had written to it,
+        including a draft nobody else has seen yet.
+
+        On the v2 per-ticket-file path this class is structurally
+        impossible: a draft is its own disjoint `tickets/T-draft-<hex>/
+        ticket.md` file, never a section inside a shared ledger file, so
+        there is no single-file "restore to main's copy" operation that
+        could ever touch it. This reproduces the exact incident shape --
+        main advances (landing an unrelated ticket) while a worktree
+        independently files a draft, then the worktree does the
+        equivalent of the section 10b restore (checking out main's
+        ledger-relevant state) before its own final commit -- and asserts
+        the draft file is untouched by either the restore or a
+        subsequent merge back into main."""
+        from frob.tickets import load_all
+        from frob.tickets._store import v2_ticket_dir
+
+        root = tmp_path / "repo"
+        _git_init(root)
+        self._v2_ticket(root, "T-0900", state=TicketState.QUEUED)
+        _commit_all(root, "seed v2 repo")
+
+        wt = tmp_path / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-draft", str(wt)], root)
+
+        # Main advances independently (an unrelated ticket lands) after
+        # the worktree branched off -- the same "main keeps moving while
+        # you work" backdrop section 10b describes.
+        main_ticket_path = self._v2_ticket(root, "T-1000", state=TicketState.QUEUED)
+        assert main_ticket_path.exists()
+        _commit_all(root, "main files an unrelated ticket")
+
+        # The worktree, unaware of main's advance, files a brand-new
+        # DRAFT (never seen by main, never committed anywhere else) --
+        # the exact "original draft" this incident class loses.
+        draft_path = self._v2_ticket(wt, "T-draft-deadbeef", state=TicketState.QUEUED)
+        assert draft_path.exists()
+
+        # Section 10b's restore recipe, applied here: bring the
+        # worktree's tracked ledger-relevant state in line with main's
+        # BEFORE the worktree's own final commit. On v1 this is
+        # `git checkout main -- tickets.md`, which overwrites the whole
+        # shared file and any draft section it held. On v2 there is no
+        # single shared ledger file to check out -- the closest
+        # structural equivalent is `git checkout main -- tickets/` for
+        # the tracked (committed) subtree, which cannot reach a file
+        # that was never committed in the first place.
+        checkout_result = _run(
+            ["git", "checkout", "main", "--", "tickets/T-1000"], wt
+        )
+        assert checkout_result.returncode == 0, checkout_result.stderr
+
+        # The draft, never committed, is untouched by the restore --
+        # still on disk, still readable.
+        assert draft_path.exists()
+        wt_loaded = load_all(wt)
+        assert wt_loaded.is_ok, wt_loaded.err
+        assert "T-draft-deadbeef" in wt_loaded.danger_ok
+
+        _commit_all(wt, "worktree commits its draft alongside restored state")
+
+        merge_result = _run(["git", "merge", "--no-edit", "feature-draft"], root)
+        assert merge_result.returncode == 0, merge_result.stderr
+
+        merged = load_all(root)
+        assert merged.is_ok, merged.err
+        assert "T-draft-deadbeef" in merged.danger_ok, (
+            "the worktree's draft was lost across restore+merge -- the "
+            "TICK002/TICK006 draft-death shape this test guards against"
+        )
+        assert "T-1000" in merged.danger_ok, "main's own ticket was lost"
+        assert v2_ticket_dir(root, "T-draft-deadbeef").exists()
 
 
 # frob:ticket T-1349
