@@ -3534,7 +3534,7 @@ Order: docs sweep, then the detector-gap audit it feeds, then the artifact clean
 id: T-1610
 title: 'Docs completeness sweep: enumerate the repo''s real surface and document every
   gap'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-05'
