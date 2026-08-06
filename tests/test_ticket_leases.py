@@ -46,11 +46,15 @@ from frob.tickets._leases import (
     _lease_path,
     _LeaseRecord,
     _list_agent_worktrees,
+    lease_age_seconds,
     leases_dir,
     read_all_leases,
+    record_lease,
+    release_lease,
     rename_lease,
     resolve_lease,
     sweep_worktrees,
+    warn_if_worktree_stale,
 )
 from frob.tickets._models import Origin, TicketKind, TicketSpec
 
@@ -1320,3 +1324,206 @@ class TestRenumberMigratesLeaseEndToEnd:
         final_lease_path = _lease_path(resolved.danger_ok, final_id)
         assert not draft_lease_path.exists()
         assert final_lease_path.exists()
+
+
+# frob:ticket T-1650
+class TestWarnIfWorktreeStaleFailureBranches:
+    """T-draft-c74b8c63 (T-1273 TEST005 remainder): `warn_if_worktree_stale`
+    must degrade to a silent no-op on every git/config failure shape it
+    claims to tolerate (its own docstring), not just the "not a git repo
+    at all" case `test_silent_on_non_git_root` already covers -- these
+    exercise the DISTINCT branches: a repo where `main_ref` itself does not
+    resolve, a `rev-list --count` that fails, and a genuinely non-numeric
+    count -- each must still return `None` and log nothing, never raise."""
+
+    # frob:ticket T-1650
+    def test_silent_when_main_ref_does_not_exist(self, second_worktree: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_main_ref_does_not_exist  # noqa: E501
+        import logging
+
+        logger = logging.getLogger("frob.tickets._leases")
+        records: list[str] = []
+
+        class _Capture(logging.Handler):
+            def emit(self, record: logging.LogRecord) -> None:
+                records.append(record.getMessage())
+
+        handler = _Capture()
+        logger.addHandler(handler)
+        try:
+            # `main_ref` names a branch that has never existed in this
+            # fixture repo -- `git merge-base` fails with a nonzero exit,
+            # hitting the `merge_base_result...returncode != 0` branch
+            # distinctly from the "not a git repo at all" `.is_err` branch.
+            warn_if_worktree_stale(second_worktree, "T-0001", main_ref="does-not-exist")
+        finally:
+            logger.removeHandler(handler)
+
+        assert not any("commit(s) behind" in msg for msg in records)
+
+    # frob:ticket T-1650
+    def test_silent_when_rev_list_count_fails(self, second_worktree: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_rev_list_count_fails  # noqa: E501
+        from frob import gitio
+
+        real_run_argv = gitio.run_argv
+
+        def _fail_rev_list(argv: list[str]) -> object:
+            if "rev-list" in argv:
+                return real_run_argv(
+                    ["git", "-C", str(second_worktree), "this-is-not-a-git-subcommand"]
+                )
+            return real_run_argv(argv)
+
+        with patch("frob.tickets._leases.gitio.run_argv", side_effect=_fail_rev_list):
+            # Must not raise even though the rev-list phase's own git
+            # invocation fails -- the `count_result...returncode != 0`
+            # branch, reached only after merge-base already succeeded.
+            warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
+
+    # frob:ticket T-1650
+    def test_silent_when_count_is_not_numeric(self, second_worktree: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_count_is_not_numeric  # noqa: E501
+        from frob import gitio
+
+        real_run_argv = gitio.run_argv
+
+        def _garbage_count(argv: list[str]) -> object:
+            result = real_run_argv(argv)
+            if "rev-list" in argv and result.is_ok:
+                garbled = result.danger_ok.model_copy(
+                    update={"stdout": "not-a-number\n"}
+                )
+                return Ok(garbled)
+            return result
+
+        with patch("frob.tickets._leases.gitio.run_argv", side_effect=_garbage_count):
+            # `int(count_result...stdout.strip())` raises `ValueError` on a
+            # non-numeric count -- must degrade silently, not propagate.
+            warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
+
+    # frob:ticket T-1650
+    def test_silent_when_config_lookup_raises(self, second_worktree: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_config_lookup_raises  # noqa: E501
+        with patch(
+            "frob.tickets._leases._load_stale_worktree_warn_commits",
+            side_effect=KeyError("boom"),
+        ):
+            # The outer `except (KeyError, TypeError)` must swallow a
+            # config-lookup surprise from anywhere inside the try block,
+            # not just from the git calls themselves.
+            warn_if_worktree_stale(second_worktree, "T-0001", main_ref="main")
+
+
+# frob:ticket T-1650
+class TestLeaseAgeSecondsExceptionBranch:
+    """T-draft-c74b8c63: `lease_age_seconds` treats ANY unparseable
+    `recorded_at` as `None` (its docstring's "defensive -- a lease file is
+    peer-writable" contract), not only a `ValueError` from
+    `datetime.fromisoformat` -- covers the broader `except Exception`
+    fallback the `ValueError`-only existing tests never reach."""
+
+    # frob:ticket T-1650
+    def test_none_when_recorded_at_is_not_a_string(self) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLeaseAgeSecondsExceptionBranch.test_none_when_recorded_at_is_not_a_string  # noqa: E501
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=(),
+            worktree="/tmp/wt",
+            branch="main",
+            recorded_at="",
+        )
+        # Force a non-`ValueError` failure inside `datetime.fromisoformat`
+        # by patching it to raise something else entirely -- the second,
+        # broader `except Exception` branch this function's docstring
+        # promises to cover.
+        with patch("frob.tickets._leases.datetime") as mock_datetime:
+            mock_datetime.fromisoformat.side_effect = TypeError("not a valid input")
+            assert lease_age_seconds(record) is None
+
+
+# frob:ticket T-1650
+class TestRecordReleaseRenameLeaseErrorBranches:
+    """T-draft-c74b8c63: `record_lease`/`release_lease`/`rename_lease` are
+    all documented "best-effort" -- an OS-level failure writing, removing,
+    or reading a lease file must degrade to a logged warning and `Ok(None)`,
+    never propagate. These exercise the OSError branches real git fixtures
+    make reachable without mocking the lease layer's own file model."""
+
+    # frob:ticket T-1650
+    def test_record_lease_degrades_on_mkdir_failure(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_mkdir_failure  # noqa: E501
+        with patch(
+            "frob.tickets._leases.Path.mkdir",
+            side_effect=OSError("permission denied"),
+        ):
+            result = record_lease(repo, "T-0001", ("src/x.py",))
+        # Best-effort: a filesystem failure never turns into an `Err` --
+        # the caller's own state transition must proceed regardless.
+        assert result.is_ok
+
+    # frob:ticket T-1650
+    def test_record_lease_degrades_on_write_failure(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_write_failure  # noqa: E501
+        with patch(
+            "frob.tickets._leases.Path.write_text",
+            side_effect=OSError("disk full"),
+        ):
+            result = record_lease(repo, "T-0001", ("src/x.py",))
+        assert result.is_ok
+        # And no lease file exists, since the write never happened.
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        assert not _lease_path(resolved.danger_ok, "T-0001").exists()
+
+    # frob:ticket T-1650
+    def test_release_lease_degrades_on_unlink_failure(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_release_lease_degrades_on_unlink_failure  # noqa: E501
+        recorded = record_lease(repo, "T-0002", ("src/y.py",))
+        assert recorded.is_ok
+
+        with patch(
+            "frob.tickets._leases.Path.unlink",
+            side_effect=OSError("permission denied"),
+        ):
+            result = release_lease(repo, "T-0002")
+        assert result.is_ok
+
+    # frob:ticket T-1650
+    def test_rename_lease_degrades_on_malformed_old_record(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_malformed_old_record  # noqa: E501
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        leases_root = resolved.danger_ok
+        leases_root.mkdir(parents=True, exist_ok=True)
+        old_path = _lease_path(leases_root, "T-0003")
+        old_path.write_text("not valid json{{{", encoding="utf-8")
+
+        result = rename_lease(repo, "T-0003", "T-0004")
+        # Malformed old record -> `model_validate_json` raises `ValueError`
+        # -> best-effort no-op, and the malformed file is left in place
+        # (never partially renamed).
+        assert result.is_ok
+        assert old_path.exists()
+        new_path = _lease_path(leases_root, "T-0004")
+        assert not new_path.exists()
+
+    # frob:ticket T-1650
+    def test_rename_lease_degrades_on_write_failure(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_write_failure  # noqa: E501
+        recorded = record_lease(repo, "T-0005", ("src/z.py",))
+        assert recorded.is_ok
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        old_path = _lease_path(resolved.danger_ok, "T-0005")
+        assert old_path.exists()
+
+        with patch(
+            "frob.tickets._leases.Path.write_text",
+            side_effect=OSError("disk full"),
+        ):
+            result = rename_lease(repo, "T-0005", "T-0006")
+        assert result.is_ok
+        # The old lease survives untouched since the rename's write step
+        # (which precedes the unlink) never succeeded.
+        assert old_path.exists()

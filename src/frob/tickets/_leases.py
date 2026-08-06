@@ -228,6 +228,7 @@ class _LeaseRecord(BaseModel):
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_computes_elapsed_time kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_none_for_unparseable_timestamp kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLeaseAgeSecondsExceptionBranch.test_none_when_recorded_at_is_not_a_string kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'defensive, a lease file is peer-writable' None-on-failure contract to cover any unresolvable timestamp, not just ValueError -- no observable behavior change, so docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def lease_age_seconds(
@@ -371,6 +372,8 @@ def _probe_worktree_liveness(worktree: str) -> str:
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_mkdir_failure kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_write_failure kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def record_lease(
     root: Path, ticket_id: str, scope: tuple[str, ...]
@@ -439,6 +442,7 @@ def record_lease(
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_release_on_close_removes_the_lease kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_release_lease_degrades_on_unlink_failure kind="unit"  # noqa: E501
 def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     """Remove `ticket_id`'s cross-worktree lease file, if any (T-0473) --
     called by `frob.tickets.transition` whenever a ticket LEAVES
@@ -465,6 +469,8 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_is_a_no_op_when_no_lease_exists_for_old_id kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_malformed_old_record kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_rename_lease_degrades_on_write_failure kind="unit"  # noqa: E501
 def rename_lease(root: Path, old_id: str, new_id: str) -> Result[None, LeaseError]:
     """Migrate `old_id`'s cross-worktree lease file (if any) to `new_id`
     (T-1173): `renumber_one`'s draft-to-final rename rewrites the ticket's
@@ -619,6 +625,10 @@ def _load_stale_worktree_warn_commits(root: Path) -> int:
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_when_within_threshold kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_respects_configured_threshold kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_main_ref_does_not_exist kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_rev_list_count_fails kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_count_is_not_numeric kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_config_lookup_raises kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'best-effort and non-fatal' silent-no-op contract to cover any git-result-shape surprise, not just the .is_err-checked cases -- no observable behavior change, so docs/modules/tickets.md#stale-worktree-cut-warning-t-1059 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def warn_if_worktree_stale(
     root: Path, ticket_id: str, *, main_ref: str = "main"
