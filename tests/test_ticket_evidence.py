@@ -63,16 +63,17 @@ class TestSetKind:
         assert reloaded.danger_ok.tickets[ticket_id].kind == TicketKind.DOCS
 
     def test_audit_trail_present(self, tmp_path: Path) -> None:
-        """A kind change is logged the same way `set_priority` logs one --
-        no separate audit-entry list exists for either field (T-0834
-        mirrors T-0411's field-only, log-only audit trail exactly)."""
+        """A kind change is logged the same way `set_priority` logs one
+        (T-0834's field-only, log-only audit trail). T-1616 additionally
+        appends to `kind_history` when the ticket already carries evidence
+        or a Done report -- a fresh ticket with neither does NOT append
+        (see `TestKindHistory` below for that case)."""
         # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_audit_trail_present
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
         result = set_kind(tmp_path, ticket_id, TicketKind.SECURITY)
         assert result.is_ok
-        # No dedicated audit-log field on Ticket for kind (same as
-        # priority) -- the write itself + the INFO log line IS the trail.
         assert result.danger_ok.kind == TicketKind.SECURITY
+        assert result.danger_ok.kind_history == ()
 
     def test_terminal_state_matches_priority(self, tmp_path: Path) -> None:
         """`set_kind` on a `done` ticket behaves exactly like `set_priority`
@@ -207,3 +208,106 @@ class TestEvidenceCmdCwd:
             )
         assert result.is_err
         assert any(str(tmp_path) in record.getMessage() for record in caplog.records)
+
+
+class TestKindHistory:
+    """T-1616: `set_kind` records a `kind_history` entry when the ticket
+    already carries evidence and/or a substantive Done report -- a change
+    made before any work started stays silent, matching pre-T-1616
+    behavior exactly."""
+
+    def test_change_before_any_work_not_recorded(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
+        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE)
+        assert result.is_ok
+        assert result.danger_ok.kind_history == ()
+
+    def test_change_after_evidence_recorded(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded  # noqa: E501
+        from frob.tickets._evidence import add_evidence
+
+        ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
+        added = add_evidence(
+            tmp_path, ticket_id, ("tests/test_ticket_evidence.py::TestSetKind",)
+        )
+        assert added.is_ok
+
+        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE)
+        assert result.is_ok
+        assert len(result.danger_ok.kind_history) == 1
+        entry = result.danger_ok.kind_history[0]
+        assert "bug->feature" in entry
+        assert "evidence=1" in entry
+
+    def test_change_after_done_report_recorded(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_after_done_report_recorded  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG, with_done_report=True)
+        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE)
+        assert result.is_ok
+        assert len(result.danger_ok.kind_history) == 1
+        assert "done_report=yes" in result.danger_ok.kind_history[0]
+
+    def test_history_is_append_only(self, tmp_path: Path) -> None:
+        """A second post-evidence reclassification appends a SECOND entry,
+        never overwriting the first."""
+        # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_history_is_append_only  # noqa: E501
+        from frob.tickets._evidence import add_evidence
+
+        ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
+        assert add_evidence(
+            tmp_path, ticket_id, ("tests/test_ticket_evidence.py::TestSetKind",)
+        ).is_ok
+        assert set_kind(tmp_path, ticket_id, TicketKind.FEATURE).is_ok
+        result = set_kind(tmp_path, ticket_id, TicketKind.DOCS)
+        assert result.is_ok
+        assert len(result.danger_ok.kind_history) == 2
+        assert "bug->feature" in result.danger_ok.kind_history[0]
+        assert "feature->docs" in result.danger_ok.kind_history[1]
+
+
+class TestKindHistoryLandNotice:
+    """T-1616: `frob ticket land` logs a loud WARNING for every
+    `kind_history` entry a landing ticket carries."""
+
+    def test_notice_logged_at_land(self, caplog: pytest.LogCaptureFixture) -> None:
+        # frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_notice_logged_at_land  # noqa: E501
+        from datetime import date
+
+        from frob.tickets._land import _warn_kind_history_at_land
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+
+        ticket = Ticket(
+            id="T-9001",
+            title="t",
+            state=TicketState.DONE,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date.today(),
+            kind_history=("2026-08-06 bug->feature evidence=1 done_report=yes",),
+        )
+        with caplog.at_level("WARNING"):
+            _warn_kind_history_at_land(ticket)
+        assert any(
+            "T-9001" in record.getMessage() and "bug->feature" in record.getMessage()
+            for record in caplog.records
+        )
+
+    def test_no_history_no_notice(self, caplog: pytest.LogCaptureFixture) -> None:
+        # frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_no_history_no_notice  # noqa: E501
+        from datetime import date
+
+        from frob.tickets._land import _warn_kind_history_at_land
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+
+        ticket = Ticket(
+            id="T-9002",
+            title="t",
+            state=TicketState.DONE,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date.today(),
+        )
+        with caplog.at_level("WARNING"):
+            _warn_kind_history_at_land(ticket)
+        assert not any("T-9002" in record.getMessage() for record in caplog.records)

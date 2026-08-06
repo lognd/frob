@@ -809,6 +809,40 @@ pass, matching WAIVE001's existing "reason is mandatory" contract for
 every other waiver in this repo. Every waive (with or without a reason) is
 logged at `WARNING`, same visibility class as `--skip-mutation-evidence`.
 
+**`frob:no-behavior-change reason="..."` INVERTS the obligation, never
+skips it (T-1616).** BUG002 is unsatisfiable BY CONSTRUCTION for a pure
+refactor or deletion, where the whole point is that behavior did NOT
+change -- "the designated test genuinely fails at the parent" proves the
+OPPOSITE of that claim. Before T-1616 the only path forward was
+reclassifying the ticket's `kind` to `feature` (dodging BUG002 entirely,
+invisibly) or `frob:waive BUG002` (skipping the check, no evidence for the
+"unchanged" claim either). `_no_behavior_change_reason` scans `ticket.body`
+for `frob:no-behavior-change reason="..."` with the same shape/precedent
+as the waiver regex just above. When present, `bug_repro_violations`
+swaps direction: the designated test must PASS at the parent (proving
+nothing changed there either -- `_no_behavior_change_message`'s framing);
+a genuine FAILED_AT_PARENT is now the violation, since it falsifies the
+ticket's own "nothing behavioral changed" claim. `NO_VERDICT` still
+degrades to no violation regardless of direction -- an infra/kill-switch
+gap is not evidence against either claim. A bare directive with no
+parseable `reason=` is treated as ABSENT, same as the waiver.
+
+**Kind changes after evidence exists are recorded and surfaced, not
+silent (T-1616).** `frob ticket kind <id> <kind>` (`set_kind`,
+`src/frob/tickets/_setters.py`) appends a `kind_history` entry
+(`Ticket.kind_history`, docs/modules/tickets.md#data-models) whenever the
+new kind differs from the old AND the ticket already carries bound
+evidence and/or a substantive Done report -- i.e. a change that could
+plausibly be relaxing an already-earned evidence obligation, exactly the
+"bug relabeled to feature after the Done report already certified
+behavior-preserving work" shape T-1616 diagnosed. A fresh, pre-work
+reclassification (no evidence, no Done report yet) is ordinary and does
+NOT append. `frob ticket land` (`_warn_kind_history_at_land`,
+`src/frob/tickets/_land.py`) logs a loud `WARNING` for every entry a
+landing ticket carries, naming the old kind, the new kind, and when it
+happened -- so a reviewer sees the reclassification at land time instead
+of having to notice it by reading frontmatter.
+
 **Wired (T-1427).** `bug_repro_violations` is registered in
 `frob.gates._KNOWN_GATE_RULES` (`src/frob/gates/_waive.py`, its actual
 definition site -- `src/frob/gates/__init__.py` only imports/re-exports

@@ -1325,6 +1325,16 @@ class Ticket(BaseModel):
     # waive.
     scope_changes: tuple[ScopeChangeEntry, ...] = ()
     evidence: tuple[str, ...] = ()
+    # frob:ticket T-1616
+    # append-only audit trail of every `frob ticket kind` change made
+    # AFTER this ticket already carried evidence and/or a substantive
+    # Done report -- makes a post-hoc reclassification (e.g. bug -> feature
+    # to dodge BUG002, T-1616) visible in the ledger and at land time
+    # instead of a silent frontmatter edit. A kind change on a fresh
+    # ticket (no evidence, no Done report yet) is ordinary and does NOT
+    # append here -- only a change that could plausibly be relaxing an
+    # already-earned evidence obligation.
+    kind_history: tuple[str, ...] = ()
     # frob:ticket T-0571
     # append-only structured adversarial-review records (`frob ticket
     # review`), each naming the commit reviewed -- `close --strict` (T-0571)

@@ -112,8 +112,11 @@ def set_priority(
 
 
 # frob:ticket T-0834
+# frob:ticket T-1616
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
+# frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded  # noqa: E501
+# frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
 def set_kind(
     root: Path, ticket_id: str, kind: TicketKind
 ) -> Result[Ticket, TicketError]:
@@ -121,8 +124,54 @@ def set_kind(
     single-writer way to correct a mis-filed kind instead of hand-editing
     `tickets.md` frontmatter, same ledger-locked, no-terminal-state-check
     pattern `set_priority` uses. A no-op write (still logged) if `kind`
-    already matches."""
-    return _set_ticket_field(root, ticket_id, "kind", kind, log_value=kind.value)
+    already matches.
+
+    T-1616: if the ticket already carries evidence and/or a substantive
+    Done report at the moment of the change -- i.e. this is not a fresh,
+    pre-work reclassification but one that could be relaxing an
+    already-earned evidence obligation (a `bug`-kind ticket becoming
+    `feature` to dodge BUG002 is the motivating case) -- the change is
+    also appended to `kind_history` (never edited, only appended), so a
+    reviewer or `frob ticket land` can see it happened instead of reading
+    a silent frontmatter edit."""
+    from frob.tickets import _load_ticket_and_queue
+    from frob.tickets._models import has_substantive_done_report
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        update: dict[str, object] = {"kind": kind}
+        history_entry: str | None = None
+        if kind != ticket.kind and (
+            ticket.evidence or has_substantive_done_report(ticket.body)
+        ):
+            done_report = has_substantive_done_report(ticket.body)
+            history_entry = (
+                f"{date.today().isoformat()} {ticket.kind.value}->{kind.value} "
+                f"evidence={len(ticket.evidence)} "
+                f"done_report={'yes' if done_report else 'no'}"
+            )
+            update["kind_history"] = (*ticket.kind_history, history_entry)
+        updated = ticket.model_copy(update=update)
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s kind set to %s", ticket_id, kind.value)
+    if history_entry is not None:
+        _log.warning(
+            "tickets: %s kind changed from %s to %s AFTER evidence/Done-report "
+            "already existed -- recorded in kind_history: %s",
+            ticket_id,
+            ticket.kind.value,
+            kind.value,
+            history_entry,
+        )
+    return Ok(updated)
 
 
 # frob:ticket T-1069

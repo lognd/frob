@@ -2516,6 +2516,26 @@ def _resolve_main_branch_for_land(
     return Ok(main_branch.danger_ok)
 
 
+# frob:ticket T-1616
+# frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_notice_logged_at_land  # noqa: E501
+# frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_no_history_no_notice  # noqa: E501
+def _warn_kind_history_at_land(ticket: Ticket) -> None:
+    """T-1616: log a loud, un-missable notice at land time for every
+    `kind_history` entry a ticket carries -- "this was kind X when the
+    work was done and became kind Y before it landed" instead of a
+    reviewer discovering the reclassification only by reading
+    frontmatter. A no-op when `kind_history` is empty (the overwhelmingly
+    common case: no post-evidence reclassification ever happened)."""
+    for entry in ticket.kind_history:
+        _log.warning(
+            "land: %s was reclassified AFTER evidence/Done-report existed: %s "
+            "-- review whether the new kind's evidence obligations (e.g. "
+            "BUG002) are still honestly satisfied",
+            ticket.id,
+            entry,
+        )
+
+
 # frob:ticket T-1355
 def _land_precheck(
     root: Path,
@@ -2546,6 +2566,7 @@ def _land_precheck(
     if loaded_ticket.is_err:
         return Err(loaded_ticket.danger_err)
     ticket = loaded_ticket.danger_ok
+    _warn_kind_history_at_land(ticket)
 
     # T-1326: main_branch is resolved here, ahead of its original position
     # further down, purely so the committed-waiver check (which needs it

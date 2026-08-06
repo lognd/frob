@@ -152,6 +152,25 @@ _BUG_REPRO_WORKTREE_TIMEOUT_S = 30.0
 #: rather than a silent pass.
 _BUG002_WAIVER_RE = re.compile(r'frob:waive\s+BUG002\s+reason="([^"]*)"')
 
+#: `frob:no-behavior-change reason="..."` (T-1616): the honest home for
+#: refactor/deletion-shaped work filed as `bug`/`security` kind (there is
+#: no `refactor` kind -- T-1616's own text weighed adding one against a
+#: body-text attribute and picked the attribute, mirroring
+#: `_BUG002_WAIVER_RE`'s precedent immediately above rather than adding a
+#: new `Ticket` field + CLI verb for a single gate's own obligation-swap).
+#: When present, BUG002's whole check INVERTS (see `bug_repro_violations`)
+#: instead of being skipped: the designated evidence test must PASS at the
+#: parent commit (proving behavior is unchanged there too), and a genuine
+#: FAILURE at the parent becomes the violation -- the work's own claim
+#: ("nothing behavioral changed") would be falsified by its own repro
+#: test failing at the pre-change commit. This keeps a real, mechanically
+#: checked obligation rather than removing one, per T-1616's requirement
+#: that reclassification-shaped work get a swapped obligation, not a
+#: skipped one. Same `reason="..."` requirement as `_BUG002_WAIVER_RE`; a
+#: bare directive with no parseable reason is treated as ABSENT (the
+#: ordinary defect-repro check still runs).
+_NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"')
+
 
 class _BugReproOutcome(Enum):
     """The four possible outcomes of running BUG002's single designated
@@ -185,6 +204,18 @@ def _bug002_waiver_reason(ticket: Ticket) -> str | None:
     waiver is present. See `_BUG002_WAIVER_RE`'s comment for why this scans
     the ticket body directly instead of going through `frob.gates._waive`."""
     match = _BUG002_WAIVER_RE.search(ticket.body)
+    return match.group(1) if match else None
+
+
+# frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_reason_present_recognized  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_bare_directive_without_reason_not_recognized  # noqa: E501
+def _no_behavior_change_reason(ticket: Ticket) -> str | None:
+    """The `reason="..."` text of a `frob:no-behavior-change reason="..."`
+    line found anywhere in `ticket.body` (T-1616), or `None` if absent.
+    Same body-text-scan rationale as `_bug002_waiver_reason` immediately
+    above -- `tickets.md` is excluded from `frob.graph`'s doc/source walk,
+    so this directive can only ever live here, scanned directly."""
+    match = _NO_BEHAVIOR_CHANGE_RE.search(ticket.body)
     return match.group(1) if match else None
 
 
@@ -338,12 +369,37 @@ def _bug002_message(ticket_id: str, test_id: str, base_ref: str) -> str:
         f"not prove the defect it describes was actually fixed, only that "
         f"new code exists. Remedy: (1) bind evidence that genuinely fails "
         f"at {base_ref} and passes at the fix (a test that reaches the "
-        f"real caller/wiring the defect was about), or (2) if this defect "
+        f"real caller/wiring the defect was about), (2) if this is really "
+        f"a refactor/deletion with no intended behavior change (T-1616), "
+        f'add `frob:no-behavior-change reason="..."` to the ticket body '
+        f"-- BUG002 will then require the OPPOSITE (the test must PASS at "
+        f"{base_ref}) instead of skipping the check, or (3) if this defect "
         f"genuinely cannot be reproduced in a test (a nondeterministic "
         f"crash, an environment the suite cannot create, a ledger/doc "
         f"correction filed as kind=bug), add `frob:waive BUG002 "
         f'reason="..."` to the ticket body explaining why, in the same '
         f"spirit as `frob ticket land --skip-mutation-evidence`."
+    )
+
+
+def _no_behavior_change_message(ticket_id: str, test_id: str, base_ref: str) -> str:
+    """T-1616's inverted BUG002 message: fires when a ticket claims `frob:
+    no-behavior-change` but its own designated evidence test FAILED at the
+    parent commit -- the exact opposite failure mode of the ordinary
+    `_bug002_message`, and it means the claim itself is false: something
+    behavioral DID change, contradicted by the ticket's own repro."""
+    return (
+        f"BUG002: {ticket_id} claims `frob:no-behavior-change` but its "
+        f"designated evidence test {test_id!r} FAILED at the parent commit "
+        f"({base_ref}) -- that contradicts the claim: a test that fails "
+        f"before this ticket's change and (presumably) passes after it "
+        f"means something DID behave differently, not nothing. Remedy: "
+        f"(1) confirm the change really is behavior-preserving and bind "
+        f"evidence that passes at both {base_ref} and the fix (a "
+        f"characterization test of the touched seam, not a new-behavior "
+        f"test), or (2) if this genuinely is a behavioral fix, drop the "
+        f"`frob:no-behavior-change` claim and let BUG002's ordinary "
+        f"defect-repro check apply instead."
     )
 
 
@@ -357,6 +413,9 @@ def _bug002_message(ticket_id: str, test_id: str, base_ref: str) -> str:
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_passed_at_parent_is_error_violation  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_failed_at_parent_no_violation  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_no_verdict_no_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_passed_at_parent_no_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_failed_at_parent_is_error_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_no_verdict_no_violation  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_uncalled_guard_passes_at_both_is_refused kind="integration"  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_wired_guard_fails_at_parent_is_permitted kind="integration"  # noqa: E501
 def bug_repro_violations(
@@ -406,6 +465,37 @@ def bug_repro_violations(
         )
         return ()
     outcome = _bug_repro_outcome_at_ref(root, test_id, base_ref)
+
+    # T-1616: a `frob:no-behavior-change reason="..."` claim SWAPS the
+    # obligation rather than skipping it -- refactor/deletion-shaped work
+    # whose entire point is that behavior did NOT change cannot honestly
+    # satisfy "the designated test fails at the parent" (that would prove
+    # the OPPOSITE of the claim). Instead: the designated test must PASS
+    # at the parent (unchanged there too); a genuine FAILED_AT_PARENT
+    # falsifies the claim and is the violation. NO_VERDICT still degrades
+    # to no violation either way -- an infra/kill-switch gap is not
+    # evidence against either claim.
+    no_behavior_change_reason = _no_behavior_change_reason(ticket)
+    if no_behavior_change_reason is not None:
+        _log.warning(
+            "BUG002: %s claims frob:no-behavior-change reason=%r -- "
+            "checking the INVERTED obligation (designated test must PASS "
+            "at the parent)",
+            ticket.id,
+            no_behavior_change_reason,
+        )
+        if outcome is not _BugReproOutcome.FAILED_AT_PARENT:
+            return ()
+        return (
+            Violation(
+                rule="BUG002",
+                severity=Severity.ERROR,
+                file="tickets.md",
+                line=0,
+                message=_no_behavior_change_message(ticket.id, test_id, base_ref),
+            ),
+        )
+
     if outcome is not _BugReproOutcome.PASSED_AT_PARENT:
         return ()
     return (

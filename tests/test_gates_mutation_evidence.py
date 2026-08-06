@@ -142,6 +142,78 @@ class TestBug002Waiver:
         assert _bug002_waiver_reason(_bug_ticket()) is None
 
 
+class TestNoBehaviorChange:
+    """`_no_behavior_change_reason` (T-1616): parses `frob:no-behavior-
+    change reason="..."` out of a ticket's body, same shape/precedent as
+    `_bug002_waiver_reason`."""
+
+    def test_reason_present_recognized(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_reason_present_recognized  # noqa: E501
+        from frob.gates._mutation_evidence import _no_behavior_change_reason
+
+        body = (
+            "## Description\npure extraction, same call order\n"
+            'frob:no-behavior-change reason="split ARCH001 function, no semantic change"\n'  # noqa: E501
+        )
+        assert _no_behavior_change_reason(_bug_ticket(body=body)) == (
+            "split ARCH001 function, no semantic change"
+        )
+
+    def test_bare_directive_without_reason_not_recognized(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_bare_directive_without_reason_not_recognized  # noqa: E501
+        from frob.gates._mutation_evidence import _no_behavior_change_reason
+
+        body = "## Description\nfrob:no-behavior-change\n"
+        assert _no_behavior_change_reason(_bug_ticket(body=body)) is None
+
+    def test_no_directive_at_all(self) -> None:
+        from frob.gates._mutation_evidence import _no_behavior_change_reason
+
+        assert _no_behavior_change_reason(_bug_ticket()) is None
+
+
+class TestBugReproViolationsNoBehaviorChange:
+    """BUG002's INVERTED obligation (T-1616) when `frob:no-behavior-change
+    reason="..."` is present: the designated test must PASS at the parent
+    (proving nothing changed there either); a genuine FAILURE at the
+    parent is the violation."""
+
+    _BODY = '## Description\nx\nfrob:no-behavior-change reason="pure extraction"\n'
+
+    def test_passed_at_parent_no_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_passed_at_parent_no_violation  # noqa: E501
+        ticket = _bug_ticket(body=self._BODY)
+        with patch(
+            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            return_value=_BugReproOutcome.PASSED_AT_PARENT,
+        ):
+            violations = bug_repro_violations(tmp_path, ticket, "main")
+        assert violations == ()
+
+    def test_failed_at_parent_is_error_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_failed_at_parent_is_error_violation  # noqa: E501
+        ticket = _bug_ticket(body=self._BODY)
+        with patch(
+            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            return_value=_BugReproOutcome.FAILED_AT_PARENT,
+        ):
+            violations = bug_repro_violations(tmp_path, ticket, "main")
+        assert len(violations) == 1
+        assert violations[0].rule == "BUG002"
+        assert violations[0].severity == "error"
+        assert "no-behavior-change" in violations[0].message
+
+    def test_no_verdict_no_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_no_verdict_no_violation  # noqa: E501
+        ticket = _bug_ticket(body=self._BODY)
+        with patch(
+            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            return_value=_BugReproOutcome.NO_VERDICT,
+        ):
+            violations = bug_repro_violations(tmp_path, ticket, "main")
+        assert violations == ()
+
+
 class TestDesignatedReproTest:
     def test_first_pytest_node_id_is_designated(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_first_pytest_node_id_is_designated  # noqa: E501

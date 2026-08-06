@@ -3629,6 +3629,7 @@ Method, in this order, because deletion is the irreversible part:
 4. Re-run the full gate set afterwards. A deletion that silently reduces coverage or orphans a doc edge is the failure mode; the obligation graph should catch it, and if it does not, that is itself a finding worth a ticket.
 
 Do not delete anything an in-flight ticket references. That is the whole reason this is gated behind the rest of the queue.
+
 <!-- ticket:T-1613 -->
 ```yaml
 id: T-1613
@@ -3787,7 +3788,7 @@ Test shape: for every ledger-writing verb, assert the working tree is CLEAN afte
 id: T-1616
 title: BUG002 is unsatisfiable for a pure refactor, and reclassifying kind silently
   dodges it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -3803,6 +3804,18 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates_mutation_evidence.py::TestNoBehaviorChange::test_reason_present_recognized
+- tests/test_gates_mutation_evidence.py::TestNoBehaviorChange::test_bare_directive_without_reason_not_recognized
+- tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange::test_passed_at_parent_no_violation
+- tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange::test_failed_at_parent_is_error_violation
+- tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange::test_no_verdict_no_violation
+- tests/test_ticket_evidence.py::TestKindHistory::test_change_before_any_work_not_recorded
+- tests/test_ticket_evidence.py::TestKindHistory::test_change_after_evidence_recorded
+- tests/test_ticket_evidence.py::TestKindHistory::test_change_after_done_report_recorded
+- tests/test_ticket_evidence.py::TestKindHistory::test_history_is_append_only
+- tests/test_ticket_evidence.py::TestKindHistoryLandNotice::test_notice_logged_at_land
+- tests/test_ticket_evidence.py::TestKindHistoryLandNotice::test_no_history_no_notice
 threat: null
 component: null
 ```
@@ -3823,6 +3836,72 @@ Two things to fix, and the second matters more than the first:
 2. Make reclassification visible. Changing kind on a ticket that already has evidence or a Done report should be recorded in the ledger and surfaced at land, so a reviewer sees "this was a bug when the work was done and became a feature before it landed" instead of a silent edit. Kind changes before any work starts are ordinary; kind changes that relax an evidence obligation after the fact are the ones worth showing.
 
 Related: this is the same family as the empty-diff TEST016 refusals seen when a shared series worktree lands its whole branch -- an evidence rule correctly firing on a shape its author did not anticipate. The fix in both cases is to give the unanticipated shape its own honest path, never to weaken the rule.
+
+## Done report
+
+Gave refactor/deletion-shaped work filed as kind=bug/security an honest,
+mechanically-checked evidence obligation instead of a skip/reclassify
+dodge, and made post-hoc kind reclassification visible at land time.
+
+1. `frob:no-behavior-change reason="..."` (ticket body directive, same
+   scan/precedent as the existing `frob:waive BUG002` regex) INVERTS
+   BUG002's obligation rather than skipping it: the designated evidence
+   test must PASS at the parent commit (proving nothing changed there
+   either), and a genuine FAILURE at the parent is now the violation --
+   it falsifies the ticket's own "nothing behavioral changed" claim.
+   NO_VERDICT still degrades to no violation either way. Implemented in
+   src/frob/gates/_mutation_evidence.py (_no_behavior_change_reason,
+   _no_behavior_change_message, the swap branch in bug_repro_violations).
+
+2. `Ticket.kind_history` (src/frob/tickets/_models.py): append-only audit
+   trail. `set_kind` (src/frob/tickets/_setters.py) appends an entry
+   ("<date> <old>-><new> evidence=<n> done_report=<yes/no>") whenever the
+   new kind differs from the old AND the ticket already carries bound
+   evidence and/or a substantive Done report -- a fresh, pre-work
+   reclassification stays silent, matching pre-T-1616 behavior exactly.
+   `frob ticket land` (_warn_kind_history_at_land in
+   src/frob/tickets/_land.py, called from _land_precheck) logs a loud
+   WARNING for every kind_history entry a landing ticket carries.
+
+Docs: docs/modules/gates.md's BUG002 section documents both the inversion
+mechanism and the kind_history/land-notice mechanism; docs/modules/
+tickets.md#data-models documents the new field.
+
+Filed T-1670 (renumbers at land) for the evidence-validation
+follow-up (designated-repro-order visibility + node-id shape validation
+at bind time) named in the dispatch brief -- kept separate since it is
+independent CLI-surface work, not part of BUG002's own obligation shape.
+
+Cut: no new `refactor` TicketKind was added (weighed against the body-
+text-directive approach and the directive was chosen -- no CLI/model
+surface expansion needed, and it stays consistent with the existing
+frob:waive BUG002 precedent in the same file). If a future need arises
+for a `refactor` kind as a first-class TEST016/other-gate signal beyond
+BUG002 specifically, that is a new ticket, not silently folded in here.
+
+### Changed
+```
+ tickets.md | 75 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 73 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_mutation_evidence.py::TestNoBehaviorChange::test_reason_present_recognized` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestNoBehaviorChange::test_bare_directive_without_reason_not_recognized` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange::test_passed_at_parent_no_violation` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange::test_failed_at_parent_is_error_violation` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange::test_no_verdict_no_violation` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestKindHistory::test_change_before_any_work_not_recorded` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestKindHistory::test_change_after_evidence_recorded` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestKindHistory::test_change_after_done_report_recorded` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestKindHistory::test_history_is_append_only` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestKindHistoryLandNotice::test_notice_logged_at_land` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestKindHistoryLandNotice::test_no_history_no_notice` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 11 passed (from 11 evidence id(s))
+- gates: 0 error(s), 6110 warning(s), 711 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1617 -->
 ```yaml
@@ -4781,6 +4860,7 @@ Plan (from T-1552's own Description):
    quiet window (zero in-flight worktrees).
 2. Observe the LEDGERV1001 deprecation window for the recorded interval.
 3. Once stable, T-1552 unblocks and can delete the v1 splice machinery.
+
 <!-- ticket:T-1633 -->
 ```yaml
 id: T-1633
@@ -7000,3 +7080,63 @@ WHY V2 MAKES THIS NATURAL RATHER THAN BOLTED ON:
 - a lost field requires two writers to the SAME file, which the ownership rule forbids
 
 SEQUENCING: T-1631 migrates main's own ledger to v2 (coordinator task, quiet window, `frob ticket migrate --to v2`). T-1552 then deletes the v1 splice machinery. The ownership check and promotion path should be built correct-on-v2 and merely non-breaking on v1 -- do not design around the monofile that is being retired.
+
+<!-- ticket:T-1670 -->
+```yaml
+id: T-1670
+title: 'frob ticket evidence: designate repro test explicitly + validate node-id shape
+  at bind time'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner/**
+- src/frob/gates/**
+- docs/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Two distinct evidence-binding defects, both currently diagnosed only at
+land time, both recoverable but expensive to diagnose after the fact.
+
+1. ORDER IS LOAD-BEARING AND INVISIBLE. `_designated_repro_test` in
+   src/frob/gates/_mutation_evidence.py takes the FIRST pytest-node-id in
+   `ticket.evidence` as the test BUG002 re-runs at the parent commit.
+   Agents naturally bind pre-existing (already-passing-everywhere) tests
+   first and their new repro test second, so the designated repro passes
+   at parent and the land refuses -- not because the evidence is wrong,
+   but because of bind ORDER, a property nothing in `frob ticket evidence`
+   surfaces at bind time. Observed on T-1652, T-1653, T-1635. There is no
+   reorder verb today -- the workaround is a `--replace` swap plus
+   re-adding the displaced id.
+
+   Fix: let a ticket DESIGNATE its repro test explicitly -- a flag on
+   `frob ticket evidence` (e.g. `--designate-repro`) that marks one bound
+   id as BUG002's designated test regardless of bind order, stored
+   explicitly rather than inferred positionally. Surface which id is
+   currently designated whenever evidence is shown (`frob ticket show`).
+
+2. MALFORMED IDS ACCEPTED SILENTLY. This graph's convention is
+   `path::Class.method` -- one `::` then a DOTTED class/method. Pytest's
+   own `path::Class::method` form is accepted by `frob ticket evidence`
+   without complaint and then fails DOC007, or fails to resolve post-merge
+   and refuses the land.
+
+   Fix: validate the node-id shape AT BIND TIME (`frob ticket evidence`)
+   and reject the pytest `::`-separated form with a message naming the
+   correct `path::Class.method` form. Also verify the referenced test
+   actually exists (resolves against a real collected node id) at bind
+   time, not just at close/land time.
+
+Both parts turn a land-time diagnosis into an immediate, local error at
+the point the mistake is made -- that is the whole point (filed from
+T-1616's own mission text, which named this as follow-up work).

@@ -2770,6 +2770,10 @@ class Ticket(BaseModel):
     sprint: str | None = None   # T-0715: free-form commitment label, e.g. "2026-W30"
     scope: tuple[str, ...]      # path globs and/or symrefs
     evidence: tuple[str, ...]   # pytest node ids or policy rule ids
+    kind_history: tuple[str, ...] = ()   # T-1616: `frob ticket kind` changes made
+        # AFTER evidence/a Done report already existed, append-only, e.g.
+        # "2026-08-06 bug->feature evidence=3 done_report=yes" -- surfaced as a
+        # WARNING at `frob ticket land` (docs/modules/gates.md#bug002-t-1421...)
     attachments: tuple[Attachment, ...]
     acceptance: tuple[AcceptanceCriterion, ...] = ()   # T-0572: each item bound to evidence
     component: str | None = None   # T-0454: which module/area (freeform)
