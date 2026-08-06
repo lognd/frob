@@ -9090,3 +9090,40 @@ Deliverables:
 - A regression test reproducing the exact sequence above: edit a field on main, edit the same ticket's body in a worktree, merge, and assert the field change survived.
 
 Note for the fix: ledger v2 (tickets/T-####/ticket.md, one file per ticket) narrows this considerably, since concurrent edits to different tickets stop sharing a file at all -- but it does NOT eliminate it, because this case had both sides editing the SAME ticket. Do not close this on the strength of the v2 migration alone.
+
+<!-- ticket:T-1618 -->
+```yaml
+id: T-1618
+title: A land merges the whole worktree branch, carrying unrelated and even REJECTED
+  tickets onto main
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land*.py
+- src/frob/app/ticket_runner/**
+- docs/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+`frob ticket land <id> --worktree W` merges W's BRANCH, not the commits belonging to <id>. When W holds a series of tickets worked sequentially, the first land carries every sibling's code onto main -- including tickets that were never reviewed, and including tickets that were deliberately REJECTED.
+
+Observed 2026-08-05, the damaging case: worktree w24-waive-family held T-1581, T-1577, T-1579, T-1578, T-1580. T-1579's change (a WAIVE004 self-heal escape) was judged unsafe and reverted IN THE WORKTREE. Landing T-1581 nonetheless put T-1579's code on main, where it proceeded to delete 55 live frob:waive directives across arch/strata/perf/graph/vet on every subsequent land until it was found and reverted on main separately. Reverting the ticket in its own worktree accomplished nothing, because the code had already left by another ticket's door.
+
+The benign-but-confusing case, seen three times the same session: after the first land carries the siblings, those siblings can no longer land. Their fix is already on main, so BUG002 finds the repro test passing at the parent and TEST016 finds an empty diff with no mutants to kill. Both gates are CORRECT; the tickets are simply already done. Resolution each time was to verify the content on main by hand and `frob ticket close` directly, with --skip-mutation-evidence for the empty diff.
+
+Two things to fix:
+
+1. A land must not silently carry unrelated tickets. Either merge only the landing ticket's own commits, or -- if whole-branch merge is deliberate, which is defensible for a series -- REFUSE unless the operator acknowledges the passengers, listing every other ticket whose commits are about to ride along. Silence is the bug: nothing in the output said T-1579 was going to main.
+
+2. Landing a ticket whose content is ALREADY on main should be a recognized, first-class outcome, not a BUG002/TEST016 refusal the operator has to diagnose and route around by hand. Detect "diff is empty because this already landed", verify the content is genuinely present, and offer the close path directly.
+
+Related, and worth deciding here: CrossTicketLeakage already exists as a concept (`--allow-cross-ticket` is its escape hatch). Determine why it did not fire for this case, since a rejected ticket's code reaching main is exactly what that check is named for. If it fires only for uncommitted leakage and not for committed sibling commits, say so and close the gap.
