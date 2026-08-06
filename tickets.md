@@ -6514,7 +6514,7 @@ leniency, REL001, baseline-thread-free).
 ```yaml
 id: T-1576
 title: 'frob scaffold: default brand-new repos to profile=rapid'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
