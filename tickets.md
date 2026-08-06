@@ -7296,8 +7296,154 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+scope:
+- tests/test_coverage.py
+- docs/modules/testing.md
+- frob-coverage.lock.json
+- src/frob/testing/_coverage_refresh.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/**
+  reason: the fix lives in src/frob/testing/_coverage_refresh.py with its tests in
+    tests/test_coverage.py and its contract documented in docs/modules/testing.md;
+    frob-coverage.lock.json is the derived lock the refresh rewrites
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_coverage.py
+  reason: the fix lives in src/frob/testing/_coverage_refresh.py with its tests in
+    tests/test_coverage.py and its contract documented in docs/modules/testing.md;
+    frob-coverage.lock.json is the derived lock the refresh rewrites
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/testing.md
+  reason: the fix lives in src/frob/testing/_coverage_refresh.py with its tests in
+    tests/test_coverage.py and its contract documented in docs/modules/testing.md;
+    frob-coverage.lock.json is the derived lock the refresh rewrites
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: frob-coverage.lock.json
+  reason: the fix lives in src/frob/testing/_coverage_refresh.py with its tests in
+    tests/test_coverage.py and its contract documented in docs/modules/testing.md;
+    frob-coverage.lock.json is the derived lock the refresh rewrites
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/testing/**
+  reason: 'narrow to the one module actually touched: the package glob pulled in _stability.py''s
+    own test-closure obligations, which this ticket does not touch'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/testing/_coverage_refresh.py
+  reason: 'narrow to the one module actually touched: the package glob pulled in _stability.py''s
+    own test-closure obligations, which this ticket does not touch'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/testing/_incremental_coverage.py
+  reason: tests/test_coverage.py is a shared test file covering three modules; scope
+    closure requires both frob:tests targets even though this ticket edits neither
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/testing/_coverage_wait.py
+  reason: tests/test_coverage.py is a shared test file covering three modules; scope
+    closure requires both frob:tests targets even though this ticket edits neither
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/gitio.py
+  reason: scope closure cascade from two monolithic shared doc anchors (docs/modules/testing.md#public-api
+    and docs/modules/gates.md#coverage-as-managed-derived-state) that describe symbols
+    across several modules; none of these files are edited by this ticket
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_app.py
+  reason: scope closure cascade from two monolithic shared doc anchors (docs/modules/testing.md#public-api
+    and docs/modules/gates.md#coverage-as-managed-derived-state) that describe symbols
+    across several modules; none of these files are edited by this ticket
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: scope closure cascade from two monolithic shared doc anchors (docs/modules/testing.md#public-api
+    and docs/modules/gates.md#coverage-as-managed-derived-state) that describe symbols
+    across several modules; none of these files are edited by this ticket
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'reverting: adding this monolithic doc file pulled the entire gates package
+    into scope closure (358 SCOPE errors); the single edge into it is handled at the
+    directive instead'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/testing/**
+  reason: 'restore the package glob: docs/modules/testing.md#public-api is a shared
+    anchor describing every module in the package, so editing it requires the whole
+    package in closure; tests/unit/testing/test_stability.py closes the test edge
+    that glob brings with it'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/testing/test_stability.py
+  reason: 'restore the package glob: docs/modules/testing.md#public-api is a shared
+    anchor describing every module in the package, so editing it requires the whole
+    package in closure; tests/unit/testing/test_stability.py closes the test edge
+    that glob brings with it'
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/testing/**
+  reason: SCOPE002 is warn-tier; the broad globs added 130 closure warnings without
+    changing what this ticket edits. Narrow to the four files actually touched
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: tests/unit/testing/test_stability.py
+  reason: SCOPE002 is warn-tier; the broad globs added 130 closure warnings without
+    changing what this ticket edits. Narrow to the four files actually touched
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/gitio.py
+  reason: SCOPE002 is warn-tier; the broad globs added 130 closure warnings without
+    changing what this ticket edits. Narrow to the four files actually touched
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: tests/test_app.py
+  reason: SCOPE002 is warn-tier; the broad globs added 130 closure warnings without
+    changing what this ticket edits. Narrow to the four files actually touched
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/testing/_incremental_coverage.py
+  reason: SCOPE002 is warn-tier; the broad globs added 130 closure warnings without
+    changing what this ticket edits. Narrow to the four files actually touched
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/testing/_coverage_wait.py
+  reason: SCOPE002 is warn-tier; the broad globs added 130 closure warnings without
+    changing what this ticket edits. Narrow to the four files actually touched
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: design/frob.strata
+  reason: the new provenance write is a real fs.write capability at the core node
+    and the tests read it back at the testsuite node; both must be declared in the
+    self-model
+  actor: logan
+  at: '2026-08-06'
 evidence:
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_red_suite_keeps_coverage_data
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
