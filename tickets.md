@@ -3644,13 +3644,33 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/tickets/**
 - src/frob/app/ticket_runner/**
 - src/frob/_cli_parsers/**
 - docs/**
 - tests/**
+- src/frob/tickets/_models.py
+- src/frob/tickets/_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: 'TICK009: narrowing my own over-broad filing-time scope to the files this
+    ticket actually names'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
 threat: null
 component: null
 ```
@@ -3667,7 +3687,6 @@ Requirements:
 - Filing a NEW ordinary ticket while a runs-last ticket is in-progress should warn loudly: the precondition it started under has been invalidated.
 
 That last requirement is the one that makes this real rather than cosmetic -- the failure mode is not starting the audit too early, it is finishing it and then having new work land that silently invalidates its conclusions.
-
 <!-- ticket:T-1614 -->
 ```yaml
 id: T-1614
@@ -3730,11 +3749,24 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/app/ticket_runner/**
-- src/frob/tickets/**
 - tests/**
 - docs/modules/tickets.md
+- src/frob/tickets/_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: 'TICK009: narrowing my own over-broad filing-time scope to the files this
+    ticket actually names'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
 threat: null
 component: null
 ```
@@ -3749,7 +3781,6 @@ Fix: route block (and any other ledger-writing verb still missing it -- audit th
 Audit list to check while here: block, unblock if it exists, scope, accept, evidence --replace, migrate, renumber, archive. For each, state whether it writes the ledger and whether it commits. A table in the Done report is the deliverable, not just the block fix -- the point is that no ledger-writing verb is left in this state.
 
 Test shape: for every ledger-writing verb, assert the working tree is CLEAN after the command (and dirty under --no-commit). A single parameterized test over the verb list makes a future verb that forgets this fail immediately.
-
 <!-- ticket:T-1616 -->
 ```yaml
 id: T-1616
@@ -3806,12 +3837,25 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/tickets/**
 - .gitattributes
 - tests/**
 - docs/design/ledger-v2.md
+- src/frob/tickets/_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: 'TICK009: narrowing my own over-broad filing-time scope to the files this
+    ticket actually names'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
 threat: null
 component: null
 ```
@@ -3838,7 +3882,6 @@ Deliverables:
 - A regression test reproducing the exact sequence above: edit a field on main, edit the same ticket's body in a worktree, merge, and assert the field change survived.
 
 Note for the fix: ledger v2 (tickets/T-####/ticket.md, one file per ticket) narrows this considerably, since concurrent edits to different tickets stop sharing a file at all -- but it does NOT eliminate it, because this case had both sides editing the SAME ticket. Do not close this on the strength of the v2 migration alone.
-
 <!-- ticket:T-1618 -->
 ```yaml
 id: T-1618
@@ -3889,12 +3932,32 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/tickets/**
 - src/frob/app/ticket_runner/**
 - tests/**
 - docs/**
+- src/frob/tickets/_land.py
+- src/frob/tickets/_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: 'TICK009: narrowing my own over-broad filing-time scope to the files this
+    ticket actually names'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
 threat: null
 component: null
 ```
@@ -3910,7 +3973,6 @@ Fix: a land takes an exclusive repository lease for its duration, and every othe
 Also fix the partial-staging residue: when a land aborts after staging its REL001 bump, it should unstage what it staged, or say exactly what it left behind. Today it prints a refusal and leaves four files staged, and the operator has to work out that `git reset --hard HEAD` is safe only because the land did not complete.
 
 Acceptance: with a land running, `frob ticket new` must not be able to corrupt it -- proven by a test that runs both concurrently.
-
 <!-- ticket:T-1620 -->
 ```yaml
 id: T-1620
@@ -3999,12 +4061,32 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/tickets/**
 - src/frob/app/ticket_runner/**
 - tests/**
 - docs/**
+- src/frob/tickets/_provisional.py
+- src/frob/tickets/_new_renumber.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: 'TICK009: narrowing my own over-broad filing-time scope to the files this
+    ticket actually names'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_provisional.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: narrowed from a package glob to the specific modules named in the ticket
+    body
+  actor: logan
+  at: '2026-08-06'
 threat: null
 component: null
 ```
@@ -4020,7 +4102,6 @@ Options to weigh, and the choice belongs in this ticket:
 - Keep draft ids but make the LAND rewrite them to real ids automatically, citations included, so the toil disappears even if the draft mechanism stays.
 
 Whichever is chosen, the acceptance is the same: an agent files a follow-up ticket from a worktree, lands its work, and neither the agent nor the coordinator has to touch the ledger by hand for the citation to be correct on main.
-
 <!-- ticket:T-1623 -->
 ```yaml
 id: T-1623
