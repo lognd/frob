@@ -52,6 +52,7 @@ from frob.gitio import (
     working_diff,
 )
 from frob.tomlio import read_toml_lenient
+from frob.yaml_io import fast_yaml_loader
 
 __all__ = [
     "DerivedArtifactStatus",
@@ -79,6 +80,7 @@ __all__ = [
     "reset_common_dir_cache",
     "run_argv",
     "run_diagnosis",
+    "fast_yaml_loader",
     "scan_live_land_processes",
     "scan_malformed_ticket_edges",
     "scan_stale_ticket_leases",
