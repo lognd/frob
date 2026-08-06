@@ -9416,3 +9416,48 @@ This repo already owns the machinery: frob.graph.callgraph does call-graph resol
 Fail-closed requirement: when resolution cannot determine a call's target (genuinely dynamic dispatch, a computed getattr), that must surface as an explicit UNRESOLVED finding demanding a declaration or a waiver -- never as "no capability found". This drive has repeatedly been burned by analysis that reported nothing when it could not look; the capability layer must not repeat it.
 
 Prerequisite for symbol-level `via`: attributing a capability to a specific declared symbol is only meaningful once the hit itself is symbol-resolved. Sequence this before, or together with, the via-granularity work.
+
+<!-- ticket:T-1627 -->
+```yaml
+id: T-1627
+title: 'strata: via must name a SYMBOL and support exactly-one-site exclusivity, not
+  whitelist whole files'
+state: queued
+kind: security
+origin: human
+created: '2026-08-05'
+priority: high
+blocked_by:
+- T-1626
+parent: T-1623
+tier: ticket
+sprint: null
+scope:
+- design/frob.strata
+- src/frob/strata/**
+- src/frob/vet/**
+- tests/**
+- docs/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+`may "<capability>" via "<file>"` grants the capability to an ENTIRE FILE. The stated intent -- that a dangerous capability happens at exactly one controllable location -- is not what gets enforced.
+
+Concretely today:
+- `may "eval" via "src/frob/doctor.py"` permits eval anywhere in a 700+ line module.
+- `may "fs.write" via [16 files]` and `may "fs.read" via [12 files]` on node `cli` alone. A sixteen-file permission list is not a chokepoint; it is an inventory.
+- `may "exec" via [5 files]`, `may "env" via [6 files]`.
+
+Two separate defects:
+
+1. GRANULARITY. `via` should name a SYMBOL, not a file: `may "eval" via "src/frob/doctor.py::_probe_module"`. A file is an arbitrary container that grows; a function is the actual controllable location. Anything else in that file trips the gate.
+
+2. CARDINALITY. For genuinely dangerous capabilities the correct constraint is not "in this set of places" but "in exactly ONE place". The language has no way to say that. Add it -- an exclusivity marker meaning at most one declared site, so eval, exec, and net get a real chokepoint rather than a list.
+
+Both matter for the same reason: a permission list has no upward pressure. Every new file that writes a file gets appended to the fs.write list, and nothing ever removes one. The declaration ratchets looser as the codebase grows, which is precisely backwards for a security model.
+
+The design pattern this should enable: funnel each capability through a single owner (all fs.write goes through one io module; every other caller calls that), then the via list is 1 and stays 1. That turns each capability into an auditable chokepoint instead of a growing inventory -- and makes the eventual waiver/capability audit tractable.
+
+Sequencing note: symbol-level `via` requires that the capability scanner attribute a hit to an enclosing SYMBOL, not just a file. Check whether the scanner already has that (it builds tree-sitter spans for comment exclusion, so the machinery is likely present) before designing around a file-level constraint.
