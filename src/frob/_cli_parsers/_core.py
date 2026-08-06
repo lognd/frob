@@ -79,10 +79,6 @@ def _add_cycle_parser(sub) -> None:
 
 # frob:ticket T-0030
 # frob:ticket T-1311
-# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
-# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
-# does not trace this cross-package private import -- same class of gap as this repo's \
-# other cross-package DEAD001 waivers (T-1024 precedent)"
 # frob:tests \
 # tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches \
 # kind="integration"

@@ -41,10 +41,6 @@ def _fake_run_argv(argv: list[str], **_kwargs: object):  # noqa: ANN201
 
 
 @pytest.fixture(autouse=True)
-# frob:waive DEAD001 reason="pytest autouse fixture, invoked by the test runner for \
-# every test in this module without ever appearing as a name/call token anywhere -- \
-# the established autouse-fixture DEAD001 false-positive class (matches \
-# tests/test_dup_cross_lang.py's own autouse fixture waiver)"
 def _no_real_subprocesses(monkeypatch: pytest.MonkeyPatch) -> None:
     """Every test in this module runs against a bare `tmp_path`, not a git
     repo -- route `_land_release`'s own `run_argv` through `_fake_run_argv`

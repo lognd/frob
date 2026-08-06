@@ -96,5 +96,4 @@ class TestInstallSerialPoolsGatesUnexpectedException:
         assert concurrent.futures.ProcessPoolExecutor is SerialExecutor
 
 
-# frob:waive DEAD001 reason="imported only for isinstance/identity checks and to reach module attrs during monkeypatching -- both used above"  # noqa: E501
 _ = _serial_pools

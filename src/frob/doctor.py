@@ -321,11 +321,6 @@ class LiveLandProcess(BaseModel):
 # frob:doc docs/guides/install.md#live-land-process-report-t-1515
 # frob:ticket T-1515
 # frob:ticket T-1634
-# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
-# _read_land_lock_holder, a cross-module helper the resolver cannot see through -- the \
-# one raise path (a malformed/unreadable lock file) already returns None rather than \
-# raising, and _probe_land_lock_pid_liveness (T-1634) is a local, fully-typed pure \
-# function the resolver can already see through, not an opaque stdlib boundary"
 def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
     """T-1515: read `root`'s `.frob/land.lock` content (written by
     `frob.tickets._land._land_lock` on acquisition) and report who holds

@@ -33,7 +33,6 @@ from frob.perf._models import HeatEntry
 from frob.perf._sketch_store import _close_all
 
 
-# frob:waive DEAD001 reason="pytest autouse fixture -- teardown-only, never referenced by name/call token anywhere; matches tests/unit/perf/test_persist_run_cli.py's identical waiver for the same fixture shape"  # noqa: E501
 @pytest.fixture(autouse=True)
 def _teardown_sketch_store():
     yield

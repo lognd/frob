@@ -13,7 +13,6 @@ from frob.dup import _cache
 from frob.process._lock import derived_state_lock
 
 
-# frob:waive DEAD001 reason="pytest autouse fixture (T-0565): invoked by the test runner for every test in this module without ever appearing as a name/call token anywhere -- the one DEAD001 false-positive class build_reference_graph's sig_tokens+body_tokens broadening cannot see"  # noqa: E501
 @pytest.fixture(autouse=True)
 def _close_cached_connections():
     """Every dup-cache connection is process-cached by resolved path

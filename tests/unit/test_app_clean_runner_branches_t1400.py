@@ -7,7 +7,6 @@ returning `Err` (`sys.exit(1)`), and the executed (`-y`/`--yes`) path over
 a tree with real entries to remove -- distinct from the JSON and
 "nothing to clean" branches already covered.
 """
-# frob:waive DEPR005 reason="resolver name-collision, not real adoption: this file's run() calls target frob.app.clean_runner.run directly; the deprecated xref/outline/map runner run symbols share only the bare name (same class as tests/system/test_cli_sys_audit.py's waived precedent)"  # noqa: E501
 
 from __future__ import annotations
 

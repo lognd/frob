@@ -7064,16 +7064,6 @@ def _store_pending_process_cache(
 
 # frob:ticket T-0581
 # frob:ticket T-1445
-# frob:waive ARCH001 reason="the function's own executable body is a dozen lines (seed \
-# cache -> submit process pool -> run thread pool -> drain -> store cache -> merge); \
-# the length is the T-0581 fork-safety docstring, which documents a real \
-# 6-hour-CI-hang root cause and the exact ordering that prevents it recurring -- \
-# diluting or relocating that explanation to fix a line-count threshold would make the \
-# one place a future editor MUST read before reordering this function's calls harder \
-# to find, not easier; T-1445's own read/write cache steps are already split into \
-# _seed_preloaded_process_cache/_store_pending_process_cache, same disposition as \
-# src/frob/gates/_lang_conformance.py's project_lang_conformance_gate ARCH001 waiver \
-# precedent (a second extraction would re-fragment an already-minimal orchestrator)"
 def _run_combined_jobs(
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
     process_jobs: dict[str, _ProcessJob],

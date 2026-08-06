@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# frob:waive DEPR005 reason="resolver name-collision, not real adoption: this file's own tests.system.conftest.run test helper shares its bare name with the deprecated src/frob/app/xref_runner.py::run / outline_runner.py::run / map_runner.py::run CLI-dispatch functions, which this test never calls at all -- adding one more call to THIS run() (T-1061's own new CLI system test) is what tipped the per-file resolved-reference count past the committed baseline, per name-only coincidence (the same resolver-precision class PERF008 discloses elsewhere in this repo)"  # noqa: E501
 from tests.system.conftest import git as _git
 from tests.system.conftest import init_repo, run
 

@@ -14,14 +14,6 @@ gate is opt-in: it runs only once a manifest exists, so a repo adopts it by
 running `frob release stamp` once.
 """
 # frob:waive INV006 preset="split-carried-prose"
-# frob:waive ARCH102 reason="T-1009: authoritative_version/rewrite_pyproject_version/ \
-# changelog_skeleton_entry are the sync half of the SAME single-version-authority \
-# concern this module's docstring already scopes it to (stamp/diff_class/ \
-# required_version being the stamp/diff half); the naming/usage clustering heuristic \
-# groups by call-graph edges, and sync's helpers are new leaf functions with no \
-# existing caller in this module yet (frob.app.release_runner._sync/frob.tickets._land \
-# call them from outside) -- not a second concern to split out, the module still has \
-# exactly one job: mechanical semver, now including its derived-artifact regeneration"
 
 from __future__ import annotations
 

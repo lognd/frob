@@ -1832,12 +1832,6 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-1463
 # frob:ticket T-1495
-# frob:waive ARCH103 reason="T-0977 precedent: this IS the `frob ticket land` CLI \
-# orchestration entrypoint -- resolve root, run the pre-land fix absorption, kick off \
-# the T-1463 background baseline scan, invoke land(), join the baseline thread, run \
-# the post-land sweep, report, push, finish. Each step is already its own extracted \
-# helper/closure; the sequencing and exit-code decisions themselves ARE this \
-# function's one job, not a separate concern to split out further"  # noqa: E501
 # frob:ticket T-1444
 # frob:ticket T-1518
 def _land(root: Path, cfg: AppConfig) -> None:

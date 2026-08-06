@@ -151,8 +151,6 @@ class _EventBus:
 # (the demoted case). T-1062: leaked Unknown traces to socket.socket's own \
 # connect/makefile/write/readline calls and json.dumps, stdlib socket/json calls the \
 # resolver cannot fully bound past the broad except OSError below"
-# frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \
-# json.loads' JSONDecodeError is now explicitly caught inline (T-1062)"
 # frob:waive AFFECT001 reason="T-1062: EXHAUST001/002 hardening -- added an explicit \
 # inline except for a malformed frame's JSONDecodeError/UnicodeDecodeError, which now \
 # retries the read loop instead of letting it escape; the documented \

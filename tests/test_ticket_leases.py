@@ -30,8 +30,6 @@ import pytest
 from typani import Ok
 
 from frob.app.config import AppConfig
-
-# frob:waive DEPR005 reason="resolver name-collision, not real adoption: frob.app.ticket_runner.run (imported below as ticket_run, T-1457's new double-dispatch-refusal coverage) shares its bare name with the deprecated src/frob/app/xref_runner.py::run / outline_runner.py::run / map_runner.py::run CLI-dispatch functions -- this file never calls any of those three, the resolver just cannot distinguish same-named run() symbols across modules by name alone (the same resolver-precision class PERF008 discloses elsewhere in this repo; precedent: tests/system/test_cli_sys_audit.py's identical waiver)"  # noqa: E501
 from frob.app.ticket_runner import run as ticket_run
 from frob.tickets import (
     TicketState,
