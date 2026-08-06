@@ -193,7 +193,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 ```yaml
 id: T-1204
 title: 'perf: hot-graph burn-down (2026-07-29 profile)'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
