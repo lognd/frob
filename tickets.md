@@ -5789,7 +5789,7 @@ this change except gate:WAIVE dropping to 0. Ruff/ty/format all pass.
 id: T-1659
 title: Audit CACHE001/OPAQUE001 (and PERF/PII/SEC005) for the DEAD001-class missing-symref
   waiver hole
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -5800,12 +5800,96 @@ sprint: null
 scope:
 - src/frob/gates/_cache_gate.py
 - src/frob/gates/_opaque.py
+- tests/test_vet.py
+- tests/test_cache_gate.py
+- src/frob/gates/_waive.py
+- frob.lock
+- src/frob/logging/filter.py
+- src/frob/vet/_capability_scan.py
+- src/frob/app/_config_external.py
+- tests/unit/test_dup_core.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_vet.py
+  reason: frob:tests directives on the fixed symbols point at these test files; SCOPE002
+    requires them in the ticket's declared scope
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_cache_gate.py
+  reason: frob:tests directives on the fixed symbols point at these test files; SCOPE002
+    requires them in the ticket's declared scope
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: src/frob/gates/_waive.py::_apply_waivers is exercised directly by this ticket's
+    own new waiver-scoping test; frob.lock was updated by 'frob ack' after this ticket's
+    opaque_gate body digest changed
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: frob.lock
+  reason: src/frob/gates/_waive.py::_apply_waivers is exercised directly by this ticket's
+    own new waiver-scoping test; frob.lock was updated by 'frob ack' after this ticket's
+    opaque_gate body digest changed
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/logging/filter.py
+  reason: 'T-1659 semantic-check follow-up per coordinator directive: OPAQUE001''s
+    needle scan itself needed an AST-based bare-call check (src/frob/vet/_capability_scan.py),
+    and src/frob/logging/filter.py needed its existing waiver comment relocated around
+    the _enclosing_src mis-binding bug so main can land at 0 errors'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/vet/_capability_scan.py
+  reason: 'T-1659 semantic-check follow-up per coordinator directive: OPAQUE001''s
+    needle scan itself needed an AST-based bare-call check (src/frob/vet/_capability_scan.py),
+    and src/frob/logging/filter.py needed its existing waiver comment relocated around
+    the _enclosing_src mis-binding bug so main can land at 0 errors'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'T-1659 semantic-check follow-up: symref narrowing means the pre-existing
+    multi-function OPAQUE001 waiver above _apply_string_fields no longer covers its
+    5 sibling _apply_*_fields helpers; each now needs its own copy of the same reasoning'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/test_dup_core.py
+  reason: 'T-1659 semantic-check follow-up: one genuine (not scanner-bug) OPAQUE001
+    finding remains after the AST fix -- a closed-tuple getattr(frob_core, name) test
+    assertion needs its own waiver'
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file
+- tests/test_cache_gate.py::TestCache001Symref::test_violation_carries_symref
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_setattr_call_does_not_fire
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_eval_method_call_does_not_fire
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_identifier_ending_in_builtin_name_does_not_fire
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
 acceptance:
 - text: CACHE001 and OPAQUE001 Violations carry symref; waiver matching re-verified
     against the new symref for OPAQUE001's existing 166-waiver population
-  evidence: []
+  evidence:
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file
+  - tests/test_cache_gate.py::TestCache001Symref::test_violation_carries_symref
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_setattr_call_does_not_fire
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_eval_method_call_does_not_fire
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_identifier_ending_in_builtin_name_does_not_fire
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire
+  - tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
 threat: null
 component: null
 ```
@@ -5844,6 +5928,144 @@ today, rest unchecked), PII011/PII012 (src/frob/gates/_pii_structural/*,
 (src/frob/gates/_taint_gate.py, no symref at all, per-sink finding).
 Recommend a first pass on CACHE001 and OPAQUE001 (highest confidence,
 highest stakes given OPAQUE001's waived population), then sweep the rest.
+
+## Done report
+
+COORDINATOR CORRECTION (post-initial-report): the 136/142 tests/** findings
+were misclassified in the first pass as "a real rule-level pattern needing
+136 individual waivers." That was wrong -- per the standing "decide from
+semantics, never a lexical match" directive, the right question was WHY
+OPAQUE001 was firing on them at all.
+
+How OPAQUE001 detected indirection (before this fix): a raw byte-level
+substring scan (frob.vet._capability_scan._needle_construct_findings)
+matching fixed needles ("setattr(", "eval(", "sys.modules[", ...) anywhere
+in the file's text outside comments/string literals, with no check that
+the match was a real call to the NAMED python builtin (or, for sys.modules,
+a real WRITE). Investigating the actual 142 findings found this was the
+dominant cause, not test-fixture string content as first assumed:
+
+- pytest's monkeypatch.setattr(target, value) and z3's Model.eval(x) are
+  dotted attribute/method calls -- "setattr("/"eval(" match as a trailing
+  substring of "monkeypatch.setattr("/"model.eval(", but neither is
+  python's builtin setattr/eval.
+- A test function literally named test_..._exec / a helper named
+  _mutation_for_eval -- the needle matches mid-token inside a longer
+  identifier's own name (the identifier's def, not a call at all).
+- sys.modules["frob.strata._facts"] used as a plain READ (an ordinary
+  already-imported-module lookup for monkeypatch.setattr's own target) --
+  the "sys.modules replacement" taxonomy row's own rationale is
+  specifically about a WRITE (sys.modules[name] = fake_module replacing
+  what subsequent imports resolve to), which the needle match cannot tell
+  apart from a read.
+
+What I changed (src/frob/vet/_capability_scan.py): two AST-based semantic
+checks, using frob.lang.raw_tree's tree-sitter node info (the same parse
+this ticket's own _enclosing_qualname already introduced for OPAQUE001's
+symref), both fail-open (narrow the existing scan, never widen it):
+
+- _python_bare_call_ok: for the bare-python-builtin needles (eval/exec/
+  getattr/setattr/__import__), confirms the matched identifier is the
+  UNQUALIFIED callee of a real call node -- False (suppressed) when its
+  parent is an `attribute` node (dotted access) or when the match's start
+  byte does not equal the enclosing identifier node's own start byte
+  (mid-token substring).
+- _python_sys_modules_write_ok: for "sys.modules[", confirms the matched
+  subscript is the LEFT (assignment-target) side of an `assignment` node
+  -- False (suppressed) for a bare read.
+
+Both wired into _needle_construct_findings (extracted into a small
+_semantic_check_suppresses helper to stay under ARCH001's line threshold)
+BEFORE the existing literal-arg check runs, so a confirmed-false-positive
+match is dropped before any "is the argument a literal" question is even
+asked about it.
+
+Re-measured (frob check --only opaque --json, gate:OPAQUE, repo-wide,
+FROB_NO_GATE_CACHE=1 confirmed): 142 -> 1 unwaived error after the
+semantic fix alone. The 136 tests/** false positives evaporated exactly
+as predicted -- verified directly (not assumed): every one of the
+dotted-call/mid-token-substring/sys-modules-read shapes above stopped
+firing, confirmed by 6 new regression tests
+(tests/test_vet.py::TestOpaqueIndirectionGate, T-1659-suffixed) locking
+each false-positive shape suppressed AND the corresponding genuine bare
+call/write still firing.
+
+What genuinely remained after the semantic fix (10 findings before
+handling, matching the earlier report's own classification):
+
+- 3 "sys.modules replacement" (tests/unit/strata/test_facts.py:309,
+  tests/unit/strata/test_parse.py:254, tests/unit/test_lang_strata.py:176)
+  turned out to ALSO be semantic-check false positives (plain reads, not
+  writes) -- caught and suppressed by the same
+  _python_sys_modules_write_ok fix, not left as manual waivers.
+- 1 genuine finding (tests/unit/test_dup_core.py:52, getattr(frob_core,
+  name) over a closed literal tuple of kernel names) -- given its own
+  narrow waiver, same closed-set rationale as the _config_external.py
+  waivers below.
+- 5 in src/frob/app/_config_external.py (_apply_path_fields/_apply_int_
+  fields/_apply_float_fields/_apply_list_fields/_apply_bool_flags) -- the
+  legitimate multi-function waiver identified in the first pass
+  (_apply_string_fields's own T-1424 note: "this waiver now covers every
+  _apply_*_fields helper below") that relied on the file-scope fallback
+  T-1659's symref fix closes. Each sibling now carries its own copy of the
+  identical closed-tuple rationale.
+- 1 in src/frob/logging/filter.py:26 -- the _enclosing_src mis-binding bug
+  identified in the first pass (filed separately as T-1667).
+  Handled here (not deferred) so main can land at 0 errors: moved the
+  existing waiver comment from inside __init__'s body to directly above
+  `def __init__`, which binds correctly via the ordinary following-symbol
+  rule without depending on the buggy trailing-comment path. Verified via
+  frob check --only opaque: the finding now shows [waived: ...] instead of
+  unwaived. The dsl.py root-cause bug itself stays tracked in
+  T-1667 for whoever generalizes the real fix beyond this one
+  site.
+
+Final repo-wide measurement (frob check --only opaque --only cache, cache
+BYPASSED via FROB_NO_GATE_CACHE=1): 0 errors, 25 waived. frob check
+--land-parity: clean -- 0 unscoped error(s), matches what the land sweep
+would see. All 445 tests/test_vet.py + tests/test_cache_gate.py +
+tests/unit/test_dup_core.py tests pass (SUITE-RESULT: exitstatus=0).
+gate:SCOPE/gate:PRE/gate:TEST/gate:ARCH/gate:FMT/gate:AFFECT --ticket
+T-1659 all clean (0 errors).
+
+Both successor tickets from the first pass stay open and unchanged:
+T-1666 (PERF/PII/SEC005 symref sweep -- separately, not
+affected by this semantic fix, which is OPAQUE001-specific) and
+T-1667 (the _enclosing_src mis-binding bug, now with a
+DIFFERENT confirmed reproduction site fixed around rather than at the
+root: filter.py's own finding is now correctly waived, but the general
+dsl.py defect remains open for other, not-yet-hit sites).
+
+### Changed
+```
+ frob.lock                        |   2 +-
+ src/frob/app/_config_external.py |  46 ++++-
+ src/frob/gates/_cache_gate.py    |   2 +
+ src/frob/gates/_opaque.py        |  38 +++-
+ src/frob/logging/filter.py       |  16 +-
+ src/frob/vet/_capability_scan.py | 149 ++++++++++++++-
+ tests/test_cache_gate.py         |  27 +++
+ tests/test_vet.py                | 124 +++++++++++++
+ tests/unit/test_dup_core.py      |   5 +
+ tickets.md                       | 379 ++++++++++++++++++++++++++++++++++++++-
+ 10 files changed, 770 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestCache001Symref::test_violation_carries_symref` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_setattr_call_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_eval_method_call_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_identifier_ending_in_builtin_name_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 0 error(s), 638 warning(s), 710 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1660 -->
 ```yaml
@@ -6160,3 +6382,181 @@ Raise it to semantics:
 Expect the finding set to CHANGE substantially in both directions, not merely shrink. Report before/after with a classification of everything that appears and disappears -- a file that stops being flagged because it is genuinely imported is a fix; one that starts being flagged because only prose named it is the rule finally working.
 
 While here, check whether the existing REF001 waivers were compensating for the lexical gap. If most of them say some version of "reached dynamically", that is direct evidence for the semantic model and those waivers should be REMOVED, not migrated.
+
+<!-- ticket:T-1666 -->
+```yaml
+id: T-1666
+title: Classify and re-waive the 142 OPAQUE001 findings T-1659's symref fix surfaced;
+  sweep PERF/PII/SEC005 for the same shape
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/_config_external.py
+- src/frob/perf/**
+- src/frob/gates/_pii_structural/**
+- src/frob/gates/_taint_gate.py
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1659 fixed CACHE001 and OPAQUE001's missing Violation.symref (both now
+symbol-exact). That symref narrowing surfaced real work this ticket's
+scope did not cover fixing:
+
+## OPAQUE001: 142 newly-unwaived findings (166 waived -> 24 waived + 142/143 error)
+
+Before (main, file-scope matching): 0 errors, 166 waived.
+After (this ticket's fix, symbol-exact matching): 142-143 errors, 24 waived
+(measured via `frob check --only opaque --json`, `gate:OPAQUE` diagnostics:
+166 total, severity counter {error: 142, note: 24}).
+
+Breakdown of the 142 unwaived:
+- 136 in tests/** -- overwhelmingly literal getattr()/setattr()/eval()-shaped
+  fixture STRINGS written as test source text (e.g.
+  tests/test_ticket_work_and_land_finish.py: 30, tests/unit/strata: 14,
+  tests/unit/test_ticket_runner_land_release.py: 12, tests/test_app.py: 11,
+  tests/test_gates.py: 10, and 10+ more files with 1-9 each). These read as
+  a genuine rule-level pattern (test fixtures constructing runtime-opaque
+  constructs to exercise OTHER gates/features), not attacker-reachable
+  production code -- but each needs a real frob:waive with its own reason
+  (or the fixture rewritten to avoid the construct), not a blanket
+  re-forgive. Recommend triaging by file: most are probably one `frob:waive
+  OPAQUE001 reason="test fixture constructing a <rule> litmus, not
+  production code"` per fixture function.
+- 6 in src/**, all previously covered by ONE waiver each that the file-scope
+  fallback let cover multiple sibling functions:
+  - src/frob/app/_config_external.py:399,428,445,458,479 -- five
+    `_apply_*_fields` helpers (_apply_path_fields/_apply_int_fields/
+    _apply_float_fields/_apply_list_fields/_apply_bool_flags). The ONE
+    existing waiver above `_apply_string_fields` (line 381) explicitly says
+    in its own reason text (T-1424 update) "this waiver now covers every
+    `_apply_*_fields` helper below" -- a deliberate multi-site waiver that
+    relied on the file-scope fallback this ticket closes. This is a
+    GENUINELY ACCEPTABLE pattern (same closed-tuple-of-known-field-names
+    rationale applies to every sibling) -- the fix is mechanical: copy the
+    same `frob:waive OPAQUE001 reason="..."` comment above each of the 5
+    remaining `_apply_*_fields` functions (or extract a single small
+    helper they all route the getattr through, if that reads better).
+  - src/frob/logging/filter.py:26 -- NOT the same shape. Investigate
+    separately (see the dsl.py bug filed alongside this ticket, referenced
+    below) -- the existing waiver in `_BelowLevelFilter.__init__` resolves
+    to `_BelowLevelFilter.filter` instead, a real comment-binding bug, not
+    a multi-site-waiver pattern. Re-verify after that bug is fixed before
+    assuming this site still needs its own waiver.
+
+## CACHE001: dormant hole closed, no live waivers existed
+
+T-1659 confirmed CACHE001 currently has 0 live `frob:waive CACHE001`
+directives repo-wide, so populating its symref (done) closed a dormant hole
+with no immediate unwaived-count consequence. No further action needed here
+beyond what T-1659 already landed.
+
+## Not yet swept for the same missing-symref shape (T-1659's own scope note)
+
+`grep -c symref= <file>` presence-only audit (informed, NOT exhaustively
+verified per site -- a real per-rule read is still owed):
+
+- PERF001-014 (src/frob/perf/*.py): only `_recursion.py` sets symref today;
+  `_advisories.py` (4 Violation sites), `_dup_spawn.py`, `_hotpath_smells.py`,
+  `_loop_effects.py`, `_ratchet.py`, `_redundancy.py`, `_rules.py` do not.
+  Each of these is a per-function/per-call-site finding by nature (the
+  rule names -- duplicate-spawn, hotpath-smell, loop-invariant-effect,
+  redundant-computation -- all describe a specific site), so these read as
+  the SAME bug shape as CACHE001/OPAQUE001, not file-level-by-design. Needs
+  the same live-waiver-population check T-1659 did for OPAQUE001 before
+  fixing (a PERF gate promoted to ERROR with an existing waiver population
+  could have the same silent-over-forgiveness exposure).
+- PII011/PII012 (src/frob/gates/_pii_structural/*.py): none of the 5
+  violation-emitting files (`_crosslang.py`, `_emails.py`, `_env_access.py`,
+  `_keywords.py`, `_python_fields.py`) set symref today. Each finding is
+  about a specific field/env-var/keyword site in a specific file -- same
+  shape, needs the same audit.
+- SEC005/taint_gate (src/frob/gates/_taint_gate.py): no symref at all,
+  described in T-1659's own filing ticket as "per-sink finding" -- same
+  shape, needs the same audit.
+
+Scope for this successor: src/frob/app/_config_external.py (5-site
+re-waive), src/frob/perf/**, src/frob/gates/_pii_structural/**,
+src/frob/gates/_taint_gate.py, plus a representative slice of tests/** for
+the 136 OPAQUE001 test-fixture re-waives (do not assume every file needs a
+hand-written reason if a shared pattern emerges -- but do not blanket-waive
+either, per the playbook's waive-discipline section).
+
+<!-- ticket:T-1667 -->
+```yaml
+id: T-1667
+title: frob:waive comment inside a method's last statement mis-binds to the following
+  sibling method (_enclosing_src)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/graph/dsl.py
+- src/frob/lang/_walk_python.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Found while auditing OPAQUE001's newly symbol-exact waiver matching (T-1659):
+a `frob:waive OPAQUE001` comment placed as the LAST statement-preceding
+comment inside `_BelowLevelFilter.__init__`
+(src/frob/logging/filter.py:22-25, directly above the `getattr(...)` call
+at line 26) resolves, via `frob.graph.dsl`'s comment-to-symbol binding
+(`_enclosing_src`), to the WRONG method: `_BelowLevelFilter.filter`
+instead of `_BelowLevelFilter.__init__`.
+
+Verified directly:
+
+    src/frob/logging/filter.py::_BelowLevelFilter.filter OPAQUE001
+    {'reason': "T-1038: below is a log-level name from this process's own
+    dictConfig-declared logging setup, ..."}
+
+(via `build_graph(...).edges`, filtered to `EdgeKind.WAIVE` for this file)
+-- while the actual OPAQUE001 finding's own `Violation.symref` correctly
+computes to `src/frob/logging/filter.py::_BelowLevelFilter.__init__` (via
+`frob.lang.parse_file`'s span-containment lookup, the same primitive
+`opaque_gate` now uses, T-1659). The waiver and the finding disagree on
+which symbol the comment belongs to, so `_match_waiver`'s symbol-exact
+branch (T-1652/T-1659) never matches this site -- not because the waiver
+is wrong, but because `_enclosing_src` mis-binds it.
+
+`__init__` (span 20-26 per `parse_file`) is the LAST method-body line
+before the class's next sibling method (`filter`, span 28-30) begins.
+`_enclosing_src`'s own binding logic likely attaches a trailing comment to
+the NEXT following symbol rather than the one it is textually inside of,
+in this specific "last line of a method body, comment sits right above
+the method's final statement" shape. This is worth root-causing
+independently of any single rule's waiver population: `_enclosing_src` is
+the shared primitive EVERY `frob:` directive comment (not just
+`frob:waive`) resolves through, so a systematic mis-binding here could be
+silently misfiling `frob:doc`/`frob:ticket`/`frob:tests`/`frob:invariant`
+edges onto the wrong symbol too, not just OPAQUE001 waivers.
+
+Scope: src/frob/graph/dsl.py (`_enclosing_src` and whatever span-lookup it
+delegates to). Out of T-1659's own declared scope
+(src/frob/gates/_cache_gate.py, src/frob/gates/_opaque.py) -- filed
+separately rather than folded in.
+
+Suggested acceptance: a reduced repro (a comment sitting on the line
+immediately preceding a method's LAST statement, in a class with a
+following sibling method) reproducibly binds to the wrong symbol via
+`_enclosing_src`/`build_graph`, and the fix makes it bind to the
+textually-enclosing method instead. Re-verify
+src/frob/logging/filter.py:22's `frob:waive OPAQUE001` binds to
+`_BelowLevelFilter.__init__` once fixed, and re-run
+`frob check --only opaque` on that file to confirm the waiver matches
+again.

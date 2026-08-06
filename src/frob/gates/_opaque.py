@@ -55,11 +55,34 @@ from pathlib import Path
 
 from frob.gates._models import Severity, Violation
 from frob.gates._tracked_files import tracked_files as _shared_tracked_files
-from frob.lang import supported_extensions
+from frob.lang import parse_file, supported_extensions
 from frob.logging import get_logger
 from frob.vet._capability import _opaque_indirection_findings
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-1659
+def _enclosing_qualname(rel_path: str, abs_path: Path, line: int) -> str | None:
+    """The tightest-spanning symbol's qualname covering `line` in `rel_path`
+    (T-1659), or `None` when the file fails to parse or no symbol's span
+    contains `line` (a module-level/top-level site). Reuses `frob.lang.
+    parse_file`'s own per-run memoization (T-0410), so calling this once per
+    OPAQUE001 finding costs nothing beyond the first parse of a given file
+    within the same `frob check` run -- unlike `frob.perf._heat._enclosing_
+    symbol`, this does not need a whole-repo `GraphSnapshot`: `opaque_gate`
+    runs as a `_ProcessJob` (T-0415, picklable-args-only), so a per-file
+    `ParsedFile` lookup is the only shape that composes with that
+    constraint."""
+    result = parse_file(abs_path)
+    if result.is_err:
+        return None
+    parsed = result.danger_ok
+    candidates = [s for s in parsed.symbols if s.span[0] <= line <= s.span[1]]
+    if not candidates:
+        return None
+    tightest = min(candidates, key=lambda s: s.span[1] - s.span[0])
+    return tightest.qualname
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -67,6 +90,8 @@ _log = get_logger(__name__)
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_emits_warn_severity_violation  # noqa: E501
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_no_findings_on_empty_tracked_set  # noqa: E501
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_waived_finding_is_suppressed_and_reason_recorded  # noqa: E501
+# frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_violation_carries_symref  # noqa: E501
+# frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_waiver_scoped_to_symbol_not_whole_file  # noqa: E501
 # frob:enforces CHK-GATE-OPAQUE001
 # frob:enforces CHK-SUBSYS-VET
 # T-1087: two `docs/design/registry/supply-chain.yaml` entries whose
@@ -108,6 +133,7 @@ def opaque_gate(root: Path) -> tuple[Violation, ...]:
             continue
         scanned += 1
         for finding in findings:
+            qualname = _enclosing_qualname(rel_path, abs_path, finding.line)
             violations.append(
                 Violation(
                     rule="OPAQUE001",
@@ -119,6 +145,16 @@ def opaque_gate(root: Path) -> tuple[Violation, ...]:
                     severity=Severity.ERROR,
                     file=rel_path,
                     line=finding.line,
+                    # T-1659: symbol-exact when the site resolves inside a
+                    # parsed symbol's span, else fall back to the existing
+                    # file-scoped match (module-level/top-level site, or a
+                    # file whose language `frob.lang` cannot parse) --
+                    # mirrors DEAD001's T-1652 fix, closing the same
+                    # file-wide-amnesty hole `_match_waiver` falls into for
+                    # any Violation with `symref=None`.
+                    symref=(
+                        f"{rel_path}::{qualname}" if qualname is not None else None
+                    ),
                     message=(
                         f"OPAQUE001: {rel_path}:{finding.line} "
                         f"{finding.construct_name} is a runtime-resolved "

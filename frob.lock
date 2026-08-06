@@ -176,7 +176,7 @@
       "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
     },
     {
-      "digest": "d1ad0661c33dc758a6d7496819675d03be65d0866e5a3a43e358c07716963fe6",
+      "digest": "da531cc192cdd5cca7e5c7556233ba751b2480f097f7d9eae5eb8f5dead08a48",
       "facet": "body",
       "ref": "src/frob/gates/_opaque.py::opaque_gate"
     },

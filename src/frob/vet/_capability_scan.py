@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict
 
 from frob.excludes import iter_files
-from frob.lang import parse_file
+from frob.lang import parse_file, raw_tree
 from frob.logging import get_logger
 
 from ._capability_core import (
@@ -42,6 +42,8 @@ from ._capability_registry import (
 )
 
 if TYPE_CHECKING:
+    from tree_sitter import Node, Tree
+
     from frob.strata import CveFingerprint
 
 _log = get_logger(__name__)
@@ -864,6 +866,95 @@ def _subscript_key_looks_literal(content: bytes) -> bool:
     return _arg_looks_literal(stripped)
 
 
+# frob:ticket T-1659
+# T-1659: the python builtins whose `RUNTIME_OPAQUE_CONSTRUCTS` needle is a
+# BARE, unqualified name (`eval(`, `exec(`, `getattr(`, `setattr(`,
+# `__import__(`) -- these are exactly the needles a raw substring scan
+# cannot tell apart from (a) the same characters appearing as the tail of a
+# longer identifier (`_mutation_for_eval(`, `test_...flags_exec(`, both real
+# incidents this repo's own OPAQUE001 waivers already hand-documented as
+# "scanner false positive on the ... name") or (b) a dotted attribute/method
+# access ending in the same name (`monkeypatch.setattr(`, `model.eval(` --
+# pytest's own monkeypatch fixture and z3's `Model.eval`, neither the
+# python builtin). Constructs whose needle is ALREADY dotted
+# (`importlib.import_module(`) are not in this set -- they need the
+# opposite verification (an exact attribute chain, not a bare name) and had
+# no reported false positives, so left on the pre-existing text-scan path.
+_BARE_PYTHON_BUILTIN_NEEDLES = frozenset(
+    {"eval(", "exec(", "getattr(", "setattr(", "__import__("}
+)
+
+
+# frob:ticket T-1659
+def _python_bare_call_ok(tree: Tree, start: int, end: int) -> bool | None:
+    """Whether the byte span `[start, end)` in `tree` is exactly a python
+    `identifier` node used as the UNQUALIFIED callee of a `call` expression
+    (T-1659, the coordinator's semantic-check directive following the
+    OPAQUE001 symref fix's own audit): `False` when it is the trailing
+    `.name` half of a dotted attribute/method access
+    (`monkeypatch.setattr(...)`, `model.eval(...)`) or a substring landing
+    mid-token inside a longer identifier (`_mutation_for_eval(...)`, a
+    needle match that does not start at the identifier's own `start_byte`);
+    `None` when the tree has no node cleanly resolving the question (should
+    not normally happen for a genuine identifier match) -- treated as
+    fail-OPEN by every caller, i.e. still fires, matching this gate's
+    existing fail-closed-on-ambiguity doctrine (T-0339): this check only
+    ever NARROWS the raw substring scan, never widens it beyond what the
+    scan already found."""
+    node: Node | None = tree.root_node.descendant_for_byte_range(start, end)
+    if node is None:
+        return None
+    if node.start_byte != start or node.type != "identifier":
+        return False
+    parent = node.parent
+    if parent is None:
+        return None
+    if parent.type == "attribute":
+        return False
+    if parent.type == "call":
+        # T-1659: tree-sitter's python binding hands back a fresh wrapper
+        # object per accessor call, so `is` identity never holds across two
+        # separate node lookups even for the SAME underlying tree node --
+        # `.id` (the binding's own stable node handle) is the correct
+        # comparison, verified empirically against this exact shape.
+        func = parent.child_by_field_name("function")
+        return func is not None and func.id == node.id
+    return None
+
+
+# frob:ticket T-1659
+_SYS_MODULES_NEEDLE = "sys.modules["
+
+
+# frob:ticket T-1659
+def _python_sys_modules_write_ok(tree: Tree, start: int) -> bool | None:
+    """Whether the `sys.modules[` match starting at byte `start` is the
+    ASSIGNMENT TARGET of a `sys.modules[name] = fake_module` write (T-1659,
+    coordinator-directed semantic check) -- `False` for a plain READ
+    (`sys.modules["pkg"]` on the right of an assignment, or passed to a
+    call/comparison/anywhere else), which is an ordinary, safe dict lookup
+    of an already-imported module and not the taxonomy row's "replaces
+    what every subsequent import resolves to" write at all. `None` when the
+    match cannot be resolved to a `subscript` node at all (should not
+    normally happen for a genuine needle hit) -- fail-OPEN, same posture as
+    `_python_bare_call_ok`."""
+    node: Node | None = tree.root_node.descendant_for_byte_range(
+        start, start + len("sys.modules")
+    )
+    if node is None:
+        return None
+    subscript = node
+    while subscript is not None and subscript.type != "subscript":
+        subscript = subscript.parent
+    if subscript is None:
+        return None
+    parent = subscript.parent
+    if parent is None or parent.type != "assignment":
+        return False
+    left = parent.child_by_field_name("left")
+    return left is not None and left.id == subscript.id
+
+
 # frob:ticket T-1051
 def _structural_opaque_findings(
     raw: bytes,
@@ -945,6 +1036,16 @@ def _opaque_indirection_findings(path: Path) -> tuple[_OpaqueFinding, ...]:
 
     comment_spans = _non_executable_byte_spans(path)
     uses_libloading = language == "rust" and b"libloading" in raw
+    # T-1659: parsed once per file, only for python (the only language the
+    # `_BARE_PYTHON_BUILTIN_NEEDLES`/`_SYS_MODULES_NEEDLE` semantic checks
+    # apply to) -- `raw_tree` is content-hash cached (`frob.lang._parse`),
+    # so this costs a real parse once per distinct file content, not once
+    # per construct/match.
+    python_tree: Tree | None = None
+    if language == "python":
+        tree_result = raw_tree(path)
+        if tree_result.is_ok:
+            python_tree = tree_result.danger_ok[0]
     findings: list[_OpaqueFinding] = []
     for construct in RUNTIME_OPAQUE_CONSTRUCTS:
         if construct.language != language:
@@ -952,21 +1053,61 @@ def _opaque_indirection_findings(path: Path) -> tuple[_OpaqueFinding, ...]:
         is_libloading_needle = construct.construct_name == "libloading symbol lookup"
         if is_libloading_needle and not uses_libloading:
             continue
-        findings.extend(_needle_construct_findings(construct, raw, comment_spans))
+        findings.extend(
+            _needle_construct_findings(construct, raw, comment_spans, python_tree)
+        )
     findings.extend(_structural_opaque_findings(raw, language, comment_spans))
     return tuple(findings)
 
 
+# frob:ticket T-1659
+def _semantic_check_suppresses(
+    construct,  # noqa: ANN001 -- frob.vet._capability_registry._OpaqueConstruct
+    python_tree: Tree | None,
+    idx: int,
+    match_end: int,
+) -> bool:
+    """True if `_needle_construct_findings`'s T-1659 semantic narrowing
+    (`_python_bare_call_ok` / `_python_sys_modules_write_ok`) confirms this
+    needle match at `[idx, match_end)` is NOT a real indirection site --
+    extracted from `_needle_construct_findings`'s own loop body to keep it
+    under `ARCH001`'s line threshold, not a behavior change of its own."""
+    if python_tree is None:
+        return False
+    if construct.needle in _BARE_PYTHON_BUILTIN_NEEDLES:
+        name_end = match_end - 1  # exclude the needle's trailing "("
+        return _python_bare_call_ok(python_tree, idx, name_end) is False
+    if construct.needle == _SYS_MODULES_NEEDLE:
+        return _python_sys_modules_write_ok(python_tree, idx) is False
+    return False
+
+
 # frob:ticket T-1051
+# frob:ticket T-1659
 def _needle_construct_findings(
     construct,  # noqa: ANN001 -- frob.vet._capability_registry._OpaqueConstruct
     raw: bytes,
     comment_spans: tuple[tuple[int, int], ...],
+    python_tree: Tree | None = None,
 ) -> list[_OpaqueFinding]:
     """Every site of one `RUNTIME_OPAQUE_CONSTRUCTS` needle in `raw` (T-1051,
     extracted from `_opaque_indirection_findings` to keep it under
     `ARCH001`'s line-count threshold) -- same literal-arg fail-closed logic
-    that function always ran inline, unchanged in behavior."""
+    that function always ran inline. T-1659 adds two semantic narrowings,
+    both applied BEFORE the literal-arg check even runs, both fail-open
+    (only ever narrow the raw substring scan, never widen it):
+
+    - a `_BARE_PYTHON_BUILTIN_NEEDLES` construct with a `python_tree`
+      available, confirmed (`_python_bare_call_ok`) to be a dotted
+      attribute/method access or a mid-token substring -- neither shape is
+      the python builtin this taxonomy row means.
+    - the `_SYS_MODULES_NEEDLE` ("sys.modules[") construct, confirmed
+      (`_python_sys_modules_write_ok`) to be a plain READ (`mod =
+      sys.modules["x"]`, an ordinary already-imported-module lookup) rather
+      than the assignment-target WRITE (`sys.modules["x"] = fake`) the
+      taxonomy row's own rationale is about.
+
+    Every OTHER construct's behavior is unchanged."""
     findings: list[_OpaqueFinding] = []
     needle = construct.needle.encode("utf-8")
     start = 0
@@ -979,6 +1120,8 @@ def _needle_construct_findings(
         if _fully_in_any_span(idx, match_end, comment_spans):
             continue
         if _byte_offset_inside_string_literal(raw, idx):
+            continue
+        if _semantic_check_suppresses(construct, python_tree, idx, match_end):
             continue
         fires = True
         if construct.literal_arg_index is not None:

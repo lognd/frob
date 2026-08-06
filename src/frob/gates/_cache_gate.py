@@ -218,6 +218,7 @@ def _cache001_violation(rel_path: str, site: _UncoveredRead) -> Violation:
         severity=Severity.ERROR,
         file=rel_path,
         line=site.lineno,
+        symref=f"{rel_path}::{site.func_name}",
         message=(
             f"CACHE001: {rel_path}:{site.lineno} @memoize_per_run function "
             f"{site.func_name} reads {site.read_desc}, whose target is not "
@@ -235,6 +236,7 @@ def _cache001_violation(rel_path: str, site: _UncoveredRead) -> Violation:
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:tests tests/test_cache_gate.py::TestMemoizedReadCoverage.test_uncovered_read_fires  # noqa: E501
 # frob:tests tests/test_cache_gate.py::TestMemoizedReadCoverage.test_silent_shapes  # noqa: E501
+# frob:tests tests/test_cache_gate.py::TestCache001Symref.test_violation_carries_symref  # noqa: E501
 def cache_gate(root: Path) -> tuple[Violation, ...]:
     """CACHE001: every git-tracked `src/frob/**/*.py` `@memoize_per_run`
     function scanned for a read whose target is not derived from any of its

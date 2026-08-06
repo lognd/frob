@@ -378,13 +378,15 @@ def _load_file_config(file: Path) -> dict:
     return data.get("tool", {}).get("frob", {})
 
 
-# frob:waive OPAQUE001 reason="T-1038: every getattr(args, field, None)/ getattr(args, \
-# flag, False) call below ranges over a closed, statically-declared tuple/string \
-# literal of known AppConfig/argparse field names defined at module scope above -- not \
-# attacker- or externally-controlled input; this is the standard \
-# argparse-Namespace-to-model field-copy idiom, not an evasion surface. T-1424: this \
-# waiver now covers every `_apply_*_fields` helper below, all of which share the same \
-# closed-tuple shape as the original single-function body it was written for."
+# frob:waive OPAQUE001 reason="T-1038: every getattr(args, field, None) call below \
+# ranges over a closed, statically-declared tuple/string literal of known \
+# AppConfig/argparse field names defined at module scope above -- not attacker- or \
+# externally-controlled input; this is the standard argparse-Namespace-to-model \
+# field-copy idiom, not an evasion surface. T-1659: OPAQUE001's Violation now carries \
+# symref (T-1659's own symref fix), so this waiver binds ONLY to _apply_string_fields \
+# -- the T-1424 note about it covering every sibling `_apply_*_fields` helper below \
+# described the file-scope fallback this fix closes; each sibling now carries its own \
+# copy of the identical reasoning below."
 def _apply_string_fields(args: argparse.Namespace, d: dict) -> None:
     """Copy every present `_STRING_FIELDS` value from `args` into `d`, in place."""
     for field in _STRING_FIELDS:
@@ -393,6 +395,12 @@ def _apply_string_fields(args: argparse.Namespace, d: dict) -> None:
             d[field] = val
 
 
+# frob:ticket T-1659
+# frob:waive OPAQUE001 reason="T-1038/T-1659: same closed, statically-declared \
+# _PATH_FIELDS tuple as _apply_string_fields above -- not attacker/externally- \
+# controlled input; split into its own waiver because OPAQUE001's Violation now \
+# carries symref (T-1659), which binds a waiver to exactly one function instead of the \
+# whole file."
 def _apply_path_fields(args: argparse.Namespace, d: dict) -> None:
     """Copy every present `_PATH_FIELDS` value from `args` into `d` as a `Path`."""
     for field in _PATH_FIELDS:
@@ -421,6 +429,12 @@ def _resolve_ticket_worktree(d: dict) -> None:
         d["ticket_worktree"] = d["ticket_worktree"].resolve()
 
 
+# frob:ticket T-1659
+# frob:waive OPAQUE001 reason="T-1038/T-1659: same closed, statically-declared \
+# _INT_FIELDS tuple (plus the two ad-hoc literal-named fields parse_exit_code/ \
+# check_budget) as _apply_string_fields above -- not attacker/externally-controlled \
+# input; split into its own waiver because OPAQUE001's Violation now carries symref \
+# (T-1659), which binds a waiver to exactly one function instead of the whole file."
 def _apply_int_fields(args: argparse.Namespace, d: dict) -> None:
     """Copy every present `_INT_FIELDS` value, plus the two ad-hoc int fields
     (`parse_exit_code`, `check_budget`) that need an explicit `int()` cast."""
@@ -439,6 +453,12 @@ def _apply_int_fields(args: argparse.Namespace, d: dict) -> None:
         d["check_budget"] = int(check_budget)
 
 
+# frob:ticket T-1659
+# frob:waive OPAQUE001 reason="T-1038/T-1659: same closed, statically-declared \
+# _FLOAT_FIELDS tuple as _apply_string_fields above -- not attacker/externally- \
+# controlled input; split into its own waiver because OPAQUE001's Violation now \
+# carries symref (T-1659), which binds a waiver to exactly one function instead of the \
+# whole file."
 def _apply_float_fields(args: argparse.Namespace, d: dict) -> None:
     """Copy every present `_FLOAT_FIELDS` value from `args` into `d`, in place."""
     for field in _FLOAT_FIELDS:
@@ -447,6 +467,12 @@ def _apply_float_fields(args: argparse.Namespace, d: dict) -> None:
             d[field] = val
 
 
+# frob:ticket T-1659
+# frob:waive OPAQUE001 reason="T-1038/T-1659: same closed, statically-declared \
+# _LIST_FIELDS tuple (plus the one ad-hoc literal-named exports_exclude field) as \
+# _apply_string_fields above -- not attacker/externally-controlled input; split into \
+# its own waiver because OPAQUE001's Violation now carries symref (T-1659), which \
+# binds a waiver to exactly one function instead of the whole file."
 def _apply_list_fields(args: argparse.Namespace, d: dict) -> None:
     """Copy every non-empty `_LIST_FIELDS` value, plus `exports_exclude`
     (kept separate since it predates the shared list-field loop)."""
@@ -472,6 +498,12 @@ def _apply_scalar_overrides(args: argparse.Namespace, d: dict) -> None:
         d["fleet_body"] = fleet_body
 
 
+# frob:ticket T-1659
+# frob:waive OPAQUE001 reason="T-1038/T-1659: same closed, statically-declared \
+# _BOOL_FLAGS tuple as _apply_string_fields above -- not attacker/externally- \
+# controlled input; split into its own waiver because OPAQUE001's Violation now \
+# carries symref (T-1659), which binds a waiver to exactly one function instead of the \
+# whole file."
 def _apply_bool_flags(args: argparse.Namespace, d: dict) -> None:
     """Set every `_BOOL_FLAGS` entry that `args` carries as `True`; absent or
     `False` flags are left out of `d` (never explicitly forced `False`)."""

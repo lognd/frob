@@ -130,3 +130,30 @@ class TestT1454RegressionShape:
         _git_init_tracked(tmp_path)
         violations = cache_gate(tmp_path)
         assert any(v.rule == "CACHE001" for v in violations)
+
+
+# frob:ticket T-1659
+class TestCache001Symref:
+    """CACHE001's `Violation` used to leave `symref` unset (the DEAD001/
+    T-1652 hole this ticket audits every gate for): a `frob:waive CACHE001`
+    written above one `@memoize_per_run` function in a multi-function file
+    would silently forgive every CACHE001 finding in that file via
+    `_match_waiver`'s file-scope fallback. Fixed to set
+    `symref=f"{rel_path}::{site.func_name}"`."""
+
+    # frob:tests \
+    # tests/test_cache_gate.py::TestCache001Symref.test_violation_carries_symref
+    def test_violation_carries_symref(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_cache_gate.py::cache_gate"""
+        _write(
+            tmp_path,
+            "src/frob/_fixture_symref.py",
+            "from frob.check._memo import memoize_per_run\n\n"
+            "@memoize_per_run\n"
+            "def compute(root):\n"
+            '    return open("frob.lock").read()\n',
+        )
+        _git_init_tracked(tmp_path)
+        violations = [v for v in cache_gate(tmp_path) if v.rule == "CACHE001"]
+        assert len(violations) == 1
+        assert violations[0].symref == "src/frob/_fixture_symref.py::compute"

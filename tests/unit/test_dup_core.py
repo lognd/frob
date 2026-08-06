@@ -34,6 +34,11 @@ def test_frob_core_module_registers_exported_kernels():
     # Python; assert the module imports and exposes its exported surface.
     import frob_core
 
+    # frob:waive OPAQUE001 reason="T-1659: name ranges over a closed, statically- \
+    # declared tuple of this test's own exported-kernel names literally spelled out 2 \
+    # lines above -- not attacker/externally-controlled input; the whole point of the \
+    # loop is asserting each already-known kernel name resolves to a callable, not a \
+    # dynamic-name evasion surface"
     for name in (
         "r3_canonical_hash",
         "winnow_fingerprints",

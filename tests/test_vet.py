@@ -6137,6 +6137,130 @@ class TestOpaqueIndirectionGate:
         assert waived[0].waived is not None
         assert "trusted enum member" in waived[0].waived.reason
 
+    def test_opaque_violation_carries_symref(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_opaque.py::opaque_gate kind="unit"
+        # T-1659: OPAQUE001's Violation used to leave `symref` unset, which
+        # made every `frob:waive OPAQUE001` match by FILE SCOPE
+        # (`_match_waiver`'s symref-less branch) instead of the specific
+        # function it was written above -- the same DEAD001/T-1652 hole.
+        import subprocess as sp
+
+        from frob.gates._opaque import opaque_gate
+
+        sp.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("def handler(name, x):\n    getattr(subprocess, name)(x)\n")
+        sp.run(["git", "add", "pkg.py"], cwd=tmp_path, capture_output=True, check=True)
+
+        violations = opaque_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].symref == "pkg.py::handler"
+
+    def test_opaque_waiver_scoped_to_symbol_not_whole_file(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_opaque.py::opaque_gate kind="unit"
+        # T-1659: a `frob:waive OPAQUE001` written above ONE function in a
+        # multi-function file must NOT forgive a sibling function's own
+        # OPAQUE001 finding -- pre-fix, both fell back to file-scope
+        # matching and a single waiver silently covered every finding in
+        # the file (the DEAD001/T-1652 shape this ticket audits for).
+        import subprocess as sp
+
+        from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
+        from frob.gates._opaque import opaque_gate
+        from frob.graph import build_graph
+
+        sp.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            '# frob:waive OPAQUE001 reason="waived is a trusted enum member"\n'
+            "def waived(name, x):\n"
+            "    getattr(subprocess, name)(x)\n"
+            "\n"
+            "\n"
+            "def unwaived(name, x):\n"
+            "    getattr(subprocess, name)(x)\n"
+        )
+        sp.run(["git", "add", "pkg.py"], cwd=tmp_path, capture_output=True, check=True)
+
+        violations = opaque_gate(tmp_path)
+        assert len(violations) == 2
+
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        kept, waived = _apply_waivers(violations, snap)
+        assert len(kept) == 1
+        assert kept[0].symref == "pkg.py::unwaived"
+        assert len(waived) == 1
+        assert waived[0].symref == "pkg.py::waived"
+
+    # -- T-1659: semantic (AST-based) narrowing of the needle scan itself,
+    # following the coordinator's "decide from semantics, never a lexical
+    # match" directive -- these lock the exact false-positive shapes the
+    # T-1659 symref-narrowing audit surfaced: `monkeypatch.setattr(...)`/
+    # `model.eval(...)` (dotted attribute access, not the bare builtin),
+    # `test_..._exec(...)`/`_mutation_for_eval(...)` (the needle landing
+    # mid-token inside a longer identifier), and `sys.modules["x"]` read
+    # (not the assignment-target WRITE the taxonomy row means) -- while a
+    # genuine bare call of each kind still fires.
+
+    def test_dotted_setattr_call_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('monkeypatch.setattr("frob.gates._x", lambda root: None)\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_dotted_eval_method_call_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("result = model.eval(assignment)\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_identifier_ending_in_builtin_name_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("def _mutation_for_eval(x):\n    return x\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_bare_setattr_call_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("setattr(obj, name, value)\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "setattr" for f in findings)
+
+    def test_sys_modules_read_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('mod = sys.modules["frob.strata._facts"]\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_sys_modules_write_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('sys.modules["fake"] = FakeModule()\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "sys.modules replacement" for f in findings)
+
     # -- T-0666: litmus fixtures for taxonomy runtime-opaque rows that have
     # NO entry in `RUNTIME_OPAQUE_CONSTRUCTS`/`OPAQUE_SOURCE_INVISIBLE` yet
     # (no detector, no fail-closed obligation, no excuse-registration).
