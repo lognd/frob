@@ -93,6 +93,26 @@ def test_render_project_all_registered_types_succeed(tmp_path: Path) -> None:
         assert result.is_ok, f"{project_type} failed to render: {result.err}"
 
 
+# frob:ticket T-1576
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_p\
+# rofile
+def test_render_project_all_types_default_to_rapid_profile(tmp_path: Path) -> None:
+    """T-1576: every registered project type's rendered `frob.toml` opts a
+    brand-new scaffolded repo into `[profile] profile = "rapid"` -- the
+    one-way auto-ratchet (`frob.tickets._profile`) upgrades it to
+    `standard` automatically once the repo outgrows the thresholds."""
+    for project_type in list_project_types():
+        out_dir = tmp_path / f"{project_type}-profile"
+        result = render_project(project_type, "demo", out_dir)
+        assert result.is_ok, f"{project_type} failed to render: {result.err}"
+        toml_path = out_dir / "frob.toml"
+        assert toml_path.exists(), f"{project_type} did not write frob.toml"
+        contents = toml_path.read_text(encoding="utf-8")
+        assert "[profile]" in contents, f"{project_type} missing [profile]"
+        assert 'profile = "rapid"' in contents, f"{project_type} not rapid by default"
+
+
 # frob:tests \
 # tests/unit/test_scaffold_project.py::test_resolve_manifest_paths_bad_output_expressio\
 # n_is_render_failed

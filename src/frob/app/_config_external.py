@@ -346,6 +346,8 @@ _BOOL_FLAGS = (
     "ticket_land_queue",
     # frob:ticket T-1444
     "ticket_land_drain",
+    # frob:ticket T-1518
+    "ticket_land_run_mutation_sweep",
     "ticket_close_strict",
     "ticket_foreground",
     "ticket_steal",

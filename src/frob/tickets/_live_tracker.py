@@ -4,7 +4,10 @@ Landing/closing T-0605 instantly turned 41 `docs/design/registry/
 patterns.yaml` rows with `disposition: "deferred:T-0605"` into main-wide
 REG003 errors -- discovered only on the NEXT `frob check`, after the close
 was already final and irreversible. `frob.gates`'s WAIVE006 already models
-the identical hazard for `frob:waive ... ticket=<id>` bindings, but neither
+the identical hazard for `frob:waive ... ticket=<id>` bindings (T-1559
+extends the same scan to WIRE001/WIRE002's `follow_up=<id>` binding, the
+same hazard for a different waiver family -- see `_WAIVER_TICKET_PATTERN`),
+but neither
 check ran AT CLOSE TIME for the ticket about to disappear -- both only ever
 caught it retroactively, one `frob check` too late.
 
@@ -76,7 +79,19 @@ _REGISTRY_LIVE_KINDS = ("deferred", "tracked_by")
 # `--ticket T-0605` (a real false-positive class hit in `.frob/
 # telemetry.jsonl` during T-0854's own testing), which cites nothing as a
 # live tracker at all.
-_WAIVER_TICKET_PATTERN = r"ticket=\"?{id}\"?\b|ticket\s+\"{id}\""
+# T-1559: the WIRE001/WIRE002 `follow_up=` binding (`frob.gates._wire.
+# _wire002_violations`'s own attribute) is the SAME "this ticket is still
+# cited as live tracker" hazard `ticket=` already covers, for a different
+# waiver family (WIRE001's deferred-wiring waivers, not WAIVE006's own).
+# The 2026-08-05 incident this ticket fixes: T-1490/T-1488 landed and
+# closed while 16 `frob:waive WIRE001 ... follow_up="T-1490"`-shaped
+# directives still bound them -- WIRE002 caught it only on the NEXT `frob
+# check`, one check too late, exactly the T-0605 shape this module
+# already exists to close for `ticket=`. Folded into the SAME pattern
+# (one `git grep -E` alternation) rather than a parallel scan, since both
+# are "a comment attribute equals this ticket id" citations differing
+# only in attribute name.
+_WAIVER_TICKET_PATTERN = r"ticket=\"?{id}\"?\b|ticket\s+\"{id}\"|follow_up=\"?{id}\"?\b"
 
 # `docs/design/registry/*.yaml` -- the one pathspec the registry-
 # disposition grep is scoped to (the waiver grep runs repo-wide, no
@@ -92,9 +107,11 @@ def _registry_pattern(ticket_id: str) -> str:
     return rf'disposition:\s*["\']?({kinds}):{re.escape(ticket_id)}\b'
 
 
+# frob:ticket T-1559
 def _waiver_pattern(ticket_id: str) -> str:
     """The `git grep -E` pattern for a waiver `ticket=`/`ticket "..."`
-    attribute naming `ticket_id`."""
+    attribute (WAIVE006's own binding) OR a `follow_up=` attribute
+    (WIRE001/WIRE002's binding, T-1559) naming `ticket_id`."""
     return _WAIVER_TICKET_PATTERN.format(id=re.escape(ticket_id))
 
 
@@ -206,18 +223,24 @@ def _content_key(line: str) -> str:
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_own_scope_citation_excluded  # noqa: E501
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_citation_outside_own_scope_still_flagged  # noqa: E501
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_draft_id_always_clear  # noqa: E501
+# frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_follow_up_attribute  # noqa: E501
+# frob:ticket T-1559
 def live_tracker_citations(
     root: Path, ticket_id: str, *, base_ref: str = "main"
 ) -> tuple[str, ...]:
     """Every `file:line: text` site under `root` that still cites
     `ticket_id` as its live tracker: a registry `deferred:`/`tracked_by:`
-    disposition, or a waiver `ticket=` attribute (either grammar) -- the
-    exact citation classes the T-0605 incident and WAIVE006 already model,
-    now checked BEFORE the ticket this scan names can close/land, not
-    after. Empty means clear to close; a non-empty result names every
-    citing row/site so the remedy (file a successor ticket and re-point
-    the citing rows, or re-point them in this same change) has something
-    concrete to act on.
+    disposition, a waiver `ticket=` attribute (either grammar, WAIVE006's
+    own binding), or a waiver `follow_up=` attribute (WIRE001/WIRE002's
+    binding, T-1559 -- the 2026-08-05 incident: 16 `frob:waive WIRE001
+    ... follow_up="T-1490"`-shaped directives survived T-1490/T-1488's
+    close/land and only surfaced as WIRE002 orphans on the NEXT `frob
+    check`) -- the exact citation classes the T-0605 incident, WAIVE006,
+    and WIRE002 already model, now checked BEFORE the ticket this scan
+    names can close/land, not after. Empty means clear to close; a
+    non-empty result names every citing row/site so the remedy (file a
+    successor ticket and re-point the citing rows, or re-point them in
+    this same change) has something concrete to act on.
 
     A provisional draft id (`frob.tickets._provisional.is_draft_id`) is
     ALWAYS clear (`()`, no scan run): `frob ticket land`'s own draft-

@@ -2000,19 +2000,72 @@ ticket's evidence, so landing this rule cannot turn a past close red.
 
 **Wired into `frob ticket land`** (`_land.py::_check_mutation_evidence`,
 called from `_land_precheck` right after `current_branch` resolves, before
-any git mutation): a `security`/`bug`-kind ticket with an ERROR-severity
-TEST016 finding refuses the land (`LandError.EvidenceConfirmatoryOnly`);
-every other kind's WARN finding is logged and does not block. `frob
-ticket land --skip-mutation-evidence` (AppConfig
+any git mutation): as of T-1518, only a `security`-kind ticket runs the
+mutation subprocess SYNCHRONOUSLY here and can still refuse the land on
+an ERROR-severity TEST016 finding (`LandError.EvidenceConfirmatoryOnly`).
+Every other kind's TEST016 obligation (including `bug`-kind, previously
+also synchronous+blocking) is deferred: `_check_mutation_evidence`
+enqueues a `frob.tickets._mutation_sweep_queue.SweepEntry` instead of
+running the mutation subprocess inline, and does NOT block the land for
+it -- see "Batch mutation-evidence sweep (TEST016, T-1518)" below.
+BUG002 (`bug_repro_violations`) is unaffected by this change and stays
+synchronous+ERROR-always for bug/security kind on every land, deferred
+kind or not -- it is cheap (re-runs already-bound evidence against a
+single prior commit, no mutation subprocess) and proves a different
+property. `frob ticket land --skip-mutation-evidence` (AppConfig
 `ticket_skip_mutation_evidence`, default off) is the documented escape
-hatch for a genuine false positive: the check still runs and logs its
-findings at WARNING, it just cannot refuse the land. Deliberately
-NOT part of `frob.check`'s `test_gate`/`_ALL_GATES` snapshot pipeline
-(`frob.check` is out of this ticket's scope): every other TEST rule is a
-pure function of the graph snapshot, safe to run on every `frob check`
-invocation; this rule spawns real bounded subprocesses per ticket, which
-would violate the "must not slow the default `frob check` path for
+hatch for the still-synchronous `security`-kind path: the check still
+runs and logs its findings at WARNING, it just cannot refuse the land.
+Deliberately NOT part of `frob.check`'s `test_gate`/`_ALL_GATES` snapshot
+pipeline (`frob.check` is out of this ticket's scope): every other TEST
+rule is a pure function of the graph snapshot, safe to run on every `frob
+check` invocation; this rule spawns real bounded subprocesses per ticket,
+which would violate the "must not slow the default `frob check` path for
 tickets that never opt in" guard if it ran unconditionally there.
+
+### Batch mutation-evidence sweep (TEST016, T-1518)
+
+<!-- frob:describes src/frob/tickets/_mutation_sweep_queue.py::enqueue_pending_sweep -->
+<!-- frob:describes src/frob/tickets/_mutation_sweep_queue.py::run_pending_sweep -->
+
+TEST016's mutation subprocess is the single most expensive, least
+incremental land stage (2026-08-04 dev-cycle review) -- its marginal
+per-ticket value is test-strength validation, not main-correctness, so
+running it synchronously on every land does not pay for itself except for
+`security`-kind tickets. `frob.tickets._mutation_sweep_queue` moves the
+rest of that work off the per-land critical path onto a batch/nightly
+cadence:
+
+- **Enqueue.** `_check_mutation_evidence` calls `enqueue_pending_sweep(
+  worktree, ticket.id, base_ref, ticket.kind)` for any kind outside
+  `SYNC_BLOCKING_KINDS` (`{security}`) instead of running the mutation
+  subprocess inline. This appends a `pending` `SweepEntry` to
+  `.frob/mutation-sweep-queue.json`, guarded by the same `fcntl`-advisory-
+  lock discipline `frob.tickets._land_queue` (T-1345) already established
+  for `.frob/land-queue.json` -- a separate file, a separate lock, same
+  pattern.
+- **Batch run.** `run_pending_sweep(root)` processes every `pending`
+  entry: re-runs `check_ticket_mutation_evidence` against `root`'s
+  current tree and the entry's recorded `base_ref`, then marks the entry
+  `swept`. Never mutates the original ticket's state and never blocks
+  anything retroactively. A `bug`-kind entry (the one deferred kind that
+  used to promote TEST016 to ERROR) whose batch run still finds
+  confirmatory-only evidence files a NEW `bug`-kind ticket
+  (`origin=agent`) naming the offending land, so the finding re-enters
+  the normal doable-ticket queue instead of vanishing into a log line.
+  Every other kind's confirmatory-only finding is logged at WARNING only,
+  matching `mutation_evidence_violations`' own WARN severity for those
+  kinds.
+- **Cadence.** `frob ticket land --drain` (T-1444's merge-queue drainer)
+  calls `run_pending_sweep` automatically after draining every queued
+  land -- the natural batch boundary the ticket body names. A standalone
+  `frob ticket land --run-mutation-sweep` CLI flag (AppConfig
+  `ticket_land_run_mutation_sweep`) runs the same batch pass without
+  `--drain`, for a deployment (e.g. a nightly cron) that never calls
+  `--drain` at all.
+- **Visibility.** `pending_sweep_count(root)` returns how many entries
+  are currently `pending`, for a caller that wants queue depth without
+  mutating anything.
 
 **Also wired into `frob ticket close` (T-0844)**, the direct non-land
 close path: `frob.app.ticket_runner._close` computes the same
@@ -2068,7 +2121,17 @@ registry parse per close") for every site that still cites `ticket_id` as
 its live tracker: a registry `deferred:`/`tracked_by:` disposition
 (`duplicate_of:` is excluded -- it never claimed the target still had open
 work), or a waiver `ticket=`/`ticket "..."` attribute (both the
-`frob:waive` comment grammar and the `.strata` `waive` clause grammar). A
+`frob:waive` comment grammar and the `.strata` `waive` clause grammar),
+OR (T-1559) a waiver `follow_up=` attribute -- WIRE001/WIRE002's own
+binding, the SAME "this ticket is still cited as live tracker" hazard
+for a different waiver family. T-1559's own incident: T-1490/T-1488
+landed and closed on 2026-08-05 while 16 `frob:waive WIRE001 ...
+follow_up="T-1490"`-shaped directives still bound them; WIRE002 (only
+enforced at `frob check` time, not at close/land) caught it one check
+too late, turning main red with 16 orphan errors nobody was warned about
+at close time -- the exact T-0605 shape this preflight already existed
+to close for `ticket=`, now folded into the same scan/pattern rather
+than a parallel mechanism. A
 provisional draft id is always clear (WAIVE006/WAIVE007's own `T-draft-*`
 exemption, same rationale: land's draft-finalize step rewrites every
 draft-id reference to the final id in the same commit). `own_scope` (the
@@ -2400,6 +2463,78 @@ scoped-out remainder.
   closure captured. This module does not print anything itself (no CLI
   surface in this scope), so the contract is preserved by construction:
   nothing here bypasses or reimplements `land()`'s own reporting.
+
+## Development profiles (`frob.toml [profile]`, T-1575)
+
+<!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->
+<!-- frob:describes src/frob/tickets/_profile.py::effective_profile -->
+<!-- frob:describes src/frob/tickets/_profile.py::downgrade_profile_ratchet -->
+
+`frob.tickets._profile` reads `frob.toml`'s `[profile] profile = "..."`
+(`ProfileName`: `rapid` | `standard` | `fortress`) -- `standard` is the
+default, today's unchanged behavior, whenever `[profile]` is absent or
+the file does not exist, so an existing repo's ceremony is never silently
+relaxed just because `frob` shipped this feature.
+
+The ticket's own motivation: a small/new repo pays the same fixed land
+ceremony (TEST016, the T-1514 double sweep, the T-1463 baseline snapshot
+worktree, REL001) as a 950-file repo, and that ceremony is fixed-cost,
+not proportional to repo size. `rapid` trims it:
+
+- **No TEST016 on the land path at all.** `_land.py::_check_mutation_
+  evidence` checks `effective_profile(worktree)` before its T-1518
+  `SYNC_BLOCKING_KINDS` branch; `rapid` skips BOTH the synchronous
+  `security`-kind mutation subprocess and the deferred batch-sweep
+  enqueue. BUG002 (`bug_repro_violations`) is unaffected by the profile
+  and still runs/blocks for bug/security kind regardless of profile.
+- **No pre-commit sweep.** `_land_cmd.py::_land` passes
+  `pre_commit_sweep=None` to `land()` when rapid -- the single post-land
+  sweep (`_post_land_unscoped_error_sweep`, unchanged, still revert-on-
+  red) is the only sweep that runs. The T-1463 baseline-capture thread
+  itself still runs even under rapid in this increment, since it is the
+  SAME thread/result the post-land sweep also reads (T-1514) -- a fully
+  baseline-thread-free rapid path (this ticket's "no baseline snapshot
+  worktree" line, taken literally) is disclosed as deferred follow-up
+  work, not implemented here (see T-1575's Done report for the filed
+  follow-up id).
+- **Evidence/done-report leniency for `kind in {docs, chore}`, and
+  REL001 off under rapid** are likewise disclosed as deferred follow-up
+  in T-1575's Done report, not wired in this increment -- the ticket's
+  land-pipeline seams for both exist but were judged too invasive to
+  land safely in the same pass as the two seams above without dedicated
+  regression coverage of their own.
+
+**Never relaxed in any profile, `rapid` included:** ledger integrity
+checks and LAND-PROOF verification -- neither is gated by
+`effective_profile` anywhere.
+
+**`fortress`** parses and round-trips as a `ProfileName` member but has
+NO behavioral wiring yet -- a placeholder for a stricter tier a follow-up
+ticket defines.
+
+**One-way auto-ratchet.** `effective_profile(root)` -- the read path
+every seam above calls, never `configured_profile` directly -- applies a
+ONE-WAY ratchet on top of the configured value: if `rapid` and any of
+three live thresholds trips (repo file count > 300, total ticket count >
+200, concurrent lease count > 5 -- see `frob.tickets._profile`'s module
+docstring for the exact primitives each reads and why those numbers),
+the ratchet persists to `.frob/profile-ratchet.json` and every future
+`effective_profile` call returns `standard` regardless of what `frob.
+toml` still says or whether the tripped condition later reverses (files
+deleted, tickets archived). `downgrade_profile_ratchet(root, reason=...)`
+is the only way back -- an explicit, loudly-logged call, never invoked
+from any land-pipeline seam automatically.
+
+**`frob scaffold` defaults new repos to `rapid` (T-1576).** Every
+`frob.toml.j2` template under `src/frob/scaffold/data/**` writes
+`[profile] profile = "rapid"` into a freshly scaffolded project's
+generated `frob.toml` -- a brand-new repo is exactly the under-threshold
+case `rapid` exists for, and the one-way auto-ratchet above upgrades it
+to `standard` automatically the moment it grows past the thresholds.
+This does NOT affect an EXISTING repo's `frob.toml`: an absent `[profile]`
+key still means `standard` (`configured_profile`'s own documented
+default), unchanged by this ticket -- only the scaffold's OWN generated
+template content changed.
 
 ## Git merge driver
 

@@ -136,6 +136,22 @@ class TestLiveTrackerCitations:
         assert len(citations) == 1
         assert "mod.py" in citations[0]
 
+    # frob:ticket T-1559
+    def test_finds_comment_waiver_follow_up_attribute(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_follow_up_attribute  # noqa: E501
+        """T-1559: a `frob:waive WIRE001 ... follow_up="T-1490"` directive
+        is caught by the SAME scan as a `ticket=` binding -- the
+        2026-08-05 incident this ticket fixes."""
+        _init_repo(tmp_path)
+        (tmp_path / "mod.py").write_text(
+            '# frob:waive WIRE001 reason="pending wiring" follow_up="T-1490"\nx = 1\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "add wire001 waiver")
+        citations = live_tracker_citations(tmp_path, "T-1490")
+        assert len(citations) == 1
+        assert "mod.py" in citations[0]
+
     def test_finds_strata_waiver_ticket_clause(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_strata_waiver_ticket_clause  # noqa: E501
         _init_repo(tmp_path)

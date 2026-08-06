@@ -1,5 +1,13 @@
 check_base = "main"
 
+# T-1576: brand-new scaffolded repos start on the rapid profile --
+# see docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575.
+# The one-way auto-ratchet upgrades this to standard automatically once
+# the repo grows past frob.tickets._profile's thresholds; downgrading
+# back to rapid after that is an explicit `frob profile downgrade` call.
+[profile]
+profile = "rapid"
+
 [gates.severity]
 
 # Sized for a fresh, minimal scaffold on day one -- raise as the real

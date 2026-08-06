@@ -1758,6 +1758,7 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
 # helper/closure; the sequencing and exit-code decisions themselves ARE this \
 # function's one job, not a separate concern to split out further"  # noqa: E501
 # frob:ticket T-1444
+# frob:ticket T-1518
 def _land(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
     merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
@@ -1823,6 +1824,10 @@ def _land(root: Path, cfg: AppConfig) -> None:
         _land_drain(root, cfg)
         return
 
+    if cfg.ticket_land_run_mutation_sweep:
+        _run_batch_mutation_sweep(root)
+        return
+
     _require_land_args(cfg)
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     assert cfg.ticket_worktree is not None
@@ -1885,6 +1890,29 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
 
     _warn_land_override_flags(cfg)
 
+    # frob:ticket T-1575
+    # T-1575: rapid profile skips the T-1514 pre-commit sweep ("single
+    # post-land sweep with revert-on-red, no pre-commit sweep" -- this
+    # ticket's own text). The T-1463 baseline-capture thread below still
+    # runs even under rapid: it is ALSO what feeds the post-land sweep a
+    # few lines further down (same thread/result, per T-1514's own
+    # docstring), and rapid keeps that one -- only the pre-commit half is
+    # skipped here. A fully baseline-thread-free rapid path is disclosed
+    # as deferred follow-up, not implemented in this pass (see the T-1575
+    # Done report).
+    from frob.tickets._profile import ProfileName, effective_profile
+
+    _profile_result = effective_profile(worktree)
+    _rapid_land = _profile_result.is_ok and _profile_result.danger_ok is (
+        ProfileName.RAPID
+    )
+    if _rapid_land:
+        _log.info(
+            "ticket land: %s effective profile is rapid (T-1575) -- "
+            "skipping the pre-commit sweep, single post-land sweep only",
+            cfg.ticket_id,
+        )
+
     # T-1463: run concurrently with land()'s own merge/checks below -- see
     # `_capture_pre_land_baseline`'s docstring for why this is safe
     # (snapshot-isolated, not a read of root's live tree). T-1444: this is
@@ -1925,8 +1953,10 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
         check_gate_claims=_land_gate_claims_fn(worktree),
         skip_mutation_evidence=cfg.ticket_skip_mutation_evidence,
         allow_cross_ticket=cfg.ticket_allow_cross_ticket,
-        pre_commit_sweep=_land_pre_commit_sweep_fn(
-            _baseline_thread, _baseline_holder, cfg
+        pre_commit_sweep=(
+            None
+            if _rapid_land
+            else _land_pre_commit_sweep_fn(_baseline_thread, _baseline_holder, cfg)
         ),
     )
     if result.is_err:
@@ -2049,6 +2079,7 @@ def _land_enqueue(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1444
+# frob:ticket T-1518
 def _land_drain(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land --drain`: serially process every `queued` entry
     in `.frob/land-queue.json` via `frob.tickets._land_queue.drain_next`,
@@ -2116,6 +2147,49 @@ def _land_drain(root: Path, cfg: AppConfig) -> None:
             )
 
     _log.info("ticket land --drain: done, %d landed, %d failed", landed, failed)
+    _run_batch_mutation_sweep(root)
+
+
+# frob:ticket T-1518
+def _run_batch_mutation_sweep(root: Path) -> None:
+    """T-1518's natural cadence point: after `--drain` finishes landing
+    every queued entry, process any TEST016 mutation-evidence checks that
+    `_land._check_mutation_evidence` deferred (every kind besides
+    `security`, see `frob.tickets._mutation_sweep_queue`'s own docstring).
+    A failure here is logged and swallowed, never raised -- this is a
+    best-effort batch sweep riding along the merge-queue's own drain
+    cadence, not a step the drain's own success/failure accounting
+    depends on; a standalone `frob ticket land --run-mutation-sweep`
+    invocation (e.g. a nightly cron) is the other sanctioned way to run
+    it, for a deployment that never uses `--drain` at all."""
+    from frob.tickets._mutation_sweep_queue import (
+        pending_sweep_count,
+        run_pending_sweep,
+    )
+
+    result = run_pending_sweep(root)
+    if result.is_err:
+        _log.warning(
+            "ticket land --drain: batch mutation sweep failed: %s",
+            result.danger_err,
+        )
+        return
+    if result.danger_ok:
+        _log.info(
+            "ticket land --drain: batch mutation sweep processed %d "
+            "deferred TEST016 entr%s",
+            result.danger_ok,
+            "y" if result.danger_ok == 1 else "ies",
+        )
+    remaining = pending_sweep_count(root)
+    if remaining.is_ok and remaining.danger_ok:
+        _log.warning(
+            "ticket land --drain: %d entr%s still pending in the mutation "
+            "sweep queue after this batch (likely enqueued mid-sweep) -- "
+            "will be picked up next run",
+            remaining.danger_ok,
+            "y" if remaining.danger_ok == 1 else "ies",
+        )
 
 
 # frob:ticket T-1444

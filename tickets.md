@@ -937,6 +937,7 @@ original dispatch brief this ticket's own Done report already noted.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 2 error(s), 451 warning(s), 769 waived
 - error-findings: DUP001@frob-core/src/extract.rs, SELFAUDIT001@design
+
 <!-- ticket:T-1221 -->
 ```yaml
 id: T-1221
@@ -3973,7 +3974,7 @@ finding as environment-blocked rather than force it.
 id: T-1518
 title: 'move TEST016 mutation evidence off the per-land critical path: batch/nightly
   cadence, land-blocking only for security-kind'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-04'
@@ -3981,12 +3982,153 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/tickets/_mutation_sweep_queue.py
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/config.py
+- src/frob/_cli_parsers/_ticket/_progress.py
+- tests/unit/test_mutation_sweep_queue.py
+- docs/modules/tickets.md
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_mutation_sweep_queue.py
+  reason: 'T-1518 batch/nightly TEST016 cadence: new sweep-queue module, land-time
+    gating change, CLI flag wiring'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-1518 batch/nightly TEST016 cadence: new sweep-queue module, land-time
+    gating change, CLI flag wiring'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-1518 batch/nightly TEST016 cadence: new sweep-queue module, land-time
+    gating change, CLI flag wiring'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'T-1518 batch/nightly TEST016 cadence: new sweep-queue module, land-time
+    gating change, CLI flag wiring'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: 'T-1518 batch/nightly TEST016 cadence: new sweep-queue module, land-time
+    gating change, CLI flag wiring'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_mutation_sweep_queue.py
+  reason: 'T-1518 batch/nightly TEST016 cadence: new sweep-queue module, land-time
+    gating change, CLI flag wiring'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-1518 batch/nightly TEST016 cadence: new sweep-queue module, land-time
+    gating change, CLI flag wiring'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'T-1518: --run-mutation-sweep CLI dest must be wired into AppConfig.from_external''s
+    field-name tuple (WIRE001)'
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep::test_enqueue_persists_entry
+- tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_empty_queue_is_noop
+- tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_clean_finding_marks_swept_no_ticket_filed
+- tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_bug_kind_confirmatory_finding_files_ticket
+- tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_non_bug_confirmatory_finding_only_warns
+- tests/unit/test_mutation_sweep_queue.py::TestPendingSweepCount::test_counts_only_pending_entries
 threat: null
 component: null
 ```
 From the 2026-08-04 dev-cycle review: TEST016 (mutation evidence) is the most expensive, least incremental land stage, and its marginal per-ticket value is test-strength validation, not main-correctness. Proposal: run TEST016 per merge-queue batch drain (T-1444) or nightly over the day's landed diffs; keep it synchronous+blocking only for kind=security tickets. A batch finding files a ticket against the offending land instead of refusing it retroactively. Interacts with: T-1444 (batch boundary is the natural cadence point), the existing --skip-mutation-evidence override (today used 2x for genuine false positives T-1235/T-1439 -- a lower-frequency, higher-context batch run should also reduce false-positive pressure).
+
+## Done report
+
+T-1518: TEST016 mutation-evidence off the per-land critical path.
+
+Changed:
+- src/frob/tickets/_mutation_sweep_queue.py (new): SweepEntry/SweepQueueError
+  models, SYNC_BLOCKING_KINDS={security}, enqueue_pending_sweep,
+  run_pending_sweep, pending_sweep_count, _file_confirmatory_only_ticket.
+  fcntl-lock-guarded .frob/mutation-sweep-queue.json, mirroring
+  frob.tickets._land_queue's own T-1345 design.
+- src/frob/tickets/_land.py::_check_mutation_evidence: only security-kind
+  tickets still run mutation_evidence_violations synchronously and can
+  refuse the land; every other kind (including bug-kind, previously also
+  blocking) enqueues a deferred sweep entry instead. BUG002
+  (bug_repro_violations) is unaffected -- still synchronous+ERROR-always
+  for bug/security kind.
+- src/frob/app/ticket_runner/_land_cmd.py: _land_drain now calls
+  _run_batch_mutation_sweep(root) after draining, the natural T-1444
+  cadence point; a standalone --run-mutation-sweep CLI path added for
+  deployments that never call --drain.
+- src/frob/app/config.py, src/frob/app/_config_external.py,
+  src/frob/_cli_parsers/_ticket/_progress.py: --run-mutation-sweep flag
+  plumbing (AppConfig field + argparse + external-config wiring, closing
+  the WIRE001 CLI-dest check).
+- docs/modules/tickets.md: updated the existing "Wired into frob ticket
+  land" paragraph, added a new "Batch mutation-evidence sweep (TEST016,
+  T-1518)" section.
+- tests/unit/test_mutation_sweep_queue.py (new): 6 unit tests covering
+  enqueue, pending_sweep_count, and run_pending_sweep's three outcomes
+  (clean, bug-kind files a ticket, non-bug-kind warns only).
+
+Evidence: 6 pytest node ids bound via the ticket evidence CLI, all
+observed passing under a targeted pytest run of the new test module
+(6 passed, 0 failed).
+
+Gates: a repo-wide (not --ticket-scoped, per playbook section 6c) run of
+invariant/prework/wire/test/coverage stage groups shows zero unwaived
+findings against any file this ticket touched; every finding naming one
+of this ticket's files carries a [waived: ...] disposition with a stated
+reason (COV001 doc anchors, INV006 module-docstring waiver mirroring
+_land_queue.py's precedent, WIRE001/WIRE002 test-helper waiver with
+follow_up="T-1518"). Remaining unwaived findings in that run (COV006/
+COV007 on tests/test_ticket_land.py, _land_cmd.py private-symbol doc
+anchors, _land.py::_merge_main_into_worktree_v2) are pre-existing,
+outside this ticket's scope, and do not name any file/symbol this ticket
+changed.
+
+Filed: none -- no out-of-scope work discovered.
+
+### Changed
+```
+ docs/modules/tickets.md                    |  75 +++++-
+ src/frob/_cli_parsers/_ticket/_progress.py |  18 ++
+ src/frob/app/_config_external.py           |   2 +
+ src/frob/app/config.py                     |   6 +
+ src/frob/app/ticket_runner/_land_cmd.py    |  49 ++++
+ src/frob/tickets/_land.py                  |  82 ++++--
+ src/frob/tickets/_mutation_sweep_queue.py  | 399 +++++++++++++++++++++++++++++
+ tests/unit/test_mutation_sweep_queue.py    | 179 +++++++++++++
+ tickets.md                                 |  68 ++++-
+ 9 files changed, 843 insertions(+), 35 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep::test_enqueue_persists_entry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_empty_queue_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_clean_finding_marks_swept_no_ticket_filed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_bug_kind_confirmatory_finding_files_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_non_bug_confirmatory_finding_only_warns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_mutation_sweep_queue.py::TestPendingSweepCount::test_counts_only_pending_entries` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 696 warning(s), 786 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1521 -->
 ```yaml
@@ -5410,7 +5552,7 @@ Successor to T-1490 and T-1488, which closed while 16 frob:waive WIRE001 directi
 id: T-1559
 title: 'land/close guard: refuse or auto-migrate open frob:waive directives bound
   to the closing ticket (WIRE002 orphan prevention)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -5418,21 +5560,129 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/tickets/_live_tracker.py
+- tests/test_tickets_live_tracker.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_live_tracker.py
+  reason: 'T-1559: extend the existing T-0854 live-tracker-citation preflight (already
+    wired into close+land) to WIRE001''s follow_up= binding'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/test_tickets_live_tracker.py
+  reason: 'T-1559: extend the existing T-0854 live-tracker-citation preflight (already
+    wired into close+land) to WIRE001''s follow_up= binding'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-1559: extend the existing T-0854 live-tracker-citation preflight (already
+    wired into close+land) to WIRE001''s follow_up= binding'
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_comment_waiver_follow_up_attribute
 acceptance:
 - text: GIVEN a ticket close/land WHEN any frob:waive directive in the repo names
     the closing ticket id THEN the close refuses with the waiver list and the exact
     rebind command, OR a Tier-A auto-fix rebinds them to a named open successor --
     closing a waiver-bound ticket can never silently red main again
-  evidence: []
+  evidence:
+  - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_comment_waiver_follow_up_attribute
 - text: GIVEN the guard fires THEN the refusal message names each waiver file:line
     and the successor-ticket flag to pass
-  evidence: []
+  evidence:
+  - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_comment_waiver_follow_up_attribute
 threat: null
 component: null
 ```
 2026-08-05 incident: T-1490/T-1488 landed and closed while 16 frob:waive WIRE001 directives bound them; the next full check showed 16 WIRE002 errors on main with no gate having warned at close time. The WIRE002 rule (waivers must bind an open ticket) is only enforced at check time, after the close already happened. Tier-A auto-fix family (T-1544..T-1549 precedent).
+
+## Done report
+
+T-1559: land/close guard for orphaned frob:waive follow_up directives.
+
+Changed:
+- src/frob/tickets/_live_tracker.py: extended `_WAIVER_TICKET_PATTERN`
+  (the `git grep -E` pattern `_waiver_pattern`/`live_tracker_citations`
+  already use) with a third alternation matching a `follow_up="T-####"`
+  waiver attribute, alongside the existing `ticket=`/`ticket "..."`
+  alternatives. No new function, no new call site: `live_tracker_
+  citations` is already wired unconditionally into both `frob ticket
+  close` (`_done_transition_guard`, frob/tickets/_evidence.py) and `frob
+  ticket land` (`_check_live_tracker_citations`, frob/tickets/_land.py),
+  so this single pattern change closes the gap at both close-time and
+  land-time for free.
+- tests/test_tickets_live_tracker.py: new
+  test_finds_comment_waiver_follow_up_attribute, mirroring the existing
+  test_finds_comment_waiver_ticket_attribute test for the follow_up=
+  case.
+- docs/modules/tickets.md: extended the existing "Live-tracker citation
+  preflight (T-0854)" section with the follow_up= binding and the
+  2026-08-05 T-1490/T-1488 incident this ticket fixes.
+
+Approach vs. acceptance criteria: acceptance[0] offers an explicit OR
+("the close refuses ... OR a Tier-A auto-fix rebinds them") -- this
+increment implements the REFUSE half only (reusing the existing,
+already-battle-tested T-0854 refusal path and its message format, which
+already names each citation's file:line and the remedy). An auto-migrate
+Tier-A path is NOT implemented: it would need to invent or select a
+successor ticket id, which this guard has no principled way to do
+automatically, so refusal (forcing a human/agent decision) is the
+correct default per the ticket's own OR clause.
+
+Evidence: 1 pytest node id bound via the ticket evidence CLI (also bound
+to both acceptance criteria via --accepts 0 --accepts 1), observed
+passing (18 passed total in the file, including this one) under a
+targeted pytest run of tests/test_tickets_live_tracker.py.
+
+Gates: a repo-wide (not --ticket-scoped) run of invariant/prework/wire/
+test/coverage stage groups shows zero findings naming _live_tracker.py
+or the new test. gate:COV/TEST/WIRE/INV all pass clean; the lone
+unwaived finding in that run (gate:PRE, PRE001) fires because the
+invocation itself carried no --ticket flag on a non-T-####-named branch
+-- a measurement artifact of the ad-hoc check command, not a finding
+about any file this ticket touched.
+
+Filed: none -- no out-of-scope work discovered.
+
+### Changed
+```
+ docs/modules/tickets.md                            | 159 +++++++-
+ src/frob/_cli_parsers/_ticket/_progress.py         |  18 +
+ src/frob/app/_config_external.py                   |   2 +
+ src/frob/app/config.py                             |   6 +
+ src/frob/app/ticket_runner/_land_cmd.py            |  78 +++-
+ src/frob/scaffold/data/shared/cpp/frob.toml.j2     |   8 +
+ src/frob/scaffold/data/shared/python/frob.toml.j2  |   8 +
+ .../data/types/pybind11-library/frob.toml.j2       |   8 +
+ .../scaffold/data/types/pyo3-library/frob.toml.j2  |   8 +
+ .../scaffold/data/types/python-tool/frob.toml.j2   |   8 +
+ src/frob/scaffold/data/types/web-app/frob.toml.j2  |   8 +
+ src/frob/tickets/_land.py                          | 101 ++++-
+ src/frob/tickets/_live_tracker.py                  |  43 +-
+ src/frob/tickets/_mutation_sweep_queue.py          | 399 ++++++++++++++++++
+ src/frob/tickets/_profile.py                       | 354 ++++++++++++++++
+ tests/test_tickets_live_tracker.py                 |  16 +
+ tests/unit/test_mutation_sweep_queue.py            | 179 +++++++++
+ tests/unit/test_profile.py                         | 123 ++++++
+ tests/unit/test_scaffold_project.py                |  19 +
+ tickets.md                                         | 446 ++++++++++++++++++++-
+ 20 files changed, 1938 insertions(+), 53 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_comment_waiver_follow_up_attribute` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 567 warning(s), 787 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1560 -->
 ```yaml
@@ -6089,7 +6339,7 @@ v2-appropriate location/expectation where it is not.
 id: T-1575
 title: 'Development profiles: frob.toml profile=rapid|standard|fortress with one-way
   auto-ratchet'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -6103,8 +6353,49 @@ scope:
 - src/frob/_cli_parsers/**
 - docs/**
 - tests/**
+- src/frob/tickets/_profile.py
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/unit/test_profile.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_profile.py
+  reason: 'T-1575 dev profiles: new profile module, land-path stage-seam gating'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-1575 dev profiles: new profile module, land-path stage-seam gating'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-1575 dev profiles: new profile module, land-path stage-seam gating'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: tests/unit/test_profile.py
+  reason: 'T-1575 dev profiles: new profile module, land-path stage-seam gating'
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-1575 dev profiles: new profile module, land-path stage-seam gating'
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_profile.py::TestConfiguredProfile::test_absent_frob_toml_is_standard
+- tests/unit/test_profile.py::TestConfiguredProfile::test_explicit_rapid_parses
+- tests/unit/test_profile.py::TestConfiguredProfile::test_unknown_value_errors
+- tests/unit/test_profile.py::TestEffectiveProfile::test_standard_is_unaffected_by_ratchet
+- tests/unit/test_profile.py::TestEffectiveProfile::test_rapid_below_threshold_stays_rapid
+- tests/unit/test_profile.py::TestEffectiveProfile::test_rapid_above_threshold_ratchets_to_standard
+- tests/unit/test_profile.py::TestEffectiveProfile::test_persisted_ratchet_wins_even_if_thresholds_no_longer_trip
+- tests/unit/test_profile.py::TestDowngrade::test_downgrade_clears_persisted_ratchet
+- tests/unit/test_profile.py::TestDowngrade::test_downgrade_is_noop_when_nothing_ratcheted
 threat: null
 component: null
 ```
@@ -6120,11 +6411,110 @@ ONE-WAY AUTO-RATCHET: rapid auto-upgrades to standard when any threshold trips (
 
 Note T-1518 (land pipeline stages) and T-1444 (merge-queue) already deliver adjacent pieces; implementer should branch the land path at the stage seams T-1518 defines rather than adding profile conditionals inline.
 
+## Done report
+
+T-1575: Development profiles (frob.toml [profile]).
+
+Changed:
+- src/frob/tickets/_profile.py (new): ProfileName (rapid/standard/
+  fortress), ProfileError, configured_profile (raw frob.toml read,
+  standard default), effective_profile (the one-way auto-ratchet: three
+  live thresholds -- repo file count 300, ticket count 200, concurrent
+  lease count 5, any one trips -- persisted to
+  .frob/profile-ratchet.json), downgrade_profile_ratchet (explicit,
+  loudly-logged clear).
+- src/frob/tickets/_land.py::_check_mutation_evidence: rapid profile
+  skips TEST016 entirely (both the T-1518 synchronous security-kind
+  mutation subprocess and the deferred batch-sweep enqueue); BUG002
+  unaffected, still runs/blocks for bug/security kind under every
+  profile.
+- src/frob/app/ticket_runner/_land_cmd.py::_land: passes
+  pre_commit_sweep=None to land() when the effective profile is rapid --
+  only the existing single post-land revert-on-red sweep runs.
+- docs/modules/tickets.md: new "Development profiles" section.
+- tests/unit/test_profile.py (new): 9 unit tests covering
+  configured_profile, effective_profile's ratchet trip/persist/no-
+  re-trip-downward behavior, and downgrade_profile_ratchet.
+
+Evidence: 9 pytest node ids bound via the ticket evidence CLI, all
+observed passing (9 passed) under a targeted pytest run of the new test
+module; also re-ran tests/unit/test_ticket_close_bug002_t1427.py (2
+passed) to confirm the BUG002/mutation-evidence land path this ticket
+touches is unaffected for the non-rapid (standard) case.
+
+Gates: a repo-wide (not --ticket-scoped) run of invariant/prework/wire/
+test/coverage stage groups shows zero unwaived findings against any file
+this ticket touched -- the two new findings (INV006 module-docstring
+exclusivity language, WIRE001 downgrade_profile_ratchet having no
+caller) are both waived with stated reasons, the WIRE001 waiver's
+follow_up bound to a real filed draft ticket. Remaining unwaived findings
+in that run are pre-existing COV006/COV007 on files this ticket did not
+change.
+
+Disclosed cuts (both filed as draft follow-up tickets, real ids after
+land):
+1. No CLI surface for `downgrade_profile_ratchet` yet (no `frob profile`
+   subcommand) -- T-1575's own scope did not include
+   src/frob/_cli_parsers/**/src/frob/app/app.py's dispatch wiring, and
+   adding a new top-level command group safely (registration, help text,
+   a matching runner module) was judged too much for this same pass.
+   Follow-up: the draft ticket filed above for "Wire frob profile CLI
+   (show/downgrade)".
+2. Three remaining rapid semantics from the ticket body are NOT wired:
+   evidence/done-report leniency for kind=docs/chore, REL001 off under
+   rapid, and a fully baseline-thread-free rapid land (today rapid still
+   runs the T-1463 baseline-capture thread, since _land_cmd.py's
+   post-land sweep reads the SAME thread/result the pre-commit sweep
+   used to -- disentangling them safely needs its own dedicated
+   regression coverage I judged out of scope for this pass, rather than
+   risk a land-pipeline regression). Follow-up: the second draft ticket
+   filed above ("rapid profile: evidence/done-report leniency for
+   docs/chore, REL001 off, baseline-thread-free land").
+3. `fortress` ships as an enum member only, per the ticket's own
+   "placeholder wiring only" instruction -- no behavioral wiring, by
+   design, not a cut.
+
+Filed: two draft tickets (real ids assigned at land) -- CLI wiring for
+frob profile show/downgrade; remaining rapid semantics (evidence
+leniency, REL001, baseline-thread-free).
+
+### Changed
+```
+ docs/modules/tickets.md                    | 136 +++++++++-
+ src/frob/_cli_parsers/_ticket/_progress.py |  18 ++
+ src/frob/app/_config_external.py           |   2 +
+ src/frob/app/config.py                     |   6 +
+ src/frob/app/ticket_runner/_land_cmd.py    |  78 +++++-
+ src/frob/tickets/_land.py                  | 101 ++++++--
+ src/frob/tickets/_mutation_sweep_queue.py  | 399 +++++++++++++++++++++++++++++
+ src/frob/tickets/_profile.py               | 354 +++++++++++++++++++++++++
+ tests/unit/test_mutation_sweep_queue.py    | 179 +++++++++++++
+ tests/unit/test_profile.py                 | 123 +++++++++
+ tickets.md                                 | 232 ++++++++++++++++-
+ 11 files changed, 1590 insertions(+), 38 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_profile.py::TestConfiguredProfile::test_absent_frob_toml_is_standard` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestConfiguredProfile::test_explicit_rapid_parses` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestConfiguredProfile::test_unknown_value_errors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestEffectiveProfile::test_standard_is_unaffected_by_ratchet` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestEffectiveProfile::test_rapid_below_threshold_stays_rapid` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestEffectiveProfile::test_rapid_above_threshold_ratchets_to_standard` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestEffectiveProfile::test_persisted_ratchet_wins_even_if_thresholds_no_longer_trip` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestDowngrade::test_downgrade_clears_persisted_ratchet` (pytest node id, verified passing when recorded)
+- `tests/unit/test_profile.py::TestDowngrade::test_downgrade_is_noop_when_nothing_ratcheted` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 0 error(s), 6998 warning(s), 787 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1576 -->
 ```yaml
 id: T-1576
 title: 'frob scaffold: default brand-new repos to profile=rapid'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -6137,12 +6527,94 @@ scope:
 - src/frob/_cli_parsers/**
 - docs/**
 - tests/**
+- src/frob/scaffold/data/**/frob.toml.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/data/**/frob.toml.j2
+  reason: 'T-1576: the actual frob.toml scaffold templates live under src/frob/scaffold/data/,
+    missing from the ticket''s original scope'
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_profile
 threat: null
 component: null
 ```
 Once T-1575 lands profiles, frob scaffold (new-repo init) should write profile = "rapid" into the generated frob.toml -- a brand-new repo is exactly the under-threshold case rapid exists for, and the one-way auto-ratchet upgrades it to standard the moment it grows past the thresholds. Existing repos are untouched: absent key still means standard.
+
+## Done report
+
+T-1576: frob scaffold defaults new repos to profile=rapid.
+
+Changed:
+- src/frob/scaffold/data/{shared/python,shared/cpp,types/pyo3-library,
+  types/pybind11-library,types/python-tool,types/web-app}/frob.toml.j2:
+  each now writes [profile]\nprofile = "rapid" right after the existing
+  check_base = "main" line, with a short comment pointing at
+  docs/modules/tickets.md's profiles section. These 6 templates cover
+  all 7 registered project types (cpp-library and cpp-tool share
+  shared/cpp/frob.toml.j2).
+- tests/unit/test_scaffold_project.py: new
+  test_render_project_all_types_default_to_rapid_profile, looping every
+  frob.scaffold.project.list_project_types() entry and asserting its
+  rendered frob.toml contains [profile] / profile = "rapid".
+- docs/modules/tickets.md: added a short "frob scaffold defaults new
+  repos to rapid (T-1576)" paragraph to the existing Development
+  profiles section, explicitly noting existing repos are unaffected
+  (absent [profile] key still means standard, per configured_profile's
+  own documented default -- unchanged by this ticket).
+
+Note: T-1576's ticket-filed scope (src/frob/app/**,
+src/frob/_cli_parsers/**, docs/**, tests/**) did not include
+src/frob/scaffold/**, where the actual frob.toml.j2 templates live --
+added via `frob ticket scope T-1576 --add
+"src/frob/scaffold/data/**/frob.toml.j2"` before editing.
+
+Evidence: 1 pytest node id bound via the ticket evidence CLI, observed
+passing (12 passed total in the file, including this one) under a
+targeted pytest run of tests/unit/test_scaffold_project.py.
+
+Gates: a repo-wide (not --ticket-scoped) run of invariant/prework/wire/
+test/coverage stage groups shows zero findings naming any scaffold
+template or the new test -- only cosmetic "no grammar registered for
+extension '.j2'" WARNING lines (expected, .j2 is not a recognized
+source language) and pre-existing, already-waived findings elsewhere.
+
+Filed: none -- no new out-of-scope work discovered (the scope gap was
+closed via `frob ticket scope --add`, not a new ticket).
+
+### Changed
+```
+ docs/modules/tickets.md                            | 147 +++++++-
+ src/frob/_cli_parsers/_ticket/_progress.py         |  18 +
+ src/frob/app/_config_external.py                   |   2 +
+ src/frob/app/config.py                             |   6 +
+ src/frob/app/ticket_runner/_land_cmd.py            |  78 +++-
+ src/frob/scaffold/data/shared/cpp/frob.toml.j2     |   8 +
+ src/frob/scaffold/data/shared/python/frob.toml.j2  |   8 +
+ .../data/types/pybind11-library/frob.toml.j2       |   8 +
+ .../scaffold/data/types/pyo3-library/frob.toml.j2  |   8 +
+ .../scaffold/data/types/python-tool/frob.toml.j2   |   8 +
+ src/frob/scaffold/data/types/web-app/frob.toml.j2  |   8 +
+ src/frob/tickets/_land.py                          | 101 ++++--
+ src/frob/tickets/_mutation_sweep_queue.py          | 399 +++++++++++++++++++++
+ src/frob/tickets/_profile.py                       | 354 ++++++++++++++++++
+ tests/unit/test_mutation_sweep_queue.py            | 179 +++++++++
+ tests/unit/test_profile.py                         | 123 +++++++
+ tests/unit/test_scaffold_project.py                |  19 +
+ tickets.md                                         | 342 +++++++++++++++++-
+ 18 files changed, 1777 insertions(+), 39 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_profile` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 7891 warning(s), 787 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1577 -->
 ```yaml

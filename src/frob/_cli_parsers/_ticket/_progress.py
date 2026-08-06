@@ -297,6 +297,24 @@ def _add_ticket_land_parser(ticket_sub):
             "--plan/--queue."
         ),
     )
+    # frob:ticket T-1518
+    ticket_land_p.add_argument(
+        "--run-mutation-sweep",
+        dest="ticket_land_run_mutation_sweep",
+        action="store_true",
+        help=(
+            "T-1518: process every pending entry in "
+            ".frob/mutation-sweep-queue.json (frob.tickets."
+            "_mutation_sweep_queue.run_pending_sweep) -- the batch/nightly "
+            "cadence TEST016 mutation-evidence check for every ticket kind "
+            "besides security (which still checks synchronously at land "
+            "time). `--drain` already runs this automatically after "
+            "draining the merge queue; use this standalone for a "
+            "deployment that never calls --drain (e.g. a nightly cron). "
+            "Needs neither <id> nor --worktree. Mutually exclusive with "
+            "--plan/--queue/--drain."
+        ),
+    )
     # frob:ticket T-1175
     ticket_land_p.add_argument(
         "--finish",

@@ -543,6 +543,12 @@ class AppConfig(BaseModel):
     # process, one invocation (not a long-running poll loop -- see
     # _land_drain's own docstring for why).
     ticket_land_drain: bool = False
+    # frob:ticket T-1518
+    # `frob ticket land --run-mutation-sweep`: standalone batch/nightly
+    # processing of frob.tickets._mutation_sweep_queue's deferred TEST016
+    # entries -- the same call --drain makes automatically after draining,
+    # for a deployment that never calls --drain at all.
+    ticket_land_run_mutation_sweep: bool = False
     ticket_worktree: Path | None = None
     # frob:ticket T-1243
     # `frob ticket brief --cluster <id>` / `frob ticket work --cluster <id>`

@@ -1782,6 +1782,7 @@ def _validate_scope_covered_preflight(
     return Ok(None)
 
 
+# frob:ticket T-1518
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
 def _check_mutation_evidence(
@@ -1802,33 +1803,89 @@ def _check_mutation_evidence(
     Both feed the SAME error/warn accounting and the SAME
     `--skip-mutation-evidence` escape hatch below -- no parallel mechanism.
 
-    A `security`/`bug`-kind ticket whose bound evidence killed zero
+    T-1575: if `frob.tickets._profile.effective_profile(worktree)` reads
+    `rapid`, TEST016 is skipped ENTIRELY -- no synchronous mutation
+    subprocess for any kind (including `security`) and no deferred sweep
+    entry -- per that ticket's own "no TEST016 on the land path" text.
+    BUG002 is unaffected by the profile and still runs/blocks for bug/
+    security kind regardless.
+
+    T-1518 narrowed the SYNCHRONOUS half of this obligation (the actual
+    mutation subprocess, `mutation_evidence_violations`/TEST016) to
+    `security`-kind tickets only (`frob.tickets._mutation_sweep_queue.
+    SYNC_BLOCKING_KINDS`) -- the most expensive, least incremental land
+    stage, whose marginal value is test-strength validation, not main-
+    correctness. A `security`-kind ticket whose bound evidence killed zero
     mutants (TEST016 at ERROR severity, see `frob.gates._mutation_evidence`'s
     module docstring for why that severity split, not the ratchet-pool
-    mechanism, is the right tool here) REFUSES the land -- the same
-    "knowable before any git mutation" posture `_validate_closeable` and
-    `_validate_scope_covered_preflight` already hold. Every other kind's
-    TEST016 finding (WARN) is logged and does NOT block: the obligation
-    text calls WARN "a TEST-family warning," not a hard gate, for those
-    kinds. `Err(MutationEvidenceError.ExecDisabled)` (surfaced as an empty
-    violation tuple by `mutation_evidence_violations`, T-0803's honest-
-    empty-is-not-a-pass posture) and any other check failure are logged
-    and treated as non-blocking -- this obligation augments the existing
-    evidence gates, it does not replace their own hard-fail paths if the
-    mutation subsystem itself cannot run. BUG002 is ERROR-always (only
-    ever fires for bug/security kind in the first place, see
-    `bug_repro_violations`'s own docstring), so it always contributes to
-    the same `errors` list below.
+    mechanism, is the right tool here) still REFUSES the land inline -- the
+    same "knowable before any git mutation" posture `_validate_closeable`
+    and `_validate_scope_covered_preflight` already hold. Every OTHER
+    kind's TEST016 obligation is deferred entirely: `_check_mutation_
+    evidence` enqueues a `mutation_sweep_queue.SweepEntry` instead of
+    running the subprocess inline, and a later batch pass (`mutation_
+    sweep_queue.run_pending_sweep`, driven from the merge-queue drain
+    cadence, T-1444) evaluates it retroactively -- a bug-kind finding
+    there files a new ticket against the offending land rather than
+    refusing it after the fact (see that module's own docstring). BUG002
+    (`bug_repro_violations`) is UNCHANGED by this ticket -- it stays
+    synchronous and ERROR-always for bug/security kind, since it is cheap
+    (re-runs already-bound evidence against a single prior commit, no
+    mutation subprocess) and proves a different, complementary property
+    (the fix actually fixes something) than TEST016's "is this evidence
+    adversarial" question.
 
     `skip=True` (T-0755 reviewer round 2, `frob ticket land
-    --skip-mutation-evidence`) is the documented escape hatch: the check
-    still RUNS (so its findings are still logged and visible) but never
-    refuses the land. Every use is logged at WARNING naming the ticket, so
-    a bypass always leaves a trail -- this is for a genuinely false-
-    positive finding (e.g. a mutation-testing gap the reviewer has not yet
-    closed), never a silent way to wave through real confirmatory
-    evidence."""
+    --skip-mutation-evidence`) is the documented escape hatch for the
+    still-synchronous `security`-kind path: the check still RUNS (so its
+    findings are still logged and visible) but never refuses the land.
+    Every use is logged at WARNING naming the ticket, so a bypass always
+    leaves a trail -- this is for a genuinely false-positive finding (e.g.
+    a mutation-testing gap the reviewer has not yet closed), never a
+    silent way to wave through real confirmatory evidence."""
     from frob.gates import bug_repro_violations, mutation_evidence_violations
+    from frob.tickets._mutation_sweep_queue import (
+        SYNC_BLOCKING_KINDS,
+        enqueue_pending_sweep,
+    )
+    from frob.tickets._profile import ProfileName, effective_profile
+
+    profile = effective_profile(worktree)
+    rapid = profile.is_ok and profile.danger_ok is ProfileName.RAPID
+    if rapid:
+        _log.info(
+            "land: %s TEST016 skipped entirely (mutation subprocess AND "
+            "the deferred batch sweep) -- effective profile is rapid "
+            "(T-1575); BUG002 is unaffected and still runs",
+            ticket.id,
+        )
+
+    if rapid or ticket.kind not in SYNC_BLOCKING_KINDS:
+        if not rapid:
+            enqueued = enqueue_pending_sweep(worktree, ticket.id, base_ref, ticket.kind)
+            if enqueued.is_err:
+                _log.warning(
+                    "land: %s failed to enqueue a deferred TEST016 sweep "
+                    "(%s) -- TEST016 will not be evaluated for this land "
+                    "at all until this is investigated",
+                    ticket.id,
+                    enqueued.danger_err,
+                )
+        bug002_only = bug_repro_violations(worktree, ticket, base_ref)
+        errors = [v for v in bug002_only if v.severity == "error"]
+        for v in bug002_only:
+            _log.warning("land: %s %s %s", ticket.id, v.rule, v.message)
+        if errors:
+            _log.error(
+                "land: %s cannot land -- %d BUG002 finding(s) (kind=%s); "
+                "TEST016 was deferred to the batch mutation sweep, BUG002 "
+                "is unaffected and still blocks",
+                ticket.id,
+                len(errors),
+                ticket.kind,
+            )
+            return Err(LandError.EvidenceConfirmatoryOnly)
+        return Ok(None)
 
     violations = mutation_evidence_violations(
         worktree, ticket, base_ref
