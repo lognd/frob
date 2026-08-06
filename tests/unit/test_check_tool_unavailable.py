@@ -5,10 +5,6 @@ traceback and never a silent skip (vacuous-pass doctrine). One monkeypatched
 check confirming the unavailable-tool line is visible.
 """
 
-# frob:waive OPAQUE001 reason="T-1038: every setattr(...) in this file is \
-# monkeypatch-style test isolation (pytest fixtures reassigning a module/object \
-# attribute by a name the test itself constructs) -- deliberate test infrastructure, \
-# not an evasion risk over untrusted input"
 
 from __future__ import annotations
 

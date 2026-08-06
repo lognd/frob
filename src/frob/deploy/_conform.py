@@ -290,10 +290,6 @@ def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
     base, start = resolved
 
     if base == "eval":
-        # frob:waive OPAQUE001 reason="T-1038: scanner false positive -- this calls \
-        # the locally-defined _mutation_for_eval helper (named after the SHELL 'eval' \
-        # verb this module parses text about), not python's eval() builtin; no dynamic \
-        # code execution happens here"
         return _mutation_for_eval(tokens, start)
 
     return _mutation_for_base(base, tokens[start + 1 :])
@@ -314,9 +310,6 @@ def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
 # in _mutation_for_base (reached via _mutation_for_command) as a KeyError site; it \
 # cannot correlate that indexing with the 'if base in _LAST_POSITIONAL_KIND' guard \
 # immediately above it -- the dict access is unreachable when the key is absent"
-# frob:waive OPAQUE001 reason="T-1038: scanner false positive on this function's own \
-# name (_mutation_for_eval, named after the SHELL 'eval' verb this module parses text \
-# about) -- no python eval() builtin call exists anywhere in this function's body"
 def _mutation_for_eval(tokens: list[str], start: int) -> set[MutationTarget]:
     """`eval`'s remaining args, re-tokenized and re-resolved as a fresh
     command line (see `_mutation_for_command`'s eval docs)."""

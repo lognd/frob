@@ -5,10 +5,6 @@ their output -- the whole point of this gate is real, observed
 diagnostics, and both tools are dev dependencies already required to run
 this suite (T-1339's oracle mechanism)."""
 
-# frob:waive OPAQUE001 reason="T-1038: the setattr(...) below is monkeypatch-style \
-# test isolation (pytest fixtures reassigning a module attribute by a name the test \
-# itself constructs) -- deliberate test infrastructure, not an evasion risk over \
-# untrusted input"
 
 from __future__ import annotations
 

@@ -9,12 +9,6 @@ worktree` commands, so the fixture reproduces the real shape rather than
 mocking it away.
 """
 
-# frob:waive OPAQUE001 reason="every setattr(...) here is pytest monkeypatch with a \
-# LITERAL dotted-path string target (e.g. \
-# frob.app.ticket_runner._land_cmd._unscoped_error_findings / \
-# _apply_root_tier_a_fixes), the standard test seam this suite already uses -- same \
-# disposition as tests/unit/test_ticket_close_bug002_t1438.py's file-level waiver; the \
-# mutated sites are restored by monkeypatch teardown and never escape the test process"
 
 from __future__ import annotations
 

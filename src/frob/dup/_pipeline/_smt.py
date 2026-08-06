@@ -295,10 +295,6 @@ def _smt_solve(
     return _smt_verdict_for_check(a, b, solver, solver.check(), params_a, z3)
 
 
-# frob:waive OPAQUE001 reason="T-1038: model.eval(...) below is z3's Model.eval method \
-# (symbolic-model evaluation against a satisfying assignment) -- a scanner false \
-# positive on the method name, not python's eval() builtin; no dynamic code execution \
-# happens here"
 def _smt_verdict_for_check(
     a: str, b: str, solver: Any, verdict: Any, params_a: list[Any], z3: Any
 ) -> Result[ProbeVerdict, DupError]:

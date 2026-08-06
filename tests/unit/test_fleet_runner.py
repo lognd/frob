@@ -3,10 +3,6 @@ table/JSON output and `route`'s manifest-error/success dispatch. `frob.fleet`
 internals are exercised directly in tests/unit/fleet/; this file is purely
 about the CLI dispatch layer around them."""
 
-# frob:waive OPAQUE001 reason="T-1038: every setattr(...) in this file is \
-# monkeypatch-style test isolation (pytest fixtures reassigning a module/object \
-# attribute by a name the test itself constructs) -- deliberate test infrastructure, \
-# not an evasion risk over untrusted input"
 
 from __future__ import annotations
 

@@ -3,10 +3,6 @@ source tree (the T-0166 review incident class -- a landed grammar change
 left main's built `strata_core` behind, and `frob check` silently ran the
 OLD parser until a human noticed a confusing SYS004)."""
 
-# frob:waive OPAQUE001 reason="T-1038: every setattr(...) in this file is \
-# monkeypatch-style test isolation (pytest fixtures reassigning a module/object \
-# attribute by a name the test itself constructs) -- deliberate test infrastructure, \
-# not an evasion risk over untrusted input"
 
 from __future__ import annotations
 

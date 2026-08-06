@@ -3,9 +3,6 @@ opt-in `--stats` velocity/ETA line -- unit tests over the `_query` render
 helpers plus one end-to-end `_list` caplog pass on a real tiny ledger."""
 
 # frob:ticket T-1528
-# frob:waive OPAQUE001 reason="monkeypatch with a literal dotted-path string target \
-# (frob.tickets.ticket_flow), the standard test seam this suite uses; restored by \
-# teardown"
 
 from __future__ import annotations
 

@@ -6,10 +6,6 @@ proving representative patterned entries actually fire through
 (T-0145 drift-lock style: a pattern with zero firing evidence is as good
 as absent)."""
 
-# frob:waive OPAQUE001 reason="T-1038: the eval/exec text below are fixture STRING \
-# LITERALS this file's own test data feeds into \
-# frob.vet._capability.scan_file_capabilities to prove the scanner fires on them -- \
-# never an actual eval()/exec() call in this file"
 
 from __future__ import annotations
 

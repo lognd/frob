@@ -901,11 +901,6 @@ class TestCoreAvailable:
                 raise ImportError("simulated: frob_core not installed")
             return real_import(name, *args, **kwargs)
 
-        # frob:waive OPAQUE001 reason="test-only monkeypatch of builtins.__import__ to \
-        # force core_available's ImportError branch, which cannot be reached any other \
-        # way in a dev checkout where frob_core is actually built; the string literal \
-        # target ('builtins.__import__') is not a runtime-resolved name -- it is the \
-        # one and only fixed target this test ever monkeypatches"
         monkeypatch.setattr("builtins.__import__", _raising_import)
         try:
             assert dup_core.core_available() is False

@@ -1,9 +1,6 @@
 """Unit tests for frob.vet: lockfile parsers, allow conformance, quarantine,
 typosquat, and hook-command parsing (docs/modules/vet.md). No real network calls."""
 
-# frob:waive OPAQUE001 reason="T-1038: the eval text below is fixture STRING LITERAL \
-# data this file's own tests feed into frob.vet's scanners to prove they fire on it -- \
-# never an actual eval() call in this file"
 
 from __future__ import annotations
 

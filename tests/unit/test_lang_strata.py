@@ -6,9 +6,6 @@ path and the tree-sitter-escape-hatch functions that stay unsupported for
 `.strata`.
 """
 
-# frob:waive OPAQUE001 reason="T-1038: sys.modules replacement below fakes an import \
-# target for one test's own fixture module, standard unittest.mock/sys.modules test \
-# isolation -- deliberate test infrastructure, not an evasion risk"
 
 from __future__ import annotations
 

@@ -5,10 +5,6 @@ the real end-to-end path is covered by tests/test_ticket_land.py's
 `TestReleaseBump`/`TestRebuildNatives` against the library's injected
 callables)."""
 
-# frob:waive OPAQUE001 reason="T-1038: every setattr(...) in this file is \
-# monkeypatch-style test isolation (pytest fixtures reassigning a module/object \
-# attribute by a name the test itself constructs) -- deliberate test infrastructure, \
-# not an evasion risk over untrusted input"
 
 from __future__ import annotations
 
