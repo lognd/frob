@@ -8811,6 +8811,8 @@ created: '2026-08-05'
 priority: high
 blocked_by:
 - T-1612
+- T-1611
+- T-1613
 parent: T-1609
 tier: ticket
 sprint: null
