@@ -4213,6 +4213,8 @@ kind: security
 origin: human
 created: '2026-08-05'
 priority: high
+blocked_by:
+- T-1663
 parent: T-1623
 tier: ticket
 sprint: null
@@ -4249,7 +4251,6 @@ This repo already owns the machinery: frob.graph.callgraph does call-graph resol
 Fail-closed requirement: when resolution cannot determine a call's target (genuinely dynamic dispatch, a computed getattr), that must surface as an explicit UNRESOLVED finding demanding a declaration or a waiver -- never as "no capability found". This drive has repeatedly been burned by analysis that reported nothing when it could not look; the capability layer must not repeat it.
 
 Prerequisite for symbol-level `via`: attributing a capability to a specific declared symbol is only meaningful once the hit itself is symbol-resolved. Sequence this before, or together with, the via-granularity work.
-
 <!-- ticket:T-1627 -->
 ```yaml
 id: T-1627
@@ -4588,6 +4589,8 @@ kind: bug
 origin: human
 created: '2026-08-06'
 priority: medium
+blocked_by:
+- T-1663
 parent: null
 tier: ticket
 sprint: null
@@ -4616,7 +4619,6 @@ My read is NO for waiver reasons specifically, but the decision should be delibe
 Note the pattern: this is the third detector this drive found reading PROSE as if it were a declaration (TICK006 on a marker quoted mid-sentence, T-1541; the live-tracker scan on Done-report narrative, T-1633; now INV006 on a waiver reason). Consider whether these want a shared notion of "this span is explanatory text, not a declaration" rather than three independent fixes -- the DSL already knows where directive attributes end and free text begins.
 
 Whatever is decided, add the case to the test suite so the behavior is pinned rather than incidental.
-
 <!-- ticket:T-1643 -->
 ```yaml
 id: T-1643
