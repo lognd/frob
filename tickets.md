@@ -6865,3 +6865,33 @@ threat: null
 component: null
 ```
 should_color honors FORCE_COLOR and NO_COLOR, and a CLI subprocess a test spawns inherits the whole environment. A shell exporting FORCE_COLOR=3 (Claude Code and several CI images do) embeds ANSI escapes in every CLI output a test asserts on: 5 system tests failed here purely from the ambient shell while the same commit passes elsewhere. An autouse conftest fixture now deletes both per test (delete, not force NO_COLOR, so color-path tests can still monkeypatch either one). Needs a regression test asserting a spawned CLI produces escape-free output with FORCE_COLOR set in the parent env.
+
+<!-- ticket:T-1587 -->
+```yaml
+id: T-1587
+title: 'ledger v2: Done reports were invisible to every body-reading consumer'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+- src/frob/tickets/_reporting.py
+- tests/unit/test_ticket_store.py
+- docs/design/ledger-v2.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+v2 stores the Done report in tickets/T-####/done-report.md for lock independence (write_done_report), and set_done_report's v2 branch deliberately leaves ticket.body untouched. But load_all's v2 branch parsed only ticket.md, so Ticket.body never carried the report -- while EVERY consumer reads it from body: close's substantive-report check (_evidence.py), evidence recovery from the report, TICK006 phantom-filing resolution (_tickets_gate.py), the land ledger merge's has_done_report comparisons (_land_ledger_merge.py), and recover_done_report_why.
+
+Effect in any v2 repo: frob ticket close refuses a ticket whose Done report was written seconds earlier ('write a ## Done report heading'), TICK006 goes blind, and the land-side merge cannot tell which side has a report. Observed as MissingEvidence close failures in the suite.
+
+Fixed by making the in-memory Ticket canonical: load_all/load_archive splice done-report.md back into body (_merge_sibling_done_report), write_ticket's v2 branch splits it back out so a load-modify-write round trip never duplicates it into ticket.md, set_done_report returns the merged ticket so its return value matches the next load, and the v2 index cache keys on sibling done-report.md mtimes too (otherwise a report write would not invalidate the cache, since it never touches ticket.md).
+
+Follow-up worth considering: an integration test that runs the full new -> start -> evidence -> done-report -> close cycle against a v2 repo end to end. The unit layer missed this because each half was individually correct.
