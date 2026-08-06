@@ -3602,7 +3602,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-05'
-priority: medium
+priority: high
 parent: T-1609
 tier: ticket
 sprint: null
@@ -3629,7 +3629,6 @@ Method, in this order, because deletion is the irreversible part:
 4. Re-run the full gate set afterwards. A deletion that silently reduces coverage or orphans a doc edge is the failure mode; the obligation graph should catch it, and if it does not, that is itself a finding worth a ticket.
 
 Do not delete anything an in-flight ticket references. That is the whole reason this is gated behind the rest of the queue.
-
 <!-- ticket:T-1613 -->
 ```yaml
 id: T-1613
@@ -4750,7 +4749,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-05'
-priority: medium
+priority: high
 parent: null
 tier: ticket
 sprint: null
@@ -4782,7 +4781,6 @@ Plan (from T-1552's own Description):
    quiet window (zero in-flight worktrees).
 2. Observe the LEDGERV1001 deprecation window for the recorded interval.
 3. Once stable, T-1552 unblocks and can delete the v1 splice machinery.
-
 <!-- ticket:T-1633 -->
 ```yaml
 id: T-1633
@@ -6954,6 +6952,8 @@ kind: feature
 origin: human
 created: '2026-08-06'
 priority: high
+blocked_by:
+- T-1631
 parent: T-1136
 tier: ticket
 sprint: null
