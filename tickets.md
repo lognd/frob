@@ -9578,3 +9578,44 @@ ledger_digest(ledger_path(root)) call, mirroring how renumber_one already
 dispatches to renumber_one_v2 for its own v2 path. Filed while working
 T-1588 (out of scope there -- T-1588 was scoped to src/frob/tickets/
 _store.py only).
+
+<!-- ticket:T-1631 -->
+```yaml
+id: T-1631
+title: 'coordinator: migrate main''s own ledger to v2 in a quiet window'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tickets.md
+- tickets-archive.md
+- tickets/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1552's own precondition (main's ledger migrated to v2) is not yet met:
+this repo's tickets.md/tickets-archive.md are still the v1 monofile as of
+2026-08-06 (verified directly: tickets.md/tickets-archive.md exist at
+repo root, no tickets/T-####/ticket.md directories exist). T-1492 (CLI
+wiring for `frob ticket migrate --to v2`) and T-1553 (fresh-repo default
+flip) are both done, but nobody has actually RUN the migration against
+this repo's own ledger content yet.
+
+This is a coordinator-only action (needs a quiet window with zero
+in-flight worktrees, per T-1552's own stated precondition -- a worktree
+mid-ticket-mutation during the migration would race the wholesale
+rewrite). Filed while working T-1552 so its blocker has a concrete id
+instead of a prose-only precondition.
+
+Plan (from T-1552's own Description):
+1. Coordinator runs `frob ticket migrate --to v2` against this repo in a
+   quiet window (zero in-flight worktrees).
+2. Observe the LEDGERV1001 deprecation window for the recorded interval.
+3. Once stable, T-1552 unblocks and can delete the v1 splice machinery.
