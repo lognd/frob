@@ -8143,6 +8143,10 @@ sprint: null
 scope:
 - src/frob/tickets/_land_git_ops.py
 - tests/test_evidence_integrity.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -8156,9 +8160,36 @@ scope_changes:
   reason: the breadth heuristic and its regression lock
   actor: logan
   at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: the same land landed three gate errors (2x ARCH001 oversized functions,
+    1x PII012); fixing them here keeps main green rather than leaving it red behind
+    a closed ticket
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: the same land landed three gate errors (2x ARCH001 oversized functions,
+    1x PII012); fixing them here keeps main green rather than leaving it red behind
+    a closed ticket
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: the same land landed three gate errors (2x ARCH001 oversized functions,
+    1x PII012); fixing them here keeps main green rather than leaving it red behind
+    a closed ticket
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: AFFECT001 closure for _check_already_landed
+  actor: logan
+  at: '2026-08-06'
 evidence:
 - tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_exact_root_level_file_authorizes_its_own_deletion
 - tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_wildcard_breadth_rules_are_unchanged
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_refuses_while_land_lock_held
 threat: null
 component: null
 ```
