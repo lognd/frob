@@ -719,7 +719,7 @@ Umbrella epic: migrate the Python-side tree-sitter tree-extraction layer (frob.l
 id: T-1220
 title: 'rust: tree-extraction kernel -- source bytes to symbols/spans/tokens/identifiers/comment+docstring
   spans/import specs'
-state: in-progress
+state: queued
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -937,7 +937,6 @@ original dispatch brief this ticket's own Done report already noted.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 2 error(s), 451 warning(s), 769 waived
 - error-findings: DUP001@frob-core/src/extract.rs, SELFAUDIT001@design
-
 <!-- ticket:T-1221 -->
 ```yaml
 id: T-1221
@@ -6271,3 +6270,30 @@ threat: null
 component: null
 ```
 T-1548's fix_cov002_ticket_directive_insertion writes '# frob:ticket <id>' unconditionally. During T-1548's OWN land sweep it inserted that Python-style line into design/frob.strata (comment leader '//'), which broke strata parsing on main -- frob sys sync-interface died with ParseFailed until hand-repaired (commit on 2026-08-05). Fix: resolve the comment leader per target language (the dsl/lang layer already knows per-language comment syntax for directive PARSING -- reuse that, do not hardcode a second table), and refuse to insert into file types whose leader is unknown. Regression test: handler run against a .strata file and a .rs file inserts '//', against .py inserts '#', against an unknown extension inserts nothing.
+
+<!-- ticket:T-1582 -->
+```yaml
+id: T-1582
+title: 'COV002 closing-diff grace is v1-only: no grace in a ledger-v2 repo'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+COV002's closing-diff grace (_cov002 / _ledger_states_at_base, src/frob/gates/__init__.py) reads the ticket-id -> state map out of tickets.md HUNKS in the working diff. T-1553 made fresh repos default to ledger v2, where a ticket's state lives in tickets/T-####/ticket.md and there are no tickets.md hunks at all -- so in a v2 repo _ledger_states_at_base sees nothing, the T-0590 grace for a ticket created-and-closed inside its own diff never applies, and COV002 fires falsely on exactly the worktree-agent flow the grace exists to permit.
+
+This repo has not hit it yet only because main is still a v1 monofile; every NEW frob repo is v2 from its first commit and gets the false COV002 immediately.
+
+Fix: teach _ledger_states_at_base to resolve state at base per store mode -- v2 reads tickets/<id>/ticket.md at diff.base, v1 keeps the monofile-hunk path -- and make the hunk-membership test ('was this ticket's ledger entry touched in this diff') mode-aware too. Tests: tests/test_gates.py::TestCoverageGate currently pins itself to v1 via _write_ticket's tickets.md seed; add a v2-mode mirror of each grace case rather than converting the v1 ones, so both backends stay covered.
