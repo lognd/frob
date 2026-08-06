@@ -73,6 +73,14 @@ def _commit_all(root: Path, message: str) -> None:
     _run(["git", "commit", "-q", "-m", message], root)
 
 
+#: Where this file's fixtures actually keep ledger content. Every `repo`
+#: here is a FRESH repo, and T-1553 made fresh repos default to ledger v2
+#: (`tickets/T-####/ticket.md`), so a `tickets.md` pathspec now reports
+#: clean no matter how dirty the ledger really is -- the exact blind spot
+#: that let the v2 auto-commit regression ship green.
+_LEDGER_PATHSPEC = "tickets"
+
+
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
     """A main checkout with a real git history and an initialized ledger."""
@@ -559,7 +567,7 @@ class TestCommitStartTransition:
             AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
@@ -576,7 +584,7 @@ class TestCommitStartTransition:
         result = commit_start_transition(repo, "T-0001")
         assert result.is_ok
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
     def test_reports_exact_recovery_command_on_commit_failure(
@@ -602,8 +610,8 @@ class TestCommitStartTransition:
         assert result.danger_err == LeaseError.CommitFailed
         assert "DIRTY" in caplog.text
         assert (
-            f"git -C {repo} add tickets.md && git -C {repo} commit -m "
-            '"chore(tickets): record T-0001 start transition"'
+            f"git -C {repo} add tickets/T-0001 && git -C {repo} commit -m "
+            '"chore(tickets): record T-0001 start transition" -- tickets/T-0001'
         ) in caplog.text
 
     def test_commits_cleanly_even_when_caller_shell_has_frob_agent_set(
@@ -644,7 +652,7 @@ class TestCommitStartTransition:
         # restored after the transition commit; plain env flag, nothing sensitive"
         assert os.environ.get("FROB_AGENT") == "1"
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
 
@@ -667,7 +675,7 @@ class TestCommitTicketLedgerChange:
         )
         assert result.is_ok
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
@@ -682,7 +690,7 @@ class TestCommitTicketLedgerChange:
         )
         assert result.is_ok
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
     def test_no_commit_flag_skips_entirely_even_when_dirty(self, repo: Path) -> None:
@@ -698,7 +706,7 @@ class TestCommitTicketLedgerChange:
         assert result.is_ok
 
         # --no-commit means tickets.md is left dirty on purpose.
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() != ""
 
     # frob:ticket T-1432
@@ -732,7 +740,9 @@ class TestCommitTicketLedgerChange:
         assert result.is_ok
 
         # tickets.md is now committed and clean...
-        ledger_status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        ledger_status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo
+        )
         assert ledger_status.stdout.strip() == ""
 
         # ...but the sentinel must STILL be staged, exactly as it was
@@ -752,7 +762,7 @@ class TestCommitTicketLedgerChange:
             f"sentinel.py rode along into the ledger commit under an "
             f"unrelated message -- committed files were: {committed_files}"
         )
-        assert committed_files == ["tickets.md"]
+        assert committed_files == ["tickets/T-0001/ticket.md"]
 
     # frob:ticket T-1321
     def test_identity_less_environment_falls_back_to_throwaway_git_identity(
@@ -794,7 +804,7 @@ class TestCommitTicketLedgerChange:
         )
         assert result.is_ok, result.err
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
 
         log = _run(["git", "log", "-1", "--pretty=%an <%ae>"], repo)
@@ -823,7 +833,9 @@ class TestNewDropFailAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], main_repo)
+        status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
+        )
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], main_repo)
         assert log.stdout.strip().startswith("chore(tickets): file T-")
@@ -846,7 +858,9 @@ class TestNewDropFailAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], main_repo)
+        status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
+        )
         assert status.stdout.strip() != ""
 
     def test_drop_auto_commits_the_state_change(self, repo: Path) -> None:
@@ -860,7 +874,7 @@ class TestNewDropFailAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): drop T-0001"
@@ -886,7 +900,7 @@ class TestNewDropFailAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): T-0001 fail-logged"
@@ -916,7 +930,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): record evidence for T-0001"
@@ -933,7 +947,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() != ""
 
     def test_done_report_auto_commits(self, repo: Path) -> None:
@@ -951,7 +965,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): T-0001 Done report"
@@ -971,7 +985,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): close T-0001"
@@ -994,7 +1008,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): requeue T-0001"
@@ -1018,7 +1032,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
             )
         )
 
-        status = _run(["git", "status", "--porcelain", "--", "tickets.md"], repo)
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() != ""
 
 

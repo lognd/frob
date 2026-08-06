@@ -685,14 +685,63 @@ def warn_if_worktree_stale(
 
 # frob:ticket T-1054
 # frob:ticket T-1130
+def _ledger_pathspecs(root: Path, ticket_id: str) -> tuple[str, ...]:
+    """The git pathspec(s) holding `ticket_id`'s ledger content in `root`,
+    per the repo's storage backend (T-1553's fresh-repo v2 default made
+    this store-mode-dependent).
+
+    v1/'single' and legacy 'dir' repos keep everything in the `tickets.md`
+    monofile. A v2 repo keeps it under `tickets/T-####/` (ticket.md,
+    done-report.md, attachments) and, once archived, under
+    `tickets/archive/T-####/`; a mid-migration repo can still have a live
+    monofile alongside either. Only paths that EXIST on disk are returned:
+    `git commit -- <pathspec>` is fatal on a pathspec matching nothing, so
+    listing every candidate unconditionally would turn each auto-commit
+    into a hard `CommitFailed` in exactly the fresh v2 repos this exists
+    to serve.
+
+    Hardcoding `tickets.md` here (the pre-T-1553 shape) silently no-opped
+    EVERY auto-commit in a v2 repo -- `git status --porcelain -- tickets.md`
+    reported clean while the real write landed in `tickets/T-####/`, so
+    close/evidence/requeue/done-report all left the ledger uncommitted
+    with no error surfaced anywhere."""
+    from frob.tickets._store import _store_mode
+
+    if _store_mode(root) != "v2":
+        return ("tickets.md",)
+    candidates = (
+        f"tickets/{ticket_id}",
+        f"tickets/archive/{ticket_id}",
+        "tickets.md",
+    )
+    return tuple(rel for rel in candidates if (root / rel).exists())
+
+
 def _tickets_md_dirty(root: Path, ticket_id: str) -> bool:
-    """Whether `root`'s `tickets.md` has an uncommitted change (T-1054,
-    now shared by `commit_start_transition` AND `commit_ticket_ledger_
-    change`, T-1130) -- `False` (best-effort, logged) whenever `root` is
-    not a git work tree, so a caller degrades to a no-op instead of
-    erroring on a non-git fixture root."""
+    """Whether `root`'s ledger storage for `ticket_id` has an uncommitted
+    change (T-1054, now shared by `commit_start_transition` AND
+    `commit_ticket_ledger_change`, T-1130; store-mode-aware since T-1553's
+    v2 default) -- `False` (best-effort, logged) whenever `root` is not a
+    git work tree, so a caller degrades to a no-op instead of erroring on
+    a non-git fixture root.
+
+    An EMPTY pathspec set (no ledger storage on disk for this ticket yet)
+    is `False` rather than an unrestricted `git status`: a bare status
+    would report the whole worktree dirty and hand the commit step a
+    pathspec-less `git commit` that sweeps in every unrelated staged
+    file -- the exact T-1432 poisoning this path is pathspec-limited to
+    prevent."""
+    pathspecs = _ledger_pathspecs(root, ticket_id)
+    if not pathspecs:
+        _log.debug(
+            "tickets: %s ledger-change commit skipped (no ledger storage "
+            "on disk yet under %s)",
+            ticket_id,
+            root,
+        )
+        return False
     status = gitio.run_argv(
-        ["git", "-C", str(root), "status", "--porcelain", "--", "tickets.md"]
+        ["git", "-C", str(root), "status", "--porcelain", "--", *pathspecs]
     )
     if status.is_err:
         _log.warning(
@@ -757,6 +806,7 @@ def _retry_commit_with_fallback_identity(
     root: Path,
     message: str,
     committed: Result[ProcResult, GitError],
+    pathspecs: tuple[str, ...],
 ) -> Result[ProcResult, GitError]:
     """A bare CI runner has no `user.name`/`user.email` in its git config
     (no developer machine's global config to fall back to), so `git
@@ -765,7 +815,11 @@ def _retry_commit_with_fallback_identity(
     identity scoped to this single invocation (never written to any
     config file) so the ledger commit still succeeds in an identity-less
     environment. Any other failure (a genuine merge conflict, a missing
-    repo, etc.) is returned unchanged -- this never masks a real error."""
+    repo, etc.) is returned unchanged -- this never masks a real error.
+
+    `pathspecs` must be the SAME set the first attempt used
+    (`_ledger_pathspecs`): a retry limited to a different pathspec would
+    either commit nothing or sweep in unrelated staged files."""
     if committed.is_ok and committed.danger_ok.returncode == 0:
         return committed
     if committed.is_err:
@@ -791,7 +845,7 @@ def _retry_commit_with_fallback_identity(
             "-m",
             message,
             "--",
-            "tickets.md",
+            *pathspecs,
         ]
     )
 
@@ -824,13 +878,16 @@ def _add_and_commit_tickets_md(
     anything but `tickets.md`'s own change -- any other staged content
     stays staged, untouched, exactly as `git commit -- <pathspec>`'s own
     documented contract guarantees."""
-    added = gitio.run_argv(["git", "-C", str(root), "add", "tickets.md"])
+    pathspecs = _ledger_pathspecs(root, ticket_id)
+    added = gitio.run_argv(["git", "-C", str(root), "add", *pathspecs])
     if added.is_ok and added.danger_ok.returncode == 0:
         with _without_agent_commit_guard():
             committed = gitio.run_argv(
-                ["git", "-C", str(root), "commit", "-m", message, "--", "tickets.md"]
+                ["git", "-C", str(root), "commit", "-m", message, "--", *pathspecs]
             )
-            committed = _retry_commit_with_fallback_identity(root, message, committed)
+            committed = _retry_commit_with_fallback_identity(
+                root, message, committed, pathspecs
+            )
     else:
         committed = added
     if (
@@ -842,12 +899,14 @@ def _add_and_commit_tickets_md(
         _log.error(
             "tickets: %s ledger change left %s DIRTY -- the commit step "
             "failed. Run this by hand before anything else lands: "
-            'git -C %s add tickets.md && git -C %s commit -m "%s"',
+            'git -C %s add %s && git -C %s commit -m "%s" -- %s',
             ticket_id,
             root,
             root,
+            " ".join(pathspecs),
             root,
             message,
+            " ".join(pathspecs),
         )
         return Err(LeaseError.CommitFailed)
 
