@@ -9332,3 +9332,40 @@ Fix: sync-interface replaces in place. Then a one-time pass removing the duplica
 Add a lint: more than one `attr interface=` on a single node is an error. A declaration language whose own declarations can silently duplicate cannot be the source of truth for anything -- and this file is supposed to be the source of truth for the whole self-model.
 
 Expected effect: the file loses several hundred lines of pure redundancy, and a whole class of "which block is authoritative?" ambiguity disappears.
+
+<!-- ticket:T-1625 -->
+```yaml
+id: T-1625
+title: 'strata: testsuite node declares 5277 test names as interface symbols'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: high
+parent: T-1623
+tier: ticket
+sprint: null
+scope:
+- design/frob.strata
+- src/frob/strata/**
+- src/frob/gates/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The `testsuite` node declares 5277 symbols in its `interface=` attr -- more than half of every interface symbol in design/frob.strata (the whole file totals roughly 9000 across all nodes; the next largest node is 919).
+
+Those 5277 entries are test class and test function names. A test exposes nothing to anyone: no other node imports it, no consumer depends on its surface, and renaming one breaks nothing outside its own file. Declaring them as an "interface" is a category error, and it is the single largest source of noise in the self-model.
+
+Cost: it inflates the design file threefold, it makes every sync-interface run rewrite thousands of lines (see the merge-conflict and land-noise incidents this drive), and it buries the ~3700 declarations that DO describe real cross-node surface.
+
+Options, and the ticket should pick one with reasoning:
+1. Exempt test-tree nodes from SYS104's declare-every-public-symbol obligation entirely.
+2. Keep the obligation but let a node declare `interface=*` (or an explicit `interface_exempt` clearance) meaning "this node exposes no contract; do not enumerate".
+3. Narrow SYS104 to symbols actually referenced across node boundaries, which would shrink every node's list, not just testsuite's.
+
+Option 3 is the most principled and the most work; it is also the one that would fix the general problem rather than special-casing tests. Consider it seriously before defaulting to 1.
+
+Whichever is chosen, the acceptance is that the design file describes CONTRACTS, and that a reader can see the real architectural surface without scrolling past five thousand test names.
