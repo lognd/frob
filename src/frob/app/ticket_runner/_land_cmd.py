@@ -1931,15 +1931,52 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
     process, so a caller looping over several tickets (`_land_drain`) can
     attribute the failure to the one ticket that caused it and continue
     with the rest, matching this ticket's own acceptance criterion
-    ("a failing ticket is named and dequeued alone")."""
-    import threading
+    ("a failing ticket is named and dequeued alone").
 
-    from frob.tickets import land
-    from frob.tickets._models import LandError
-
+    T-1593: split along T-1518's stage seams into `_land_core_prepare`
+    (pre-merge setup), `_land_core_start_baseline` (T-1463 background
+    baseline capture), `_land_core_invoke` (the actual `land()` call), and
+    `_land_core_finish_post_land` (T-1523 post-land verification) -- this
+    function is now just the glue between those stages, same call order
+    and short-circuit/error semantics as before the split."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
     assert cfg.ticket_worktree is not None
     worktree = cfg.ticket_worktree
+
+    root, rapid_land = _land_core_prepare(root, cfg, worktree)
+
+    baseline_thread, baseline_holder = _land_core_start_baseline(root, cfg)
+
+    result = _land_core_invoke(
+        root, cfg, worktree, rapid_land, baseline_thread, baseline_holder
+    )
+    if result.is_err:
+        baseline_thread.join()
+        return result
+
+    report = result.danger_ok
+
+    # T-1463: join only now -- the background baseline scan has had this
+    # whole land() call's wall time to finish concurrently; a slow scan
+    # just blocks here a little longer, it never blocked land() itself.
+    baseline_thread.join()
+    pre_land_sha, pre_land_findings = (
+        baseline_holder[0] if baseline_holder else (None, None)
+    )
+
+    return _land_core_finish_post_land(
+        root, cfg, report, pre_land_sha, pre_land_findings
+    )
+
+
+# frob:ticket T-1593
+def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path, bool]:
+    """Pre-merge setup seam of `_land_core` (T-1593 split): T-1175 auto-fix
+    absorption, root resolution, T-1523 stale-marker reconciliation, T-1575
+    profile check, and the override-flag warning -- pure extraction of the
+    original leading block, unchanged. Returns `(resolved_root,
+    rapid_land)`."""
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
     # own merge, in dry-run and real mode alike (a dry run should preview
@@ -1972,15 +2009,29 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
     from frob.tickets._profile import ProfileName, effective_profile
 
     _profile_result = effective_profile(worktree)
-    _rapid_land = _profile_result.is_ok and _profile_result.danger_ok is (
+    rapid_land = _profile_result.is_ok and _profile_result.danger_ok is (
         ProfileName.RAPID
     )
-    if _rapid_land:
+    if rapid_land:
         _log.info(
             "ticket land: %s effective profile is rapid (T-1575) -- "
             "skipping the pre-commit sweep, single post-land sweep only",
             cfg.ticket_id,
         )
+    return root, rapid_land
+
+
+# frob:ticket T-1593
+def _land_core_start_baseline(
+    root: Path, cfg: AppConfig
+):  # noqa: ANN201
+    """Background-baseline seam of `_land_core` (T-1593 split): starts the
+    T-1463 pre-land baseline capture thread, snapshot-isolated so it is
+    safe to run concurrently with `land()`'s own merge/checks -- pure
+    extraction of the original thread-start block, unchanged. Returns
+    `(thread, holder)`; the caller joins `thread` and reads `holder[0]`
+    once the `land()` call has returned."""
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-1463: run concurrently with land()'s own merge/checks below -- see
     # `_capture_pre_land_baseline`'s docstring for why this is safe
@@ -1991,18 +2042,39 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
     # verification wall-clock" half of this ticket's acceptance criterion
     # and is disclosed as deferred follow-up work, not implemented here;
     # see the T-1444 Done report.
-    _baseline_holder: list[tuple[str | None, frozenset[tuple[str, str]] | None]] = []
-    _baseline_thread = threading.Thread(
-        target=lambda: _baseline_holder.append(_capture_pre_land_baseline(root, cfg)),
+    import threading
+
+    baseline_holder: list[tuple[str | None, frozenset[tuple[str, str]] | None]] = []
+    baseline_thread = threading.Thread(
+        target=lambda: baseline_holder.append(_capture_pre_land_baseline(root, cfg)),
         name=f"frob-land-baseline-{cfg.ticket_id}",
         daemon=True,
     )
-    _baseline_thread.start()
+    baseline_thread.start()
+    return baseline_thread, baseline_holder
+
+
+# frob:ticket T-1593
+def _land_core_invoke(
+    root: Path,
+    cfg: AppConfig,
+    worktree: Path,
+    rapid_land: bool,
+    baseline_thread,  # noqa: ANN001
+    baseline_holder,  # noqa: ANN001
+):  # noqa: ANN201
+    """The actual `land()` call seam of `_land_core` (T-1593 split): wires
+    every collaborator closure (T-0919 shared check spawn, T-1514
+    pre-commit sweep, etc.) exactly as before -- pure extraction of the
+    original `land(...)` call, unchanged."""
+    from frob.tickets import land
+
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
     # below instead of each running its own full `frob check --ticket`.
     _shared_spawn = _shared_check_spawn_fn(worktree, cfg.ticket_id)
-    result = land(
+    return land(
         root,
         cfg.ticket_id,
         worktree,
@@ -2024,23 +2096,31 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
         allow_cross_ticket=cfg.ticket_allow_cross_ticket,
         pre_commit_sweep=(
             None
-            if _rapid_land
-            else _land_pre_commit_sweep_fn(_baseline_thread, _baseline_holder, cfg)
+            if rapid_land
+            else _land_pre_commit_sweep_fn(baseline_thread, baseline_holder, cfg)
         ),
     )
-    if result.is_err:
-        _baseline_thread.join()
-        return result
 
-    report = result.danger_ok
 
-    # T-1463: join only now -- the background baseline scan has had this
-    # whole land() call's wall time to finish concurrently; a slow scan
-    # just blocks here a little longer, it never blocked land() itself.
-    _baseline_thread.join()
-    pre_land_sha, pre_land_findings = (
-        _baseline_holder[0] if _baseline_holder else (None, None)
-    )
+# frob:ticket T-1593
+def _land_core_finish_post_land(
+    root: Path,
+    cfg: AppConfig,
+    report,  # noqa: ANN001
+    pre_land_sha: str | None,
+    pre_land_findings: frozenset[tuple[str, str]] | None,
+):
+    """T-1523 post-land verification seam of `_land_core` (T-1593 split):
+    writes/clears the post-land-verify marker around the unscoped-error
+    sweep and reports/returns the sweep's outcome -- pure extraction of
+    the original trailing `if not report.dry_run and pre_land_sha is not
+    None:` block, unchanged. Returns the same `Ok(report)`/`Err(...)`
+    shape `_land_core` returned before the split (the caller passes its
+    already-computed `result`/`report` through here unchanged on the
+    skipped-sweep path)."""
+    from frob.tickets._models import LandError
+
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     if not report.dry_run and pre_land_sha is not None:
         # T-1523: the land commit (`report.commit_sha`) is ALREADY durably
@@ -2079,7 +2159,7 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
             )
             return Err(LandError.PostLandUnscopedSweepFailed)
 
-    return result
+    return Ok(report)
 
 
 # frob:ticket T-1444

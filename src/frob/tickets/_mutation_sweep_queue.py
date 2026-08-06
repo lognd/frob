@@ -248,82 +248,26 @@ def run_pending_sweep(root: Path) -> Result[int, SweepQueueError]:
     and archived, or otherwise gone) is marked `swept` with `finding=None`
     and skipped -- there is nothing left to check.
 
-    Returns the number of entries processed (0 for an empty queue)."""
-    from frob.tickets import _load_one
-    from frob.tickets._mutation_evidence import (
-        MutationEvidenceError,
-        check_ticket_mutation_evidence,
-    )
+    Returns the number of entries processed (0 for an empty queue).
 
-    with _sweep_lock(root):
-        loaded = _load_sweep_queue(root)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        entries = loaded.danger_ok
-
-    pending = [e for e in entries if e.status == "pending"]
+    T-1593: split into `_load_pending_sweep_entries` (queue draining),
+    `_process_pending_sweep_entries` (per-entry execution), and
+    `_save_pending_sweep_results` (merge + persist) -- this function is
+    now just the glue between them, in the same order with the same
+    short-circuit semantics as before the split."""
+    loaded = _load_pending_sweep_entries(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    pending = loaded.danger_ok
     if not pending:
         _log.debug("mutation_sweep_queue: run_pending_sweep: nothing pending")
         return Ok(0)
 
-    updated_by_id: dict[str, SweepEntry] = {}
-    for entry in pending:
-        loaded_ticket = _load_one(root, entry.ticket_id)
-        if loaded_ticket.is_err:
-            _log.warning(
-                "mutation_sweep_queue: run_pending_sweep: %s no longer "
-                "loadable (%s) -- marking swept, nothing to check",
-                entry.ticket_id,
-                loaded_ticket.danger_err,
-            )
-            updated_by_id[entry.ticket_id] = entry.model_copy(
-                update={"status": "swept", "finding": None}
-            )
-            continue
-        ticket = loaded_ticket.danger_ok
-        result = check_ticket_mutation_evidence(root, ticket, entry.base_ref)
-        if result.is_err:
-            if result.danger_err is not MutationEvidenceError.ExecDisabled:
-                _log.warning(
-                    "mutation_sweep_queue: run_pending_sweep: %s check "
-                    "failed (%s) -- marking swept, no finding recorded",
-                    entry.ticket_id,
-                    result.danger_err,
-                )
-            updated_by_id[entry.ticket_id] = entry.model_copy(
-                update={"status": "swept", "finding": None}
-            )
-            continue
-        findings = result.danger_ok
-        if not findings:
-            updated_by_id[entry.ticket_id] = entry.model_copy(
-                update={"status": "swept", "finding": False}
-            )
-            continue
-        filed_id: str | None = None
-        if entry.kind is TicketKind.BUG:
-            filed = _file_confirmatory_only_ticket(root, entry.ticket_id, findings)
-            filed_id = filed.ok
-        else:
-            _log.warning(
-                "mutation_sweep_queue: run_pending_sweep: %s (kind=%s) "
-                "batch TEST016 finding, %d file(s) confirmatory-only -- "
-                "WARN only, not blocking",
-                entry.ticket_id,
-                entry.kind.value,
-                len(findings),
-            )
-        updated_by_id[entry.ticket_id] = entry.model_copy(
-            update={"status": "swept", "finding": True, "filed_ticket_id": filed_id}
-        )
+    updated_by_id = _process_pending_sweep_entries(root, pending)
 
-    with _sweep_lock(root):
-        loaded = _load_sweep_queue(root)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        current = loaded.danger_ok
-        merged = tuple(updated_by_id.get(e.ticket_id, e) for e in current)
-        _save_sweep_queue(root, merged)
+    saved = _save_pending_sweep_results(root, updated_by_id)
+    if saved.is_err:
+        return Err(saved.danger_err)
 
     _log.info(
         "mutation_sweep_queue: run_pending_sweep: processed %d entr%s",
@@ -331,6 +275,109 @@ def run_pending_sweep(root: Path) -> Result[int, SweepQueueError]:
         "y" if len(pending) == 1 else "ies",
     )
     return Ok(len(pending))
+
+
+# frob:ticket T-1593
+def _load_pending_sweep_entries(
+    root: Path,
+) -> Result[list[SweepEntry], SweepQueueError]:
+    """Queue-draining half of `run_pending_sweep` (T-1593 split): load the
+    sweep queue under `_sweep_lock` and filter to `pending`-status
+    entries. Pure extraction of the original leading `with _sweep_lock`
+    block plus the `pending = [...]` filter, unchanged."""
+    with _sweep_lock(root):
+        loaded = _load_sweep_queue(root)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        entries = loaded.danger_ok
+    return Ok([e for e in entries if e.status == "pending"])
+
+
+# frob:ticket T-1593
+def _process_pending_sweep_entries(
+    root: Path, pending: list[SweepEntry]
+) -> dict[str, SweepEntry]:
+    """Per-entry execution half of `run_pending_sweep` (T-1593 split):
+    re-run mutation evidence for each `pending` entry via
+    `_process_one_pending_sweep_entry`, returning the by-id map of
+    updated entries. Pure extraction of the original `for entry in
+    pending:` loop, unchanged (the loop BODY is further split out below
+    to stay under ARCH001's threshold)."""
+    updated_by_id: dict[str, SweepEntry] = {}
+    for entry in pending:
+        updated_by_id[entry.ticket_id] = _process_one_pending_sweep_entry(root, entry)
+    return updated_by_id
+
+
+# frob:ticket T-1593
+def _process_one_pending_sweep_entry(root: Path, entry: SweepEntry) -> SweepEntry:
+    """Single-entry body of `_process_pending_sweep_entries` (T-1593
+    split): re-run mutation evidence for one `entry` and classify/log the
+    result into an updated `SweepEntry`. Pure extraction of the original
+    per-entry loop body, unchanged."""
+    from frob.tickets import _load_one
+    from frob.tickets._mutation_evidence import (
+        MutationEvidenceError,
+        check_ticket_mutation_evidence,
+    )
+
+    loaded_ticket = _load_one(root, entry.ticket_id)
+    if loaded_ticket.is_err:
+        _log.warning(
+            "mutation_sweep_queue: run_pending_sweep: %s no longer "
+            "loadable (%s) -- marking swept, nothing to check",
+            entry.ticket_id,
+            loaded_ticket.danger_err,
+        )
+        return entry.model_copy(update={"status": "swept", "finding": None})
+    ticket = loaded_ticket.danger_ok
+    result = check_ticket_mutation_evidence(root, ticket, entry.base_ref)
+    if result.is_err:
+        if result.danger_err is not MutationEvidenceError.ExecDisabled:
+            _log.warning(
+                "mutation_sweep_queue: run_pending_sweep: %s check "
+                "failed (%s) -- marking swept, no finding recorded",
+                entry.ticket_id,
+                result.danger_err,
+            )
+        return entry.model_copy(update={"status": "swept", "finding": None})
+    findings = result.danger_ok
+    if not findings:
+        return entry.model_copy(update={"status": "swept", "finding": False})
+    filed_id: str | None = None
+    if entry.kind is TicketKind.BUG:
+        filed = _file_confirmatory_only_ticket(root, entry.ticket_id, findings)
+        filed_id = filed.ok
+    else:
+        _log.warning(
+            "mutation_sweep_queue: run_pending_sweep: %s (kind=%s) "
+            "batch TEST016 finding, %d file(s) confirmatory-only -- "
+            "WARN only, not blocking",
+            entry.ticket_id,
+            entry.kind.value,
+            len(findings),
+        )
+    return entry.model_copy(
+        update={"status": "swept", "finding": True, "filed_ticket_id": filed_id}
+    )
+
+
+# frob:ticket T-1593
+def _save_pending_sweep_results(
+    root: Path, updated_by_id: dict[str, SweepEntry]
+) -> Result[None, SweepQueueError]:
+    """Merge-and-persist half of `run_pending_sweep` (T-1593 split):
+    re-load the queue under `_sweep_lock`, overlay `updated_by_id` on the
+    current state, and save. Pure extraction of the original trailing
+    `with _sweep_lock` block, unchanged."""
+    with _sweep_lock(root):
+        loaded = _load_sweep_queue(root)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        current = loaded.danger_ok
+        merged = tuple(updated_by_id.get(e.ticket_id, e) for e in current)
+        _save_sweep_queue(root, merged)
+    return Ok(None)
 
 
 def _file_confirmatory_only_ticket(

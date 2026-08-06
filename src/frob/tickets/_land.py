@@ -1842,12 +1842,33 @@ def _check_mutation_evidence(
     Every use is logged at WARNING naming the ticket, so a bypass always
     leaves a trail -- this is for a genuinely false-positive finding (e.g.
     a mutation-testing gap the reviewer has not yet closed), never a
-    silent way to wave through real confirmatory evidence."""
-    from frob.gates import bug_repro_violations, mutation_evidence_violations
-    from frob.tickets._mutation_sweep_queue import (
-        SYNC_BLOCKING_KINDS,
-        enqueue_pending_sweep,
-    )
+    silent way to wave through real confirmatory evidence.
+
+    T-1593: the profile/kind DECISION (does this ticket owe a synchronous
+    mutation subprocess at all) is split into `_mutation_evidence_sync_
+    decision` below; the deferred and synchronous evidence paths are
+    `_mutation_evidence_deferred`/`_mutation_evidence_synchronous`. This
+    function is now purely the dispatch between them -- pure extraction,
+    same call order and return values as before the split."""
+    rapid, owes_sync = _mutation_evidence_sync_decision(worktree, ticket)
+    if not owes_sync:
+        return _mutation_evidence_deferred(worktree, ticket, base_ref, rapid)
+    return _mutation_evidence_synchronous(worktree, ticket, base_ref, skip)
+
+
+# frob:ticket T-1593
+def _mutation_evidence_sync_decision(
+    worktree: Path, ticket: Ticket
+) -> tuple[bool, bool]:
+    """Decision half of `_check_mutation_evidence` (T-1593 split): whether
+    `worktree` is under T-1575's rapid profile, and whether `ticket` owes a
+    SYNCHRONOUS mutation subprocess at all (T-1518's `SYNC_BLOCKING_KINDS`
+    narrowing) -- returns `(rapid, owes_sync)`. `owes_sync=False` routes
+    the caller to the deferred-sweep path instead of running the
+    subprocess inline; mirrors the original inline
+    `rapid or ticket.kind not in SYNC_BLOCKING_KINDS` condition exactly
+    (owes_sync is the negation of that condition)."""
+    from frob.tickets._mutation_sweep_queue import SYNC_BLOCKING_KINDS
     from frob.tickets._profile import ProfileName, effective_profile
 
     profile = effective_profile(worktree)
@@ -1859,33 +1880,59 @@ def _check_mutation_evidence(
             "(T-1575); BUG002 is unaffected and still runs",
             ticket.id,
         )
+    owes_sync = (not rapid) and ticket.kind in SYNC_BLOCKING_KINDS
+    return rapid, owes_sync
 
-    if rapid or ticket.kind not in SYNC_BLOCKING_KINDS:
-        if not rapid:
-            enqueued = enqueue_pending_sweep(worktree, ticket.id, base_ref, ticket.kind)
-            if enqueued.is_err:
-                _log.warning(
-                    "land: %s failed to enqueue a deferred TEST016 sweep "
-                    "(%s) -- TEST016 will not be evaluated for this land "
-                    "at all until this is investigated",
-                    ticket.id,
-                    enqueued.danger_err,
-                )
-        bug002_only = bug_repro_violations(worktree, ticket, base_ref)
-        errors = [v for v in bug002_only if v.severity == "error"]
-        for v in bug002_only:
-            _log.warning("land: %s %s %s", ticket.id, v.rule, v.message)
-        if errors:
-            _log.error(
-                "land: %s cannot land -- %d BUG002 finding(s) (kind=%s); "
-                "TEST016 was deferred to the batch mutation sweep, BUG002 "
-                "is unaffected and still blocks",
+
+# frob:ticket T-1593
+def _mutation_evidence_deferred(
+    worktree: Path, ticket: Ticket, base_ref: str, rapid: bool
+) -> Result[None, LandError]:
+    """Deferred half of `_check_mutation_evidence` (T-1593 split): enqueue
+    a `mutation_sweep_queue.SweepEntry` for the later batch pass (skipped
+    entirely under `rapid`, per T-1575) and still run/classify BUG002
+    synchronously regardless of profile -- pure extraction of the original
+    `if rapid or ticket.kind not in SYNC_BLOCKING_KINDS:` branch body,
+    unchanged."""
+    from frob.gates import bug_repro_violations
+    from frob.tickets._mutation_sweep_queue import enqueue_pending_sweep
+
+    if not rapid:
+        enqueued = enqueue_pending_sweep(worktree, ticket.id, base_ref, ticket.kind)
+        if enqueued.is_err:
+            _log.warning(
+                "land: %s failed to enqueue a deferred TEST016 sweep "
+                "(%s) -- TEST016 will not be evaluated for this land "
+                "at all until this is investigated",
                 ticket.id,
-                len(errors),
-                ticket.kind,
+                enqueued.danger_err,
             )
-            return Err(LandError.EvidenceConfirmatoryOnly)
-        return Ok(None)
+    bug002_only = bug_repro_violations(worktree, ticket, base_ref)
+    errors = [v for v in bug002_only if v.severity == "error"]
+    for v in bug002_only:
+        _log.warning("land: %s %s %s", ticket.id, v.rule, v.message)
+    if errors:
+        _log.error(
+            "land: %s cannot land -- %d BUG002 finding(s) (kind=%s); "
+            "TEST016 was deferred to the batch mutation sweep, BUG002 "
+            "is unaffected and still blocks",
+            ticket.id,
+            len(errors),
+            ticket.kind,
+        )
+        return Err(LandError.EvidenceConfirmatoryOnly)
+    return Ok(None)
+
+
+# frob:ticket T-1593
+def _mutation_evidence_synchronous(
+    worktree: Path, ticket: Ticket, base_ref: str, skip: bool
+) -> Result[None, LandError]:
+    """Synchronous half of `_check_mutation_evidence` (T-1593 split): run
+    the actual TEST016 mutation subprocess plus BUG002 and classify the
+    result, including the `--skip-mutation-evidence` override -- pure
+    extraction of the original `else` branch body, unchanged."""
+    from frob.gates import bug_repro_violations, mutation_evidence_violations
 
     violations = mutation_evidence_violations(
         worktree, ticket, base_ref
