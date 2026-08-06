@@ -8660,3 +8660,33 @@ Work to run only AFTER the rest of the queue is drained, in the stated order. Fi
 Why the gating is real and not ceremony: each child measures the repo's finished state. A docs sweep run mid-drive documents code that is about to change; a vestigial-artifact cleanup run mid-drive deletes things an in-flight ticket still references; a waiver audit run mid-drive judges waivers whose follow-up work has not happened yet and would condemn honest ones. Running these early produces confidently wrong answers -- the most expensive kind.
 
 Order: docs sweep, then the detector-gap audit it feeds, then the artifact cleanup, and the waiver audit LAST, as explicitly requested.
+
+<!-- ticket:T-1610 -->
+```yaml
+id: T-1610
+title: 'Docs completeness sweep: enumerate the repo''s real surface and document every
+  gap'
+state: queued
+kind: docs
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: T-1609
+tier: ticket
+sprint: null
+scope:
+- docs/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Scan the entire repository for anything true about it that is not documented, and amend the docs to cover it.
+
+Scope is the whole repo, not just docs/: every module, every gate rule, every CLI verb and flag, every config key in frob.toml, every environment variable, every file format frob reads or writes, and every workflow an agent or user is expected to follow.
+
+Method matters more than volume. Enumerate the surface FIRST from the code (the CLI parser tree, the gate rule registry, the config model, the directive DSL grammar), then diff that enumeration against what docs/ actually covers. A prose read-through will miss exactly the things that have been missing all along; a mechanical enumeration will not.
+
+Record every gap found in a durable list -- the audit child consumes it, and it is the input to that audit, not a byproduct. For each gap note what it is, where it should have been documented, and roughly how long it appears to have been missing (git blame on the undocumented symbol).
+
+Do NOT fix detector gaps here. Finding out why frob failed to catch each of these is the next ticket's job, and mixing the two loses the evidence.
