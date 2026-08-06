@@ -97,6 +97,26 @@ class TestLiveTrackerCitations:
         assert "patterns.yaml" in citations[0]
         assert "T-0605" in citations[0]
 
+    # frob:ticket T-1633
+    def test_ledger_prose_quoting_a_waiver_attribute_is_not_a_citation(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_ledger_prose_quoting_a_waiver_attribute_is_not_a_citation  # noqa: E501
+        """T-1633: the waiver grep excludes the ledger. A Done report or an
+        incident write-up legitimately QUOTES a directive verbatim; a real
+        `frob:waive ... ticket=` lives in source, never in tickets.md.
+        Without the exclusion, a ticket body describing this very bug was
+        itself flagged and refused the land it documented."""
+        _init_repo(tmp_path)
+        (tmp_path / "tickets.md").write_text(
+            "## Done report\n\n"
+            'The waiver `ticket="T-0605"` misfired here, and so did\n'
+            '`follow_up="T-0605"` in the same paragraph.\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "ledger prose quoting directives")
+        assert live_tracker_citations(tmp_path, "T-0605") == ()
+
     # frob:ticket T-1632
     def test_longer_identifier_ending_in_ticket_is_not_a_citation(
         self, tmp_path: Path

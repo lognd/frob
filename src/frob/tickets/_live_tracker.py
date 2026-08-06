@@ -105,6 +105,21 @@ _WAIVER_TICKET_PATTERN = (
     r"|" + _LEFT + r'follow_up="?{id}"?\b'
 )
 
+# frob:ticket T-1633
+# The waiver grep EXCLUDES the ledger. A `frob:waive ... ticket=<id>` /
+# `follow_up=<id>` directive is a source-code comment; it never legitimately
+# appears in tickets.md/tickets-archive.md/tickets/**, where every occurrence
+# is narrative -- a Done report quoting a command, an incident write-up
+# quoting the very pattern that misfired. Scanning prose for declarations
+# refused two real lands (T-1582, twice) and would keep doing so however
+# precise the regex became.
+_WAIVER_PATHSPEC = (
+    ":(exclude)tickets.md",
+    ":(exclude)tickets-archive.md",
+    ":(exclude)tickets/**",
+)
+
+
 # `docs/design/registry/*.yaml` -- the one pathspec the registry-
 # disposition grep is scoped to (the waiver grep runs repo-wide, no
 # pathspec, since a `frob:waive`/`.strata waive` citation can live
@@ -128,7 +143,11 @@ def _waiver_pattern(ticket_id: str) -> str:
 
 
 def _git_grep(
-    root: Path, pattern: str, *, pathspec: str | None, revision: str | None = None
+    root: Path,
+    pattern: str,
+    *,
+    pathspec: str | tuple[str, ...] | None,
+    revision: str | None = None,
 ) -> tuple[str, ...] | None:
     """`git grep -n -E pattern [<revision>] [-- pathspec]` under `root`,
     returning `file:line:text` lines. `revision=None` (the default) greps
@@ -156,7 +175,8 @@ def _git_grep(
     if revision is not None:
         argv.append(revision)
     if pathspec is not None:
-        argv += ["--", pathspec]
+        specs = (pathspec,) if isinstance(pathspec, str) else pathspec
+        argv += ["--", *specs]
     lines = _spawn_git_grep(argv, root=root, pattern=pattern, revision=revision)
     if lines is None or revision is None:
         return lines
@@ -288,7 +308,7 @@ def live_tracker_citations(
         found: list[str] = []
         for pattern, pathspec in (
             (_registry_pattern(ticket_id), _REGISTRY_PATHSPEC),
-            (_waiver_pattern(ticket_id), None),
+            (_waiver_pattern(ticket_id), _WAIVER_PATHSPEC),
         ):
             result = _git_grep(root, pattern, pathspec=pathspec, revision=revision)
             if result is None:
