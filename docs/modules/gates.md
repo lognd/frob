@@ -3297,8 +3297,8 @@ section) saved live waivers from being misread as stale.
 
 Two-layer fix, matching the two places this gap actually bites:
 
-1. **Structural signal** (`docs/modules/perf.md#perf-reach-native-
-   staleness-signal-t-1578` has the full writeup): `_perf_reach_
+1. **Structural signal** (`docs/modules/perf.md#perf-reach-native-staleness-signal-t-1578`
+   has the full writeup): `_perf_reach_
    degraded_marker` (`frob.gates.__init__`) checks `frob.strata.
    stale_natives` for `frob_core` specifically, AFTER `_maybe_
    autorebuild_natives` already had its chance to fix it -- `_build_

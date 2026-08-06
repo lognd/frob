@@ -148723,7 +148723,9 @@ Design decisions:
   placeholder "TIERBDEMO001" id that is deliberately never a real frob check
   rule -- proves the full snapshot-apply-verify-commit-or-rollback path
   end-to-end without depending on any real gate rule's shape. A real Tier-B
-  handler is left as a follow-up, out of this ticket's declared scope.
+  handler is left as a follow-up, out of this ticket's declared scope
+  (filed T-1643, T-1642's own follow-up; real id
+  after land).
 - Verification is sequential, one TierBFix at a time (never batched), per
   docs/design/check-fix-engine.md's own "a rollback never has to bisect more
   than one fix" rule -- test_multiple_fixes_verified_sequentially_not_batched
@@ -182541,7 +182543,9 @@ _apply_root_tier_a_fixes for the post-land sweep) -- no changes to
 src/frob/app/ticket_runner/_land_cmd.py were needed at all.
 
 Disclosed scope cut (per this ticket's own priority instruction: ship the
-two highest-frequency classes completely, file real tickets for the rest):
+two highest-frequency classes completely, file real tickets for the rest;
+5 follow-ups filed, real ids T-1544/T-1545/T-1547/T-1548/T-1549
+backfilled below):
 SYS100's EXTENDED case (eval/process-control/ffi/install-hook/...) fires
 per-node with no per-file evidence, so there is no single file a writer
 could add to a via list without guessing -- left unhandled. The remaining
@@ -182552,7 +182556,11 @@ EXTENDED-case follow-up above were each filed as their own new ticket
 this session (5 total, filed AFTER tickets.md was restored to main per
 the playbook's 10b/1st-ticket-in-worktree recipe -- real ids will appear
 once this land renumbers them; not cited here by draft id per the
-never-cite-draft-ids rule).
+never-cite-draft-ids rule). Real ids, backfilled post-land:
+T-1544 (TICK006 phantom-draft refile/renumber), T-1545 (SYS100
+EXTENDED-case, the one named above), T-1547 (E501-from-merge targeted
+ruff format), T-1548 (COV002 changed-symbol-without-edge insertion),
+T-1549 (ClaimDivergence done-report re-run).
 
 tests/test_gates.py and docs/modules/gates.md could not be added to this
 ticket's declared scope (ticket scope --add) -- both are under an active

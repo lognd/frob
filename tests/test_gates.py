@@ -9718,6 +9718,67 @@ class TestDocstatusGate:
         )
         assert docstatus_gate(root) == ()
 
+    # frob:ticket T-1641
+    def test_unresolvable_ticket_mention_fires_doc011(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # T-draft-8c110736: a prose T-####/T-draft-<hex> mention that resolves against
+        # neither tickets.md nor tickets-archive.md (no ledger present at
+        # all here, so nothing is known) fires DOC011.
+        from frob.gates import docstatus_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "page.md").write_text(
+            "# Page\n\nSee T-9999 for context.\n", encoding="utf-8"
+        )
+        violations = docstatus_gate(root)
+        assert set(_rules(violations)) == {"DOC011"}
+        assert any("T-9999" in v.message for v in violations)
+
+    # frob:ticket T-1641
+    def test_ticket_mention_inside_line_wrapped_inline_code_does_not_fire_doc011(
+        self, tmp_path
+    ):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # T-draft-8c110736: an inline `` `code` `` span that an editor hard-wrapped
+        # across a line break (a single embedded newline, no blank line) is
+        # still ONE token under commonmark -- the T-1228 precedent
+        # `_docptr.py::_prose_tokens` already established for DOC006's own
+        # scan. The previous `_INLINE_CODE_RE` (`` `[^`\n]+` ``) rejected any
+        # embedded newline outright, so the second physical line of a
+        # wrapped span was left un-blanked and its ticket-id-shaped content
+        # (e.g. an illustrative `T-9999` inside example CLI prose) was
+        # misread as an unresolvable real-prose citation. Regression for the
+        # docs/modules/strata.md false positive this ticket fixed.
+        from frob.gates import docstatus_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "page.md").write_text(
+            '# Page\n\nExample: `waive "X" reason "r" ticket\n"T-9999";`\n',
+            encoding="utf-8",
+        )
+        assert docstatus_gate(root) == ()
+
+    # frob:ticket T-1641
+    def test_ticket_mention_across_blank_line_still_fires_doc011(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # T-draft-8c110736: a genuine PARAGRAPH break (blank line) between two stray
+        # backticks is NOT a wrapped code span -- it must still be treated
+        # as ordinary prose and fire DOC011, matching the T-1228 precedent's
+        # own blank-line rejection.
+        from frob.gates import docstatus_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "page.md").write_text(
+            "# Page\n\nStray `backtick.\n\nSee T-9999 here, then a `close.\n",
+            encoding="utf-8",
+        )
+        violations = docstatus_gate(root)
+        assert set(_rules(violations)) == {"DOC011"}
+        assert any("T-9999" in v.message for v in violations)
+
 
 class TestDocmakeGate:
     def test_bogus_make_target_fires_doc010(self, tmp_path):

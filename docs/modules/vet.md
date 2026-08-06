@@ -623,7 +623,7 @@ Honest scope cuts (T-0180, not silently claimed done):
   transitive import of its own is invisible to this pass -- a real gap,
   not a claimed-closed one.
 - **`RecursionError` degrades to empty capabilities, not a crash.**
-  `_capability_core.py::_comment_byte_spans`'s recursive tree-sitter walk hits
+  `_capability_core.py::_comment_byte_spans_from_tree`'s recursive tree-sitter walk hits
   Python's recursion limit on some real, deeply-nested third-party source
   files (observed live against `pydantic`'s installed dependency tree in
   this repo's own `.venv`); `_closedworld.py::_scan_capabilities_best_effort`

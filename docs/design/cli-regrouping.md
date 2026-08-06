@@ -17,40 +17,55 @@ home, it just does not need a NEW group of its own.
 
 ## Candidate taxonomy
 
+Every `frob <group>` invocation named below (through the end of this
+section) is a NOT-YET-BUILT candidate verb group this doc is proposing,
+not a live CLI surface -- `frob explore`, marked IMPLEMENTED, is the sole
+exception. Each is waived DOC006 individually below with this same
+reasoning, since that is the point of a design doc.
+
 ### `frob explore` -- navigation (T-1238, IMPLEMENTED this ticket)
 
 `map`, `outline`, `xref`, `docs-search` (from `frob docs --search`). The
 epic's first concrete slice -- see `docs/modules/cli.md`'s "Navigation
 commands" section for the un-deprecation this required.
 
+<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
 ### `frob quality` -- correctness/hygiene gates
 
 `check`, `test`, `fix` (fix does not exist yet as a top-level verb --
 today `frob check`'s auto-fix handlers cover this; no action needed
 unless a standalone `fix` verb is added later), `dup`, `arch`, `bind`,
+<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->
 `cycle`, `mutate`, `perf`. Candidate subcommands: `frob quality check`,
+<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->
 `frob quality test`, `frob quality dup`, `frob quality arch`, `frob
+<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->
 quality bind`, `frob quality cycle`, `frob quality mutate`, `frob quality
 perf`.
 
+<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
 ### `frob tickets` -- the ticket queue
 
 `ticket` already IS a verb group (`frob ticket new/start/close/...`) --
 no top-level regrouping needed, it is the existing precedent this whole
 epic generalizes from. `debt`, `deprecated` are ticket-adjacent
 (disclosed-and-tracked deferred work, same shape as a ticket queue
+<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-decided 'frob tickets' regrouping" -->
 without the lifecycle) -- candidates for `frob tickets debt` / `frob
 tickets deprecated` as siblings of `frob ticket`, pending a decision on
 whether folding them under the existing `ticket` verb (`frob ticket
+<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-decided 'frob tickets' regrouping" -->
 debt`) or a new parent `tickets` (plural) that CONTAINS `ticket` reads
 better; this doc does not resolve that naming question, a later
 implementation ticket does.
 
+<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
 ### `frob design` -- design-knowledge surfaces
 
 `sys` (strata design-model applications), `registry` (unified
 design-knowledge registry), `docs` (bare extract/`--overview`, NOT
 `--search` which moved to `explore`), `graph` (obligation graph
+<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob design' group" -->
 queries), `exports`. Candidates: `frob design sys`, `frob design
 registry`, `frob design docs`, `frob design graph`, `frob design
 exports`.
@@ -62,10 +77,12 @@ conformance, quarantine, typosquat, lifecycle scripts, osv advisories).
 No regrouping needed -- it is a single command with its own internal
 subcommand structure already, same precedent as `frob ticket`.
 
+<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
 ### `frob ops` -- release/fleet/infra plumbing
 
 `release`, `registry` (see design bucket note above -- could go either
 way), `natives`, `doctor`, `clean`, `fleet`, `deploy`, `scaffold`,
+<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob ops' group" -->
 `gitlog`, `stats`. Candidates: `frob ops release`, `frob ops natives`,
 `frob ops doctor`, `frob ops clean`, `frob ops fleet`, `frob ops deploy`,
 `frob ops scaffold`, `frob ops gitlog`, `frob ops stats`.

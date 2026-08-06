@@ -214,6 +214,25 @@ class TestDoc006Config:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:ticket T-1641
+    def test_profile_section_not_flagged(self, tmp_path: Path) -> None:
+        """T-draft-8c110736: `[profile]`/`[profile.profile]` (`frob.tickets._profile`,
+        T-1575) is a real section that codebase reads but that this
+        SYNTHETIC test repo's own `frob.toml` never populates -- same
+        `_DECLARED_BUT_UNSET_CONFIG_SECTIONS` false-positive class as
+        `[vet.allow]` above, added when this repo's own `docs/modules/
+        tickets.md` was caught by the gap."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Set `[profile] profile = \"rapid\"` for a small repo.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
 
 class TestDoc006Symbol:
     """Kind 4: CODE SYMBOL -- a dotted `module.Class.method`-shaped token

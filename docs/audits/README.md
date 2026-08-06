@@ -28,7 +28,7 @@ that motivated the audit).
 | gates: quality/security | [gates-quality.md](gates-quality.md) | 3 | 15 | The ENTIRE quality surface is non-blocking (WARN): perf smells, undeclared PII, god-classes, deep nesting all exit 0. DUP fails open (default-off + no-op without natives). `frob:secret-fake` suppresses real secrets with no accountability. |
 
 - [Coordination churn self-audit](coordination-churn.md) -- 2026-07 zero-drive retrospective: six recurring coordination frictions, each with a design-out (T-0999 epic)
-- [TEST005 zero-percent classification (T-1418)](test005-zero-classification-t1418.md) -- all 306 symbol-level TEST005 findings at exactly 0.0% branch coverage classified: 0 genuine gaps, all 306 are attribution artifacts with a named, real, passing covering test; contradicts the subprocess/daemon-concentration prediction (289/306 covered by in-process unit tests only) and points at coverage-combine data loss, not process-boundary blindness, as the likely root cause (filed T-draft-0b60dd31)
+- [TEST005 zero-percent classification (T-1418)](test005-zero-classification-t1418.md) -- all 306 symbol-level TEST005 findings at exactly 0.0% branch coverage classified: 0 genuine gaps, all 306 are attribution artifacts with a named, real, passing covering test; contradicts the subprocess/daemon-concentration prediction (289/306 covered by in-process unit tests only) and points at coverage-combine data loss, not process-boundary blindness, as the likely root cause (draft id at filing time did not survive land under a traceable real id -- re-file if still open)
 - [Docs staleness sweep (2026-07-29)](docs-staleness-2026-07-29.md) -- the 121-doc staleness catalog referenced from `docs/index.md`
 
 ## Convergence protocol

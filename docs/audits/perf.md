@@ -156,8 +156,9 @@ unchanged and will resurface the moment a new heavy gate is added to
 memo entirely and may or may not still pay a real cost against `_parse`'s
 own cache; H5's still-apparently-unfixed double selfconform scan) were not
 re-verified this pass -- filed as a follow-up alongside profiling the new
-`refs` stage dominator (T-draft-bafbce1c at filing time). Do not assume
-either is fixed without a fresh profile.
+`refs` stage dominator (draft id at filing time; the ticket did not
+survive land under a traceable real id -- re-file if this gap is still
+open). Do not assume either is fixed without a fresh profile.
 
 ## (A) REAL PROFILE -- authoritative numbers
 

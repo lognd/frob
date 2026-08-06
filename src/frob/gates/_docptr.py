@@ -598,6 +598,8 @@ _DECLARED_BUT_UNSET_CONFIG_SECTIONS = frozenset(
         "clean",  # src/frob/clean/_rules.py: data.get("clean", {})
         "tool.frob",  # pyproject.toml form; src/frob/app/config.py
         "repo",  # src/frob/fleet/__init__.py: data.get("repo", [])
+        "profile",  # T-1575: src/frob/tickets/_profile.py: doc.get("profile")
+        "profile.profile",  # same table, `.profile` sub-key (ProfileName)
     }
 )
 

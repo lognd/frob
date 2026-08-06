@@ -74,7 +74,18 @@ _URL_SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://|^mailto:")
 # never a real link. Blank out fenced blocks and inline `code` spans first
 # (preserving newlines, so line numbers stay correct) before scanning.
 _FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
-_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+# T-draft-8c110736 (DOC006/DOC011 line-wrap false positive, mirroring _docptr.py's
+# T-1228 precedent): commonmark treats a SINGLE embedded newline inside an
+# inline code span as ordinary whitespace, so an editor-wrapped span like
+# `` `frob quality \n bind` `` is still one token, not two. The previous
+# `[^`\n]+` shape rejected any embedded newline outright, which left a
+# line-wrapped span's SECOND line un-blanked and exposed to DOC008's link
+# scan / DOC011's ticket-id scan as ordinary prose -- a real false positive
+# (docs/modules/strata.md's `` `... "T-9999";` `` wrapped mid-span was
+# flagged as an unresolvable ticket id). A blank line (`\n\n`, a genuine
+# paragraph break) is still rejected, matching T-1228's own rule: that is
+# two unrelated stray backticks, never a genuine wrapped span.
+_INLINE_CODE_RE = re.compile(r"`(?:[^`\n]|\n(?!\n))+`")
 
 
 def _blank_non_newlines(match: re.Match[str]) -> str:

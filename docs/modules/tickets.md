@@ -2333,6 +2333,7 @@ failure.
 in one `frob ticket evidence` invocation (all three modes can fire in the
 same call; the command only refuses when NONE of the three is given).
 
+<!-- frob:waive DOC006 reason="the prose itself discloses 'frob refactor rename' as a separate, not-yet-built ticket -- it names a future command, not a live one" -->
 Disclosed follow-up (this ticket's own body): `frob refactor rename`
 detecting a bound-evidence reference and offering the `--replace` rebind
 automatically is a separate, not-yet-built ticket -- this ships the CLI
@@ -2525,6 +2526,7 @@ deleted, tickets archived). `downgrade_profile_ratchet(root, reason=...)`
 is the only way back -- an explicit, loudly-logged call, never invoked
 from any land-pipeline seam automatically.
 
+<!-- frob:waive DOC006 reason="'frob.toml.j2' is a bare jinja template filename (src/frob/scaffold/data/**), not a dotted code-symbol path -- DOC006's kind-4 matcher has no non-code-extension exclusion, so a bare basename with a 'frob.' prefix reads as a project-namespace symbol lookup and misfires" -->
 **`frob scaffold` defaults new repos to `rapid` (T-1576).** Every
 `frob.toml.j2` template under `src/frob/scaffold/data/**` writes
 `[profile] profile = "rapid"` into a freshly scaffolded project's

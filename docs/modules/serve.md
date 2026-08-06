@@ -723,7 +723,7 @@ still what actually guarantees exclusivity underneath; the version RPC
 only decides WHEN to ask a live daemon to step aside gracefully rather
 than relying on `flock` contention alone (which would just make the fresh
 spawn silently lose to the stale one it should be replacing). This closes
-the follow-on T-1093 disclosed (T-draft-8a56400c).
+the follow-on T-1093 disclosed (landed as T-1105).
 
 ### Daemon liveness (T-1377) and the opt-in switch (T-1379)
 

@@ -612,8 +612,10 @@ suite immediately, before any new detector work lands (the T-0187/T-0158
 acceptance bar this ticket was scoped against).
 
 The registry is honest about two gaps it found rather than papering over
-them (both filed as T-draft-d6bca168, not fixed here -- out of T-0199's scope,
-which excludes `frob-core/**`):
+them (both filed as a follow-up at the time, draft id not fixed here --
+out of T-0199's scope, which excludes `frob-core/**`; the draft did not
+survive land under a traceable real id -- re-file if either gap is still
+open):
 
 - **R3 currently cannot be distinguished from R2 by any fixture.**
   `frob.dup._pipeline._fingerprint._fingerprint_symbol` feeds `r3_canonical_hash` the

@@ -538,8 +538,8 @@ as DEPLOY001.
 - No live-host conformance checker (declared manifest vs. what a
   RUNNING host actually has, as opposed to the committed scripts) -- 
   T-0259's VM auditor.
-- No OS-group / sudoers grammar gap remains -- T-0272 closed
-  T-draft-7b5b5541 (filed by T-0256); see #shared-group-and-sudoers-sub-
+- No OS-group / sudoers grammar gap remains -- T-0272 closed this
+  (filed by T-0256, landed as T-0272); see #shared-group-and-sudoers-sub-
   targets-t-0272 above.
 - T-0261 ships `HostPlatform.WINDOWS` + the five Windows clauses
   (#windows-surface-grammar above): manifest + model only, mirroring
