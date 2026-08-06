@@ -50,10 +50,11 @@ module scope.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import shlex
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -191,6 +192,57 @@ def _transition_guard(
     return Ok(None)
 
 
+# frob:ticket T-1681
+def record_rapid_debt(root: Path, ticket_id: str, skipped: str) -> None:
+    """Append one line to `rapid-debt.jsonl` naming a check that `rapid`
+    skipped for `ticket_id` (T-1681).
+
+    This is the whole bargain of the rapid profile: spend no time
+    VERIFYING, but leave a complete, machine-readable record of exactly
+    what went unverified, so the cleanup pass is draining a list rather
+    than re-deriving what happened from git archaeology. Each line is
+    self-contained JSON: ticket id, the check skipped, and the commit the
+    ticket closed at, so a later pass can re-run precisely that check
+    against precisely that tree.
+
+    TRACKED, not under `.frob/` -- the debt must survive a clone and a
+    `frob clean`, and must be reviewable in a diff. Best-effort: failing
+    to record debt must never fail a close, but it is logged at ERROR
+    because an unrecorded relaxation is the one outcome that makes the
+    cleanup pass unreliable."""
+    from frob.gitio import run_argv
+
+    head = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
+    commit = head.danger_ok.stdout.strip() if head.is_ok else "unknown"
+    entry = {"ticket": ticket_id, "skipped": skipped, "commit": commit}
+    path = root / "rapid-debt.jsonl"
+    try:
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, sort_keys=True) + "\n")
+    except OSError as exc:
+        _log.error(
+            "tickets: could not record rapid debt for %s (%s): %s -- this "
+            "relaxation is now INVISIBLE to the T-1681 cleanup pass",
+            ticket_id,
+            skipped,
+            exc,
+        )
+
+
+# frob:ticket T-1681
+def _is_rapid(root: Path) -> bool:
+    """Whether `root` is running the `rapid` development profile (T-1681).
+
+    Best-effort by design: an unreadable/absent profile config resolves to
+    NOT rapid, so a broken config can only ever make the ceremony
+    stricter, never silently relax it. Deferred import -- `frob.tickets.
+    _profile` imports this package's models."""
+    from frob.tickets._profile import ProfileName, effective_profile
+
+    resolved = effective_profile(root)
+    return resolved.is_ok and resolved.danger_ok is ProfileName.RAPID
+
+
 # frob:ticket T-0715
 def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str, ...]:
     """Ids of every descendant of `ticket` (via the `parent` chain, any
@@ -229,18 +281,32 @@ def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str,
 # frob:ticket T-0417
 # frob:ticket T-0976
 def _done_transition_structural_guard(
-    ticket: Ticket, queue: dict[str, Ticket], *, covers_scope: bool | None
+    ticket: Ticket,
+    queue: dict[str, Ticket],
+    *,
+    covers_scope: bool | None,
+    rapid: bool = False,
+    debt_sink: Callable[[str, str], None] | None = None,
 ) -> Result[None, TicketError]:
     """`_done_transition_guard`'s structural (non-diff-derived) checks:
     evidence + Done report present, open descendants, disallowed cmd:
     evidence, injected `covers_scope`, and unbound acceptance criteria --
     split from its review/mutation/reverify/diff-derived checks."""
     if not ticket.evidence or not _has_done_report(ticket.body):
-        _log.warning(
-            "tickets: %s cannot close, missing evidence or a substantive Done report",
-            ticket.id,
-        )
-        return Err(TicketError.MissingEvidence)
+        if rapid:
+            _log.warning(
+                "tickets: %s closing WITHOUT full evidence/Done report -- "
+                "profile=rapid (T-1681), recorded in rapid-debt.jsonl",
+                ticket.id,
+            )
+            debt_sink and debt_sink(ticket.id, "missing-evidence-or-done-report")
+        else:
+            _log.warning(
+                "tickets: %s cannot close, missing evidence or a substantive "
+                "Done report",
+                ticket.id,
+            )
+            return Err(TicketError.MissingEvidence)
     if ticket.tier is not TicketTier.TICKET:
         open_descendants = _open_descendant_ids(ticket, queue)
         if open_descendants:
@@ -262,12 +328,19 @@ def _done_transition_structural_guard(
             sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
         )
         return Err(TicketError.EvidenceKindNotAllowed)
-    if covers_scope is False:
+    if covers_scope is False and not rapid:
         _log.warning(
             "tickets: %s cannot close, no evidence id covers a touched/scope symbol",
             ticket.id,
         )
         return Err(TicketError.EvidenceScopeUnbound)
+    if covers_scope is False:
+        _log.warning(
+            "tickets: %s closing with no evidence id covering a touched/scope "
+            "symbol -- profile=rapid (T-1681), recorded in rapid-debt.jsonl",
+            ticket.id,
+        )
+        debt_sink and debt_sink(ticket.id, "evidence-scope-unbound")
     unbound = unbound_acceptance(ticket)
     if unbound:
         _log.warning(
@@ -410,7 +483,11 @@ def _done_transition_guard(
     `_close_mutation_evidence_for_ticket` posture for the identical
     failure mode."""
     structural = _done_transition_structural_guard(
-        ticket, queue, covers_scope=covers_scope
+        ticket,
+        queue,
+        covers_scope=covers_scope,
+        rapid=_is_rapid(root),
+        debt_sink=lambda tid, what: record_rapid_debt(root, tid, what),
     )
     if structural.is_err:
         return structural

@@ -75,3 +75,6 @@ FROBLEMS.md
 # Secrets
 .env
 # frob:managed-block END gitignore-standard
+
+# Rapid-profile verification debt (T-1681) -- tracked deliberately
+!rapid-debt.jsonl
