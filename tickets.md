@@ -6895,3 +6895,31 @@ Effect in any v2 repo: frob ticket close refuses a ticket whose Done report was 
 Fixed by making the in-memory Ticket canonical: load_all/load_archive splice done-report.md back into body (_merge_sibling_done_report), write_ticket's v2 branch splits it back out so a load-modify-write round trip never duplicates it into ticket.md, set_done_report returns the merged ticket so its return value matches the next load, and the v2 index cache keys on sibling done-report.md mtimes too (otherwise a report write would not invalidate the cache, since it never touches ticket.md).
 
 Follow-up worth considering: an integration test that runs the full new -> start -> evidence -> done-report -> close cycle against a v2 repo end to end. The unit layer missed this because each half was individually correct.
+
+<!-- ticket:T-1588 -->
+```yaml
+id: T-1588
+title: 'ledger v2 has no stale-snapshot guard: write_archive/write_all expected_digest
+  is a v1-only primitive'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_store.py
+- tests/test_ticket_store_stale_snapshot.py
+- docs/design/ledger-v2.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+expected_digest (T-0889 optimistic concurrency) fingerprints ONE ledger file via ledger_digest, so it only means anything in v1/'single' mode. T-1583's v2 write_archive branch, and write_all's v2 branch before it, therefore perform NO stale-snapshot check at all: a caller that loads, is overtaken by a sibling process, and writes back a stale wholesale map silently clobbers the sibling's write instead of getting LedgerChangedSinceLoad. Every new repo is v2, and the coordinator/agent flow this repo runs on is exactly the concurrent-writer shape the guard exists for.
+
+tests/test_ticket_store_stale_snapshot.py is pinned to v1 for now (it verifies the monofile primitive); it needs a v2 mirror once a guard exists.
+
+Design question for the implementer: the natural v2 fingerprint is per-TICKET (each tickets/T-####/ticket.md has its own content hash and its own ticket_lock) rather than one tree-wide digest -- a tree digest would make every concurrent write to unrelated tickets collide, throwing away v2's main benefit. Prefer a per-id digest map, or move the wholesale callers (archive, renumber) onto per-ticket writes that each carry their own expected digest.
