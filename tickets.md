@@ -7200,3 +7200,28 @@ Three defects, in priority order:
 3. THE FAILURE IS INDISTINGUISHABLE FROM A REAL ONE. A resource kill and a genuine suite failure both surface as 'exited 3'. Classify and report them differently: an environment-induced abort must say so explicitly, because treating it as a red suite sends the reader hunting for a regression that does not exist.
 
 Related: the WSL OOM class already recorded against concurrent agent dispatch.
+
+<!-- ticket:T-1673 -->
+```yaml
+id: T-1673
+title: SUITE-RESULT reports failure COUNTS but never the failing node ids
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The pytest_sessionfinish SUITE-RESULT hook added by T-1596 prints 'exitstatus=N collected=N failed=N' so a suite result is always visible regardless of how many -q flags are stacked. That solved visibility of the VERDICT but not of the CONTENT.
+
+Observed 2026-08-06: a full coverage run reported 'SUITE-RESULT: exitstatus=3 collected=8654 failed=5'. Under stacked -q pytest emits no 'short test summary info' section, so the five failing node ids appeared NOWHERE in 452 seconds of output. The only actionable next step was to re-run the entire suite -- eight minutes -- purely to learn which tests to look at.
+
+Fix: have the hook emit each failing node id (and its terminal outcome) on its own line, capped at a sane maximum with an 'and N more' tail. The whole point of the hook is that its output survives verbosity suppression; a count that cannot be acted on without a second full run does not meet that bar.
+
+Same root shape as T-1596: a diagnostic that is technically present but not sufficient to act on is not a working diagnostic.
