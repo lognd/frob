@@ -383,6 +383,8 @@ def _node_id_collected(base_node_id: str, node_ids: frozenset[str]) -> bool:
 
 
 # frob:ticket T-0318
+# frob:ticket T-1396
+# frob:tests tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile
 def _macro_symbol_file(src: str) -> str | None:
     """The file path `src` names, if `src` is a T-0318 test-macro stand-in
     symbol (`_walk_rust.py::_macro_symbol` mints a qualname whose leaf
@@ -650,6 +652,8 @@ def _evidence_binds_to_scope(
     return False
 
 
+# frob:ticket T-1396
+# frob:tests tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref
 def _node_id_matches_symref(evidence: str, symref: str) -> bool:
     """Whether `evidence` (a pytest/cargo node id) is the test named by
     `symref`: exact `_symref_to_nodeid` match (or its parametrize-expanded
@@ -661,6 +665,8 @@ def _node_id_matches_symref(evidence: str, symref: str) -> bool:
     return evidence == node_id or evidence.startswith(node_id + "[")
 
 
+# frob:ticket T-1396
+# frob:tests tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope
 def _file_of_symref_in_scope(symref: str, scope: tuple[str, ...]) -> bool:
     """Whether `symref`'s file (the part before `::`, or itself if bare)
     is covered by `scope` (`scope_matches`)."""
