@@ -91,7 +91,19 @@ _REGISTRY_LIVE_KINDS = ("deferred", "tracked_by")
 # (one `git grep -E` alternation) rather than a parallel scan, since both
 # are "a comment attribute equals this ticket id" citations differing
 # only in attribute name.
-_WAIVER_TICKET_PATTERN = r"ticket=\"?{id}\"?\b|ticket\s+\"{id}\"|follow_up=\"?{id}\"?\b"
+# frob:ticket T-1632
+# Each attribute alternative is LEFT-ANCHORED by an explicit leading-character
+# alternation rather than a lookbehind: this pattern is handed to `git grep -E`
+# (POSIX ERE), which has no lookbehind at all. Without the anchor, `ticket=`
+# matched inside any longer identifier ending in it -- `active_ticket=T-1582`
+# in ordinary Done-report prose read as a live-tracker citation and refused a
+# land.
+_LEFT = r"(^|[^A-Za-z0-9_.-])"
+_WAIVER_TICKET_PATTERN = (
+    _LEFT + r'ticket="?{id}"?\b'
+    r"|" + _LEFT + r'ticket\s+"{id}"'
+    r"|" + _LEFT + r'follow_up="?{id}"?\b'
+)
 
 # `docs/design/registry/*.yaml` -- the one pathspec the registry-
 # disposition grep is scoped to (the waiver grep runs repo-wide, no

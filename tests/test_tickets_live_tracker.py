@@ -97,6 +97,41 @@ class TestLiveTrackerCitations:
         assert "patterns.yaml" in citations[0]
         assert "T-0605" in citations[0]
 
+    # frob:ticket T-1632
+    def test_longer_identifier_ending_in_ticket_is_not_a_citation(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_longer_identifier_ending_in_ticket_is_not_a_citation  # noqa: E501
+        """T-1632: the attribute alternatives are left-anchored, so an id
+        embedded in a LONGER identifier is not a citation. Narrative prose
+        in a Done report legitimately writes `active_ticket=T-####` while
+        explaining a scoped run -- before the anchor that refused the
+        land."""
+        _init_repo(tmp_path)
+        (tmp_path / "tickets.md").write_text(
+            "## Done report\n\n"
+            "--ticket T-0605 sets active_ticket=T-0605, and the scoped run\n"
+            'then reports my_follow_up="T-0605" in its own narrative.\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "prose mentioning the id")
+        assert live_tracker_citations(tmp_path, "T-0605") == ()
+
+    # frob:ticket T-1632
+    def test_standalone_attributes_are_still_citations(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_standalone_attributes_are_still_citations  # noqa: E501
+        """The other half of T-1632's anchor: a genuine standalone
+        `ticket=`/`follow_up=` attribute must still be found."""
+        _init_repo(tmp_path)
+        (tmp_path / "mod.py").write_text(
+            '# frob:waive DOC001 reason="x" ticket="T-0605"\n'
+            '# frob:waive WIRE001 reason="y" follow_up="T-0605"\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "real citations")
+        citations = live_tracker_citations(tmp_path, "T-0605")
+        assert len(citations) == 2
+
     def test_finds_registry_tracked_by_disposition(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_registry_tracked_by_disposition  # noqa: E501
         _init_repo(tmp_path)
