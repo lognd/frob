@@ -8724,3 +8724,40 @@ For each gap, classify the cause and act accordingly:
 - THE RULE FIRED AND WAS IGNORED as a warning that never became an error -- file a ticket to decide whether it should be promoted, and say why it was tolerated.
 
 Deliverable: a written classification of every gap plus one filed ticket per distinct detector gap. A gap left unclassified is the outcome to avoid -- it is precisely the silent hole the exercise exists to close.
+
+<!-- ticket:T-1612 -->
+```yaml
+id: T-1612
+title: 'Remove vestigial repo artifacts: FROBLEMS.md, skills/, agents/, keeping only
+  frob-central tooling'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-05'
+priority: medium
+parent: T-1609
+tier: ticket
+sprint: null
+scope:
+- FROBLEMS.md
+- skills/**
+- agents/**
+- docs/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Remove repository artifacts that are not central to frob's tooling, so what remains is all load-bearing.
+
+Known candidates, named by the user: FROBLEMS.md and much of skills/ and agents/, which are vestigial. docs/guides/agent-playbook.md is explicitly worth KEEPING (it is the canonical home for process lessons this repo has already paid for once).
+
+Rule to apply: anything not central to frob tooling goes. Anything that IS central stays, however scruffy.
+
+Method, in this order, because deletion is the irreversible part:
+1. Enumerate candidates and, for each, find every inbound reference (code, docs, config, CI, scaffolding templates, tests). frob's own refs machinery is the right instrument.
+2. For each candidate, state plainly whether it is dead, partially live, or live-but-misplaced. A partially live artifact gets its live part extracted before the rest goes.
+3. Delete, with each deletion attributable to this ticket in one commit per coherent group -- not one giant sweep, so any single removal can be reverted independently.
+4. Re-run the full gate set afterwards. A deletion that silently reduces coverage or orphans a doc edge is the failure mode; the obligation graph should catch it, and if it does not, that is itself a finding worth a ticket.
+
+Do not delete anything an in-flight ticket references. That is the whole reason this is gated behind the rest of the queue.
