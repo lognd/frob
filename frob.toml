@@ -427,3 +427,7 @@ language = "rust"
 # reports INV006 at ERROR.
 [gates.ratchet]
 rules = ["INV006"]
+
+[profile]
+profile = "rapid"
+override_ratchet = true

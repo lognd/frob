@@ -175,6 +175,37 @@ def configured_profile(root: Path) -> Result[ProfileName, ProfileError]:
         return Err(ProfileError.BadConfig)
 
 
+# frob:ticket T-1681
+def ratchet_override_enabled(root: Path) -> bool:
+    """Whether `root`'s `frob.toml` sets `[profile] override_ratchet = true`
+    (T-1681) -- an EXPLICIT, recorded owner decision to keep `rapid` in a
+    repo whose size would otherwise auto-ratchet it to `standard`.
+
+    The auto-ratchet exists because relaxed ceremony gets riskier as a repo
+    grows, which is true. But it made `rapid` unreachable for exactly the
+    repos where the ceremony costs the most: frob's own tree trips the file
+    and ticket thresholds many times over, so configuring `rapid` here was
+    a silent no-op. A per-land ceremony measured in tens of minutes is its
+    own correctness risk -- work does not get done, and the queue grows
+    faster than it drains.
+
+    This is deliberately a config key and not an env var: it lives in a
+    tracked file, so `git log frob.toml` states exactly which commits were
+    produced under relaxed rules. That is the static record that makes the
+    relaxation recoverable rather than merely convenient -- see T-1681 for
+    the re-verification obligation it creates."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return False
+    try:
+        with toml_path.open("rb") as handle:
+            doc = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError):
+        return False
+    table = doc.get("profile")
+    return bool(table.get("override_ratchet", False)) if table else False
+
+
 def _ratchet_path(root: Path) -> Path:
     """The `.frob/profile-ratchet.json` path for a checkout rooted at
     `root`."""
@@ -281,6 +312,20 @@ def effective_profile(root: Path) -> Result[ProfileName, ProfileError]:
     profile = configured.danger_ok
     if profile is not ProfileName.RAPID:
         return Ok(profile)
+
+    if ratchet_override_enabled(root):
+        _log.warning(
+            "profile: %s is running RAPID with the size auto-ratchet "
+            "OVERRIDDEN ([profile] override_ratchet=true, T-1681) -- "
+            "TEST016, the pre-commit sweep, the baseline worktree and "
+            "REL001 are OFF on the land path, and docs/chore evidence "
+            "requirements are light. Ledger integrity and LAND-PROOF "
+            "verification are NOT relaxed. Every commit made in this "
+            "state needs the T-1681 re-verification pass before the "
+            "relaxation is considered discharged",
+            root,
+        )
+        return Ok(ProfileName.RAPID)
 
     ratchet = _load_ratchet(root)
     if ratchet.is_err:
