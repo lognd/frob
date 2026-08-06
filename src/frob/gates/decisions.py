@@ -21,6 +21,7 @@ from typani.result import Err, Ok, Result
 
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
+from frob.yaml_io import fast_yaml_loader
 
 _log = get_logger(__name__)
 
@@ -83,7 +84,7 @@ def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
             _log.error("decisions: %s has no frontmatter", path)
             return Err(DecisionError.Malformed)
         try:
-            data = yaml.safe_load(match.group(1))
+            data = yaml.load(match.group(1), Loader=fast_yaml_loader())
         except yaml.YAMLError as exc:
             _log.error("decisions: %s bad YAML: %s", path, exc)
             return Err(DecisionError.Malformed)

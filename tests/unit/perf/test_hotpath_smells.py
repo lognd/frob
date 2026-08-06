@@ -68,6 +68,30 @@ class TestPerf010YamlCLoader:
         violations = hotpath_smell_violations([parsed])
         assert not any(v.rule == "PERF010" for v in violations)
 
+    def test_does_not_fire_on_helper_loader_indirection(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader.test_does_not\
+        # _fire_on_helper_loader_indirection  # noqa: E501
+        """T-1204: a genuine PERF010 false positive -- calling a shared
+        `*_loader()` factory (`frob.yaml_io.fast_yaml_loader`'s own
+        established shape) that itself resolves to `yaml.CSafeLoader`
+        used to still fire, because the rule's original bare-token scan
+        can only ever see a LITERAL `CSafeLoader`/`CLoader` token inside
+        the calling symbol's own body, never through a helper call
+        boundary."""
+        src = (
+            "import yaml\n"
+            "\n"
+            "from frob.yaml_io import fast_yaml_loader\n"
+            "\n"
+            "def load_ticket(text):\n"
+            "    data = yaml.load(text, Loader=fast_yaml_loader())\n"
+            "    return data\n"
+        )
+        parsed = _parsed(tmp_path, "mod.py", src)
+        violations = hotpath_smell_violations([parsed])
+        assert not any(v.rule == "PERF010" for v in violations)
+
 
 class TestPerf011RepoScanInLoop:
     """Mined from `src/frob/gates/_debt_deprecated.py`'s pre-T-1207 shape:

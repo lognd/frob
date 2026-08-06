@@ -3296,23 +3296,25 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]
     # archive file's own sha256 content hash (never mtime) -- an unchanged
     # archive is never reparsed; any byte change invalidates the cache.
 def _coverage_tracer_active() -> bool
-    # T-1333: True when sys.gettrace() is a coverage.py tracer (detected
-    # by the active tracer callable's __module__ starting with
+    # T-1204: thin re-export of frob.yaml_io._coverage_tracer_active,
+    # kept under this name for this module's own direct-import test
+    # coverage. T-1333: True when sys.gettrace() is a coverage.py tracer
+    # (detected by the active tracer callable's __module__ starting with
     # "coverage") -- both bare `coverage run` and pytest-cov install
     # their tracer this same way. Used by _yaml_loader to avoid a known-
     # bad CSafeLoader/coverage.py interaction (see below).
 def _yaml_loader() -> type[yaml.SafeLoader]
-    # T-1206: yaml.CSafeLoader (libyaml) when installed, else the
-    # pure-Python yaml.SafeLoader -- every frontmatter yaml.load call in
-    # this module goes through this instead of yaml.safe_load, since
-    # safe_load always forces the slower pure-Python loader even when the
-    # C extension is available. Same accepted-construct set either way.
-    # T-1333: EXCEPT when _coverage_tracer_active() is True -- CSafeLoader
-    # has a known-bad interaction with an active coverage.py trace
-    # function that corrupts otherwise-valid frontmatter parses ("could
-    # not determine a constructor for the tag None"); this loader falls
-    # back to SafeLoader under a detected coverage run to avoid it,
-    # trading the T-1206 speed win for correctness for that run.
+    # T-1204: thin re-export of frob.yaml_io.fast_yaml_loader, kept under
+    # this name for this module's own direct-import test coverage and
+    # the frob.gates.__init__ re-export (_tickets_yaml_loader) that
+    # already depends on this import path. See "Shared YAML loader
+    # selection (frob.yaml_io)" below for the full T-1206/T-1333
+    # rationale, now the single home for it -- every OTHER per-document
+    # YAML parse site in the repo (frob.registry._models, frob.gates.
+    # decisions, frob.gates.invariants, frob.vet._lockfile) was left on
+    # the slow pure-Python default until T-1204's PERF010 burn-down
+    # wired them to this same shared helper instead of each re-deriving
+    # the libyaml-availability-and-coverage-tracer check.
 def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]
     # Replaces tickets-archive.md wholesale (same ledger section format,
     # distinct header).
@@ -3378,6 +3380,36 @@ def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]
     # a strict loader cannot be doctor's data source for finding one
     # without risking the entire shared ledger's load failing the moment
     # a single bad edge exists anywhere in it.
+```
+
+## Shared YAML loader selection (frob.yaml_io)
+
+<!-- frob:describes src/frob/yaml_io.py::fast_yaml_loader -->
+
+T-1204's PERF010 burn-down moved the T-1206/T-1333 fast-loader-selection
+logic above (`_yaml_loader`/`_coverage_tracer_active`) out of this module
+into `frob.yaml_io`, the single shared home for "pick the fastest SAFE
+YAML loader available, correctly, once" -- this module keeps thin
+re-exports under their original names (see the docstrings above) so its
+own direct-import tests and `frob.gates.__init__`'s existing
+`_tickets_yaml_loader` re-export keep working unchanged.
+
+```python
+# frob/yaml_io.py
+def fast_yaml_loader() -> type[yaml.SafeLoader]
+    # yaml.CSafeLoader (libyaml) when installed, else the pure-Python
+    # yaml.SafeLoader -- falls back to SafeLoader regardless of
+    # __with_libyaml__ whenever a coverage.py trace function is active
+    # (T-1333: a known-bad CSafeLoader/coverage-tracer interaction).
+    # Every non-test yaml.load/yaml.safe_load call site in the repo
+    # should pass Loader=fast_yaml_loader() rather than re-deriving this
+    # check -- frob.registry._models.load_registry_dir, frob.gates.
+    # decisions.load_decisions, frob.gates.invariants._frontmatter_dict,
+    # and frob.vet._lockfile._parse_pnpm_lock were all found on the slow
+    # pure-Python default (PERF010) and wired to this helper in the same
+    # pass that fixed PERF010's own false-positive blind spot for the
+    # Loader=<helper>() indirection this function's callers now use
+    # (`frob.perf._hotpath_smells._has_loader_indirection`).
 ```
 
 ## Worktree-lease guard (T-0431)

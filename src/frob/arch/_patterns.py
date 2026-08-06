@@ -531,7 +531,9 @@ def _find_if_statements(node: Node) -> list[Node]:
 # frob:doc docs/modules/arch.md#ocp-checks
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
 # frob:tests tests/unit/test_arch_ocp.py::TestTypeDispatchSmell.test_isinstance_chain_flags_ocp_violation  # noqa: E501
-def iter_type_switch_chains(tree: object) -> list[tuple[Node, str, int]]:
+def iter_type_switch_chains(
+    tree: object, if_stmts: list[Node] | None = None
+) -> list[tuple[Node, str, int]]:
     """ONE detector, TWO outputs (T-0332's own design note, reused for
     T-0617's OCP check): every `(if_stmt, variable, arm_count)` triple for
     an elif chain of >=`_MIN_CHAIN_ARMS` bare `isinstance(x, T)` arms all
@@ -539,10 +541,20 @@ def iter_type_switch_chains(tree: object) -> list[tuple[Node, str, int]]:
     as "consider Strategy" (`pattern-recommendation`); `frob.arch._ocp`'s
     `_check_type_dispatch_smell` reads the identical structural signal as
     an OCP violation (`type-dispatch-smell`) -- neither re-walks the tree
-    or re-derives the isinstance-chain shape, both just call this."""
+    or re-derives the isinstance-chain shape, both just call this.
+
+    T-1485: `if_stmts` lets a caller that already walked this SAME tree
+    for `_find_if_statements` (this module's own `_check_state_field_chain`/
+    `_check_stringly_typed` siblings, or `arch/__init__.py`'s per-file
+    driver, which now computes it once and threads it through all three)
+    pass the result through instead of triggering a second independent
+    full-subtree walk; `None` (every pre-T-1485 caller, including
+    `frob.arch._ocp`) still computes it locally, unchanged."""
     t: Tree = cast("Tree", tree)
     found: list[tuple[Node, str, int]] = []
-    for if_stmt in _find_if_statements(t.root_node):
+    for if_stmt in if_stmts if if_stmts is not None else _find_if_statements(
+        t.root_node
+    ):
         conditions = _elif_chain_conditions(if_stmt)
         if len(conditions) < _MIN_CHAIN_ARMS:
             continue
@@ -557,10 +569,18 @@ def iter_type_switch_chains(tree: object) -> list[tuple[Node, str, int]]:
     return found
 
 
-def _check_type_switch(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
+def _check_type_switch(
+    tree: object,
+    rel: str,
+    out: list[ArchSuggestion],
+    if_stmts: list[Node] | None = None,
+) -> None:
     """HALLMARK->PATTERN: an elif chain of >=3 `isinstance(x, T)` arms on
-    the SAME `x` recommends Strategy/polymorphic dispatch (T-0332)."""
-    for if_stmt, variable, n_arms in iter_type_switch_chains(tree):
+    the SAME `x` recommends Strategy/polymorphic dispatch (T-0332).
+    T-1485: `if_stmts` (see `iter_type_switch_chains`'s docstring)
+    threads a caller's own already-walked `_find_if_statements` result
+    through instead of triggering a second full-subtree walk."""
+    for if_stmt, variable, n_arms in iter_type_switch_chains(tree, if_stmts):
         _emit(
             "type-switch",
             "pattern-recommendation",
@@ -581,14 +601,24 @@ _STATE_ATTR_HINTS = ("state", "status", "mode", "phase", "stage")
 
 
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_state_field_chain_recommends_state_machine  # noqa: E501
-def _check_state_field_chain(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
+def _check_state_field_chain(
+    tree: object,
+    rel: str,
+    out: list[ArchSuggestion],
+    if_stmts: list[Node] | None = None,
+) -> None:
     """HALLMARK->PATTERN: an elif chain of >=3 arms all comparing the same
     `self.<state-like attribute>` against a string literal recommends a
     State-machine refactor (T-0332). Requires an ATTRIBUTE access (not a
     bare identifier -- that is `stringly-typed`'s territory) whose name
-    contains a state-lifecycle hint, keeping the two hallmarks disjoint."""
+    contains a state-lifecycle hint, keeping the two hallmarks disjoint.
+    T-1485: `if_stmts` (see `iter_type_switch_chains`'s docstring)
+    threads a caller's own already-walked `_find_if_statements` result
+    through instead of triggering a second full-subtree walk."""
     t: Tree = cast("Tree", tree)
-    for if_stmt in _find_if_statements(t.root_node):
+    for if_stmt in if_stmts if if_stmts is not None else _find_if_statements(
+        t.root_node
+    ):
         conditions = _elif_chain_conditions(if_stmt)
         if len(conditions) < _MIN_CHAIN_ARMS:
             continue
@@ -897,13 +927,23 @@ def _identifier_string_equality(cond: Node) -> tuple[str, str] | None:
 
 
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_stringly_typed_recommends_newtype  # noqa: E501
-def _check_stringly_typed(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
+def _check_stringly_typed(
+    tree: object,
+    rel: str,
+    out: list[ArchSuggestion],
+    if_stmts: list[Node] | None = None,
+) -> None:
     """ANTI-PATTERN->ESCAPE: a plain identifier (parameter or local, never
     `self.<attr>` -- see `_check_state_field_chain`) compared via `==`
     against >=4 distinct string literals across one elif chain recommends
-    a newtype/Enum escape (T-0332)."""
+    a newtype/Enum escape (T-0332). T-1485: `if_stmts` (see
+    `iter_type_switch_chains`'s docstring) threads a caller's own
+    already-walked `_find_if_statements` result through instead of
+    triggering a second full-subtree walk."""
     t: Tree = cast("Tree", tree)
-    for if_stmt in _find_if_statements(t.root_node):
+    for if_stmt in if_stmts if if_stmts is not None else _find_if_statements(
+        t.root_node
+    ):
         conditions = _elif_chain_conditions(if_stmt)
         if len(conditions) < _MIN_STRINGLY_TYPED_LITERALS:
             continue

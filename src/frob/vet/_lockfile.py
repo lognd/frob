@@ -17,6 +17,7 @@ from typani.result import Result
 
 from frob.logging import get_logger
 from frob.vet._models import Dependency, VetError
+from frob.yaml_io import fast_yaml_loader
 
 _log = get_logger(__name__)
 
@@ -169,7 +170,7 @@ _PNPM_KEY_RE = re.compile(r"^/?(?P<name>@?[^@()]+(?:/[^@()]+)?)@(?P<version>[^()
 def _parse_pnpm_lock(path: Path) -> Result[tuple[Dependency, ...], VetError]:
     """`pnpm-lock.yaml` -> npm dependencies from the top-level `packages:` map."""
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        data = yaml.load(path.read_text(encoding="utf-8"), Loader=fast_yaml_loader())
     except (OSError, yaml.YAMLError) as exc:
         _log.warning("vet: could not parse %s: %s", path, exc)
         return Err(VetError.LockfileUnsupported)

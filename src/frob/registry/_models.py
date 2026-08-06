@@ -27,6 +27,7 @@ from typani import Err, Ok, Result
 from typani.error_set import ErrorSet
 
 from frob.logging import get_logger
+from frob.yaml_io import fast_yaml_loader
 
 _log = get_logger(__name__)
 
@@ -315,7 +316,7 @@ def load_registry_dir(
             results[filename] = Err(RegistryLoadError.Unreadable)
             continue
         try:
-            data = yaml.safe_load(text)
+            data = yaml.load(text, Loader=fast_yaml_loader())
         except yaml.YAMLError as exc:
             _log.warning("load_registry_dir: %s malformed YAML: %s", path, exc)
             results[filename] = Err(RegistryLoadError.MalformedYaml)

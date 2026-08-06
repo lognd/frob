@@ -239,7 +239,7 @@
     "src/frob/arch/_normalized.py::NormalizedVariant": "681b02b4c4514206be00bfc787b16b38a44a59c905ecf7108a531ae7223a9a4a",
     "src/frob/arch/_normalized.py::NormalizedVariantPayload": "7edd34cd131a28d19feb34353e4de5f5dee1c733040077b1d3bdae1fc556697f",
     "src/frob/arch/_patterns.py::PATTERN_REGISTRY": "3af4a6f98f47ab82db5bd4f8650ca7c0e24213c53eaaf250deeb38cdd57add74",
-    "src/frob/arch/_patterns.py::iter_type_switch_chains": "7e5926d5232dcb885fe1101948398b94d92b709a68f166a49e9d1cc4585273c9",
+    "src/frob/arch/_patterns.py::iter_type_switch_chains": "17d23ea67ff2dcbef3d22cb90f1eb41c48da110f78a62b826980933208a6ac89",
     "src/frob/arch/_patterns.py::new_construction_accumulator": "1bfb532deb6e2cc7913688f782d7691e7b3a2124da47155ebc7a97ce9d302c52",
     "src/frob/arch/_protocol_excuse.py::DischargeResult": "41ce54da77c423ed63a6fb54197bb246c348e02813b87e03bc65254149878d91",
     "src/frob/arch/_protocol_excuse.py::cpp_raii_discharge": "4606516ead9ff0d22556b9a0af910bec0ed1e70672d9dd7696c811a651fb7aed",
@@ -2057,6 +2057,7 @@
     "src/frob/xref/__init__.py::XrefResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/xref/__init__.py::XrefResult.as_text": "63db211289e4bc72acbf4894425bb2359855c673f2b0e558ff7c7b8685b32fe0",
     "src/frob/xref/__init__.py::xref": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
+    "src/frob/yaml_io.py::fast_yaml_loader": "26c97839ef39bb8290d5f8a1b3c6b5e46ef9ab72e0c382501216b17c22aa2251",
     "strata-core/src/lib.rs::demand": "a8afc0b2ba9568e3a2cd0028bc739bc1cd4e7d50dd6f0b4c65a8473da436ea58",
     "strata-core/src/lib.rs::parse_source": "dfd7bbeb8efc4457c075eb8b63b1f10b9af7b2a2a1374cd877e21e565faf24ec",
     "strata-core/src/lib.rs::propagated_demand": "9387f02700fd8554dda91bf2dca0aec091e48c41ef726d8d1569ef94d4ba24bf",
@@ -2065,5 +2066,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.349.0"
+  "version": "0.350.0"
 }

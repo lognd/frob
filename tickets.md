@@ -193,7 +193,7 @@ User directive 2026-07-28: the annoying errors are the ones whose fix is mechani
 ```yaml
 id: T-1204
 title: 'perf: hot-graph burn-down (2026-07-29 profile)'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -218,10 +218,138 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+evidence:
+- tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_on_helper_loader_indirection
+- tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape
+- tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_on_fixed_shape
+- tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_in_test_paths
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_under_active_coverage_tracer
+- tests/test_vet.py::TestLockfileParsers::test_parse_pnpm_lock
 threat: null
 component: null
 ```
 Umbrella epic for the 2026-07-29 in-process cProfile hot-graph report (scratchpad hotgraph/report.md). 11 children, one per ranked PERF candidate (10 from the report's 'Ranked PERF ticket candidates' section) plus a CLI-startup lazy-import fix. Each child fixes a measured root cause AND ships a PERF01x lint rule per repo convention (perf root causes ship as both a .strata obligation and a PERF0xx detector, never fix-only). See STANDALONE ticket 'perf: PERF01x detectors from hot-graph root causes' for the four new detector rules this epic's children rely on.
+
+## Done report
+
+Session scope (effort-budgeted slice of the epic; the 11-child breakdown
+described in the ticket body was never actually filed on main -- no
+`parent: T-1204` tickets exist in tickets.md, and the scratchpad
+hotgraph/report.md the ticket body references is not present in this
+worktree). Worked directly from a fresh unscoped `frob check --only
+perf` reading (55 warnings, 0 errors, 99 waived) instead of the
+unavailable report, and picked the PERF010 (yaml C-loader) family: 6
+findings, the smallest and most mechanically tractable of the 5 rule
+families present (PERF010/011/005/008/014).
+
+Root-caused 4 of those 6 as a genuine RULE-LEVEL false positive rather
+than fixing sites individually: `_perf010_yaml_c_loader`
+(src/frob/perf/_hotpath_smells.py) only ever scanned a symbol's own
+body tokens for a literal `CSafeLoader`/`CLoader` token -- it has no
+visibility through a helper-function call boundary. This repo's own
+T-1206 fix (`frob.tickets._store._yaml_loader`, re-exported as
+`frob.gates.__init__._tickets_yaml_loader`) is exactly that shape: a
+small factory function selecting the C loader, called via `Loader=
+_yaml_loader()`. The rule read the already-correct code as having "no
+C loader anywhere" every time. Fixed the rule
+(`_has_loader_indirection`): a `Loader=<name>(...)` call whose name
+contains "loader" (matching this repo's own established naming
+convention) is now trusted as a deliberate loader-selection
+indirection, per the standing instruction to fix the rule rather than
+waive each site. Added a regression test proving the false positive is
+gone (`tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader.
+test_does_not_fire_on_helper_loader_indirection`) alongside the
+existing pre-fix/fixed-shape/test-path fixtures, which all still pass.
+
+The remaining 4 PERF010 findings (frob.registry._models.
+load_registry_dir, frob.gates.decisions.load_decisions, frob.gates.
+invariants._frontmatter_dict, frob.vet._lockfile._parse_pnpm_lock) were
+real: plain `yaml.safe_load(text)` with no C-loader consideration at
+all. Rather than duplicate the T-1206/T-1333 loader-selection logic (C
+loader when libyaml is present, EXCEPT under an active coverage.py
+tracer -- T-1333's own documented corruption bug) a 5th time, extracted
+it out of `frob.tickets._store` into a new shared `frob.yaml_io.
+fast_yaml_loader` (NO DUPLICATION principle) and wired all 4 real sites
+onto it. `frob.tickets._store` keeps `_yaml_loader`/
+`_coverage_tracer_active` as thin re-exports under their original
+names, so its own direct-import tests
+(tests/unit/test_ticket_store.py::TestYamlLoader) and `frob.gates.
+__init__`'s existing `_tickets_yaml_loader` re-export needed no
+change. Added `frob:doc`/`frob:tests` directives on the new public
+`fast_yaml_loader` and a new "Shared YAML loader selection
+(frob.yaml_io)" doc subsection in docs/modules/tickets.md (the
+_store.py-adjacent doc, since that is where this logic originated and
+where the re-exports still live).
+
+Per the standing repo convention (a perf root cause ships as both the
+fix AND a lint rule, never fix-only): PERF010 already existed and now
+correctly recognizes the fixed shape both directions -- flags genuinely
+missing C-loader selection, and no longer flags the delegated-to-a-
+named-loader-factory shape this session's own new fix sites (and the
+repo's pre-existing T-1206 fix) both use.
+
+Deliberately did NOT attempt PERF011 (28 findings, iter_files-in-loop --
+each needs its own per-caller correctness read of whether the loop
+genuinely re-scans or is a false resolver hit, mirroring several
+already-waived PERF008 findings' documented resolver-ambiguity pattern
+in this same run's output), PERF005 (2 Rust recursion-termination
+findings, frob-core/src/extract.rs -- needs a Rust-side frob:invariant
+annotation, out of this session's Python-focused time budget), PERF008
+(2 findings, src/frob/arch/_ffi.py + src/frob/serve/_watch.py -- each
+needs a per-call effect-reachability read), or PERF014 (7 findings,
+finditer-nested-in-pattern-loop -- each needs a per-site loop-swap
+rewrite verified against that gate's own regex-correctness risk). Not
+attempting those is a disclosed cut: T-1204 stays open, the umbrella's
+child-ticket breakdown was never filed on main so there is no id to
+close individually against, and a future session working this ticket
+should re-measure `frob check --only perf` fresh rather than assume
+this session's slice covers the whole epic.
+
+Measurement: unscoped `frob check --only perf` before this session's
+change: gate:PERF 55 warnings (0 errors, 99 waived). After: gate:PERF
+47 warnings (0 errors, 99 waived) -- 8 fewer (4 real PERF010 fixes + 4
+false positives cleared by the rule fix). gate:ARCH/gate:LARGE/gate:FMT
+all stayed clean (gate:FMT 0 errors/0 warnings after wrapping the new
+module's own frob:tests/frob:doc directive lines to canonical form).
+`pytest tests/unit/perf/test_hotpath_smells.py tests/unit/
+test_ticket_store.py tests/test_registry_models.py -p no:cacheprovider
+-q`: all passed (SUITE-RESULT lines read directly). `pytest tests/
+test_vet.py -k pnpm`: 2 passed. `pytest tests/test_gates.py -k
+"Decision or Invariant or invariant or decision"`: 24 passed.
+
+### Changed
+```
+ docs/modules/tickets.md                          |  58 ++-
+ src/frob/gates/decisions.py                      |   3 +-
+ src/frob/gates/invariants.py                     |   3 +-
+ src/frob/perf/_hotpath_smells.py                 |  44 +-
+ src/frob/registry/_models.py                     |   3 +-
+ src/frob/tickets/_store.py                       |  64 +--
+ src/frob/vet/_capability_typescript.py           | 597 +----------------------
+ src/frob/vet/_capability_typescript_bindtable.py | 593 ++++++++++++++++++++++
+ src/frob/vet/_lockfile.py                        |   3 +-
+ src/frob/yaml_io.py                              |  73 +++
+ tests/unit/perf/test_hotpath_smells.py           |  24 +
+ tickets.md                                       | 255 +++++++---
+ 12 files changed, 993 insertions(+), 727 deletions(-)
+```
+
+### Evidence
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_on_helper_loader_indirection` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_fires_on_pre_fix_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_on_fixed_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_in_test_paths` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_under_active_coverage_tracer` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestLockfileParsers::test_parse_pnpm_lock` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 0 error(s), 8273 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1205 -->
 ```yaml
@@ -2660,7 +2788,7 @@ per playbook 0.5/4b, not a defect).
 ```yaml
 id: T-1420
 title: 'arch: 51-file LARGE001 residue after T-1270''s 2-file split'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-02'
@@ -3118,80 +3246,57 @@ lease and other concurrent tickets' scopes at filing time -- narrow scope via
 
 ## Done report
 
-WAVE6-R session (dedicated T-1420 lease). Warm-up: merged main
-(a776121c -> 90eff16c ancestor merge), `frob natives build` clean,
-`frob ticket start T-1420`.
+Session scope (effort-budgeted slice of a 53-file LARGE001 residue):
+read the full LARGE001 list, prioritised the largest/most-editable
+remaining vet/ file (src/frob/vet/_capability_typescript.py, 1275 lines,
+the largest per-language capability resolver left after T-1458 already
+split _capability.py by language into _capability_c.py/_capability_
+python.py/_capability_typescript.py/_capability_scan.py).
 
-Re-measured LARGE001 (`frob check --only archgate`) at session start: 48
-unwaived + 1 waived (49 total). Split
-src/frob/tickets/_new_renumber.py's already comment-delimited v2-mode
-git-mv renumber backend (`_v2_id_dir` through `renumber_one_v2`, T-1255
-family, 260 lines) verbatim to a new sibling _renumber_v2.py
-(989 -> 730 lines; new file 288 lines). `renumber_one` dispatches to
-`renumber_one_v2` via a local (not top-level) import to avoid a circular
-import, since `_renumber_v2` imports helpers back from `_new_renumber`
-(`_rewrite_body_prose_references`, `_scan_code_references`,
-`_log_renumber_dry_run`, `_log_renumber_done`). Repointed the 5
-frob:tests edges in tests/test_tickets_collision.py's TestRenumberOneV2
-class and the frob:waive DUP002 prose in _store.py's git_mv_dir that
-named the old module path. Commit a0037269.
+Read the full symbol list and found a real pipeline-phase seam already
+implicit in the file's own commentary (T-0377 lineage): "build the
+import/require/dynamic-import binding table + scope-shadowing walk"
+(_TS_SCOPE_TYPES through _ts_import_table) is a distinct, independently
+readable phase from "resolve subscript/member/identifier expressions
+and the local alias table against that binding table, down to the
+public _ts_binding_capabilities/_ts_binding_operations/_ts_resolved_
+candidates entry points" (_ts_static_template_text through the file's
+tail). Split verbatim on that boundary into
+src/frob/vet/_capability_typescript_bindtable.py (593 lines: binding-
+table construction) and the remaining src/frob/vet/_capability_
+typescript.py (708 lines: expression resolution + entry points). Both
+clear the 800-line LARGE001 threshold. The dispatcher
+(src/frob/vet/_capability.py) only ever imported the 3 entry-point
+names, all of which stayed in the file it already imports from, so its
+import block needed no change. Ran `ruff check --fix` to resolve the
+import-sort/unused-import fallout from the split, then hand-verified
+the two remaining F821s (functions used across the new boundary) by
+adding them to the explicit import list.
 
-Verification: `pytest tests/test_tickets_collision.py` (24 passed,
-foreground). `frob check --only drift` 0 errors after the edge
-repoint (was 5 DRIFT002 before). `frob check --only archgate --only
-wire --only dead_symbols --only doclink --only docanchor --only fmt`:
-0 errors (gate:LARGE 0 errors, 47 warnings, 1 waived -- down from 48
-unwaived before this split).
+Deliberately did NOT split by force to hit a specific count across the
+other 52 files this session -- most of the remainder needs its own
+from-scratch seam read (strata/_selfconform.py at 1911 lines,
+tickets/_land.py at 2688 lines, tickets/_store.py at 2260 lines,
+tickets/_models.py at 2063 lines, gates/__init__.py at 7627 lines, the
+two Rust natives files) that this session's time budget did not reach.
+Not splitting those is a disclosed cut, not a silent one -- T-1420
+stays open with 52 unwaived files remaining (one file resolved this
+session, from 54 unwaived at session start to 53).
 
-src/frob/vet/_capability.py (6070 lines, largest unwaived LARGE001 file
-repo-wide): per this session's brief, did NOT split it blind. Read the
-full symbol list (`grep -n '^def \|^class '`, 180 symbols) and found a
-clean per-language seam: a scanner core plus six self-contained
-per-language alias/binding-resolution families (Python, TypeScript,
-Rust, C, Kotlin) plus a tail aggregation/fingerprint/opaque-indirection
-layer -- the same shape T-1420's already-landed
-_capability_registry.py package split found in the sibling file. Wrote
-the full seam analysis (module boundaries, line ranges, what stays in
-the dispatcher, the one open question about the opaque-indirection
-family's placement) as a design ticket, parent T-1420, kind=feature,
-scope src/frob/vet/_capability.py + its two test files:
-T-1459 (real id assigned at land). Left QUEUED, not
-implemented -- per the brief's explicit instruction to design first and
-implement only if time remains and the design is unambiguous; this
-session's remaining time went to closing out the one small clean file
-on the list instead of starting a 6000-line six-language split without
-review.
-
-The Rust files (strata-core/src/lib.rs, strata-core/src/parse/**) and
-the other Python files on the ticket's scope list
-(src/frob/tickets/_models.py 1977 lines, _store.py 1576 lines) were NOT
-touched this session -- time was spent on natives warm-up, the merge,
-the _new_renumber split, and the capability design ticket. Not
-splitting them is a disclosed cut, not a silent one: none of the three
-have an obvious single clean seam the way _new_renumber.py's v2 block
-did (a quick read of _models.py's export list shows a much more tangled
-pydantic-model + validator + prose-rewrite mix than the tickets/ backend
-split just landed), and the Rust files need a from-scratch seam read
-this session did not get to.
-
-Measured LARGE001 count after this session's one split: 47 unwaived + 1
-waived (48 total, down from 49 at session start) via `frob check --only
-archgate`, full output read (not piped).
-
-Nothing outside the ticket's declared scope was touched. No lease
-collisions hit. T-1420 itself stays open (not closed) -- 47 unwaived
-files remain repo-wide, most of them (Rust natives, strata/, gates/,
-tickets/_land.py, etc.) untouched by this session and needing their own
-seam reads before a future session force-splits them.
+Measurement: unscoped `frob check --only archgate` before this
+session's change: gate:LARGE 54 warnings (53 unwaived + 1 waived).
+After: gate:LARGE 53 warnings (52 unwaived + 1 waived) -- 1 file
+cleared. gate:ARCH stayed 0 errors/0 warnings/61 waived throughout
+(unaffected by this split). `pytest tests/test_vet.py` -p
+no:cacheprovider -q: 443 passed, 0 failed (SUITE-RESULT line read
+directly, not piped).
 
 ### Changed
 ```
- src/frob/tickets/_new_renumber.py | 273 ++---------------------------------
- src/frob/tickets/_renumber_v2.py  | 296 ++++++++++++++++++++++++++++++++++++++
- src/frob/tickets/_store.py        |  18 +--
- tests/test_tickets_collision.py   |  10 +-
- tickets.md                        | 145 +++++++++++++++++++
- 5 files changed, 466 insertions(+), 276 deletions(-)
+ src/frob/vet/_capability_typescript.py           | 597 +----------------------
+ src/frob/vet/_capability_typescript_bindtable.py | 593 ++++++++++++++++++++++
+ tickets.md                                       |   3 +-
+ 3 files changed, 609 insertions(+), 584 deletions(-)
 ```
 
 ### Evidence
@@ -3209,11 +3314,16 @@ seam reads before a future session force-splits them.
 - `tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 14 passed (from 14 evidence id(s))
-- gates: 8 error(s), 7405 warning(s), 730 waived
-- error-findings: AFFECT001@src/frob/tickets/_new_renumber.py, AFFECT001@src/frob/tickets/_renumber_v2.py, AFFECT001@src/frob/tickets/_store.py, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:29, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:35, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:57, F401@/home/logan/projects/frob/.claude/worktrees/t-1420/src/frob/tickets/_new_renumber.py:58, INV006@src/frob/tickets/_renumber_v2.py
+- tests: 19 passed (from 19 evidence id(s))
+- gates: 0 error(s), 1791 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1452 -->
 ```yaml
@@ -3779,7 +3889,7 @@ no frob:until binding.
 ```yaml
 id: T-1485
 title: 'perf: fold arch nesting/cyclomatic/events into one walk; consolidate _walk_all/_find_if_statements'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-03'
@@ -3791,8 +3901,24 @@ scope:
 - src/frob/arch/_python.py
 - src/frob/arch/_concurrency_model.py
 - src/frob/arch/_patterns.py
+- src/frob/arch/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/arch/__init__.py
+  reason: the _find_if_statements triplicate-walk this ticket's own brief names (T-0332's
+    own design note calling out iter_type_switch_chains/_check_state_field_chain/_check_stringly_typed
+    as 3 independent consumers) can only be de-duplicated at their actual call site,
+    which lives in arch/__init__.py's per-file suggestion loop, not inside _patterns.py
+    itself
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/test_arch.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy
+- tests/unit/test_arch.py::TestPatternRecommender::test_state_field_chain_recommends_state_machine
+- tests/unit/test_arch.py::TestPatternRecommender::test_stringly_typed_recommends_newtype
+- tests/unit/test_arch_ocp.py::TestTypeDispatchSmell::test_isinstance_chain_flags_ocp_violation
 threat: null
 component: null
 ```
@@ -3819,6 +3945,99 @@ across a real corpus, not a quick fold-in inside a multi-ticket sweep.
 Scope for the follow-up: src/frob/arch/_python.py (nesting/cyclomatic/
 events fold), src/frob/arch/_concurrency_model.py (_walk_all), src/frob/
 arch/_patterns.py (_find_if_statements).
+
+## Done report
+
+Delivered the safest, most clearly-scoped of the ticket's 3 named
+consolidations: `arch/_patterns.py`'s `_check_type_switch`/
+`_check_state_field_chain`/`_check_stringly_typed`, all called
+sequentially over the SAME tree by `arch/__init__.py`'s per-file check
+driver, each independently ran a full recursive `_find_if_statements`
+walk. Added `if_stmts: list[Node] | None = None` to
+`iter_type_switch_chains` and all three `_check_*` functions
+(defaulting to `None` -> compute locally, so `frob.arch._ocp`'s own
+existing `iter_type_switch_chains` reuse and any other pre-T-1485
+caller is byte-for-byte unaffected -- verified by
+`tests/unit/test_arch_ocp.py`, 10 passed unchanged); `arch/__init__.py`
+now computes `_patterns._find_if_statements(...)` once and threads the
+result through all three, cutting 3 full-tree walks per Python file
+down to 1 for this check family.
+
+Needed `frob ticket scope T-1485 --add src/frob/arch/__init__.py` (real
+call site the ticket's original 3-file scope did not name -- the
+duplication can only be eliminated at the caller, since all 3 walks
+live inside independently-callable public/private functions whose own
+bodies each need to stay correct when called alone) -- recorded via the
+CLI with a reason, per playbook section 4.
+
+The other two named consolidations were investigated and NOT
+attempted, disclosed rather than silently dropped:
+
+- `arch/_python.py`'s nesting/cyclomatic/events fold: this ticket's own
+  body AND `_py_build_function`'s existing docstring both explicitly
+  flag this as deliberately NOT safe to fold without a from-scratch
+  byte-identical-output proof across a real corpus first (T-1215's own
+  precedent) -- max_nesting_depth/cyclomatic are kept as separate walks
+  specifically so they match the original per-language walk exactly,
+  and _py_collect_body_events does not necessarily visit every node
+  type the same way. Forcing this fold inside a multi-ticket sweep
+  without that proof risks silently changing either metric's value for
+  an edge case neither this session's time budget nor its test corpus
+  could rule out.
+- `_concurrency_model.py`'s `_walk_all`: read its only caller
+  (`_executor_bindings`) and found it is NOT residue -- `_walk_all` is
+  a genuinely different walk from this package's `_iter_own_scope`
+  family (module-wide, not scope-limited, by design: an executor is
+  commonly bound at module level and consumed elsewhere, per its own
+  docstring) and has exactly ONE caller. There is no second full-tree
+  walk of the same shape anywhere in scope to consolidate it with --
+  it is already minimal, not duplicated.
+
+Measurement: unscoped `frob check --only archgate --only perf`: gate:
+ARCH 0 errors/0 warnings/61 waived (unchanged), gate:PERF 0 errors/47
+warnings/99 waived (unchanged -- this consolidation's redundant-walk
+shape is not one any existing PERF01x rule's lexical pattern
+(PERF011/013/014) matches, since all three calls are direct symbol
+calls, not a loop-nested repo-scan/ast.walk/finditer; no new rule
+proposed here since the pattern this fixes -- N independent public
+functions each re-walking a caller-supplied tree, only detectable by
+knowing they are always invoked together over the same tree -- needs
+cross-call-site correlation a single-symbol lexical rule cannot see).
+`pytest tests/unit/test_arch.py -k PatternRecommender`: 33 passed.
+`pytest tests/unit/test_arch.py`: 292 passed. `pytest tests/unit/
+test_arch_ocp.py`: 10 passed (proves the shared `iter_type_switch_chains`
+entry point's other caller is unaffected). `pytest tests/test_gates.py
+-k "ArchGate or Pattern"`: 3 passed.
+
+### Changed
+```
+ docs/modules/tickets.md                          |  58 ++-
+ src/frob/arch/__init__.py                        |  14 +-
+ src/frob/arch/_patterns.py                       |  64 ++-
+ src/frob/gates/decisions.py                      |   3 +-
+ src/frob/gates/invariants.py                     |   3 +-
+ src/frob/perf/_hotpath_smells.py                 |  44 +-
+ src/frob/registry/_models.py                     |   3 +-
+ src/frob/tickets/_store.py                       |  64 +--
+ src/frob/vet/_capability_typescript.py           | 597 +----------------------
+ src/frob/vet/_capability_typescript_bindtable.py | 593 ++++++++++++++++++++++
+ src/frob/vet/_lockfile.py                        |   3 +-
+ src/frob/yaml_io.py                              |  73 +++
+ tests/unit/perf/test_hotpath_smells.py           |  24 +
+ tickets.md                                       | 281 ++++++++---
+ 14 files changed, 1080 insertions(+), 744 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestPatternRecommender::test_state_field_chain_recommends_state_machine` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestPatternRecommender::test_stringly_typed_recommends_newtype` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_ocp.py::TestTypeDispatchSmell::test_isinstance_chain_flags_ocp_violation` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 454 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1487 -->
 ```yaml
@@ -11165,6 +11384,7 @@ dispatch declined to do, moved one layer of indirection away.
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 328 warning(s), 799 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1643 -->
 ```yaml
 id: T-1643

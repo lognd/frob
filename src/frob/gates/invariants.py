@@ -21,6 +21,7 @@ from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 from frob.logging import get_logger
+from frob.yaml_io import fast_yaml_loader
 
 _log = get_logger(__name__)
 
@@ -229,7 +230,7 @@ def _frontmatter_dict(path: Path) -> Result[dict, InvariantError]:
         return Err(InvariantError.Malformed)
 
     try:
-        raw = yaml.safe_load(match.group(1)) or {}
+        raw = yaml.load(match.group(1), Loader=fast_yaml_loader()) or {}
     except yaml.YAMLError as exc:
         _log.warning("load_invariants: %s frontmatter is bad YAML: %s", path, exc)
         return Err(InvariantError.Malformed)

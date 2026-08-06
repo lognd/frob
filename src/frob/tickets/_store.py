@@ -32,7 +32,6 @@ import json
 import os
 import re
 import shutil
-import sys
 import tempfile
 import threading
 from collections.abc import Iterator
@@ -53,6 +52,8 @@ from frob.tickets._models import (
     _find_done_report_heading,
     replace_done_report_section,
 )
+from frob.yaml_io import _coverage_tracer_active as _coverage_tracer_active_impl
+from frob.yaml_io import fast_yaml_loader
 
 # T-0458: `fcntl` is posix-only; `ledger_lock` degrades to a documented
 # no-op (see its docstring) on a platform without it, rather than failing
@@ -69,61 +70,30 @@ _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n(.*)\Z", re.DOTALL)
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
-# frob:ticket T-1333
+# frob:ticket T-1204
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_detects_coverage_tracer_by_module_name  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_no_active_tracer_is_not_coverage  # noqa: E501
 def _coverage_tracer_active() -> bool:
-    """True when `sys.gettrace()` is installed by `coverage.py` (or a
-    subclass of its tracer), so callers can avoid a known-bad interaction
-    between that tracer and `yaml.CSafeLoader` (T-1333: the CSafeLoader/
-    libyaml C extension corrupts frontmatter parses -- 'could not
-    determine a constructor for the tag None' on otherwise-valid YAML --
-    specifically when a `coverage.py` trace function is active; both
-    bare `coverage run` and `pytest-cov` install their tracer this same
-    way, and the pure-Python `SafeLoader` is unaffected). Detection is by
-    the active tracer callable's module name rather than an env var,
-    since that is the actual mechanism responsible for the corruption and
-    stays accurate under any invocation style (`coverage run`, pytest-cov,
-    a hand-rolled `sys.settrace`-based coverage tool)."""
-    tracer = sys.gettrace()
-    if tracer is None:
-        return False
-    module = getattr(tracer, "__module__", None) or getattr(
-        type(tracer), "__module__", ""
-    )
-    return module.startswith("coverage")
+    """Thin re-export of `frob.yaml_io._coverage_tracer_active` (T-1204:
+    the T-1206/T-1333 loader-selection logic moved to a shared module so
+    every YAML-parsing call site in the repo can reuse it, not just this
+    one) -- kept here under its original name for this module's own
+    direct-import test coverage and any external caller still importing
+    it from this path."""
+    return _coverage_tracer_active_impl()
 
 
-# frob:ticket T-1206
-# frob:ticket T-1333
+# frob:ticket T-1204
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_prefers_csafeloader_when_libyaml_present  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_without_libyaml  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_under_active_coverage_tracer  # noqa: E501
 def _yaml_loader() -> type[yaml.SafeLoader]:
-    """The fastest safe YAML loader available: `yaml.CSafeLoader` (libyaml,
-    a C extension) when installed, else the pure-Python `yaml.SafeLoader`.
-
-    T-1206: every per-document `yaml.safe_load` call in this module
-    profiled at 67 pct of `load_queue`'s cost on the 1235+-document
-    `tickets-archive.md` ledger -- `yaml.safe_load` always uses the
-    pure-Python `SafeLoader` even when `yaml.__with_libyaml__` reports the
-    C extension is installed. Both loaders reject the exact same YAML
-    constructs (CSafeLoader is a C reimplementation of the same safe
-    subset, not a superset) -- so this swap is fail-open-preserving: a
-    malformed frontmatter block that raised `yaml.YAMLError` before still
-    raises the same error class through this loader.
-
-    T-1333: `CSafeLoader` has a known-bad interaction with an active
-    `coverage.py` trace function (see `_coverage_tracer_active`'s
-    docstring) that corrupts otherwise-valid frontmatter parses. When a
-    coverage tracer is detected active, this falls back to the
-    pure-Python `SafeLoader` regardless of `__with_libyaml__`, trading the
-    T-1206 speed win for correctness for the duration of that run --
-    `SafeLoader` accepts the exact same YAML subset, so this never changes
-    what parses, only how fast."""
-    if yaml.__with_libyaml__ and not _coverage_tracer_active():
-        return yaml.CSafeLoader
-    return yaml.SafeLoader
+    """Thin re-export of `frob.yaml_io.fast_yaml_loader` (T-1204: see that
+    function's docstring for the full T-1206/T-1333 rationale) -- kept
+    under this module's original name for its own direct-import test
+    coverage and the `frob.gates.__init__` re-export
+    (`_tickets_yaml_loader`) that already depends on this import path."""
+    return fast_yaml_loader()
 
 
 # frob:ticket T-0162

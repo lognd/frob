@@ -15,6 +15,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
+
+from tree_sitter import Tree
 
 from frob.arch import (
     _async_hazards,
@@ -527,11 +530,16 @@ def _run_python_checks(
         all_py_sigs.extend(_python._extract_signatures(tree, rel))
         if not _is_init_file(rel):
             all_dispatch_refs[rel] = _python._collect_file_dispatch_refs(tree)
-        _patterns._check_type_switch(tree, rel, suggestions)
-        _patterns._check_state_field_chain(tree, rel, suggestions)
+        # T-1485: _check_type_switch/_check_state_field_chain/
+        # _check_stringly_typed each independently walked the whole tree
+        # for _find_if_statements before this -- compute it ONCE per file
+        # here and thread it through all three instead.
+        if_stmts = _patterns._find_if_statements(cast("Tree", tree).root_node)
+        _patterns._check_type_switch(tree, rel, suggestions, if_stmts)
+        _patterns._check_state_field_chain(tree, rel, suggestions, if_stmts)
         _patterns._check_telescoping_ctor(tree, rel, suggestions)
         _patterns._check_wrap_delegate(tree, rel, suggestions)
-        _patterns._check_stringly_typed(tree, rel, suggestions)
+        _patterns._check_stringly_typed(tree, rel, suggestions, if_stmts)
         _patterns._check_interface_translate(tree, rel, suggestions)
         _patterns._check_manual_callback_list(tree, rel, suggestions)
         _patterns._check_anemic_accessors(tree, rel, suggestions)

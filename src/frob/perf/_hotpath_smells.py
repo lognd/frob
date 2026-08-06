@@ -113,12 +113,46 @@ def _is_test_path(path: str) -> bool:
 
 
 # frob:ticket T-1225
+def _has_loader_indirection(tokens: Sequence[str]) -> bool:
+    """Whether `tokens` (a symbol's own body tokens) contains a `Loader=
+    <helper>(...)` keyword argument delegating loader selection to a
+    named helper, e.g. `Loader=_yaml_loader()`/`Loader=_tickets_yaml_
+    loader()` -- the exact T-1206 fixed shape in `frob.tickets._store`/
+    `frob.gates.__init__` (`_yaml_loader`/`_tickets_yaml_loader`, both
+    already resolving to `yaml.CSafeLoader` when available). PERF010's
+    original bare `CSafeLoader`/`CLoader`-token scan false-positived on
+    both: it can only ever see a LITERAL loader-class token in the
+    calling symbol's own body, never through a helper call boundary, so
+    the repo's own established C-loader-selection convention (a small
+    `*_loader()` factory, reused across every per-document parse site
+    instead of repeating the CSafeLoader-availability probe at each call)
+    permanently misread as "no C loader anywhere" (T-1420-adjacent
+    finding). Any identifier containing "loader" (case-insensitive)
+    immediately followed by a call is trusted as a deliberate loader
+    -selection indirection -- the same naming convention this repo's own
+    fix already established -- rather than requiring cross-symbol body
+    inspection this lexical, single-symbol-scoped rule has no access to."""
+    n = len(tokens)
+    for i in range(n - 2):
+        if (
+            tokens[i] == "Loader"
+            and tokens[i + 1] == "="
+            and "loader" in tokens[i + 2].lower()
+            and i + 3 < n
+            and tokens[i + 3] == "("
+        ):
+            return True
+    return False
+
+
+# frob:ticket T-1225
 def _perf010_yaml_c_loader(symbol: RawSymbol, path: str) -> Violation | None:
     """PERF010: `yaml.safe_load(...)`/`yaml.load(...)` called with no
-    `CSafeLoader`/`CLoader` token anywhere in this symbol's own body --
-    mined from `src/frob/tickets/_store.py`'s pre-T-1206 shape (every
-    per-document `yaml.safe_load` call defaulted to the pure-python
-    `SafeLoader`)."""
+    `CSafeLoader`/`CLoader` token, and no `Loader=<helper>()` indirection
+    to one (`_has_loader_indirection`), anywhere in this symbol's own
+    body -- mined from `src/frob/tickets/_store.py`'s pre-T-1206 shape
+    (every per-document `yaml.safe_load` call defaulted to the pure-
+    python `SafeLoader`)."""
     if _is_test_path(path):
         return None
     tokens = symbol.body_tokens
@@ -131,6 +165,8 @@ def _perf010_yaml_c_loader(symbol: RawSymbol, path: str) -> Violation | None:
             and tokens[i + 3] == "("
         ):
             if any(t in _C_LOADER_TOKENS for t in tokens):
+                continue
+            if _has_loader_indirection(tokens):
                 continue
             return _violation(
                 "PERF010",
