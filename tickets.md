@@ -9237,3 +9237,38 @@ Why it is worth fixing rather than tolerating: it doubles the volume of every te
 Fix direction: do not install frob's own stream handlers when running under pytest (pytest's capture is already reporting them), or set propagation so exactly one path reports. Whichever is chosen, assert it: a test that emits one record and asserts it appears exactly once in the captured output.
 
 Also verify, and state the answer in the Done report, whether ordinary CLI invocations double as well. A probe during triage did not produce a warning at all, so the CLI case is UNVERIFIED rather than known-clean -- do not assume it is fine because the pytest path explains the observed instances.
+
+<!-- ticket:T-1622 -->
+```yaml
+id: T-1622
+title: Tickets filed from a worktree get draft ids that never survive a land
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner/**
+- tests/**
+- docs/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+`frob ticket new` run inside a worktree allocates a T-draft-<hex> id rather than a real T-#### one, because real id allocation needs main's ledger. Those draft ids never survive a land: the ledger splice drops the draft block, and any Done report citing it becomes a phantom citation (TICK006).
+
+Consequence, hit FOUR separate times on 2026-08-05: an agent files legitimate follow-up tickets while working, cites them honestly in its Done report, and the coordinator must then refile each one on main, swap every citation in the worktree ledger, and delete the local draft block by hand before the land will pass. It is pure toil, it is error-prone (a blanket string-swap once renamed the draft's own block instead of removing it), and it happens on nearly every dispatch that discovers follow-up work.
+
+T-1544 already covers the CITATION side (a Tier-A auto-fix that refiles and renumbers phantom draft citations). This ticket is the ALLOCATION side, which is the root: make an id filed from a worktree real from the start.
+
+Options to weigh, and the choice belongs in this ticket:
+- Reserve id ranges per worktree, so a worktree can allocate a real id with no coordination.
+- Allocate through the existing cross-worktree lease side-channel (frob.tickets._leases already has a shared, peer-writable directory and liveness probing -- the coordination substrate exists).
+- Keep draft ids but make the LAND rewrite them to real ids automatically, citations included, so the toil disappears even if the draft mechanism stays.
+
+Whichever is chosen, the acceptance is the same: an agent files a follow-up ticket from a worktree, lands its work, and neither the agent nor the coordinator has to touch the ledger by hand for the citation to be correct on main.
