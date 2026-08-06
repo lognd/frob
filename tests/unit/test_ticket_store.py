@@ -466,6 +466,59 @@ class TestWriteArchivedTicket:
         assert active.is_ok
         assert active.danger_ok == {}
 
+    # frob:ticket T-1583
+    def test_v2_write_archive_round_trips_through_load_archive(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
+        # e_round_trips_through_load_archive kind="unit"
+        """T-1583: `write_archive` wrote the `tickets-archive.md` monofile
+        even in v2 mode, where `load_archive` globs `tickets/archive/**`
+        and never reads it -- `archive()` then dropped those same ids from
+        active storage, losing them from every read path."""
+        from frob.tickets._store import write_archive
+
+        v2_ticket_dir(tmp_path, "T-0100").mkdir(parents=True)
+        (v2_ticket_dir(tmp_path, "T-0100") / "ticket.md").write_text(
+            _serialize_ticket(_ticket("T-0100"))
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        assert write_archive(
+            tmp_path, {"T-0001": _ticket(), "T-0002": _ticket("T-0002")}
+        ).is_ok
+        assert not archive_path(tmp_path).exists()
+
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok.keys() == {"T-0001", "T-0002"}
+
+    # frob:ticket T-1583
+    def test_v2_write_archive_prunes_ids_absent_from_the_map(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
+        # e_prunes_ids_absent_from_the_map kind="unit"
+        """`write_archive`'s contract is wholesale REPLACE, so the v2
+        branch must prune an archived id the new map omits -- otherwise
+        `renumber`'s rewrite would leave the old id behind as a ghost."""
+        from frob.tickets._store import v2_archive_dir, write_archive
+
+        v2_archive_dir(tmp_path, "T-0009").mkdir(parents=True)
+        (v2_archive_dir(tmp_path, "T-0009") / "ticket.md").write_text(
+            _serialize_ticket(_ticket("T-0009"))
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        assert write_archive(tmp_path, {"T-0001": _ticket()}).is_ok
+        assert not v2_archive_dir(tmp_path, "T-0009").exists()
+
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok.keys() == {"T-0001"}
+
     def test_single_mode_preserves_sibling_archived_ticket(
         self, tmp_path: Path
     ) -> None:

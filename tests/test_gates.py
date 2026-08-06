@@ -194,6 +194,16 @@ def _ticket(
 
 
 def _write_ticket(root: Path, ticket: Ticket) -> None:
+    """Write `ticket` into `root`'s v1 monofile ledger.
+
+    Seeds `tickets.md` first so `write_ticket` resolves to 'single' mode:
+    T-1553 made a bare `tmp_path` default to v2, but this file's ledger
+    assertions (`_marker_line`, COV002's closing-diff grace) are about
+    `tickets.md` hunks specifically -- COV002's grace reads the ledger
+    monofile diff and has no v2 equivalent yet (T-1582)."""
+    ledger = root / "tickets.md"
+    if not ledger.exists():
+        ledger.write_text("# Tickets\n", encoding="utf-8")
     write_ticket(root, ticket).danger_ok
 
 

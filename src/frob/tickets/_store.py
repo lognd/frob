@@ -1486,6 +1486,35 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
 # frob:ticket T-0458
 # frob:ticket T-0601
 # frob:ticket T-0889
+# frob:ticket T-1583
+def _write_archive_v2(
+    root: Path, tickets: dict[str, Ticket]
+) -> Result[None, TicketError]:
+    """`write_archive`'s v2-mode body: upsert every entry into its own
+    `tickets/archive/T-####/ticket.md` (`write_archived_ticket`) and prune
+    any archived ticket directory whose id is absent from `tickets`, so
+    the wholesale-replace contract the monofile branch has holds here too.
+
+    Every prune is logged with its id -- this is the only path that
+    removes archived ledger content, and a silent removal here would be
+    indistinguishable from the T-1583 loss it exists to fix."""
+    for ticket in tickets.values():
+        written = write_archived_ticket(root, ticket)
+        if written.is_err:
+            return Err(written.danger_err)
+    for path in _v2_archive_glob(root):
+        ticket_id = path.parent.name
+        if ticket_id in tickets:
+            continue
+        _log.info(
+            "tickets: write_archive pruning archived %s -- absent from the "
+            "wholesale map this call replaces the archive with",
+            ticket_id,
+        )
+        shutil.rmtree(path.parent)
+    return Ok(None)
+
+
 def write_archive(
     root: Path,
     tickets: dict[str, Ticket],
@@ -1503,7 +1532,17 @@ def write_archive(
     load and this call refuses (`Err(LedgerChangedSinceLoad)`) rather than
     clobbering it with a stale in-memory map. `None` (the default) preserves
     the pre-T-0889 unconditional-overwrite behavior for callers that have
-    not been updated to pass a digest."""
+    not been updated to pass a digest.
+
+    T-1583: v2 mode has no archive monofile, so this delegates to
+    `_write_archive_v2` -- one `tickets/archive/T-####/ticket.md` per
+    entry, matching what `load_archive`'s own v2 branch reads. Writing the
+    monofile unconditionally (the pre-T-1583 behavior) put every archived
+    ticket somewhere `load_archive` would never look while `archive()`
+    went on to drop those same ids from the active store, losing them from
+    every read path."""
+    if _store_mode(root) == "v2":
+        return _write_archive_v2(root, tickets)
     with ledger_lock(root):
         path = archive_path(root)
         if expected_digest is not None:
