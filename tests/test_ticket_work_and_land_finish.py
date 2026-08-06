@@ -247,6 +247,67 @@ class TestAbsorbPreLandFixes:
             assert len(line) <= 88
 
 
+# frob:ticket T-1578
+class TestWorktreeNativesVerifiablyHealthy:
+    """`_worktree_natives_verifiably_healthy` (T-1578): the pre-land
+    preflight that decides whether this land's WAIVE004 self-run is even
+    worth paying for."""
+
+    def test_healthy_natives_return_true(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealt\
+        # hy.test_healthy_natives_return_true
+        from frob.app.ticket_runner._land_cmd import (
+            _worktree_natives_verifiably_healthy,
+        )
+
+        monkeypatch.setattr("frob.gates._maybe_autorebuild_natives", lambda root: None)
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: ())
+        monkeypatch.setattr("frob.strata.unimportable_natives", lambda root: ())
+
+        assert _worktree_natives_verifiably_healthy(repo) is True
+
+    def test_stale_after_autorebuild_attempt_returns_false(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealt\
+        # hy.test_stale_after_autorebuild_attempt_returns_false
+        """A native still reported stale AFTER the auto-rebuild attempt
+        (disabled, or the rebuild itself failed) must read as unhealthy --
+        the whole point of preflighting before paying for a full
+        `run_gates()` this land can no longer trust."""
+        from frob.app.ticket_runner._land_cmd import (
+            _worktree_natives_verifiably_healthy,
+        )
+
+        monkeypatch.setattr("frob.gates._maybe_autorebuild_natives", lambda root: None)
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: ("still-stale",))
+        monkeypatch.setattr("frob.strata.unimportable_natives", lambda root: ())
+
+        assert _worktree_natives_verifiably_healthy(repo) is False
+
+    def test_unimportable_native_returns_false(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealt\
+        # hy.test_unimportable_native_returns_false
+        from frob.app.ticket_runner._land_cmd import (
+            _worktree_natives_verifiably_healthy,
+        )
+
+        monkeypatch.setattr("frob.gates._maybe_autorebuild_natives", lambda root: None)
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: ())
+        monkeypatch.setattr(
+            "frob.strata.unimportable_natives", lambda root: ("broken-native",)
+        )
+
+        assert _worktree_natives_verifiably_healthy(repo) is False
+
+
 # frob:ticket T-1456
 # frob:ticket T-1513
 class TestPostLandUnscopedSweep:

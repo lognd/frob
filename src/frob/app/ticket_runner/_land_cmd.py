@@ -219,6 +219,28 @@ def _sync_interface_pre_land_step(worktree: Path, ticket_id: str) -> None:
             )
 
 
+# frob:ticket T-1578
+def _worktree_natives_verifiably_healthy(worktree: Path) -> bool:
+    """T-1578: attempt the SAME auto-rebuild `run_gates` itself would
+    (`frob.gates._maybe_autorebuild_natives`), then check that every
+    declared `[[native]]` is both IMPORTABLE (`frob.strata.
+    unimportable_natives`) and content-FRESH (`frob.strata.
+    stale_natives`) -- mirrors exactly what a WAIVE004 self-manufactured
+    `run_gates()` call inside `fix_waive004_stale_waiver` would itself
+    observe, cheaply, WITHOUT paying for a full gates suite run when the
+    answer is already 'no, this run's WAIVE004 verdict cannot be
+    trusted'. `False` means the caller should exclude `WAIVE004` from
+    this land's Tier-A batch rather than let `run_gates()` burn a full
+    pass whose verdict `fix_waive004_stale_waiver`'s own `_degraded_
+    verification_reason`/mass-invalidation guards would refuse to act on
+    anyway."""
+    from frob.gates import _maybe_autorebuild_natives
+    from frob.strata import stale_natives, unimportable_natives
+
+    _maybe_autorebuild_natives(worktree)
+    return not stale_natives(worktree) and not unimportable_natives(worktree)
+
+
 # frob:ticket T-1323
 # frob:ticket T-1404
 def _tier_a_pre_land_step(
@@ -270,9 +292,32 @@ def _tier_a_pre_land_step(
     # It has already corrupted design/frob.strata (comment leader `//`)
     # during two separate lands, each time breaking `frob sys
     # sync-interface` on main until hand-repaired. Excluded from the
-    # pre-land batch until that handler resolves the leader per language;
-    # COV002 still REPORTS normally, it just cannot auto-edit here.
-    exclude = ("COV002",) + (("FMT001",) if touched_paths is not None else ())
+    # pre-land batch until that handler resolves the leader per language
+    # (T-1581 fixes this in `_insert_ticket_directive_above`, but stays
+    # excluded HERE until that ticket's own land actually reverts this
+    # workaround -- reverting it preemptively from an unrelated ticket
+    # would race whichever lands second); COV002 still REPORTS normally,
+    # it just cannot auto-edit here.
+    #
+    # T-1578: preflight worktree natives BEFORE paying for the WAIVE004
+    # self-run at all -- `fix_waive004_stale_waiver`'s own guards
+    # (`_degraded_verification_reason`/`_mass_invalidation_rules`) would
+    # refuse to act on a natives-degraded run anyway, but only AFTER a
+    # full `run_gates()` pass and a loud ERROR log; excluding WAIVE004
+    # here when `_worktree_natives_verifiably_healthy` says no gets the
+    # identical outcome (nothing deleted) for a fraction of the cost, at
+    # INFO level instead of a scary ERROR every land.
+    exclude: tuple[str, ...] = ("COV002",) + (
+        ("FMT001",) if touched_paths is not None else ()
+    )
+    if not _worktree_natives_verifiably_healthy(worktree):
+        _log.info(
+            "ticket land: %s worktree natives stale/unimportable after "
+            "auto-rebuild attempt -- skipping this land's WAIVE004 self-run "
+            "(T-1578)",
+            ticket_id,
+        )
+        exclude = (*exclude, "WAIVE004")
     applied = apply_tier_a_fixes(
         worktree,
         snapshot_result.danger_ok,

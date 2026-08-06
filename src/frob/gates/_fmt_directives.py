@@ -91,11 +91,19 @@ _MARKERS: dict[str, str] = {
     ".cpp": "//",
     ".hpp": "//",
     ".hh": "//",
+    ".strata": "//",
 }
 """Line-comment marker per supported file suffix. T-0441 scope is `#`/`//`
 line comments only -- block comments (`/* ... */`) are out of scope, per
 the ticket's own language-coverage note; a `frob:` directive written
-inside a block comment is left untouched by this module."""
+inside a block comment is left untouched by this module. `.strata` (T-1581)
+was originally missing here entirely -- `fix_cov002_ticket_directive_
+insertion`'s own hardcoded, narrower table defaulted an unknown suffix to
+`#`, and during T-1548's own land that silently wrote a Python-style
+directive into a `.strata` file (comment leader `//`), breaking strata
+parsing on main. Adding it here, the one shared marker table, means every
+caller of `marker_for` gets the fix at once instead of each hand-rolled
+table needing the same patch independently."""
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441

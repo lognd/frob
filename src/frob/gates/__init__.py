@@ -5207,6 +5207,52 @@ def _perf_gate_candidate_paths(snapshot: GraphSnapshot) -> list[str]:
     return candidate_paths
 
 
+#: T-1578: the `[[native]]` `name` (frob.toml) `frob.graph.callgraph`
+#: resolves call edges through -- `frob.perf`'s reach-dependent rules
+#: (PERF008/PERF012, loop-invariant-effect / duplicate-spawn detection)
+#: walk that same call graph via `EffectGraph.reachable_effect`, so a
+#: content-stale (built but source-newer) `frob_core` can silently change
+#: which call edges resolve without ever failing to IMPORT -- invisible
+#: to `NATIVE001`, which only checks import failure (`unimportable_
+#: natives`), never staleness.
+_PERF_REACH_NATIVE_NAME = "frob_core"
+
+#: T-1578: the `GateStats.skipped` marker name `_perf_reach_degraded_
+#: marker` appends when the reach substrate is stale -- deliberately NOT
+#: a real gate name (never appears in `_ALL_GATES`), so it can never be
+#: mistaken for an actually-skipped gate stage; its only job is tripping
+#: `_fix_engine._degraded_verification_reason`'s "unexpected skip" branch.
+# frob:doc docs/modules/perf.md#perf-reach-native-staleness-signal-t-1578
+PERF_REACH_DEGRADED_SKIP_MARKER = "perf_reach_native_stale"
+
+
+def _perf_reach_degraded_marker(root: Path) -> str | None:
+    """T-1578: `PERF_REACH_DEGRADED_SKIP_MARKER` if `frob.strata.
+    stale_natives` still reports `_PERF_REACH_NATIVE_NAME` (`frob_core`)
+    stale at gate-build time (i.e. AFTER `run_gates`'s own `_maybe_
+    autorebuild_natives` already had its chance to fix it -- this only
+    fires when that rebuild was disabled or failed), else `None`.
+
+    This closes the gap `_native_unavailable_report`/`NATIVE001` cannot:
+    NATIVE001 only ever sees an UNIMPORTABLE native (`unimportable_
+    natives`) -- a stale-but-still-importable `frob_core` imports fine
+    and NATIVE001 stays silent, while `frob.graph.callgraph`'s native
+    fast path can still be resolving edges against OUTDATED compiled
+    logic. Never raises: any failure reading native state is treated as
+    "cannot prove degradation", the same fail-open posture `stale_
+    natives` itself already takes for an unreadable `frob.toml`."""
+    from frob.strata import stale_natives
+
+    try:
+        stale = stale_natives(root)
+    except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
+        _log.debug("_perf_reach_degraded_marker: stale_natives probe failed: %s", exc)
+        return None
+    if any(s.spec.name == _PERF_REACH_NATIVE_NAME for s in stale):
+        return PERF_REACH_DEGRADED_SKIP_MARKER
+    return None
+
+
 # frob:doc docs/modules/perf.md#integration-points
 # frob:ticket T-0021
 # frob:ticket T-0203
@@ -5975,6 +6021,18 @@ def _build_jobs(
     selected_thread.update(ticket_jobs)
     if use_cache:
         _substitute_cacheable_jobs(selected_thread, st)
+    # T-1578: perf_gate's reach-dependent rules (PERF008/PERF012) can
+    # silently degrade when frob_core is content-stale but still
+    # importable (invisible to NATIVE001) -- perf_gate itself still runs
+    # unchanged (its non-reach rules, PERF001-004, need no native at
+    # all), but a marker is appended to `skipped` so a caller that treats
+    # ANY unexpected skip as a degraded-run signal (`_fix_engine.
+    # _degraded_verification_reason`) catches this one too, instead of
+    # only ever seeing "0 findings" with nothing to explain it.
+    if "perf" in selected_process or "perf" in selected_thread:
+        marker = _perf_reach_degraded_marker(st.repo_root)
+        if marker is not None:
+            skipped.append(marker)
     return selected_thread, selected_process, skipped
 
 
@@ -7422,6 +7480,7 @@ __all__ = [
     "fuzz_gate",
     "lang_conformance_gate",
     "perf_gate",
+    "PERF_REACH_DEGRADED_SKIP_MARKER",
     "pii_structural_gate",
     "project_lang_conformance_gate",
     "protocol_summary_gate",

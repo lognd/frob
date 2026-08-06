@@ -1138,11 +1138,46 @@ def _waive003_violations(
 #   is still earning its keep, for the same reason the existing
 #   SCOPE001/COV002/TODO001 `SCOPED_RUN_FLAKY_RULE_IDS` class does.
 #
+# T-1577 enrolled two more, both audited directly against their own gate
+# source rather than assumed from the ticket that named them:
+# - WIRE001: `frob.gates._wire`'s own module docstring/`_wire001_*`
+#   helpers construct every finding from `diff.hunks`' ADDED lines (`a
+#   newly-added symbol nothing outside its own tests can reach`) -- there
+#   is no code path that emits a WIRE001 finding without a diff whose
+#   hunks happen to define the exact symbol a waiver names, so on a full
+#   unscoped run (whose `diff` is essentially never the ticket diff that
+#   originally introduced the waived symbol) this reads "0 findings" by
+#   construction, same shape as DUP001/DUP002/AFFECT001/AFFECT002 above.
+# - SCOPE001: already documented above this table (T-0753 comment,
+#   "a diff-scoped rule like SCOPE001") and already carries the identical
+#   diff-scoped exemption for its OWN scoped-run flakiness via
+#   `SCOPED_RUN_FLAKY_RULE_IDS` below -- the same diff-dependence that
+#   makes a `--ticket`-scoped run's SCOPE001 count unstable (T-1133) also
+#   makes a full unscoped run's diff (whatever this invocation's
+#   base/head happen to resolve to) essentially never the exact diff a
+#   SCOPE001 waiver's site was originally waived against; enrolling it
+#   here closes the WAIVE004 side of the same structural gap
+#   `SCOPED_RUN_FLAKY_RULE_IDS` already closes for WAIVE004's own
+#   scoped-run early-exit.
+#
+# DEPR005, DEAD001, and REF002 were audited against this same question
+# (T-1577) and do NOT qualify -- each evaluates its FULL current state
+# every run, not a diff's touched set: DEPR005 compares the full current
+# reference-count index against a committed baseline
+# (`_depr005_edge_violations`'s `file_reference_counts` over the WHOLE
+# `_DeprecatedRefIndex`, not a diff), DEAD001 walks the full repo-wide
+# call graph for reachability (`frob.graph.callgraph`, no diff input at
+# all), and REF002 counts inbound references over every git-tracked file
+# (`frob.gates._refs`, again no diff). A "0 findings" read from any of
+# these three is a genuine, trustworthy signal on a full run -- exempting
+# them would hide real staleness, not just diff-scoping noise.
+#
 # Neither exemption weakens WAIVE004 for any OTHER rule -- a waiver on a
 # rule NOT in this set still needs a real, live, rule-id-exact match in
 # `all_violations` or it is reported exactly as before.
+# frob:ticket T-1577
 _WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES = frozenset(
-    {"INV006", "DUP001", "DUP002", "AFFECT001", "AFFECT002"}
+    {"INV006", "DUP001", "DUP002", "AFFECT001", "AFFECT002", "WIRE001", "SCOPE001"}
 )
 
 

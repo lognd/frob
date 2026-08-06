@@ -6964,6 +6964,37 @@ class TestTestGate:
         found = _waive004_violations((), snap, frozenset())
         assert found == ()
 
+    # frob:ticket T-1577
+    @pytest.mark.parametrize(
+        ("rule", "src"),
+        [
+            ("WIRE001", "src/a.py::helper"),
+            ("SCOPE001", "src/a.py"),
+        ],
+        ids=["wire001", "scope001"],
+    )
+    def test_waive004_exempts_diff_scoped_rules(self, rule: str, src: str) -> None:
+        """T-1577: WIRE001 only ever constructs a finding from a diff's
+        added hunks (`frob.gates._wire`), and SCOPE001 is already
+        documented as diff-scoped like COV002/TODO001 via `SCOPED_RUN_
+        FLAKY_RULE_IDS` -- a full unscoped run's diff is essentially never
+        the exact diff that originally introduced/waived the site, so a
+        zero-match waiver on either rule must not be reported as stale."""
+        # frob:tests src/frob/gates/_waive.py::_waive004_violations
+        from frob.gates import _waive004_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src=src,
+            target=rule,
+            origin="src/a.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive004_violations((), snap, frozenset())
+        assert found == ()
+
     # frob:ticket T-1064
     def test_waive004_still_fires_for_a_non_exempt_rule_with_the_same_shape(
         self,
@@ -10697,6 +10728,65 @@ class TestWaive004DegradedRunGuard:
             content = (root / "src" / f"m{i}.py").read_text(encoding="utf-8")
             assert "frob:waive PERF00" in content
 
+    def test_mass_invalidation_with_live_finding_elsewhere_proceeds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1579: the SAME mass-stale shape as the test above, but this
+        run ALSO reports a live, non-WAIVE004 finding of the target rule
+        elsewhere in the tree -- proof the detector demonstrably ran and
+        can still find that rule. Mass-staleness is then trustworthy and
+        deletion proceeds for every candidate of that rule."""
+        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine import (
+            _WAIVE004_MASS_INVALIDATION_THRESHOLD,
+            fix_waive004_stale_waiver,
+        )
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD):
+            (root / "src" / f"m{i}.py").write_text(
+                '# frob:waive PERF001 reason="fixture"\ndef f():\n    return 1\n',
+                encoding="utf-8",
+            )
+        snapshot = self._snap(root)
+
+        stale_violations = tuple(
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.ERROR,
+                file=f"src/m{i}.py",
+                line=1,
+                message="WAIVE004: frob:waive PERF001 matches 0 findings",
+            )
+            for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD)
+        )
+        live_elsewhere = Violation(
+            rule="PERF001",
+            severity=Severity.WARN,
+            file="src/other.py",
+            line=7,
+            message="PERF001: a real, live finding proving the detector ran",
+        )
+        mass_report = GateReport(
+            violations=(*stale_violations, live_elsewhere), waived=(), stats=GateStats()
+        )
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg, **kw: Ok(mass_report))
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
+        assert len(waive004_applied) == _WAIVE004_MASS_INVALIDATION_THRESHOLD
+        for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD):
+            content = (root / "src" / f"m{i}.py").read_text(encoding="utf-8")
+            assert "frob:waive PERF001" not in content
+
     def test_healthy_run_below_threshold_still_deletes(self, tmp_path: Path) -> None:
         """A genuine, non-degraded full run with a single stale waiver
         (no NATIVE001, no skipped stage, well under the mass-invalidation
@@ -12207,6 +12297,55 @@ class TestOptInGates:
             "skipping unparsed" in rec.message and "src/broken.py" in rec.message
             for rec in caplog.records
         )
+
+
+class TestPerfReachDegradedMarker:
+    """`_perf_reach_degraded_marker` (T-1578): a content-stale-but-still-
+    importable `frob_core` is invisible to NATIVE001 (import-failure
+    only) -- this closes that gap with a distinct `GateStats.skipped`
+    marker name."""
+
+    def test_no_stale_natives_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_perf_reach_degraded_marker
+        from frob.gates import _perf_reach_degraded_marker
+
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: ())
+
+        assert _perf_reach_degraded_marker(tmp_path) is None
+
+    def test_stale_frob_core_returns_the_marker(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_perf_reach_degraded_marker
+        from types import SimpleNamespace
+
+        from frob.gates import (
+            PERF_REACH_DEGRADED_SKIP_MARKER,
+            _perf_reach_degraded_marker,
+        )
+
+        stale_entry = SimpleNamespace(spec=SimpleNamespace(name="frob_core"))
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: (stale_entry,))
+
+        assert _perf_reach_degraded_marker(tmp_path) == PERF_REACH_DEGRADED_SKIP_MARKER
+
+    def test_stale_unrelated_native_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_perf_reach_degraded_marker
+        """A stale native that is NOT `frob_core` (e.g. `strata_core`,
+        already caught by its own NATIVE001-adjacent paths for design/
+        strata loading) must not trip this perf-specific marker."""
+        from types import SimpleNamespace
+
+        from frob.gates import _perf_reach_degraded_marker
+
+        stale_entry = SimpleNamespace(spec=SimpleNamespace(name="strata_core"))
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: (stale_entry,))
+
+        assert _perf_reach_degraded_marker(tmp_path) is None
 
 
 class TestScopeDigest:

@@ -1065,3 +1065,42 @@ def main() -> int
 - T-0973: `main`'s `SERIAL_POOLS_ENV_VAR`/`_SAMPLE_ENV_VAR` env-var reads
   each carry a `frob:waive SEC110 reason="..."` -- both are behavior
   toggles (pool-serialization mode, stack-sampling opt-in), not secrets.
+
+## Perf-reach native staleness signal (T-1578)
+
+<!-- frob:describes src/frob/gates/__init__.py::_perf_reach_degraded_marker -->
+
+PERF008/PERF012 (`frob.perf._loop_effects`/`_dup_spawn`) resolve their
+call graph through `frob.graph.callgraph`'s native `frob_core` fast path
+when it is available -- `frob.perf`'s own reach analysis is otherwise
+pure Python, per this module's own docstrings, but the CALL GRAPH it
+walks can itself come from `frob_core`. A `frob_core` build that is
+CONTENT-STALE (source edited, artifact not rebuilt) but still
+IMPORTABLE is invisible to `NATIVE001`
+(`src/frob/gates/__init__.py::_native_unavailable_report`), which only
+ever checks import failure (`frob.strata.unimportable_natives`), never
+staleness -- a stale-but-loadable `frob_core` can silently resolve
+DIFFERENT call edges than the current source would, without the gate
+run ever failing loudly.
+
+`_perf_reach_degraded_marker` closes that specific gap: `_build_jobs`
+(the gate-job registry `run_gates` assembles from) calls it whenever
+`perf` is among the selected gates, AFTER `run_gates`'s own
+`_maybe_autorebuild_natives` already had its chance to fix a stale
+`frob_core` in place (T-1213) -- so this only fires when that rebuild
+was disabled (`FROB_NO_NATIVE_AUTOREBUILD`/`natives_auto_rebuild =
+false`) or genuinely failed (no toolchain). When it fires, the marker
+name `PERF_REACH_DEGRADED_SKIP_MARKER`
+(`"perf_reach_native_stale"`) is appended to the run's `GateStats.
+skipped` -- perf_gate ITSELF still runs unchanged (PERF001-004 need no
+native at all and stay fully trustworthy), but any caller that treats
+an unexpected `skipped` entry as a whole-run degradation signal
+(`frob.gates._fix_engine._degraded_verification_reason`, T-1323's
+WAIVE004 self-run guard) now catches this case too, instead of only
+ever observing "0 findings" from the reach-dependent rules with
+nothing to explain why.
+
+See also `docs/modules/gates.md`'s WAIVE004/NATIVE001 sections and
+`docs/design/check-fix-engine.md` for how this marker feeds the
+pre-land Tier-A preflight (`_worktree_natives_verifiably_healthy`,
+`src/frob/app/ticket_runner/_land_cmd.py`).

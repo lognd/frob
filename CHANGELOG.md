@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.347.0] - unreleased
+
+- T-1581: COV002 Tier-A insertion handler must use the target file's comment leader
+
 ## [0.346.0] - unreleased
 
 - T-1279: TEST005 burn-down: src/frob/gates (179 findings, 12 at 0.0%)

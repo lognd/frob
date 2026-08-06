@@ -522,3 +522,81 @@ class TestFixCov002TicketDirectiveInsertion:
         assert (root / "pkg" / "mod.py").read_text(encoding="utf-8") == (
             "def f():\n    return 2\n"
         )
+
+
+class TestInsertTicketDirectiveAboveCommentLeader:
+    """`_insert_ticket_directive_above` (T-1581): the inserted directive's
+    comment leader must match the TARGET file's own language, resolved via
+    the shared `frob.gates._fmt_directives.marker_for` table -- not a
+    second, narrower hardcoded table that silently defaults an unknown
+    suffix to `#` (the exact defect that broke `design/frob.strata` during
+    T-1548's own land)."""
+
+    def test_strata_file_gets_slash_slash_leader(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
+        # est_strata_file_gets_slash_slash_leader kind="unit"
+        """GIVEN a `.strata` target file, WHEN the directive is inserted,
+        THEN it uses the `//` leader, not `#`."""
+        from frob.gates._fix_engine import _insert_ticket_directive_above
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _write(root, "design/frob.strata", "system Foo {\n}\n")
+
+        ok = _insert_ticket_directive_above(root, "design/frob.strata", 1, "T-9001")
+        assert ok is True
+        text = (root / "design" / "frob.strata").read_text(encoding="utf-8")
+        assert text.startswith("// frob:ticket T-9001\n")
+
+    def test_rust_file_gets_slash_slash_leader(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
+        # est_rust_file_gets_slash_slash_leader kind="unit"
+        """GIVEN a `.rs` target file, WHEN the directive is inserted, THEN
+        it uses the `//` leader."""
+        from frob.gates._fix_engine import _insert_ticket_directive_above
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _write(root, "src/lib.rs", "fn f() {}\n")
+
+        ok = _insert_ticket_directive_above(root, "src/lib.rs", 1, "T-9001")
+        assert ok is True
+        text = (root / "src" / "lib.rs").read_text(encoding="utf-8")
+        assert text.startswith("// frob:ticket T-9001\n")
+
+    def test_python_file_gets_hash_leader(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
+        # est_python_file_gets_hash_leader kind="unit"
+        """GIVEN a `.py` target file, WHEN the directive is inserted, THEN
+        it uses the `#` leader."""
+        from frob.gates._fix_engine import _insert_ticket_directive_above
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _write(root, "pkg/mod.py", "def f():\n    return 1\n")
+
+        ok = _insert_ticket_directive_above(root, "pkg/mod.py", 1, "T-9001")
+        assert ok is True
+        text = (root / "pkg" / "mod.py").read_text(encoding="utf-8")
+        assert text.startswith("# frob:ticket T-9001\n")
+
+    def test_unknown_extension_refuses_insertion(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.t\
+        # est_unknown_extension_refuses_insertion kind="unit"
+        """GIVEN a target file whose suffix has no registered comment
+        leader, WHEN the directive would be inserted, THEN the handler
+        refuses (no-op) rather than guessing a leader."""
+        from frob.gates._fix_engine import _insert_ticket_directive_above
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        _write(root, "data/notes.xyz", "some content\n")
+
+        ok = _insert_ticket_directive_above(root, "data/notes.xyz", 1, "T-9001")
+        assert ok is False
+        text = (root / "data" / "notes.xyz").read_text(encoding="utf-8")
+        assert text == "some content\n"

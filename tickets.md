@@ -6773,7 +6773,7 @@ closed via `frob ticket scope --add`, not a new ticket).
 id: T-1577
 title: 'WAIVE004: exempt diff-scoped rules (WIRE001, SCOPE001, audit DEPR005/DEAD001)
   from full-run staleness reads'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -6783,11 +6783,22 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/_waive.py
-- src/frob/gates/_fix_engine.py
 - docs/modules/gates.md
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/_fix_engine.py
+  reason: this ticket's actual fix lives entirely in _waive.py -- _fix_engine.py was
+    listed in the original ticket scope but is not touched here; narrowing avoids
+    pulling in that file's whole-file SCOPE002 doc-anchor closure (gates_e501_autofix.md/tickets.md)
+    which belongs to a different ticket's edits
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_gates.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[wire001]
+- tests/test_gates.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[scope001]
 threat: null
 component: null
 ```
@@ -6795,12 +6806,89 @@ WIRE001 is diff-scoped by construction (src/frob/gates/_wire.py: 'a newly-added 
 
 Fix: enroll WIRE001 and SCOPE001; audit DEPR005, DEAD001, REF002 for the same shape and enroll any that qualify. Each enrollment needs a one-line justification comment citing the gate's own diff-scoping. Expected effect: roughly 80 of the 98 standing WAIVE004 warnings on main disappear, and the per-land WAIVE004 noise drops proportionally.
 
+## Done report
+
+WIRE001 and SCOPE001 enrolled in `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES`
+(`src/frob/gates/_waive.py`), each with a justification comment citing the
+gate's own diff-scoping (verified directly, not assumed from the ticket
+text):
+
+- WIRE001 (`frob.gates._wire`): every finding is constructed from `diff.
+  hunks`' added lines -- "a newly-added symbol nothing outside its own
+  tests can reach" is structurally diff-relative, so a full unscoped run's
+  diff essentially never matches the diff that introduced the waived
+  symbol.
+- SCOPE001: already documented in this same module (T-0753 comment,
+  "a diff-scoped rule like SCOPE001") and already carries the mirror
+  exemption for WAIVE004's own scoped-run flakiness via
+  `SCOPED_RUN_FLAKY_RULE_IDS` (`_waive.py`). Enrolling it here closes the
+  matching full-run-side gap.
+
+Audited DEPR005, DEAD001, REF002 for the same shape per the ticket's
+instruction -- none qualify, and none were enrolled:
+
+- DEPR005 (`_depr005_edge_violations`) compares the FULL current
+  reference-count index against a committed baseline every run -- no diff
+  input.
+- DEAD001 (`frob.gates._dead_symbols`) walks the full repo-wide call graph
+  for reachability -- no diff input.
+- REF002 (`frob.gates._refs`) counts inbound references over every
+  git-tracked file -- no diff input.
+
+A "0 findings" read from any of these three is a genuine, trustworthy
+signal on a full run; exempting them would hide real staleness rather
+than diff-scoping noise.
+
+`docs/modules/gates.md`'s "Structurally-unverifiable rules (T-1064)"
+section gained a matching bullet for WIRE001/SCOPE001 plus the negative
+DEPR005/DEAD001/REF002 audit result, so the doc and the code enumerate
+the same set.
+
+Residual, disclosed rather than forced: this worktree also holds T-1581's
+already-committed work (same worktree, series dispatch). A `--ticket
+T-1577`-scoped `frob check` sees SCOPE001/SCOPE002 noise against files
+T-1581 touched (`src/frob/gates/_fix_engine.py`,
+`src/frob/gates/_fmt_directives.py`, `tests/test_gates_fix_engine.py`,
+`docs/modules/gates_e501_autofix.md`) because T-1581's landing commit
+subject did not literally include "T-1581" (T-0108's cross-ticket SCOPE001
+exemption keys off a `T-\d{4}` reference in the attributing commit's own
+subject line) -- a pre-existing gap in this worktree's own commit history,
+not something narrowing T-1577's scope further can fix, and not something
+this ticket's own scope should absorb (removed `src/frob/gates/_fix_engine.
+py` from T-1577's scope instead, since this ticket never touches it).
+`frob check --land-parity` -- the actual land-sweep-equivalent check --
+reports CLEAN (0 unscoped errors) against the current combined worktree
+tree, confirming this is per-ticket-scoped-check noise from the
+multi-ticket-worktree sequencing, not a real land blocker.
+
+### Changed
+```
+ docs/modules/gates.md              |  17 ++++++
+ docs/modules/gates_e501_autofix.md |  31 ++++++++---
+ src/frob/gates/_fix_engine.py      |  56 ++++++++++++-------
+ src/frob/gates/_fmt_directives.py  |  10 +++-
+ src/frob/gates/_waive.py           |  36 ++++++++++++-
+ tests/test_gates.py                |  44 +++++++++++++++
+ tests/test_gates_fix_engine.py     |  78 +++++++++++++++++++++++++++
+ tickets.md                         | 108 +++++++++++++++++++++++++++++++++++--
+ 8 files changed, 350 insertions(+), 30 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_waive004_exempts_wire001_as_diff_scoped` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_waive004_exempts_scope001_as_diff_scoped` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 1116 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1578 -->
 ```yaml
 id: T-1578
 title: Natives-stale worktree gate runs must signal degradation structurally, not
   report zero findings
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -6816,6 +6904,13 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestPerfReachDegradedMarker::test_no_stale_natives_returns_none
+- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_frob_core_returns_the_marker
+- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none
+- tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_healthy_natives_return_true
+- tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_stale_after_autorebuild_attempt_returns_false
+- tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_unimportable_native_returns_false
 threat: null
 component: null
 ```
@@ -6823,12 +6918,109 @@ Every land's pre-land Tier-A pass runs fix_waive004_stale_waiver's self-manufact
 
 Fix, two layers: (1) the perf/reach substrate must emit a structural degraded-run signal (skipped-stage / import-failure marker on the report) when its native deps fail to import or are content-stale, so _degraded_verification_reason catches it BEFORE the count heuristic -- 'zero findings' and 'could not analyze' must be distinguishable everywhere, not just for perf; (2) the pre-land Tier-A pass in _land_cmd.py should preflight-check worktree natives and skip the WAIVE004 self-run entirely when stale -- today it burns a full run_gates() per land whose verdict is guaranteed untrustworthy, then logs a scary ERROR. Expected effect: the per-land 'WAIVE004 auto-fix: 73 directives went stale' ERROR disappears and each land gets a full gates-run cheaper.
 
+## Done report
+
+Two layers, matching the ticket's own split.
+
+Layer 1 -- structural signal (`src/frob/gates/__init__.py`):
+`_perf_reach_degraded_marker` checks `frob.strata.stale_natives` for
+`frob_core` specifically (the native `frob.graph.callgraph`'s edge-
+resolution fast path uses, which PERF008/PERF012's reach analysis
+walks), called from `_build_jobs` whenever `perf` is a selected gate,
+AFTER `run_gates`'s own `_maybe_autorebuild_natives` already had its
+chance to fix a stale `frob_core` in place. This only fires when that
+auto-rebuild was disabled or genuinely failed -- a content-stale
+`frob_core` is invisible to NATIVE001, which only ever checks import
+FAILURE (`unimportable_natives`), never staleness. When it fires, the
+new `PERF_REACH_DEGRADED_SKIP_MARKER` ("perf_reach_native_stale") is
+appended to `GateStats.skipped` -- perf_gate itself still runs
+unchanged (PERF001-004 need no native and stay fully trustworthy), but
+`frob.gates._fix_engine._degraded_verification_reason`'s existing
+"unexpected skip" branch (T-1323) now catches this specific
+degradation too, instead of only ever seeing "0 findings" from
+PERF008/PERF012 with nothing to explain why.
+
+Layer 2 -- land preflight (`src/frob/app/ticket_runner/_land_cmd.py`):
+`_worktree_natives_verifiably_healthy` runs the SAME auto-rebuild
+attempt `run_gates` itself would, then checks EVERY declared native
+(not just frob_core -- the WAIVE004 self-run is a FULL gates pass) for
+staleness/importability directly. `_tier_a_pre_land_step` calls this
+BEFORE `apply_tier_a_fixes` and excludes `WAIVE004` from that land's
+Tier-A batch when it says no, logged at INFO rather than the scary
+ERROR `fix_waive004_stale_waiver`'s own guards would have logged after
+paying for the full run anyway. Same eventual outcome (nothing
+deleted), cheaper, quieter.
+
+`docs/modules/perf.md` gained a new "Perf-reach native staleness
+signal (T-1578)" section (the `frob:doc` anchor Layer 1's public
+`PERF_REACH_DEGRADED_SKIP_MARKER` constant points at) and
+`docs/modules/gates.md` gained a matching "Perf-reach content-
+staleness signal + land preflight (T-1578)" subsection right after the
+existing NATIVE001 auto-rebuild writeup, cross-linking both.
+
+Found and fixed two verification-time regressions while checking this
+ticket's own `frob check --only gates-native` (unscoped, repo-wide,
+per playbook section 6c -- these were not diff-scoped to T-1578's own
+touched set, they were real debt my earlier T-1577/T-1579 commits in
+this same worktree introduced):
+
+- ARCH001: T-1579's per-rule mass-invalidation filtering pushed
+  `_waive004_verified_candidates` past the 60-line ceiling -- extracted
+  `_drop_untrustworthy_mass_stale_candidates`, no behavior change.
+  Committed as its own T-1579-attributed commit (43e2a9b7), not folded
+  into this ticket's own diff.
+- DUP001: T-1577's two WIRE001/SCOPE001 exemption tests were 95%
+  identical bodies -- parametrized into one
+  `test_waive004_exempts_diff_scoped_rules` test over both rules, with
+  T-1577's own evidence rebound via `frob ticket evidence --replace`.
+  Committed as its own T-1577-attributed commit (46814e9c).
+
+Merged `main` mid-ticket (playbook section 1's warm-up merge, run again
+here since main had moved considerably since this worktree's original
+merge and the deletion-filter check flagged two files main had
+recently added that this branch predated) -- confirmed clean (`git
+diff main --diff-filter=D --stat` empty after merging, no conflict
+markers, all touched-test suites re-verified green post-merge).
+
+`frob check --land-parity` reports CLEAN (0 unscoped errors) against
+the current, post-merge worktree tree.
+
+### Changed
+```
+ docs/modules/gates.md                     | 116 ++++++++++--
+ docs/modules/gates_e501_autofix.md        |  31 +++-
+ docs/modules/perf.md                      |  39 ++++
+ src/frob/app/ticket_runner/_land_cmd.py   |  42 ++++-
+ src/frob/gates/__init__.py                |  59 ++++++
+ src/frob/gates/_fix_engine.py             | 194 ++++++++++++++------
+ src/frob/gates/_fmt_directives.py         |  10 +-
+ src/frob/gates/_waive.py                  |  37 +++-
+ tests/test_gates.py                       | 139 +++++++++++++++
+ tests/test_gates_fix_engine.py            |  78 ++++++++
+ tests/test_ticket_work_and_land_finish.py |  61 +++++++
+ tickets.md                                | 286 +++++++++++++++++++++++++++++-
+ 12 files changed, 1007 insertions(+), 85 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestPerfReachDegradedMarker::test_no_stale_natives_returns_none` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_frob_core_returns_the_marker` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_healthy_natives_return_true` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_stale_after_autorebuild_attempt_returns_false` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_unimportable_native_returns_false` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 6236 warning(s), 798 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1579 -->
 ```yaml
 id: T-1579
 title: 'WAIVE004 auto-fix: mass-stale states can never self-heal -- add detector-proven
   escape from the count guard'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -6843,6 +7035,8 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_proceeds
 threat: null
 component: null
 ```
@@ -6850,11 +7044,90 @@ The T-1323 mass-invalidation guard refuses to delete when >= 5 waivers of one ru
 
 Refinement: when the SAME self-manufactured run produced >= 1 live finding of the target rule elsewhere in the tree, the detector demonstrably ran and can find that rule -- mass-staleness is then trustworthy, and deletion may proceed (still capped per run, still one rule at a time, still logged per waiver). When the rule has ZERO findings anywhere (the degraded signature, exactly what T-1578's structural signal also targets), keep refusing as today. Depends on T-1578 conceptually but is independently implementable; blocked_by is intentionally not set.
 
+## Done report
+
+`_mass_invalidation_rule` (singular, first-match-wins) refused the
+ENTIRE WAIVE004 auto-fix batch whenever any one rule's stale-waiver
+count in a self-manufactured run met `_WAIVE004_MASS_INVALIDATION_
+THRESHOLD` (5) -- correct for a degraded run (the 2026-07-29 incident
+this guard was built for), but it also meant a rule whose waivers
+become GENUINELY mass-stale (a detector tightened, a mass refactor
+removed the pattern several waivers covered) could never be cleaned by
+this handler again: every run re-flags the same waivers, every run
+refuses, warnings never drain.
+
+Implemented the refinement exactly as scoped: `_mass_invalidation_
+rules` (plural) now returns every rule meeting the threshold, and each
+is judged independently by the new `_rule_has_live_finding` -- if the
+SAME self-manufactured run's `report.violations` also contains at
+least one REAL (non-WAIVE004) finding of that rule elsewhere in the
+tree, the detector demonstrably ran and can still find it, so
+mass-staleness is trustworthy and that rule's candidates proceed to
+deletion (still one rule's own candidates at a time, still logged per
+waiver, still capped by the same threshold per rule). A mass-stale
+rule with ZERO live findings anywhere keeps refusing exactly as
+before -- unchanged from the pre-T-1579 behavior for the genuinely
+degraded case, and unchanged for every rule that never hits the
+mass-invalidation threshold in the first place.
+
+`docs/modules/gates.md`'s WAIVE004 incident writeup gained a
+"Refinement (T-1579)" paragraph describing the same self-heal logic.
+`docs/design/check-fix-engine.md` was in scope but needed no edit --
+its "no threshold loosening" anti-goal section describes a different
+mechanism (baseline/ratchet comparison) this change does not touch.
+
+Residual, disclosed rather than forced (same shape as T-1577's Done
+report): a `--ticket T-1579`-scoped `frob check` sees SCOPE001/SCOPE002
+noise against 3 files T-1581 touched in this same worktree
+(`docs/modules/gates_e501_autofix.md`, `src/frob/gates/_fmt_
+directives.py`, `tests/test_gates_fix_engine.py`) because T-1581's own
+code commit (90d65fc2) did not include "T-1581" in its subject line --
+T-0108's cross-ticket SCOPE001 exemption keys off a `T-\d{4}` reference
+in the attributing commit's subject, and that commit predates this
+observation (fixing it now would mean amending an already-referenced,
+already-Done-reported commit, which the git safety protocol forbids
+without an explicit user request). `_fix_engine.py` itself is exempt
+from this since T-1579's own declared scope covers it directly.
+`frob check --land-parity` -- the actual land-sweep-equivalent check --
+reports CLEAN (0 unscoped errors) against the current combined
+worktree tree, confirming this is per-ticket-scoped-check noise from
+multi-ticket-worktree sequencing, not a real land blocker.
+
+Separately, while verifying T-1579's own gates, found and fixed one
+more instance of the SAME ambiguous-scope-coverage gap T-1577's own
+edit to `_waive.py` exposed (`_WAIVE004_STRUCTURALLY_UNVERIFIABLE_
+RULES` ambiguously covered by 3 open tickets' scopes at once,
+T-1577/T-1342/T-1339) -- resolved with an explicit `frob:ticket T-1577`
+directive, committed under T-1577's own scope (`_waive.py` is not in
+T-1579's declared scope) as a small follow-up commit
+(f90842a5), not folded into this ticket's own changes.
+
+### Changed
+```
+ docs/modules/gates.md              |  72 ++++++++++----
+ docs/modules/gates_e501_autofix.md |  31 ++++--
+ src/frob/gates/_fix_engine.py      | 181 +++++++++++++++++++++++----------
+ src/frob/gates/_fmt_directives.py  |  10 +-
+ src/frob/gates/_waive.py           |  37 ++++++-
+ tests/test_gates.py                | 103 +++++++++++++++++++
+ tests/test_gates_fix_engine.py     |  78 +++++++++++++++
+ tickets.md                         | 198 ++++++++++++++++++++++++++++++++++++-
+ 8 files changed, 626 insertions(+), 84 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_proceeds` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 1135 warning(s), 785 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1580 -->
 ```yaml
 id: T-1580
 title: fold docs/modules/gates_e501_autofix.md into docs/modules/gates.md
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-05'
@@ -6867,16 +7140,102 @@ scope:
 - docs/modules/gates_e501_autofix.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
 T-1547's E501 Tier-A auto-fix handler doc landed as a standalone page (docs/modules/gates_e501_autofix.md) because docs/modules/gates.md -- home to every other Tier-A handler's own writeup -- was under an in-progress T-1205 lease for T-1547's whole duration. T-1205 has landed and the lease is clear: fold that page's content into gates.md's existing '--fix Tier-A deterministic auto-fix handlers' section (matching the SYS100/SYS104 T-1531 precedent's own subsection shape), then delete the standalone page.
 
+## Done report
+
+Folded `docs/modules/gates_e501_autofix.md`'s two writeups
+(`fix_e501_merge_introduced` T-1547, `fix_cov002_ticket_directive_
+insertion` T-1548 including T-1581's comment-leader-resolution
+addition) into `docs/modules/gates.md`'s existing "`--fix` Tier-A
+deterministic auto-fix handlers" section, as two new `###` subsections
+inserted right before the existing SYS100/SYS104 (T-1531) subsection --
+matching that subsection's own shape/heading level, per the ticket's
+own precedent. Updated the `frob:describes` anchors and the two
+`frob:doc` directives in `src/frob/gates/_fix_engine.py` (on
+`fix_e501_merge_introduced` and `fix_cov002_ticket_directive_
+insertion`) to point at the new `gates.md` anchors instead of the
+deleted page. Then deleted `docs/modules/gates_e501_autofix.md`.
+
+**Deletion-filter declaration**: `docs/modules/gates_e501_autofix.md`
+deleted, no `frob:waive` directives present in the deleted file
+(confirmed via `grep -n "frob:waive" docs/modules/gates_e501_autofix.md`
+before deletion -- zero matches, nothing to re-declare).
+
+Mid-ticket, `frob check --only gates-fast --ticket T-1580` surfaced a
+real, pre-existing bug unrelated to this ticket's own diff: `main` had
+moved forward with a land (T-1518, landed before this session touched
+this worktree) whose own COV002 auto-fix reintroduced the EXACT
+Python-style-directive-into-`design/frob.strata` corruption T-1581
+(this same session's earlier ticket) fixes going forward -- a hand-
+repair commit for THAT specific instance (5bdf02c3, "stop the COV002
+auto-fix from corrupting non-Python files at land") had already landed
+to `main` by the time I checked, so merging `main` again (after
+waiting for an in-flight coordinator land, T-1279, to finish and the
+tip to stabilize, per playbook section 1 step 0) picked up the repair
+directly -- `design/frob.strata` parses cleanly again, and the
+resulting cascade of ~40+ misattributed DRIFT/COV/PARSE findings this
+session's `frob check` runs briefly showed is gone. That merge also
+conflicted in `src/frob/app/ticket_runner/_land_cmd.py` (this session's
+own T-1578 natives-preflight edit vs. main's own interim `COV002`
+Tier-A exclusion workaround for the same corruption bug) -- resolved by
+keeping BOTH: the COV002 exclusion stays until T-1581's own land
+reverts it (avoiding a race between two tickets landing in unknown
+order), and T-1578's natives-health check runs alongside it.
+
+Residual, disclosed rather than forced (same shape as this session's
+other Done reports): a `--ticket T-1580`-scoped `frob check` still
+shows ~21 COV002/COV001 findings and 3 SCOPE-family findings against
+files T-1577/T-1578/T-1579/T-1581 touched in this SAME worktree, plus
+several unrelated OTHER agents' concurrently-open tickets (T-1582,
+T-1396, T-1389, T-1264, T-1554, T-1533, T-1549, T-1545, T-1544, T-1342,
+T-1339 -- verified directly: `frob.gates._scope_covers` reports these
+paths as "ambiguously covered by N equally-specific open ticket
+scopes"). None of this is T-1580's own diff (docs-only, `docs/modules/
+gates.md` + the delete) -- it is pre-existing scope-ambiguity noise
+from a busy parallel-drive session with many open tickets simultaneously
+declaring broad scope over the same large shared files, structurally
+outside what a docs-only ticket can or should fix. `frob check
+--land-parity` -- the actual land-sweep-equivalent check -- reports
+CLEAN (0 unscoped errors) against the current worktree tree both before
+and after this ticket's own commit, confirming none of this blocks a
+real land.
+
+### Changed
+```
+ docs/modules/gates.md                     | 187 ++++++++++++--
+ docs/modules/gates_e501_autofix.md        |  77 ------
+ docs/modules/perf.md                      |  39 +++
+ src/frob/app/ticket_runner/_land_cmd.py   |  51 +++-
+ src/frob/gates/__init__.py                |  59 +++++
+ src/frob/gates/_fix_engine.py             | 198 ++++++++++-----
+ src/frob/gates/_fmt_directives.py         |  10 +-
+ src/frob/gates/_waive.py                  |  37 ++-
+ tests/test_gates.py                       | 139 +++++++++++
+ tests/test_gates_fix_engine.py            |  78 ++++++
+ tests/test_ticket_work_and_land_finish.py |  61 +++++
+ tickets.md                                | 388 +++++++++++++++++++++++++++++-
+ 12 files changed, 1163 insertions(+), 161 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 553 warning(s), 798 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1581 -->
 ```yaml
 id: T-1581
 title: COV002 Tier-A insertion handler must use the target file's comment leader
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -6888,12 +7247,112 @@ scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates.py
 - docs/modules/gates.md
+- tests/test_gates_fix_engine.py
+- src/frob/gates/_fmt_directives.py
+- docs/modules/gates_e501_autofix.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: the real fix_cov002 regression tests live here, not tests/test_gates.py
+    as the ticket originally listed
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: src/frob/gates/_fmt_directives.py
+  reason: reuse marker_for's existing per-suffix comment-leader table instead of a
+    second hardcoded dict, and extend it with .strata
+  actor: logan
+  at: '2026-08-05'
+- op: add
+  glob: docs/modules/gates_e501_autofix.md
+  reason: the real fix_cov002_ticket_directive_insertion writeup lives here (gates.md
+    was under an in-progress lease at T-1548 land time)
+  actor: logan
+  at: '2026-08-05'
+evidence:
+- tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_strata_file_gets_slash_slash_leader
+- tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_rust_file_gets_slash_slash_leader
+- tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_python_file_gets_hash_leader
+- tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_unknown_extension_refuses_insertion
 threat: null
 component: null
 ```
 T-1548's fix_cov002_ticket_directive_insertion writes '# frob:ticket <id>' unconditionally. During T-1548's OWN land sweep it inserted that Python-style line into design/frob.strata (comment leader '//'), which broke strata parsing on main -- frob sys sync-interface died with ParseFailed until hand-repaired (commit on 2026-08-05). Fix: resolve the comment leader per target language (the dsl/lang layer already knows per-language comment syntax for directive PARSING -- reuse that, do not hardcode a second table), and refuse to insert into file types whose leader is unknown. Regression test: handler run against a .strata file and a .rs file inserts '//', against .py inserts '#', against an unknown extension inserts nothing.
+
+## Done report
+
+`fix_cov002_ticket_directive_insertion`'s insertion helper
+(`_insert_ticket_directive_above` in `src/frob/gates/_fix_engine.py`)
+hardcoded its own narrow suffix table (`.py` -> `#`, `.rs` -> `//`, any
+other suffix silently defaulted to `#`). During T-1548's own land this
+default fired against `design/frob.strata` (comment leader `//`),
+inserting a Python-style `#` directive that broke strata parsing on
+`main` until it was hand-repaired.
+
+Fix: the helper now resolves the leader via
+`frob.gates._fmt_directives.marker_for` -- the ONE shared per-suffix
+comment-leader table `frob fmt`'s own directive-canonicalization pass
+already maintains -- instead of a second, independently-drifting table.
+`marker_for`'s backing `_MARKERS` table gained a `.strata": "//"` entry
+as part of this fix (it did not cover `.strata` before either). A
+target suffix `marker_for` does not recognize now REFUSES the
+insertion outright (logs a warning, returns `False`) instead of
+guessing `#`.
+
+Moved the stray `frob:doc` directive that had drifted onto the private
+`_insert_ticket_directive_above` helper back onto the public
+`fix_cov002_ticket_directive_insertion` it documents (COV005/COV007
+caught this during verification) and updated
+`docs/modules/gates_e501_autofix.md`'s existing writeup with a new
+"Comment-leader resolution (T-1581)" subsection.
+
+Scope was narrowed/extended from the ticket's original declaration:
+the real regression tests live in `tests/test_gates_fix_engine.py`
+(not `tests/test_gates.py` as originally listed), the real doc
+writeup lives in `docs/modules/gates_e501_autofix.md` (not
+`docs/modules/gates.md`, which was under an in-progress T-1205 lease
+at T-1548 land time and still hosts only a forwarding note), and
+`src/frob/gates/_fmt_directives.py` needed touching to add the
+`.strata` entry and expose the one shared table to reuse. All three
+were added via `frob ticket scope --add` with reasons recorded in the
+ledger.
+
+One residual, disclosed rather than forced: `frob sys sync-interface`
+picked up the new `TestInsertTicketDirectiveAboveCommentLeader` test
+class as SYS104 drift against `design/frob.strata` (a new public
+testsuite symbol). `design/frob.strata` is currently leased by the
+in-progress T-1220, so this ticket could not add it to scope
+(`ScopeLeaseConflict`) or commit the sync fix itself. `frob check
+--only sys --ticket T-1581` accordingly reports one SELFAUDIT001
+finding for this; `frob check --land-parity` reports CLEAN (0 unscoped
+errors) against the current worktree tree, confirming this specific
+drift is checkpoint-exempt / land's own pre-land Tier-A sweep (which
+runs `frob sys sync-interface` unconditionally) will resolve it at
+land time once T-1220's lease clears -- no manual escalation needed
+beyond this disclosure.
+
+### Changed
+```
+ docs/modules/gates_e501_autofix.md | 31 +++++++++++----
+ src/frob/gates/_fix_engine.py      | 56 ++++++++++++++++++---------
+ src/frob/gates/_fmt_directives.py  | 10 ++++-
+ tests/test_gates_fix_engine.py     | 78 ++++++++++++++++++++++++++++++++++++++
+ tickets.md                         | 29 +++++++++++++-
+ 5 files changed, 177 insertions(+), 27 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_strata_file_gets_slash_slash_leader` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_rust_file_gets_slash_slash_leader` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_python_file_gets_hash_leader` (pytest node id, verified passing when recorded)
+- `tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_unknown_extension_refuses_insertion` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 1115 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1582 -->
 ```yaml

@@ -1062,6 +1062,23 @@ still cannot swallow a different rule's finding):
   `SCOPE001`/`COV002`/`TODO001` `SCOPED_RUN_FLAKY_RULE_IDS` set already
   documents, just triggered by diff content rather than `--ticket` base
   drift.
+- **`WIRE001`/`SCOPE001`** (T-1577) join the set for the identical
+  diff-scoped reason as `DUP001`/`DUP002`/`AFFECT001`/`AFFECT002` above:
+  `WIRE001` (`frob.gates._wire`) only ever constructs a finding from a
+  diff's own added hunks -- "a newly-added symbol nothing outside its own
+  tests can reach" is structurally a diff-relative question, so a full
+  unscoped run's diff (whatever this invocation's base/head resolve to)
+  is essentially never the exact diff that introduced the waived symbol.
+  `SCOPE001` was already documented above (T-0753) as diff-scoped and
+  already carries the equivalent exemption for WAIVE004's OWN scoped-run
+  flakiness via `SCOPED_RUN_FLAKY_RULE_IDS`; enrolling it here closes the
+  matching full-run-side gap. `DEPR005`, `DEAD001`, and `REF002` were
+  audited for the same shape (T-1577) and do NOT qualify -- each
+  evaluates its full current state every run (a baseline-vs-current
+  reference-count compare, a repo-wide call-graph reachability walk, and
+  a repo-wide inbound-reference count, respectively), with no diff input
+  at all, so a "0 findings" read from any of them on a full run is a
+  genuine, trustworthy signal, not diff-scoping noise.
 
 A ratchet-to-error path via the T-0569/T-0594 waivable-warning pool is a
 natural follow-up once the known-flaky set above is characterized
@@ -3260,6 +3277,50 @@ straight through to the old reminder-only NATIVE001 behavior -- useful
 for a CI runner or sandbox that intentionally wants a stale/missing
 native to fail loudly rather than pay a rebuild inline.
 
+### Perf-reach content-staleness signal + land preflight (T-1578)
+
+<!-- frob:describes src/frob/gates/__init__.py::_perf_reach_degraded_marker -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_worktree_natives_verifiably_healthy -->
+
+NATIVE001 (above) only ever detects an UNIMPORTABLE native -- a `frob_
+core` that is CONTENT-STALE (source edited, artifact not rebuilt) but
+still loads fine is invisible to it, yet `frob.graph.callgraph`'s native
+fast path can still be resolving call edges against outdated compiled
+logic. This mattered for real: `frob.perf`'s reach-dependent rules
+(PERF008/PERF012, `frob.perf._loop_effects`/`_dup_spawn`) walk that same
+call graph, and every land's pre-land Tier-A pass runs `fix_
+waive004_stale_waiver`'s self-manufactured `run_gates()` inside the
+WORKTREE, where a stale `frob_core` is common -- the reach substrate then
+silently under-reports PERF008/PERF012 findings to zero, and only
+T-1323's mass-invalidation COUNT heuristic (above, in the `--fix` Tier-A
+section) saved live waivers from being misread as stale.
+
+Two-layer fix, matching the two places this gap actually bites:
+
+1. **Structural signal** (`docs/modules/perf.md#perf-reach-native-
+   staleness-signal-t-1578` has the full writeup): `_perf_reach_
+   degraded_marker` (`frob.gates.__init__`) checks `frob.strata.
+   stale_natives` for `frob_core` specifically, AFTER `_maybe_
+   autorebuild_natives` already had its chance to fix it -- `_build_
+   jobs` appends its `PERF_REACH_DEGRADED_SKIP_MARKER` name to
+   `GateStats.skipped` whenever `perf` is a selected gate and this
+   fires, so `_fix_engine._degraded_verification_reason`'s existing
+   "unexpected skip" branch (T-1323) now also catches this case --
+   "zero findings" and "could not analyze" become distinguishable for
+   perf's reach-dependent rules specifically, without actually skipping
+   perf_gate's OWN still-correct, native-independent PERF001-004 rules.
+2. **Land preflight**: `_worktree_natives_verifiably_healthy`
+   (`src/frob/app/ticket_runner/_land_cmd.py`) runs the SAME auto-rebuild
+   attempt `run_gates` itself would, then checks every declared native
+   for staleness/importability directly -- `_tier_a_pre_land_step` calls
+   this BEFORE `apply_tier_a_fixes`, and excludes `WAIVE004` from that
+   land's Tier-A batch entirely when it says no, at `_log.info` level.
+   This produces the IDENTICAL outcome `fix_waive004_stale_waiver`'s own
+   guards would have produced anyway (nothing deleted) -- but without
+   paying for a full, guaranteed-untrustworthy `run_gates()` pass first,
+   and without the scary per-land ERROR log that outcome used to leave
+   behind.
+
 ## Invariants
 
 <!-- frob:describes src/frob/gates/invariants.py::_Criticality -->
@@ -3809,24 +3870,43 @@ its finding message, so the handler just calls that existing remedy:
   handler manufactured for ITSELF actually was one, only that the
   CALLER hadn't scoped it.
 
-  The fix is two independent guards, either of which alone would have
-  caught this incident, applied BEFORE any deletion (never a partial
-  batch -- either guard trips, zero waivers are deleted that call):
-  `_degraded_verification_reason` refuses when the self-manufactured
-  `run_gates()` report carries a `NATIVE001` finding (the exact
-  stale-natives shape `_native_unavailable_report` already detects and
-  short-circuits `run_gates` to report) or an unexpected `GateStats.
-  skipped` entry (excluding the routine unscoped-run `scope`/`prework`
-  pair every call this handler ever makes produces); `_mass_
-  invalidation_rule` independently refuses when a single run proposes
-  deleting `_WAIVE004_MASS_INVALIDATION_THRESHOLD` (5) or more waivers
-  of the SAME rule at once -- the incident's own shape, and a signal
-  that needs no separately recorded baseline pool to compare against.
-  `_absorb_pre_land_fixes` ran WAIVE004 excluded (`exclude=("WAIVE004",)`)
-  as an interim mitigation between the incident and this fix landing;
-  it runs unexcluded again now that the handler guards itself.
-  `tests/test_gates.py::TestWaive004DegradedRunGuard` reproduces the
-  degraded-run and mass-invalidation shapes directly.
+  The fix is two independent guards, applied BEFORE any deletion:
+  `_degraded_verification_reason` refuses the ENTIRE batch when the
+  self-manufactured `run_gates()` report carries a `NATIVE001` finding
+  (the exact stale-natives shape `_native_unavailable_report` already
+  detects and short-circuits `run_gates` to report) or an unexpected
+  `GateStats.skipped` entry (excluding the routine unscoped-run `scope`/
+  `prework` pair every call this handler ever makes produces);
+  `_mass_invalidation_rules` independently flags every rule whose
+  candidates in a single run meet or exceed
+  `_WAIVE004_MASS_INVALIDATION_THRESHOLD` (5) -- the incident's own
+  shape, and a signal that needs no separately recorded baseline pool to
+  compare against. `_absorb_pre_land_fixes` ran WAIVE004 excluded
+  (`exclude=("WAIVE004",)`) as an interim mitigation between the incident
+  and this fix landing; it runs unexcluded again now that the handler
+  guards itself. `tests/test_gates.py::TestWaive004DegradedRunGuard`
+  reproduces the degraded-run and mass-invalidation shapes directly.
+
+  **Refinement (T-1579): mass-stale can self-heal when proven live.** As
+  originally landed, ANY mass-invalidation hit refused the whole batch
+  forever -- correct for a degraded run, but it also meant a rule whose
+  waivers become GENUINELY mass-stale (a detector tightened, a mass
+  refactor removed the pattern several waivers covered) could never be
+  cleaned by this handler again: every run re-flags the same waivers,
+  every run refuses. `_mass_invalidation_rules` now returns EVERY
+  mass-stale rule (not just the first), and each is judged independently
+  by `_rule_has_live_finding`: if this SAME self-manufactured run's
+  `report.violations` also contains at least one REAL (non-`WAIVE004`)
+  finding of that rule elsewhere in the tree, the detector demonstrably
+  ran and can still find it -- mass-staleness is then trustworthy, and
+  that rule's candidates proceed to deletion (still one rule's own
+  candidates at a time, still logged per waiver, still capped by the
+  same threshold). A mass-stale rule with ZERO live findings anywhere
+  keeps refusing exactly as before -- indistinguishable from the
+  degraded-run signature `_degraded_verification_reason` targets from
+  the structural direction. Every other, non-mass-stale rule's
+  candidates were never affected by this check either way, before or
+  after this refinement.
 
   A companion guard closes the same incident's OTHER half at the land
   layer itself, independent of which Tier-A handler is at fault: `frob
@@ -3977,6 +4057,77 @@ scope, the CLI wiring is a sibling ticket's. `tests/test_gates.py::
 TestFixEngineTierA`/`TestFixEngineTierABatch2` exercise every handler at
 the function level against real `GraphSnapshot`s/`TicketQueue`s,
 GIVEN/WHEN/THEN per each ticket's own acceptance criteria.
+
+### `fix_e501_merge_introduced` auto-fix (T-1547)
+
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_e501_merge_introduced -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::_merge_touched_python_files -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::_e501_lines_for_file -->
+
+`fix_e501_merge_introduced` (registered in `TIER_A_HANDLERS["E501"]`)
+closes the E501 item T-1531's own deferral list named: an over-long line
+a land-time MERGE introduces (as opposed to a pre-existing E501 finding
+anywhere else in the repo) gets a targeted `ruff format` pass, scoped to
+exactly the `.py` files that merge touched -- never a whole-tree `ruff
+format` sweep, which would re-litigate every unrelated pre-existing
+E501 finding in the repo.
+
+`_merge_touched_python_files` derives the touched set from `HEAD`'s own
+two-parent merge diff (`git diff --name-only HEAD^1 HEAD^2`) when `HEAD`
+is a real merge commit, or from uncommitted working-tree changes against
+`HEAD` (`git diff --name-only HEAD`) for the in-progress-merge shape
+`frob ticket land`'s own pre-land Tier-A phase runs in (the worktree has
+already `git merge main`d but not yet committed that merge). Distinct
+from `fix_fmt001_directive_wrap`, which only ever rewraps `frob:`-
+directive comment lines, never ordinary code.
+
+`_e501_lines_for_file` re-verifies E501 is actually gone (a scoped `ruff
+check --select E501 --output-format json` before and after the targeted
+format pass) before counting a file as fixed -- `ruff format` cannot
+always shorten every over-long line (an unbreakable string literal, for
+instance), so a file whose E501 lines survive the format pass is left as
+an ordinary, still-live E501 finding rather than misreported as fixed.
+
+### `fix_cov002_ticket_directive_insertion` auto-fix (T-1548)
+
+<!-- frob:describes src/frob/gates/_fix_engine.py::fix_cov002_ticket_directive_insertion -->
+<!-- frob:describes src/frob/gates/_fix_engine.py::_insert_ticket_directive_above -->
+
+`fix_cov002_ticket_directive_insertion` (registered in
+`TIER_A_HANDLERS["COV002"]`) closes a COV002 finding (a changed symbol
+with no `frob:ticket` edge to an open ticket and no covering ticket
+scope) by inserting `# frob:ticket <landing-id>` (leader resolved per
+the TARGET file's own language, see below) directly above the symbol --
+but ONLY when the caller supplies a real, currently OPEN `ticket_id`
+(the landing ticket, `None` outside a land context: this handler is a
+whole no-op then, per Tier-A's own never-guess posture) and the finding
+is against `working_diff(root, "main")` -- this land's own diff, the
+only diff this handler has any basis to attribute a fix to.
+
+This is the one Tier-A handler in this module whose fix genuinely
+depends on WHICH ticket is running the fix pass, which no other handler
+here needs -- `TIER_A_HANDLERS`' callable shape and
+`apply_tier_a_fixes`'s own signature both grew a `ticket_id: str | None`
+parameter for it (T-1548); every other handler ignores the new
+argument, unchanged behavior.
+
+**Comment-leader resolution (T-1581).** The insertion helper,
+`_insert_ticket_directive_above`, originally hardcoded its own narrow
+suffix table (`.py` -> `#`, `.rs` -> `//`, anything else defaulted
+silently to `#`). During T-1548's own land that default fired against
+`design/frob.strata` (leader `//`), writing a Python-style `#`
+directive into it and breaking strata parsing on `main` until it was
+hand-repaired. The handler now resolves the leader via
+`frob.gates._fmt_directives.marker_for` -- the ONE shared per-suffix
+comment-leader table `frob fmt`'s own directive-canonicalization pass
+already uses, extended to include `.strata` (`//`) as part of this fix
+-- instead of a second, independently-drifting table. A target suffix
+`marker_for` does not recognize now REFUSES the insertion outright
+(logs a warning, returns a no-op) rather than guessing `#`. Regression
+coverage: `tests/test_gates_fix_engine.py::
+TestInsertTicketDirectiveAboveCommentLeader` (`.strata` and `.rs`
+insert `//`, `.py` inserts `#`, an unrecognized suffix inserts
+nothing).
 
 ### SYS100/SYS104 `.strata` declaration auto-fix (T-1531)
 

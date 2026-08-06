@@ -1320,7 +1320,7 @@ def _e501_lines_for_file(root: Path, rel_file: str) -> set[int] | None:
     return lines
 
 
-# frob:doc docs/modules/gates_e501_autofix.md#fix_e501_merge_introduced-auto-fix
+# frob:doc docs/modules/gates.md#fix_e501_merge_introduced-auto-fix-t-1547
 # frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_introduced_targeted_format_applies  # noqa: E501
 # frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op  # noqa: E501
 # frob:ticket T-1547
@@ -1379,27 +1379,49 @@ def fix_e501_merge_introduced(root: Path, snapshot: GraphSnapshot) -> list[FixAp
 # unrelated change).
 # ---------------------------------------------------------------------------
 
-#: Per-suffix line-comment marker for the inserted `frob:ticket` directive
-#: -- same two-language table `fix_inv006_carried_waiver` already uses
-#: (`_INV006_LINE_COMMENT`), duplicated narrowly here rather than shared
-#: since the two tables' own docstrings describe different obligations
-#: (a carried waiver vs. a coverage directive) and could reasonably drift
-#: independently later.
-_COV002_LINE_COMMENT: dict[str, str] = {".py": "#", ".rs": "//"}
 
-
+# frob:tests \
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_stra\
+# ta_file_gets_slash_slash_leader
+# frob:tests \
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_rust\
+# _file_gets_slash_slash_leader
+# frob:tests \
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_pyth\
+# on_file_gets_hash_leader
+# frob:tests \
+# tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_unkn\
+# own_extension_refuses_insertion
+# frob:ticket T-1581
 def _insert_ticket_directive_above(
     root: Path, rel_file: str, line: int, ticket_id: str
 ) -> bool:
-    """Insert `# frob:ticket <ticket_id>` (or `//` for a `.rs` source, per
-    `_COV002_LINE_COMMENT`) as the new physical line immediately BEFORE
-    1-indexed `line` of `root/rel_file` -- the directive attaches to the
-    symbol whose definition starts at `line`, exactly where every other
-    hand-written `frob:ticket` directive in this repo already sits.
-    Returns `False` (a no-op) on any read/write failure or an
-    out-of-range `line`, never raises -- matching every other Tier-A
-    handler's "no rewrite is better than a bad one" posture."""
+    """Insert `# frob:ticket <ticket_id>` (leader resolved per target
+    language via `frob.gates._fmt_directives.marker_for` -- `//` for a
+    `.rs`/`.strata` source, `#` for `.py`, etc.) as the new physical line
+    immediately BEFORE 1-indexed `line` of `root/rel_file` -- the
+    directive attaches to the symbol whose definition starts at `line`,
+    exactly where every other hand-written `frob:ticket` directive in this
+    repo already sits. T-1581: this used to hardcode its own narrower
+    suffix table defaulting an unrecognized suffix to `#`, which is what
+    let T-1548's own land silently write a Python-style directive into a
+    `.strata` file (leader `//`) and break strata parsing on main; it now
+    reuses the one shared marker table instead of guessing, and REFUSES
+    (returns `False`) for a suffix `marker_for` does not recognize rather
+    than defaulting to `#`. Returns `False` (a no-op) on any read/write
+    failure, an out-of-range `line`, or an unknown suffix -- never raises,
+    matching every other Tier-A handler's "no rewrite is better than a bad
+    one" posture."""
+    from frob.gates._fmt_directives import marker_for
+
     path = root / rel_file
+    marker = marker_for(rel_file)
+    if marker is None:
+        _log.warning(
+            "COV002 auto-fix: no known comment leader for %r, skipping insertion",
+            rel_file,
+        )
+        return False
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -1408,8 +1430,6 @@ def _insert_ticket_directive_above(
     idx = line - 1
     if idx < 0 or idx > len(lines):
         return False
-    suffix = path.suffix
-    marker = _COV002_LINE_COMMENT.get(suffix, "#")
     newline = "\n"
     if lines and not lines[-1].endswith("\n"):
         newline = "\n"  # last-line-no-trailing-newline files still get one
@@ -1418,7 +1438,7 @@ def _insert_ticket_directive_above(
     return _write_text(path, "".join(lines))
 
 
-# frob:doc docs/modules/gates_e501_autofix.md#fix_cov002_ticket_directive_insertion-auto-fix-t-1548  # noqa: E501
+# frob:doc docs/modules/gates.md#fix_cov002_ticket_directive_insertion-auto-fix-t-1548  # noqa: E501
 # frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean  # noqa: E501
 # frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no_ticket_id_is_a_no_op  # noqa: E501
 # frob:ticket T-1548
@@ -1541,21 +1561,40 @@ def _degraded_verification_reason(report: GateReport) -> str | None:
     return None
 
 
-def _mass_invalidation_rule(candidates: list[tuple[str, int, str]]) -> str | None:
-    """The first target rule in `candidates` (each a `(file, line, rule)`
+def _mass_invalidation_rules(candidates: list[tuple[str, int, str]]) -> dict[str, int]:
+    """Every target rule in `candidates` (each a `(file, line, rule)`
     WAIVE004 deletion candidate) whose count meets or exceeds
-    `_WAIVE004_MASS_INVALIDATION_THRESHOLD`, or `None` if no rule does --
-    the T-1323 incident's own shape (one rule family's waivers ALL going
+    `_WAIVE004_MASS_INVALIDATION_THRESHOLD`, mapped to its count -- the
+    T-1323 incident's own shape (one rule family's waivers ALL going
     stale in the same run) treated as anomalous-zero-findings evidence in
     its own right, without needing a separately recorded baseline pool to
-    compare against."""
+    compare against. T-1579: returns EVERY rule meeting the threshold
+    (not just the first), since each is now judged independently against
+    `_rule_has_live_finding` rather than the whole batch refusing on the
+    first hit."""
     counts: dict[str, int] = {}
     for _file, _line, rule in candidates:
         counts[rule] = counts.get(rule, 0) + 1
-    for rule, count in counts.items():
-        if count >= _WAIVE004_MASS_INVALIDATION_THRESHOLD:
-            return rule
-    return None
+    return {
+        rule: count
+        for rule, count in counts.items()
+        if count >= _WAIVE004_MASS_INVALIDATION_THRESHOLD
+    }
+
+
+def _rule_has_live_finding(report: GateReport, rule: str) -> bool:
+    """T-1579: True if `report.violations` (the SAME self-manufactured run
+    `_mass_invalidation_rules` is judging) contains at least one REAL
+    finding of `rule` itself (not a `WAIVE004` finding ABOUT `rule`)
+    anywhere in the tree -- proof the detector for `rule` demonstrably
+    ran and can still find violations this pass. This is what tells a
+    genuinely mass-stale rule (detector tightened, mass refactor cleaned
+    up every site at once -- deletion should proceed) apart from a
+    degraded run silently under-reporting `rule` to zero everywhere
+    (T-1578's structural-degradation signal targets the same failure
+    shape from the other direction: making the degradation itself
+    visible rather than inferring it here from an absence)."""
+    return any(v.rule == rule for v in report.violations)
 
 
 def _is_single_line_waiver(line: str, rule: str) -> bool:
@@ -1599,12 +1638,17 @@ def _waive004_verified_candidates(
 ) -> list[tuple[str, int, str]] | None:
     """`fix_waive004_stale_waiver`'s own self-manufactured `run_gates()`
     call, split out to keep the caller under ARCH001's function-length
-    ceiling: `None` if the run errored, looked degraded
-    (`_degraded_verification_reason`), or showed a mass-invalidation
-    shape (`_mass_invalidation_rule`) -- any of the three means "delete
-    nothing", per this handler's prove-fresh-or-do-nothing contract
-    (T-1323). Otherwise the `(file, line, target_rule)` WAIVE004
-    deletion candidates from a verified-trustworthy run."""
+    ceiling: `None` if the run errored or looked degraded
+    (`_degraded_verification_reason`) -- either means "delete nothing at
+    all", per this handler's prove-fresh-or-do-nothing contract (T-1323).
+    Otherwise the `(file, line, target_rule)` WAIVE004 deletion
+    candidates from a verified-trustworthy run, with any rule that shows
+    a mass-invalidation shape (`_mass_invalidation_rules`) filtered back
+    OUT unless this same run also proves the detector still ran for that
+    rule (`_rule_has_live_finding`, T-1579) -- a rule failing that proof
+    has its candidates dropped individually; every other rule's
+    candidates (mass-stale-but-proven, or never mass-stale at all)
+    proceed."""
     from frob.gates import GateConfig, run_gates
 
     result = run_gates(GateConfig(root=str(root), gates=gates, ticket=ticket))
@@ -1635,19 +1679,55 @@ def _waive004_verified_candidates(
             continue
         candidates.append((violation.file, violation.line, target_rule))
 
-    mass_rule = _mass_invalidation_rule(candidates)
-    if mass_rule is not None:
-        _log.error(
-            "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one run "
-            "(>= %d threshold) -- treating as a degraded/under-reporting run, "
-            "deleting nothing",
-            sum(1 for _f, _l, rule in candidates if rule == mass_rule),
-            mass_rule,
-            _WAIVE004_MASS_INVALIDATION_THRESHOLD,
-        )
-        return None
+    return _drop_untrustworthy_mass_stale_candidates(candidates, report)
 
-    return candidates
+
+def _drop_untrustworthy_mass_stale_candidates(
+    candidates: list[tuple[str, int, str]], report: GateReport
+) -> list[tuple[str, int, str]]:
+    """T-1579: the per-rule mass-invalidation judgment half of
+    `_waive004_verified_candidates`, split out to keep that function
+    under ARCH001's line ceiling. For every rule `_mass_invalidation_
+    rules` flags, `_rule_has_live_finding` decides whether `report`
+    proves the detector for that rule demonstrably ran (keep its
+    candidates) or not (drop them) -- logged per rule either way. A rule
+    never flagged as mass-stale is untouched regardless."""
+    mass_rules = _mass_invalidation_rules(candidates)
+    untrustworthy_rules: set[str] = set()
+    for mass_rule, count in mass_rules.items():
+        if _rule_has_live_finding(report, mass_rule):
+            # This run's own violations prove the detector for
+            # `mass_rule` demonstrably ran and can still find it live
+            # elsewhere -- mass-staleness is trustworthy, not a
+            # degraded/under-reporting signature. Proceed for this rule
+            # (still one rule's own candidates at a time, still logged
+            # per waiver below via the normal deletion loop).
+            _log.warning(
+                "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one "
+                "run (>= %d threshold), but this run also found a LIVE %s "
+                "violation elsewhere -- the detector demonstrably ran; "
+                "proceeding with deletion (T-1579)",
+                count,
+                mass_rule,
+                _WAIVE004_MASS_INVALIDATION_THRESHOLD,
+                mass_rule,
+            )
+        else:
+            untrustworthy_rules.add(mass_rule)
+            _log.error(
+                "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one "
+                "run (>= %d threshold) and this run found NO live %s violation "
+                "anywhere -- treating as a degraded/under-reporting run, deleting "
+                "nothing for this rule",
+                count,
+                mass_rule,
+                _WAIVE004_MASS_INVALIDATION_THRESHOLD,
+                mass_rule,
+            )
+
+    if not untrustworthy_rules:
+        return candidates
+    return [c for c in candidates if c[2] not in untrustworthy_rules]
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -1682,14 +1762,24 @@ def fix_waive004_stale_waiver(
     genuine full run it manufactured itself, never a stale/ambient one.
 
     T-1323: prove-fresh-or-do-nothing. Before deleting anything, checks
-    that self-manufactured run for two structural degradation signals
+    that self-manufactured run for a structural degradation signal
     (`_degraded_verification_reason` -- stale/missing natives, any
-    skipped gate stage) and, after collecting candidates, for a mass-
-    invalidation shape (`_mass_invalidation_rule` -- one rule's waivers
-    ALL going stale together in a single run, the 2026-07-29 incident's
-    own signature). Either one aborts the ENTIRE batch -- zero waivers
-    deleted, not a partial subset -- rather than acting on a verification
-    run this handler cannot vouch for."""
+    skipped gate stage); either one aborts the ENTIRE batch -- zero
+    waivers deleted, not a partial subset -- rather than acting on a
+    verification run this handler cannot vouch for.
+
+    After collecting candidates, also checks for a mass-invalidation
+    shape (`_mass_invalidation_rules` -- one rule's waivers ALL going
+    stale together in a single run, the 2026-07-29 incident's own
+    signature) -- but T-1579 refined this from a whole-batch abort into a
+    PER-RULE escape: a mass-stale rule this same run also finds at least
+    one LIVE finding of elsewhere (`_rule_has_live_finding`) has
+    demonstrably had its detector run, so mass-staleness is trustworthy
+    and its candidates proceed to deletion; a mass-stale rule with ZERO
+    live findings anywhere keeps refusing exactly as before (the
+    degraded-run signature `_degraded_verification_reason` targets from
+    the other, structural direction). Every other, non-mass-stale rule's
+    candidates are never affected by this check either way."""
     del queue  # signature uniformity only, this handler re-runs the gates itself
     if gates or ticket is not None:
         return []
