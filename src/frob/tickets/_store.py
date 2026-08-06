@@ -51,6 +51,7 @@ from frob.tickets._models import (
     TicketError,
     _done_report_section_end,
     _find_done_report_heading,
+    replace_done_report_section,
 )
 
 # T-0458: `fcntl` is posix-only; `ledger_lock` degrades to a documented
@@ -1317,7 +1318,8 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
         return _parse_ledger(ledger.read_text(encoding="utf-8"))
     paths = _v2_glob(root) if mode == "v2" else _dir_glob(root)
     if mode == "v2":
-        cached = _read_index_cache(_index_path(root), paths)
+        cache_key_paths = _v2_cache_key_paths(paths)
+        cached = _read_index_cache(_index_path(root), cache_key_paths)
         if cached is not None:
             _log.debug("tickets: v2 index cache hit (%d ticket(s))", len(cached))
             return Ok(cached)
@@ -1328,13 +1330,58 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
             _log.error("tickets: load aborted, %s is malformed", path)
             return Err(parsed.danger_err)
         ticket = parsed.danger_ok
+        if mode == "v2":
+            ticket = _merge_sibling_done_report(ticket, path)
         if ticket.id in tickets:
             _log.error("tickets: duplicate id %s (%s)", ticket.id, path)
             return Err(TicketError.DuplicateId)
         tickets[ticket.id] = ticket
     if mode == "v2":
-        _write_index_cache(_index_path(root), paths, tickets)
+        _write_index_cache(_index_path(root), cache_key_paths, tickets)
     return Ok(tickets)
+
+
+# frob:ticket T-1587
+def _v2_cache_key_paths(ticket_paths: list[Path]) -> list[Path]:
+    """`ticket_paths` plus every existing sibling `done-report.md`, sorted
+    -- the staleness key `_read_index_cache`/`_write_index_cache` must use
+    now that a loaded `Ticket.body` carries its Done report
+    (`_merge_sibling_done_report`).
+
+    Keying on `ticket.md` alone would serve a cached body from before a
+    `done-report.md` write, since `set_done_report`'s v2 path never
+    touches `ticket.md` at all -- the report would appear only after some
+    unrelated edit happened to invalidate the cache."""
+    keyed = list(ticket_paths)
+    keyed.extend(
+        report
+        for path in ticket_paths
+        if (report := path.parent / "done-report.md").exists()
+    )
+    return sorted(keyed)
+
+
+# frob:ticket T-1587
+def _merge_sibling_done_report(ticket: Ticket, ticket_md: Path) -> Ticket:
+    """`ticket` with its v2 `done-report.md` spliced back into `body`.
+
+    v2 stores the Done report in its own file for lock independence
+    (`write_done_report`), but EVERY consumer -- close's substantive-report
+    check, evidence recovery, TICK006, the land ledger merge -- reads
+    `Ticket.body`. Without this merge they all silently see no report in a
+    v2 repo: `frob ticket close` refuses a ticket whose report was written
+    seconds earlier, and TICK006 goes blind. `write_ticket`'s v2 branch
+    splits it back out, so the round trip never duplicates the section
+    into `ticket.md`."""
+    report = ticket_md.parent / "done-report.md"
+    if not report.exists():
+        return ticket
+    text = report.read_text(encoding="utf-8")
+    if not text.strip():
+        return ticket
+    return ticket.model_copy(
+        update={"body": replace_done_report_section(ticket.body, text)}
+    )
 
 
 # frob:ticket T-1206
@@ -1462,7 +1509,9 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
             if parsed.is_err:
                 _log.error("tickets: load_archive aborted, %s is malformed", path)
                 return Err(parsed.danger_err)
-            ticket = parsed.danger_ok
+            # T-1587: same merge the active tree gets -- an archived
+            # ticket's Done report is what TICK006 resolves against.
+            ticket = _merge_sibling_done_report(parsed.danger_ok, path)
             if ticket.id in tickets:
                 _log.error("tickets: duplicate archived id %s (%s)", ticket.id, path)
                 return Err(TicketError.DuplicateId)
@@ -1614,10 +1663,20 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """
     mode = _store_mode(root)
     if mode == "v2":
+        # T-1587: `load_all` merges done-report.md back into `body`, so a
+        # load -> modify -> write round trip arrives here carrying the
+        # report. Split it back out (never write it into ticket.md) or the
+        # section would be duplicated on the next read and ticket.md would
+        # start contending with done-report.md writes again.
+        body, report_text = _split_done_report(ticket.body)
         with ticket_lock(root, ticket.id):
-            return atomic_write(
-                v2_ticket_path(root, ticket.id), _serialize_ticket(ticket)
+            written = atomic_write(
+                v2_ticket_path(root, ticket.id),
+                _serialize_ticket(ticket.model_copy(update={"body": body})),
             )
+            if written.is_err or report_text is None:
+                return written
+            return atomic_write(v2_done_report_path(root, ticket.id), report_text)
     with ledger_lock(root):
         if mode == "single":
             return _write_ticket_single_mode(root, ticket)

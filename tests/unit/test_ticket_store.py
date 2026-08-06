@@ -1161,9 +1161,19 @@ class TestSetDoneReport:
             tmp_path, "T-0001", why="v2 done report", base_ref="does-not-exist"
         )
         assert result.is_ok
-        # ticket.md's own body is untouched -- no '## Done report' spliced in.
-        assert "## Done report" not in result.danger_ok.body
-        assert result.danger_ok.body == _ticket_evidence().body
+        # ticket.md ON DISK is untouched -- no '## Done report' spliced in;
+        # that separation is the whole point of the v2 split.
+        on_disk = (d / "ticket.md").read_text(encoding="utf-8")
+        assert "## Done report" not in on_disk
+
+        # T-1587: the ticket handed BACK does carry the report in `body`,
+        # matching what the next load_all produces -- every consumer
+        # (close, evidence recovery, TICK006) reads it from there.
+        assert "## Done report" in result.danger_ok.body
+        assert "v2 done report" in result.danger_ok.body
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].body == result.danger_ok.body
 
         report_text = read_done_report(tmp_path, "T-0001")
         assert report_text is not None

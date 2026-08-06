@@ -400,7 +400,16 @@ def _store_done_report(
         report_write = write_done_report(root, ticket_id, report)
         if report_write.is_err:
             return Err(report_write.danger_err)
-        return Ok(ticket)
+        # T-1587: `ticket.md` on disk stays free of the report (that is the
+        # whole point of the v2 split), but the ticket handed BACK carries
+        # it in `body` -- exactly what the next `load_all` will produce
+        # (`_merge_sibling_done_report`). Returning the pre-write ticket
+        # instead made every caller reading `.body` see no report at all.
+        return Ok(
+            ticket.model_copy(
+                update={"body": replace_done_report_section(ticket.body, report)}
+            )
+        )
     updated = ticket.model_copy(
         update={"body": replace_done_report_section(ticket.body, report)}
     )

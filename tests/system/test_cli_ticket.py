@@ -196,7 +196,11 @@ class TestTicketRoundTrip:
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
 
-        ledger = tmp_path / "tickets.md"
+        # T-1553 made a fresh repo default to ledger v2, so this ticket's
+        # body lives in tickets/T-0001/ticket.md, not the v1 monofile.
+        ledger = tmp_path / "tickets" / "T-0001" / "ticket.md"
+        if not ledger.exists():
+            ledger = tmp_path / "tickets.md"
         assert ledger.exists()
         body = ledger.read_text()
         assert "attempt 1" in body

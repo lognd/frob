@@ -153,6 +153,26 @@ def pytest_configure(config: pytest.Config) -> None:
     restore_stale_journals(_REPO_ROOT)
 
 
+# frob:ticket T-1586
+@pytest.fixture(autouse=True)
+def _neutralize_inherited_color_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Drop `FORCE_COLOR`/`NO_COLOR` inherited from the developer's shell
+    before EVERY test.
+
+    `frob.logging.color.should_color` honors both (no-color.org
+    precedence), and a CLI subprocess a test spawns inherits the whole
+    environment -- so a shell exporting `FORCE_COLOR=3` (Claude Code and
+    several CI images do) makes every assertion on plain output text fail
+    with ANSI escapes embedded, while the same suite passes on a shell
+    without it. Deleting rather than setting `NO_COLOR` keeps the default
+    honest (not a TTY -> no color) AND leaves a test free to monkeypatch
+    either variable to exercise the color paths themselves."""
+    monkeypatch.delenv("FORCE_COLOR", raising=False)
+    monkeypatch.delenv("NO_COLOR", raising=False)
+
+
 # frob:ticket T-0926
 # frob:tests tests/unit/test_conftest_parse_reset.py::TestConftestParseReset.test_reset_before_each_test_isolates_partial_parse_state  # noqa: E501
 @pytest.fixture(autouse=True)
