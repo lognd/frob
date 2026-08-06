@@ -9825,7 +9825,7 @@ Plan (from T-1552's own Description):
 id: T-1632
 title: 'live-tracker citation regex lacks a left boundary: active_ticket=T-#### reads
   as a citation'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -9863,3 +9863,6 @@ Two further hardening points worth doing in the same pass:
 2. Add the boundary cases to the test suite directly: `active_ticket=T-XXXX` must NOT be a citation, `ticket="T-XXXX"` must be, and the same pair for `follow_up=`.
 
 Note this guard is doing exactly what it should in the general case -- T-1559 added it to stop a closing ticket orphaning waivers that name it, and that is valuable. This is a precision bug in an otherwise correct check, not an argument against the check.
+
+## Drop reason
+- 2026-08-06: refiling with placeholder ids: the body quoted a real ticket id inside a pattern example and was itself flagged as a live-tracker citation
