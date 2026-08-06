@@ -8846,3 +8846,38 @@ Specific things this drive learned to look for:
 - A waiver on a rule that structurally cannot fire (a diff-scoped rule judged on a full run) is noise, not an exception, and belongs in that rule's exemption list instead.
 
 Deliverable: every waiver classified, obsolete and cop-out waivers removed, and a count reported by category. A waiver left unexamined defeats the exercise.
+
+<!-- ticket:T-1615 -->
+```yaml
+id: T-1615
+title: 'frob ticket block leaves the ledger dirty: audit every ledger-writing verb
+  for auto-commit parity'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/**
+- src/frob/tickets/**
+- tests/**
+- docs/modules/tickets.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+frob ticket block writes its edge into the ledger and leaves the file dirty. Every sibling mutation verb auto-commits: start (T-1054), then new/drop/fail (T-1130), then close/evidence/requeue/done-report. block was missed.
+
+Consequence, observed directly on 2026-08-05: two block edges recorded back to back left tickets.md uncommitted on main, and the next `frob ticket land` refused with DirtyMain. The land is right to refuse -- a dirty root is exactly what its precheck exists to catch -- but the dirt was created by frob itself, silently, by a verb the caller had no reason to think left work behind.
+
+This is the same incident class T-1130 names in its own body: "commit before dispatching" was coordinator memory rather than something the tool guaranteed. Any verb that writes the ledger and does not commit it converts a routine command into a trap for whatever runs next.
+
+Fix: route block (and any other ledger-writing verb still missing it -- audit them all rather than fixing only this one) through commit_ticket_ledger_change, with the same --no-commit opt-out the other verbs expose for callers batching several writes.
+
+Audit list to check while here: block, unblock if it exists, scope, accept, evidence --replace, migrate, renumber, archive. For each, state whether it writes the ledger and whether it commits. A table in the Done report is the deliverable, not just the block fix -- the point is that no ledger-writing verb is left in this state.
+
+Test shape: for every ledger-writing verb, assert the working tree is CLEAN after the command (and dirty under --no-commit). A single parameterized test over the verb list makes a future verb that forgets this fail immediately.
