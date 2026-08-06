@@ -7169,3 +7169,34 @@ Filed by the coordinator after the originating agent's own draft of this ticket 
 
 ## Drop reason
 - 2026-08-06: duplicate of T-1670, which is the originating agent's own ticket -- it was renumbered from its draft id at land, not dropped; I searched for the pre-renumber draft id and wrongly concluded it was lost
+
+<!-- ticket:T-1672 -->
+```yaml
+id: T-1672
+title: A killed xdist worker aborts the run and silently leaves coverage.xml unrefreshed
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Observed 2026-08-06 running 'frob coverage --full' on main with two agents active.
+
+pytest addopts carry '-n auto', which spawns one worker per core (16 on this box). Under concurrent memory pressure the kernel killed gw15; xdist then raised INTERNALERROR (KeyError: <WorkerController gw15> in loadscope._assign_work_unit) and the run ended with exitstatus=3 after 8622 of 8654 tests had already passed. Because the pytest subprocess exited non-zero, coverage_refresh discarded the whole run: coverage.xml was NOT rewritten. Nearly eight minutes of work produced no artifact, and the ONLY visible symptom is a non-zero exit -- a caller that checks 'did coverage.xml change' rather than reading the log sees a silent no-op.
+
+Three defects, in priority order:
+
+1. WORKER COUNT IGNORES MEMORY. '-n auto' sizes the pool from core count alone. Size it from available memory as well (workers = min(cores, mem_available / per_worker_estimate)), and let 'frob coverage' / 'frob test' cap it explicitly. This box OOM-kills reliably at 16 workers under agent load.
+
+2. A DEAD WORKER SHOULD NOT DISCARD A COMPLETE RUN. Detect the INTERNALERROR/node-down signature and retry the unfinished work units -- serially if need be -- rather than throwing away 8622 passing results.
+
+3. THE FAILURE IS INDISTINGUISHABLE FROM A REAL ONE. A resource kill and a genuine suite failure both surface as 'exited 3'. Classify and report them differently: an environment-induced abort must say so explicitly, because treating it as a red suite sends the reader hunting for a regression that does not exist.
+
+Related: the WSL OOM class already recorded against concurrent agent dispatch.
