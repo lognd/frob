@@ -150,9 +150,7 @@ class TestSuiteResultLine:
             return self._reporter
 
     class _FakeConfig:
-        def __init__(
-            self, *, reporter: object | None, is_worker: bool = False
-        ) -> None:
+        def __init__(self, *, reporter: object | None, is_worker: bool = False) -> None:
             self.pluginmanager = TestSuiteResultLine._FakePluginManager(reporter)
             if is_worker:
                 self.workerinput = {"workerid": "gw0"}

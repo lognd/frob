@@ -2034,9 +2034,7 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
 
 
 # frob:ticket T-1593
-def _land_core_start_baseline(
-    root: Path, cfg: AppConfig
-):  # noqa: ANN201
+def _land_core_start_baseline(root: Path, cfg: AppConfig):  # noqa: ANN201
     """Background-baseline seam of `_land_core` (T-1593 split): starts the
     T-1463 pre-land baseline capture thread, snapshot-isolated so it is
     safe to run concurrently with `land()`'s own merge/checks -- pure

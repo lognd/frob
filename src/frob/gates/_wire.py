@@ -129,8 +129,6 @@ def _added_lines(
     return by_file
 
 
-
-
 def _new_callable_records(
     root: Path,
     snapshot: GraphSnapshot,

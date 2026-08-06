@@ -2666,7 +2666,7 @@ class TestDeadSymbolGate:
             "src/a.py",
             "from pydantic import BaseModel, field_validator\n\n\n"
             "class Foo(BaseModel):\n"
-            '    model_config = {}\n'
+            "    model_config = {}\n"
             "    x: str\n\n"
             '    @field_validator("x")\n'
             "    @classmethod\n"

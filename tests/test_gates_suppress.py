@@ -134,7 +134,9 @@ class TestMypyOracleCacheDir:
     ty-vs-mypy oracle disagree at random and reddening SUPPRESS001 tests
     only under load."""
 
-    def test_mypy_invocation_pins_cache_dir_under_root(self, tmp_path: Path) -> None:
+    def test_mypy_invocation_pins_cache_dir_under_root(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests src/frob/gates/_suppress.py::_mypy_diagnostics kind="unit"
         from frob.gates import _suppress
 
@@ -148,12 +150,8 @@ class TestMypyOracleCacheDir:
             # about the ARGV it builds, not the diagnostics it parses.
             return Err("stubbed: argv captured")
 
-        original = _suppress.guarded_subprocess_run
-        _suppress.guarded_subprocess_run = _fake_run
-        try:
-            _suppress._mypy_diagnostics(tmp_path)
-        finally:
-            _suppress.guarded_subprocess_run = original
+        monkeypatch.setattr(_suppress, "guarded_subprocess_run", _fake_run)
+        _suppress._mypy_diagnostics(tmp_path)
 
         assert captured, "mypy was never invoked"
         argv = captured[0]

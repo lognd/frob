@@ -227,7 +227,7 @@ class TestDoc006Config:
         _write(
             tmp_path,
             "docs/guide.md",
-            "Set `[profile] profile = \"rapid\"` for a small repo.\n",
+            'Set `[profile] profile = "rapid"` for a small repo.\n',
         )
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))

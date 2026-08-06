@@ -599,5 +599,3 @@ def _ts_import_table(program_node) -> dict[str, str]:  # noqa: ANN001
 
     visit(program_node)
     return table
-
-

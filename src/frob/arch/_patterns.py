@@ -552,8 +552,8 @@ def iter_type_switch_chains(
     `frob.arch._ocp`) still computes it locally, unchanged."""
     t: Tree = cast("Tree", tree)
     found: list[tuple[Node, str, int]] = []
-    for if_stmt in if_stmts if if_stmts is not None else _find_if_statements(
-        t.root_node
+    for if_stmt in (
+        if_stmts if if_stmts is not None else _find_if_statements(t.root_node)
     ):
         conditions = _elif_chain_conditions(if_stmt)
         if len(conditions) < _MIN_CHAIN_ARMS:
@@ -616,8 +616,8 @@ def _check_state_field_chain(
     threads a caller's own already-walked `_find_if_statements` result
     through instead of triggering a second full-subtree walk."""
     t: Tree = cast("Tree", tree)
-    for if_stmt in if_stmts if if_stmts is not None else _find_if_statements(
-        t.root_node
+    for if_stmt in (
+        if_stmts if if_stmts is not None else _find_if_statements(t.root_node)
     ):
         conditions = _elif_chain_conditions(if_stmt)
         if len(conditions) < _MIN_CHAIN_ARMS:
@@ -941,8 +941,8 @@ def _check_stringly_typed(
     already-walked `_find_if_statements` result through instead of
     triggering a second full-subtree walk."""
     t: Tree = cast("Tree", tree)
-    for if_stmt in if_stmts if if_stmts is not None else _find_if_statements(
-        t.root_node
+    for if_stmt in (
+        if_stmts if if_stmts is not None else _find_if_statements(t.root_node)
     ):
         conditions = _elif_chain_conditions(if_stmt)
         if len(conditions) < _MIN_STRINGLY_TYPED_LITERALS:
