@@ -265,11 +265,19 @@ def _tier_a_pre_land_step(
     # out-of-scope rewrite this ticket closes. When the touched set could
     # not be computed, FMT001 stays in the batch (unscoped, matching the
     # pre-T-1404 fallback the scoped fmt pass above also took).
+    # T-1581: COV002's insertion handler writes a Python-style
+    # `# frob:ticket <id>` comment whatever the target file's language is.
+    # It has already corrupted design/frob.strata (comment leader `//`)
+    # during two separate lands, each time breaking `frob sys
+    # sync-interface` on main until hand-repaired. Excluded from the
+    # pre-land batch until that handler resolves the leader per language;
+    # COV002 still REPORTS normally, it just cannot auto-edit here.
+    exclude = ("COV002",) + (("FMT001",) if touched_paths is not None else ())
     applied = apply_tier_a_fixes(
         worktree,
         snapshot_result.danger_ok,
         queue_result.danger_ok,
-        exclude=("FMT001",) if touched_paths is not None else (),
+        exclude=exclude,
         ticket_id=ticket_id,
     )
     if applied:
