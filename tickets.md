@@ -8443,6 +8443,7 @@ failed (SUITE-RESULT confirmed). `ruff check` clean on the touched file.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 5817 warning(s), 797 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1595 -->
 ```yaml
 id: T-1595
@@ -10233,7 +10234,7 @@ Acceptance: ten consecutive full-suite runs, each verified via its SUITE-RESULT 
 id: T-1636
 title: Fix gate:EXHAUST qualified-except-clause matching bug in mayraise resolver,
   drain EXHAUST+COV warnings
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -10254,6 +10255,19 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_qualified_except_clause_discharges_bare_named_leak
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_of_qualified_catch_type_is_normalized
+- tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_level_walks_exactly_to_root_returns_none
+- tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_outside_root_returns_none_via_value_error
+- tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_within_root_resolves
+- tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_subscript_call_target_is_not_resolved
+- tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_call_names_skips_unresolvable_subscript_call
+- tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
+- tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
+- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+- tests/test_vet.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged
 threat: null
 component: null
 ```
@@ -10497,3 +10511,48 @@ separately verified unscoped above).
 - tests: 12 passed (from 12 evidence id(s))
 - gates: 0 error(s), 1547 warning(s), 845 waived
 - error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1637 -->
+```yaml
+id: T-1637
+title: Manual draft refile silently discards evidence and Done reports; renumber already
+  exists and is undocumented
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner/**
+- docs/guides/agent-playbook.md
+- docs/modules/tickets.md
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+`frob ticket renumber <old> <new>` already exists and "rewrites one ticket's id everywhere". It is the correct primitive for turning a worktree draft id into a real one. Nothing documents that, so the recipe actually used -- five times on 2026-08-05/06, by the coordinator -- was a hand-rolled sequence:
+
+1. read the draft's body out of the worktree ledger
+2. `frob ticket new` on main with that body, capturing the new real id
+3. delete the draft's block from the worktree ledger
+4. string-swap every citation of the draft id in the ledger and in source
+
+That recipe is lossy and it lost data. Step 3 deletes the block that holds the ticket's EVIDENCE LIST and its DONE REPORT; step 2 creates a fresh ticket that has neither. The land then refuses with "missing evidence or a Done report", and the only way back is `git show <commit>~1:tickets.md` archaeology to recover 12 evidence ids and a 12KB Done report and re-record them by hand. That happened for T-1636. Earlier repeats of the same recipe were survivable only because those tickets' content had already reached main by other means.
+
+The recipe also has a second failure mode already hit twice: a blanket string-swap of the draft id renames the draft's OWN block instead of removing it, producing a duplicate of the real ticket in the worktree ledger.
+
+Deliverables:
+
+1. A first-class promotion path -- `frob ticket promote <draft-id>` (name negotiable) that allocates the next real id and performs the renumber atomically, carrying frontmatter, evidence, Done report, scope, and every citation across in one operation. This is the missing half of T-1622: that ticket asks worktree ids to be real from the start, this one makes existing drafts recoverable either way.
+
+2. Failing that, document `frob ticket renumber` as THE way to refile a draft, in docs/guides/agent-playbook.md next to the existing draft-loss guidance, so the manual recipe stops being reinvented.
+
+3. Make the lossy step impossible to take by accident: removing or overwriting a ledger block that carries a Done report or a non-empty evidence list should refuse, or at minimum warn loudly naming what is about to be discarded. The ledger already has post-splice integrity checks (`_post_splice_integrity_check`, T-1536) that refuse when an id would be LOST -- this is the same class of protection one level down, for a block's contents rather than its existence.
+
+Point 3 is the one that generalises. The ledger is the system of record for work that has already been done; discarding a Done report should be as hard as discarding a ticket.
