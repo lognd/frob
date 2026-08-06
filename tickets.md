@@ -5184,7 +5184,7 @@ INV006: T-1420 split _capability_typescript.py by pipeline phase, and the new _c
 id: T-1645
 title: TICK009 demands scope precision from queued tickets, before the touched set
   can be known
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -5370,7 +5370,6 @@ here and not investigated.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 0 error(s), 1059 warning(s), 851 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1646 -->
 ```yaml
 id: T-1646
