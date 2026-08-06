@@ -7025,6 +7025,8 @@ kind: feature
 origin: human
 created: '2026-08-05'
 priority: medium
+blocked_by:
+- T-1620
 parent: null
 tier: ticket
 sprint: null
@@ -7122,7 +7124,6 @@ T-1579's declared scope) as a small follow-up commit
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 1135 warning(s), 785 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1580 -->
 ```yaml
 id: T-1580
