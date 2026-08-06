@@ -307,17 +307,33 @@ def _tier_a_pre_land_step(
     # here when `_worktree_natives_verifiably_healthy` says no gets the
     # identical outcome (nothing deleted) for a fraction of the cost, at
     # INFO level instead of a scary ERROR every land.
-    exclude: tuple[str, ...] = ("COV002",) + (
+    # T-1592: WAIVE004 is excluded from the land path UNCONDITIONALLY.
+    # Deleting a waiver is cleanup, never a landing requirement, but doing
+    # it here has now caused three separate incidents (2026-07-29's 50
+    # PERF waivers; 2026-08-05's 55 across arch/strata/perf/graph/vet via
+    # the T-1579 escape; then 4 more DEPR005/DEAD001 that slipped UNDER
+    # the mass-invalidation threshold, which cannot see a rule holding
+    # fewer than `_WAIVE004_MASS_INVALIDATION_THRESHOLD` waivers at all).
+    # Every one traces to the same root: a worktree gates run whose
+    # analysis layer silently under-reports, which `_worktree_natives_
+    # verifiably_healthy` below does NOT reliably detect -- it answered
+    # "healthy" for the run that deleted those 4 while the perf gate was
+    # reporting zero PERF004 findings repo-wide.
+    #
+    # The blanket exclude goes away when a degraded-run signal actually
+    # fires for a silently under-reporting perf/reach substrate (T-1578
+    # covers stale/unimportable natives, not the zero-findings case).
+    # WAIVE004 still REPORTS on every `frob check`; only the land's
+    # unattended auto-delete is off.
+    exclude: tuple[str, ...] = ("COV002", "WAIVE004") + (
         ("FMT001",) if touched_paths is not None else ()
     )
     if not _worktree_natives_verifiably_healthy(worktree):
         _log.info(
             "ticket land: %s worktree natives stale/unimportable after "
-            "auto-rebuild attempt -- skipping this land's WAIVE004 self-run "
-            "(T-1578)",
+            "auto-rebuild attempt (T-1578)",
             ticket_id,
         )
-        exclude = (*exclude, "WAIVE004")
     applied = apply_tier_a_fixes(
         worktree,
         snapshot_result.danger_ok,
