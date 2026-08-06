@@ -5314,7 +5314,7 @@ than expanded into T-1490 silently.
 ```yaml
 id: T-1552
 title: 'ledger v2: delete v1 splice machinery once main is migrated'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -8449,7 +8449,7 @@ failed (SUITE-RESULT confirmed). `ruff check` clean on the touched file.
 id: T-1595
 title: 'Stale test assertions: coverage-fast Makefile dry-run + PERF001 fixture below
   TEST002 threshold'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
