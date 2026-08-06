@@ -61,6 +61,57 @@ _log = get_logger(__name__)
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 LEASES_DIRNAME = "frob-leases"
 
+# frob:ticket T-1680
+def _refuse_for_held_land_lock(root: Path, path: Path) -> Result[None, LeaseError]:
+    """The refusal `_land_flock_probe` returns when the land lock is held
+    by a live process (T-1680, split out for ARCH103): reads the holder
+    record purely to NAME the landing ticket in the message, so an
+    operator learns which land to wait on rather than only that some land
+    exists. An unreadable holder record still refuses -- the lock being
+    held is the fact that matters; the record only improves the wording."""
+    holder = _read_land_lock_holder_json(path)
+    landing_ticket = holder.get("ticket_id") if holder else None
+    _log.warning(
+        "tickets: %s refused -- a land is in progress for %s "
+        "(land.lock held by %s) -- retry after it completes",
+        root,
+        landing_ticket if landing_ticket else "an unknown ticket",
+        holder if holder is not None else "an unreadable/unwritten lock",
+    )
+    return Err(LeaseError.LandInProgress)
+
+
+# frob:ticket T-1680
+def _land_flock_probe(root: Path) -> Result[None, LeaseError]:
+    """The `flock` half of `refuse_if_land_in_progress` (T-1619), split out
+    to keep that function under the ARCH001 threshold (T-1680).
+
+    `Err(LandInProgress)` iff a LIVE process holds `LAND_LOCK_REL`. Every
+    other outcome is `Ok(None)`: no `fcntl` on this platform, no lock file
+    yet (a fresh checkout that has never landed), an unopenable file, or a
+    lock this process could itself acquire -- all of which mean "no live
+    land", and none of which may block an ordinary `frob ticket new`. The
+    acquire is a PROBE and is released immediately; the real land-side
+    critical section is `_land.py`'s own `_land_lock`."""
+    if fcntl is None:
+        return Ok(None)
+    path = root / LAND_LOCK_REL
+    if not path.exists():
+        return Ok(None)
+    try:
+        fd = os.open(path, os.O_RDWR)
+    except OSError:
+        return Ok(None)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        os.close(fd)
+        return _refuse_for_held_land_lock(root, path)
+    fcntl.flock(fd, fcntl.LOCK_UN)
+    os.close(fd)
+    return Ok(None)
+
+
 # frob:ticket T-1619
 # frob:doc docs/modules/tickets.md#land-exclusivity-lease-t-1619
 # Canonical home for `frob ticket land`'s advisory `flock` path (T-0577,
@@ -981,7 +1032,7 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
         if _proc_cwd(pid) != resolved_root:
             continue
         ticket_id = next(
-            (token for token in argv if _TICKET_ID_ARGV_RE.match(token)), None
+            (arg for arg in argv if _TICKET_ID_ARGV_RE.match(arg)), None
         )
         return (pid, ticket_id)
     return None
@@ -1038,37 +1089,9 @@ def refuse_if_land_in_progress(root: Path) -> Result[None, LeaseError]:
     is created by `_land_lock` on the land side, so a fresh checkout that
     has never landed anything has no lock file to probe at all, which must
     never block a first `frob ticket new`."""
-    if fcntl is not None:
-        path = root / LAND_LOCK_REL
-        if path.exists():
-            try:
-                fd = os.open(str(path), os.O_RDWR)
-            except OSError:
-                fd = None
-            if fd is not None:
-                try:
-                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                except OSError:
-                    holder = _read_land_lock_holder_json(path)
-                    os.close(fd)
-                    landing_ticket = holder.get("ticket_id") if holder else None
-                    _log.warning(
-                        "tickets: %s refused -- a land is in progress for %s "
-                        "(land.lock held by %s) -- retry after it completes",
-                        root,
-                        landing_ticket if landing_ticket else "an unknown ticket",
-                        holder
-                        if holder is not None
-                        else "an unreadable/unwritten lock",
-                    )
-                    return Err(LeaseError.LandInProgress)
-                else:
-                    # Acquired it -- no live flock holder. Release
-                    # immediately; this call is a probe, not a real lease
-                    # acquisition (`_land.py`'s `_land_lock` is the actual
-                    # land-side critical section this call never overlaps).
-                    fcntl.flock(fd, fcntl.LOCK_UN)
-                    os.close(fd)
+    probed = _land_flock_probe(root)
+    if probed.is_err:
+        return Err(probed.danger_err)
     found = _scan_for_live_land_process(root)
     if found is not None:
         pid, landing_ticket = found

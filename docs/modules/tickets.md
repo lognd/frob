@@ -2502,6 +2502,18 @@ import) -- so a `AlreadyLandedOnMain` refusal is a strong, well-targeted
 HINT, not a proof; the operator's own verification step is still real
 work, just no longer undirected work.
 
+**The signal is the real limitation (T-1675).** "No diff in the declared
+scope" is being asked to answer "was this already landed?", and it
+cannot: an empty scope-diff is equally consistent with *the work is
+already on main*, *the work landed outside its declared scope globs*, and
+*this ticket legitimately changed only docs or the ledger*. That is
+absence-of-evidence read as evidence-of-absence. T-1675 tracks deciding
+it positively instead -- establishing "already landed" by finding the
+ticket's content ON main (its commit, its directive edges, its evidence
+resolving there) -- at which point the check can be unconditional and the
+flag can go away. The rationale below explains why it is opt-in *today*,
+not why the design is right.
+
 **Deliberately opt-in, not wired into the default land path.** An early
 draft wired this into `_land_precheck` unconditionally and it regressed
 20 existing tests across this repo's own `test_ticket_land.py` suite: an

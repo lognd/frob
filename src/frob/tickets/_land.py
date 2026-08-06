@@ -2495,6 +2495,20 @@ def _check_already_landed(
     close` directly (`--skip-mutation-evidence` if TEST016 also reports
     an empty diff) instead of retrying the land.
 
+    OFF BY DEFAULT (`frob ticket land --check-already-landed` opts in),
+    and the reason is a measured false-positive rate, not timidity:
+    against this repo's own test/fixture population, an empty scope-diff
+    is ALSO the ordinary shape of a docs-only, ledger-only, or
+    Done-report-only ticket that never needed to touch a file matching
+    its declared scope. Refusing those by default would be a worse
+    false-positive rate than the confusion this check exists to replace.
+    An operator who already suspects the "this probably already landed
+    via a passenger" shape (the situation the incident hit three times)
+    opts in explicitly rather than meeting it as a surprise. T-1675
+    tracks the real fix: decide "already landed" by finding the ticket's
+    content ON main, positively, rather than inferring it from the
+    ABSENCE of a diff -- at which point this can be on unconditionally.
+
     A ticket with no declared `scope` at all is a no-op here (`Ok(None)`)
     -- an empty scope matches nothing by this repo's own `scope_matches`
     convention, so "no changes in an empty scope" is not evidence of
@@ -2805,21 +2819,9 @@ def _land_precheck(
     main's current branch name -- everything `land` must check BEFORE any
     git mutation.
 
-    T-1618: `check_already_landed` (default `False`, `frob ticket land
-    --check-already-landed`) is a DELIBERATELY opt-in extra preflight
-    (`_check_already_landed`) that refuses early, with a specific
-    diagnostic and a `frob ticket close` recipe, when the ticket's own
-    declared scope has no changes on this branch at all -- the common
-    consequence of the T-1618 passenger-ticket class the check above this
-    one now prevents going forward. Off by default: measured against this
-    repo's own test/fixture population, an empty scope-diff is also the
-    ordinary shape of a docs-only, ledger-only, or Done-report-only
-    ticket that never needed to touch a file matching its own declared
-    scope -- refusing those by default would be a worse false-positive
-    rate than the confusion this check exists to replace. An operator who
-    already suspects the "this probably already landed via a passenger"
-    shape (the exact situation the incident hit three times) opts in
-    explicitly instead of hitting it as a surprise."""
+    `check_already_landed` (T-1618) is an opt-in extra preflight; see
+    `_check_already_landed` for what it decides and why it is off by
+    default (T-1680 moved the rationale onto the check itself)."""
     same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
     if same_path_check.is_err:
         return Err(same_path_check.danger_err)

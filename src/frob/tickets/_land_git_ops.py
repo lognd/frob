@@ -415,10 +415,22 @@ def _deletion_glob_too_broad(glob: str) -> bool:
     single top-level directory silently authorizes deleting ANYTHING
     under it -- exactly the stale-base incident class this filter exists
     to catch. A more specific glob (`src/frob/`, `src/frob/tickets/**`)
-    is still trusted."""
+    is still trusted.
+
+    T-1680: breadth is decided by what the pattern MATCHES, not by whether
+    it happens to contain a slash. A pattern with no wildcard
+    metacharacter is EXACT -- it authorizes precisely one path, the
+    narrowest authorization there is, and is trusted whether or not it
+    sits at the repo root. The old `"/" not in stripped` test rejected
+    `FROBLEMS.md`/`tickets.md`/`README.md` as "over-broad" while trusting
+    `src/frob/tickets/**`, which matches hundreds of files, and left
+    root-level deletions unlandable: the refusal named the scope entry
+    that already authorized the file and told the operator to add it."""
     stripped = glob.removesuffix("/**").removesuffix("/*").rstrip("/")
     if stripped in ("", ".", "*"):
         return True
+    if not any(ch in glob for ch in "*?["):
+        return False
     return "/" not in stripped
 
 

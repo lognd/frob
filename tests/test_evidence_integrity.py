@@ -825,6 +825,39 @@ class TestD12DeletionFilterBroadScope:
 
         assert _deletion_owned("anything/at/all.py", (".",)) is False
 
+    # frob:ticket T-1680
+    def test_exact_root_level_file_authorizes_its_own_deletion(self) -> None:
+        """T-1680 REGRESSION LOCK: an exact literal path is the NARROWEST
+        authorization there is and must be trusted, at the repo root as
+        much as anywhere else.
+
+        The old rule asked whether the pattern contained a '/', so every
+        root-level file read as an over-broad glob. That made deleting any
+        root-level file unlandable, and the refusal printed the scope entry
+        that already authorized the file while insisting it was missing."""
+        from frob.tickets._land_merge import _deletion_owned
+
+        assert _deletion_owned("FROBLEMS.md", ("FROBLEMS.md",)) is True
+        assert _deletion_owned("tickets.md", ("tickets.md", "docs/**")) is True
+        # An exact path authorizes ONLY itself -- narrow, not permissive.
+        assert _deletion_owned("README.md", ("FROBLEMS.md",)) is False
+
+    # frob:ticket T-1680
+    def test_wildcard_breadth_rules_are_unchanged(self) -> None:
+        """T-1680 must not loosen the D-12 guard it fixes: a bare
+        top-level directory glob still authorizes nothing, while a
+        sufficiently deep glob is still trusted."""
+        from frob.tickets._land_git_ops import _deletion_glob_too_broad
+
+        assert _deletion_glob_too_broad("src/**") is True
+        assert _deletion_glob_too_broad("docs/**") is True
+        assert _deletion_glob_too_broad("*") is True
+        assert _deletion_glob_too_broad(".") is True
+        assert _deletion_glob_too_broad("src/frob/tickets/**") is False
+        # Exact paths, wildcard-free, at any depth.
+        assert _deletion_glob_too_broad("FROBLEMS.md") is False
+        assert _deletion_glob_too_broad("src/frob/tickets/_land.py") is False
+
 
 # ---------------------------------------------------------------------------
 # D-05: land() re-verifies evidence against the post-merge worktree tree
