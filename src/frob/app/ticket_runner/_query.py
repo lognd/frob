@@ -471,23 +471,27 @@ def _active_large_glob_warnings(
     *,
     breadth: tuple[int, tuple[str, ...]] | None = None,
 ) -> list[str]:
-    """Large-glob-warning nudges (T-0453) for every ticket currently
-    holding a scope-lease (in-progress) or waiting to (queued/planned) --
-    the full per-ticket detail `frob check`'s TICK009 (T-0714) renders one
-    line per finding for. `frob ticket doable` itself only shows a single
-    count line (`_render_scope_breadth_summary`) -- this function is the
-    shared detail computation both consume. Pass a precomputed `breadth`
-    (`scope_breadth_context(root)`) so the breadth walk runs once for the
-    whole listing, not once per ticket."""
+    """Large-glob-warning nudges (T-0453) for every ticket PLANNED or
+    IN_PROGRESS -- the full per-ticket detail `frob check`'s TICK009
+    (T-0714) renders one line per finding for. `frob ticket doable` itself
+    only shows a single count line (`_render_scope_breadth_summary`) --
+    this function is the shared detail computation both consume. Pass a
+    precomputed `breadth` (`scope_breadth_context(root)`) so the breadth
+    walk runs once for the whole listing, not once per ticket.
+
+    T-1645: a QUEUED ticket is deliberately excluded, matching TICK009's
+    own exemption (`frob.gates._tickets_gate._tick009_scope_breadth_
+    nudges`) -- its declared scope is a prediction made before anyone has
+    opened the code, not evidence of an over-broad touched set worth
+    nudging on yet. This summary's whole point is to describe the same
+    outstanding-finding count TICK009 will report on the next `frob
+    check`; the two would silently drift apart if only one of them
+    dropped the QUEUED case."""
     from frob.tickets import TicketState, large_glob_warnings
 
     warnings: list[str] = []
     for t in sorted(queue.tickets.values(), key=lambda t: t.id):
-        if t.state in (
-            TicketState.IN_PROGRESS,
-            TicketState.QUEUED,
-            TicketState.PLANNED,
-        ):
+        if t.state in (TicketState.IN_PROGRESS, TicketState.PLANNED):
             warnings.extend(large_glob_warnings(t, root, breadth=breadth))
     return warnings
 

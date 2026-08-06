@@ -8119,6 +8119,7 @@ class TestLandPlanQueueDrainCommitsDurable:
 
 
 # frob:ticket T-1515
+# frob:ticket T-1634
 class TestLandLockHolderMetadataAndTimeout:
     """T-1515: `_land_lock` now writes pid/session/start-time into
     land.lock's own content on acquisition, and refuses (raising
@@ -8205,6 +8206,102 @@ class TestLandLockHolderMetadataAndTimeout:
                     pass  # pragma: no cover -- must never be reached
             assert excinfo.value.holder is not None
             assert excinfo.value.holder["session_id"] == "foreign-orphan"
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_loc\
+    # k_from_a_confirmed_dead_pid_is_reclaimed_and_logged
+    # frob:ticket T-1634
+    def test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-1634: a land.lock file naming a pid that does not correspond
+        to any running process, with NO real `flock` actually held (the
+        orphaned-file-only shape a killed/SIGKILLed land leaves behind --
+        the OS already released the real OS-level lock the instant that
+        process exited), is proceeded through IMMEDIATELY by a fresh
+        `_land_lock` acquisition -- never waits, never raises
+        `LandLockTimeout` -- and logs a WARNING disclosing the dead
+        holder's identity, closing the 'a human has to notice and delete
+        this by hand' gap T-1634 was filed against."""
+        import json
+        import logging
+
+        from frob.tickets._land import _LAND_LOCK_REL, _land_lock
+
+        dead_pid = min(os.getpid() * 7 + 999983, 2**22)
+        path = tmp_path / _LAND_LOCK_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "pid": dead_pid,
+                    "session_id": "orphaned-session",
+                    "started_at": "2026-08-04T00:00:00+00:00",
+                }
+            )
+            + "\n"
+        )
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._land"):
+            with _land_lock(tmp_path, timeout=5.0):
+                pass
+
+        reclaim_lines = [
+            r.message
+            for r in caplog.records
+            if "reclaiming orphaned land.lock" in r.message
+        ]
+        assert reclaim_lines, caplog.text
+        assert str(dead_pid) in reclaim_lines[0]
+        assert "orphaned-session" in reclaim_lines[0]
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_loc\
+    # k_naming_a_genuinely_live_pid_still_refuses
+    # frob:ticket T-1634
+    def test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1634's reclaim must never override a genuinely-held OS lock:
+        a land.lock naming THIS test process's own (genuinely live) pid,
+        with the flock ACTUALLY held via a separate fd, still times out
+        exactly as before -- liveness alone is never a substitute for the
+        real `flock`."""
+        import fcntl
+        import json
+
+        from frob.tickets._land import (
+            _LAND_LOCK_REL,
+            LandLockTimeout,
+            _land_lock,
+        )
+
+        path = tmp_path / _LAND_LOCK_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX)
+        os.write(
+            holder_fd,
+            (
+                json.dumps(
+                    {
+                        "pid": os.getpid(),
+                        "session_id": "genuinely-live",
+                        "started_at": "2026-08-04T00:00:00+00:00",
+                    }
+                )
+                + "\n"
+            ).encode("utf-8"),
+        )
+        try:
+            with pytest.raises(LandLockTimeout) as excinfo:
+                with _land_lock(tmp_path, timeout=0.2):
+                    pass  # pragma: no cover -- must never be reached
+            assert excinfo.value.holder is not None
+            assert excinfo.value.holder["session_id"] == "genuinely-live"
         finally:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)

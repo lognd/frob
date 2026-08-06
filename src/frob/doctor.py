@@ -73,7 +73,6 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
-import os
 from importlib.metadata import version
 from pathlib import Path
 
@@ -295,14 +294,21 @@ def scan_stale_ticket_leases(root: Path) -> tuple[str, ...]:
 
 # frob:doc docs/guides/install.md#live-land-process-report-t-1515
 # frob:ticket T-1515
+# frob:ticket T-1634
 class LiveLandProcess(BaseModel):
     """One holder observed in `root`'s `.frob/land.lock` content (T-1515):
     who is (or, if `alive` is `False`, WAS -- an orphaned/crashed holder
     that never released the file) currently running `frob ticket land`
-    against this repo. `alive` is a best-effort liveness probe (`os.kill
-    (pid, 0)`, POSIX-only) -- `None` when it could not be determined (a
-    non-POSIX platform, or a `PermissionError` probing a pid this process
-    does not own)."""
+    against this repo. `alive` is a best-effort liveness probe
+    (`frob.tickets._land._probe_land_lock_pid_liveness`, POSIX-only) --
+    `None` when it could not be determined (a non-POSIX platform, or a
+    `PermissionError` probing a pid this process does not own). T-1634:
+    `alive is False` (CONFIRMED dead, never ambiguous) is informational,
+    not a health failure -- see `_assemble_doctor_report`'s `healthy`
+    computation. The dead holder's `flock` was already released by the
+    kernel the instant that process exited, so nothing is actually
+    blocked; the next real `_land_lock` acquisition self-heals the file's
+    stale content and logs its own WARNING reclaim line (T-1634)."""
 
     model_config = {}
 
@@ -314,10 +320,12 @@ class LiveLandProcess(BaseModel):
 
 # frob:doc docs/guides/install.md#live-land-process-report-t-1515
 # frob:ticket T-1515
+# frob:ticket T-1634
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
-# _read_land_lock_holder, a cross-module helper the resolver cannot see through, and \
-# os.kill, a stdlib call whose exact escaping type set is not in the curated table; \
-# the two known outcomes (ProcessLookupError, PermissionError/OSError) are caught below"
+# _read_land_lock_holder, a cross-module helper the resolver cannot see through -- the \
+# one raise path (a malformed/unreadable lock file) already returns None rather than \
+# raising, and _probe_land_lock_pid_liveness (T-1634) is a local, fully-typed pure \
+# function the resolver can already see through, not an opaque stdlib boundary"
 def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
     """T-1515: read `root`'s `.frob/land.lock` content (written by
     `frob.tickets._land._land_lock` on acquisition) and report who holds
@@ -327,8 +335,18 @@ def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
     live against this repo right now' a single `frob doctor` command
     instead of a human having to `ps`/`lsof` the lock file by hand before
     starting a new session (the exact orphaned-driver blind spot T-1495's
-    2026-08-04 incident hit)."""
-    from frob.tickets._land import _LAND_LOCK_REL, _read_land_lock_holder
+    2026-08-04 incident hit). T-1634: the liveness probe itself now lives
+    in `frob.tickets._land._probe_land_lock_pid_liveness` -- the SAME
+    confirmed_absent/ambiguous three-state notion `_land_lock`'s own
+    reclaim-logging (T-1634) and `frob.tickets._leases._probe_worktree_
+    liveness` (T-0782) already use, so this repo has exactly one pid-
+    liveness rule for a land.lock holder, not a second copy re-derived
+    here."""
+    from frob.tickets._land import (
+        _LAND_LOCK_REL,
+        _probe_land_lock_pid_liveness,
+        _read_land_lock_holder,
+    )
 
     path = root / _LAND_LOCK_REL
     holder = _read_land_lock_holder(path)
@@ -343,28 +361,32 @@ def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
         or not isinstance(started_at, str)
     ):
         return None
-    alive: bool | None
-    try:
-        os.kill(pid, 0)
-        alive = True
-    except ProcessLookupError:
-        alive = False
-    except (PermissionError, OSError):
-        alive = None
+    alive = _probe_land_lock_pid_liveness(pid)
     return LiveLandProcess(
         pid=pid, session_id=session_id, started_at=started_at, alive=alive
     )
 
 
 # frob:ticket T-1515
+# frob:ticket T-1634
 def _live_land_process_remediation(proc: LiveLandProcess) -> str:
-    """Remediation hint naming the observed land.lock holder (T-1515)."""
+    """Remediation hint naming the observed land.lock holder (T-1515).
+    T-1634: called for `alive in (False, None)` -- a CONFIRMED-dead holder
+    (`False`) is disclosed but self-healing (the next `frob ticket land`
+    reclaims and logs it automatically, and does not block `healthy`
+    anymore); an AMBIGUOUS probe (`None`) is NOT self-healing (this repo
+    cannot confirm the holder is actually gone, so it still blocks
+    `healthy` exactly like before, per `_assemble_doctor_report`'s own
+    confirmed_absent/ambiguous split). Never called for `alive is True`
+    -- that is a normal, informational, in-flight land, not a finding."""
     if proc.alive is False:
         return (
-            f"land.lock is held by pid {proc.pid} (session {proc.session_id}, "
+            f"land.lock names pid {proc.pid} (session {proc.session_id}, "
             f"started {proc.started_at}) which is NOT running -- an orphaned "
-            "lock file from a crashed/killed land; remove `.frob/land.lock` "
-            "by hand after confirming no other process is actually mid-land"
+            "lock file from a crashed/killed land; harmless (the OS already "
+            "released the underlying lock) and self-healing: the next `frob "
+            "ticket land` reclaims and overwrites it automatically, or run "
+            "`rm .frob/land.lock` by hand to clear it immediately"
         )
     return (
         f"land.lock is held by pid {proc.pid} (session {proc.session_id}, "
@@ -802,10 +824,14 @@ def _combined_remediation(
     ticket-lease hint (T-1131), venv-shim hint (T-1161), stale-binary-
     floor hint (T-1218), live-land-process hint (T-1515), or all joined --
     `None` only when every part is clean. T-1515: an ALIVE land process is
-    informational, not unhealthy (a real, in-flight `land()` is normal) --
-    only a DEAD (orphaned) holder contributes here; see
-    `_assemble_doctor_report`'s `healthy` computation for the matching
-    split."""
+    informational, not unhealthy (a real, in-flight `land()` is normal).
+    T-1634: a CONFIRMED-dead (orphaned) holder still contributes a
+    disclosure line here (so it is never silently dropped from the
+    report), but no longer makes the OVERALL report unhealthy -- see
+    `_assemble_doctor_report`'s `healthy` computation, which now treats
+    only an AMBIGUOUS liveness probe as blocking, matching the
+    confirmed_absent/ambiguous split `frob.tickets._leases.
+    _probe_worktree_liveness` already draws."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
@@ -823,7 +849,7 @@ def _combined_remediation(
         parts.append(_venv_shim_remediation(venv_shims))
     if stale_binary:
         parts.append(stale_binary)
-    if live_land_process is not None and live_land_process.alive is False:
+    if live_land_process is not None and live_land_process.alive is not True:
         parts.append(_live_land_process_remediation(live_land_process))
     return " | ".join(parts) if parts else None
 
@@ -945,8 +971,15 @@ def _assemble_doctor_report(
     journal/ticket-edge/ticket-lease/venv-shim/stale-binary scans found
     something -- see `DoctorReport`'s own docstring for the per-field
     contract each of those checks documents. `live_land_process` (T-1515)
-    only affects `healthy` when its holder is DEAD (`alive is False`, an
-    orphaned lock) -- a genuinely live `land()` in flight is normal, not
+    only affects `healthy` when its holder's liveness is AMBIGUOUS
+    (`alive is None`) -- this repo genuinely cannot confirm the holder is
+    gone, so it stays a human-actionable finding. T-1634: a CONFIRMED-dead
+    holder (`alive is False`) no longer counts against `healthy` -- the
+    OS already released its `flock` the instant that process exited, so
+    nothing is actually blocked, and the next real `_land_lock`
+    acquisition self-heals the file's stale content on its own (logging a
+    WARNING when it does). A genuinely live `land()` in flight
+    (`alive is True`) was already, and remains, informational, not
     unhealthy."""
     healthy = (
         natives_healthy
@@ -957,7 +990,7 @@ def _assemble_doctor_report(
         and not stale_ticket_leases
         and not venv_shims
         and not stale_binary
-        and not (live_land_process is not None and live_land_process.alive is False)
+        and not (live_land_process is not None and live_land_process.alive is None)
     )
     return DoctorReport(
         frob_version=_frob_version(),

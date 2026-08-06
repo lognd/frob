@@ -96,6 +96,7 @@ def repo(tmp_path: Path) -> Path:
     return main_repo
 
 
+# frob:ticket T-1639
 class TestCrossTicketLeakage:
     """`land()` refuses when the branch carries a sibling ticket's own
     committed, still-open work -- unless explicitly overridden."""
@@ -272,4 +273,72 @@ class TestCrossTicketLeakage:
 
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
+        assert (repo / "src" / "fix.py").exists()
+
+    # frob:tests \
+    # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_queued_\
+    # sibling_scope_overlap_does_not_block
+    # frob:ticket T-1639
+    def test_queued_sibling_scope_overlap_does_not_block(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
+        # T-1639: the real 2026-08-06 incident shape -- a freshly filed,
+        # never-started (QUEUED) sibling declaring a scope that happens to
+        # cover a changed path must not refuse the land at all. A declared
+        # scope on an unstarted ticket is an intention, not a claim; only
+        # an IN_PROGRESS sibling (a real concurrent writer with real
+        # commits) may refuse.
+        queued = new_ticket(
+            repo, _spec("Freshly filed backlog item", scope=("src/**",))
+        )
+        assert queued.is_ok
+        queued_id = queued.danger_ok.id
+        # Deliberately left QUEUED -- never planned, never started, no
+        # lease, no commits of its own anywhere.
+        _commit_all(repo, f"seed {queued_id}: freshly filed, queued")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-queued", str(wt)], repo)
+        created = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert created.is_ok
+        landing_id = created.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text(
+            "# independent fix, unrelated to queued_id\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "fix.py").exists()
+
+    # frob:tests \
+    # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_planned\
+    # _sibling_scope_overlap_does_not_block
+    # frob:ticket T-1639
+    def test_planned_sibling_scope_overlap_does_not_block(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
+        # T-1639: PLANNED (the pre-work-sweep state `frob ticket start`
+        # sets before a worktree/lease exists) is the same "not actually
+        # being worked yet" shape as QUEUED -- must not refuse either.
+        planned = new_ticket(repo, _spec("Planned backlog item", scope=("src/**",)))
+        assert planned.is_ok
+        planned_id = planned.danger_ok.id
+        assert transition(repo, planned_id, TicketState.PLANNED).is_ok
+        _commit_all(repo, f"seed {planned_id}: planned, not started")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-planned", str(wt)], repo)
+        created = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert created.is_ok
+        landing_id = created.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text(
+            "# independent fix, unrelated to planned_id\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()

@@ -938,12 +938,13 @@ def _tick008_violations_for_ticket(
 
 
 # frob:ticket T-0714
+# frob:ticket T-1645
 # frob:enforces CHK-GATE-TICK009
 def _tick009_scope_breadth_nudges(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
     """TICK009 (T-0714): one WARN per over-broad-scope nudge
-    `frob.tickets.large_glob_warnings` finds across every queued/planned/
+    `frob.tickets.large_glob_warnings` finds across every planned/
     in-progress ticket -- the same detail `frob ticket doable` used to
     print, unconditionally, as a `WARNING:` line PER nudge on EVERY queue
     query (observed flooding a 5-lease session-start listing). `doable`
@@ -951,17 +952,29 @@ def _tick009_scope_breadth_nudges(
     (`frob.app.ticket_runner._render_scope_breadth_summary`); this gate is
     where the per-ticket remediation detail lives instead, reported once
     per `frob check` run rather than once per `doable` invocation. Purely
-    a relocation -- `large_glob_warnings` itself (T-0453) is unchanged."""
+    a relocation -- `large_glob_warnings` itself (T-0453) is unchanged.
+
+    T-1645: a `QUEUED` ticket no longer fires at all. Its declared scope
+    is a PREDICTION of what work will eventually touch, made before
+    anyone has opened the code -- demanding file-level precision at that
+    point produces one of two bad outcomes, both observed on this repo's
+    own ledger (48 tickets, ~204 findings, 40 filed in a single incident-
+    response session where the honest scope for most really was a
+    package glob): either the author invents a narrow list that turns
+    out wrong (the implementer scope-adds anyway, so the declaration was
+    noise), or the honest broad scope carries a permanent warning nobody
+    ever acts on because there is nothing yet TO narrow it to. By `frob
+    ticket start` (which also surfaces this same nudge directly, see
+    `frob.app.ticket_runner._lifecycle._warn_scope_breadth_on_start`) the
+    ticket is `PLANNED`/`IN_PROGRESS`, the author has the code open, and
+    a broad scope has started actually costing other tickets (T-1639) --
+    that is the point this nudge is worth making, not before."""
     from frob.tickets import TicketState, large_glob_warnings, scope_breadth_context
 
     breadth = scope_breadth_context(root)
     violations: list[Violation] = []
     for t in sorted(queue.tickets.values(), key=lambda t: t.id):
-        if t.state not in (
-            TicketState.IN_PROGRESS,
-            TicketState.QUEUED,
-            TicketState.PLANNED,
-        ):
+        if t.state not in (TicketState.IN_PROGRESS, TicketState.PLANNED):
             continue
         # frob:ticket T-1484
         # WAVE14-B: an acknowledged-broad ticket (`frob ticket scope-ack`)

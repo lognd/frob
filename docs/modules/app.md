@@ -292,7 +292,11 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 - `deprecated_runner.run` -- `frob deprecated`: lists outstanding
   `frob:deprecated` entries (T-0638).
 - `doctor_runner.run` -- `frob doctor`: native-extension/scaffold/ticket-
-  lease/venv-shim diagnosis (T-0319, docs/guides/install.md).
+  lease/venv-shim diagnosis (T-0319, docs/guides/install.md). T-1634: on the
+  otherwise-healthy path, also surfaces a confirmed-dead land.lock holder
+  as a plain-text info line (self-healing, no longer a health failure --
+  see docs/guides/install.md's "Orphaned (dead-holder) land.lock is
+  self-healing" section).
 - `fleet_runner.run` -- `frob fleet status`/`frob fleet route` (T-0573):
   cross-repo status/gate rollup and ticket routing (docs/modules/fleet.md).
 - `fmt_runner.run` -- `frob fmt [path] [--check] [--json]` (T-0441):

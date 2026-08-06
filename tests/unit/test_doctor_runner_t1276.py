@@ -21,7 +21,7 @@ import pytest
 
 from frob.app import doctor_runner
 from frob.app.config import AppConfig
-from frob.doctor import DoctorReport, NativeExtensionStatus
+from frob.doctor import DoctorReport, LiveLandProcess, NativeExtensionStatus
 
 
 def _cfg(**overrides: object) -> AppConfig:
@@ -36,7 +36,13 @@ def _cfg(**overrides: object) -> AppConfig:
     return AppConfig(**base)
 
 
-def _report(*, healthy: bool, remediation: str | None) -> DoctorReport:
+# frob:ticket T-1634
+def _report(
+    *,
+    healthy: bool,
+    remediation: str | None,
+    live_land_process: LiveLandProcess | None = None,
+) -> DoctorReport:
     return DoctorReport(
         frob_version="9.9.9",
         extensions=[
@@ -49,6 +55,7 @@ def _report(*, healthy: bool, remediation: str | None) -> DoctorReport:
         ],
         healthy=healthy,
         remediation=remediation,
+        live_land_process=live_land_process,
     )
 
 
@@ -152,3 +159,63 @@ class TestDoctorRunnerUnhealthy:
         with pytest.raises(SystemExit) as exc:
             doctor_runner.run(_cfg(doctor_json=True))
         assert exc.value.code == 1
+
+
+# frob:ticket T-1634
+class TestDoctorRunnerOrphanedLandLockDisclosure:
+    """T-1634: a CONFIRMED-dead land.lock holder no longer makes
+    `DoctorReport.healthy` `False`, but `run`'s plain-text output still
+    discloses it -- these tests exercise `_print_orphaned_land_lock_
+    disclosure` through `run` directly (not just via `frob.doctor`'s own
+    unit tests), since the CLI-facing disclosure text is `doctor_runner`'s
+    own responsibility, not `frob.doctor`'s."""
+
+    # frob:ticket T-1634
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosur\
+    # e.test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line
+    def test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line(
+        self, monkeypatch, capsys
+    ) -> None:
+        """A `healthy=True` report carrying a CONFIRMED-dead
+        `live_land_process` still prints an explicit disclosure line and
+        does NOT exit -- the finding is surfaced, not silently dropped,
+        even though it no longer fails the health check."""
+        import frob.doctor as doctor_mod
+
+        dead = LiveLandProcess(
+            pid=999999,
+            session_id="orphaned-session",
+            started_at="2026-08-04T00:00:00+00:00",
+            alive=False,
+        )
+        monkeypatch.setattr(
+            doctor_mod,
+            "run_diagnosis",
+            lambda: _report(healthy=True, remediation=None, live_land_process=dead),
+        )
+        doctor_runner.run(_cfg())
+        out = capsys.readouterr().out
+        assert "orphaned land.lock" in out
+        assert "999999" in out
+        assert "self-healing" in out
+
+    # frob:ticket T-1634
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosur\
+    # e.test_healthy_report_with_no_land_lock_prints_nothing_extra
+    def test_healthy_report_with_no_land_lock_prints_nothing_extra(
+        self, monkeypatch, capsys
+    ) -> None:
+        """A healthy report with no land.lock holder at all (the common
+        case) prints no orphaned-lock line."""
+        import frob.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod,
+            "run_diagnosis",
+            lambda: _report(healthy=True, remediation=None, live_land_process=None),
+        )
+        doctor_runner.run(_cfg())
+        out = capsys.readouterr().out
+        assert "orphaned land.lock" not in out

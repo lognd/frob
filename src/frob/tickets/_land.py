@@ -203,8 +203,44 @@ def _read_land_lock_holder(path: Path) -> dict | None:
     return parsed if isinstance(parsed, dict) else None
 
 
+# frob:ticket T-1634
+# frob:tests \
+# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_dead_holder_pid_is_re\
+# ported_dead_but_self_healing_and_healthy
+# frob:tests \
+# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_live_holder_pid_is_re\
+# ported_alive_and_healthy
+# frob:tests \
+# tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_ambiguous_holder_live\
+# ness_is_reported_unhealthy
+# frob:tests \
+# tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_fr\
+# om_a_confirmed_dead_pid_is_reclaimed_and_logged
+def _probe_land_lock_pid_liveness(pid: int) -> bool | None:
+    """Three-state liveness probe for a land.lock holder's pid (T-1634):
+    `True` (alive), `False` (CONFIRMED dead -- `os.kill(pid, 0)` raised
+    `ProcessLookupError`), or `None` (ambiguous -- `PermissionError`/other
+    `OSError`, e.g. no permission to signal a pid owned by another user, or
+    pid recycling noise). Mirrors the confirmed_absent/ambiguous split
+    `frob.tickets._leases._probe_worktree_liveness` already draws for
+    worktree leases (T-0782/T-0584): only a CONFIRMED-dead holder is ever
+    safe to reclaim automatically; an ambiguous probe must never be treated
+    as license to reclaim anything, exactly like that function's own
+    contract. Shared by `frob.doctor.scan_live_land_processes` and
+    `_land_lock`'s own post-acquire reclaim-logging below, so this repo has
+    exactly one pid-liveness notion for land.lock, not two."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except (PermissionError, OSError):
+        return None
+    return True
+
+
 @contextmanager
 # frob:ticket T-1495
+# frob:ticket T-1634
 def _land_lock(root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S) -> Iterator[None]:
     """Exclusive, cross-process lock serializing every `land()` call
     against `root` (T-0577) -- see `land`'s docstring for why this closes
@@ -224,7 +260,20 @@ def _land_lock(root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S) -> Iterator
     acquisition, this process's own pid/session/start-time
     (`_land_lock_holder_metadata`) is written into the lock file's
     content, both for a future blocked caller's log line and for `frob
-    doctor`'s live-land-process report."""
+    doctor`'s live-land-process report.
+
+    T-1634: a successful acquisition -- whether immediate (the common case:
+    the OS itself already released a dead prior holder's `flock` the
+    instant that process exited, SIGKILL included) or after waiting out a
+    genuinely-held lock -- checks the file's PRIOR content (if any) before
+    overwriting it. If that prior holder's pid is CONFIRMED dead
+    (`_probe_land_lock_pid_liveness` returns `False`) and is not this
+    process's own pid, this logs the loud WARNING reclaim message a human
+    used to have to notice and act on by hand via `frob doctor`'s
+    remediation hint alone -- the acquisition itself was never actually
+    blocked by a dead holder (the kernel already freed the `flock`), so
+    this is disclosure, not a new code path that bypasses the lock; an
+    AMBIGUOUS or genuinely-alive prior holder never logs this line."""
     if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
         _log.warning(
             "land: _land_lock: fcntl unavailable on this platform, lock is "
@@ -262,6 +311,25 @@ def _land_lock(root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S) -> Iterator
                 os.close(fd)
                 raise LandLockTimeout(root, _read_land_lock_holder(path)) from None
             _time.sleep(_LAND_LOCK_POLL_S)
+    # T-1634: log-only reclaim disclosure -- this call already holds
+    # `fd`'s flock and is about to overwrite the file's content below via
+    # that SAME fd (the actual reclaim), so there is nothing left to
+    # unlink here; unlinking by PATH would sever the path from the inode
+    # `fd` is about to write into, leaving the fresh holder metadata
+    # invisible to any reader of `path`.
+    prior_holder = _read_land_lock_holder(path)
+    if prior_holder is not None:
+        prior_pid = prior_holder.get("pid")
+        if isinstance(prior_pid, int) and prior_pid != os.getpid():
+            if _probe_land_lock_pid_liveness(prior_pid) is False:
+                _log.warning(
+                    "land: %s reclaiming orphaned land.lock -- prior holder "
+                    "pid %s (session %s, started %s) confirmed NOT running",
+                    root,
+                    prior_holder.get("pid"),
+                    prior_holder.get("session_id"),
+                    prior_holder.get("started_at"),
+                )
     holder_metadata = _land_lock_holder_metadata()
     try:
         os.ftruncate(fd, 0)
@@ -2137,6 +2205,10 @@ def _leaked_hits_for_candidate(
 # frob:ticket T-1355
 # frob:ticket T-1370
 # frob:ticket T-1390
+# frob:ticket T-1639
+# frob:doc \
+# docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t\
+# -1639
 def _find_leaked_tickets(
     worktree: Path,
     landing_id: str,
@@ -2181,7 +2253,27 @@ def _find_leaked_tickets(
     tickets back to back, not a real cross-agent leak. Without this, two
     open siblings in the same worktree whose scopes overlap mutually
     deadlock: landing either one refuses because the other is still
-    open, and there is no way to land either first."""
+    open, and there is no way to land either first.
+
+    T-1639: a scope hit is only ever REFUSED when the sibling is
+    `IN_PROGRESS` -- the same "declared scope is a claim only once a
+    ticket is actually being worked" line `frob.tickets._leases` already
+    draws (a lease exists ONLY for an `IN_PROGRESS` ticket, never a
+    queued/planned/blocked one). `QUEUED`/`PLANNED`/`BLOCKED` siblings
+    scope-match all the time -- filing a ticket with a broad, honestly-
+    generous scope used to reserve that scope against every other land
+    immediately, before a single commit existed for it (measured
+    2026-08-06: a freshly filed, unstarted ticket blocked an unrelated
+    land over 12 files that only overlapped by declaration). A hit
+    against a non-`IN_PROGRESS` sibling is still surfaced -- at INFO, not
+    the ERROR `_report_leaked_tickets` logs for a real refusal -- naming
+    the ticket and its state, so the overlap is disclosed without being
+    treated as evidence of a concurrent writer. This does not touch the
+    T-1618 case CrossTicketLeakage exists for (a shared series worktree
+    carrying a sibling's COMMITTED work onto main): that shape always
+    involves a sibling that was actually started, so it is always
+    `IN_PROGRESS` (or already `DONE`/`DROPPED`, both already exempted
+    above) by the time it could leak anything."""
     from frob.tickets._models import TicketState
 
     leaked: dict[str, list[str]] = {}
@@ -2198,12 +2290,32 @@ def _find_leaked_tickets(
         hits = _leaked_hits_for_candidate(
             worktree, landing_id, other_id, other, changed_paths, base_ref
         )
-        if hits:
-            leaked[other_id] = hits
+        if not hits:
+            continue
+        if effective_state != TicketState.IN_PROGRESS:
+            # frob:ticket T-1639
+            _log.info(
+                "land: %s cross-ticket leakage check found %s (state=%s) "
+                "scope-overlaps %d changed path(s), but %s is not "
+                "IN_PROGRESS -- a declared scope on a ticket nobody has "
+                "started is an intention, not a claim; not refusing: %s",
+                landing_id,
+                other_id,
+                effective_state.value,
+                len(hits),
+                other_id,
+                hits,
+            )
+            continue
+        leaked[other_id] = hits
     return leaked
 
 
 # frob:ticket T-1355
+# frob:ticket T-1639
+# frob:doc \
+# docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t\
+# -1639
 def _check_cross_ticket_leakage(
     root: Path,
     worktree: Path,
@@ -2214,11 +2326,13 @@ def _check_cross_ticket_leakage(
 ) -> Result[None, LandError]:
     """Refuse (T-1355) when `worktree`'s branch has committed changes
     covered by a DIFFERENT ticket's declared `scope`, and that other
-    ticket is still open (not `done`/`dropped`) on `root`'s ledger --
-    the incident class where landing one ticket out of a multi-ticket
-    series worktree silently carries a sibling's still-open work onto
-    main (T-1352's land of worktree t-1276 carrying T-1276's own
-    committed files while T-1276 stayed `in-progress`).
+    ticket is `IN_PROGRESS` (T-1639: not merely "not done/dropped" --
+    see `_find_leaked_tickets`'s own docstring for why a queued/planned/
+    blocked sibling's scope hit is disclosed, not refused) on `root`'s
+    ledger -- the incident class where landing one ticket out of a
+    multi-ticket series worktree silently carries a sibling's still-open
+    work onto main (T-1352's land of worktree t-1276 carrying T-1276's
+    own committed files while T-1276 stayed `in-progress`).
 
     Scans `_branch_changed_files(worktree, base_ref)` against every OTHER
     ticket in `worktree`'s CURRENT ledger -- deliberately the WORKTREE's

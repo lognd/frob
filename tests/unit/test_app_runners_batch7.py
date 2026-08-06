@@ -490,6 +490,53 @@ class TestTicketStart:
             == TicketState.IN_PROGRESS
         )
 
+    # frob:ticket T-1645
+    def test_start_warns_on_over_broad_scope(self, tmp_path: Path, caplog) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_warns_on_ov\
+        # er_broad_scope
+        """T-1645: `start` surfaces TICK009's over-broad-scope nudge
+        directly, right when the ticket enters `PLANNED`/`IN_PROGRESS` --
+        "narrow it now" is actionable in the moment, not a warning that
+        accumulates silently in a full-repo check nobody reads."""
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="broad scope ticket",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/**"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0001"
+        )
+        with caplog.at_level("WARNING"):
+            ticket_run(cfg)
+        assert "T-0001" in caplog.text
+        assert "chronically over-broad" in caplog.text or "narrow it" in caplog.text
+
+    # frob:ticket T-1645
+    def test_start_precise_scope_warns_nothing(self, tmp_path: Path, caplog) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_sco\
+        # pe_warns_nothing
+        """A precisely-scoped ticket's `start` produces no scope-breadth
+        nudge at all."""
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="precise scope ticket",
+            ticket_kind="bug",
+            ticket_scope=["tests/test_gates.py"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0001"
+        )
+        with caplog.at_level("WARNING"):
+            ticket_run(cfg)
+        assert "chronically over-broad" not in caplog.text
+
     def test_start_foreground_runs_sweep_synchronously(
         self, tmp_path: Path, caplog
     ) -> None:

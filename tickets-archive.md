@@ -183191,7 +183191,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_timeout_raises_when_a_foreign_holder_never_releases
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_no_lock_file_reports_nothing
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy
-- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_and_unhealthy
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_malformed_lock_content_reports_nothing
 threat: null
 component: null

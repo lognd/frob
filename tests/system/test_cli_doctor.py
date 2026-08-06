@@ -17,6 +17,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 FROB = [sys.executable, "-m", "frob"]
 
 _FAKE_NATIVE_DIR = str(Path(__file__).parent.parent / "fixtures" / "fake_no_native")
@@ -715,6 +717,7 @@ class TestDoctorVenvShims:
 
 
 # frob:ticket T-1515
+# frob:ticket T-1634
 class TestDoctorLiveLandProcess:
     """T-1515 (the 2026-08-04 incident): `frob doctor` reports whoever
     currently holds `.frob/land.lock` (pid/session/start-time, written by
@@ -767,13 +770,18 @@ class TestDoctorLiveLandProcess:
 
     # frob:tests src/frob/doctor.py::scan_live_land_processes
     # frob:ticket T-1515
-    def test_dead_holder_pid_is_reported_dead_and_unhealthy(
+    # frob:ticket T-1634
+    def test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy(
         self, tmp_path: Path
     ) -> None:
-        """A pid that does not correspond to any running process (an
-        orphaned lock from a crashed land, the T-1495 incident shape) is
-        reported `alive=False` and DOES make `run_diagnosis` unhealthy,
-        with a remediation naming the exact stale-lock-file repair."""
+        """T-1634: a pid that does not correspond to any running process
+        (an orphaned lock from a crashed land, the T-1495 incident shape)
+        is reported `alive=False`, but no longer makes `run_diagnosis`
+        unhealthy -- the OS already released the underlying `flock` the
+        instant that process exited, so nothing is actually blocked, and
+        the next real `_land_lock` acquisition self-heals the stale
+        content on its own. `report.remediation` still names the exact
+        holder identity as a disclosed (not silent) finding."""
         import json
         import os
 
@@ -800,10 +808,50 @@ class TestDoctorLiveLandProcess:
         assert proc.alive is False
 
         report = run_diagnosis(tmp_path)
-        assert report.healthy is False
+        assert report.healthy is True
         assert report.remediation is not None
         assert "orphaned lock" in report.remediation
+        assert "self-healing" in report.remediation
         assert str(dead_pid) in report.remediation
+
+    # frob:tests src/frob/doctor.py::scan_live_land_processes
+    # frob:ticket T-1634
+    def test_ambiguous_holder_liveness_is_reported_unhealthy(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1634: an AMBIGUOUS liveness probe (the pid-liveness equivalent
+        of `frob.tickets._leases._probe_worktree_liveness`'s own
+        `"ambiguous"` outcome) is never treated as license to self-heal --
+        it still makes `run_diagnosis` unhealthy, exactly like the pre-
+        T-1634 confirmed-dead case used to."""
+        import json
+
+        from frob.doctor import run_diagnosis, scan_live_land_processes
+        from frob.tickets import _land
+
+        monkeypatch.setattr(_land, "_probe_land_lock_pid_liveness", lambda pid: None)
+
+        lock_dir = tmp_path / ".frob"
+        lock_dir.mkdir(parents=True)
+        (lock_dir / "land.lock").write_text(
+            json.dumps(
+                {
+                    "pid": 4242,
+                    "session_id": "ambiguous-session",
+                    "started_at": "2026-08-04T00:00:00+00:00",
+                }
+            )
+            + "\n"
+        )
+
+        proc = scan_live_land_processes(tmp_path)
+        assert proc is not None
+        assert proc.alive is None
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert report.remediation is not None
+        assert "liveness unknown" in report.remediation
 
     # frob:tests src/frob/doctor.py::scan_live_land_processes
     # frob:ticket T-1515

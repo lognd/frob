@@ -616,15 +616,39 @@ frob doctor
 
 A LIVE holder is informational only -- a genuinely in-flight `land()`
 call is normal, not unhealthy, so it does not affect `DoctorReport.
-healthy`/`remediation`. A DEAD holder (the probed pid is not running --
-an orphaned lock left behind by a crashed/killed land) DOES make
-`healthy` `False`, with a remediation naming the exact pid/session and
-pointing at removing the stale `.frob/land.lock` by hand once a human
-has confirmed nothing is actually mid-land. This is exactly the "one
-command instead of a human having to `ps`/`lsof` the lock file" T-1515
-asked for -- run `frob doctor` at the start of a session before
-dispatching a land-touching wave, the same way natives/derived-state
-health is already checked first.
+healthy`/`remediation`. This is exactly the "one command instead of a
+human having to `ps`/`lsof` the lock file" T-1515 asked for -- run `frob
+doctor` at the start of a session before dispatching a land-touching
+wave, the same way natives/derived-state health is already checked
+first.
+
+### Orphaned (dead-holder) land.lock is self-healing (T-1634)
+
+The liveness probe (`frob.tickets._land._probe_land_lock_pid_liveness`)
+is three-state, mirroring the confirmed_absent/ambiguous split
+`frob.tickets._leases._probe_worktree_liveness` already draws for
+cross-worktree leases (T-0782/T-0584): `True` (alive), `False`
+(CONFIRMED dead -- `os.kill(pid, 0)` raised `ProcessLookupError`), or
+`None` (AMBIGUOUS -- e.g. a `PermissionError` probing a pid this process
+does not own). Only `None` still makes `DoctorReport.healthy` `False`
+now -- the same "cannot confirm either way" caution `_probe_worktree_
+liveness` already applies, never a license to treat an unconfirmed
+holder as safely gone.
+
+A CONFIRMED-dead holder (`alive is False`, the T-1495 orphaned-lock
+shape) no longer blocks `healthy` at all: the OS already released the
+underlying `flock` the instant that process exited (SIGKILL included),
+so nothing is actually blocked by the leftover file -- only its STALE
+CONTENT lingered, requiring a human to notice `frob doctor`'s
+remediation hint and delete `.frob/land.lock` by hand before this fix.
+As of T-1634, the very next real `_land_lock` acquisition (the next
+`frob ticket land` against the same `root`) reads the prior holder's
+content before overwriting it, confirms the pid is dead via the same
+probe, and logs a loud WARNING disclosing the reclaimed identity --
+self-healing, not merely diagnosing. `frob doctor`'s own plain-text
+output still surfaces the finding (even though it no longer flips
+`healthy`), naming it explicitly as self-healing so it is never silently
+dropped from the report.
 
 ## Honest pytest-collection failure in the coverage gate (T-1161)
 

@@ -637,6 +637,9 @@ def _start(root: Path, cfg: AppConfig) -> None:
 
     record_ticket_event(root, ticket_id=cfg.ticket_id, event="started")
 
+    # frob:ticket T-1645
+    _warn_scope_breadth_on_start(root, transitioned.danger_ok)
+
     # frob:ticket T-0474
     # By default `start` is now just the state transition above -- the
     # pre-work sweep (a synchronous whole-repo dup+xref scan, 57s on this
@@ -784,6 +787,28 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
         )
     else:
         _log.info("reconcile: no orphaned land intents found")
+
+
+# frob:ticket T-1645
+# frob:doc docs/modules/gates.md#tick009tick010-t-0714
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_warns_on_over_broad_scope  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_scope_warns_nothing  # noqa: E501
+def _warn_scope_breadth_on_start(root: Path, ticket) -> None:  # noqa: ANN001
+    """T-1645: surface TICK009's over-broad-scope nudge directly at `frob
+    ticket start` -- "your scope matches N files, narrow it now" is far
+    more actionable in the moment the author has the code open (and just
+    entered `IN_PROGRESS`, so `_tick009_scope_breadth_nudges` starts
+    evaluating this ticket on the very next `frob check` anyway) than a
+    warning that accumulates silently in a full-repo check nobody reads
+    per-ticket. Purely a disclosure -- never blocks or exits nonzero;
+    `TICK009` itself (a WARN-severity gate finding) is the only thing
+    that actually gates anything here, and narrowing scope after seeing
+    this is `frob ticket scope <id> --add/--remove`, not something this
+    function does for the caller."""
+    from frob.tickets import large_glob_warnings
+
+    for warning in large_glob_warnings(ticket, root):
+        _log.warning("ticket start: %s", warning)
 
 
 # frob:ticket T-0354

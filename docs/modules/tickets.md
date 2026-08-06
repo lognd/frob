@@ -2217,6 +2217,41 @@ Three gaps found in one real landing session, closed together:
   is offered anyway as an explicit, documented manual override, never set
   by `land` itself since it never needs it.
 
+## Cross-ticket leakage only refuses on an IN_PROGRESS sibling (T-1639)
+
+<!-- frob:describes src/frob/tickets/_land.py::_find_leaked_tickets -->
+<!-- frob:describes src/frob/tickets/_land.py::_check_cross_ticket_leakage -->
+
+`_check_cross_ticket_leakage` (T-1355) refuses a land whose branch touches
+files covered by a DIFFERENT ticket's declared `scope`, when that other
+ticket is `IN_PROGRESS` on `root`'s ledger -- the incident class where
+landing one ticket out of a multi-ticket series worktree silently carries
+a sibling's still-open work onto main.
+
+T-1639: before this fix, "still open" meant "not `DONE`/`DROPPED`" --
+which also matched `QUEUED`/`PLANNED`/`BLOCKED`. Filing a ticket with a
+generously broad scope (this repo's own convention: declare scope early
+and wide so nothing is silently out of bounds) reserved that scope
+against every OTHER land immediately, before a single commit existed for
+it -- measured 2026-08-06: a freshly filed, unstarted ticket (T-1637)
+blocked an unrelated land (T-1636) over 12 files that only overlapped by
+declaration, forcing `--allow-cross-ticket` as a reflex habit.
+
+The fix reuses the same line `frob.tickets._leases` already draws for
+worktree leases: a lease (and now a CrossTicketLeakage refusal) exists
+only for a ticket that is actually being worked, never one merely filed.
+`_find_leaked_tickets` still computes every scope-overlap hit exactly as
+before (including the T-1370 same-worktree exemption and the T-1390
+"sibling's own ledger record never moved" exemption), but only a hit
+against an `IN_PROGRESS` sibling lands in the `leaked` map that
+`_report_leaked_tickets` refuses on. A hit against a `QUEUED`/`PLANNED`/
+`BLOCKED` sibling is still logged (at INFO, naming the ticket and its
+state) so the overlap is disclosed, not silently dropped -- it just no
+longer blocks. This does not weaken the T-1618 case the check exists for
+(a shared series worktree carrying a sibling's COMMITTED work onto main):
+that case always involves a sibling that was actually started, so it is
+always `IN_PROGRESS` by the time it could leak anything.
+
 ## Post-land unscoped error sweep (T-1456)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_unscoped_error_findings -->

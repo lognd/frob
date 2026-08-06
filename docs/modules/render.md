@@ -157,7 +157,10 @@ remediation line printed the literal word `None` when there was no
 remediation (`f"remediation: {report.remediation}"`); the migrated line uses
 `r.write.kv("  remediation", report.remediation or "")`, so an empty
 remediation prints an empty value, not `None`. This is a deliberate fix,
-disclosed here and in the T-0448 Done report.
+disclosed here and in the T-0448 Done report. T-1634: a further disclosure
+line (also `r.write.warn` through `Renderer`) prints on the otherwise-
+healthy path when a confirmed-dead land.lock holder was found -- see
+`docs/modules/app.md`'s `doctor_runner.run` entry.
 
 ## Exemplar: frob map
 

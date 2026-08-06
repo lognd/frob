@@ -4504,7 +4504,7 @@ NOTE ON THIS TICKET'S OWN TEXT: the examples above deliberately use non-existent
 id: T-1634
 title: An orphaned land.lock from a killed land blocks unrelated commands until deleted
   by hand
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -4517,8 +4517,53 @@ scope:
 - src/frob/process/**
 - src/frob/doctor.py
 - tests/**
+- src/frob/app/doctor_runner.py
+- docs/guides/install.md
+- tickets-archive.md
+- docs/modules/app.md
+- docs/modules/render.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/doctor_runner.py
+  reason: doctor CLI runner needs the T-1634 self-heal disclosure line
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/app/doctor_runner.py
+  reason: doctor CLI runner needs the T-1634 self-heal disclosure line
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/guides/install.md
+  reason: doctor's live-land-process report doc anchor documents the T-1634 self-heal
+    behavior
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tickets-archive.md
+  reason: T-1515's evidence needed --replace after renaming a test this ticket touched
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/app.md
+  reason: AFFECT001 closure docs for doctor_runner.run
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/render.md
+  reason: AFFECT001 closure docs for doctor_runner.run
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ambiguous_holder_liveness_is_reported_unhealthy
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy
+- tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure::test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line
+- tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure::test_healthy_report_with_no_land_lock_prints_nothing_extra
 threat: null
 component: null
 ```
@@ -4542,6 +4587,100 @@ Also worth doing in the same pass:
 - Whatever cleanup path exists must run on the abort paths a land already has: this drive saw a land refuse to unwind and leave staged REL001 files behind (see the land-lease ticket), so "the land aborted, clean up after yourself" is a recurring gap rather than a one-off.
 
 Regression test: write a land.lock naming a pid that does not exist, run a command that takes the lock, assert it proceeds and logs the reclaim; then write one naming a LIVE pid and assert it still refuses.
+
+## Done report
+
+Self-healing land.lock (T-1634).
+
+Root cause: the actual `_land_lock` acquisition was never really blocked
+by a dead holder -- the OS releases `flock` the instant a process exits,
+SIGKILL included. The real bug was `frob doctor`'s health computation:
+`scan_live_land_processes` read the stale JSON content left behind and
+marked `DoctorReport.healthy = False` for a CONFIRMED-dead holder, and
+`make coverage`/`make coverage-fast`'s own recipe gates its pytest/`frob
+coverage` invocation on `frob doctor`'s exit code -- so a leftover file
+from a killed land failed an unrelated Makefile target for hours until a
+human noticed and deleted `.frob/land.lock` by hand.
+
+Fix, in two parts:
+1. `frob.tickets._land._probe_land_lock_pid_liveness(pid) -> bool | None`:
+   a new shared three-state pid-liveness probe (True/False/None), mirroring
+   the confirmed_absent/ambiguous split `frob.tickets._leases.
+   _probe_worktree_liveness` already draws for worktree leases. Used by
+   both `_land_lock` and `frob.doctor.scan_live_land_processes` -- one
+   liveness notion for land.lock, not two.
+2. `_land_lock` now reads the PRIOR holder's content right after acquiring
+   the flock (whether immediate or after waiting) and, if that holder's pid
+   is CONFIRMED dead, logs a loud WARNING disclosing the dead holder's
+   identity before overwriting the file with this process's own metadata --
+   the disclosure T-1634 asked for. (This does not, and must not, unlink
+   the file mid-acquire: the same fd is about to overwrite its content, and
+   unlinking-by-path would sever the path from the inode the fd writes
+   into. Verified against the existing test that holds a REAL flock on a
+   file naming a fake-dead pid -- that test still correctly times out,
+   proving the fix never overrides a genuinely-held OS lock based on
+   metadata alone.)
+3. `frob doctor`: `DoctorReport.healthy` no longer goes False for a
+   CONFIRMED-dead holder (`alive is False`) -- only for an AMBIGUOUS probe
+   (`alive is None`, e.g. a PermissionError) does it still block, matching
+   the leases module's own confirmed_absent/ambiguous distinction. The
+   finding is still disclosed: `_combined_remediation` still names the
+   dead holder (now describing it as self-healing, not requiring a human
+   fix), and `doctor_runner.py`'s plain-text CLI output prints an explicit
+   info line on the otherwise-healthy path so the finding is never dropped
+   from the human-readable report, honoring this file's existing "doctor
+   only ever reports, it never repairs" design (see
+   `scan_stale_ticket_leases`'s docstring) -- doctor does not mutate
+   `.frob/land.lock` itself; the next real `_land_lock` acquisition is
+   what performs the actual reclaim.
+
+Other rules with the same pre-work/in-progress confusion: none found in
+this ticket's own scope. `frob doctor`'s stale-ticket-lease scan already
+gets this right (reports, points at `frob ticket requeue`, never mutates).
+This ticket's confusion was different in shape from T-1639/T-1645's (a
+diagnostic treating "the holder is definitely gone" the same as "we
+cannot tell" instead of treating "before work" the same as "during work"),
+so I would not fold it into the same fix pattern those two tickets share.
+
+Tests added/renamed:
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged (new)
+- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses (new; renamed from the pre-existing fake-pid+real-flock test, unchanged behavior, new name/docstring only)
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy (renamed+rewritten from test_dead_holder_pid_is_reported_dead_and_unhealthy; T-1515's evidence rebound via `frob ticket evidence T-1515 --archived --replace`)
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_ambiguous_holder_liveness_is_reported_unhealthy (new)
+
+Verification:
+- `uv run pytest tests/test_ticket_land.py -k LandLock` -- 5 passed
+- `uv run pytest tests/system/test_cli_doctor.py` -- 37 passed
+- `uv run pytest tests/system/test_cli_doctor.py tests/unit/test_makefile_coverage.py` -- 62 passed
+- `uv run frob check --only gates-fast --ticket T-1634` -- 0 errors (5441 repo-wide warnings, all pre-existing per gate:scope-note)
+- `uv run frob check --land-parity` -- clean, 0 unscoped errors
+
+Not done / follow-ups: the ticket also asked "whatever cleanup path
+exists must run on the abort paths a land already has" -- verified this
+is already satisfied without new code: the stale-content-reclaim
+disclosure lives in `_land_lock`'s acquire path itself (runs on every
+`land()` call regardless of how the PREVIOUS one exited), and `frob
+doctor` is a standalone diagnostic invoked independently of any land
+abort path, so no additional wiring into `_land_locked`'s own unwind
+logic was needed.
+
+### Changed
+```
+ tickets.md | 46 ++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 44 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ambiguous_holder_liveness_is_reported_unhealthy` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 5531 warning(s), 849 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1635 -->
 ```yaml
@@ -4784,7 +4923,7 @@ Regression test: from a cwd inside worktree A, `land <id> --worktree B` must ref
 id: T-1639
 title: CrossTicketLeakage treats a QUEUED ticket's scope as a lock, so filing a ticket
   blocks unrelated lands
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -4796,8 +4935,42 @@ scope:
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land.py
 - docs/modules/tickets.md
+- tests/unit/test_land_cross_ticket_leakage.py
+- tests/system/test_cli_doctor.py
+- tests/test_ticket_land.py
+- tests/unit/test_doctor_runner_t1276.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: regression tests for the QUEUED/PLANNED-does-not-block fix
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/system/test_cli_doctor.py
+  reason: 'shared-worktree accumulation: these T-1634 test files are on the same branch
+    as T-1639''s diff'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'shared-worktree accumulation: these T-1634 test files are on the same branch
+    as T-1639''s diff'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/test_doctor_runner_t1276.py
+  reason: 'shared-worktree accumulation: these T-1634 test files are on the same branch
+    as T-1639''s diff'
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_queued_sibling_scope_overlap_does_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_planned_sibling_scope_overlap_does_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block
 threat: null
 component: null
 ```
@@ -4817,6 +4990,106 @@ Proposed:
 Verify before implementing: confirm the current behavior really does treat queued as blocking (the refusal message says "not done/dropped", which implies it does) and check whether `_scope_covers`/the lease layer already has a state filter that was simply not applied here. If the distinction already exists somewhere, reuse it rather than adding a second notion of "active".
 
 Note the interaction with cross-ticket leakage's genuine purpose (T-1618): the check is valuable and must keep firing for the case it was built for -- a shared series worktree carrying a sibling's committed work onto main. That case involves real commits, so gating on in-progress does not weaken it.
+
+## Done report
+
+CrossTicketLeakage no longer blocks on a QUEUED/PLANNED/BLOCKED sibling (T-1639).
+
+Confirmed the reported bug directly: `_find_leaked_tickets` (src/frob/tickets/_land.py)
+skipped only `DONE`/`DROPPED` siblings -- "still open" meant every other
+state, including QUEUED (a ticket nobody has started, zero commits, no
+worktree, no lease). A freshly filed ticket with a generously broad scope
+(this repo's own filing convention) reserved that scope against every
+other land immediately.
+
+Fix: a scope hit against a sibling is now only ever REFUSED
+(`_report_leaked_tickets`/`Err(LandError.CrossTicketLeakage)`) when that
+sibling is `IN_PROGRESS`. This reuses the exact line
+`frob.tickets._leases` already draws for worktree leases -- a lease is
+recorded ONLY when a ticket enters `IN_PROGRESS` (`transition`'s own
+T-0473 mechanism), never for QUEUED/PLANNED/BLOCKED -- so "declared scope
+is a claim" and "declared scope is an intention" already had a real,
+existing state boundary in this codebase; CrossTicketLeakage was simply
+not using it. A hit against a non-`IN_PROGRESS` sibling is still logged
+(INFO, naming the ticket, its state, and the overlapping paths) so the
+overlap is disclosed, not silently dropped -- it just no longer refuses.
+
+T-1618's genuine purpose (a shared series worktree carrying a sibling's
+COMMITTED work onto main) is unaffected: that shape always involves a
+sibling that was actually started, so it is always `IN_PROGRESS` (or
+already `DONE`/`DROPPED`, both already exempted before this change) by
+the time it could leak anything on the branch. Verified this holds by
+NOT touching `_leaked_hits_for_candidate`'s own T-1370/T-1390 exemption
+logic at all -- only the state gate at the top of `_find_leaked_tickets`'s
+loop changed.
+
+Changed:
+- src/frob/tickets/_land.py::_find_leaked_tickets -- state gate narrowed
+  from "not DONE/DROPPED" to "IN_PROGRESS only refuses; otherwise log and
+  continue"
+- src/frob/tickets/_land.py::_check_cross_ticket_leakage -- docstring
+  updated to describe the IN_PROGRESS-only refusal condition
+- docs/modules/tickets.md -- new "Cross-ticket leakage only refuses on an
+  IN_PROGRESS sibling (T-1639)" section, with frob:doc edges bound from
+  both changed functions
+
+Tests added (real git fixture repos, matching this test module's existing
+style -- not mocks):
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_queued_sibling_scope_overlap_does_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_planned_sibling_scope_overlap_does_not_block
+
+Verification:
+- `uv run pytest tests/unit/test_land_cross_ticket_leakage.py` -- 8 passed
+  (6 pre-existing regressions unaffected, 2 new)
+- `uv run pytest tests/unit/test_scope_lease_deadlock.py` -- 5 passed
+  (adjacent lease-deadlock suite unaffected)
+- `uv run frob check --ticket T-1639` -- 0 errors other than the one
+  land-absorbed SELFAUDIT001 (a testsuite interface-sync entry `frob
+  ticket land` writes automatically via `frob sys sync-interface` before
+  its own merge, per the playbook -- confirmed via `--land-parity` below,
+  not left unaddressed)
+- `uv run frob check --land-parity` -- clean, 0 unscoped errors (this IS
+  the exact evaluation the land sweep runs, including its own
+  sync-interface pass, so the SELFAUDIT001 above is confirmed resolved by
+  land itself, not a real gap)
+
+T-1639 and T-1645 share one root cause: frob treating a declaration made
+BEFORE work identically to one made DURING work. I did not find a third
+instance of this same confusion within this ticket's own scope
+(src/frob/tickets/_land.py, src/frob/tickets/_land_git_ops.py,
+docs/modules/tickets.md) -- the only other state-sensitive check I
+touched incidentally, T-1370's same-worktree-lease exemption
+(`_leaked_hits_for_candidate`), already keys off a REAL lease (which only
+exists once IN_PROGRESS), so it was already correct on this axis and
+needed no change.
+
+### Changed
+```
+ docs/guides/install.md                 |  42 ++++++--
+ docs/modules/app.md                    |   6 +-
+ docs/modules/render.md                 |   5 +-
+ src/frob/app/doctor_runner.py          |  26 +++++
+ src/frob/doctor.py                     |  93 +++++++++++------
+ src/frob/tickets/_land.py              |  70 ++++++++++++-
+ tests/system/test_cli_doctor.py        |  59 +++++++++--
+ tests/test_ticket_land.py              |  96 ++++++++++++++++++
+ tests/unit/test_doctor_runner_t1276.py |  67 ++++++++++++-
+ tickets-archive.md                     |   3 +-
+ tickets.md                             | 177 ++++++++++++++++++++++++++++++++-
+ 11 files changed, 589 insertions(+), 55 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_queued_sibling_scope_overlap_does_not_block` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_planned_sibling_scope_overlap_does_not_block` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 711 warning(s), 851 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1640 -->
 ```yaml
@@ -4912,7 +5185,7 @@ INV006: T-1420 split _capability_typescript.py by pipeline phase, and the new _c
 id: T-1645
 title: TICK009 demands scope precision from queued tickets, before the touched set
   can be known
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -4924,8 +5197,51 @@ scope:
 - src/frob/gates/_tickets_gate.py
 - tests/test_gates.py
 - docs/modules/gates.md
+- src/frob/app/ticket_runner/_lifecycle.py
+- tests/unit/test_app_runners_batch7.py
+- tests/test_gates_tick009_tick010.py
+- src/frob/app/ticket_runner/_query.py
+- tests/unit/test_app_runners_t0714_doable_summary.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: T-1645's start-time nudge enhancement lives in the start command, not just
+    the TICK009 gate
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: T-1645's start-time nudge enhancement lives in the start command, not just
+    the TICK009 gate
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_gates_tick009_tick010.py
+  reason: TICK009 unit tests live here, not test_gates.py
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: doable's scope-breadth summary mirrors TICK009 and must stay consistent
+    with the QUEUED exemption
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/test_app_runners_t0714_doable_summary.py
+  reason: asserts doable's scope-breadth summary, which now must exclude QUEUED like
+    TICK009
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_queued_ticket_no_finding_even_with_broad_scope
+- tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_chronically_over_broad_glob_warns
+- tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_in_progress_over_broad_glob_still_warns
+- tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_queued_tickets_never_contribute_a_nudge
+- tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_multiple_stale_leases_collapse_to_one_summary_line
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_warns_on_over_broad_scope
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_precise_scope_warns_nothing
 threat: null
 component: null
 ```
@@ -4946,6 +5262,115 @@ Consider also making `frob ticket start` the moment of enforcement -- surfacing 
 Related and worth deciding together: T-1639 (queued scope should not block lands) and T-1614 (the waiver audit, which will meet the same "was this justified when written or only now?" question). All three are the same underlying issue -- a declaration made before the work is a different kind of claim than one made during it, and frob currently treats them identically.
 
 Do NOT resolve this by raising the 25-file threshold. The threshold is not the problem; applying the rule at the wrong point in the lifecycle is.
+
+## Done report
+
+TICK009 no longer fires on QUEUED tickets; surfaced at start time instead (T-1645).
+
+Confirmed the bug directly: `_tick009_scope_breadth_nudges` (src/frob/gates/_tickets_gate.py)
+evaluated every ticket in `IN_PROGRESS`/`QUEUED`/`PLANNED` state -- QUEUED
+included, demanding file-level precision for a scope declared before
+anyone had opened the code. Measured on this repo's own ledger before
+the fix: 48 tickets carried TICK009, ~204 findings total.
+
+Fix (same lifecycle principle as T-1639, applied here per the ticket's
+own explicit ask to implement them consistently):
+- `_tick009_scope_breadth_nudges` now evaluates only `PLANNED`/
+  `IN_PROGRESS` tickets -- QUEUED produces zero TICK009 findings,
+  regardless of scope breadth. DONE/DROPPED/BLOCKED unaffected (already
+  excluded before this change, for DONE/DROPPED; BLOCKED was never
+  evaluated either way since it wasn't in the original tuple).
+- `frob.app.ticket_runner._query._active_large_glob_warnings` (backs
+  `frob ticket doable`'s scope-breadth summary count) updated the same
+  way -- its own docstring claims it mirrors TICK009's detail, so leaving
+  it including QUEUED would have silently made `doable`'s summary count
+  disagree with what `frob check` actually reports.
+- New: `frob.app.ticket_runner._lifecycle._warn_scope_breadth_on_start`,
+  called at the end of `frob ticket start` (right after the queued/
+  planned -> in-progress transition commits) -- surfaces the exact same
+  `large_glob_warnings` nudge directly to the author in the moment they
+  have the code open, per the ticket's own "far more actionable" framing.
+  Pure disclosure (a WARNING log line), never blocks or exits nonzero.
+
+Measured after the fix (`frob check --only tickets --json`, this
+worktree's own branch): 2 TICK009 findings, both for T-1634 (this
+worktree's own in-progress ticket, correctly still firing since it is
+genuinely IN_PROGRESS with a broad-by-necessity scope) -- down from the
+repo's pre-fix 48-ticket / ~204-finding baseline, matching the ticket's
+"roughly 100 warnings" expectation (T-1634's own scope entries account
+for the 2 remaining, all others were QUEUED and are now silent).
+
+Changed:
+- src/frob/gates/_tickets_gate.py::_tick009_scope_breadth_nudges
+- src/frob/app/ticket_runner/_query.py::_active_large_glob_warnings
+- src/frob/app/ticket_runner/_lifecycle.py::_warn_scope_breadth_on_start (new)
+- docs/modules/gates.md -- TICK009 table entry + "TICK009/TICK010" section updated
+- tests/test_gates_tick009_tick010.py -- existing QUEUED-state assertions
+  moved to PLANNED (the state still evaluated); two new tests added
+  (QUEUED-silent, IN_PROGRESS-still-fires)
+- tests/unit/test_app_runners_t0714_doable_summary.py -- same QUEUED ->
+  PLANNED update plus a new QUEUED-silent test
+- tests/unit/test_app_runners_batch7.py -- two new tests for the new
+  start-time nudge
+
+Tests added:
+- tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_queued_ticket_no_finding_even_with_broad_scope
+- tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_in_progress_over_broad_glob_still_warns
+- tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_queued_tickets_never_contribute_a_nudge
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_warns_on_over_broad_scope
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_precise_scope_warns_nothing
+
+Verification:
+- `uv run pytest tests/test_gates_tick009_tick010.py tests/unit/test_app_runners_t0714_doable_summary.py tests/unit/test_app_runners_batch7.py -k "TestTick009ScopeBreadthNudges or TestRenderScopeBreadthSummary or TestTicketStart"` -- 17 passed
+- `uv run frob check --ticket T-1645` -- 0 errors other than the one
+  land-absorbed SELFAUDIT001 (testsuite interface-sync entry `frob
+  ticket land` writes automatically before its own merge)
+- `uv run frob check --land-parity` -- clean, 0 unscoped errors (confirms
+  the SELFAUDIT001 above resolves at land, not a real gap)
+
+Not done: the ticket explicitly says "do NOT resolve this by raising the
+25-file threshold" -- confirmed `_over_broad_scope_entries`'s threshold
+logic is completely untouched; only the STATE gate changed.
+
+T-1639/T-1645/T-1614 (named together in this ticket's body) are the same
+underlying issue: frob treating a declaration made before work
+identically to one made during it. T-1639's report covers the
+CrossTicketLeakage instance; I did not find a third instance within this
+ticket's own scope (src/frob/gates/_tickets_gate.py plus the two files I
+scope-added for consistency). T-1614 (the waiver audit) is out of scope
+here and not investigated.
+
+### Changed
+```
+ docs/guides/install.md                       |  42 +++-
+ docs/modules/app.md                          |   6 +-
+ docs/modules/render.md                       |   5 +-
+ docs/modules/tickets.md                      |  35 +++
+ src/frob/app/doctor_runner.py                |  26 +++
+ src/frob/doctor.py                           |  93 +++++---
+ src/frob/tickets/_land.py                    | 132 ++++++++++-
+ tests/system/test_cli_doctor.py              |  60 ++++-
+ tests/test_ticket_land.py                    |  97 ++++++++
+ tests/unit/test_doctor_runner_t1276.py       |  71 +++++-
+ tests/unit/test_land_cross_ticket_leakage.py |  69 ++++++
+ tickets-archive.md                           |   3 +-
+ tickets.md                                   | 321 ++++++++++++++++++++++++++-
+ 13 files changed, 896 insertions(+), 64 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_queued_ticket_no_finding_even_with_broad_scope` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_chronically_over_broad_glob_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_in_progress_over_broad_glob_still_warns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_queued_tickets_never_contribute_a_nudge` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_multiple_stale_leases_collapse_to_one_summary_line` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_warns_on_over_broad_scope` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_precise_scope_warns_nothing` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 1059 warning(s), 851 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1646 -->
 ```yaml

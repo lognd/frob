@@ -37,13 +37,17 @@ def _queue(*tickets: Ticket) -> TicketQueue:
 class TestTick009ScopeBreadthNudges:
     def test_precisely_scoped_ticket_is_clean(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_precisely_scoped_ticket_is_clean  # noqa: E501
-        ticket = _ticket("T-1100", ("tests/test_gates.py",), TicketState.QUEUED)
+        ticket = _ticket("T-1100", ("tests/test_gates.py",), TicketState.PLANNED)
         violations = tickets_gate(tmp_path, _queue(ticket))
         assert not any(v.rule == "TICK009" for v in violations)
 
     def test_chronically_over_broad_glob_warns(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_chronically_over_broad_glob_warns  # noqa: E501
-        ticket = _ticket("T-1101", ("src/frob/**",), TicketState.QUEUED)
+        # T-1645: PLANNED (the state a ticket carries the instant `frob
+        # ticket start` runs) is the earliest state TICK009 still fires
+        # on -- the code is open and the ticket is a real, actionable
+        # nudge target by this point.
+        ticket = _ticket("T-1101", ("src/frob/**",), TicketState.PLANNED)
         violations = [
             v for v in tickets_gate(tmp_path, _queue(ticket)) if v.rule == "TICK009"
         ]
@@ -51,6 +55,32 @@ class TestTick009ScopeBreadthNudges:
         assert violations[0].severity == Severity.WARN
         assert "T-1101" in violations[0].message
         assert "chronically over-broad" in violations[0].message
+
+    def test_in_progress_over_broad_glob_still_warns(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_in_progress_over_broad_glob_still_warns  # noqa: E501
+        # T-1645: the ticket's own claim -- "IN-PROGRESS/done: finding as
+        # today" -- verified directly, unchanged by the QUEUED exemption.
+        ticket = _ticket("T-1103", ("src/frob/**",), TicketState.IN_PROGRESS)
+        violations = [
+            v for v in tickets_gate(tmp_path, _queue(ticket)) if v.rule == "TICK009"
+        ]
+        assert len(violations) == 1
+
+    # frob:ticket T-1645
+    def test_queued_ticket_no_finding_even_with_broad_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_queued_ticket_no_finding_even_with_broad_scope  # noqa: E501
+        # T-1645: the actual bug -- a QUEUED ticket's scope is a
+        # prediction, not evidence of a touched set; a chronically-broad
+        # glob on a ticket nobody has started must produce ZERO TICK009
+        # findings, not a warning waiting for a human to act on
+        # information that does not exist yet.
+        ticket = _ticket("T-1104", ("src/frob/**",), TicketState.QUEUED)
+        violations = [
+            v for v in tickets_gate(tmp_path, _queue(ticket)) if v.rule == "TICK009"
+        ]
+        assert not violations
 
     def test_terminal_state_ticket_excluded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_terminal_state_ticket_excluded  # noqa: E501
@@ -63,7 +93,7 @@ class TestTick009ScopeBreadthNudges:
     # frob:ticket T-1484
     def test_scope_breadth_ack_exempts_ticket(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_scope_breadth_ack_exempts_ticket  # noqa: E501
-        ticket = _ticket("T-1105", ("src/frob/**",), TicketState.QUEUED)
+        ticket = _ticket("T-1105", ("src/frob/**",), TicketState.PLANNED)
         acked = ticket.model_copy(
             update={
                 "scope_breadth_ack": True,

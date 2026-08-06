@@ -80,8 +80,34 @@ def run(cfg: AppConfig) -> None:
         # an empty remediation line is honest, printing "None" was a bug.
         r.write.kv("  remediation", report.remediation or "")
 
+    _print_orphaned_land_lock_disclosure(r, report)
+
     if not report.healthy:
         sys.exit(1)
+
+
+# frob:ticket T-1634
+# frob:tests \
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.te\
+# st_healthy_report_with_confirmed_dead_holder_prints_self_healing_line
+# frob:tests \
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure.te\
+# st_healthy_report_with_no_land_lock_prints_nothing_extra
+def _print_orphaned_land_lock_disclosure(r: Renderer, report) -> None:
+    """T-1634: extracted out of `run` to keep it under ARCH001's 60-line
+    threshold. A confirmed-dead land.lock holder no longer makes the
+    overall report unhealthy (self-healing -- the OS already released the
+    `flock`) -- but it is still a real, discoverable finding, so print it
+    even on the otherwise-healthy path, in addition to the unhealthy-path
+    `remediation` block `run` already prints above."""
+    live = report.live_land_process
+    if report.healthy and live is not None and live.alive is False:
+        r.blank()
+        r.write.warn(
+            f"  orphaned land.lock found (pid {live.pid} confirmed NOT "
+            "running) -- self-healing, no action needed; the next `frob "
+            "ticket land` reclaims it automatically"
+        )
 
 
 # frob:ticket T-1360

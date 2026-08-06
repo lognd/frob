@@ -42,7 +42,7 @@ declaration).
 | TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
 | TICK007 | tickets | (warn) a dispatchable (unblocked, unleased) CRITICAL/HIGH ticket has sat past its `frob.tickets.undispatched_stale` threshold -- see "TICK007 (T-0820)" below |
 | TICK008 | tickets | (warn) a ticket in the checked ledger carries unknown/extra frontmatter field(s) (`Ticket`'s `extra="allow"` captured them into `__pydantic_extra__` instead of hard-failing) -- often a typoed known field, whose value is silently lost to the schema default; see "TICK008 (T-0842)" below |
-| TICK009 | tickets | (warn) a queued/planned/in-progress ticket's declared scope is over-broad (`frob.tickets.large_glob_warnings`) -- relocated out of `frob ticket doable`'s own per-invocation output; see "TICK009/TICK010 (T-0714)" below |
+| TICK009 | tickets | (warn) a planned/in-progress ticket's declared scope is over-broad (`frob.tickets.large_glob_warnings`) -- relocated out of `frob ticket doable`'s own per-invocation output; QUEUED is exempt (T-1645), see "TICK009/TICK010 (T-0714)" below |
 | TICK010 | tickets | (warn) a cross-worktree lease file (`.git/frob-leases/*.json`) whose recorded worktree path no longer exists on disk -- names the lease file and the remedy; see "TICK009/TICK010 (T-0714)" below |
 | TICK011 | tickets | (warn) a Done report's prose discloses deferred/cut work (a conservative disclosure-phrase scan) with no ticket id resolving nearby and no explicit no-ticket-needed reason -- see "TICK011 (T-1129)" below |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
@@ -1448,9 +1448,20 @@ check`'s `tickets` stage, where it is reported once per check run instead
 of once per queue query:
 
 - **TICK009** wraps `frob.tickets.large_glob_warnings` (T-0453, unchanged)
-  as one WARN `Violation` per nudge, for every ticket in
-  `IN_PROGRESS`/`QUEUED`/`PLANNED` state -- exactly the same detail
-  `doable` used to print, just relocated.
+  as one WARN `Violation` per nudge, for every ticket in `IN_PROGRESS`/
+  `PLANNED` state -- exactly the same detail `doable` used to print, just
+  relocated. T-1645: a `QUEUED` ticket is excluded entirely -- its
+  declared scope is a prediction made before anyone has opened the code,
+  not a touched set that can honestly be narrowed yet; demanding
+  file-level precision at that point either produces a narrow guess the
+  implementer scope-adds past anyway (the declaration was noise) or an
+  honest broad scope that carries a permanent, un-actionable warning (48
+  tickets / ~204 findings on this repo's own ledger before the fix, 40 of
+  them filed in one incident-response session where the honest scope
+  really was a package glob). `frob ticket start` (`_warn_scope_breadth_
+  on_start`) surfaces this exact nudge directly the moment a ticket
+  enters `PLANNED` -- more actionable than a warning nobody reads
+  per-ticket in a full-repo check.
 - **TICK010** scans `.git/frob-leases/*.json` directly (a plain
   `Path.exists()` check against each lease's recorded `worktree` field,
   not the internal TOCTOU-hardened liveness probe
