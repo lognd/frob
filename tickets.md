@@ -4706,3 +4706,43 @@ Two mechanical consequences of the wave-8 lands, both caught by the gates on mai
 SELFAUDIT001 (SYS102): T-1204 added src/frob/yaml_io.py (the shared fast_yaml_loader factory that stops a fifth re-derivation of loader selection) but no strata node's code= glob covered it, so the file was outside the self-model entirely. Bound to the cli node alongside the other src/frob root-level modules, and frob sys sync-interface then declared fast_yaml_loader in that node's interface=.
 
 INV006: T-1420 split _capability_typescript.py by pipeline phase, and the new _capability_typescript_bindtable.py header carries the module's historical narrative -- 'X only ever inspected identifier/member_expression', past tense, describing a round-1 gap that round 2 closed. The real recursion invariants live on the functions themselves in the sibling module as frob:invariant terminates edges. Waived at file level with that reasoning rather than reworded, because rewording history to dodge a keyword makes the narrative worse without making the code safer. Whether INV006 should read explanatory prose at all is T-1640.
+
+<!-- ticket:T-1645 -->
+```yaml
+id: T-1645
+title: TICK009 demands scope precision from queued tickets, before the touched set
+  can be known
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_tickets_gate.py
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+TICK009 flags a ticket whose scope glob matches more than 25 files, asking the author to "narrow it to the specific files this ticket touches". It fires regardless of the ticket's STATE.
+
+For an in-progress ticket that is exactly right: the work is underway, the touched set is knowable, and a sprawling scope both hides drift and (per T-1639) locks files against every other land.
+
+For a QUEUED ticket it asks for information that does not exist yet. Nobody has opened the code. "The specific files this ticket touches" is a prediction, and the honest prediction for "audit why frob missed each doc gap" or "make capability detection symbol-resolved" genuinely is `src/frob/gates/**`. Demanding precision earlier than it can be known has two bad outcomes, both observed here: the author either invents a narrow list that turns out wrong (and the implementer scope-adds anyway, so the declaration was noise), or leaves the honest broad scope and carries a permanent warning.
+
+Current state on main: 48 tickets carry TICK009, ~204 findings. 40 of the 48 were filed in a single session of incident-response ticketing, where the honest scope for most really was a package glob.
+
+Proposed: gate TICK009 on state, exactly as T-1639 proposes for CrossTicketLeakage.
+- QUEUED: no finding. The scope is an estimate.
+- IN-PROGRESS / done: finding as today. By `frob ticket start` the author has the code open and can say what they touch; that is also when a broad scope starts costing other people.
+
+Consider also making `frob ticket start` the moment of enforcement -- surfacing "your scope matches 68 files, narrow it now" at start time is far more actionable than a warning that accumulates silently in a full-repo check nobody reads per-ticket.
+
+Related and worth deciding together: T-1639 (queued scope should not block lands) and T-1614 (the waiver audit, which will meet the same "was this justified when written or only now?" question). All three are the same underlying issue -- a declaration made before the work is a different kind of claim than one made during it, and frob currently treats them identically.
+
+Do NOT resolve this by raising the 25-file threshold. The threshold is not the problem; applying the rule at the wrong point in the lifecycle is.
