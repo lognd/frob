@@ -5314,11 +5314,13 @@ than expanded into T-1490 silently.
 ```yaml
 id: T-1552
 title: 'ledger v2: delete v1 splice machinery once main is migrated'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
 priority: medium
+blocked_by:
+- T-1631
 parent: null
 tier: ticket
 sprint: null
@@ -7124,6 +7126,7 @@ T-1579's declared scope) as a small follow-up commit
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 1135 warning(s), 785 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1580 -->
 ```yaml
 id: T-1580
@@ -7361,7 +7364,7 @@ beyond this disclosure.
 ```yaml
 id: T-1582
 title: 'COV002 closing-diff grace is v1-only: no grace in a ledger-v2 repo'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7375,6 +7378,12 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov002_v2_done_ticket_covers_own_closing_diff
+- tests/test_gates.py::TestCoverageGate::test_cov002_v2_grace_covers_ticket_created_and_closed_in_same_diff
+- tests/test_gates.py::TestCoverageGate::test_cov002_v2_marker_touch_without_state_transition_still_fires
+- tests/test_gates.py::TestCoverageGate::test_cov002_v2_done_ticket_without_grace_still_fires
+- tests/test_gates.py::TestCoverageGate::test_cov002_v2_stale_done_ticket_unrelated_touch_still_fires
 threat: null
 component: null
 ```
@@ -7383,6 +7392,103 @@ COV002's closing-diff grace (_cov002 / _ledger_states_at_base, src/frob/gates/__
 This repo has not hit it yet only because main is still a v1 monofile; every NEW frob repo is v2 from its first commit and gets the false COV002 immediately.
 
 Fix: teach _ledger_states_at_base to resolve state at base per store mode -- v2 reads tickets/<id>/ticket.md at diff.base, v1 keeps the monofile-hunk path -- and make the hunk-membership test ('was this ticket's ledger entry touched in this diff') mode-aware too. Tests: tests/test_gates.py::TestCoverageGate currently pins itself to v1 via _write_ticket's tickets.md seed; add a v2-mode mirror of each grace case rather than converting the v1 ones, so both backends stay covered.
+
+## Done report
+
+COV002's closing-diff grace is now mode-aware, not v1-only.
+
+Added `_store_mode_at_base(root, base)` to src/frob/gates/__init__.py: a
+git-object-based historical analog of `frob.tickets._store._store_mode`
+(lists `tickets/T-####/ticket.md` blobs at `base` via `git ls-tree`, else
+checks for a `tickets.md` blob there) -- needed because the grace must
+resolve the ledger mode as it stood BEFORE this diff, which can differ
+from the current working-tree mode across a v1 -> v2 migration commit.
+
+`_ledger_states_at_base` now dispatches on it: v1 keeps the unchanged
+`git show base:tickets.md` monofile read; v2 (`_ledger_states_at_base_v2`,
+new) lists every `tickets/T-####/ticket.md` blob at `base` and reads each
+one's `state:` field directly out of its git object via a new
+`_ledger_state_from_frontmatter_text` frontmatter-only parser (reuses
+`frob.tickets._store`'s `_FRONTMATTER_RE`/`_yaml_loader` rather than a
+full `Ticket.model_validate`, so a ticket whose OTHER fields fail schema
+validation still resolves its state instead of vanishing from the grace
+map).
+
+`_ticket_marker_in_diff_hunk` now checks the CURRENT working tree's store
+mode (`frob.tickets._store._store_mode` directly -- this is "did THIS
+diff touch this ticket's storage", not a historical question) and, in v2
+mode, collapses straight to "does this ticket's own
+`tickets/<id>/ticket.md` have a hunk in the diff" -- no block-span
+scanning needed, since v2 gives each ticket its own whole file (no other
+ticket's content to accidentally match against, unlike v1's shared
+monofile).
+
+Before this, a v2 repo's `_ledger_states_at_base` always hit the v1
+branch, found no `tickets.md` blob at any base, and returned `{}` for
+every diff; `_ticket_marker_in_diff_hunk` scanned a `tickets.md` that
+never exists in v2 and always returned False. The T-0590/T-0214 grace
+(a ticket created-and-closed, or opened-and-closed, entirely within the
+current uncommitted diff) could never apply in a v2 repo, false-firing
+COV002 on the exact worktree-agent create-and-close flow the grace exists
+to permit -- on every new frob repo's very first close, since T-1553 made
+v2 the fresh-repo default.
+
+Added a v2 mirror test class section inside tests/test_gates.py's
+TestCoverageGate (5 new tests: done_ticket_covers_own_closing_diff,
+grace_covers_ticket_created_and_closed_in_same_diff,
+marker_touch_without_state_transition_still_fires,
+done_ticket_without_grace_still_fires,
+stale_done_ticket_unrelated_touch_still_fires) plus two small test
+helpers (`_write_ticket_v2`, `_v2_ticket_file_hunk`), per the ticket's own
+instruction not to convert the v1-pinned cases. Kept only the
+representative grace/anti-grace shapes (T-0214/T-0320/T-0590's core
+cases), not every v1 variant (e.g. T-0564's marker-vs-state-line
+distinction has no v2 analog at all, since v2 has no block to scan).
+
+Documented the mode-aware dispatch in docs/modules/gates.md's COV002
+decision-log entry (new bullet directly below the existing T-0214 grace
+bullet).
+
+Verification:
+- pytest tests/test_gates.py::TestCoverageGate: 51 passed (46 pre-existing
+  + 5 new v2), no regression
+- pytest tests/test_gates.py (whole file): all passed
+- frob check --only test --ticket T-1582: 0 errors
+- frob check --only coverage --only doclink --only docanchor --only
+  archgate --only scope --only prework --only fmt --ticket T-1582: 3
+  COV002 + 1 PRE001 (stale sweep, refreshed) + 3 SCOPE001 seen on the
+  scoped run -- all attributable to this being a multi-ticket worktree
+  (T-1588 landed first in this same branch, still open/in-progress):
+  --ticket T-1582 sets active_ticket=T-1582, and `_scope_covers` denies
+  ambiguous ties among several OTHER open tickets (T-1588, T-1587, T-1583,
+  T-1420) that also scope src/frob/tickets/_store.py/docs/design/
+  ledger-v2.md -- confirmed via direct `_scope_covers` call that these
+  same 3 files resolve clean once T-1588 (or no ticket) is the active
+  ticket; not a defect introduced by this ticket's own changes.
+- frob check --land-parity: clean, 0 unscoped errors (the authoritative
+  check here, since it evaluates the real merged tree without an
+  active-ticket tie-break skew)
+
+### Changed
+```
+ docs/design/ledger-v2.md                  |  48 ++++++
+ src/frob/tickets/_store.py                | 152 +++++++++++++++--
+ tests/test_ticket_store_stale_snapshot.py | 268 ++++++++++++++++++++++++++++++
+ tickets.md                                | 144 +++++++++++++++-
+ 4 files changed, 598 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov002_v2_done_ticket_covers_own_closing_diff` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov002_v2_grace_covers_ticket_created_and_closed_in_same_diff` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov002_v2_marker_touch_without_state_transition_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov002_v2_done_ticket_without_grace_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov002_v2_stale_done_ticket_unrelated_touch_still_fires` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 1077 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1583 -->
 ```yaml
@@ -7515,7 +7621,7 @@ Follow-up worth considering: an integration test that runs the full new -> start
 id: T-1588
 title: 'ledger v2 has no stale-snapshot guard: write_archive/write_all expected_digest
   is a v1-only primitive'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7529,6 +7635,11 @@ scope:
 - docs/design/ledger-v2.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_store_stale_snapshot.py::TestWriteAllRefusesAStaleSnapshotV2::test_external_replacement_between_load_and_write_all_is_refused
+- tests/test_ticket_store_stale_snapshot.py::TestWriteArchiveRefusesAStaleSnapshotV2::test_external_replacement_between_load_and_write_archive_is_refused
+- tests/test_ticket_store_stale_snapshot.py::TestLedgerDigestMapV2::test_map_keys_are_ticket_ids_values_match_ledger_digest
+- tests/test_ticket_store_stale_snapshot.py::TestWriteAllRefusesAStaleSnapshotV2::test_v1_style_string_digest_in_v2_mode_is_treated_as_no_check
 threat: null
 component: null
 ```
@@ -7537,6 +7648,95 @@ expected_digest (T-0889 optimistic concurrency) fingerprints ONE ledger file via
 tests/test_ticket_store_stale_snapshot.py is pinned to v1 for now (it verifies the monofile primitive); it needs a v2 mirror once a guard exists.
 
 Design question for the implementer: the natural v2 fingerprint is per-TICKET (each tickets/T-####/ticket.md has its own content hash and its own ticket_lock) rather than one tree-wide digest -- a tree digest would make every concurrent write to unrelated tickets collide, throwing away v2's main benefit. Prefer a per-id digest map, or move the wholesale callers (archive, renumber) onto per-ticket writes that each carry their own expected digest.
+
+## Done report
+
+ledger v2 now has a real per-ticket stale-snapshot guard.
+
+Added `ledger_digest_map(root)`/`archive_digest_map(root)` to
+src/frob/tickets/_store.py: v2's per-id fingerprint analog of the v1
+`ledger_digest` monofile primitive -- `{ticket_id: ledger_digest(that
+ticket's ticket.md)}`, empty map on a non-v2 repo. `write_all`/
+`write_archive`'s `expected_digest` parameter is now `str | dict[str, str]
+| None`: v1 keeps the old monofile `str`, v2 accepts a digest map from
+`ledger_digest_map`/`archive_digest_map`. `_write_all_v2`/
+`_write_archive_v2` re-fingerprint only the ids the caller's map covers
+against their CURRENT on-disk digest (`_stale_v2_ids`), under the same
+`ledger_lock` the v1 branch already holds; any mismatch -- a sibling wrote
+or deleted that ticket since the load -- refuses the whole call
+(`Err(LedgerChangedSinceLoad)`), same contract as v1. A str handed to a
+v2-mode write (a not-yet-updated caller) is treated as "no check", never
+misapplied as a per-id digest. `None` preserves unconditional-overwrite
+for both modes, unchanged.
+
+Chose a per-id map over a tree-wide digest per the ticket's own design
+guidance: a tree-wide digest would make a wholesale write to ticket A
+refuse merely because unrelated ticket B also changed since the load,
+throwing away v2's structural benefit.
+
+Investigated every current caller of write_all/write_archive
+(_archive.py, _new_renumber.py, _land_finalize.py, scaffold's unrelated
+_managed.py which is a different expected_digest concept entirely): both
+archive() and renumber_one() already dispatch to v2-native paths
+(archive_v2/renumber_one_v2) that use per-ticket git mv and never reach
+write_all/write_archive at all, so they were never exposed to this gap.
+renumber(root)'s plain contiguous-renumber path (distinct from
+renumber_one) has no v2 dispatch and reaches write_all's v2 branch via the
+generic mode dispatch without building a digest map -- wiring it is out
+of this ticket's scope (src/frob/tickets/_new_renumber.py is not in
+scope), filed as a follow-up (draft T-1630, cite the real id
+once landed).
+
+Documented the new guard in docs/design/ledger-v2.md's lock-model section
+(new "3.1 Stale-snapshot guard for wholesale writes (T-1588)"
+subsection), including the renumber(root) gap and the follow-up pointer.
+
+Added a v2 mirror test suite to tests/test_ticket_store_stale_snapshot.py
+(TestWriteAllRefusesAStaleSnapshotV2, TestWriteArchiveRefusesAStaleSnapshotV2,
+TestLedgerDigestMapV2) alongside the existing v1-pinned classes, per the
+ticket's own instruction not to convert the v1 cases. 17 tests in the file
+total (7 pre-existing v1 + 10 new v2), all pass.
+
+One self-caught bug during implementation: an initial edit accidentally
+duplicated the `frob:ticket T-1254` directive onto the newly-multi-line
+`_write_all_v2` def, which COV005 correctly flagged as the directive
+riding onto a private symbol away from its original public binding (on
+`write_all`) -- removed before finishing; only `frob:ticket T-1588` marks
+the new private helper.
+
+Verification:
+- pytest tests/test_ticket_store_stale_snapshot.py: 17 passed
+- pytest tests/unit/test_ticket_store.py: 65 passed (no regression)
+- pytest tests/test_tickets.py -k "Archive or Renumber": 16 passed (no
+  regression in the real callers)
+- frob check --only test --ticket T-1588: 0 errors
+- frob check --only coverage --only doclink --only docanchor --ticket
+  T-1588: 0 errors (7 errors seen on an earlier pass were the accidental
+  COV005 self-inflicted regression above, self-fixed and re-verified 0
+  errors after)
+- frob check --only archgate --only scope --only prework --only fmt
+  --ticket T-1588: 0 errors after refreshing the pre-work sweep
+  (frob ticket sweep T-1588) -- the 3 ARCH001 errors and stale PRE001 seen
+  were pre-existing, in files this ticket never touches
+  (_land_cmd.py/_land.py/_mutation_sweep_queue.py)
+- frob check --land-parity: clean, 0 unscoped errors
+
+### Changed
+```
+ tickets.md | 48 ++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 46 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_store_stale_snapshot.py::TestWriteAllRefusesAStaleSnapshotV2::test_external_replacement_between_load_and_write_all_is_refused` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_store_stale_snapshot.py::TestWriteArchiveRefusesAStaleSnapshotV2::test_external_replacement_between_load_and_write_archive_is_refused` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_store_stale_snapshot.py::TestLedgerDigestMapV2::test_map_keys_are_ticket_ids_values_match_ledger_digest` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_store_stale_snapshot.py::TestWriteAllRefusesAStaleSnapshotV2::test_v1_style_string_digest_in_v2_mode_is_treated_as_no_check` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 412 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1589 -->
 ```yaml

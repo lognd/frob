@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.349.0] - unreleased
+
+- T-1588: ledger v2 has no stale-snapshot guard: write_archive/write_all expected_digest is a v1-only primitive
+
 ## [0.348.0] - unreleased
 
 - T-1590: suite red: extending-guides drift, exports residue, unregistered gate rule literal

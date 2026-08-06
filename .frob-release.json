@@ -1938,12 +1938,14 @@
     "src/frob/tickets/_setters.py::sprint_view": "6b42b53893077506b7811c6fad63cc3f84f58a16efd56582ea31d6f74ddd7cbe",
     "src/frob/tickets/_setters.py::ticket_flow": "9b27320b33ca48cfdde2896e81ca1425945211dc45fd157b2533604efa24f105",
     "src/frob/tickets/_store.py::allocator_lock": "522cae7f8f402e06907286779b392ed084deadd792c25781da7af94a4de9331c",
+    "src/frob/tickets/_store.py::archive_digest_map": "31637d4359100b596ce7c2a3a6d51fda7a2e4d656e78f644b3c6fb4a83889ed8",
     "src/frob/tickets/_store.py::archive_path": "b43c31381608f17460946fe847701fe090597c5cdf4b9a2168c425c1dfedcd3f",
     "src/frob/tickets/_store.py::atomic_write": "e3383dd5e644221e31346fb42f32fbc2ce60a0b9192c3fab154f067812e1866c",
     "src/frob/tickets/_store.py::attachments_dir": "79f6d2cf489151d44c0b8dfbec875118b81fec28188d96e49ba653762f7c70a7",
     "src/frob/tickets/_store.py::git_mv_dir": "b37f3049cf30271880b20e49b8127767111d0e09a6df4ec6d87c5225458c2b7b",
     "src/frob/tickets/_store.py::iter_raw_ledger_frontmatter": "ec87f5fc7f466d214e25c57695bc6e52cc730eeee77aeb2a0cb5e1dbee1c67c8",
     "src/frob/tickets/_store.py::ledger_digest": "6526523ab2cec8ef76de23c1767bb97e2cee27758a903c17fe6bd238a544444e",
+    "src/frob/tickets/_store.py::ledger_digest_map": "8d43a83ea0be085da6651d8e4b9e4b68076ca1904efbbd18cc5aaa566ac2e073",
     "src/frob/tickets/_store.py::ledger_lock": "df7e6b4abcbfb8d713c9990e537efdad9e3c6e27ddaa903a8efa152eb6e727c7",
     "src/frob/tickets/_store.py::ledger_path": "70ed0bedd3df7a954cef81db2b7c8dca55193959507a7420ee76647e2af1ab9c",
     "src/frob/tickets/_store.py::load_all": "60b754e1e41609e0c068de26256662b99652685944cdddd7622ff486c9e64810",
@@ -1961,8 +1963,8 @@
     "src/frob/tickets/_store.py::v2_state_transitions": "435a1a2b1ef438f9caa4fde0612adcea9335e58b74a3d385a5137987027cb6d1",
     "src/frob/tickets/_store.py::v2_ticket_dir": "fc1d25387f94288106d470f5dfdce57c2dfce3e3c062b733274c591d90705d26",
     "src/frob/tickets/_store.py::v2_ticket_path": "c161717f911c838d17f6c143360f70dff1d76edbb30498c40fffae446305e1fe",
-    "src/frob/tickets/_store.py::write_all": "6a014d8db35f886254d855c6cab8e9fe72b69d0c843cbb3bad2305ce5d606222",
-    "src/frob/tickets/_store.py::write_archive": "4ea0c13300d6471b46531d45f46aee042a82c63bcb5ce78adf2308f782089767",
+    "src/frob/tickets/_store.py::write_all": "b9d502bb484dea98e54fdd5c1066e6ddefc94a3778df7338bfa3dac8f06e5b0f",
+    "src/frob/tickets/_store.py::write_archive": "e5bffe2ada3af69b2322bf1f01ceab7fd5f8e1a70acc88df1d2ad5b4c90effd3",
     "src/frob/tickets/_store.py::write_archived_ticket": "e25adc974ed9d027de7e2c3dcaf9c53fdbe6a8ae311579ec89259808829f7463",
     "src/frob/tickets/_store.py::write_done_report": "fafff332cfed701f8886410b7425ab776cd41311c1baf04cdd854671582fb9f6",
     "src/frob/tickets/_store.py::write_ticket": "7a493296c6fa18900d1e71b68e3853de304748ddcdb0a712f57755f6affb5c08",
@@ -2063,5 +2065,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.348.0"
+  "version": "0.349.0"
 }

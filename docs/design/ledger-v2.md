@@ -229,6 +229,54 @@ serializes a read-increment-write id-allocation race; both primitives are
 same-thread reentrant) -- see `tests/unit/test_process_lock.py`'s
 `TestTicketLock`/`TestAllocatorLock`.
 
+### 3.1 Stale-snapshot guard for wholesale writes (T-1588)
+
+`ledger_lock`/`ticket_lock` alone only prevent two writes from
+INTERLEAVING; they do nothing to stop a wholesale write (`write_all`/
+`write_archive`, used by `renumber`/`archive`'s bulk-rewrite callers) from
+CLOBBERING a sibling's write that landed cleanly, serially, entirely
+BETWEEN this caller's `load_all`/`load_archive` and its own later write --
+the T-0680 field incident (three unrelated DONE tickets silently reverted
+to QUEUED by a stale in-memory map). T-0889 closed this for v1 with an
+optimistic-concurrency check: a caller captures `ledger_digest(ledger_path
+(root))` (a sha256 of the WHOLE monofile) at load time and passes it back
+as `write_all`'s/`write_archive`'s `expected_digest`; a mismatch at write
+time refuses (`Err(LedgerChangedSinceLoad)`) instead of overwriting.
+
+That primitive is meaningless in v2: there is no single monofile to
+fingerprint, and using a tree-wide digest anyway (e.g. hashing the
+concatenation of every `ticket.md`) would make a wholesale write
+covering ticket A refuse merely because ticket B, entirely unrelated,
+also changed since the load -- exactly the false-collision v2's whole
+per-ticket-file split exists to avoid. T-1588 gives v2 its own
+`expected_digest` shape instead: `write_all`/`write_archive` now accept
+`str | dict[str, str] | None` -- v1 keeps passing the old monofile `str`,
+v2 passes a PER-TICKET digest map (`ledger_digest_map(root)` /
+`archive_digest_map(root)`, `{ticket_id: ledger_digest(that ticket's
+ticket.md)}`, captured right after the paired `load_all`/`load_archive`).
+At write time, `_write_all_v2`/`_write_archive_v2` re-fingerprint only the
+ids the caller's own map covers against their CURRENT on-disk digest
+(under the same `ledger_lock` the v1 branch already holds); any mismatch
+-- another writer changed OR DELETED that ticket since the load -- refuses
+the whole call, same `LedgerChangedSinceLoad` contract as v1. An id the
+caller's map never mentions can change freely without tripping the guard
+-- the per-id shape is the point, not an incidental detail.
+
+A `str` (the old v1 shape) handed to a v2-mode write is not silently
+misapplied as if it were a per-id digest -- it is treated exactly like
+`None` (opted out), so a not-yet-migrated caller degrades to the pre-T-1588
+unconditional-overwrite behavior rather than crashing or comparing
+mismatched types. No current call site (`archive`, `renumber_one`) passes
+`expected_digest` through a v2 write path today -- `archive_v2` and
+`renumber_one_v2` both already avoid `write_all`/`write_archive` entirely
+in favor of per-ticket `git mv` (section 4), so they were never exposed to
+this gap. `renumber(root)`'s plain contiguous-renumber path (distinct from
+`renumber_one`) has no v2-specific dispatch at all and reaches
+`write_all`'s v2 branch through the generic mode dispatch without ever
+building a digest map -- wiring it to `ledger_digest_map` is tracked as a
+follow-up, filed from this same investigation, rather than folded into the
+store-layer primitive itself.
+
 ## 4. Cross-ticket operations
 
 ### 4.1 Renumber, with reference rewrite

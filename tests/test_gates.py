@@ -237,6 +237,24 @@ def _state_line(root: Path, ticket_id: str) -> int:
     raise AssertionError(f"state: line for {ticket_id} not found in tickets.md")
 
 
+# frob:ticket T-1582
+def _write_ticket_v2(root: Path, ticket: Ticket) -> None:
+    """`_write_ticket`'s v2-mode twin: writes straight through `write_ticket`
+    on a bare `tmp_path` (T-1553 default v2, no `tickets.md` seed) so the
+    write resolves to `tickets/<id>/ticket.md` -- the COV002 v2-grace tests
+    build their `Hunk`s against that path directly instead of a marker-line
+    offset into a shared monofile."""
+    write_ticket(root, ticket).danger_ok
+
+
+def _v2_ticket_file_hunk(ticket_id: str) -> Hunk:
+    """The `Hunk` a v2-mode diff carries for `ticket_id`'s own
+    `tickets/<id>/ticket.md` -- one ticket owns the WHOLE file, so unlike
+    v1's marker/state-line offsets there is no span to compute; any hunk
+    on this path means this ticket's file was touched."""
+    return Hunk(file=f"tickets/{ticket_id}/ticket.md", span=(1, 1))
+
+
 _WIDGET_PY = '''class Widget:
     """A widget."""
 
@@ -925,6 +943,179 @@ class TestCoverageGate:
                 # tickets.md is touched, but only T-0002's hunk -- T-0001's
                 # own marker is nowhere in this diff.
                 Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(
+            tickets={"T-0001": stale_ticket, "T-0002": unrelated_ticket}
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV002")
+        assert v is not None
+        assert "frob ticket new" in v.message
+
+    # ------------------------------------------------------------------
+    # T-1582: v2-mode mirrors of the COV002 closing-diff grace tests
+    # above. v2 has no `tickets.md` monofile -- each ticket owns its own
+    # `tickets/<id>/ticket.md`, so "the ticket's marker/state line is in
+    # a touched hunk" collapses to "that ticket's own file has a hunk in
+    # the diff" (see `_v2_ticket_file_hunk`), and `_ledger_states_at_base`
+    # must resolve state from the git-tracked v2 tree at `diff.base`
+    # rather than a `tickets.md` blob that never existed in a v2 repo.
+    # ------------------------------------------------------------------
+
+    def test_cov002_v2_done_ticket_covers_own_closing_diff(
+        self, tmp_path: Path
+    ) -> None:
+        """v2 mirror of test_cov002_done_ticket_covers_own_closing_diff:
+        the ticket was IN_PROGRESS at base, DONE in the working tree, and
+        this diff carries a hunk on its own `tickets/T-0001/ticket.md` --
+        grace must apply."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        ticket = _ticket(state=TicketState.IN_PROGRESS)
+        _write_ticket_v2(tmp_path, ticket)
+        _git_init(tmp_path)
+        done_ticket = _ticket(state=TicketState.DONE)
+        _write_ticket_v2(tmp_path, done_ticket)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                _v2_ticket_file_hunk("T-0001"),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    def test_cov002_v2_grace_covers_ticket_created_and_closed_in_same_diff(
+        self, tmp_path: Path
+    ) -> None:
+        """v2 mirror of test_cov002_grace_covers_ticket_created_and_closed_
+        in_same_diff (T-0590): the ticket has no `tickets/T-0001/` blob at
+        all at `diff.base` (created and closed entirely within this
+        uncommitted diff) -- `_ledger_states_at_base_v2` must resolve
+        `None` for it, and `_base_state_permits_grace` treats that as
+        grace-eligible, same as v1's "no entry in tickets.md at base"
+        case."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _git_init(tmp_path)
+        done_ticket = _ticket(state=TicketState.DONE)
+        _write_ticket_v2(tmp_path, done_ticket)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                _v2_ticket_file_hunk("T-0001"),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    def test_cov002_v2_marker_touch_without_state_transition_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """v2 mirror of test_cov002_marker_touch_without_state_transition_
+        still_fires (T-0320): the ticket was ALREADY DONE at base too (a
+        typo-fix-shaped re-write, not a genuine transition) -- grace must
+        not apply, and COV002 still fires."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        ticket = _ticket(state=TicketState.DONE)
+        _write_ticket_v2(tmp_path, ticket)
+        _git_init(tmp_path)
+        # Re-write the same (still-DONE) ticket file -- simulates a
+        # Done-report typo fix that touches the same v2 file again.
+        _write_ticket_v2(tmp_path, ticket)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                _v2_ticket_file_hunk("T-0001"),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV002")
+        assert v is not None
+        assert "frob ticket new" in v.message
+
+    def test_cov002_v2_done_ticket_without_grace_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """v2 mirror of test_cov002_done_ticket_without_grace_still_fires:
+        a DONE ticket whose own `tickets/T-0001/ticket.md` is NOT part of
+        this diff at all must not cover an unrelated later touch to the
+        symbol it once covered."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV002")
+        assert v is not None
+        assert "frob ticket new" in v.message
+
+    def test_cov002_v2_stale_done_ticket_unrelated_touch_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """v2 mirror of test_cov002_stale_done_ticket_unrelated_tickets_md_
+        touch_still_fires: a symbol bound to an old, already-DONE T-0001
+        (not part of this diff) must still fire even though this diff DOES
+        touch a different ticket's own v2 file (T-0002) -- grace must be
+        scoped to the specific ticket whose OWN file is in the diff, not
+        "some ticket file was touched somewhere"."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        stale_ticket = _ticket(ticket_id="T-0001", state=TicketState.DONE)
+        _write_ticket_v2(tmp_path, stale_ticket)
+        unrelated_ticket = _ticket(ticket_id="T-0002", state=TicketState.DONE)
+        _write_ticket_v2(tmp_path, unrelated_ticket)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        diff = Diff(
+            base="x",
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                # A v2 ticket file IS touched, but only T-0002's -- T-0001's
+                # own file is nowhere in this diff.
+                _v2_ticket_file_hunk("T-0002"),
             ),
         )
         queue = TicketQueue(

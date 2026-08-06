@@ -1177,6 +1177,66 @@ def ledger_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# frob:ticket T-1588
+# frob:doc docs/design/ledger-v2.md#3-lock-model
+# frob:tests tests/test_ticket_store_stale_snapshot.py::TestLedgerDigestMapV2.test_map_keys_are_ticket_ids_values_match_ledger_digest  # noqa: E501
+def ledger_digest_map(root: Path) -> dict[str, str]:
+    """Per-TICKET fingerprint map for v2 mode's stale-snapshot guard
+    (T-1588): `{ticket_id: ledger_digest(that ticket's ticket.md)}`.
+
+    `ledger_digest` alone fingerprints ONE monofile, which only means
+    anything in v1/'single' mode -- v2 has no single ledger file, so a
+    tree-wide digest would make every concurrent write to an UNRELATED
+    ticket collide, throwing away the whole reason v2 splits tickets into
+    their own directories in the first place. This is the v2 analog: a
+    caller snapshots this map right after `load_all`/`load_archive`, then
+    passes it back to `write_all`/`write_archive` as `expected_digest` (now
+    `str | dict[str, str] | None` -- the v1 monofile digest or this v2
+    per-id map, mode-appropriate); `_write_all_v2`/`_write_archive_v2`
+    compare only the ids actually present in the map against their
+    CURRENT on-disk digest at write time, under the same `ledger_lock`
+    the v1 branch already holds. A non-v2 repo (or a v2 repo before any
+    ticket exists) returns an empty map -- callers loop over its own keys
+    when deciding what to compare, so an empty map degrades to "nothing to
+    check" rather than raising."""
+    if _store_mode(root) != "v2":
+        return {}
+    return {path.parent.name: ledger_digest(path) for path in _v2_glob(root)}
+
+
+# frob:ticket T-1588
+# frob:doc docs/design/ledger-v2.md#3-lock-model
+# frob:tests tests/test_ticket_store_stale_snapshot.py::TestLedgerDigestMapV2.test_archive_map_keys_are_ticket_ids  # noqa: E501
+def archive_digest_map(root: Path) -> dict[str, str]:
+    """`ledger_digest_map`'s archive-side twin (T-1588): per-archived-
+    ticket digest map, `write_archive`'s v2 `expected_digest` counterpart
+    to `ledger_digest_map`'s active-ledger map. Same empty-map-on-non-v2
+    contract."""
+    if _store_mode(root) != "v2":
+        return {}
+    return {path.parent.name: ledger_digest(path) for path in _v2_archive_glob(root)}
+
+
+def _stale_v2_ids(
+    current_paths: dict[str, Path], expected: dict[str, str]
+) -> list[str]:
+    """Shared v2 staleness check for `_write_all_v2`/`_write_archive_v2`:
+    every id in `expected` whose CURRENT on-disk digest (via
+    `current_paths`, a `{ticket_id: ticket.md path}` map covering every id
+    that exists on disk right now) no longer matches the digest `expected`
+    recorded at load time -- covers both "a sibling wrote a new version of
+    this ticket" and "a sibling deleted this ticket" (a missing path
+    digests to `_MISSING_LEDGER_DIGEST`, which mismatches any real prior
+    digest). Returns ids sorted for a deterministic, readable log line."""
+    stale = []
+    for ticket_id, expected_digest in expected.items():
+        path = current_paths.get(ticket_id)
+        current = ledger_digest(path) if path is not None else _MISSING_LEDGER_DIGEST
+        if current != expected_digest:
+            stale.append(ticket_id)
+    return sorted(stale)
+
+
 # frob:ticket T-1257
 # The derived, gitignored index cache (design section 6): rebuildable at
 # any time from `tickets/**/ticket.md`, NEVER a second source of truth --
@@ -1539,7 +1599,7 @@ def write_archive(
     root: Path,
     tickets: dict[str, Ticket],
     *,
-    expected_digest: str | None = None,
+    expected_digest: str | dict[str, str] | None = None,
 ) -> Result[None, TicketError]:
     """Replace `tickets-archive.md` wholesale with `tickets` (same ledger
     section format as the active file, distinct header); serialized against
@@ -1560,9 +1620,18 @@ def write_archive(
     monofile unconditionally (the pre-T-1583 behavior) put every archived
     ticket somewhere `load_archive` would never look while `archive()`
     went on to drop those same ids from the active store, losing them from
-    every read path."""
+    every read path.
+
+    T-1588: `expected_digest` is now `str | dict[str, str] | None` -- v1
+    passes the old monofile `str` (unchanged), v2 passes an
+    `archive_digest_map` snapshot (`{ticket_id: digest}`), since a single
+    tree-wide digest would make every concurrent write to an UNRELATED
+    archived ticket collide. A `str` given in v2 mode (a not-yet-updated
+    caller) is not a v2-shaped snapshot -- treated the same as `None`
+    (opted out), never misapplied as a per-id digest."""
     if _store_mode(root) == "v2":
-        return _write_archive_v2(root, tickets)
+        digest_map = expected_digest if isinstance(expected_digest, dict) else None
+        return _write_archive_v2(root, tickets, digest_map)
     with ledger_lock(root):
         path = archive_path(root)
         if expected_digest is not None:
@@ -1584,8 +1653,11 @@ def write_archive(
 
 
 # frob:ticket T-1583
+# frob:ticket T-1588
 def _write_archive_v2(
-    root: Path, tickets: dict[str, Ticket]
+    root: Path,
+    tickets: dict[str, Ticket],
+    expected_digest: dict[str, str] | None = None,
 ) -> Result[None, TicketError]:
     """`write_archive`'s v2-mode body: upsert every entry into its own
     `tickets/archive/T-####/ticket.md` (`write_archived_ticket`) and prune
@@ -1594,7 +1666,27 @@ def _write_archive_v2(
 
     Every prune is logged with its id -- this is the only path that
     removes archived ledger content, and a silent removal here would be
-    indistinguishable from the T-1583 loss it exists to fix."""
+    indistinguishable from the T-1583 loss it exists to fix.
+
+    T-1588: when `expected_digest` (an `archive_digest_map` snapshot) is
+    given, every id it covers is re-fingerprinted against its CURRENT
+    on-disk `ticket.md` right before writing (`_stale_v2_ids`); any
+    mismatch -- another writer changed or removed that archived ticket
+    since this caller's load -- refuses the WHOLE call
+    (`Err(LedgerChangedSinceLoad)`) rather than writing some entries and
+    silently clobbering the stale one. `None` (the default) preserves the
+    pre-T-1588 unconditional-overwrite behavior."""
+    if expected_digest is not None:
+        current_paths = {path.parent.name: path for path in _v2_archive_glob(root)}
+        stale = _stale_v2_ids(current_paths, expected_digest)
+        if stale:
+            _log.error(
+                "tickets: write_archive (v2) refused -- archived ticket(s) "
+                "%s changed on disk since this caller's load "
+                "(T-1588 per-id digest guard)",
+                stale,
+            )
+            return Err(TicketError.LedgerChangedSinceLoad)
     for ticket in tickets.values():
         written = write_archived_ticket(root, ticket)
         if written.is_err:
@@ -1838,7 +1930,7 @@ def write_all(
     root: Path,
     tickets: dict[str, Ticket],
     *,
-    expected_digest: str | None = None,
+    expected_digest: str | dict[str, str] | None = None,
 ) -> Result[None, TicketError]:
     """Replace the ENTIRE store with `tickets` (used by archive/renumber).
     Single mode rewrites the ledger wholesale; dir mode writes each file and
@@ -1869,13 +1961,25 @@ def write_all(
     single-ticket `ticket_lock` `write_ticket` uses for its own v2 path.
     Each backend's own body is a private per-mode helper (`_write_all_
     single`/`_write_all_v2`/`_write_all_dir`) so this function stays the
-    thin mode-dispatch it reads as."""
+    thin mode-dispatch it reads as.
+
+    T-1588: `expected_digest` is now `str | dict[str, str] | None` -- v1
+    passes the old monofile `str` (unchanged), v2 passes a
+    `ledger_digest_map` snapshot (`{ticket_id: digest}`), the natural v2
+    fingerprint (a single tree-wide digest would make every concurrent
+    write to an UNRELATED ticket collide, throwing away v2's whole
+    per-ticket-file benefit). A `str` given in v2 mode (a not-yet-updated
+    caller) is not a v2-shaped snapshot -- treated the same as `None`
+    (opted out), never misapplied as a per-id digest; single mode is
+    unaffected since dir mode never accepted a digest either."""
     with ledger_lock(root):
         mode = _store_mode(root)
         if mode == "single":
-            return _write_all_single(root, tickets, expected_digest)
+            digest = expected_digest if isinstance(expected_digest, str) else None
+            return _write_all_single(root, tickets, digest)
         if mode == "v2":
-            return _write_all_v2(root, tickets)
+            digest_map = expected_digest if isinstance(expected_digest, dict) else None
+            return _write_all_v2(root, tickets, digest_map)
         return _write_all_dir(root, tickets)
 
 
@@ -1904,9 +2008,35 @@ def _write_all_single(
     return atomic_write(path, text)
 
 
-def _write_all_v2(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
+# frob:ticket T-1588
+def _write_all_v2(
+    root: Path,
+    tickets: dict[str, Ticket],
+    expected_digest: dict[str, str] | None = None,
+) -> Result[None, TicketError]:
     """`write_all`'s v2-mode body (T-1254): write each ticket's own
-    `ticket.md`, then prune any v2 directory not present in `tickets`."""
+    `ticket.md`, then prune any v2 directory not present in `tickets`.
+
+    T-1588: when `expected_digest` (a `ledger_digest_map` snapshot) is
+    given, every id it covers is re-fingerprinted against its CURRENT
+    on-disk `ticket.md` right before writing (`_stale_v2_ids`, under the
+    same `ledger_lock` `write_all` already holds); any mismatch -- a
+    sibling process wrote or deleted that ticket since this caller's
+    load -- refuses the WHOLE call (`Err(LedgerChangedSinceLoad)`) rather
+    than silently clobbering the stale one while writing the rest. `None`
+    (the default) preserves the pre-T-1588 unconditional-overwrite
+    behavior."""
+    if expected_digest is not None:
+        current_paths = {path.parent.name: path for path in _v2_glob(root)}
+        stale = _stale_v2_ids(current_paths, expected_digest)
+        if stale:
+            _log.error(
+                "tickets: write_all (v2) refused -- ticket(s) %s changed "
+                "on disk since this caller's load (T-1588 per-id digest "
+                "guard)",
+                stale,
+            )
+            return Err(TicketError.LedgerChangedSinceLoad)
     keep_dirs: set[Path] = set()
     for ticket in tickets.values():
         path = v2_ticket_path(root, ticket.id)

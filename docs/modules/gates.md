@@ -4545,6 +4545,32 @@ mean a directive line specifically).
   close lands as its own commit and drops out of the diff, the grace window
   closes and a genuinely later, unrelated touch to the same symbol is
   caught exactly as before.
+- **The same-diff grace window is mode-aware (T-1582).** The grace
+  machinery above was implemented against `tickets.md`'s monofile hunks
+  before ledger v2 existed, and stayed v1-only after T-1553 made a fresh
+  repo default to v2: `_ledger_states_at_base` read a ticket's pre-diff
+  state out of `git show <base>:tickets.md`, which simply does not exist
+  in a v2 repo, and `_ticket_marker_in_diff_hunk` scanned `tickets.md` for
+  a `<!-- ticket:<id> -->` marker block that likewise never exists there.
+  A v2 repo therefore got `{}`/`False` from both, silently denying grace
+  on every single ticket-close-in-the-same-diff -- exactly the
+  worktree-agent flow the grace exists to permit, false-firing COV002 on
+  every new frob repo's very first close. Both helpers now dispatch on
+  the ledger's store mode: `_store_mode_at_base(root, base)` (a
+  git-object-based historical analog of `frob.tickets._store._store_mode`,
+  since the grace needs the mode as it stood BEFORE this diff, which can
+  differ from the current mode across a v1 -> v2 migration commit) picks
+  `_ledger_states_at_base`'s branch -- v1 keeps the `tickets.md` blob read
+  unchanged, v2 lists every `tickets/T-####/ticket.md` blob at `base` via
+  `git ls-tree` and reads each one's `state:` field directly out of its
+  git object. `_ticket_marker_in_diff_hunk` checks the CURRENT working
+  tree's mode instead (`frob.tickets._store._store_mode` directly -- this
+  question is "did THIS diff touch this ticket's storage", not a
+  historical one): in v2 mode, one ticket owns one whole file, so "the
+  ticket's marker is in a touched hunk" collapses to "this ticket's own
+  `tickets/<id>/ticket.md` has a hunk in the diff", with no block-span
+  scanning needed at all (there is no other ticket's content in the same
+  file to accidentally match against, unlike v1's shared monofile).
 - **COV005 catches a directive silently rebound to the WRONG symbol, not
   just an unattached one** (T-0297). COV001 only proves a directive resolves
   to SOME symbol; it says nothing about whether that symbol is still the

@@ -46,6 +46,8 @@ from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, TypeVar
 
+import yaml
+
 if TYPE_CHECKING:
     from frob.graph.callgraph import CallGraph
 
@@ -268,7 +270,10 @@ from frob.tickets._models import (
 from frob.tickets._provisional import (  # noqa: F401 -- re-exported so tests/test_tickets_collision.py's monkeypatch("frob.gates.on_default_branch", ...) still resolves
     on_default_branch,
 )
+from frob.tickets._store import _FRONTMATTER_RE as _TICKETS_FRONTMATTER_RE
 from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
+from frob.tickets._store import _store_mode as _tickets_store_mode
+from frob.tickets._store import _yaml_loader as _tickets_yaml_loader
 
 _log = get_logger(__name__)
 
@@ -1604,10 +1609,95 @@ def _base_state_permits_grace(state_at_base: TicketState | None) -> bool:
 
 
 @functools.lru_cache(maxsize=32)
+def _store_mode_at_base(root: str, base: str) -> str:
+    """Which ledger backend the repo used AT `base` (the historical analog
+    of `frob.tickets._store._store_mode`, T-1582): `'v2'` if `base`'s tree
+    contains any `tickets/T-####/ticket.md` blob, `'single'` if it has no
+    such blob but does have a `tickets.md` blob, else `'unknown'` (neither
+    -- e.g. `base` predates any ticket ledger at all).
+
+    `_store_mode` itself only ever inspects the CURRENT working tree on
+    disk; COV002's grace needs the mode as it stood BEFORE this diff,
+    which can differ from the current mode across a v1 -> v2 migration
+    commit -- so this is a genuinely separate, git-object-based lookup,
+    not a thin wrapper. Cached per `(root, base)`, same rationale as
+    `_ledger_states_at_base`: the historical mode at a fixed base commit
+    never changes mid-run.
+    """
+    ls = run_argv(
+        ("git", "-C", root, "ls-tree", "-r", "--name-only", base, "--", "tickets/")
+    )
+    if ls.is_ok and ls.danger_ok.returncode == 0:
+        for line in ls.danger_ok.stdout.splitlines():
+            parts = line.split("/")
+            if len(parts) == 3 and parts[0] == "tickets" and parts[2] == "ticket.md":
+                return "v2"
+    show = run_argv(("git", "-C", root, "show", f"{base}:tickets.md"))
+    if show.is_ok and show.danger_ok.returncode == 0:
+        return "single"
+    return "unknown"
+
+
+def _ledger_state_from_frontmatter_text(text: str) -> TicketState | None:
+    """Parse just the `state:` field out of one v2-mode `ticket.md`'s
+    raw `---`-frontmatter text (the same frontmatter shape
+    `frob.tickets._store._serialize_ticket` writes), or `None` on any
+    parse failure -- deliberately lighter than a full `Ticket.model_
+    validate`: `_ledger_states_at_base_v2` only ever needs the state
+    field, and a ticket whose OTHER fields fail to validate (a schema
+    change since `base`, say) should still resolve its state rather than
+    silently vanish from the grace map."""
+    match = _TICKETS_FRONTMATTER_RE.match(text)
+    if match is None:
+        return None
+    try:
+        data = yaml.load(match.group(1), Loader=_tickets_yaml_loader())
+    except yaml.YAMLError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    try:
+        return TicketState(data.get("state"))
+    except ValueError:
+        return None
+
+
+def _ledger_states_at_base_v2(root: str, base: str) -> Mapping[str, TicketState]:
+    """`_ledger_states_at_base`'s v2-mode body (T-1582): list every
+    `tickets/T-####/ticket.md` blob `base`'s tree carries and read each
+    one's `state:` field directly out of the git object (`git show
+    base:<path>`), never the working tree -- mirrors the v1 branch's own
+    `git show base:tickets.md` read, one file per ticket instead of one
+    shared monofile. A ticket whose blob fails to read or parse is simply
+    absent from the returned map (same as v1's "ticket did not exist at
+    base" case -- `_base_state_permits_grace` treats a missing id as
+    grace-eligible)."""
+    ls = run_argv(
+        ("git", "-C", root, "ls-tree", "-r", "--name-only", base, "--", "tickets/")
+    )
+    if ls.is_err or ls.danger_ok.returncode != 0:
+        return {}
+    states: dict[str, TicketState] = {}
+    for line in ls.danger_ok.stdout.splitlines():
+        parts = line.split("/")
+        if len(parts) != 3 or parts[0] != "tickets" or parts[2] != "ticket.md":
+            continue
+        ticket_id = parts[1]
+        shown = run_argv(("git", "-C", root, "show", f"{base}:{line}"))
+        if shown.is_err or shown.danger_ok.returncode != 0:
+            continue
+        state = _ledger_state_from_frontmatter_text(shown.danger_ok.stdout)
+        if state is None:
+            continue
+        states[ticket_id] = state
+    return states
+
+
+@functools.lru_cache(maxsize=32)
 def _ledger_states_at_base(root: str, base: str) -> Mapping[str, TicketState]:
-    """The `tickets.md` ticket-id -> state map as it existed at `diff.base`
-    (the merge-base sha), or `{}` if `tickets.md` did not exist there or
-    failed to parse.
+    """The ticket-id -> state map as it existed at `diff.base` (the
+    merge-base sha), or `{}` if the ledger did not exist there or failed
+    to parse.
 
     T-0320: `_bound_to_open_ticket`'s marker-in-hunk grace is a PROXY for "a
     ticket close is landing in this diff" -- it does not by itself prove a
@@ -1618,7 +1708,21 @@ def _ledger_states_at_base(root: str, base: str) -> Mapping[str, TicketState]:
     grace now demands an actual open -> DONE transition, not mere hunk
     overlap. Cached per `(root, base)` since `_cov002` calls this once per
     touched symbol and the base ledger does not change mid-run.
+
+    T-1582: dispatches on `_store_mode_at_base` -- v1's monofile read
+    (`git show base:tickets.md`) is unchanged, v2 reads a state map from
+    `_ledger_states_at_base_v2` instead. Before this, a v2 repo always hit
+    the v1 branch, found no `tickets.md` blob at any base, and silently
+    returned `{}` for every diff -- the T-0590 same-diff-close grace could
+    never apply in a v2 repo at all, false-firing COV002 on exactly the
+    worktree-agent create-and-close flow the grace exists to permit.
     """
+    mode = _store_mode_at_base(root, base)
+    if mode == "v2":
+        return _ledger_states_at_base_v2(root, base)
+    if mode != "single":
+        _log.debug("_ledger_states_at_base: no ledger at base=%s (root=%s)", base, root)
+        return {}
     spawned = run_argv(("git", "-C", root, "show", f"{base}:tickets.md"))
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         _log.debug(
@@ -1657,7 +1761,19 @@ def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
     keeps the "unrelated ticket's stale edge doesn't ride along" guarantee
     (a hunk elsewhere in `tickets.md`, outside this ticket's block, still
     does not count) while covering the whole block, not one line of it.
+
+    T-1582: v2 mode (checked against the CURRENT working tree via
+    `_store_mode`, since this asks "did THIS diff touch this ticket's
+    storage", not a historical question) has no shared monofile to scan
+    for a marker block at all -- one ticket owns one whole file
+    (`tickets/<id>/ticket.md`), so "this ticket's marker is in a touched
+    hunk" collapses to "this ticket's own file has a hunk in the diff",
+    with no block-span reasoning needed (there is no OTHER ticket's
+    content in the same file to accidentally match against).
     """
+    if _tickets_store_mode(Path(root)) == "v2":
+        v2_path = f"tickets/{ticket_id}/ticket.md"
+        return any(h.file == v2_path for h in diff.hunks)
     tickets_md_hunks = [h for h in diff.hunks if h.file == "tickets.md"]
     if not tickets_md_hunks:
         return False
