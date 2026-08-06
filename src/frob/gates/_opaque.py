@@ -71,8 +71,8 @@ def _enclosing_qualname(rel_path: str, abs_path: Path, line: int) -> str | None:
     OPAQUE001 finding costs nothing beyond the first parse of a given file
     within the same `frob check` run -- unlike `frob.perf._heat._enclosing_
     symbol`, this does not need a whole-repo `GraphSnapshot`: `opaque_gate`
-    runs as a `_ProcessJob` (T-0415, picklable-args-only), so a per-file
-    `ParsedFile` lookup is the only shape that composes with that
+    runs as a `_ProcessJob` (T-0415, arguments must be picklable), so a per-file
+    `ParsedFile` lookup is what composes with that
     constraint."""
     result = parse_file(abs_path)
     if result.is_err:

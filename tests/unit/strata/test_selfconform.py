@@ -1685,9 +1685,7 @@ class TestDuplicateInterface:
         result = check_self_conformance(model, tmp_path)
         assert result.is_ok
         hits = [
-            v
-            for v in result.danger_ok.violations
-            if v.rule == SYS_DUPLICATE_INTERFACE
+            v for v in result.danger_ok.violations if v.rule == SYS_DUPLICATE_INTERFACE
         ]
         assert len(hits) == 1
         assert hits[0].node == "widget"
@@ -1736,9 +1734,7 @@ class TestDuplicateInterface:
         result = check_self_conformance(model, tmp_path)
         assert result.is_ok, result.err
         hits = [
-            v
-            for v in result.danger_ok.violations
-            if v.rule == SYS_DUPLICATE_INTERFACE
+            v for v in result.danger_ok.violations if v.rule == SYS_DUPLICATE_INTERFACE
         ]
         # Exactly one duplicated symbol, exactly one finding -- the comment
         # contributed nothing (grammar-aware), and the two REAL blocks each
