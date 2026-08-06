@@ -42,9 +42,16 @@ def _seed_ticket(
     ticket_id: str,
     state: TicketState = TicketState.DONE,
 ) -> Ticket:
-    """Write one ticket directly into a fresh ledger (bypassing `new_ticket`'s
-    id allocation) so tests can seed a known starting state; returns the
-    seeded `Ticket`."""
+    """Write one ticket directly into a fresh v1 ledger (bypassing
+    `new_ticket`'s id allocation) so tests can seed a known starting state;
+    returns the seeded `Ticket`.
+
+    Pins v1/'single' mode: `expected_digest` and `ledger_digest` are
+    monofile primitives (one file, one content hash), and T-1553 made a
+    bare `tmp_path` default to v2, where there is no single file to
+    fingerprint. v2's own stale-snapshot guard is T-1588."""
+    (root / "tickets.md").touch()
+    (root / "tickets-archive.md").touch()
     ticket = Ticket(
         id=ticket_id,
         title=f"Seed {ticket_id}",
@@ -148,6 +155,11 @@ class TestWriteArchiveRefusesAStaleSnapshot:
         """Load the (empty) archive, externally write an archived ticket,
         then attempt a stale wholesale `write_archive` -- must refuse and
         leave the external write intact."""
+        # v1/'single' pin: `expected_digest` fingerprints ONE archive file,
+        # which v2 does not have (T-1553 default flip; v2's guard is
+        # T-1588).
+        (tmp_path / "tickets.md").touch()
+        (tmp_path / "tickets-archive.md").touch()
         loaded = load_archive(tmp_path)
         assert loaded.is_ok, loaded.err
         stale_map = loaded.danger_ok
