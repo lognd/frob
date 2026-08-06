@@ -6773,7 +6773,7 @@ closed via `frob ticket scope --add`, not a new ticket).
 id: T-1577
 title: 'WAIVE004: exempt diff-scoped rules (WIRE001, SCOPE001, audit DEPR005/DEAD001)
   from full-run staleness reads'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -6882,7 +6882,6 @@ multi-ticket-worktree sequencing, not a real land blocker.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 0 error(s), 1116 warning(s), 784 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1578 -->
 ```yaml
 id: T-1578
