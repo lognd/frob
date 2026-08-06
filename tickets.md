@@ -8132,7 +8132,7 @@ Test convenience must not set the safety level of a production write path. Filed
 ```yaml
 id: T-1680
 title: Deletion filter rejects an exact root-level filename as an 'over-broad glob'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-06'
