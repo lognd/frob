@@ -27,6 +27,23 @@ gate's violation list is filtered through. Re-exported from
 call site keeps working.
 """
 
+# frob:waive LARGE001 reason="T-1651: this file is already the product of two prior \
+# extractions (T-1072 split off frob.gates.__init__, T-1081 further split \
+# WAIVE006/007/PLACE001 into _waive_comments.py and the lease helpers into \
+# _waive_lease.py) -- its own docstring says what remains is deliberately 'one \
+# cluster': frob:waive directive validation (WAIVE001-005) plus the \
+# _match_waiver/_apply_waivers/_ceiling_ok/_severity_overrides matching spine every \
+# other gate's violation list filters through. The bulk of the line count (~710 lines) \
+# is _KNOWN_GATE_RULES, a frob-zone-managed generated registry \
+# (frob.tickets._land_merge_zones, marker 'known-gate-rules T-1002') read by three \
+# functions in this file (known_gate_rule_ids, _waive002_violations, \
+# _waive003_violations) -- relocating it would require also repointing that \
+# merge-zone's glob (which, investigated during this ticket, already points at the \
+# wrong file (src/frob/gates/__init__.py instead of this one) -- a pre-existing \
+# staleness out of this ticket's scope, not something to compound by moving the marker \
+# again in the same change). No consumer-set or pipeline-phase boundary separates the \
+# remaining logic from the registry it validates against; splitting further would be \
+# an arbitrary line-count cut, not a real seam."
 from __future__ import annotations
 
 import tomllib

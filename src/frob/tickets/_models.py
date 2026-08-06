@@ -8,6 +8,11 @@
 # render_claims_block) are small predicate/render helpers over those exact same \
 # models, not a separate concern -- this is the single tickets data-model module the \
 # docstring already scopes it to"
+# frob:waive LARGE001 reason="T-1651: same cohesion this file's own ARCH102 waiver \
+# already establishes -- one connected cluster of Ticket/Evidence data models plus the \
+# scope-glob/done-report helpers over them, not a bundle of unrelated concerns. \
+# Splitting by line count would cut the Ticket model's own field/validator block from \
+# the helpers that operate on it, which is the opposite of a real seam."
 
 from __future__ import annotations
 

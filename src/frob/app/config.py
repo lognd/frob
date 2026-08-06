@@ -1,4 +1,13 @@
 # frob:waive INV006 preset="split-carried-prose"
+# frob:waive LARGE001 reason="T-1651: this module is one pydantic model (AppConfig) \
+# plus its Subcommand enum and one validator helper -- the whole file IS the app's \
+# single config surface (docs/guides/python-app.md's App/AppConfig pattern), not a \
+# bundle of unrelated concerns. A line-count split would cut AppConfig's own \
+# field/validator block in half with no behavioral or consumer-set boundary to hang \
+# the cut on -- strictly worse than the warning per T-1651's own judgement standard. \
+# _config_external.py and _config_meta.py already carry off the genuinely separable \
+# parts (external-tool kwarg building, ARCH_DEFAULT_* constants); what remains here is \
+# the single cohesive model."
 from __future__ import annotations
 
 import argparse
