@@ -3968,7 +3968,7 @@ Note for the fix: ledger v2 (tickets/T-####/ticket.md, one file per ticket) narr
 id: T-1618
 title: A land merges the whole worktree branch, carrying unrelated and even REJECTED
   tickets onto main
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -4105,7 +4105,6 @@ incident) is worse.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 0 error(s), 8148 warning(s), 737 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1619 -->
 ```yaml
 id: T-1619
