@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.355.0] - unreleased
+
+- T-1663: Classify every gate rule: semantic, legitimately lexical, or lexical-and-wrong
+
 ## [0.354.0] - unreleased
 
 - T-1637: Manual draft refile silently discards evidence and Done reports; renumber already exists and is undocumented

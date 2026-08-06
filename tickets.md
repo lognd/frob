@@ -3642,6 +3642,7 @@ T-1612's own authorized deletion -- nothing new deleted by this ticket.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 2779 warning(s), 711 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1611 -->
 ```yaml
 id: T-1611
@@ -6966,7 +6967,7 @@ Children should:
 ```yaml
 id: T-1663
 title: 'Classify every gate rule: semantic, legitimately lexical, or lexical-and-wrong'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-06'
@@ -6979,6 +6980,8 @@ scope:
 - src/frob/gates/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
@@ -7005,12 +7008,53 @@ Known (c) candidates already evidenced, include them and verify:
 - WALK001 -- unpruned traversal detected by matching `os.walk`/`rglob` call text; an aliased or indirectly-bound traversal evades it.
 - The four prose-as-declaration detectors (T-1633, T-1640): they need a shared notion of "this span is explanatory text, not a declaration". The DSL already knows where directive attributes end and free text begins -- reuse that rather than three independent fixes.
 
+## Done report
+
+Changed:
+- docs/design/gate-semantics-classification.md (new)
+
+Evidence: tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+(docs-only ticket, no gate-affecting code changed; CLI-dispatch integration
+test recorded per playbook section 5)
+
+Filed: T-1683 (DEAD001/OPAQUE001 findings need a per-symbol symref
+to avoid file-wide waiver amnesty)
+
+Classification summary: surveyed every gate module owning a rule id in
+_KNOWN_GATE_RULES (296 ids). Overwhelming majority already decide from a
+resolved AST node, graph edge, or ticket-ledger model (class a). A small,
+legitimately textual set (SEC001-004, EXCL001, frob fmt's directive wrap,
+_rule_id_scan.py's own generator, TICK011's disclosure-phrase trigger,
+WAIVE004's directive-parsing half) inspects raw text because its SUBJECT is
+text -- no fix needed. Two class-(c) findings: REF001 (already this epic's
+T-1665) and the new DEAD001/OPAQUE001 symref gap (T-1683). WALK001
+was on the ticket's own evidenced-candidate shortlist but direct inspection
+of _walk_lint.py shows it is AST-based and import-alias-aware for bare
+calls -- reclassified (a), not (c); documented why in the doc's "Lexical
+and wrong" section footnote so this is not re-derived from scratch.
+
+Gates: frob check --ticket T-1663 --delta run below.
+
+### Changed
+```
+ tickets.md | 43 +++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 41 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 3462 warning(s), 711 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1664 -->
 ```yaml
 id: T-1664
 title: Semantic checks must report UNRESOLVED, never silently pass when they cannot
   analyse
-state: queued
+state: planned
 kind: security
 origin: human
 created: '2026-08-06'
@@ -7053,7 +7097,7 @@ This is the single highest-leverage item in the epic. Semantic checks FAIL DIFFE
 id: T-1665
 title: 'REF001: decide inbound references from resolved imports and calls, not path/basename
   text mentions'
-state: queued
+state: planned
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -8539,3 +8583,41 @@ top-level verb of comparable weight (frob clean, frob vet, frob release)
 has its own module-doc section; this one should too. Read the actual CLI
 wiring in src/frob/_cli_parsers/** and native_coverage_refresh's
 implementation before writing it, to avoid a stale/guessed description.
+
+<!-- ticket:T-1683 -->
+```yaml
+id: T-1683
+title: DEAD001/OPAQUE001 findings need a per-symbol symref to avoid file-wide waiver
+  amnesty
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_dead_symbols.py
+- src/frob/gates/_opaque.py
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Found while working T-1663 (gate semantics classification pass).
+
+DEAD001 (`_dead_symbols.py`) and OPAQUE001 (`_opaque.py`) are both
+semantically decided (AST/graph resolved), not lexical -- but neither
+finding attaches a per-symbol `symref` to its Violation. Without one,
+`frob:waive DEAD001 reason="..."` or `frob:waive OPAQUE001 reason="..."`
+placed anywhere in a flagged file waives the finding for the WHOLE FILE,
+not the one symbol it was meant to excuse -- every other dead/opaque
+symbol in that file silently stops being reported too (the same blast-
+radius hazard T-1663's own body calls out for any symref-less rule).
+
+Plan: thread a per-symbol `symref` through `DeadSymbolViolation`/
+`OpaqueViolation` construction (both already resolve the specific symbol
+under inspection internally -- this is exposing existing data, not new
+analysis) so a waiver line binds to one symbol.

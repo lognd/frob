@@ -229,6 +229,9 @@ capability may-analysis (T-0339), and conformance totality (T-0341):
   scales (distributed fundamentals, consensus, DDIA, resilience/SRE,
   performance, observability, HW->FW->SW->service boundaries, and verified
   primary-contributor lessons), each tagged by strata-checkability.
+- `docs/design/gate-semantics-classification.md` -- T-1663: every gate rule
+  classified semantic/legitimately-lexical/lexical-and-wrong, the T-1662
+  epic's precursor evidence map.
 - `docs/design/coding-performance-corpus.md` -- cited code-level performance
   corpus: conceptual/algorithmic (complexity traps, data-structure choice)
   and low-level/mechanical-sympathy (cache/branch/alloc/SIMD; Drepper, Fog,
