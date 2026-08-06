@@ -6887,7 +6887,7 @@ multi-ticket-worktree sequencing, not a real land blocker.
 id: T-1578
 title: Natives-stale worktree gate runs must signal degradation structurally, not
   report zero findings
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7013,7 +7013,6 @@ the current, post-merge worktree tree.
 - tests: 6 passed (from 6 evidence id(s))
 - gates: 0 error(s), 6236 warning(s), 798 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1579 -->
 ```yaml
 id: T-1579
