@@ -7542,7 +7542,7 @@ Design question for the implementer: the natural v2 fingerprint is per-TICKET (e
 id: T-1589
 title: 'strata self-model drift: mutation audit, threat caught_by, and k8s export
   golden fail against the real repo'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7657,7 +7657,6 @@ drift, `frob check --only test --only invariant --only sys --only decisions
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 0 error(s), 2025 warning(s), 787 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1590 -->
 ```yaml
 id: T-1590
