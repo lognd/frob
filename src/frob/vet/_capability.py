@@ -222,7 +222,7 @@ def language_for(path: Path) -> str | None:
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'never raises' contract to cover a surprising span shape, not just the OSError read failure -- no observable behavior change, so docs/modules/vet.md#public-api needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 # frob:tests \
-# tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_execut\
+# tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel.test_non_execut\
 # able_line_numbers_surprising_span_shape_is_empty kind="unit"  # noqa: E501
 def non_executable_line_numbers(path: Path) -> frozenset[int]:
     """Every 1-indexed line number in `path` that a comment or python

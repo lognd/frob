@@ -786,7 +786,7 @@ class TestDoctorVenvShims:
 
         real_open = Path.open
 
-        def _raise_on_broken(self: Path, *args: object, **kwargs: object):
+        def _raise_on_broken(self: Path, *args, **kwargs):  # noqa: ANN002, ANN003, ANN202
             if self.name == "broken":
                 raise OSError("permission denied")
             return real_open(self, *args, **kwargs)

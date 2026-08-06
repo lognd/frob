@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import KernelModel, Node, bind_code, check_capability_conformance
 import frob.vet._capability as _capability_mod
+from frob.strata import KernelModel, Node, bind_code, check_capability_conformance
 from frob.vet._capability import (
     non_executable_line_numbers,
     scan_file_capabilities,

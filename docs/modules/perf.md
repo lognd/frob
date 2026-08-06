@@ -1095,7 +1095,7 @@ name `PERF_REACH_DEGRADED_SKIP_MARKER`
 skipped` -- perf_gate ITSELF still runs unchanged (PERF001-004 need no
 native at all and stay fully trustworthy), but any caller that treats
 an unexpected `skipped` entry as a whole-run degradation signal
-(`frob.gates._fix_engine._degraded_verification_reason`, T-1323's
+(`frob.gates._fix_engine_sync._degraded_verification_reason`, T-1323's
 WAIVE004 self-run guard) now catches this case too, instead of only
 ever observing "0 findings" from the reach-dependent rules with
 nothing to explain why.

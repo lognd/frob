@@ -785,9 +785,10 @@ class TestGitOps:
         # kill switch, or git missing from PATH) -- distinct from a
         # nonzero git exit code, this is `guarded_subprocess_run` itself
         # returning Err before any process ran.
+        from typani import Err
+
         import frob.refactor._gitops as gitops_mod
         from frob.refactor._models import RefactorError
-        from typani import Err
 
         root = _repo(tmp_path)
         _write(root, "a.py", "x = 1\n")
