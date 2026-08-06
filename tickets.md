@@ -9369,3 +9369,50 @@ Options, and the ticket should pick one with reasoning:
 Option 3 is the most principled and the most work; it is also the one that would fix the general problem rather than special-casing tests. Consider it seriously before defaulting to 1.
 
 Whichever is chosen, the acceptance is that the design file describes CONTRACTS, and that a reader can see the real architectural surface without scrolling past five thousand test names.
+
+<!-- ticket:T-1626 -->
+```yaml
+id: T-1626
+title: 'strata: capability detection must be symbol-resolved with full alias support,
+  not lexical needles'
+state: queued
+kind: security
+origin: human
+created: '2026-08-05'
+priority: high
+parent: T-1623
+tier: ticket
+sprint: null
+scope:
+- src/frob/vet/**
+- src/frob/graph/**
+- tests/**
+- docs/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Capability detection is fundamentally LEXICAL: `scan_file_capabilities` matches per-language needle tables against the file's raw bytes, excluding hits inside tree-sitter comment spans. Import/binding-aware passes were bolted on afterwards per language (`_python_binding_capabilities` T-0328, `_ts_binding_capabilities` T-0377, a rust sibling) to recover aliased and from-import evasions the raw-text scan "structurally cannot" catch -- their own words.
+
+That architecture cannot be made watertight by adding more needles. A capability model that decides "does this code eval?" by substring search is guessing, and it fails in both directions:
+
+FALSE NEGATIVES (evasions the current design misses, or catches only by luck):
+- indirect binding: `f = subprocess.run` then `f(cmd)` later, or through a dict/list
+- attribute chains through a re-export: `from frob import io` then `io.helpers.write(...)`
+- wrappers: a local helper that forwards to the dangerous callable, so the call site the scanner sees is innocent
+- `functools.partial(os.system, ...)`, decorators, and callables passed as arguments
+- `getattr(module, name)(...)` where name is computed
+- re-exports through a package `__init__` that rename the symbol
+
+FALSE POSITIVES (already costing real waivers in this repo):
+- `_body_reaches_decode_and_exec` carries a waiver explaining that the scanner flags the literal strings "eval"/"exec" in its OWN needle table
+- any identifier containing a needle as a substring (`evaluate_cacheable_gate`, `_eval_needle`, `compile_pattern`)
+
+Requirement: capability detection must be a SYMBOL match with full alias resolution, not a text match. Resolve each call site to the symbol it actually reaches -- through import aliases, from-imports with `as`, attribute chains, re-exports, and local rebinding -- and decide the capability from the RESOLVED target. A hit is a resolved reference to a known-dangerous symbol; anything unresolved is reported as unresolved rather than silently passing.
+
+This repo already owns the machinery: frob.graph.callgraph does call-graph resolution, and the lang adapters already produce tree-sitter symbol spans. The capability scanner should consume that resolution rather than maintaining a parallel lexical approximation per language.
+
+Fail-closed requirement: when resolution cannot determine a call's target (genuinely dynamic dispatch, a computed getattr), that must surface as an explicit UNRESOLVED finding demanding a declaration or a waiver -- never as "no capability found". This drive has repeatedly been burned by analysis that reported nothing when it could not look; the capability layer must not repeat it.
+
+Prerequisite for symbol-level `via`: attributing a capability to a specific declared symbol is only meaningful once the hit itself is symbol-resolved. Sequence this before, or together with, the via-granularity work.
