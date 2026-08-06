@@ -31,16 +31,29 @@ the Makefile recipe's xdist-crash serial-rerun recovery
 knobs (`COVERAGE_RERUN_DEADLINE`/`COVERAGE_XDIST_DEADLINE`) -- real,
 already-hardened resilience against a specific parallel-run flake class
 that would take a dedicated ticket of its own to re-derive faithfully in
-Python rather than risk a subtly wrong port. `native_coverage_refresh`
-surfaces any pytest/coverage subprocess failure as a plain `Err` instead;
-a caller that needs the full Makefile recipe's resilience still has it via
+Python rather than risk a subtly wrong port (that ticket is T-1672). A
+caller that needs the full Makefile recipe's resilience still has it via
 `make coverage`/`make coverage-fast` directly, unaffected by this module.
+
+T-1676 removed the all-passing-tests requirement this module used to
+impose: a non-zero pytest exit no longer discards the run. The suite
+VERDICT and the coverage ARTIFACT are independent results, and a failing
+test does not invalidate the coverage recorded for the thousands that
+passed -- the field incident was a 7m32s full run, 8622 of 8654 tests
+green, that produced no `coverage.xml` at all because one xdist worker was
+OOM-killed. Such a run is now stamped, marked degraded in
+`.frob/coverage-run.json`, and reported loudly. Accepting it is safe
+because `stamp_coverage`'s independent `module_join_fraction` deflation
+floor still refuses a coverage.xml that was genuinely truncated, and
+`write_coverage_lock`'s ratchet still refuses to lower a committed floor.
 """
 # frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 
+import json
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -71,9 +84,39 @@ _DEFAULT_COV_TARGET = "src/frob"
 class CoverageRefreshError(ErrorSet):
     """Failure values `native_coverage_refresh` can return."""
 
-    PytestFailed = "the pytest subprocess exited non-zero"
+    PytestRefused = "the pytest subprocess could not be spawned at all"
     CoverageXmlFailed = "`coverage xml` could not produce coverage.xml"
     StampFailed = "the post-run stamp_coverage call failed"
+
+
+#: Where `native_coverage_refresh` records the provenance of the run that
+#: produced the current `coverage.xml` (T-1676) -- specifically whether the
+#: suite was RED while it was measured. Consumers that need to know how far
+#: to trust the artifact read this; nothing else in the tree records it.
+# frob:ticket T-1676
+_RUN_PROVENANCE_REL = ".frob/coverage-run.json"
+
+
+# frob:ticket T-1676
+@dataclass(frozen=True)
+class _PytestPass:
+    """The outcome of one pytest pass (T-1676).
+
+    `ran` is whether pytest executed at all (False = the "nothing touched,
+    only restamp" path). `exit_code` is its status, `None` when it did not
+    run. `degraded` means it ran and exited non-zero -- the coverage data it
+    produced is real but was measured against a RED suite, so a symbol whose
+    test failed early under-reports.
+
+    The whole point of the type (T-1676) is that a non-zero pytest exit is
+    no longer conflated with "this pass produced nothing": the suite VERDICT
+    and the coverage ARTIFACT are independent results, and discarding 8622
+    passing tests' coverage because one test failed threw away the
+    measurement the caller actually asked for."""
+
+    ran: bool
+    degraded: bool
+    exit_code: int | None
 
 
 # frob:ticket T-1516
@@ -104,37 +147,83 @@ def _pytest_argv(
     return argv
 
 
-# frob:ticket T-1516
-def _run(argv: list[str], *, cwd: Path) -> Result[subprocess.CompletedProcess, Unit]:
-    """`guarded_subprocess_run`, collapsed to a plain pass/fail `Result`
-    (T-1516) -- a refused spawn (`FROB_DISABLE_EXEC=1`) and a real nonzero
-    exit are both "this subprocess did not succeed" from this module's own
-    callers' point of view; only the log line distinguishes them."""
+# frob:ticket T-1676
+def _spawn(argv: list[str], *, cwd: Path) -> Result[subprocess.CompletedProcess, Unit]:
+    """`guarded_subprocess_run` with the refused-spawn case collapsed to
+    `Err` (T-1676) -- the one seam every subprocess in this module goes
+    through, so "did not run at all" is distinguishable from "ran and
+    exited non-zero" by every caller that cares about the difference.
+
+    `_run` (below) is the pass/fail reading of this for callers where a
+    non-zero exit really does mean no usable output; `_pytest_outcome` is
+    the reading for callers where it does not."""
     guarded = guarded_subprocess_run(argv, cwd=str(cwd), check=False)
     if guarded.is_err:
         _log.error("coverage_refresh: %s refused (exec disabled)", " ".join(argv))
         return Err(Unit())
-    proc = guarded.danger_ok
+    return Ok(guarded.danger_ok)
+
+
+# frob:ticket T-1516
+def _run(argv: list[str], *, cwd: Path) -> Result[subprocess.CompletedProcess, Unit]:
+    """`_spawn`, collapsed to a plain pass/fail `Result` (T-1516) -- for a
+    subprocess whose non-zero exit genuinely means it produced nothing
+    usable (`coverage xml`). Since T-1676 the pytest passes deliberately do
+    NOT use this: a red suite still produces valid coverage data."""
+    spawned = _spawn(argv, cwd=cwd)
+    if spawned.is_err:
+        return Err(Unit())
+    proc = spawned.danger_ok
     if proc.returncode != 0:
         _log.error("coverage_refresh: %s exited %d", " ".join(argv), proc.returncode)
         return Err(Unit())
     return Ok(proc)
 
 
+# frob:ticket T-1676
+def _pytest_outcome(argv: list[str], *, cwd: Path) -> Result[_PytestPass, Unit]:
+    """Run one pytest pass and classify its exit (T-1676).
+
+    `Err(Unit())` means pytest never ran -- a refused spawn under
+    `FROB_DISABLE_EXEC=1`. That is the ONLY case where there is genuinely no
+    measurement to keep, and the only one that still aborts the refresh.
+
+    A non-zero exit is `Ok(_PytestPass(ran=True, degraded=True, ...))`: the
+    tests that ran still wrote their coverage data, and that data is what
+    the caller asked for. It is logged at ERROR so a red suite stays as
+    visible as it was when it aborted the run -- it simply no longer
+    vetoes the artifact."""
+    spawned = _spawn(argv, cwd=cwd)
+    if spawned.is_err:
+        return Err(Unit())
+    code = spawned.danger_ok.returncode
+    if code != 0:
+        _log.error(
+            "coverage_refresh: %s exited %d -- the suite was RED while coverage "
+            "was measured; KEEPING the coverage data (T-1676) and marking this "
+            "run degraded. Symbols whose tests failed early under-report; treat "
+            "a NEW low-coverage finding from this run as suspect until the "
+            "suite is green",
+            " ".join(argv),
+            code,
+        )
+    return Ok(_PytestPass(ran=True, degraded=code != 0, exit_code=code))
+
+
 # frob:ticket T-1516
 def _run_full_suite(
     root: Path, *, cov_target: str, reason: str
-) -> Result[Unit, CoverageRefreshError]:
+) -> Result[_PytestPass, CoverageRefreshError]:
     """Run the WHOLE suite under coverage, no target restriction (T-1516) --
     the `full=True`/cold-start branch of `native_coverage_refresh`, split out
     to keep that function under the ARCH001 line threshold. `reason` is a
     human-readable log label only (e.g. "explicit --full")."""
     _log.info("coverage_refresh: %s -- running the full suite", reason)
     argv = _pytest_argv(targets=(), cov_target=cov_target, append=False)
-    ran = _run(argv, cwd=root)
+    ran = _pytest_outcome(argv, cwd=root)
     if ran.is_err:
-        return Err(CoverageRefreshError.PytestFailed)
-    return Ok(Unit())
+        return Err(CoverageRefreshError.PytestRefused)
+    return Ok(ran.danger_ok)
 
 
 # frob:ticket T-1516
@@ -145,7 +234,7 @@ def _run_incremental_or_restamp(
     base: str,
     cov_target: str,
     xml_path: Path,
-) -> Result[bool, CoverageRefreshError]:
+) -> Result[_PytestPass, CoverageRefreshError]:
     """The non-cold-start branch of `native_coverage_refresh` (T-1516),
     split out to keep that function under the ARCH001 line threshold.
 
@@ -159,21 +248,21 @@ def _run_incremental_or_restamp(
     if targets:
         _log.info("coverage_refresh: incremental run, %d target(s)", len(targets))
         argv = _pytest_argv(targets=targets, cov_target=cov_target, append=True)
-        ran = _run(argv, cwd=root)
+        ran = _pytest_outcome(argv, cwd=root)
         if ran.is_err:
-            return Err(CoverageRefreshError.PytestFailed)
-        return Ok(True)
+            return Err(CoverageRefreshError.PytestRefused)
+        return Ok(ran.danger_ok)
     if not xml_path.exists():
         return _run_full_suite(
             root,
             cov_target=cov_target,
             reason="nothing touched and no coverage.xml yet",
-        ) | (lambda _: True)
+        )
     _log.info(
         "coverage_refresh: nothing touched selects a python test -- "
         "restamping existing coverage.xml only"
     )
-    return Ok(False)
+    return Ok(_PytestPass(ran=False, degraded=False, exit_code=None))
 
 
 # frob:ticket T-1516
@@ -186,10 +275,11 @@ def _run_pytest_pass(
     cold_start: bool,
     cov_target: str,
     xml_path: Path,
-) -> Result[bool, CoverageRefreshError]:
+) -> Result[_PytestPass, CoverageRefreshError]:
     """Dispatch to `_run_full_suite` or `_run_incremental_or_restamp` (T-1516),
     split out of `native_coverage_refresh` to keep it under the ARCH001
-    line threshold. Returns whether pytest actually ran."""
+    line threshold. Returns the pass outcome (whether pytest ran, and
+    whether it ran against a red suite)."""
     if full or cold_start:
         return _run_full_suite(
             root,
@@ -197,10 +287,46 @@ def _run_pytest_pass(
             reason=(
                 "explicit --full" if full else "cold start (no coverage-stamp yet)"
             ),
-        ) | (lambda _: True)
+        )
     return _run_incremental_or_restamp(
         root, snapshot, base=base, cov_target=cov_target, xml_path=xml_path
     )
+
+
+# frob:ticket T-1676
+def _write_run_provenance(root: Path, outcome: _PytestPass) -> None:
+    """Record whether the run that produced the current `coverage.xml` was
+    measured against a red suite (T-1676).
+
+    Deliberately best-effort and side-effect-only: the coverage data itself
+    is already written and stamped by the time this runs, and losing the
+    provenance note must never turn a successful refresh into a failure.
+    A failed write is logged, not returned -- there is nothing the caller
+    could usefully do about it.
+
+    Writing this on EVERY run, degraded or not, is the point: a stale
+    "degraded" note left over from a previous run would be read as a
+    property of the current artifact."""
+    record = {
+        "degraded": outcome.degraded,
+        "pytest_exit_code": outcome.exit_code,
+        "pytest_ran": outcome.ran,
+    }
+    path = root / _RUN_PROVENANCE_REL
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+    except OSError as exc:
+        _log.warning("coverage_refresh: could not write %s: %s", path, exc)
+        return
+    if outcome.degraded:
+        _log.warning(
+            "coverage_refresh: coverage.xml recorded as DEGRADED in %s "
+            "(pytest exit %s) -- the artifact is usable but was measured "
+            "against a red suite",
+            _RUN_PROVENANCE_REL,
+            outcome.exit_code,
+        )
 
 
 # frob:ticket T-1516
@@ -208,7 +334,7 @@ def _run_pytest_pass(
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_full_run_when_no_stamp_exists  # noqa: E501
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_incremental_run_uses_touched_set_targets  # noqa: E501
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_nothing_touched_only_restamps  # noqa: E501
-# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_pytest_failure_is_err  # noqa: E501
+# frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_red_suite_keeps_coverage_data  # noqa: E501
 def native_coverage_refresh(
     root: Path,
     snapshot: GraphSnapshot,
@@ -256,9 +382,9 @@ def native_coverage_refresh(
     )
     if pass_result.is_err:
         return Err(pass_result.danger_err)
-    ran_pytest = pass_result.danger_ok
+    outcome = pass_result.danger_ok
 
-    if ran_pytest:
+    if outcome.ran:
         # `--cov-report=` above deliberately disables pytest-cov's own
         # report generation (mirrors the Makefile recipe's own separate
         # `coverage xml` step) so both the full and incremental branches
@@ -274,6 +400,7 @@ def native_coverage_refresh(
     if stamped.is_err:
         _log.error("coverage_refresh: stamp_coverage failed: %s", stamped.danger_err)
         return Err(CoverageRefreshError.StampFailed)
+    _write_run_provenance(root, outcome)
     return Ok(Unit())
 
 

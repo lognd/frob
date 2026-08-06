@@ -443,10 +443,44 @@ def native_coverage_refresh(root: Path, snapshot: GraphSnapshot, *,
     # target keeps that shell-side resilience).
 
 class CoverageRefreshError(ErrorSet):
-    PytestFailed = "the pytest subprocess exited non-zero"
+    PytestRefused = "the pytest subprocess could not be spawned at all"
     CoverageXmlFailed = "`coverage xml` could not produce coverage.xml"
     StampFailed = "the post-run stamp_coverage call failed"
 ```
+
+### A red suite does not discard the run (T-1676)
+
+`native_coverage_refresh` used to treat any non-zero pytest exit as
+`PytestFailed` and throw the whole run away without writing
+`coverage.xml`. That conflated two independent results: the suite
+**verdict** (did every test pass) and the coverage **artifact** (which
+lines did the tests that ran execute). A failing test does not invalidate
+the coverage recorded for the thousands that passed. The field incident
+was a 7m32s full run in which 8622 of 8654 tests passed and one xdist
+worker was OOM-killed; it produced no coverage artifact at all.
+
+Since T-1676:
+
+- A non-zero pytest exit **keeps** the coverage data. `coverage xml` and
+  `stamp_coverage` still run and the refresh returns `Ok`.
+- The run's provenance is recorded in `.frob/coverage-run.json`
+  (`degraded`, `pytest_exit_code`, `pytest_ran`), written on **every**
+  run so a previous run's `degraded` note can never be misread as a
+  property of the current artifact.
+- The red suite is still reported at ERROR. It stays as visible as it was
+  when it aborted the run; it just no longer vetoes the artifact.
+- `PytestRefused` is the one remaining abort: pytest never ran at all
+  (`FROB_DISABLE_EXEC=1`), so there is no measurement to keep.
+
+Accepting a degraded artifact is safe because two independent guards
+still hold: `stamp_coverage`'s `module_join_fraction` deflation floor
+refuses a `coverage.xml` that was genuinely truncated, and
+`write_coverage_lock`'s ratchet refuses to lower a committed floor unless
+`allow_decrease=True` is passed deliberately. A degraded run can raise a
+floor or clear a violation; it cannot quietly lower the bar. Treat a NEW
+low-coverage finding sourced from a degraded run as suspect until the
+suite is green -- a test that failed early stops contributing coverage
+for the symbols it was exercising.
 
 ### Coverage as managed derived state (T-1516/T-1517)
 

@@ -4,6 +4,7 @@ natives-clobber guard on the `make coverage`/`make coverage-fast` targets."""
 
 from __future__ import annotations
 
+import json
 import subprocess
 import textwrap
 from pathlib import Path
@@ -431,11 +432,11 @@ class TestNativeCoverageRefresh:
         run, then `coverage xml -i`, then `stamp_coverage`."""
         calls: list[list[str]] = []
 
-        def _fake_run(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
             calls.append(list(argv))
-            return Ok(None)
+            return Ok(subprocess.CompletedProcess(argv, 0))
 
-        monkeypatch.setattr(_refresh_mod, "_run", _fake_run)
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
         stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
 
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
@@ -453,11 +454,11 @@ class TestNativeCoverageRefresh:
         target -- the pytest run is `--cov-append`-restricted to it."""
         calls: list[list[str]] = []
 
-        def _fake_run(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
             calls.append(list(argv))
-            return Ok(None)
+            return Ok(subprocess.CompletedProcess(argv, 0))
 
-        monkeypatch.setattr(_refresh_mod, "_run", _fake_run)
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
         monkeypatch.setattr(
             _refresh_mod,
             "python_coverage_targets",
@@ -481,11 +482,11 @@ class TestNativeCoverageRefresh:
         (tmp_path / "coverage.xml").write_text("<coverage/>", encoding="utf-8")
         calls: list[list[str]] = []
 
-        def _fake_run(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
             calls.append(list(argv))
-            return Ok(None)
+            return Ok(subprocess.CompletedProcess(argv, 0))
 
-        monkeypatch.setattr(_refresh_mod, "_run", _fake_run)
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
         monkeypatch.setattr(
             _refresh_mod,
             "python_coverage_targets",
@@ -501,18 +502,78 @@ class TestNativeCoverageRefresh:
         assert len(stamp_calls) == 1
 
     # frob:ticket T-1516
-    def test_pytest_failure_is_err(
+    def test_red_suite_keeps_coverage_data(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """A failing `pytest` run short-circuits to `Err(PytestFailed)`
-        without ever reaching `stamp_coverage`."""
-        monkeypatch.setattr(_refresh_mod, "_run", lambda *a, **k: Err(Unit()))  # noqa: ARG005
+        """T-1676 REGRESSION LOCK -- inverted from the original
+        `test_pytest_failure_is_err`, which asserted the behavior this
+        ticket removed.
+
+        A red suite must NOT discard the run: `coverage xml` still runs,
+        `stamp_coverage` still runs, the refresh still succeeds, and the
+        artifact is marked degraded. The incident this locks out cost a
+        7m32s full run in which 8622 of 8654 tests passed and no
+        coverage.xml was produced at all."""
+        calls: list[list[str]] = []
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            calls.append(list(argv))
+            code = 1 if argv[0] == "pytest" else 0
+            return Ok(subprocess.CompletedProcess(argv, code))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+        stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
+
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
+        assert result.is_ok
+        assert calls[0][0] == "pytest"
+        assert ["coverage", "xml", "-i"] in calls
+        assert len(stamp_calls) == 1
+
+        record = json.loads(
+            (tmp_path / _refresh_mod._RUN_PROVENANCE_REL).read_text(encoding="utf-8")
+        )
+        assert record["degraded"] is True
+        assert record["pytest_exit_code"] == 1
+
+    # frob:ticket T-1676
+    def test_refused_spawn_is_err(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The one case that still aborts: pytest never ran at all
+        (`FROB_DISABLE_EXEC=1`), so there is genuinely no measurement to
+        keep and nothing to stamp."""
+        monkeypatch.setattr(_refresh_mod, "_spawn", lambda *a, **k: Err(Unit()))  # noqa: ARG005
         stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
 
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
         assert result.is_err
-        assert result.danger_err == _refresh_mod.CoverageRefreshError.PytestFailed
+        assert result.danger_err == _refresh_mod.CoverageRefreshError.PytestRefused
         assert stamp_calls == []
+
+    # frob:ticket T-1676
+    def test_green_suite_records_not_degraded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A green run overwrites the provenance record rather than leaving
+        a previous run's `degraded` note in place to be misread as a
+        property of the current artifact."""
+        stale = tmp_path / _refresh_mod._RUN_PROVENANCE_REL
+        stale.parent.mkdir(parents=True, exist_ok=True)
+        stale.write_text('{"degraded": true, "pytest_exit_code": 1}\n', encoding="utf-8")
+
+        monkeypatch.setattr(
+            _refresh_mod,
+            "_spawn",
+            lambda argv, **k: Ok(subprocess.CompletedProcess(argv, 0)),  # noqa: ARG005
+        )
+        self._patch_stamp(monkeypatch, stamp=None)
+
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
+        assert result.is_ok
+        record = json.loads(stale.read_text(encoding="utf-8"))
+        assert record["degraded"] is False
+        assert record["pytest_exit_code"] == 0
 
 
 # frob:ticket T-1516

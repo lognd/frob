@@ -141004,7 +141004,7 @@ evidence:
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
-- tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
 - tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
 - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
@@ -141048,7 +141048,7 @@ acceptance:
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
-  - tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
   - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
 - text: GIVEN a frob command that actually RUNS tests to obtain coverage data (frob
     test --wait-coverage, via run_coverage_wait) THEN the frob-native coverage refresh
@@ -141361,7 +141361,6 @@ test --wait-coverage`, both native, both touched-set-incremental) never
 requires a manual `make coverage` invocation -- only the full-suite
 resilience path still does, by disclosed design, not oversight.
 ; logan, 2026-08-05)
-
 <!-- ticket:T-1206 -->
 ```yaml
 id: T-1206
@@ -183376,7 +183375,7 @@ evidence:
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
-- tests/test_coverage.py::TestNativeCoverageRefresh::test_pytest_failure_is_err
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
 - tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
 threat: null
 component: null
@@ -183565,7 +183564,6 @@ effects must update) was touched.
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 1 error(s), 693 warning(s), 781 waived
 - error-findings: PRE001@tickets/T-1516
-
 <!-- ticket:T-1517 -->
 ```yaml
 id: T-1517

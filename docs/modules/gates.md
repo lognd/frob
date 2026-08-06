@@ -1402,6 +1402,15 @@ promotion to ERROR is a default-severity change, not an unwaivable one.
 <!-- frob:describes src/frob/testing/_coverage_cache.py::fill_from_cache -->
 <!-- frob:describes src/frob/testing/_coverage_refresh.py::native_coverage_refresh -->
 
+**T-1676**: `native_coverage_refresh` no longer requires an all-passing
+suite to produce an artifact. A non-zero pytest exit keeps the coverage
+data, stamps it, and records `degraded` in `.frob/coverage-run.json`;
+only a refused spawn (`PytestRefused`) aborts. The suite verdict and the
+coverage artifact are independent results. See
+[testing.md](testing.md#a-red-suite-does-not-discard-the-run-t-1676) for
+the full contract and the two guards that keep a degraded artifact safe
+to stamp.
+
 T-1205's own acceptance criteria ask for coverage to stop being a
 hand-refreshed artifact TEST005/006/011/017 merely read and complain
 about. Two tickets close most of that gap:
