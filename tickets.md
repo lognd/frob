@@ -3548,6 +3548,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:grep -q 'docs-completeness-2026-08-06' docs/index.md && test -s docs/audits/docs-completeness-2026-08-06.md
+  exit=0 sha256=e3b0c44298fc
 threat: null
 component: null
 ```
@@ -3640,7 +3642,6 @@ T-1612's own authorized deletion -- nothing new deleted by this ticket.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 2779 warning(s), 711 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1611 -->
 ```yaml
 id: T-1611
