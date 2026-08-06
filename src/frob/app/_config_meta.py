@@ -215,8 +215,8 @@ def stale_install_warning(repo_root: Path) -> str | None:
 # (int(p) on a non-numeric component) is caught below"
 # frob:waive EXHAUST002 reason="T-1636: the resolver's curated builtin-raiser table \
 # attributes int(...) with {ValueError, TypeError} unconditionally, but every element \
-# of parts here is already a str (raw.strip().split('.') output) -- int(str) can only \
-# ever raise ValueError, never TypeError; a false positive from the table's \
+# of parts here is already a str (raw.strip().split('.') output), and int(str) raises \
+# ValueError rather than TypeError; a false positive from the table's \
 # context-insensitive over-approximation of int()"
 def _parse_version_tuple(raw: str) -> tuple[int, ...] | None:
     """Parse a dotted-numeric version string (`"0.277.0"`) into a tuple for
