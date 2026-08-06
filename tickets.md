@@ -4343,7 +4343,7 @@ Also verify, and state the answer in the Done report, whether ordinary CLI invoc
 ```yaml
 id: T-1622
 title: Tickets filed from a worktree get draft ids that never survive a land
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -4498,7 +4498,6 @@ queued ticket for that investigation. I did not touch it.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 8497 warning(s), 711 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1623 -->
 ```yaml
 id: T-1623
