@@ -1857,8 +1857,27 @@ def _check_committed_waive_deletions(
     return Ok(None)
 
 
+# frob:ticket T-1681
+def _land_is_rapid(worktree: Path, ticket_id: str) -> bool:
+    """Whether `worktree` runs the `rapid` profile, recording the
+    relaxation as debt when it does (T-1681). Best-effort: an unreadable
+    profile resolves to NOT rapid, so a broken config can only make the
+    land stricter."""
+    from frob.tickets._evidence import record_rapid_debt
+    from frob.tickets._profile import ProfileName, effective_profile
+
+    resolved = effective_profile(worktree)
+    if not (resolved.is_ok and resolved.danger_ok is ProfileName.RAPID):
+        return False
+    record_rapid_debt(worktree, ticket_id, "land-evidence-scope-unbound")
+    return True
+
+
 def _validate_scope_covered_preflight(
-    ticket: Ticket, covers_scope: Callable[[Ticket], bool | None] | None
+    ticket: Ticket,
+    covers_scope: Callable[[Ticket], bool | None] | None,
+    *,
+    rapid: bool = False,
 ) -> Result[None, LandError]:
     """`Err(NotCloseable)` if `covers_scope(ticket)` answers `False` against
     the PRE-merge worktree ticket (T-0774): D-05's `covers_scope` callable
@@ -1886,6 +1905,13 @@ def _validate_scope_covered_preflight(
     preflight silent, exactly like the post-merge check's own tri-state
     contract (`_done_transition_guard`)."""
     if covers_scope is None:
+        return Ok(None)
+    if covers_scope(ticket) is False and rapid:
+        _log.warning(
+            "land: %s landing with no evidence id covering a touched/scope "
+            "symbol -- profile=rapid (T-1681), recorded in rapid-debt.jsonl",
+            ticket.id,
+        )
         return Ok(None)
     if covers_scope(ticket) is False:
         _log.error(
@@ -2847,7 +2873,9 @@ def _land_precheck(
         return Err(main_branch_resolved.danger_err)
     main_branch_name = main_branch_resolved.danger_ok
 
-    scope_preflight = _validate_scope_covered_preflight(ticket, covers_scope)
+    scope_preflight = _validate_scope_covered_preflight(
+        ticket, covers_scope, rapid=_land_is_rapid(worktree, ticket.id)
+    )
     if scope_preflight.is_err:
         return Err(scope_preflight.danger_err)
 
