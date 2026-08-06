@@ -1638,7 +1638,7 @@ entirely.
 ```yaml
 id: T-1279
 title: 'TEST005 burn-down: src/frob/gates (179 findings, 12 at 0.0%)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-29'
@@ -1685,10 +1685,22 @@ acceptance:
 - text: GIVEN a 0.0%-branch symbol in gates WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
-  evidence: []
+  evidence:
+  - tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches::test_exec_disabled_degrades_to_no_violations
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
+  - tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride::test_default_retired_set_is_module_constant
 - text: GIVEN a new test added to close a gates TEST005 finding WHEN reviewed THEN
     it asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
-  evidence: []
+  evidence:
+  - tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches::test_exec_disabled_degrades_to_no_violations
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
+  - tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride::test_default_retired_set_is_module_constant
 acceptance_amendments:
 - op: remove
   index: 0
@@ -1764,57 +1776,84 @@ machinery or file a removal ticket instead of writing a fake test for it
 
 ## Done report
 
-Changed:
-src/frob/gates/_mutation_evidence.py::mutation_evidence_violations (added frob:tests binding for the ExecDisabled Err branch)
-src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids (added frob:tests bindings for comment-skip, missing-base-dir, unresolved-const-ref branches)
-src/frob/gates/_rule_id_scan.py::generated_gate_rule_ids (added frob:tests binding for the default-retired-set path)
-tests/gates/__init__.py (new test package)
-tests/gates/test_mutation_evidence_err_branches.py (new: TestMutationEvidenceErrBranches)
-tests/gates/test_rule_id_scan_branches.py (new: TestScanEmittedRuleIdsBranches, TestGeneratedGateRuleIdsRetiredOverride)
-design/frob.strata (SELFAUDIT001/SYS104: declared the three new test classes in the testsuite interface)
+T-1279's substantive work (2 genuine TEST005 gaps closed: mutation_evidence_violations
+Err/ExecDisabled branch, and 3 scan_emitted_rule_ids branches) was already implemented
+and landed to main under commit 8e7503ce "test(gates): cover mutation-evidence Err
+branch and rule-id-scan edges" -- this worktree's own `git log` confirms
+tests/gates/test_mutation_evidence_err_branches.py and
+tests/gates/test_rule_id_scan_branches.py are present in main's history. A prior
+agent's Done-report prose (visible via `frob ticket show T-1279`) already documents
+this investigation: 10 of the 12 listed 0.0%-branch symbols already carried real,
+behavioral frob:tests-bound coverage in existing files (tests/test_secrets_gate.py,
+tests/test_gates.py's TestParseFailureGate/TestKnownGateRuleIds/TestScopeDigest*/
+TestPreworkGate*/TestTestGate*/TestReleaseGate*/TestPerfGate*/TestRunGates*,
+tests/test_vet.py's TestOpaqueIndirectionGate) and their reported 0.0% is most
+plausibly the known subprocess/multiprocess coverage-attribution gap tracked by
+T-1235/T-1395 (out of this ticket's scope to fix). The ticket's ledger state had
+regressed to queued after a stale-lease release (see commits 87d07376 "requeue
+T-1279" and d0c5cc34 "register T-1402's gate-module scope after releasing T-1279's
+stale lease") even though the code/tests were already merged.
 
-Investigation of the other 10 of 12 listed 0.0%-branch symbols
-(secrets_gate, parse_failure_gate, opaque_gate, scan_emitted_rule_ids's
-literal-scan path, scope_digest, prework_gate, test_gate, release_gate,
-perf_gate, run_gates) found each already has real, behavioral
-frob:tests-bound coverage of both clean and finding-producing branches
-in existing test files (tests/test_secrets_gate.py,
-tests/test_gates.py's TestParseFailureGate/TestKnownGateRuleIds/
-TestScopeDigest*/TestPreworkGate*/TestTestGate*/TestReleaseGate*/
-TestPerfGate*/TestRunGates* classes, tests/test_vet.py's
-TestOpaqueIndirectionGate). Their reported 0.0% is not explained by a
-missing test -- most plausibly the known subprocess/multiprocess
-coverage-attribution gap tracked by the concurrent T-1235/T-1395
-tickets (out of this ticket's src/frob/gates/** scope to fix). Rather
-than fabricate filler tests against already-tested functions to chase
-a number, I closed the two symbols with a genuine, verifiable test gap
-(the mutation_evidence Err branch, and three rule_id_scan branches)
-and filed T-1396 to continue auditing the remaining ~167 non-0.0%-tier
-TEST005 findings in src/frob/gates for real (non-attribution) gaps.
+This session re-took the lease (`frob ticket start T-1279`), re-verified the 6
+tests still collect and pass (`pytest tests/gates/ -q` -- 6 passed), and re-recorded
+evidence via the CLI (a prior evidence-recording attempt did not survive the
+requeue -- `frob ticket show` reported "no evidence recorded" before this run).
 
-Evidence:
-tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches::test_exec_disabled_degrades_to_no_violations
-tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
-tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error
-tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out
-tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
-tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride::test_default_retired_set_is_module_constant
-(all verified: timeout 100 uv run pytest -q -p no:randomly -o addopts="" tests/gates/ tests/test_gates_mutation_evidence.py -- 10 passed)
+MEASUREMENT CAVEAT: no coverage.xml/coverage stamp exists in this worktree
+(`frob check --only test` reports "WARNING: load_coverage: no coverage.xml at
+coverage.xml" and TEST006 "no coverage stamp found"). TEST005 is therefore
+UNMEASURED in this worktree, not zero -- per playbook section 6b/6c, a full
+unscoped `make coverage` run is a coordinator-only step; this dispatch did not
+run it. The last COMMITTED frob-coverage.lock.json (dated Aug 5 15:41, already
+on main going into this ticket) is the only on-disk reference point, and per
+playbook section 6d it is NOT trustworthy as a TEST005 count (T-1401 documented
+disagreements against the real coverage.xml it was derived from). No trustworthy
+before/after unscoped TEST005 package number can be produced from this worktree
+without running make coverage, which is out of scope for a dispatched sub-agent.
 
-Filed: T-1396 (continuation: audit src/frob/gates' remaining ~167 TEST005 findings past the 0.0% priority tier for genuine, non-attribution gaps)
-
-Gates: frob check --ticket T-1279 clean across all 39 gate families (run in three --only chunks: prework, gates-security, static, plus a full --budget 100 pass) -- 0 errors. ruff check/format and ty check clean.
+No new out-of-scope work found. T-1396 (already filed by the prior agent) tracks
+the remaining ~167 non-0.0%-tier TEST005 findings in src/frob/gates.
 
 ### Changed
-(no changed files detected)
+```
+ tickets.md | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+```
 
 ### Evidence
-(no evidence recorded)
+- `tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches::test_exec_disabled_degrades_to_no_violations` (pytest node id, verified passing when recorded)
+- `tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped` (pytest node id, verified passing when recorded)
+- `tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error` (pytest node id, verified passing when recorded)
+- `tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out` (pytest node id, verified passing when recorded)
+- `tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file` (pytest node id, verified passing when recorded)
+- `tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride::test_default_retired_set_is_module_constant` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
-- gates: 0 error(s), 2784 warning(s), 698 waived
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 571 warning(s), 784 waived
 - error-findings: none (measured, zero errors)
+
+### Acceptance amendments
+- [0] remove: removed 'GIVEN the gates package at the 75%/70% floors WHEN frob check --only test runs THEN it reports 0 TEST005 findings under src/frob/gates/**' (reason: Unsatisfiable by construction, replaced with a triage-shaped criterion.
+
+The removed criterion asserted zero TEST005 findings across a package holding
+hundreds. No single dispatch can reach that, so the ticket could never close
+honestly -- and since T-1410 wired the gate-claim guard, frob correctly REFUSES
+to close it, stranding genuine completed work behind an aspiration.
+
+This is a correction, not goalpost-moving. The criterion was authored before we
+knew the count itself was partly artifact: T-1418 is currently classifying the
+306 symbols reporting exactly 0.0 percent, and three agents independently found
+that many already carry real, behavioral, frob:tests-bound tests -- the code is
+exercised, just in a process pytest-cov does not attribute back. Demanding zero
+findings therefore demanded work that in some cases does not exist, and pushed
+agents toward writing filler tests against already-tested code.
+
+The replacement is the shape used on T-1400 and it is strictly harder to satisfy
+dishonestly: every remaining finding must be triaged, a genuine gap must be
+closed with a behavioral test, and an artifact must be recorded with the
+covering test named so the claim is checkable. Filler still fails it.
+; logan, 2026-08-02)
 
 <!-- ticket:T-1315 -->
 ```yaml
@@ -2436,7 +2475,7 @@ this investigation ticket's close.
 id: T-1396
 title: 'TEST005 burn-down: src/frob/gates remaining findings past the 0.0% priority
   tier'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-01'
@@ -2464,6 +2503,19 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+evidence:
+- tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile::test_no_separator_returns_none
+- tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile::test_qualname_not_macro_suffixed_returns_none
+- tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile::test_macro_suffixed_qualname_returns_file_path
+- tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_bare_file_symref_exact_match
+- tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_bare_file_symref_prefix_match
+- tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_bare_file_symref_no_match
+- tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_dotted_symref_exact_match
+- tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_dotted_symref_parametrized_match
+- tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_dotted_symref_no_match
+- tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_dotted_symref_file_in_scope
+- tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_dotted_symref_file_out_of_scope
+- tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_bare_path_symref_in_scope
 threat: null
 component: null
 ```
@@ -2502,6 +2554,106 @@ writing a test for it).
 ## Acceptance
 - [ ] GIVEN the gates package at the 75%/70% floors WHEN frob check --only test runs THEN it reports 0 TEST005 findings under src/frob/gates/** that are NOT explained by the T-1235/T-1395 coverage-attribution gap
 - [ ] GIVEN a symbol judged to have a genuine missing-branch gap WHEN a test is added THEN it asserts real behavior, never filler
+
+## Done report
+
+Continuation of T-1279's src/frob/gates TEST005 burn-down, past the 12-symbol
+0.0% priority tier. Scope for this ticket is narrow ('tests/gates/**',
+'src/frob/gates/__init__.py'), so this pass focused specifically on
+__init__.py -- the single largest module in the package (7446 lines) and
+the one this ticket's own scope permits source edits to.
+
+MEASUREMENT: no coverage.xml/coverage stamp exists in this worktree (no
+`make coverage` has run here -- confirmed via `frob check --only test`
+reporting "no coverage.xml at coverage.xml" and TEST006 "no coverage stamp
+found"). Per playbook sections 6b/6c/6d, a full unscoped `make coverage` run
+is a coordinator-only step; this dispatch did not and structurally could not
+run it. As a substitute, I ran a SCOPED `pytest --cov=src/frob/gates
+--cov-branch` over tests/test_gates.py + tests/gates/ to get a rough,
+non-authoritative read of which __init__.py lines/branches show zero hits
+under that partial run. I verified directly that this scoped coverage.xml
+cannot be trusted as a real TEST005 measurement: `frob check --stamp-coverage`
+against it refuses outright (CoverageDeflated: canary module
+src/frob/__main__.py reads 0.0%, T-1236's canary check), and a bare `frob
+check --only test` against it reports 0 TEST005 findings repo-wide --
+consistent with section 6e's documented risk that a scoped run silently
+undercounts rather than measuring cleanly. I deleted the scratch coverage.xml
+before finishing so it could not be mistaken for real data by a later run.
+
+Given that, I used the scoped XML only as a POINTER to candidate gaps, then
+verified each candidate by reading source + grepping for existing direct
+tests (the same discipline as T-1279): a genuine gap needs BOTH zero hits in
+the scoped read AND no existing frob:tests-bound test naming the symbol
+directly. Three private helpers in __init__.py matched both conditions:
+`_macro_symbol_file`, `_node_id_matches_symref`, `_file_of_symref_in_scope`
+-- each is used by the ticket-evidence/scope-binding machinery
+(`evidence_covers_scope`, `_evidence_binds_to_scope`) but had never been
+exercised by a test that calls them directly; only indirect coverage through
+much larger integration-style tests, which does not walk every one of their
+own branches (e.g. the bare-file-vs-dotted-symref split in
+`_node_id_matches_symref`, the no-separator guard in `_macro_symbol_file`).
+
+Added tests/gates/test_scope_symref_helpers.py with 3 test classes (12 test
+methods) exercising every branch of these 3 functions directly -- no filler,
+each asserts a specific real return value for a specific real input shape
+(exact match, prefix match, no-match, macro-suffix match, non-suffix
+no-match, missing-separator guard, in-scope, out-of-scope). Bound each
+function to its covering test class via `frob:tests` directives.
+
+design/frob.strata: `frob sys sync-interface` reported this file needs the
+3 new test class names added to the testsuite interface (SYS104/SELFAUDIT001),
+but the file itself is OUTSIDE this ticket's declared scope and is currently
+leased by T-1220 (`frob ticket scope T-1396 --add design/frob.strata` refused
+with ScopeLeaseConflict). Per playbook section 0.5, `frob ticket land`
+absorbs `frob sys sync-interface` automatically before merge -- this is
+land-owned, not worktree-owned -- so I reverted my local sync-interface write
+and left the SELFAUDIT001/SYS104 drift for land to resolve, exactly as it did
+for T-1279's identical situation. Confirmed via `frob check --land-parity`:
+clean, 0 unscoped errors -- the SELFAUDIT001 finding a scoped
+`--only sys`/`--only coverage`/`--only scope` run still shows locally is
+checkpoint-exempt at the real land sweep, not a real blocker.
+
+This closes 3 of the remaining ~167 non-0.0%-tier findings this ticket's
+brief described (a small fraction; the file is 7446 lines and covers 30+
+gate implementations). The bulk of the remaining audit is unstarted --
+genuinely triaging the rest requires a trustworthy TEST005 read, which
+requires the coordinator's own full `make coverage` stamp (this dispatch
+could not produce one). I am not filing a further continuation ticket for
+this specific remainder since T-1396 itself already exists as that
+continuation vehicle and its acceptance criteria (triage findings, close
+genuine gaps with behavioral tests, no filler) remain open and accurately
+describe the work still to do -- a future dispatch with a real coverage
+stamp available should re-open/continue this ticket rather than treating it
+as fully closed by this partial pass.
+
+No new out-of-scope work found beyond the design/frob.strata lease conflict
+noted above (not filed as a new ticket -- it is expected, land-owned drift
+per playbook 0.5/4b, not a defect).
+
+### Changed
+```
+ tickets.md | 148 +++++++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 99 insertions(+), 49 deletions(-)
+```
+
+### Evidence
+- `tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile::test_no_separator_returns_none` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile::test_qualname_not_macro_suffixed_returns_none` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestMacroSymbolFile::test_macro_suffixed_qualname_returns_file_path` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_bare_file_symref_exact_match` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_bare_file_symref_prefix_match` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_bare_file_symref_no_match` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_dotted_symref_exact_match` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_dotted_symref_parametrized_match` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_dotted_symref_no_match` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_dotted_symref_file_in_scope` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_dotted_symref_file_out_of_scope` (pytest node id, verified passing when recorded)
+- `tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_bare_path_symref_in_scope` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: 0 error(s), 493 warning(s), 784 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1420 -->
 ```yaml
@@ -6989,3 +7141,31 @@ Three real (isolation-reproducible) suite failures on main:
 3. tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known -- a rule id literal is constructed in src/frob/gates or src/frob/strata that is not in the known-rule registry. Every emitted rule must be registered (that registry is what WAIVE002/docs generation read).
 
 All three are 'the code moved, the declarations did not' -- fix the declarations, do not relax the tests.
+
+<!-- ticket:T-1591 -->
+```yaml
+id: T-1591
+title: 'suite: tests that pass in isolation but fail under xdist -- shared-state pollution'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/**
+- src/frob/lang/**
+- src/frob/serve/**
+- src/frob/app/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+A full 'pytest tests/' run reds ~8 tests that PASS when run in isolation with -p no:randomly, i.e. they depend on execution order or on state another test left behind in the same xdist worker. Confirmed members: tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable (2), tests/unit/test_app_runners.py::TestMapRunner/TestOutlineRunner (2), tests/test_lang.py::TestParseCache::test_second_call_same_content_is_a_hit, tests/test_serve.py::TestCheckScope::test_in_scope_diff_passes, tests/system/test_cli_perf.py::TestCheckOnlyPerf, tests/test_ticket_evidence.py::TestKindCliInvalidKind::test_invalid_kind_refused (AppConfig ValidationError instead of a clean refusal), tests/test_coverage.py::TestCoverageTargetNativesGuard, tests/test_ticket_land.py::TestClaimDivergencePostMerge.
+
+This is the most corrosive failure class we have: it makes the suite's verdict depend on worker assignment, so a red run gets dismissed as 'flaky' and real regressions hide behind it (this drive already had 'gates green is not suite green' bite twice).
+
+Per test: reproduce with the same seed/worker ordering (pytest -p no:randomly with the failing test AFTER its polluter, or -p xdist with -n matching), find the shared mutable state (module-level caches like frob.lang's parse memo, monkeypatched globals, cwd, env vars, .frob/ derived state), and fix it at the source with an autouse reset fixture rather than reordering tests. tests/conftest.py already has this shape for the parse cache (T-0926) and color env (T-1586).
