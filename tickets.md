@@ -7298,6 +7298,10 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_red_suite_keeps_coverage_data
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_green_suite_records_not_degraded
 threat: null
 component: null
 ```
@@ -7314,7 +7318,6 @@ Work:
 4. Keep reporting the suite failure loudly and separately. It stays visible; it just no longer vetoes the artifact.
 
 Related: T-1672 (worker death aborts the run and should be retried/classified) is the other half of the same incident; T-1389 already tracks per-symbol false-0.0% deflation detection, which item 3 must not duplicate.
-
 <!-- ticket:T-1677 -->
 ```yaml
 id: T-1677
