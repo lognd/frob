@@ -9127,3 +9127,38 @@ Two things to fix:
 2. Landing a ticket whose content is ALREADY on main should be a recognized, first-class outcome, not a BUG002/TEST016 refusal the operator has to diagnose and route around by hand. Detect "diff is empty because this already landed", verify the content is genuinely present, and offer the close path directly.
 
 Related, and worth deciding here: CrossTicketLeakage already exists as a concept (`--allow-cross-ticket` is its escape hatch). Determine why it did not fire for this case, since a rejected ticket's code reaching main is exactly what that check is named for. If it fires only for uncommitted leakage and not for committed sibling commits, say so and close the gap.
+
+<!-- ticket:T-1619 -->
+```yaml
+id: T-1619
+title: 'Land has no exclusive lease: a concurrent frob ticket new corrupts it mid-staging'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner/**
+- tests/**
+- docs/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+A land reads main's working tree at precheck and records main's tip for its unwind path. Any concurrent write to main breaks it, and frob's own commands are the most likely writers:
+
+- Uncommitted edits in main -> the land refuses with DirtyMain, mid-chain.
+- A NEW COMMIT on main while the land stages -> tip drift (T-0907), the land refuses to unwind, and it leaves its REL001 version bump STAGED for someone to clean up by hand.
+
+Both happened on 2026-08-05, and the second was caused by `frob ticket new` -- which auto-commits the ledger. So "file a ticket" and "land a ticket" are mutually destructive operations with no interlock between them, and nothing warns you. The operator is expected to just know, which is the same tribal-knowledge failure T-1130 closed for ledger auto-commit.
+
+Fix: a land takes an exclusive repository lease for its duration, and every other ledger-writing verb (new, close, drop, fail, requeue, block, scope, evidence, kind, ...) either refuses with a clear "a land is in progress for T-####, retry after it completes" or waits on it. The lease must be crash-safe -- a killed land cannot leave the repo permanently locked -- which is the same shape as the existing worktree-lease liveness probing (frob.tickets._leases), so reuse that rather than inventing a second mechanism.
+
+Also fix the partial-staging residue: when a land aborts after staging its REL001 bump, it should unstage what it staged, or say exactly what it left behind. Today it prints a refusal and leaves four files staged, and the operator has to work out that `git reset --hard HEAD` is safe only because the land did not complete.
+
+Acceptance: with a land running, `frob ticket new` must not be able to corrupt it -- proven by a test that runs both concurrently.
