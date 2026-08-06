@@ -132,7 +132,15 @@ def _scan_function_reads(
 ) -> list[_UncoveredRead]:
     """Every observed-read call inside `node`'s OWN body (not nested
     `def`s -- see `ast.walk` note below) whose target expression names none
-    of `param_names`."""
+    of `param_names`.
+
+    T-1647 (PERF013): the `ast.Call`-shaped reads and the bare
+    `os.environ` attribute-access read used to be two SEPARATE
+    `ast.walk(node)` passes over the identical tree -- one `walk` now
+    dispatches both checks per visited node (an `ast.Call` and an
+    `ast.Attribute` are never the same node, so folding the two `if`
+    branches into one loop body changes nothing about which nodes get
+    reported, only how many times the tree is walked)."""
     found: list[_UncoveredRead] = []
     for inner in ast.walk(node):
         # Do not descend into a nested function/lambda's own scope: its
@@ -143,28 +151,32 @@ def _scan_function_reads(
             inner, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
         ):
             continue
-        if not isinstance(inner, ast.Call):
-            continue
-        func = inner.func
-        if isinstance(func, ast.Attribute) and func.attr in _READ_METHOD_ATTRS:
-            if not _subtree_references_any(func.value, param_names):
-                found.append(_UncoveredRead(inner.lineno, node.name, _read_desc(inner)))
-        elif isinstance(func, ast.Name) and func.id == "open":
-            if inner.args and not _subtree_references_any(inner.args[0], param_names):
-                found.append(_UncoveredRead(inner.lineno, node.name, _read_desc(inner)))
+        if isinstance(inner, ast.Call):
+            func = inner.func
+            if isinstance(func, ast.Attribute) and func.attr in _READ_METHOD_ATTRS:
+                if not _subtree_references_any(func.value, param_names):
+                    found.append(
+                        _UncoveredRead(inner.lineno, node.name, _read_desc(inner))
+                    )
+            elif isinstance(func, ast.Name) and func.id == "open":
+                if inner.args and not _subtree_references_any(
+                    inner.args[0], param_names
+                ):
+                    found.append(
+                        _UncoveredRead(inner.lineno, node.name, _read_desc(inner))
+                    )
+            elif (
+                isinstance(func, ast.Attribute)
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "os"
+                and func.attr in _ENV_ATTRS
+            ):
+                # os.environ/os.getenv are never parameter-derived by
+                # construction -- always uncovered.
+                found.append(
+                    _UncoveredRead(inner.lineno, node.name, f"os.{func.attr}(...)")
+                )
         elif (
-            isinstance(func, ast.Attribute)
-            and isinstance(func.value, ast.Name)
-            and func.value.id == "os"
-            and func.attr in _ENV_ATTRS
-        ):
-            # os.environ/os.getenv are never parameter-derived by
-            # construction -- always uncovered.
-            found.append(
-                _UncoveredRead(inner.lineno, node.name, f"os.{func.attr}(...)")
-            )
-    for inner in ast.walk(node):
-        if (
             isinstance(inner, ast.Attribute)
             and inner.attr == "environ"
             and isinstance(inner.value, ast.Name)

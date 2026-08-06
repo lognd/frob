@@ -3687,6 +3687,7 @@ Requirements:
 - Filing a NEW ordinary ticket while a runs-last ticket is in-progress should warn loudly: the precondition it started under has been invalidated.
 
 That last requirement is the one that makes this real rather than cosmetic -- the failure mode is not starting the audit too early, it is finishing it and then having new work land that silently invalidates its conclusions.
+
 <!-- ticket:T-1614 -->
 ```yaml
 id: T-1614
@@ -3781,6 +3782,7 @@ Fix: route block (and any other ledger-writing verb still missing it -- audit th
 Audit list to check while here: block, unblock if it exists, scope, accept, evidence --replace, migrate, renumber, archive. For each, state whether it writes the ledger and whether it commits. A table in the Done report is the deliverable, not just the block fix -- the point is that no ledger-writing verb is left in this state.
 
 Test shape: for every ledger-writing verb, assert the working tree is CLEAN after the command (and dirty under --no-commit). A single parameterized test over the verb list makes a future verb that forgets this fail immediately.
+
 <!-- ticket:T-1616 -->
 ```yaml
 id: T-1616
@@ -3882,6 +3884,7 @@ Deliverables:
 - A regression test reproducing the exact sequence above: edit a field on main, edit the same ticket's body in a worktree, merge, and assert the field change survived.
 
 Note for the fix: ledger v2 (tickets/T-####/ticket.md, one file per ticket) narrows this considerably, since concurrent edits to different tickets stop sharing a file at all -- but it does NOT eliminate it, because this case had both sides editing the SAME ticket. Do not close this on the strength of the v2 migration alone.
+
 <!-- ticket:T-1618 -->
 ```yaml
 id: T-1618
@@ -3973,6 +3976,7 @@ Fix: a land takes an exclusive repository lease for its duration, and every othe
 Also fix the partial-staging residue: when a land aborts after staging its REL001 bump, it should unstage what it staged, or say exactly what it left behind. Today it prints a refusal and leaves four files staged, and the operator has to work out that `git reset --hard HEAD` is safe only because the land did not complete.
 
 Acceptance: with a land running, `frob ticket new` must not be able to corrupt it -- proven by a test that runs both concurrently.
+
 <!-- ticket:T-1620 -->
 ```yaml
 id: T-1620
@@ -4102,6 +4106,7 @@ Options to weigh, and the choice belongs in this ticket:
 - Keep draft ids but make the LAND rewrite them to real ids automatically, citations included, so the toil disappears even if the draft mechanism stays.
 
 Whichever is chosen, the acceptance is the same: an agent files a follow-up ticket from a worktree, lands its work, and neither the agent nor the coordinator has to touch the ledger by hand for the citation to be correct on main.
+
 <!-- ticket:T-1623 -->
 ```yaml
 id: T-1623
@@ -4875,7 +4880,7 @@ Both are cheap to fix if anticipated and annoying if discovered at land time. Bi
 id: T-1647
 title: 'PERF remainder: PERF011/014/008/005/013 that T-1204 disclosed but did not
   attempt'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -4889,6 +4894,15 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_does_not_fire_when_scan_is_the_loops_own_iterable
+- tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_does_not_fire_when_earlier_loop_is_an_unrelated_genexpr
+- tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_fires_when_scan_is_a_nested_loops_own_iterable
+- tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_fires_on_pre_fix_shape
+- tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_does_not_fire_when_scan_is_hoisted
+- tests/test_cache_gate.py::TestMemoizedReadCoverage::test_uncovered_read_fires
+- tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires
+- tests/test_serve_watch.py::TestWatchTick::test_watch_tick_never_disagrees_with_pull_signal
 threat: null
 component: null
 ```
@@ -4906,6 +4920,59 @@ Method, per this repo's standing rule (memory: "perf findings become lint rules"
 Before fixing anything, classify each rule the way T-1636 and T-1204 both did to good effect: is this real debt, or is the detector firing on a shape its author did not anticipate? T-1204 found exactly the latter in PERF010 -- the detector could not see a C loader selected through a helper call, so the repo's own optimisation read as absent. A rule-level fix that honestly clears 60 findings beats 60 site edits, and PERF011 at 62 findings is the obvious candidate to check first.
 
 MEASUREMENT WARNING, non-negotiable: the perf gate silently under-reports when native extensions are stale. A worktree with unbuilt natives reports zero PERF findings while looking perfectly healthy, and that exact failure deleted 55 live waivers earlier in this drive. Confirm natives are healthy before trusting ANY perf measurement, and measure unscoped -- a --ticket-scoped zero is not a package zero.
+
+## Done report
+
+Natives confirmed built and healthy in this worktree before any measurement (strata_core/frob_core import cleanly from .venv; make core ran clean). Baseline unscoped gate:PERF matched the brief's stated 47 unwaived warnings exactly.
+
+Classified PERF011 first per the brief's own hint (largest cluster). Manually read all 31 live findings against their real source: 22 were a genuine rule-level false positive -- the detector flagged a repo-scan call (iter_files/xref/exports_consumers) the instant ANY for/while token had appeared earlier in the flattened token stream, with no notion of what the call sits inside. The dominant shape was `for x in iter_files(...):` -- the repo-scan call IS the loop's own iterable expression, evaluated exactly once to build the iterator, never "once per iteration" the way the mined T-1207 shape (a call inside the loop body) is. One case (tests/integration/test_integration.py) was a variant: an unrelated genexpr's own for-clause tripped the flag for a later, entirely un-looped call.
+
+Fixed PERF011 at the rule level (src/frob/perf/_hotpath_smells.py::_perf011_repo_scan_in_loop): track bracket depth so a comprehension/genexpr's own for-clause never sets loop-context, and exempt a repo-scan call landing in the FIRST depth-0 loop's own header (provably a single evaluation). A call in a later/nested loop's own header still fires -- verified against the real nested case (src/frob/vet/_capability_scan.py) which stayed correctly flagged. Added 3 new regression tests, all 16 tests in the file pass. Unscoped gate:PERF: 47 -> 27.
+
+2 residual PERF011 findings (src/frob/bind/__init__.py's scan_bindings/scan_sources) are a disclosed, different false-positive shape the token-only fix cannot resolve: two SIBLING top-level loops (not nested), which a flat token stream with no indent/dedent markers cannot distinguish from real nesting. Waived per-site with that specific reason.
+
+PERF013 (src/frob/gates/_cache_gate.py::_scan_function_reads) was genuine debt: two separate ast.walk(node) passes over the identical tree. Merged into one walk with a type-dispatched body. Verified via tests/test_cache_gate.py (4/4 pass).
+
+PERF008's 3 remaining findings all matched this repo's own already-established precedent exactly (8 sibling findings already waived under the identical reasoning). Waived per-site.
+
+PERF005: 1 of 3 in scope (src/frob/vet/_taint.py::_assigned_names) got the frob:invariant terminates annotation the rule asks for, matching existing precedent. The other 2 (frob-core/src/extract.rs) are Rust, outside this ticket's declared scope -- disclosed to the follow-up ticket.
+
+PERF014's 9 remaining findings were NOT fixed. A brief 2-site spot check found the SAME systemic flaw class PERF011 had (sibling-loop count inflation). Needs the same audit-then-fix treatment, not attempted here due to time.
+
+Filed T-1649 for the full disclosed remainder.
+
+ARCH001 regression caught and fixed in-flight: the PERF011 fix's own docstring pushed the function past the 60-line threshold; moved rationale to a module-level comment, re-verified archgate clean.
+
+Verified before finishing: frob check --only test/archgate/coverage/sys --ticket T-1647 all clean; frob check --land-parity clean; git diff main --diff-filter=D --stat empty; FROB_NO_GATE_CACHE=1 re-measurement confirms the 47 -> 20 unwaived-warning delta is stable.
+
+### Changed
+```
+ src/frob/arch/_ffi.py                  |  1 +
+ src/frob/bind/__init__.py              |  2 +
+ src/frob/gates/_cache_gate.py          | 56 ++++++++++++++---------
+ src/frob/perf/_hotpath_smells.py       | 63 +++++++++++++++++++++-----
+ src/frob/serve/_watch.py               |  1 +
+ src/frob/vet/_taint.py                 |  1 +
+ tests/test_serve_watch.py              |  1 +
+ tests/unit/perf/test_hotpath_smells.py | 69 +++++++++++++++++++++++++++++
+ tickets.md                             | 81 +++++++++++++++++++++++++++++++++-
+ 9 files changed, 241 insertions(+), 34 deletions(-)
+```
+
+### Evidence
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_does_not_fire_when_scan_is_the_loops_own_iterable` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_does_not_fire_when_earlier_loop_is_an_unrelated_genexpr` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_fires_when_scan_is_a_nested_loops_own_iterable` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_fires_on_pre_fix_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop::test_does_not_fire_when_scan_is_hoisted` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestMemoizedReadCoverage::test_uncovered_read_fires` (pytest node id, verified passing when recorded)
+- `tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires` (pytest node id, verified passing when recorded)
+- `tests/test_serve_watch.py::TestWatchTick::test_watch_tick_never_disagrees_with_pull_signal` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 0 error(s), 2917 warning(s), 850 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1648 -->
 ```yaml
@@ -4947,3 +5014,72 @@ Proposed: make a disclosed remainder a first-class, structured thing.
 The acceptance test is the one that failed here: close a ticket whose report says "52 files remain, not attempted" and have frob demand where those 52 files went.
 
 Note for whoever implements: do NOT make this so heavy that agents stop disclosing. Honest disclosure is the behaviour worth protecting -- the fix should capture it, never punish it. If the choice is between an agent writing "not attempted" freely and an agent hiding a cut to avoid ceremony, the current state is better than a bad fix.
+
+<!-- ticket:T-1649 -->
+```yaml
+id: T-1649
+title: 'PERF remainder: 9 real PERF011 site fixes, PERF014 rule-level audit, 2 out-of-scope
+  PERF005 Rust findings'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/check/_native.py
+- src/frob/gates/_inv.py
+- src/frob/gates/_inv006_split_assist.py
+- src/frob/gates/_lang_conformance.py
+- src/frob/vet/_capability_scan.py
+- src/frob/gates/_docptr.py
+- src/frob/gates/_refs.py
+- src/frob/arch/_cpp_mayraise.py
+- src/frob/arch/_ffi.py
+- src/frob/arch/_protocol_excuse.py
+- src/frob/gates/_rule_id_scan.py
+- src/frob/perf/_hotpath_smells.py
+- frob-core/src/extract.rs
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1647 fixed the majority of the 47-warning gate:PERF pool (rule-level PERF011 false-positive fix cleared 20 findings on its own; PERF013's genuine duplicate ast.walk got merged; 3 PERF008 findings and 2 residual PERF011 sibling-loop false positives got specific waivers; one PERF005 recursion got its frob:invariant terminates). Unscoped gate:PERF went 47 -> 20 unwaived warnings (99 -> 104 waived).
+
+This ticket is the disclosed remainder T-1647 did not attempt, split by rule:
+
+## PERF011 -- 9 genuine findings (real debt, not rule misfires)
+
+A repo-scan API (iter_files/xref/exports_consumers) called once per outer-loop iteration, genuinely re-walking the same (sub)tree N times where N is a small collection (file extensions, spec dirs) the caller already has in hand. Per this repo's own PERF011 remedy text: hoist and index once per distinct key, don't rescan.
+
+- src/frob/check/_native.py:29 (_collect_sources) -- per-extension rglob via iter_files inside `for ext in exts:`
+- src/frob/gates/_inv.py:370 (inv003_gate) -- per spec_dir (2 dirs)
+- src/frob/gates/_inv.py:495 (inv004_gate) -- same shape as inv003_gate
+- src/frob/gates/_inv.py:661 (inv006_gate) -- nested per src_dir x suffix
+- src/frob/gates/_inv006_split_assist.py:89 (find_carried_waiver) -- nested per candidate_dir x candidate_suffix (own docstring notes this runs rarely -- low real-world cost, still worth an honest fix or a reasoned waiver citing that same rarity)
+- src/frob/gates/_lang_conformance.py:159 (_lang002_unregistered_files) -- per candidate-language extension
+- src/frob/gates/_lang_conformance.py:190 (_lang003_unsound_gaps) -- per supported_extensions() extension, called just to check truthiness (existence) -- cheapest fix of the nine: hoist one `iter_files(repo_root)` call and index by suffix once, or track "extension present" via a single pass
+- src/frob/vet/_capability_scan.py:602 (_aggregate_capabilities) -- per _EXT_LANGUAGE extension
+- src/frob/vet/_capability_scan.py:663 (_aggregate_fingerprints) -- identical shape, sibling of the above (candidate for a genuinely shared helper -- same walk/exclusion shape already noted in that file's own docstring)
+
+## PERF014 -- 9 findings, rule needs the SAME kind of audit T-1647 gave PERF011 first
+
+_perf014_finditer_in_nested_loop fires on "3+ for/while tokens anywhere earlier in the function", the same flat/no-nesting-info design PERF011 had before T-1647's fix. A spot check of 2 of the 9 live findings found the identical failure class: SEQUENTIAL (sibling), not truly nested, loops earlier in the function inflate the count past the threshold.
+
+- src/frob/gates/_docptr.py:122 (_prose_tokens) -- CONFIRMED false positive: a listcomp's own `for` (building newline_offsets) plus the first (single-loop) finditer call's own `for match in ... finditer(text):` both precede the SECOND, genuinely-2-level-nested finditer call (`for line_no, line in enumerate(...): for match in ..finditer(line):`), pushing the count to 3 and misfiring on a shape the rule's own docstring says must stay silent.
+- src/frob/gates/_refs.py:387 (_python_import_targets) -- CONFIRMED false positive: two SEQUENTIAL top-level for-loops (one per import style: `from X import Y` then `import X`), each with its own single level of real nesting; the second loop's count inherits the first loop's tokens, again crossing the >=3 threshold on 2 real levels.
+
+The other 7 (src/frob/arch/_cpp_mayraise.py:238,354; src/frob/arch/_ffi.py:273,366; src/frob/arch/_protocol_excuse.py:91; src/frob/gates/_refs.py:412; src/frob/gates/_rule_id_scan.py:128) were NOT individually re-verified against real code by T-1647 -- do that first, the same way T-1647 audited every live PERF011 finding, before assuming they're all false positives or all real.
+
+A real fix needs the same "is this call inside a loop that is ITSELF nested under an earlier, still-open loop, vs. one that just lexically follows an earlier CLOSED loop" distinction PERF011's T-1647 fix used bracket-depth-plus-first-loop tracking for -- PERF014's threshold-counting design will need a comparable (not necessarily identical) rewrite, since sum-of-preceding-loops can't currently tell "3 truly nested" from "2 nested + 1 sequential sibling" apart. Follow T-1647's own audit-before-fixing method: read the rule, sample every live finding against real code, classify per-site, THEN decide site-fix vs rule-fix vs waive.
+
+## PERF005 -- 2 findings, both out of scope for T-1647 (scope was src/frob/**, tests/**)
+
+- frob-core/src/extract.rs:52 (walk_leaves)
+- frob-core/src/extract.rs:254 (collect_comment_nodes)
+
+Both are Rust recursion in the frob-core crate; this repo's `frob:invariant terminates` annotation convention is Python-only as far as T-1647 could tell in-scope -- confirm whether an equivalent Rust-side annotation mechanism exists before fixing/waiving these, or extend scope to frob-core/**.

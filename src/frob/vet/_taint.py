@@ -138,6 +138,7 @@ def _call_func_name(node: ast.expr) -> str | None:
     return None
 
 
+# frob:invariant terminates reason="_assigned_names only recurses into an ast.Tuple/ast.List target's own .elts, and ast.parse produces a finite, non-self-referential expression tree (a target node can never be its own child)" measure="depth of the assignment target's own AST nesting strictly decreases with each recursive call"  # noqa: E501
 def _assigned_names(target: ast.expr) -> list[str]:
     """Every plain `Name` target `target` binds -- handles a bare `Name`
     and `Tuple`/`List` unpacking, skips subscript/attribute targets (which

@@ -294,6 +294,7 @@ def _scan_function_body(lines: list[str], start: int) -> frozenset[str]:
                 started = True
             elif ch == "}":
                 depth -= 1
+        # frob:waive PERF008 reason="pat is a compiled re.Pattern constant from _PANIC_PATTERNS; .search(line) is a plain regex match with no I/O. PERF008 resolves the bare method name 'search' by name-only coincidence to an unrelated same-named function that genuinely reaches walk_pruned elsewhere in the repo -- a resolver ambiguity, not a real fs-walk on this call (same class as the eight PERF008 findings already waived under this exact reasoning, T-1041's Done report)"  # noqa: E501
         for pat in _PANIC_PATTERNS:
             if pat.search(line):
                 raises.add("PanicException")

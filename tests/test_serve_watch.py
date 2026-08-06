@@ -83,6 +83,7 @@ class TestWatchTick:
             if do_edit:
                 _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY + f"\n# edit {i}\n")
             watch_key, watch_changed = watch_tick(tmp_path, last_key)
+            # frob:waive PERF008 reason="this test's whole point is calling _repo_dirty_key(tmp_path) once per edit in the sequence to verify watch_tick and the pull path agree on every single edit -- hoisting it out of the loop would defeat the test (same reasoning as tests/test_serve.py:563's own PERF008 waiver for the sibling warm_state loop)"  # noqa: E501
             pull_key = _warm._repo_dirty_key(tmp_path)
             pull_changed = last_key is not None and pull_key != prior_pull_key
             assert watch_changed == pull_changed

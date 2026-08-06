@@ -166,6 +166,7 @@ class WatchThread:
         tick or until `stop()` is called."""
         while not self._stop.is_set():
             try:
+                # frob:waive PERF008 reason="this IS the poll loop: watch_tick's whole purpose is detecting a NEW filesystem change every tick, so re-running it every iteration is the design, not accidental redundancy -- hoisting it out of the loop would delete the watcher (same reasoning as tests/test_serve.py:563's own PERF008 waiver, this loop's real-code counterpart)"  # noqa: E501
                 self._last_key, changed = watch_tick(self._root, self._last_key)
             except Exception:  # noqa: BLE001
                 _log.exception("serve: watch: tick failed for %s", self._root)

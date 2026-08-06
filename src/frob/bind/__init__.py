@@ -33,6 +33,7 @@ class Mismatch:
 
 
 # frob:doc docs/modules/bind.md#public-api
+# frob:waive PERF011 reason="T-1647: the .cpp and .rs iter_files calls below are two SIBLING top-level loops (each its own scan's iterable, evaluated once), not one nested inside the other -- PERF011's flat token-stream check cannot tell a sibling loop that merely follows an earlier, already-closed one from a genuinely nested repeat (no indent/dedent info in the token stream); each call really does run exactly once per scan_bindings invocation"  # noqa: E501
 def scan_bindings(root: Path) -> list[BindingDecl]:
     """Scan a project root for // BIND: comments in .cpp and .rs files."""
     results = []
@@ -52,6 +53,7 @@ def scan_bindings(root: Path) -> list[BindingDecl]:
 
 
 # frob:doc docs/modules/bind.md#public-api
+# frob:waive PERF011 reason="T-1647: the .h and .rs iter_files calls below are two SIBLING top-level loops (each its own scan's iterable, evaluated once), not one nested inside the other -- same limitation as scan_bindings above; each call really does run exactly once per scan_sources invocation"  # noqa: E501
 def scan_sources(root: Path) -> list[SourceDecl]:
     """Scan .h and .cpp files for declared functions, and .rs for #[pyfunction]."""
     results = []

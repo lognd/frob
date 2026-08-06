@@ -179,31 +179,74 @@ def _perf010_yaml_c_loader(symbol: RawSymbol, path: str) -> Violation | None:
     return None
 
 
+# frob:ticket T-1647
+_OPEN_BRACKETS = frozenset({"(", "[", "{"})
+# frob:ticket T-1647
+_CLOSE_BRACKETS = frozenset({")", "]", "}"})
+
+
+# T-1647: PERF011 used to flag a repo-scan call the instant ANY for/while
+# token appeared earlier in the flattened stream. An audit of every live
+# PERF011 finding on main found this systematically misfired on
+# `for x in <repo-scan-call>(...):` and its comprehension/genexpr
+# equivalents -- that call is the loop's own ITERABLE expression,
+# evaluated exactly ONCE to build the iterator, never "once per
+# iteration" the way the mined T-1207 shape (a call inside the loop
+# BODY) is. 22 of 31 findings were exactly this shape, including one
+# where the "earlier loop" was an unrelated genexpr's own for-clause
+# with no relation to the later, un-looped call it caused to misfire.
+# See `_perf011_repo_scan_in_loop`'s own docstring below for the fix and
+# its one disclosed residual gap (sibling, not nested, loops).
 # frob:ticket T-1225
+# frob:ticket T-1647
 def _perf011_repo_scan_in_loop(symbol: RawSymbol, path: str) -> Violation | None:
     """PERF011: a repo-scan API call (`xref`/`exports_consumers`/
-    `iter_files`) that appears AFTER a `for`/`while` token in the
-    flattened token stream -- the same coarse "loop token seen earlier in
-    the stream" gate PERF001-004 already use (`_rules.py`'s own module
-    docstring: loop-context is function-granularity, not true lexical
-    nesting). Mined from `src/frob/gates/_debt_deprecated.py`'s pre-T-1207
-    shape: a per-symbol `exports_consumers`+`xref` double full-repo scan
-    inside a loop over every tracked symbol."""
+    `iter_files`) called from inside a loop over symbols -- mined from
+    `src/frob/gates/_debt_deprecated.py`'s pre-T-1207 shape. Tracks
+    bracket depth and each depth-0 `for`/`while`'s own header span: a
+    loop token INSIDE a bracket (a comprehension/genexpr's own for-clause)
+    never sets loop-context, and a repo-scan call inside the FIRST depth-0
+    loop's own header is exempted (a single iterator-building evaluation,
+    not a repeat) -- see this module's own T-1647 comment above for the
+    full rationale and its one disclosed gap."""
     tokens = symbol.body_tokens
     n = len(tokens)
     seen_loop = False
+    depth = 0
+    header_open = False
+    header_is_first_loop = False
     for i in range(n):
-        if tokens[i] in _LOOP_TOKENS:
+        tok = tokens[i]
+        if tok in _OPEN_BRACKETS:
+            depth += 1
+        elif tok in _CLOSE_BRACKETS:
+            depth = max(0, depth - 1)
+
+        if tok in _LOOP_TOKENS and depth == 0:
+            header_is_first_loop = not seen_loop
             seen_loop = True
+            header_open = True
             continue
+
+        if header_open and tok == ":" and depth == 0:
+            header_open = False
+            continue
+
         if not seen_loop:
             continue
-        if tokens[i] in _REPO_SCAN_CALLEES and i + 1 < n and tokens[i + 1] == "(":
+
+        if tok in _REPO_SCAN_CALLEES and i + 1 < n and tokens[i + 1] == "(":
+            if header_open and header_is_first_loop:
+                # This call IS the enclosing for/while's own iterable
+                # expression, and that loop is the first (and so far only)
+                # loop-context seen -- it runs exactly once, not per
+                # iteration of anything. Not a violation (T-1647).
+                continue
             return _violation(
                 "PERF011",
                 path,
                 symbol.span[0],
-                f"{tokens[i]}(...) (a full-repo scan API) is called inside "
+                f"{tok}(...) (a full-repo scan API) is called inside "
                 f"a loop in {symbol.qualname}",
             )
     return None

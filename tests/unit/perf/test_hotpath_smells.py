@@ -128,6 +128,75 @@ class TestPerf011RepoScanInLoop:
         violations = hotpath_smell_violations([parsed])
         assert not any(v.rule == "PERF011" for v in violations)
 
+    def test_does_not_fire_when_scan_is_the_loops_own_iterable(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop.test_does_\
+        # not_fire_when_scan_is_the_loops_own_iterable  # noqa: E501
+        """T-1647: a real PERF011 false positive on `main` -- the repo-scan
+        call is the sole, first loop's own iterable expression
+        (`for path in iter_files(root):`), evaluated exactly once to build
+        the iterator, never "once per iteration" the way the mined T-1207
+        shape is (mirrors `src/frob/arch/__init__.py::_collect_files`'s
+        real pre-fix shape)."""
+        src = (
+            "def collect(root):\n"
+            "    result = []\n"
+            "    for p in iter_files(root):\n"
+            "        result.append(p)\n"
+            "    return result\n"
+        )
+        parsed = _parsed(tmp_path, "mod.py", src)
+        violations = hotpath_smell_violations([parsed])
+        assert not any(v.rule == "PERF011" for v in violations)
+
+    def test_does_not_fire_when_earlier_loop_is_an_unrelated_genexpr(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop.test_does_\
+        # not_fire_when_earlier_loop_is_an_unrelated_genexpr  # noqa: E501
+        """T-1647: a real PERF011 false positive on `main`
+        (`tests/integration/test_integration.py::
+        test_outline_line_matches_xref_definition`) -- an unrelated
+        generator expression's own `for`-clause earlier in the function
+        used to flip the rule's loop-context flag, so a later, entirely
+        un-looped repo-scan call was misread as being inside a loop."""
+        src = (
+            "def find(items, root):\n"
+            "    cls = next(c for c in items if c.name == 'X')\n"
+            "    xr = xref('X', root)\n"
+            "    return cls, xr\n"
+        )
+        parsed = _parsed(tmp_path, "mod.py", src)
+        violations = hotpath_smell_violations([parsed])
+        assert not any(v.rule == "PERF011" for v in violations)
+
+    def test_fires_when_scan_is_a_nested_loops_own_iterable(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/perf/test_hotpath_smells.py::TestPerf011RepoScanInLoop.test_fires\
+        # _when_scan_is_a_nested_loops_own_iterable  # noqa: E501
+        """T-1647: the genuine-debt counterpart to the two false-positive
+        tests above -- a repo-scan call that IS a loop's own iterable but
+        that loop is nested inside an earlier, still-live outer loop (the
+        real `src/frob/vet/_capability_scan.py::_aggregate_capabilities`
+        shape) really does re-run the scan once per outer iteration, and
+        must keep firing."""
+        src = (
+            "def scan(root, exts):\n"
+            "    out = []\n"
+            "    for ext in exts:\n"
+            "        for path in iter_files(root, suffix=ext):\n"
+            "            out.append(path)\n"
+            "    return out\n"
+        )
+        parsed = _parsed(tmp_path, "mod.py", src)
+        violations = hotpath_smell_violations([parsed])
+        assert any(v.rule == "PERF011" for v in violations)
+
 
 class TestPerf013RepeatedAstWalk:
     """Mined from `src/frob/gates/_pii_structural/__init__.py`'s
