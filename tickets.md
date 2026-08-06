@@ -7364,7 +7364,7 @@ beyond this disclosure.
 ```yaml
 id: T-1582
 title: 'COV002 closing-diff grace is v1-only: no grace in a ledger-v2 repo'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7489,7 +7489,6 @@ Verification:
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 0 error(s), 1077 warning(s), 797 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1583 -->
 ```yaml
 id: T-1583
