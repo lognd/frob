@@ -1679,9 +1679,13 @@ def _write_archive_v2(
 # frob:ticket T-0458
 # frob:ticket T-1254
 # frob:ticket T-1536
+# frob:ticket T-1637
 # frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
-def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
+# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_warns_loudly_by_default  # noqa: E501
+def write_ticket(
+    root: Path, ticket: Ticket, *, strict_no_content_loss: bool = False
+) -> Result[None, TicketError]:
     """Upsert one ticket into whichever backend the repo uses (atomic).
 
     Single mode reads the raw ledger TEXT, still Err-propagates if the file
@@ -1722,7 +1726,24 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     sibling id that was present before this write, refuses the write
     outright (`Err(LedgerIntegrityViolation)`) instead of persisting a
     ledger the very next read could fail to load.
+
+    T-1637: BEFORE any of the above, if `ticket.id` already exists on disk,
+    its current content is compared against `ticket` via `_check_no_
+    content_loss` -- a write that would replace an existing evidence list
+    and/or Done report with an empty one is logged as a LOUD warning by
+    default, or refused outright (`Err(DoneReportOrEvidenceDiscarded)`) if
+    `strict_no_content_loss=True`. Deliberately mode-agnostic (reads via
+    `load_all`, which already dispatches across single/dir/v2) rather than
+    three separate per-mode implementations of the same comparison.
     """
+    existing = load_all(root)
+    if existing.is_ok:
+        old = existing.danger_ok.get(ticket.id)
+        guarded = _check_no_content_loss(
+            old, ticket, strict=strict_no_content_loss
+        )
+        if guarded.is_err:
+            return Err(guarded.danger_err)
     mode = _store_mode(root)
     if mode == "v2":
         return _write_ticket_v2_mode(root, ticket)
@@ -1730,6 +1751,80 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
         if mode == "single":
             return _write_ticket_single_mode(root, ticket)
         return atomic_write(_dir_path_for(root, ticket), _serialize_ticket(ticket))
+
+
+# frob:ticket T-1637
+def _has_done_report(ticket: Ticket) -> bool:
+    """Whether `ticket.body` carries a genuine `## Done report` heading
+    (`_find_done_report_heading`, the same boundary scan `_split_done_
+    report`/`replace_done_report_section` already use) -- the "did real
+    work already happen here" signal `_check_no_content_loss` guards."""
+    return _find_done_report_heading(ticket.body.splitlines()) is not None
+
+
+# frob:ticket T-1637
+def _check_no_content_loss(
+    old: Ticket | None, new: Ticket, *, strict: bool
+) -> Result[None, TicketError]:
+    """`write_ticket`'s content-loss guard (T-1637): a write that would
+    replace `old`'s evidence list and/or Done report with an empty one on
+    `new` always logs a LOUD warning naming exactly what is about to be
+    discarded (T-1637's "at minimum warn loudly" floor); with `strict=
+    True` it refuses outright (`Err(DoneReportOrEvidenceDiscarded)`)
+    instead.
+
+    This is the sibling of `_post_splice_integrity_check` (T-0764/T-1536)
+    one level down: that guard protects against a ticket id vanishing from
+    the ledger outright; this one protects against the id surviving while
+    the recorded WORK on it (evidence, a Done report) silently vanishes,
+    the exact T-1636 field incident (a hand-rolled draft-refile recipe
+    discarded 12 evidence ids and a 12KB Done report, recoverable only via
+    `git show <sha>~1:tickets.md` archaeology).
+
+    Default (`strict=False`) is warn-only, not refuse, because `write_
+    ticket` is also the low-level primitive several legitimate internal
+    call sites use to construct a deliberately "poorer" ticket snapshot on
+    purpose -- test fixtures simulating a stale/regressed ledger side for
+    `splice_ledger`'s own merge-preference tests being the concrete case
+    that made a hard-refuse-by-default break real, correct code. `strict=
+    True` is for a caller that specifically wants the harder guarantee
+    (e.g. an interactive CLI command a human is driving directly, where a
+    silent-but-logged warning is not enough) -- `frob ticket promote`
+    passes it.
+
+    `old is None` (first-ever write for this id, e.g. `new_ticket`) is
+    always fine -- there is nothing to lose yet. Only fires when `old` had
+    non-empty evidence OR a Done report AND `new` has NEITHER; a write
+    that keeps at least one of the two, or that only changes OTHER fields
+    (state, scope, evidence CONTENT without emptying it), is untouched."""
+    if old is None:
+        return Ok(None)
+    old_had_content = bool(old.evidence) or _has_done_report(old)
+    if not old_had_content:
+        return Ok(None)
+    new_has_content = bool(new.evidence) or _has_done_report(new)
+    if new_has_content:
+        return Ok(None)
+    if strict:
+        _log.error(
+            "tickets: write refused (strict) -- %s currently carries %d "
+            "evidence id(s) and done_report=%s, and this write would "
+            "replace both with nothing (T-1637 content-loss guard)",
+            new.id,
+            len(old.evidence),
+            _has_done_report(old),
+        )
+        return Err(TicketError.DoneReportOrEvidenceDiscarded)
+    _log.warning(
+        "tickets: %s write discards %d evidence id(s) and done_report=%s "
+        "-- ALLOWED (non-strict, T-1637 content-loss guard); this is the "
+        "exact shape that lost T-1636's 12 evidence ids + Done report, "
+        "verify this is intentional",
+        new.id,
+        len(old.evidence),
+        _has_done_report(old),
+    )
+    return Ok(None)
 
 
 # frob:ticket T-1536

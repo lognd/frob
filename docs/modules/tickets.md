@@ -1393,6 +1393,85 @@ exactly the window the first guard's unlocked read cannot itself close.
 The two guards are deliberately complementary defense in depth, not each
 independently sufficient.
 
+**T-1622: land-time promotion, not cross-worktree allocation, is the
+committed design.** An earlier draft of T-1622 considered making a
+worktree allocate a REAL id at filing time (a shared, cross-worktree
+counter under the git-common-dir) so no draft/finalize round-trip was
+needed at all. That approach was explicitly rejected: a worktree
+allocating against a shared mutable resource re-introduces exactly the
+kind of cross-checkout coordination this whole mechanism exists to avoid
+(an agent guessing the next free id to dodge the draft round-trip
+collided with a real id filed on main the same session). The kept design
+is what this section already documents -- a draft stays local and opaque
+until `land` promotes it, inside the land transaction, where an exclusive
+lease already makes allocation race-free. `_finalize_sibling_drafts` +
+`_rewrite_draft_references_in_bodies` (the mapping passed to the rewrite
+is `draft_id_mapping`, covering BOTH the ticket actually being landed and
+every OTHER draft ticket finalized alongside it) together mean this
+promotion already reaches every citation, in every ticket's body, not
+just the landing ticket's own -- the exact "an agent files a follow-up
+from a worktree, lands its work, and nobody touches the ledger by hand
+for the citation to be correct on main" acceptance T-1622 was filed to
+guarantee. `tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::
+test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report`
+proves the cross-ticket shape explicitly (a DIFFERENT ticket's Done
+report citing a sibling's draft id, not the landing ticket citing
+itself).
+
+### `frob ticket promote` (T-1637)
+
+The first-class replacement for the lossy hand-rolled draft-refile recipe
+(read a draft's body out of the worktree ledger, `frob ticket new` a fresh
+ticket on main, delete the draft's own block, string-swap every citation
+by hand). That recipe drops whatever `frob ticket new` cannot recreate --
+most critically, the draft's evidence ids and Done report (the T-1636
+incident: 12 evidence ids and a 12KB Done report discarded, recoverable
+only via `git show <sha>~1:tickets.md` archaeology). `frob ticket promote
+<draft-id> [--path DIR]` is a thin CLI wrapper over `finalize_draft`
+(`frob.app.ticket_runner._promote`): it allocates the draft's next real
+`T-####` id against the current merged view and rewrites the ledger block
+plus every code reference to it via `renumber_one` -- the same rename
+primitive `frob ticket renumber <old> <new>` exposes directly for the
+case where both ids are already known. Because it is a RENAME, not a
+copy-then-delete, every field of the `Ticket` object (evidence, Done
+report, scope, state, acceptance) moves onto the new id automatically;
+nothing the operation itself does can lose them. A no-op (logged, exit 0)
+if the given id is already final -- callers do not need to check
+`is_draft_id` first.
+
+`land` already calls this same `finalize_draft`/`finalize_draft_for_land`
+machinery automatically for the ticket it lands plus every sibling draft
+still in the worktree's ledger (see "Provisional ids" above) -- `promote`
+exists for the case a real id is needed OUTSIDE of a land: a coordinator
+recovering residue from an abandoned worktree, or promoting several
+drafts on main directly without a land transaction to piggyback on.
+
+### Content-loss guard on `write_ticket` (T-1637)
+
+`write_ticket` (`frob.tickets._store`) now compares an incoming write
+against whatever is currently on disk for that id, via `_check_no_
+content_loss`: if the existing ticket carries non-empty evidence or a
+`## Done report` section and the incoming write has NEITHER, the write is
+flagged. Default behavior (`strict_no_content_loss=False`, every existing
+call site unchanged) is a LOUD warning, not a refusal -- `write_ticket` is
+also the low-level primitive several legitimate internal callers use to
+construct a deliberately "poorer" snapshot on purpose (test fixtures
+simulating a stale/regressed ledger side for `splice_ledger`'s own
+merge-preference tests being the concrete case that made a hard-refuse-
+by-default break real, correct code). Pass `strict_no_content_loss=True`
+for a caller that wants the harder guarantee -- an interactive command a
+human is driving directly, where a logged-but-silent warning is not
+enough.
+
+This is the sibling of `_post_splice_integrity_check` (T-0764/T-1536,
+"Storage internals" below) one level down: that guard refuses a write
+that would drop a ticket ID from the ledger outright; this one covers the
+id SURVIVING while the recorded work on it silently vanishes -- exactly
+the T-1636 shape (a hand-rolled refile reconstructing a ticket from
+scratch under the same id, losing its evidence and Done report). `old is
+None` (first write for a brand-new id, e.g. `new_ticket`) is always fine
+-- there is nothing to lose yet.
+
 ### Decision record: T-0162
 
 Three real collisions in one day (all sequential max+1 races across

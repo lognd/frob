@@ -660,4 +660,47 @@ def _renumber_one(root: Path, cfg: AppConfig) -> None:
             _log.info("  %s", f)
 
 
+# frob:ticket T-1637
+# frob:tests tests/system/test_cli_ticket_promote.py::TestPromoteCLI.test_promotes_a_draft_carrying_evidence_and_done_report kind="integration"  # noqa: E501
+# frob:tests tests/system/test_cli_ticket_promote.py::TestPromoteCLI.test_promoting_an_already_final_id_is_a_no_op kind="integration"  # noqa: E501
+def _promote(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket promote <draft-id>`: allocate the next real `T-####`
+    id against `root`'s current merged (active+archive) view and rewrite
+    the ledger block plus every code reference to it in one atomic
+    operation (`finalize_draft`) -- the first-class replacement for the
+    lossy hand recipe T-1637 was filed about (read the draft's body out,
+    `frob ticket new` a fresh ticket, delete the draft's own block,
+    string-swap citations by hand). That recipe drops whatever `frob
+    ticket new` cannot recreate -- evidence ids and a Done report, most
+    critically (the T-1636 incident: 12 evidence ids and a 12KB Done
+    report recoverable only via `git show <sha>~1:tickets.md`
+    archaeology). `finalize_draft` is a RENAME, not a copy-then-delete: it
+    reuses `renumber_one` to move every field of the SAME `Ticket` object
+    (evidence, Done report, scope, state, acceptance -- everything) onto
+    the new id, so nothing it already carried can be lost by the
+    operation itself.
+
+    A no-op (`Ok(draft_id)` unchanged, logged as a no-op) if `draft_id` is
+    already a final id -- callers can call this unconditionally without
+    checking `frob.tickets.is_draft_id` themselves first, same contract
+    `finalize_draft` itself already promises."""
+    from frob.tickets import finalize_draft
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket promote requires a draft id")
+        sys.exit(1)
+
+    result = finalize_draft(root, cfg.ticket_id)
+    if result.is_err:
+        _log.error("ticket promote failed: %s", result.danger_err)
+        sys.exit(1)
+    final_id = result.danger_ok
+    if final_id == cfg.ticket_id:
+        _log.info(
+            "ticket promote: %s is already a final id, nothing to do", cfg.ticket_id
+        )
+        return
+    _log.info("promoted %s -> %s", cfg.ticket_id, final_id)
+
+
 # frob:ticket T-0176

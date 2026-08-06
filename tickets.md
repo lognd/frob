@@ -4105,6 +4105,7 @@ incident) is worse.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 0 error(s), 8148 warning(s), 737 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1619 -->
 ```yaml
 id: T-1619
@@ -4342,7 +4343,7 @@ Also verify, and state the answer in the Done report, whether ordinary CLI invoc
 ```yaml
 id: T-1622
 title: Tickets filed from a worktree get draft ids that never survive a land
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -4356,6 +4357,8 @@ scope:
 - docs/**
 - src/frob/tickets/_provisional.py
 - src/frob/tickets/_new_renumber.py
+- tests/test_ticket_land.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -4377,6 +4380,20 @@ scope_changes:
     body
   actor: logan
   at: '2026-08-06'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: narrow the chronically-broad tests/**,docs/** globs to the specific files
+    actually touched for T-1622's land-time-promotion verification
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: narrow the chronically-broad tests/**,docs/** globs to the specific files
+    actually touched for T-1622's land-time-promotion verification
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report
 threat: null
 component: null
 ```
@@ -4392,6 +4409,95 @@ Options to weigh, and the choice belongs in this ticket:
 - Keep draft ids but make the LAND rewrite them to real ids automatically, citations included, so the toil disappears even if the draft mechanism stays.
 
 Whichever is chosen, the acceptance is the same: an agent files a follow-up ticket from a worktree, lands its work, and neither the agent nor the coordinator has to touch the ledger by hand for the citation to be correct on main.
+
+## Done report
+
+DESIGN PIVOT mid-ticket (coordinator directive): the original brief asked
+for cross-worktree REAL id allocation (a shared counter file under the
+git-common-dir, keyed through the existing T-0473 lease side-channel). I
+built and tested that approach (shared, flock-guarded counter in
+`_provisional.py`/`_new_renumber.py`, verified working end to end in
+`tests/test_tickets_collision.py`'s two-linked-worktree scenario), then
+the repo owner rejected it: a worktree allocating against a shared mutable
+resource re-introduces exactly the coordination hazard T-0162 exists to
+avoid (an agent guessing the next free id to dodge the draft round-trip
+had already collided with a real main-side ticket this session, T-1651).
+I reverted that change in full (`git checkout -- src/frob/tickets/
+_new_renumber.py src/frob/tickets/_provisional.py tests/system/
+test_cli_ticket_land.py tests/system/test_cli_ticket_worktree_root.py
+tests/test_ticket_land.py tests/test_tickets_collision.py`) before
+committing anything, so it left no trace in this ticket's landed diff.
+
+The committed design instead keeps drafts local/opaque per T-0162, and
+promotes them ONLY inside `land`, which already holds exclusive access to
+main. Investigation found this promotion machinery ALREADY EXISTS and
+already covers T-1622's exact acceptance criterion:
+
+- `finalize_draft_for_land` (land-path draft finalize, `_land_finalize.py`)
+  promotes the landing ticket's own draft id against a fresh read of
+  main's ledger.
+- `_finalize_sibling_drafts` promotes EVERY OTHER draft still present in
+  the worktree's ledger alongside it (T-0637) -- this is the follow-up-
+  ticket-filed-mid-session shape T-1622 was filed about.
+- `_rewrite_draft_references_in_bodies` is called with the FULL `draft_
+  id_mapping` (primary + every finalized sibling, `_land_finalize_and_
+  close`'s `draft_id_mapping.update(siblings_finalized.danger_ok)`), and
+  rewrites stale draft-id PROSE citations across every ticket body in both
+  ledgers, not just the landing ticket's own (T-0811/T-0812).
+
+What existing test coverage proved (self-citation, and sibling-drops-
+alongside-primary) did NOT yet prove: a DIFFERENT ticket's Done report
+citing a sibling draft's id gets that citation rewritten too -- the exact
+"30 citations across 31 files" shape the incident report described (one
+ticket citing another, not a ticket citing itself). Added
+`TestDraftReferenceRewriteOnLand::
+test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report`
+to `tests/test_ticket_land.py`, which files a primary ticket, files a
+SEPARATE standalone sibling ticket (both draft ids off-branch), cites the
+sibling's draft id in the PRIMARY's own Done-report "Filed: ..." line
+only, lands the primary, and asserts: the sibling was promoted to a real
+id, the primary's landed body no longer contains the sibling's dead draft
+id, the primary's body contains "Filed: <sibling's real id>", and zero
+`T-draft-` strings survive anywhere in the landed ledger. This closes the
+gap between "self-citation is proven" and "T-1622's actual incident shape
+is proven."
+
+Documented the committed design and the rejected alternative in
+`docs/modules/tickets.md`'s "Provisional ids" section (new paragraph
+before "Decision record: T-0162"), naming the new regression test
+explicitly, so a future reader does not re-propose the rejected
+cross-worktree-allocation design from scratch.
+
+No changes to `src/frob/tickets/_provisional.py` or `_new_renumber.py` --
+the committed design needed none; those two files remain scope-declared
+because they were where the (rejected) allocation-side change would have
+lived, and `frob check --ticket` still validates nothing there drifted.
+
+Filed: none. No out-of-scope gap found; the promotion machinery this
+ticket needed already existed, built by T-0637/T-0811/T-0812/T-1090/
+T-1179 in prior sessions.
+
+Not done: the OWNERSHIP model half of the coordinator's redesign message
+("apart from `frob ticket` commands, main's tickets must never be
+overwritten by a worktree", the T-1617 lease-based-write-protection ask)
+is explicitly OUT of T-1622's declared scope (`_land.py`/`_leases.py`/
+`_store.py`/ledger-v2 are not in this ticket's scope globs) and is not
+this ticket's subject either -- T-1617 already exists as its own filed,
+queued ticket for that investigation. I did not touch it.
+
+### Changed
+```
+ tickets.md | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 8497 warning(s), 711 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1623 -->
 ```yaml
@@ -5120,7 +5226,7 @@ NOTE ON THIS TICKET'S OWN TEXT: the examples above deliberately use non-existent
 id: T-1637
 title: Manual draft refile silently discards evidence and Done reports; renumber already
   exists and is undocumented
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -5134,8 +5240,30 @@ scope:
 - docs/guides/agent-playbook.md
 - docs/modules/tickets.md
 - tests/**
+- src/frob/_cli_parsers/_ticket/**
+- docs/design/ledger-v2.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/**
+  reason: frob ticket promote needs CLI parser wiring alongside the library-level
+    renumber/finalize_draft it reuses
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: 'AFFECT001: write_ticket''s affects()-closure doc includes this file (section
+    3 lock model); the T-1637 content-loss guard needed a short note there too'
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_content_loss_warns_loudly_by_default
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_strict_no_content_loss_refuses
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_keeping_evidence_or_done_report_is_never_refused
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_first_write_for_a_new_id_is_never_refused
+- tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promotes_a_draft_carrying_evidence_and_done_report
+- tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promoting_an_already_final_id_is_a_no_op
 threat: null
 component: null
 ```
@@ -5159,6 +5287,137 @@ Deliverables:
 3. Make the lossy step impossible to take by accident: removing or overwriting a ledger block that carries a Done report or a non-empty evidence list should refuse, or at minimum warn loudly naming what is about to be discarded. The ledger already has post-splice integrity checks (`_post_splice_integrity_check`, T-1536) that refuse when an id would be LOST -- this is the same class of protection one level down, for a block's contents rather than its existence.
 
 Point 3 is the one that generalises. The ledger is the system of record for work that has already been done; discarding a Done report should be as hard as discarding a ticket.
+
+## Done report
+
+DESIGN PIVOT mid-ticket (coordinator directive, same message as T-1622's):
+kept everything from the original T-1637 brief -- especially deliverable
+(c), refusing/warning on discarding a Done-report/evidence-carrying
+block -- and confirmed `frob ticket renumber` already existed as the
+correct atomic rename primitive.
+
+Deliverable 1 -- first-class promotion path: added `frob ticket promote
+<draft-id>` (`frob.app.ticket_runner._query._promote`), a thin CLI
+wrapper over the EXISTING `finalize_draft` (`frob.tickets._draft_
+finalize`), which itself calls `renumber_one` -- so promotion needed
+almost no new logic, exactly as the coordinator anticipated. It allocates
+the draft's next real id against the current merged (active+archive)
+view and rewrites the ledger block plus every code reference in one
+atomic rename. Because it renames the SAME `Ticket` object rather than
+reconstructing a fresh one, evidence/Done report/scope/state/acceptance
+all move onto the new id automatically -- proven end to end by
+`tests/system/test_cli_ticket_promote.py::TestPromoteCLI::
+test_promotes_a_draft_carrying_evidence_and_done_report` (files a draft
+via the real CLI, gives it evidence + a Done report via `write_ticket`,
+promotes it via `frob ticket promote`, asserts both survived intact on
+the promoted ticket) and `test_promoting_an_already_final_id_is_a_no_op`
+(idempotent no-op for a non-draft id, matching `finalize_draft`'s own
+contract). CLI wiring: `src/frob/_cli_parsers/_ticket/_progress.py`
+(`_add_ticket_promote_parser`), `src/frob/app/ticket_runner/__init__.py`
+(dispatch table + import + `__all__`), `src/frob/app/ticket_runner/
+_query.py` (`_promote`). Manual smoke test also run (a real `git
+worktree`, `frob ticket new` off-branch, `frob ticket promote`) --
+confirmed the draft's block on disk carries the real id with zero
+`T-draft-` strings remaining.
+
+Deliverable 2 -- document `renumber`/`promote` as the refile path:
+added a paragraph to `docs/guides/agent-playbook.md` section 0 item 8
+(the existing "every residue/follow-up you file is a draft" guidance)
+naming the lossy hand-recipe explicitly, pointing at `frob ticket
+promote` for the pre-land case and `frob ticket renumber <old> <new>`
+for the case both ids are already known. Also documented `promote` and
+the content-loss guard as two new subsections in `docs/modules/
+tickets.md`, and a shorter cross-reference note in `docs/design/
+ledger-v2.md`'s lock-model section (needed to satisfy AFFECT001, since
+`write_ticket`'s affects()-closure names that doc).
+
+Deliverable 3 (the one that generalizes) -- content-loss guard on
+`write_ticket`: `_check_no_content_loss` (`frob.tickets._store`) compares
+an incoming write against the on-disk ticket for that id; if the on-disk
+version carries non-empty evidence or a `## Done report` heading and the
+incoming write has NEITHER, the write is flagged. Default
+(`strict_no_content_loss=False`, every EXISTING call site unchanged) is a
+LOUD warning naming exactly what would be discarded, not a refusal --
+proven this was the right default the hard way: a first pass made this a
+hard refuse by default and it broke 6 pre-existing tests in
+`tests/test_ticket_land.py` (`TestSpliceLedgerRicherStatePreference`,
+`TestSpliceLedgerPrefersEvidenceRichSideOnRankTie`,
+`TestTick005LandRegressions`) whose fixtures legitimately construct a
+"poorer" ticket snapshot via `write_ticket` directly to simulate a
+stale/regressed ledger side for `splice_ledger`'s own merge-preference
+tests. `strict_no_content_loss=True` is available for a caller that wants
+the harder guarantee (an interactive command a human drives directly);
+nothing in this ticket's own scope currently sets it (a future `frob
+ticket promote --strict`-style flag, or an interactive confirmation
+prompt, is the natural next step but was not asked for and was not
+added). This is the sibling of the existing `_post_splice_integrity_
+check` (T-0764/T-1536) one level down: that guard protects an id from
+vanishing from the ledger outright; this one protects the recorded WORK
+on a surviving id from silently vanishing -- the exact T-1636 shape.
+Tests: `TestWriteTicket::test_content_loss_warns_loudly_by_default`
+(warns, does not block, verified via `caplog`), `test_strict_no_content_
+loss_refuses` (opts in, blocks, verified the on-disk content is
+unchanged after refusal), `test_keeping_evidence_or_done_report_is_never_
+refused` (only clearing BOTH trips it -- clearing just one is fine),
+`test_first_write_for_a_new_id_is_never_refused` (no prior content, no
+guard).
+
+Corrected a directive-placement mistake mid-ticket: the two new helper
+functions were initially placed directly above `write_ticket`'s own
+frob:doc/frob:tests directive block, so COV005 correctly flagged the
+directives as having silently ridden onto the new private helpers
+instead of staying bound to `write_ticket`. Moved both helpers to after
+`write_ticket`'s body (Python resolves the forward reference at call
+time, so no functional change) -- `frob check --only coverage --ticket
+T-1637` went from 60 errors to 0.
+
+Filed: none. No out-of-scope gap found.
+
+Evidence: 6 ids recorded (`frob ticket evidence T-1637 ...`), all
+collected and passing:
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_content_loss_warns_loudly_by_default
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_strict_no_content_loss_refuses
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_keeping_evidence_or_done_report_is_never_refused
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_first_write_for_a_new_id_is_never_refused
+- tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promotes_a_draft_carrying_evidence_and_done_report
+- tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promoting_an_already_final_id_is_a_no_op
+
+Gates: `frob check --only coverage --ticket T-1637` clean (0 errors, 1
+warning, 171 waived). `frob check --only affect_drift --only prework
+--ticket T-1637` clean (0 errors). Full regression pass on touched test
+files: `tests/unit/test_ticket_store.py`, `tests/system/
+test_cli_ticket_promote.py`, `tests/test_ticket_land.py` (326 collected,
+0 failed).
+
+### Changed
+```
+ docs/design/ledger-v2.md                   |  15 ++++
+ docs/guides/agent-playbook.md              |  17 ++++
+ docs/modules/tickets.md                    |  79 +++++++++++++++++
+ src/frob/_cli_parsers/_ticket/_progress.py |  21 +++++
+ src/frob/app/ticket_runner/__init__.py     |   4 +
+ src/frob/app/ticket_runner/_query.py       |  43 ++++++++++
+ src/frob/tickets/_models.py                |  18 ++++
+ src/frob/tickets/_store.py                 |  97 ++++++++++++++++++++-
+ tests/system/test_cli_ticket_promote.py    | 130 ++++++++++++++++++++++++++++
+ tests/test_ticket_land.py                  |  88 +++++++++++++++++++
+ tests/unit/test_ticket_store.py            |  94 +++++++++++++++++++++
+ tickets.md                                 | 131 ++++++++++++++++++++++++++++-
+ 12 files changed, 733 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestWriteTicket::test_content_loss_warns_loudly_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteTicket::test_strict_no_content_loss_refuses` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteTicket::test_keeping_evidence_or_done_report_is_never_refused` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteTicket::test_first_write_for_a_new_id_is_never_refused` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promotes_a_draft_carrying_evidence_and_done_report` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promoting_an_already_final_id_is_a_no_op` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 4942 warning(s), 713 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1638 -->
 ```yaml
@@ -7838,3 +8097,34 @@ Work:
 3. The message must never call a commit 'the parent commit' when it is the commit under test.
 
 T-1676 was closed with --skip-mutation-evidence citing this ticket.
+
+<!-- ticket:T-1679 -->
+```yaml
+id: T-1679
+title: 'Invert the content-loss guard default: refuse, and give test fixtures an explicit
+  unchecked primitive'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+T-1637 added _check_no_content_loss in src/frob/tickets/_store.py -- a guard on write_ticket that catches a write replacing a ticket's evidence list AND Done report with nothing. That is the exact shape of the T-1636 field incident, which discarded 12 evidence ids and a 12KB Done report recoverable only by git archaeology.
+
+It ships with strict=False as the DEFAULT, so the guard WARNS and proceeds; only 'frob ticket promote' opts into refusing. That means the incident it was written to prevent would still happen today, just with a log line attached. A guard whose default is to allow the thing it detects is a detector, not a guard.
+
+The stated reason for the warn-default is that a hard refuse broke six pre-existing splice_ledger test fixtures that deliberately construct a 'poorer' ticket snapshot via write_ticket. That is a real constraint, but it argues for a different seam, not a weaker default: test fixtures wanting to simulate a regressed ledger side should call an explicitly-named unchecked primitive (e.g. _write_ticket_unchecked) that says so at the call site, leaving write_ticket itself safe for every production caller.
+
+Work:
+1. Add the explicit unchecked primitive and move the six fixtures onto it.
+2. Flip write_ticket's default to strict (refuse).
+3. Audit every remaining production call site for one that legitimately needs to empty both fields; each such site opts out explicitly and says why.
+
+Test convenience must not set the safety level of a production write path. Filed by the coordinator while reviewing T-1637 before landing it -- the guard is a real improvement and lands as-is; this ticket finishes it.

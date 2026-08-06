@@ -358,6 +358,100 @@ class TestWriteTicket:
         assert loaded.is_ok
         assert loaded.danger_ok.keys() == {"T-0001"}
 
+    # frob:ticket T-1637
+    def test_content_loss_warns_loudly_by_default(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_warns_loudly_by_default  # noqa: E501
+        done = _ticket().model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": "## Description\nsomething\n\n## Done report\n\nshipped\n",
+            }
+        )
+        assert write_ticket(tmp_path, done).is_ok
+
+        # The T-1636 shape: a fresh Ticket for the SAME id, evidence and
+        # Done report both gone (e.g. a hand-rolled refile that rebuilt
+        # the ticket from scratch instead of renumbering it). Default
+        # (non-strict) is a LOUD warning, not a refusal -- `write_ticket`
+        # is also the primitive legitimate internal callers (e.g.
+        # `splice_ledger` merge-preference test fixtures) use to construct
+        # a deliberately poorer snapshot on purpose.
+        with caplog.at_level("WARNING"):
+            stripped = _ticket().model_copy(
+                update={"body": "## Description\nsomething\n"}
+            )
+            result = write_ticket(tmp_path, stripped)
+        assert result.is_ok
+        assert any(
+            "content-loss guard" in record.message for record in caplog.records
+        )
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].evidence == ()
+        assert "## Done report" not in loaded.danger_ok["T-0001"].body
+
+    # frob:ticket T-1637
+    def test_strict_no_content_loss_refuses(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_strict_no_content_loss_refuses  # noqa: E501
+        done = _ticket().model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": "## Description\nsomething\n\n## Done report\n\nshipped\n",
+            }
+        )
+        assert write_ticket(tmp_path, done).is_ok
+
+        stripped = _ticket().model_copy(update={"body": "## Description\nsomething\n"})
+        result = write_ticket(tmp_path, stripped, strict_no_content_loss=True)
+        assert result.is_err
+        assert result.danger_err == TicketError.DoneReportOrEvidenceDiscarded
+
+        # Refused means UNCHANGED on disk -- the Done report/evidence
+        # must still be there.
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].evidence == ("tests/test_x.py::test_ok",)
+        assert "## Done report" in loaded.danger_ok["T-0001"].body
+
+    # frob:ticket T-1637
+    def test_keeping_evidence_or_done_report_is_never_refused(
+        self, tmp_path: Path
+    ) -> None:
+        """Only a write that discards BOTH evidence and the Done report
+        trips the guard -- normal transitions (state change, scope edit,
+        evidence CONTENT change without emptying it) must never refuse."""
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_keeping_evidence_or_done_report_is_never_refused  # noqa: E501
+        done = _ticket().model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": "## Description\nsomething\n\n## Done report\n\nshipped\n",
+            }
+        )
+        assert write_ticket(tmp_path, done).is_ok
+
+        # Keeps the Done report, only clears evidence -- fine.
+        keeps_report = done.model_copy(update={"evidence": ()})
+        assert write_ticket(tmp_path, keeps_report).is_ok
+
+        # Keeps evidence, only drops the Done report heading -- fine.
+        keeps_evidence = done.model_copy(update={"body": "## Description\nsomething\n"})
+        assert write_ticket(tmp_path, keeps_evidence).is_ok
+
+    # frob:ticket T-1637
+    def test_first_write_for_a_new_id_is_never_refused(self, tmp_path: Path) -> None:
+        """No prior on-disk content for this id -- `_check_no_content_loss`
+        has nothing to compare against, so a brand-new ticket with empty
+        evidence and no Done report (the normal `new_ticket` shape) must
+        write clean."""
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_first_write_for_a_new_id_is_never_refused  # noqa: E501
+        fresh = _ticket()
+        assert fresh.evidence == ()
+        result = write_ticket(tmp_path, fresh)
+        assert result.is_ok
+
 
 # frob:ticket T-1254
 class TestV2WriteTicket:

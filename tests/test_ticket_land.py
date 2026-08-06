@@ -3038,6 +3038,94 @@ class TestDraftReferenceRewriteOnLand:
             "a T-draft- id survived somewhere in the landed ledger text"
         )
 
+    # frob:ticket T-1622
+    def test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report(
+        self, repo: Path
+    ) -> None:
+        """T-1622's exact real-world shape: an agent, mid-work on its
+        assigned ticket, discovers follow-up work and files it via `frob
+        ticket new` (which mints a draft id off-branch) -- then cites that
+        DIFFERENT ticket's draft id in ITS OWN Done report's "Filed: ..."
+        line, never editing the sibling's own body at all. `_land_
+        rewrite_draft_references_in_bodies` is called with the FULL
+        `draft_id_mapping` (primary + every finalized sibling,
+        `_land_finalize_and_close`'s `draft_id_mapping.update(siblings_
+        finalized...)`), so this citation must be rewritten too -- proving
+        the land alone (no draft/finalize round-trip left for a human,
+        no hand-edited citation anywhere) satisfies T-1622's acceptance:
+        an agent files a follow-up from a worktree, lands its work, and
+        nobody touches the ledger by hand for the citation to be correct
+        on main."""
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-t1622", str(wt)], repo)
+
+        primary = new_ticket(
+            wt, _spec("Primary work citing a sibling", scope=("src/primary622.py",))
+        )
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        assert primary_id.startswith("T-draft-")
+        (wt / "src" / "primary622.py").write_text("# primary work\n")
+
+        # The follow-up, discovered mid-work, filed as its own standalone
+        # ticket -- left QUEUED, exactly like a real residue filing.
+        sibling = new_ticket(
+            wt, _spec("Follow-up discovered mid-work", scope=("src/sib622.py",))
+        )
+        assert sibling.is_ok
+        sibling_draft_id = sibling.danger_ok.id
+        assert sibling_draft_id.startswith("T-draft-")
+        assert sibling_draft_id != primary_id
+
+        _make_closeable(wt, primary_id)
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[primary_id]
+        ticket = ticket.model_copy(
+            update={
+                "body": (
+                    ticket.body
+                    + f"\nFiled: {sibling_draft_id} (follow-up, out of scope)\n"
+                )
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+        _commit_all(wt, "primary work citing a standalone sibling draft")
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        final_id = report.final_id
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        landed_map = landed.danger_ok
+
+        # The sibling must have been promoted to a real id alongside the
+        # primary -- never left as a draft, never dropped.
+        assert sibling_draft_id not in landed_map
+        finalized_siblings = [
+            tid
+            for tid, t in landed_map.items()
+            if t.title == "Follow-up discovered mid-work"
+        ]
+        assert finalized_siblings, "sibling draft ticket was dropped at land"
+        sibling_final_id = finalized_siblings[0]
+        assert not sibling_final_id.startswith("T-draft-")
+
+        # And the PRIMARY's own Done report -- a DIFFERENT ticket's body
+        # than the sibling's -- must cite the sibling's REAL final id, not
+        # its now-defunct draft id, with no human intervention.
+        final_body = landed_map[final_id].body
+        assert sibling_draft_id not in final_body, (
+            "primary's Done report still cites the sibling's dead draft id "
+            "-- this is the exact toil T-1622 exists to eliminate"
+        )
+        assert f"Filed: {sibling_final_id}" in final_body
+
+        ledger_text = ledger_path(repo).read_text(encoding="utf-8")
+        assert "T-draft-" not in ledger_text
+
     def test_land_rewrites_strata_waive_clause_draft_id_reference(
         self, repo: Path
     ) -> None:

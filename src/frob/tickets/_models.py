@@ -1672,6 +1672,24 @@ class TicketError(ErrorSet):
         "landing block's id already exists on main under a different title "
         "-- refusing to overwrite"
     )
+    # frob:ticket T-1637
+    # A write that would replace an existing ticket id's content with a
+    # version carrying NO evidence and NO "## Done report" section, when
+    # the on-disk version being overwritten had one or the other -- the
+    # one-level-down sibling of LedgerIntegrityViolation (T-0764/T-1536
+    # protects against a ticket id vanishing entirely; this protects
+    # against the id surviving but its already-done WORK vanishing). The
+    # T-1636 field incident this exists to prevent: a hand-rolled draft
+    # refile recipe (`frob ticket new` on main, then delete the draft's
+    # own block) discarded 12 evidence ids and a 12KB Done report with no
+    # warning at all, recoverable only via `git show <sha>~1:tickets.md`
+    # archaeology.
+    DoneReportOrEvidenceDiscarded = (
+        "this write would replace an existing ticket's evidence/Done "
+        "report with an empty one -- refusing (strict mode; the default, "
+        "non-strict write_ticket() call logs the same finding as a "
+        "warning instead of refusing)"
+    )
     # T-0889: a wholesale `write_all`/`write_archive` caller that captured
     # a digest of the ledger at load time and passed it back as
     # `expected_digest` gets THIS instead of a silent clobber when the

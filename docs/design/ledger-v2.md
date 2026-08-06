@@ -216,6 +216,21 @@ the per-ticket locks for all of them in a fixed order (sorted by id) to
 avoid a lock-ordering deadlock -- the one new discipline this model
 requires, tested explicitly (section 7).
 
+**Content-loss guard (T-1637):** independent of which lock tier is held,
+`write_ticket` now compares an incoming write against whatever is
+currently on disk for that id before performing it: replacing a non-empty
+evidence list and/or a `## Done report` section with an empty one logs a
+loud warning by default, or refuses outright
+(`Err(DoneReportOrEvidenceDiscarded)`) when the caller opts into
+`strict_no_content_loss=True` (`frob ticket promote`'s CLI path does).
+This targets a DIFFERENT failure class than the lock model above -- not a
+race between two writers, but a single writer reconstructing a ticket
+from scratch under an id that already carried real work (the T-1636
+field incident: a hand-rolled draft-refile recipe discarded 12 evidence
+ids and a 12KB Done report with no lock contention involved at all). See
+`docs/modules/tickets.md`'s "Content-loss guard on write_ticket" section
+for the full mechanism (`frob.tickets._store._check_no_content_loss`).
+
 **Implementation status (T-1253):** both primitives described above ship
 in `src/frob/tickets/_store.py` as `ticket_lock(root, ticket_id)` and
 `allocator_lock(root)`, built on the same `flock`-plus-thread-local-

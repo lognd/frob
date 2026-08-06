@@ -65,6 +65,23 @@ WHY and the recovery recipes.
    T-1125 rewrites prose citations automatically, but VERIFY the real id
    exists on main before citing it in your final report. A disclosed cut
    with no ticket is a TICK011 finding -- file it or state why not.
+   NEVER hand-refile a draft (read its body out, `frob ticket new` a
+   fresh one on main, delete the draft's block, string-swap citations) --
+   that recipe is lossy: it discards the draft's evidence and Done report
+   (T-1636: 12 evidence ids + a 12KB Done report lost, recoverable only
+   via `git show <sha>~1:tickets.md` archaeology) and, on any `write_
+   ticket` call, now WARNS loudly about exactly that loss (T-1637's
+   content-loss guard, `frob.tickets._store._check_no_content_loss`) --
+   heed the warning, do not repeat the recipe anyway. If a draft needs a
+   real id BEFORE its own land (a coordinator manually refiling residue
+   recovered from an abandoned worktree, or promoting several drafts at
+   once), `frob ticket promote <draft-id>` (T-1637) is the first-class,
+   atomic replacement: it allocates the next real id and renumbers the
+   ledger block plus every code reference in one call (`renumber_one`
+   under the hood, same primitive `frob ticket renumber <old> <new>`
+   exposes directly for a case where you already know both ids), carrying
+   evidence/Done report/scope across intact because it RENAMES the same
+   ticket object rather than reconstructing a fresh one.
 9. `uv run frob ticket land` (T-1175) prints its own `LAND-PROOF:` line
    after every real (non-dry-run) land -- `commit=<sha>
    is_ancestor_of_main=True/False state_on_main=<state>

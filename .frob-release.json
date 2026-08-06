@@ -1970,7 +1970,7 @@
     "src/frob/tickets/_store.py::write_archive": "e5bffe2ada3af69b2322bf1f01ceab7fd5f8e1a70acc88df1d2ad5b4c90effd3",
     "src/frob/tickets/_store.py::write_archived_ticket": "e25adc974ed9d027de7e2c3dcaf9c53fdbe6a8ae311579ec89259808829f7463",
     "src/frob/tickets/_store.py::write_done_report": "fafff332cfed701f8886410b7425ab776cd41311c1baf04cdd854671582fb9f6",
-    "src/frob/tickets/_store.py::write_ticket": "7a493296c6fa18900d1e71b68e3853de304748ddcdb0a712f57755f6affb5c08",
+    "src/frob/tickets/_store.py::write_ticket": "511d9bbfaea50b53c97a71bea7f0564c821b3cadfd395dc2813764a5f482fb6f",
     "src/frob/tickets/_worktree_guard.py::FROB_AGENT_ENV": "6f6ad16643b577b93fc9ed9bfd21d31424e84cf04d8bfb1c470c9b95d224bce6",
     "src/frob/tickets/_worktree_guard.py::FROB_WORKTREE_ENV": "30d9b7d45443142e51d7e347b5bceb79199f07ce10725d8252b7d8232f754ccc",
     "src/frob/tickets/_worktree_guard.py::agent_env_exports": "149643b353f0a30d2d3bf990b10b0725d8cf1c1f3bbedf4ad922a8142c627eda",
@@ -2069,5 +2069,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.353.0"
+  "version": "0.354.0"
 }

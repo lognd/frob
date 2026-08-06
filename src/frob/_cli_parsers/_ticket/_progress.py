@@ -135,6 +135,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "collapse-dir-into-monofile behavior",
     )
     ticket_renumber_p = _add_ticket_renumber_parser(ticket_sub)
+    ticket_promote_p = _add_ticket_promote_parser(ticket_sub)
     ticket_land_p = _add_ticket_land_parser(ticket_sub)
     ticket_merge_driver_p = _add_ticket_merge_driver_parser(ticket_sub)
     return [
@@ -146,6 +147,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         ticket_reconcile_p,
         ticket_migrate_p,
         ticket_renumber_p,
+        ticket_promote_p,
         ticket_land_p,
         ticket_merge_driver_p,
     ]
@@ -188,6 +190,25 @@ def _add_ticket_renumber_parser(ticket_sub):
         help="report what renumber <old> <new> would change without writing",
     )
     return ticket_renumber_p
+
+
+# frob:ticket T-1637
+def _add_ticket_promote_parser(ticket_sub):
+    """Register `frob ticket promote <draft-id>` and return its subparser:
+    the first-class replacement for the lossy hand-rolled draft-refile
+    recipe (T-1637) -- allocates the draft's real id and renumbers it
+    (ledger block + every code reference) in one atomic operation, via
+    `finalize_draft`/`renumber_one`, carrying evidence/Done report/scope
+    across intact since it renames the SAME ticket rather than
+    reconstructing a fresh one."""
+    ticket_promote_p = ticket_sub.add_parser(
+        "promote",
+        help="allocate a draft id's real T-#### id and rewrite the ledger "
+        "block plus every code reference to it, atomically -- the "
+        "first-class replacement for hand-refiling a draft ticket",
+    )
+    ticket_promote_p.add_argument("ticket_id", metavar="draft-id")
+    return ticket_promote_p
 
 
 def _add_ticket_land_parser(ticket_sub):
