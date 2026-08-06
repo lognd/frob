@@ -256,6 +256,15 @@ def _doc008_violation(doc_rel: str, line: int, message: str) -> Violation:
     )
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _strip_code_spans/_line_index/_doc_anchor_slugs, module-local helpers the resolver \
+# cannot see through, and Option.or_else/.danger_some (typani), a generic-typed call \
+# it cannot bind; the one real raise path (file read) is caught below"
+# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
+# unconditional _SUBSCRIPT_RAISE default for slug_cache[resolved]/ slug_cache[doc_rel] \
+# -- both writes/reads are guarded by an immediately-preceding 'if resolved not in \
+# slug_cache'/'if doc_rel not in slug_cache' membership check, so the key is always \
+# present by construction; the resolver's syntactic bracket scan cannot see the guard"
 def _doc008_scan_doc(
     root: Path,
     doc_rel: str,
@@ -543,6 +552,9 @@ def _doc011_known_ticket_ids(root: Path) -> set[str]:
     return known
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _strip_code_spans/_line_index, module-local helpers the resolver cannot see through; \
+# the one real raise path (file read) is caught below"
 def _doc011_scan_doc(
     root: Path, doc_rel: str, known_ids: set[str]
 ) -> tuple[Violation, ...]:
@@ -580,6 +592,13 @@ def _doc009_violation(doc_rel: str, message: str) -> Violation:
     )
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _STATUS_HEADER_RE.match, a compiled-regex match over an already-caught read_text() \
+# output; a compiled pattern match cannot raise"
+# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
+# unconditional _SUBSCRIPT_RAISE default for text.splitlines()[:N], a list SLICE \
+# (never raises KeyError, or any exception, regardless of N) that the resolver's \
+# syntactic bracket scan cannot distinguish from a dict lookup"
 def _doc009_check_doc(root: Path, doc_rel: str) -> Violation | None:
     """The DOC009 `Violation` for `doc_rel`, or None when a dated status
     header (or a superseded-by header whose target resolves) is found
@@ -660,6 +679,9 @@ _MAKE_TARGET_CITATION_RE = re.compile(r"`make ([A-Za-z][\w.-]*)`")
 _MAKEFILE_TARGET_RE = re.compile(r"^([A-Za-z][\w.-]*)\s*:(?!=)")
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _MAKEFILE_TARGET_RE.match, a compiled-regex match over an already-caught read_text() \
+# output; a compiled pattern match cannot raise"
 def _makefile_targets(root: Path) -> set[str]:
     """Every recipe name declared in `root`'s Makefile (`target:` lines,
     `.PHONY`/pattern/variable-assignment lines excluded)."""
@@ -707,6 +729,9 @@ def _doc010_violation(doc_rel: str, line: int, target: str) -> Violation:
     )
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _line_index/_MAKE_TARGET_CITATION_RE.finditer, a module-local helper and a \
+# compiled-regex scan over an already-caught read_text() output; neither can raise"
 def _doc010_scan_doc(
     root: Path, doc_rel: str, make_targets: set[str]
 ) -> list[Violation]:

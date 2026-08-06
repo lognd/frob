@@ -275,6 +275,7 @@ def _is_subtype(sub: str, sup: str) -> bool:
 
 
 # frob:ticket T-0686
+# frob:ticket T-1636
 def _catches(caught: str | None, raised: str) -> bool:
     """True when an `except` clause whose caught type text is `caught`
     (`None` for a bare `except:`) discharges a raised/propagated type
@@ -282,7 +283,28 @@ def _catches(caught: str | None, raised: str) -> bool:
     `except:` or `except Exception:`) -- a narrow `except ValueError:`
     must not be credited with silently handling a raise this resolver
     could not identify (fail-closed: an unresolved raise stays unresolved
-    unless the catch is broad enough to plausibly cover it)."""
+    unless the catch is broad enough to plausibly cover it).
+
+    T-1636: `caught` is normalized through `_bare_callee_name`
+    before comparison. `frob.arch._python._py_except_exception_type`
+    captures a QUALIFIED except clause's text verbatim (`except
+    json.JSONDecodeError:` -> `"json.JSONDecodeError"`), while every
+    raiser table in this module (`_STDLIB_QUALIFIED_RAISERS`, e.g.
+    `"json.loads": frozenset({"JSONDecodeError"})`) attributes the BARE
+    name -- an unnormalized comparison never matched a qualified except
+    clause against the bare name it genuinely discharges, producing a
+    false-positive leak (EXHAUST002) on code that already handles the
+    exception correctly (confirmed empirically:
+    `_fix_engine.py::_e501_lines_for_file` and
+    `_land.py::_read_land_lock_holder` both explicitly catch
+    `json.JSONDecodeError` and still showed the leak before this fix).
+    `raised` is never qualified by construction (every entry in
+    `_BUILTIN_RAISERS`/`_STDLIB_QUALIFIED_RAISERS`/`_own_base_raises` is
+    already a bare name), so normalizing only `caught` is sufficient and
+    keeps this a narrow, targeted fix rather than a speculative rewrite of
+    both sides."""
+    if caught is not None:
+        caught = _bare_callee_name(caught)
     if raised == UNKNOWN:
         return caught is None or caught == "Exception"
     if caught is None or caught == "Exception":
@@ -345,21 +367,31 @@ def _own_base_raises(
 
 
 # frob:ticket T-0976
+# frob:ticket T-1636
 def _resolve_direct_raises(func: NormalizedFunction) -> set[str]:
     """`func`'s own `raise` statements (T-0686): a resolved-directly type
     as-is, or a bare re-raise resolved against the nearest preceding
     `except` via `_nearest_preceding_catch` -- these always escape `func`
-    unconditionally regardless of any later catch in the same body."""
+    unconditionally regardless of any later catch in the same body.
+
+    T-1636: both branches are normalized through
+    `_bare_callee_name` -- `raise module.Type(...)`/`except module.Type:`
+    both capture qualified text verbatim (`frob.arch._python`), while
+    every downstream consumer of this module's `raises`/`catchable` sets
+    (`_catches`, the leaked-type reporting in
+    `frob.gates._exhaustive_handling`, a `# frob:raises <Type>` directive)
+    compares against a BARE name -- an unnormalized qualified type here
+    would silently never match any of them."""
     direct: set[str] = set()
     for r in func.raises:
         if r.exception_type is not None:
-            direct.add(r.exception_type)
+            direct.add(_bare_callee_name(r.exception_type))
             continue
         catch = _nearest_preceding_catch(func, r.line)
         if catch is None or catch.exception_type is None:
             direct.add(UNKNOWN)
         else:
-            direct.add(catch.exception_type)
+            direct.add(_bare_callee_name(catch.exception_type))
     return direct
 
 

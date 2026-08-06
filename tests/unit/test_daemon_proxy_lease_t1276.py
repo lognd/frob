@@ -71,15 +71,22 @@ def _shutdown(root: Path, thread: threading.Thread) -> None:
     thread.join(timeout=1)
 
 
+# frob:ticket T-1636
 class TestDaemonLease:
     """T-1097/T-1126: `try_daemon_lease`/`release_daemon_lease`/
     `_LeaseConnection` -- the persistent-connection lease surface a real
     daemon must actually answer over the wire."""
 
+    # frob:ticket T-1636
     @pytest.fixture(autouse=True)
     def _opt_in(self, monkeypatch):
         # frob:tests \
-        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease._opt_in
+        # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease._opt_in \
+        # kind="integration"
+        # T-1636: an autouse pytest fixture is reached via pytest's own
+        # fixture-injection machinery for every test in this class, never a literal
+        # call token a static call-graph can see -- same rationale as
+        # test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths._opt_in.
         monkeypatch.setenv("FROB_DAEMON", "1")
 
     def test_round_trip_acquire_call_release_close(

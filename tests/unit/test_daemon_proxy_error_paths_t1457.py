@@ -246,16 +246,25 @@ class TestShutdownStaleDaemon:
         assert any("frob_shutdown accepted" in rec.message for rec in caplog.records)
 
 
+# frob:ticket T-1636
 class TestTryDaemonLeaseErrorPaths:
     """`try_daemon_lease`'s connect-OSError, call-OSError, and remote-error
     branches -- distinct from `test_daemon_proxy_lease_t1276.py`'s
     happy-path/disabled/no-socket coverage."""
 
+    # frob:ticket T-1636
     @pytest.fixture(autouse=True)
     def _opt_in(self, monkeypatch):
         # frob:tests \
         # tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPat\
-        # hs._opt_in
+        # hs._opt_in kind="integration"
+        # T-1636: an autouse pytest fixture is reached via pytest's own
+        # fixture-injection machinery for every test in this class, never a literal
+        # call token a static call-graph can see -- the same blind spot
+        # frob.gates._wire._is_autouse_pytest_fixture already special-cases for
+        # WIRE001; COV006 has no equivalent rescue yet, so this is discharged the
+        # same way any other framework-dispatch boundary is (COV006's own
+        # kind="integration"/"e2e" trust-at-face-value convention).
         monkeypatch.setenv("FROB_DAEMON", "1")
 
     def test_call_oserror_closes_connection_and_returns_unreachable(

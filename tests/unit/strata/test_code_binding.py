@@ -166,6 +166,7 @@ class TestBindCode:
         assert "api/secret.py" not in owner
 
 
+# frob:ticket T-1636
 class TestCheckImportConformance:
     # frob:tests src/frob/strata/_code_binding.py::check_import_conformance kind="unit"
     def test_same_component_import_is_fine(self, tmp_path: Path):
@@ -383,7 +384,7 @@ class TestCheckImportConformance:
         report = check_import_conformance(model, binding, tmp_path)
         assert report.violations == ()
 
-    # frob:tests src/frob/strata/_code_binding.py::_relative_imports kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_relative_base_dir kind="unit"
     def test_relative_base_dir_level_walks_exactly_to_root_returns_none(
         self, tmp_path: Path
     ):
@@ -393,7 +394,7 @@ class TestCheckImportConformance:
         file_dir = tmp_path / "a" / "b"
         assert _relative_base_dir(file_dir, tmp_path, 4) is None
 
-    # frob:tests src/frob/strata/_code_binding.py::_relative_imports kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_relative_base_dir kind="unit"
     def test_relative_base_dir_outside_root_returns_none_via_value_error(
         self, tmp_path: Path
     ):
@@ -403,7 +404,7 @@ class TestCheckImportConformance:
         unrelated = tmp_path.parent / "elsewhere" / "pkg"
         assert _relative_base_dir(unrelated, tmp_path, 1) is None
 
-    # frob:tests src/frob/strata/_code_binding.py::_relative_imports kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_relative_base_dir kind="unit"
     def test_relative_base_dir_within_root_resolves(self, tmp_path: Path):
         file_dir = tmp_path / "a" / "b"
         assert _relative_base_dir(file_dir, tmp_path, 1) == file_dir
@@ -452,6 +453,7 @@ class TestCheckImportConformance:
 
 
 # frob:ticket T-0595
+# frob:ticket T-1636
 class TestObservedCallNames:
     """docs/audits/strata.md G1 stronger half (T-0595): the code-side half
     of the ENDORSE-boundary predicate join `_threat.py::
@@ -520,7 +522,7 @@ class TestObservedCallNames:
         binding = bind_code(model, tmp_path).danger_ok
         assert _observed_call_names(binding, tmp_path, "Api") == frozenset()
 
-    # frob:tests src/frob/strata/_code_binding.py::_observed_call_names kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_call_target_name kind="unit"
     def test_subscript_call_target_is_not_resolved(self):
         """`_call_target_name`'s conservative None case (T-1415 remainder):
         a call whose target is neither a bare name nor an attribute access
@@ -529,7 +531,7 @@ class TestObservedCallNames:
         func = next(n for n in ast.walk(tree) if isinstance(n, ast.Call)).func
         assert _call_target_name(func) is None
 
-    # frob:tests src/frob/strata/_code_binding.py::_observed_call_names kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_call_names kind="unit"
     def test_call_names_skips_unresolvable_subscript_call(self):
         tree = ast.parse("funcs[0](x)\nsanitize(x)\n")
         assert _call_names(tree) == frozenset({"sanitize"})

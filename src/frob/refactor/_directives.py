@@ -42,6 +42,9 @@ __all__ = [
 ]
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to Path.cwd(), a stdlib \
+# call the resolver cannot statically bound; the one real raise path (path.relative_to \
+# outside cwd) is caught below"
 def _display_path(path: Path) -> str:
     """Repo-relative POSIX path when possible, else the path as given --
     mirrors `frob.lang._display_path` exactly (private there, so this

@@ -429,6 +429,13 @@ def _read_source_for_format(path: Path) -> str | None:
 
 # frob:ticket T-0979
 # frob:ticket T-1359
+# frob:raises OSError
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# path.parent.mkdir/tempfile.mkstemp/os.fdopen/os.fsync/os.replace, stdlib calls the \
+# resolver's curated table does not cover; every one of them is a genuine OSError \
+# source and the function's own except OSError block (and its bare re-raise, now \
+# declared via # frob:raises OSError above) is the intended, documented boundary for \
+# all of them"
 def _write_formatted(path: Path, rewritten: str) -> None:
     """`_format_one_path`'s write half: rewrite `path` in place with
     `rewritten`'s content, `newline=""` preserving whatever CRLF/LF

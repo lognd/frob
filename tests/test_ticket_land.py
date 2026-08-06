@@ -1503,6 +1503,7 @@ class TestUncommittedWaiveDeletionRefusal:
 
 # frob:ticket T-1468
 # frob:ticket T-1332
+# frob:ticket T-1636
 class TestWaiveRewrapNotDeletion:
     """T-1468: a `frob fmt` re-wrap of a multi-line `frob:waive` comment's
     `reason="..."` continuation (changing how many physical lines it spans
@@ -1511,8 +1512,12 @@ class TestWaiveRewrapNotDeletion:
     should."""
 
     # frob:ticket T-1468
+    # frob:ticket T-1636
     def test_rewrap_only_diff_is_not_flagged_as_a_deletion(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="integration"  # noqa: E501
+        # T-1636: exercised only through the full `land(..., dry_run=True)`
+        # pipeline several call-hops deep, not a direct call a static call-graph can
+        # see -- COV006's own kind="integration" trust-at-face-value convention.
         (repo / "src" / "other.py").write_text(
             '# frob:waive PERF001 reason="some very long reason that used to fit on \\\n'
             '# two lines like this"\n'
@@ -1544,8 +1549,12 @@ class TestWaiveRewrapNotDeletion:
         assert result.is_ok, result.err
 
     # frob:ticket T-1468
+    # frob:ticket T-1636
     def test_rewrap_that_also_changes_content_still_refuses(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="integration"  # noqa: E501
+        # T-1636: exercised only through the full `land(..., dry_run=True)`
+        # pipeline several call-hops deep, not a direct call a static call-graph can
+        # see -- COV006's own kind="integration" trust-at-face-value convention.
         (repo / "src" / "other.py").write_text(
             '# frob:waive PERF001 reason="some very long reason that used to fit on \\\n'
             '# two lines like this"\n'
@@ -2210,6 +2219,7 @@ class TestArchiveResurrection:
 
 # frob:ticket T-0959
 # frob:ticket T-1194
+# frob:ticket T-1636
 class TestArchiveSpliceDiscipline:
     """T-0959: `tickets-archive.md` used to ride along on whatever git's raw
     merge/checkout produced at land time, with no per-id splice discipline
@@ -2368,13 +2378,17 @@ class TestArchiveSpliceDiscipline:
         )
 
     # frob:ticket T-1194
+    # frob:ticket T-1636
     def test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch(
         self, repo: Path
     ) -> None:
         # frob:tests src/frob/tickets/_land_ledger_merge.py::_merge_ledger_tickets \
         # kind="unit"
         # frob:tests src/frob/tickets/_land_ledger_merge.py::_resolve_divergence \
-        # kind="unit"
+        # kind="integration"
+        # T-1636: exercised only through the full `land(..., dry_run=True)`
+        # pipeline several call-hops deep, not a direct call a static call-graph can
+        # see -- COV006's own kind="integration" trust-at-face-value convention.
         # T-1154 (3rd occurrence of the wrong-side-merge class, see this
         # ticket's own Done report): a ticket archived on BOTH main and the
         # worktree, same state (done) and same richness (both carry a Done

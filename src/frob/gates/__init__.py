@@ -1638,6 +1638,10 @@ def _store_mode_at_base(root: str, base: str) -> str:
     return "unknown"
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# yaml.load/_tickets_yaml_loader and TicketState(...), a resolver-opaque call and a \
+# pydantic-style enum constructor; the two real raise paths (yaml.YAMLError, \
+# ValueError) are caught below"
 def _ledger_state_from_frontmatter_text(text: str) -> TicketState | None:
     """Parse just the `state:` field out of one v2-mode `ticket.md`'s
     raw `---`-frontmatter text (the same frontmatter shape
@@ -2042,6 +2046,14 @@ def _cov004(queue: TicketQueue) -> tuple[Violation, ...]:
 # frob:ticket T-1455
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov004_matching_sha_is_clean
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov004_missing_attachment
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to hashlib.sha256, a \
+# stdlib call the resolver cannot statically bound; the one real raise path \
+# (path.read_bytes()) is caught below"
+# frob:waive EXHAUST002 reason="T-1636: the resolver's curated builtin-raiser table \
+# attributes getattr(...) with AttributeError unconditionally, but this call passes a \
+# default ('') -- a 3-arg getattr(obj, name, default) never raises AttributeError by \
+# construction; attachment.path itself is not a getattr call and is guaranteed present \
+# by the Ticket attachment model this function's own caller constructs it from"
 def _cov004_one(
     ticket: Ticket,
     attachment,  # noqa: ANN001

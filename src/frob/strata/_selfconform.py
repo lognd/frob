@@ -256,6 +256,11 @@ SYS_VIA_LESS_LARGE_NODE = "SYS107"
 _PACKAGE_ROOT = "src/frob"
 
 # frob:doc docs/strata/surface.md#may-scope
+# frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
+# (T-1440/T-1451) documents the SYS107 via-less-large-node advisory this constant \
+# configures -- same T-0524/T-0529 per-symbol architecture-doc precedent every other \
+# COV007 waiver in this repo already carries, not accidental drift onto a private \
+# symbol"
 #: SYS107's default "large node" file-count threshold (T-1451) --
 #: deliberately a round, generous number (LARGE001's own file-SIZE
 #: threshold precedent, `frob.arch._check_large_file`, is the closest
@@ -1329,6 +1334,10 @@ def _binding_totality_violations(
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1451
+# frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
+# (T-1451) documents SYS107's blast-radius measure this private helper implements -- \
+# same T-0524/T-0529 per-function architecture-doc precedent every other COV007 waiver \
+# in this repo already carries, not accidental drift onto a private helper"
 def _node_real_code_file_count(binding: CodeBinding, node_id: str) -> int:
     """The number of real (owned, non-`FOREIGN`) files `binding` binds to
     `node_id` -- SYS107's own "how large is this node's blast radius"
@@ -1345,6 +1354,11 @@ def _node_real_code_file_count(binding: CodeBinding, node_id: str) -> int:
 # frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_large_node_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_small_node_is_silent  # noqa: E501
 # frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_scoped_grant_on_large_node_is_silent  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
+# (T-1440/T-1451) documents the SYS107 via-less-large-node advisory this private \
+# helper implements -- same T-0524/T-0529 per-function architecture-doc precedent \
+# every other COV007 waiver in this repo already carries, not accidental drift onto a \
+# private helper"
 def _via_less_large_node_violations(
     model: KernelModel, binding: CodeBinding, threshold: int
 ) -> list[SelfConformViolation]:

@@ -374,6 +374,9 @@ def _mine_done_transitions_v1(
 
 
 # frob:ticket T-1330
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to v2_state_transitions, \
+# a cross-module git-history walk the resolver cannot see through; the one real raise \
+# path (datetime.fromisoformat on a malformed timestamp) is caught below"
 def _mine_done_transitions_v2(
     root: Path, ticket_ids: Sequence[str]
 ) -> tuple[SprintTransition, ...]:

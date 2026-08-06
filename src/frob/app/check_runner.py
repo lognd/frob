@@ -927,6 +927,11 @@ def _handle_early_exit_modes(root: Path, cfg: AppConfig) -> bool:
 # frob:ticket T-1535
 # frob:doc docs/modules/tickets.md#frob-check---land-parity-t-1535
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function kind="unit"  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's --land-parity section \
+# (T-1535) is a deliberate architecture doc describing this exact private CLI \
+# handler's own evaluation, same T-0524/T-0529 per-function architecture-doc precedent \
+# every other COV007 waiver in this repo already carries -- not accidental drift onto \
+# a private helper"
 def _run_land_parity(root: Path, cfg: AppConfig) -> None:
     """`frob check --land-parity` (T-1535): run
     `frob.app.ticket_runner._land_cmd.land_parity_findings` against `root`

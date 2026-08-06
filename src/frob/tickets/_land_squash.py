@@ -126,6 +126,11 @@ def _check_squash_conflicted(
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
 # frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
+# (T-1136/T-1258) is a deliberate design doc walking through this exact private \
+# v2-mode scope-widening helper's own contract -- same T-0524/T-0529 per-function \
+# architecture-doc precedent every other COV007 waiver in this repo already carries, \
+# not accidental drift onto a private helper"
 def _v2_effective_scope(ticket: Ticket) -> Ticket:
     """v2-mode land treats a ticket's own `tickets/<id>/` directory as
     always in scope (design section 1's file-per-ticket layout), mirroring
@@ -145,6 +150,12 @@ def _v2_effective_scope(ticket: Ticket) -> Ticket:
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
 # frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_same_ticket_conflict_surfaces_loudly_no_splice  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
+# (T-1136/T-1258, AC3's 'no splice_ledger-class resolution needed' contract) is a \
+# deliberate design doc walking through this exact private v2-mode conflict-check \
+# counterpart -- same T-0524/T-0529 per-function architecture-doc precedent every \
+# other COV007 waiver in this repo already carries, not accidental drift onto a \
+# private helper"
 def _check_squash_conflicted_v2(
     root: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
 ) -> Result[None, LandError]:
@@ -185,6 +196,11 @@ def _check_squash_conflicted_v2(
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
 # frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
+# (T-1136/T-1258) is a deliberate design doc walking through this exact private \
+# v2-mode squash-and-splice entry point's own contract -- same T-0524/T-0529 \
+# per-function architecture-doc precedent every other COV007 waiver in this repo \
+# already carries, not accidental drift onto a private helper"
 def _squash_and_splice_ledger_v2(
     root: Path,
     worktree: Path,

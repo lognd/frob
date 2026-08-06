@@ -142,12 +142,22 @@ def load_manifest(root: Path) -> Result[ReleaseManifest, ReleaseError]:
         return Err(ReleaseError.Malformed)
 
 
-# frob:doc docs/modules/release.md#public-api
+# frob:doc docs/modules/release.md#stamp-refuses-an-un-bumped-api-change-t-1381
 # frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
 # frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_no_lease_succeeds  # noqa: E501
 # frob:ticket T-1381
 # frob:tests tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped.test_refuses_when_api_changed_and_version_not_bumped  # noqa: E501
 # frob:tests tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped.test_allows_when_version_is_bumped  # noqa: E501
+# T-1636: retargeted from #public-api (a COV007 finding -- this
+# private helper is not in that section's own `frob:describes` list, and
+# the T-1381 feature it implements is documented right here instead) to
+# the section that genuinely describes it, matching `stamp`'s own anchor
+# immediately below.
+# frob:waive COV007 reason="T-1636: docs/modules/release.md's Stamp-refuses section \
+# (T-1381) is a deliberate architecture doc walking through this exact private \
+# helper's own contract (the SAME computation REL001 uses, applied at stamp time) -- \
+# same T-0524/T-0529 per-function architecture-doc precedent every other COV007 waiver \
+# in this repo already carries, not accidental drift onto a private helper"
 def _bump_shortfall(
     root: Path, snapshot: GraphSnapshot, version: str
 ) -> tuple[str, str, str, str] | None:

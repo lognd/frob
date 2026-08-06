@@ -1286,6 +1286,10 @@ def _merge_touched_python_files(root: Path) -> list[str]:
     ]
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# guarded_subprocess_run, a cross-module Result-returning wrapper the resolver cannot \
+# see through, and result.danger_ok.stdout attribute access on its own return type; \
+# the one real raise path (json.loads on malformed ruff output) is caught below"
 def _e501_lines_for_file(root: Path, rel_file: str) -> set[int] | None:
     """1-indexed line numbers `ruff check --select E501` reports for
     `rel_file`, or `None` on any spawn/parse failure -- distinguishing
@@ -1394,6 +1398,13 @@ def fix_e501_merge_introduced(root: Path, snapshot: GraphSnapshot) -> list[FixAp
 # tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader.test_unkn\
 # own_extension_refuses_insertion
 # frob:ticket T-1581
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to marker_for, a \
+# cross-module helper the resolver cannot see through; the one real raise path (file \
+# read) is caught below"
+# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
+# unconditional _SUBSCRIPT_RAISE default for lines[-1], a list index guarded by an \
+# immediately-preceding 'if lines and ...' emptiness check, so the index is always \
+# valid by construction; the resolver's syntactic bracket scan cannot see the guard"
 def _insert_ticket_directive_above(
     root: Path, rel_file: str, line: int, ticket_id: str
 ) -> bool:

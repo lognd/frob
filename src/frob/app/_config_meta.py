@@ -210,6 +210,14 @@ def stale_install_warning(repo_root: Path) -> str | None:
 
 
 # frob:ticket T-1218
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to str.strip/ str.split, \
+# plain str methods the resolver cannot statically bound; the one real raise path \
+# (int(p) on a non-numeric component) is caught below"
+# frob:waive EXHAUST002 reason="T-1636: the resolver's curated builtin-raiser table \
+# attributes int(...) with {ValueError, TypeError} unconditionally, but every element \
+# of parts here is already a str (raw.strip().split('.') output) -- int(str) can only \
+# ever raise ValueError, never TypeError; a false positive from the table's \
+# context-insensitive over-approximation of int()"
 def _parse_version_tuple(raw: str) -> tuple[int, ...] | None:
     """Parse a dotted-numeric version string (`"0.277.0"`) into a tuple for
     ordering comparison, or `None` when any component is non-numeric (e.g.

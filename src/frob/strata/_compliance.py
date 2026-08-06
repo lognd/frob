@@ -1033,6 +1033,12 @@ CMPL_REGISTRY_UNIT_IDS: frozenset[str] = frozenset(
 )
 
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#compliance005compliance007-compliance-registry-vs-model-checking-t-1244  # noqa: E501
+# frob:waive COV007 reason="T-1636: the anchored EXHAUSTIVENESS-GATE.md section is a \
+# deliberate design doc walking through this exact private mapping's own \
+# vacuity-closure rationale (T-1244), immediately below in this same module's own \
+# multi-paragraph docstring -- same T-0524/T-0529 per-symbol architecture-doc \
+# precedent every other COV007 waiver in this repo already carries, not accidental \
+# drift onto a private symbol"
 #: T-1244 (gate-vacuity closure): `_check_cmpl_registry_unit_dispositions`
 #: (COMPLIANCE005) only proves a `CMPL_REGISTRY_UNIT_IDS` member carries
 #: SOME `handled_by`/`out_of_scope` string -- for 16 of the 17 units that

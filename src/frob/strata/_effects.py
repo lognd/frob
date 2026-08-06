@@ -193,6 +193,11 @@ def _via_matches(rel: str, via: tuple[str, ...]) -> bool:
 # frob:tests \
 # tests/unit/strata/test_effects.py::TestScopedMayViaConformance.test_observation_outsi\
 # de_via_surface_is_a_violation kind="unit"
+# frob:waive COV007 reason="T-1636: docs/strata/surface.md's may-scope section \
+# (T-1440) names this exact private per-file join function BY NAME \
+# ('_effects.py::_declared_kinds_for_file') in its own prose -- same T-0524/T-0529 \
+# per-function architecture-doc precedent every other COV007 waiver in this repo \
+# already carries, not accidental drift onto a private helper"
 def _declared_kinds_for_file(node: Node, rel: str) -> frozenset[str]:
     """The precise capability kinds `node` declares that actually COVER
     `rel` (T-1440's per-file SYS100 join): a grant with no `via` (the

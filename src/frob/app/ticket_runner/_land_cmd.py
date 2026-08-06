@@ -360,6 +360,19 @@ _POST_LAND_SWEEP_BUDGET_S = 300
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:ticket T-1535
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# guarded_subprocess_run/_parse_error_findings_from_stdout, cross-module calls the \
+# resolver cannot see through; the one real raise path (subprocess.TimeoutExpired) is \
+# caught below"
+# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
+# unconditional _SUBSCRIPT_RAISE default for spawn_kwargs['env'] = env, a dict WRITE \
+# (never raises KeyError) that the resolver's syntactic bracket scan cannot \
+# distinguish from a read"
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
+# sweep section (T-1456/T-1535) is a deliberate architecture doc walking through this \
+# exact private spawn-and-parse helper's own contract, same T-0524/T-0529 per-function \
+# architecture-doc precedent every other COV007 waiver in this repo already carries -- \
+# not accidental drift onto a private helper"
 def _unscoped_error_findings(
     root: Path,
     ticket_id: str,
@@ -435,6 +448,11 @@ def _unscoped_error_findings(
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:ticket T-1513
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
+# sweep section (T-1456/T-1513) is a deliberate architecture doc walking through this \
+# exact private Tier-A auto-fix step, same T-0524/T-0529 per-function architecture-doc \
+# precedent every other COV007 waiver in this repo already carries -- not accidental \
+# drift onto a private helper"
 def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> list[str]:
     """Run the T-1138 Tier-A deterministic auto-fix handlers against
     `root`'s WHOLE tree (unscoped -- no `touched_paths`, mirroring
@@ -471,6 +489,11 @@ def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> list[str]:
 # frob:ticket T-1513
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_fix_commit_stages_only_touched_paths_not_git_add_dash_a  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
+# sweep section (T-1456/T-1513) is a deliberate architecture doc walking through this \
+# exact private commit-and-fix step, same T-0524/T-0529 per-function architecture-doc \
+# precedent every other COV007 waiver in this repo already carries -- not accidental \
+# drift onto a private helper"
 def _sweep_apply_tier_a_and_commit(
     root: Path, ticket_id: str, final_id: str, new_findings: frozenset[tuple[str, str]]
 ) -> int:
@@ -537,6 +560,11 @@ def _sweep_apply_tier_a_and_commit(
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
+# sweep section (T-1456) is a deliberate architecture doc walking through this exact \
+# private revert step, same T-0524/T-0529 per-function architecture-doc precedent \
+# every other COV007 waiver in this repo already carries -- not accidental drift onto \
+# a private helper"
 def _sweep_revert_land(
     root: Path,
     final_id: str,
@@ -587,6 +615,11 @@ def _sweep_revert_land(
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_no_new_error_is_a_silent_no_op  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_unmeasurable_baseline_or_fresh_skips_the_sweep  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
+# sweep section (T-1456) is a deliberate architecture doc walking through this exact \
+# private orchestration entry point, same T-0524/T-0529 per-function architecture-doc \
+# precedent every other COV007 waiver in this repo already carries -- not accidental \
+# drift onto a private helper"
 def _post_land_unscoped_error_sweep(
     root: Path,
     ticket_id: str,
@@ -679,6 +712,11 @@ def _post_land_unscoped_error_sweep(
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1514
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
+# sweep section (T-1456/T-1514) is a deliberate architecture doc walking through this \
+# exact private pre-commit Tier-A step, same T-0524/T-0529 per-function \
+# architecture-doc precedent every other COV007 waiver in this repo already carries -- \
+# not accidental drift onto a private helper"
 def _sweep_apply_tier_a_pre_commit(root: Path, ticket_id: str) -> frozenset[str]:
     """T-1514's pre-commit twin of `_sweep_apply_tier_a_and_commit`: run the
     unscoped Tier-A auto-fix handlers against `root` and, for every path
@@ -832,6 +870,11 @@ def land_parity_findings(
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1514
 # frob:ticket T-1524
+# frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
+# sweep section (T-1456/T-1514/T-1524) is a deliberate architecture doc walking \
+# through this exact private pre-commit sweep entry point, same T-0524/T-0529 \
+# per-function architecture-doc precedent every other COV007 waiver in this repo \
+# already carries -- not accidental drift onto a private helper"
 def _pre_commit_unscoped_error_sweep(
     root: Path,
     ticket_id: str,

@@ -314,6 +314,10 @@ class LiveLandProcess(BaseModel):
 
 # frob:doc docs/guides/install.md#live-land-process-report-t-1515
 # frob:ticket T-1515
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _read_land_lock_holder, a cross-module helper the resolver cannot see through, and \
+# os.kill, a stdlib call whose exact escaping type set is not in the curated table; \
+# the two known outcomes (ProcessLookupError, PermissionError/OSError) are caught below"
 def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
     """T-1515: read `root`'s `.frob/land.lock` content (written by
     `frob.tickets._land._land_lock` on acquisition) and report who holds

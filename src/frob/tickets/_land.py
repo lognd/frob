@@ -181,6 +181,9 @@ def _land_lock_holder_metadata() -> dict:
 
 
 # frob:ticket T-1515
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to str.strip(), a str \
+# method the resolver's curated table does not cover (never raises); the two real \
+# raise paths (OSError on read, JSONDecodeError/ValueError on parse) are caught below"
 def _read_land_lock_holder(path: Path) -> dict | None:
     """Best-effort read of `path`'s current holder metadata (T-1515) --
     `None` on any read/parse failure (the file may not exist yet, or a
@@ -2491,6 +2494,11 @@ def _land_precheck_remaining_checks(
 # frob:ticket T-1258
 # frob:doc docs/design/ledger-v2.md#5-merge-story-the-frob-ledger-driver-retired
 # frob:tests tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_with_no_custom_merge  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/design/ledger-v2.md's Merge story section \
+# (T-1136/T-1258) is a deliberate design doc walking through this exact private \
+# v2-mode merge counterpart's own contract -- same T-0524/T-0529 per-function \
+# architecture-doc precedent every other COV007 waiver in this repo already carries, \
+# not accidental drift onto a private helper"
 def _merge_main_into_worktree_v2(
     worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[bool, LandError]:

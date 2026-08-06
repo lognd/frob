@@ -360,6 +360,11 @@ def ensure_daemon(root: Path) -> None:
 # frob:doc docs/modules/serve.md#daemon-liveness-t-1377-and-the-opt-in-switch-t-1379
 # frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn.test_unset_env_disables_the_daemon  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestDaemonOptIn.test_frob_daemon_1_enables_the_daemon  # noqa: E501
+# frob:waive COV007 reason="T-1636: docs/modules/serve.md's Daemon liveness section \
+# (T-1377/T-1379) is a deliberate architecture doc walking through this exact private \
+# opt-in switch's own design, same T-0524/T-0529 per-function architecture-doc \
+# precedent every other COV007 waiver in this repo already carries -- not accidental \
+# drift onto a private helper"
 def _daemon_enabled() -> bool:
     """Whether the daemon path may be used at all.
 

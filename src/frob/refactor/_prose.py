@@ -56,6 +56,9 @@ __all__ = [
 _DOCS_GLOB = "**/*.md"
 
 
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to path.as_posix(), a \
+# Path method the resolver's curated table does not cover (never raises); the one real \
+# raise path (path.relative_to outside repo_root) is caught below"
 def _display_path(repo_root: Path, path: Path) -> str:
     """Repo-relative POSIX path when possible, else the path as given --
     mirrors `frob.refactor._directives._display_path` exactly (same

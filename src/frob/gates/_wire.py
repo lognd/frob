@@ -132,6 +132,13 @@ _AUTOUSE_FIXTURE_RE = re.compile(
 
 
 # frob:ticket T-1510
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _AUTOUSE_FIXTURE_RE.search, a compiled-regex search over an already-caught \
+# read_text() output; a compiled pattern search cannot raise"
+# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
+# unconditional _SUBSCRIPT_RAISE default for lines[start - 1 : end], a list SLICE \
+# (never raises KeyError, or any exception, for any start/end) that the resolver's \
+# syntactic bracket scan cannot distinguish from a dict lookup"
 def _is_autouse_pytest_fixture(root: Path, record) -> bool:
     """True if `record`'s span opens with an `@pytest.fixture(autouse=True)`
     (or `pytest_asyncio.fixture`) decorator -- pytest's own fixture-injection

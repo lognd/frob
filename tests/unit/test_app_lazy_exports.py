@@ -24,11 +24,13 @@ def _run(code: str) -> str:
     return result.stdout.strip()
 
 
+# frob:ticket T-1636
 class TestLazyRunnerRunAttrs:
     # frob:ticket T-1424
+    # frob:ticket T-1636
     def test_accessing_one_alias_does_not_import_the_others(self) -> None:
         # frob:tests src/frob/app/__init__.py::__getattr__ kind="unit"
-        # frob:tests src/frob/app/__init__.py::_import_runner_run_module kind="unit"
+        # frob:tests src/frob/app/__init__.py::_import_runner_run_module kind="integration"  # noqa: E501
         code = (
             "import sys\n"
             "import frob.app as app\n"

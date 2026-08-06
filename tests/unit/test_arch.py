@@ -6463,6 +6463,66 @@ class TestMayRaiseResolver:
         assert result["pkg/mod.py::g"].raises == frozenset()
         assert result["pkg/mod.py::f"].raises == frozenset({"KeyError"})
 
+    # frob:ticket T-1636
+    def test_qualified_except_clause_discharges_bare_named_leak(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # T-1636: `except json.JSONDecodeError:` must discharge a
+        # leaked bare "JSONDecodeError" (the shape every raiser table in
+        # this module attributes) -- before the fix, `_catches` compared
+        # the qualified caught text "json.JSONDecodeError" against the bare
+        # raised text and never matched, so a function that genuinely
+        # catches a qualified exception type still reported it as leaked.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=3,
+            calls=[NormalizedCall(callee="json.loads", line=2)],
+            catches=[NormalizedCatch(line=3, exception_type="json.JSONDecodeError")],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/mod.py::f"].raises == frozenset()
+
+    # frob:ticket T-1636
+    def test_bare_reraise_of_qualified_catch_type_is_normalized(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # T-1636: a bare `raise` re-raising a qualified caught
+        # type (`except json.JSONDecodeError:` ... `raise`) must resolve
+        # to the BARE name "JSONDecodeError", matching every raiser
+        # table's own bare-name convention -- an unnormalized qualified
+        # name here would never match a `# frob:raises JSONDecodeError`
+        # directive or a caller's own bare-named catch.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=3,
+            catches=[NormalizedCatch(line=2, exception_type="json.JSONDecodeError")],
+            raises=[NormalizedRaise(line=3, exception_type=None)],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/mod.py::f"].raises == frozenset({"JSONDecodeError"})
+
     # frob:ticket T-0686
     def test_unresolvable_call_yields_unknown(self) -> None:
         # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"

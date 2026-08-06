@@ -598,11 +598,16 @@ class TestArchiveLedger:
         assert "```yaml" in text
 
 
+# frob:ticket T-1636
 class TestYamlLoader:
-    # frob:tests src/frob/tickets/_store.py::_yaml_loader kind="unit"
     """Direct tests of `_yaml_loader`'s CSafeLoader/SafeLoader selection."""
 
     # frob:ticket T-1373
+    # frob:ticket T-1636
+    # T-1636: retargeted from the class docstring (COV006 -- a
+    # class symbol has no call-graph node of its own to traverse from) onto
+    # this method, which calls `_yaml_loader()` directly below.
+    # frob:tests src/frob/tickets/_store.py::_yaml_loader kind="unit"
     def test_prefers_csafeloader_when_libyaml_present(self, monkeypatch) -> None:
         """T-1373: this predates T-1333, which deliberately falls back to
         `SafeLoader` whenever a coverage tracer is live -- so under `make

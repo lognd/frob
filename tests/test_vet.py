@@ -3894,6 +3894,7 @@ class TestEmbeddedCodeCapability:
 
 
 # frob:ticket T-0910
+# frob:ticket T-1636
 class TestFingerprintScan:
     """T-0153: `_scan_file_fingerprints` -- the CVE-fingerprint sibling of
     `_scan_file_operations`, joined to `frob.strata.CVE_FINGERPRINTS`."""
@@ -3908,10 +3909,16 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
 
+    # frob:ticket T-1636
     def test_yaml_load_with_explicit_loader_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="integration"  # noqa: E501
+        # T-1636: `_yaml_load_call_lacks_explicit_loader` is invoked only via
+        # `_capability_scan.py`'s _FINGERPRINT_REFINEMENTS dispatch table (a function
+        # reference stored by name, looked up and called indirectly), never a
+        # literal call token a static call-graph can see -- same class as COV006's
+        # own documented argparse-dispatch-table rescue.
         # frob:ticket T-1329
         # An explicit Loader= is FP-DESERIALIZE-YAML-001's own prescribed
         # remediation (CVE-2017-18342 is the loader-LESS default) -- the
@@ -3930,10 +3937,16 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert not any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
 
+    # frob:ticket T-1636
     def test_one_bare_yaml_load_among_remediated_calls_still_flags(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="integration"  # noqa: E501
+        # T-1636: `_yaml_load_call_lacks_explicit_loader` is invoked only via
+        # `_capability_scan.py`'s _FINGERPRINT_REFINEMENTS dispatch table (a function
+        # reference stored by name, looked up and called indirectly), never a
+        # literal call token a static call-graph can see -- same class as COV006's
+        # own documented argparse-dispatch-table rescue.
         # frob:ticket T-1329
         from frob.vet._capability_scan import _scan_file_fingerprints
 
