@@ -2475,7 +2475,7 @@ this investigation ticket's close.
 id: T-1396
 title: 'TEST005 burn-down: src/frob/gates remaining findings past the 0.0% priority
   tier'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-01'
