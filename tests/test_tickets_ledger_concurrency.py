@@ -42,6 +42,20 @@ from frob.tickets._models import RenumberReport
 from frob.tickets._provisional import DRAFT_PREFIX
 from frob.tickets._store import ledger_lock, write_ticket
 
+# T-1635: this module's races all rendezvous two threads via a short
+# Barrier/Event wait before joining them with an equally short timeout.
+# Both were originally 5s/10s, tuned for an unloaded machine -- under a
+# `pytest-xdist -n auto` full-suite run (a dozen sibling workers'
+# processes/threads contending for the same CPUs), plain thread
+# scheduling delay alone can push a thread's arrival at the rendezvous
+# past a 5s wait, raising `BrokenBarrierError` in the thread body (which
+# then silently leaves the `nonlocal` result variable `None`, observed
+# failing as `AssertionError: None` rather than a timeout message) even
+# though `archive`/`renumber_one`'s locking itself was never at fault.
+# Widened to a generous CI-safety margin; still far under anything a
+# genuine deadlock in the code under test would need to hide behind.
+_CONCURRENCY_TIMEOUT_S = 30
+
 
 def _seed_ticket(
     root: Path,
@@ -87,7 +101,7 @@ class TestArchiveRaceWithConcurrentNew:
         removes."""
         _seed_ticket(tmp_path, ticket_id="T-0001", state=TicketState.DONE)
 
-        start_gate = threading.Barrier(2, timeout=5)
+        start_gate = threading.Barrier(2, timeout=_CONCURRENCY_TIMEOUT_S)
         archive_result: Result[int, TicketError] | None = None
         new_result: Result[Ticket, TicketError] | None = None
 
@@ -112,8 +126,8 @@ class TestArchiveRaceWithConcurrentNew:
         new_thread = threading.Thread(target=_run_new)
         archive_thread.start()
         new_thread.start()
-        archive_thread.join(timeout=10)
-        new_thread.join(timeout=10)
+        archive_thread.join(timeout=_CONCURRENCY_TIMEOUT_S)
+        new_thread.join(timeout=_CONCURRENCY_TIMEOUT_S)
         assert not archive_thread.is_alive()
         assert not new_thread.is_alive()
 
@@ -145,7 +159,7 @@ class TestRenumberOneRaceWithConcurrentNew:
         """Same race, exercised through `renumber_one` instead of `archive`."""
         _seed_ticket(tmp_path, ticket_id="T-0050", state=TicketState.QUEUED)
 
-        start_gate = threading.Barrier(2, timeout=5)
+        start_gate = threading.Barrier(2, timeout=_CONCURRENCY_TIMEOUT_S)
         renumber_result: Result[RenumberReport, TicketError] | None = None
         new_result: Result[Ticket, TicketError] | None = None
 
@@ -170,8 +184,8 @@ class TestRenumberOneRaceWithConcurrentNew:
         new_thread = threading.Thread(target=_run_new)
         renumber_thread.start()
         new_thread.start()
-        renumber_thread.join(timeout=10)
-        new_thread.join(timeout=10)
+        renumber_thread.join(timeout=_CONCURRENCY_TIMEOUT_S)
+        new_thread.join(timeout=_CONCURRENCY_TIMEOUT_S)
         assert not renumber_thread.is_alive()
         assert not new_thread.is_alive()
 
@@ -212,12 +226,12 @@ class TestLedgerLockSpansWholesaleOperations:
             with ledger_lock(tmp_path):
                 order.append("holder-enter")
                 entered.set()
-                release.wait(timeout=5)
+                release.wait(timeout=_CONCURRENCY_TIMEOUT_S)
                 order.append("holder-exit")
 
         holder_thread = threading.Thread(target=_holder)
         holder_thread.start()
-        assert entered.wait(timeout=5)
+        assert entered.wait(timeout=_CONCURRENCY_TIMEOUT_S)
 
         def _waiter() -> None:
             with ledger_lock(tmp_path):
@@ -229,8 +243,8 @@ class TestLedgerLockSpansWholesaleOperations:
         assert order == ["holder-enter"], "second lock acquisition did not block"
 
         release.set()
-        holder_thread.join(timeout=5)
-        waiter_thread.join(timeout=5)
+        holder_thread.join(timeout=_CONCURRENCY_TIMEOUT_S)
+        waiter_thread.join(timeout=_CONCURRENCY_TIMEOUT_S)
         assert order == ["holder-enter", "holder-exit", "waiter-enter"]
 
 
@@ -257,7 +271,7 @@ class TestFinalizeDraftAllocationRace:
         _seed_ticket(tmp_path, ticket_id=draft_a, state=TicketState.DONE)
         _seed_ticket(tmp_path, ticket_id=draft_b, state=TicketState.DONE)
 
-        start_gate = threading.Barrier(2, timeout=5)
+        start_gate = threading.Barrier(2, timeout=_CONCURRENCY_TIMEOUT_S)
         result_a: Result[str, TicketError] | None = None
         result_b: Result[str, TicketError] | None = None
 
@@ -275,8 +289,8 @@ class TestFinalizeDraftAllocationRace:
         thread_b = threading.Thread(target=_run_b)
         thread_a.start()
         thread_b.start()
-        thread_a.join(timeout=10)
-        thread_b.join(timeout=10)
+        thread_a.join(timeout=_CONCURRENCY_TIMEOUT_S)
+        thread_b.join(timeout=_CONCURRENCY_TIMEOUT_S)
         assert not thread_a.is_alive()
         assert not thread_b.is_alive()
 

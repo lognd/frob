@@ -121,6 +121,47 @@ class TestRelativize:
         assert _relativize(None, tmp_path) is None
 
 
+# frob:ticket T-1635
+class TestMypyOracleCacheDir:
+    """T-1635 regression: `_mypy_diagnostics` must pin `--cache-dir`
+    inside the caller's own root.
+
+    Before this fix the oracle invocation inherited mypy's default
+    `.mypy_cache` resolved against the PROCESS CWD, so every concurrent
+    pytest-xdist worker shared one cache directory. A torn read then
+    returned ZERO diagnostics for a file that genuinely had one -- the
+    silent-under-report shape this drive kept hitting, here making the
+    ty-vs-mypy oracle disagree at random and reddening SUPPRESS001 tests
+    only under load."""
+
+    def test_mypy_invocation_pins_cache_dir_under_root(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_suppress.py::_mypy_diagnostics kind="unit"
+        from frob.gates import _suppress
+
+        captured: list[list[str]] = []
+
+        from typani.result import Err
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN003, ANN202
+            captured.append(list(argv))
+            # Err short-circuits _mypy_diagnostics to [] -- this test is
+            # about the ARGV it builds, not the diagnostics it parses.
+            return Err("stubbed: argv captured")
+
+        original = _suppress.guarded_subprocess_run
+        _suppress.guarded_subprocess_run = _fake_run
+        try:
+            _suppress._mypy_diagnostics(tmp_path)
+        finally:
+            _suppress.guarded_subprocess_run = original
+
+        assert captured, "mypy was never invoked"
+        argv = captured[0]
+        assert "--cache-dir" in argv, argv
+        pinned = argv[argv.index("--cache-dir") + 1]
+        assert pinned == str(tmp_path / ".mypy_cache"), pinned
+
+
 class TestSuppress001Gate:
     """`suppress001_gate`: the full evidence-driven correlation, against
     the real `ty`/`mypy` oracles."""

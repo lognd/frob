@@ -97,6 +97,15 @@ class TestWatchThread:
         # frob:tests \
         # tests/test_serve_watch.py::TestWatchThread.test_change_fires_on_change_callba\
         # ck
+        # T-1635: `poll_interval_s=0.05` means production only needs a
+        # couple of ticks to notice the edit, but under `pytest-xdist -n
+        # auto` this thread competes for CPU with a dozen sibling workers'
+        # own threads/processes -- a 5.0s ceiling measured this way was
+        # observed failing on a fully-loaded box even though the watcher
+        # itself was behaving correctly (scheduling delay, not a missed
+        # event). Widened to a generous CI-safety margin; still far
+        # tighter than a real hang would need to escape.
+        _NOTICE_BUDGET_S = 20.0
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         _warm._invalidate(tmp_path)
@@ -109,7 +118,7 @@ class TestWatchThread:
         try:
             time.sleep(0.2)
             _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY + "\n# edited\n")
-            deadline = time.monotonic() + 5.0
+            deadline = time.monotonic() + _NOTICE_BUDGET_S
             while not calls and time.monotonic() < deadline:
                 time.sleep(0.05)
             assert calls, "on_change was never called after an on-disk edit"
@@ -118,6 +127,21 @@ class TestWatchThread:
 
     def test_stop_joins_promptly(self, tmp_path: Path) -> None:
         # frob:tests tests/test_serve_watch.py::TestWatchThread.test_stop_joins_promptly
+        # T-1635: `WatchThread.stop()` itself only waits up to its own
+        # internal, hardcoded 5.0s bound ("a daemon shutdown never hangs
+        # on this thread specifically") before returning -- it is
+        # deliberately non-blocking-forever, not a guarantee the thread
+        # has actually exited by the time it returns. Under `pytest-
+        # xdist -n auto`, a single in-flight `watch_tick` (which shells
+        # out to git) competing with a dozen sibling workers' own
+        # threads/processes for CPU can legitimately still be running
+        # when that internal bound elapses -- observed failing on a
+        # fully-loaded box even though the thread went on to exit
+        # normally moments later. Poll for the thread's actual exit
+        # against a generous CI-safety deadline instead of trusting
+        # `stop()`'s own internal join alone; a real hang (the thread
+        # never honoring the stop Event at all) still fails this test.
+        _JOIN_BUDGET_S = 20.0
         _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
         _git_init(tmp_path)
         _warm._invalidate(tmp_path)
@@ -126,5 +150,9 @@ class TestWatchThread:
         watcher.start()
         started = time.monotonic()
         watcher.stop()
-        assert time.monotonic() - started < 5.0
-        assert not watcher._thread.is_alive()
+        deadline = started + _JOIN_BUDGET_S
+        while watcher._thread.is_alive() and time.monotonic() < deadline:
+            watcher._thread.join(timeout=0.1)
+        assert not watcher._thread.is_alive(), (
+            f"watch thread did not stop within the {_JOIN_BUDGET_S}s budget"
+        )

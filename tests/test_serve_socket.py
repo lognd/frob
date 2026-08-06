@@ -310,13 +310,28 @@ class TestShutdownReapsChildren:
         # frob:tests \
         # tests/test_serve_socket.py::TestShutdownReapsChildren.test_frob_shutdown_exit\
         # s_and_reaps_within_budget
+        # T-1635: the *production* budget this exercises is
+        # `_CHILD_REAP_GRACE_S` (1.0s, the SIGTERM grace before escalating
+        # to kill()) -- comfortably sub-second on an unloaded machine. The
+        # wall-clock ceiling below is a generous CI-safety margin, not the
+        # thing under test: under `pytest-xdist -n auto` this test's own
+        # thread/child-process scheduling competes with ~a dozen sibling
+        # workers' own threads and multiprocessing children for the same
+        # CPUs, so a 5s ceiling measured this way was observed failing on
+        # a fully-loaded box (`daemon did not exit within the 5s budget`)
+        # even though the daemon and OS both behaved correctly -- the test
+        # was measuring machine load, not a regression. `_JOIN_BUDGET_S`
+        # stays far below `_sleep_forever`'s own 30s sleep so a genuine
+        # reap failure (child never terminated) still fails this test
+        # rather than silently passing once the child's own sleep expires.
+        _JOIN_BUDGET_S = 20
         cfg = SocketDaemonConfig(root=root, idle_timeout_s=30.0)
         results: list = []
         thread = threading.Thread(
             target=lambda: results.append(run_socket_daemon(cfg)), daemon=True
         )
         thread.start()
-        deadline = time.monotonic() + 5
+        deadline = time.monotonic() + _JOIN_BUDGET_S
         while not socket_path(root).exists() and time.monotonic() < deadline:
             time.sleep(0.02)
         assert socket_path(root).exists()
@@ -328,14 +343,16 @@ class TestShutdownReapsChildren:
             assert response.is_ok
 
             start = time.monotonic()
-            thread.join(timeout=5)
+            thread.join(timeout=_JOIN_BUDGET_S)
             elapsed = time.monotonic() - start
-            assert not thread.is_alive(), "daemon did not exit within the 5s budget"
-            assert elapsed < 5
+            assert not thread.is_alive(), (
+                f"daemon did not exit within the {_JOIN_BUDGET_S}s budget"
+            )
+            assert elapsed < _JOIN_BUDGET_S
             assert results[0].is_ok
             assert not socket_path(root).exists()
 
-            proc.join(timeout=5)
+            proc.join(timeout=_JOIN_BUDGET_S)
             assert not proc.is_alive(), "child survived the daemon's own shutdown"
         finally:
             if proc.is_alive():

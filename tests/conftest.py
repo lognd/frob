@@ -100,10 +100,35 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 #: match) so a renamed/parametrized variant of any of these still groups
 #: without needing this list edited in lockstep with the test files
 #: themselves, which live outside this ticket's scope.
+#: T-1635: `test_no_reg008_findings_for_arch_checks_yaml`/`..._system_
+#: design_yaml` (`tests/test_registry_exhaustiveness.py`) join this list
+#: on the SAME evidence shape, not a speculative addition -- both call
+#: `build_graph(root, ...)` against `_REPO_ROOT` directly (`root =
+#: Path(__file__).resolve().parents[1]`), by design: they verify the
+#: real, live `docs/design/registry/*.yaml` against this repo's actual
+#: code graph, so isolating them onto a synthetic `tmp_path` fixture
+#: (the alternative to grouping) is not available -- there is no fixture
+#: copy of "this repo's own registry" to check instead. Reproduced under
+#: a real `pytest -n auto` full-suite run: both timed out at pytest-
+#: timeout's per-test budget with a faulthandler thread dump showing one
+#: blocked inside `derived_state_lock`/`derived_state_write_lock`
+#: (`src/frob/process/_lock.py`, an unbounded `fcntl.flock` over
+#: `.frob/derived.lock` at the real repo root) and the other still
+#: inside `load_file_data`, immediately followed by "node down: Not
+#: properly terminated" -- the identical contention/OOM shape T-1433
+#: diagnosed for the three tests already below, just not yet extended to
+#: these two. `derived_state_lock` is a real cross-process exclusive
+#: lock over a shared on-disk resource (there is exactly one `.frob/`
+#: per checkout); `loadgroup` scheduling has no reason on its own to
+#: keep these five apart, so several full-repo scans can still land on
+#: different workers at the same moment and queue on that lock (or pay
+#: peak-memory cost concurrently) unless explicitly grouped.
 _SELF_SCAN_HEAVY_NAME_SUBSTRINGS = (
     "test_sys_gate_zero_violations",
     "test_repo_design_and_declarations_are_self_conformant",
     "test_repo_unrestricted_scan_is_clean",
+    "test_no_reg008_findings_for_arch_checks_yaml",
+    "test_no_reg008_findings_for_system_design_yaml",
 )
 
 
@@ -188,9 +213,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         return
     total = getattr(session, "testscollected", 0)
     failed = getattr(session, "testsfailed", 0)
-    line = (
-        f"SUITE-RESULT: exitstatus={exitstatus} collected={total} failed={failed}"
-    )
+    line = f"SUITE-RESULT: exitstatus={exitstatus} collected={total} failed={failed}"
     reporter = session.config.pluginmanager.get_plugin("terminalreporter")
     if reporter is not None:
         reporter.write_line(line)

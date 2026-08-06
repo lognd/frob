@@ -5388,7 +5388,17 @@ class TestClaimDivergencePostMerge:
             if "skipping gate-state re-verification" in r.getMessage()
         ]
         assert notices, "expected an explicit skip notice, got none"
-        assert "-1" not in notices[0]
+        # T-1635: the notice embeds `tid` (a randomly-minted `T-draft-
+        # <hex>` id, `mint_draft_id`) verbatim, twice -- a bare `"-1" not
+        # in notices[0]` check intermittently failed (~1/16 of runs,
+        # independent of any load/scheduling) whenever that random hex
+        # happened to start with "1" right after "draft-", producing the
+        # substring "...draft-1..." and tripping the sentinel check on
+        # pure coincidence, not a real `-1` sentinel leak. Strip the
+        # ticket id out before checking so the assertion only ever
+        # catches a genuine `-1` in the FORMATTED numbers this message is
+        # actually guarding against.
+        assert "-1" not in notices[0].replace(tid, "<TID>")
 
     def test_two_unmeasured_gate_claims_never_vacuously_match(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
@@ -5428,7 +5438,12 @@ class TestClaimDivergencePostMerge:
         assert done.is_ok, done.err
         assert "### Captured claims" in done.danger_ok.body
         assert "unmeasured" in done.danger_ok.body
-        assert "-1" not in done.danger_ok.body
+        # T-1635: same defensive strip as the sibling test above -- `tid`
+        # is a randomly-minted `T-draft-<hex>` id that can coincidentally
+        # embed the substring "-1"; excluding it keeps this assertion
+        # honest about what it actually guards (no `-1` sentinel in a
+        # FORMATTED number, not "the random id happens to avoid one").
+        assert "-1" not in done.danger_ok.body.replace(tid, "<TID>")
         _commit_all(wt, "advance ticket with a fully unmeasured captured claim")
 
         result = land(

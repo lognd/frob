@@ -45,6 +45,21 @@ ignores that predate mypy running here at all.
 Detection only. The Tier-A auto-fix that WRITES the paired suppression is
 a separate, sibling ticket (T-1341) -- this module never edits a source
 file.
+
+WATCH ITEM (T-1635): `_mypy_diagnostics` pins `--cache-dir` INSIDE its
+caller-supplied `root` rather than letting mypy fall back to its default
+`.mypy_cache` (resolved against the process's CWD, not `root`). Under
+`pytest-xdist`, every worker/test invoking this oracle shares the SAME
+CWD (the repo root), so a default cache dir is a real cross-process
+shared resource: concurrent invocations race on the same incremental-
+cache files. Reproduced directly: a full-suite `-n auto` run
+intermittently returned zero mypy diagnostics for a file this function's
+own caller had just written and expected exactly one diagnostic from --
+a torn/stale incremental-cache read racing another worker's concurrent
+mypy invocation, not a real absence of the error. Pinning the cache
+under `root` (always a fresh, test-owned `tmp_path` in tests; the same
+default location as before in real `frob check` runs, where `cwd ==
+root` already) removes the shared resource entirely.
 """
 # frob:waive INV006 reason="this module's 'only'/'never' occurrences are source-level \
 # design-rationale prose (the module docstring's rule-by-rule mandate summary), \
@@ -222,8 +237,8 @@ def _mypy_diagnostics(root: Path) -> list[tuple[str, int, str]]:
     yields an empty list rather than raising -- `suppress001_gate` only
     calls this when `suppression_dialects()["mypy"].available` is
     `True`, but this stays defensive against a race between that check
-    and the actual invocation (PATH mutated mid-run, kill-switch
-    flipped)."""
+    and the actual invocation. T-1635: `--cache-dir` pinned INSIDE
+    `root` -- see the module docstring's T-1635 watch item."""
     try:
         run_result = guarded_subprocess_run(
             [
@@ -231,6 +246,8 @@ def _mypy_diagnostics(root: Path) -> list[tuple[str, int, str]]:
                 "--hide-error-context",
                 "--no-color-output",
                 "--no-error-summary",
+                "--cache-dir",
+                str(root / ".mypy_cache"),  # T-1635: never the ambient CWD
                 # mypy skips type-checking an untyped `def`'s BODY by
                 # default (only its signature) -- this repo's own source
                 # is annotated throughout, but the oracle must not go
