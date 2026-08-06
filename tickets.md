@@ -10233,7 +10233,7 @@ Acceptance: ten consecutive full-suite runs, each verified via its SUITE-RESULT 
 id: T-1636
 title: Fix gate:EXHAUST qualified-except-clause matching bug in mayraise resolver,
   drain EXHAUST+COV warnings
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-06'
