@@ -117,7 +117,7 @@ class TestLiveTrackerCitations:
         _commit_all(tmp_path, "ledger prose quoting directives")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
 
-    # frob:ticket T-1632
+    # frob:ticket T-1633
     def test_longer_identifier_ending_in_ticket_is_not_a_citation(
         self, tmp_path: Path
     ) -> None:
@@ -137,7 +137,7 @@ class TestLiveTrackerCitations:
         _commit_all(tmp_path, "prose mentioning the id")
         assert live_tracker_citations(tmp_path, "T-0605") == ()
 
-    # frob:ticket T-1632
+    # frob:ticket T-1633
     def test_standalone_attributes_are_still_citations(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_standalone_attributes_are_still_citations  # noqa: E501
         """The other half of T-1632's anchor: a genuine standalone

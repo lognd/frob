@@ -91,7 +91,7 @@ _REGISTRY_LIVE_KINDS = ("deferred", "tracked_by")
 # (one `git grep -E` alternation) rather than a parallel scan, since both
 # are "a comment attribute equals this ticket id" citations differing
 # only in attribute name.
-# frob:ticket T-1632
+# frob:ticket T-1633
 # Each attribute alternative is LEFT-ANCHORED by an explicit leading-character
 # alternation rather than a lookbehind: this pattern is handed to `git grep -E`
 # (POSIX ERE), which has no lookbehind at all. Without the anchor, `ticket=`
