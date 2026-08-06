@@ -1324,6 +1324,7 @@ def _e501_lines_for_file(root: Path, rel_file: str) -> set[int] | None:
 # frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_introduced_targeted_format_applies  # noqa: E501
 # frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op  # noqa: E501
 # frob:ticket T-1547
+# frob:enforces CHK-GATE-E501
 def fix_e501_merge_introduced(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
     """Tier-A fix (T-1547): run a targeted `ruff format` over exactly the
     `.py` files a land-time merge touched (`_merge_touched_python_files`)

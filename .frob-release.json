@@ -669,7 +669,7 @@
     "src/frob/gates/_registry_exhaustiveness.py::path_ever_tracked": "ebb48169088d1eeafdb81270a34e09c8902ccedcf86dce79890bd11e399070bd",
     "src/frob/gates/_registry_exhaustiveness.py::registry_gate": "77d03c7ef935157cdfba1e8be95ca7a3003b6c3160c591e8f85acad24af0dff0",
     "src/frob/gates/_render_lint.py::render_lint_gate": "1be6f5d87ed3627cf2a5a876f4708f93f45670ac4a221373f9693b6eadadcbd9",
-    "src/frob/gates/_rule_id_scan.py::RETIRED_RULE_IDS": "a930690db6dbb3518bccefcb293d45d94c2aaaf43fe20ba6171e44edb7303cdb",
+    "src/frob/gates/_rule_id_scan.py::RETIRED_RULE_IDS": "d463f1b96aa87cc5f995ec85f34fcbd542a18fa0377564a557a9c9d5ad377279",
     "src/frob/gates/_rule_id_scan.py::SCANNED_BASES": "3783615bf7354214bc83a4dc42cb2377a3adfdf5135a5a5068f99ae198db5856",
     "src/frob/gates/_rule_id_scan.py::generated_gate_rule_ids": "c68a9fadb9288989ee4a4877c5a4a0e503fa20e553c5c6d7c9a52c2cf94bd06c",
     "src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids": "2def589fa8c56d2b24feb4f6364b52e882338f18d83cfbfcfca2ce7f211aa748",
@@ -2063,5 +2063,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.347.0"
+  "version": "0.348.0"
 }

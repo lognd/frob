@@ -6882,6 +6882,7 @@ multi-ticket-worktree sequencing, not a real land blocker.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 0 error(s), 1116 warning(s), 784 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1578 -->
 ```yaml
 id: T-1578
@@ -7013,6 +7014,7 @@ the current, post-merge worktree tree.
 - tests: 6 passed (from 6 evidence id(s))
 - gates: 0 error(s), 6236 warning(s), 798 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1579 -->
 ```yaml
 id: T-1579
@@ -7120,6 +7122,7 @@ T-1579's declared scope) as a small follow-up commit
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 1135 warning(s), 785 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1580 -->
 ```yaml
 id: T-1580
@@ -7229,6 +7232,7 @@ real land.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 553 warning(s), 798 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1581 -->
 ```yaml
 id: T-1581
@@ -7538,7 +7542,7 @@ Design question for the implementer: the natural v2 fingerprint is per-TICKET (e
 id: T-1589
 title: 'strata self-model drift: mutation audit, threat caught_by, and k8s export
   golden fail against the real repo'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7553,6 +7557,12 @@ scope:
 - docs/strata/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+- tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_has_a_substantive_caught_by
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 threat: null
 component: null
 ```
@@ -7565,12 +7575,95 @@ Four real-repo self-model tests fail on main after the T-1518/T-1575/T-1576/T-15
 
 These are exactly the 'design must keep up with the code' checks the self-model exists to enforce, so they are real drift to close, not tests to relax. Update design/frob.strata declarations (frob sys sync-interface for interface= attrs), give the new threat entry a substantive caught_by, re-derive the k8s golden ONLY after confirming the diff is intended, and re-run the may-mutation audit until every may is load-bearing again.
 
+## Done report
+
+Four real self-model tests fixed, all "code observed, declaration structurally
+redundant/stale":
+
+1. test_mutation_audit::test_every_may_is_load_bearing -- cli node
+   declared BOTH a bare "env" may (covering several files) AND a narrower
+   "env.read via _land_cmd.py" atom; testsuite node declared BOTH a bare
+   "net" may AND a narrower "net.connect via test_sync_may.py" atom.
+   canonical_declared_kind/expand_declared_kind confirmed the bare kind's
+   expansion is a strict superset of the narrow one ("env" -> {env.read,
+   env.write}, "net" -> {net.connect, net.listen}) -- deleting the narrow
+   atom leaves the node's overall declared-kind set unchanged (the bare
+   atom already covers it), so the mutation audit's node-level SYS100
+   join never fires on its deletion; it was never load-bearing. Folded
+   both narrow atoms into their sibling bare declaration's `via` list
+   (design/frob.strata) instead of keeping a structurally-redundant
+   second atom -- the code is still correctly attributed (land_parity_
+   findings' os.environ read, test_sync_may.py's fixture-embedded
+   requests.get( needle), just via the declaration that is actually
+   load-bearing.
+
+2. test_mutation_audit::test_second_detector_gaps_are_exactly_the_
+   disclosed_app_level_kinds -- 'process-control' (testsuite node,
+   T-1439's signal.signal(/sys.exit reclassification out of bare 'env')
+   has no _SECCOMP_KIND_MAP entry (no dedicated syscall of its own,
+   same shape as env/env.read already disclosed) and was missing from
+   the test's disclosed set. Added it with the same reasoning pattern
+   the existing env.read docstring uses. (The prior extra 'net.connect'
+   gap in this same assertion was resolved as a side effect of fix #1
+   above -- once the narrow net.connect atom no longer exists as a
+   standalone declaration, it no longer appears as its own second-
+   detector-gap entry.)
+
+3. test_threat::test_every_shipped_entry_has_a_substantive_caught_by --
+   a stale exhaustiveness-lock count (15) hadn't been bumped when
+   T-1439's process-control BenignCapability entry was added to
+   DEFAULT_BENIGN_CAPABILITIES (now 16 entries); the entry's own
+   caught_by text was already substantive, not a placeholder -- only the
+   count assertion and its explanatory comment needed updating.
+
+4. test_export_golden::test_k8s and ::test_seccomp -- both goldens
+   (tests/golden/frob_export_k8s.yaml, tests/golden/frob_export_seccomp.json)
+   predated design/frob.strata's `security` node (src/frob/security/**,
+   zero `may` capabilities). Confirmed via a direct diff before
+   regenerating: the only change in both is a new, empty-capability
+   NetworkPolicy/seccomp block for that one node (no egress, default-
+   deny syscalls) -- a genuine addition, not exporter-logic drift.
+   Re-derived both goldens from the current design/frob.strata via
+   export_k8s_netpol/export_seccomp.
+
+Verification: targeted pytest runs for every failing test/file (all now
+pass), the full tests/unit/strata/ directory (139 passed), design/frob.strata
+still parses (`frob.lang.parse_file`), `frob sys sync-interface` reports no
+drift, `frob check --only test --only invariant --only sys --only decisions
+--ticket T-1589` (0 errors). Did not run the full unscoped suite (playbook
+3b/3c budget) -- that is T-1591's job and the coordinator's land-time job.
+
+### Changed
+```
+ docs/design/registry/check-coverage.yaml          |  6 +-
+ docs/guides/extending/registry_of_registries.json |  2 +-
+ src/frob/__init__.py                              |  4 ++
+ src/frob/gates/_fix_engine.py                     |  1 +
+ src/frob/gates/_rule_id_scan.py                   | 13 +++-
+ src/frob/gates/_waive.py                          |  6 ++
+ tests/unit/test_extending_guides_complete.py      |  2 +-
+ tickets.md                                        | 84 ++++++++++++++++++++++-
+ 8 files changed, 111 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_has_a_substantive_caught_by` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 2025 warning(s), 787 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1590 -->
 ```yaml
 id: T-1590
 title: 'suite red: extending-guides drift, exports residue, unregistered gate rule
   literal'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7586,6 +7679,13 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ```
@@ -7599,11 +7699,78 @@ Three real (isolation-reproducible) suite failures on main:
 
 All three are 'the code moved, the declarations did not' -- fix the declarations, do not relax the tests.
 
+## Done report
+
+Three real suite failures, all "code moved, declaration did not":
+
+1. tests/unit/test_extending_guides_complete.py: the secrets-scan-providers
+   inventory row (docs/guides/extending/registry_of_registries.json) and
+   the drift-lock test's own _REGISTRY_PROBES table both still named
+   src/frob/gates/_secrets.py::_SecretPattern as the anchor, but
+   _SecretPattern actually lives in src/frob/security/_redact.py (imported
+   into _secrets.py, not defined there) -- and that module already carries
+   the correct frob:doc anchor back to the guide. Retargeted both the
+   inventory row's anchor_file and the test's probe entry to
+   src/frob/security/_redact.py; no source or guide prose changed.
+
+2. tests/unit/test_exports.py::TestFrobExportsPolicyResidue: src/frob/doctor.py
+   grew LiveLandProcess/scan_live_land_processes (T-1515) without adding
+   them to src/frob/__init__.py's re-export block and __all__. Added both,
+   alphabetically placed alongside the package's existing doctor.py
+   re-exports; both symbols already carry their own docstrings.
+
+3. tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known:
+   two rule-id literals the T-1010 static scan now finds were never
+   registered:
+   - "E501" (src/frob/gates/_fix_engine.py's targeted-ruff-format
+     land-merge auto-fix, T-1547) is a real, legitimately emitted rule
+     literal -- added to _KNOWN_GATE_RULES (src/frob/gates/_waive.py).
+     frob check --only registry then flagged REG010 (no CHK-GATE-E501
+     registry entry) and REG008 (no frob:enforces edge) for the new id;
+     resolved with `frob registry audit --sync-gate-rules` plus a
+     `frob:enforces CHK-GATE-E501` directive on
+     fix_e501_merge_introduced.
+   - "TIERBDEMO001" (src/frob/gates/_fix_engine_tier_b.py) already carries
+     an explicit WIRE001 waiver stating it must never be registered as a
+     real gate rule (T-1481, purely a synthetic Tier-B wiring demo id).
+     Since the drift-lock test requires every id the scan finds to be
+     either known or retired, added it to
+     frob.gates._rule_id_scan.RETIRED_RULE_IDS (the documented mechanism
+     for "kept out of the generated set on purpose") rather than pasting
+     it into _KNOWN_GATE_RULES, which would have contradicted its own
+     waiver comment.
+
+Verification: targeted pytest runs for all three failing files/classes
+(6+1+6 = 13 node ids, all now pass), `frob check --only test --ticket
+T-1590` (0 errors), `frob check --only doclink --only docanchor --only
+registry --ticket T-1590` (0 errors after the registry sync + enforces
+edge). Did not run the full unscoped suite (playbook 3b/3c budget) --
+that is T-1591's job and the coordinator's land-time job.
+
+### Changed
+```
+ tickets.md | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source` (pytest node id, verified passing when recorded)
+- `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree` (pytest node id, verified passing when recorded)
+- `tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 6836 warning(s), 785 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1591 -->
 ```yaml
 id: T-1591
 title: 'suite: tests that pass in isolation but fail under xdist -- shared-state pollution'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7618,6 +7785,11 @@ scope:
 - src/frob/app/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_parse_file_returns_native_parser_unavailable
+- tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_outline_file_returns_err_not_crash
+- tests/test_serve.py::TestCheckScope::test_in_scope_diff_passes
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 threat: null
 component: null
 ```
@@ -7626,6 +7798,157 @@ A full 'pytest tests/' run reds ~8 tests that PASS when run in isolation with -p
 This is the most corrosive failure class we have: it makes the suite's verdict depend on worker assignment, so a red run gets dismissed as 'flaky' and real regressions hide behind it (this drive already had 'gates green is not suite green' bite twice).
 
 Per test: reproduce with the same seed/worker ordering (pytest -p no:randomly with the failing test AFTER its polluter, or -p xdist with -n matching), find the shared mutable state (module-level caches like frob.lang's parse memo, monkeypatched globals, cwd, env vars, .frob/ derived state), and fix it at the source with an autouse reset fixture rather than reordering tests. tests/conftest.py already has this shape for the parse cache (T-0926) and color env (T-1586).
+
+## Done report
+
+CONFIRMED, ROOT-CAUSED, AND FIXED (real xdist-order pollution):
+
+tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable
+  (test_parse_file_returns_native_parser_unavailable,
+  test_outline_file_returns_err_not_crash). Polluter: frob.gates.
+  _stamp_worker_parse_artifact_cache_env sets os.environ[
+  "FROB_PARSE_ARTIFACT_CACHE"] via a direct assignment with no restore
+  -- correct for its real short-lived-CLI-process use, a real leak in a
+  long-lived pytest-xdist worker. Any earlier test that drives
+  frob.gates.run_gates in-process leaves the var pointing at a torn-down
+  tmp_path db; a later, unrelated parse_file/walk_strata call then
+  silently consults that stale persistent artifact cache instead of a
+  fresh parse, returning a cached Ok for design/litmus/chirp.strata
+  where the test expects a fresh Err (native parser monkeypatched
+  unavailable). Fixed at the source: tests/conftest.py gets a new
+  autouse fixture (_reset_parse_artifact_cache_env_before_test,
+  mirroring T-0926/T-1586's existing shape) that pops the env var and
+  resets frob.lang._artifact_conn/_artifact_conn_path before every
+  test. Before: fails when run after any run_gates-driving test in the
+  same worker. After: verified clean in isolation, combined with
+  tests/unit/test_lang_artifact_cache.py (the module's own env-var
+  tests), and in a tests/unit/ -q run (full directory, all green).
+
+FOUND WHILE INVESTIGATING, NOT ACTUALLY POLLUTION (deterministic,
+reproduce in isolation, fixed anyway since in-scope and cheap):
+
+tests/test_serve.py::TestCheckScope::test_in_scope_diff_passes --
+  fails in isolation, always: its fixture's declared ticket scope
+  covered legacy "tickets.md" but not write_ticket's real v2 per-ticket
+  storage path (tickets/T-0001/ticket.md), so SCOPE001 always flagged
+  the ticket's own storage file as out-of-scope. Added "tickets/**" to
+  the declared scope tuple.
+
+tests/system/test_frob_self_model.py::TestFrobSelfModel::
+  test_parses_and_elaborates -- fails in isolation, always: T-1589
+  (this drive's earlier ticket) re-derived the k8s/seccomp export
+  goldens for design/frob.strata's `security` node addition but missed
+  this test's hard-coded node-count assertion (21 -> 22). Bumped it
+  with the same root-cause note.
+
+CONFIRMED NOT POLLUTION, FILED AS FOLLOW-UPS (out of T-1591's actual
+shared-state charter, or out of its declared scope to fix directly):
+
+- tests/test_ticket_evidence.py::TestKindCliInvalidKind::
+  test_invalid_kind_refused: deterministically conflicts with
+  tests/test_app_config.py::TestEnumFieldValidation::
+  test_invalid_ticket_kind_value_lists_valid_values -- the two tests
+  assert MUTUALLY EXCLUSIVE behavior for AppConfig(ticket_kind_value=
+  <invalid>) (one expects construction to succeed and _kind() to
+  refuse via SystemExit, the other expects a pydantic ValidationError
+  at construction). One of them is always failing regardless of run
+  order; this needs a design decision, not a pollution fix. Filed
+  (draft id T-1594, will renumber at land).
+- tests/test_coverage.py::TestCoverageTargetNativesGuard and
+  tests/system/test_cli_perf.py::TestCheckOnlyPerf::
+  test_perf001_fixture_warns_but_check_exits_zero: both fail
+  deterministically in isolation (a stale "pytest --cov" substring
+  check against the real Makefile's current coverage-fast recipe; a
+  fixture with only 1 unit case against TEST002's current
+  min_unit_cases=3 threshold). Neither is pollution; the Makefile
+  fix is outside this ticket's scope. Filed (draft id T-1595).
+
+COULD NOT DE-POLLUTE WITHIN BUDGET -- STILL RED under some xdist
+configurations, disclosed rather than left silently red:
+
+- tests/unit/test_app_runners.py::TestMapRunner (both tests) and
+  ::TestOutlineRunner::test_directory_target_falls_back_to_map: fail
+  in a full `pytest tests/ -n auto` run (caplog.records empty when
+  INFO logging is expected) but pass in isolation, combined with
+  tests/unit/test_main_entry.py, and as the whole tests/unit/
+  directory. Could not identify the specific cross-file polluter or a
+  smaller reproducing combination within this ticket's time budget.
+- tests/test_lang.py::TestParseCache::test_second_call_same_content_is_a_hit:
+  same shape -- passes in every isolated/combined repro tried, red
+  only in the full run. A second, still-undiscovered shared counter/
+  cache beyond the artifact-cache env var already fixed is the likely
+  cause, not confirmed.
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge: passed in
+  every repro attempt (isolation and combined); never reproduced the
+  failure directly outside a full run's short summary.
+- Four NEWLY OBSERVED failures under a full run with -n 4 (different
+  worker count/grouping than -n auto), not on the original list, each
+  clean in isolation and combined with each other:
+  tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::
+  test_claims_captured_from_real_callables,
+  tests/test_ticket_land.py::TestLedgerV2LandMergeStory::
+  test_same_ticket_conflict_surfaces_loudly_no_splice,
+  tests/test_ticket_reverify.py::TestReverifyCli::
+  test_surfaces_now_failing_evidence_loudly,
+  tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::
+  test_new_file_under_broad_lease_is_exempt.
+
+All of the above unresolved items are filed together as a follow-up
+(draft id T-1596) rather than left as a silent gap.
+
+FULL-SUITE VERIFICATION CAVEAT: three separate full, unscoped
+`pytest tests/` background runs during this investigation (two at
+-n auto, one at -n 4) each terminated WITHOUT printing pytest's own
+final "N passed, M failed in Ts" summary line -- output stops right
+after the "short test summary info" FAILED list, no crash traceback,
+no INTERNALERROR visible in the captured log. This means I do NOT
+have a clean, fully-completed before/after total pass/fail COUNT to
+report -- only the consistent set of failing test IDENTITIES each run
+did manage to report before truncating, which is what this report is
+based on. Flagged in the T-1596 follow-up as its own
+investigation item; this repo's own memory notes an earlier WSL OOM
+session-kill history that may be the same class of issue recurring
+for a genuinely full run specifically.
+
+Verification actually completed: targeted pytest runs for every FIXED
+test (all now pass, several combinations tried including full
+tests/unit/ directory), `frob sys sync-interface` clean, design/
+frob.strata still parses. Did not run `frob check` broadly for this
+ticket given its scope is test-file-heavy; the touched production
+file (tests/conftest.py, src is untouched here) needs no gate beyond
+what pytest itself already verifies.
+
+### Changed
+```
+ design/frob.strata                                |  22 +-
+ docs/design/registry/check-coverage.yaml          |   6 +-
+ docs/guides/extending/registry_of_registries.json |   2 +-
+ src/frob/__init__.py                              |   4 +
+ src/frob/gates/_fix_engine.py                     |   1 +
+ src/frob/gates/_rule_id_scan.py                   |  13 +-
+ src/frob/gates/_waive.py                          |   6 +
+ tests/conftest.py                                 |  48 ++-
+ tests/golden/frob_export_k8s.yaml                 |  14 +
+ tests/golden/frob_export_seccomp.json             |  19 ++
+ tests/system/test_frob_self_model.py              |   7 +-
+ tests/test_serve.py                               |  10 +-
+ tests/unit/strata/test_mutation_audit.py          |  11 +-
+ tests/unit/strata/test_threat.py                  |  17 +-
+ tests/unit/test_extending_guides_complete.py      |   2 +-
+ tickets.md                                        | 342 +++++++++++++++++++++-
+ 16 files changed, 497 insertions(+), 27 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_parse_file_returns_native_parser_unavailable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_outline_file_returns_err_not_crash` (pytest node id, verified passing when recorded)
+- `tests/test_serve.py::TestCheckScope::test_in_scope_diff_passes` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 5494 warning(s), 787 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1592 -->
 ```yaml

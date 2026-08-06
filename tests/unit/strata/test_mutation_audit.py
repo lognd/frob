@@ -76,7 +76,15 @@ class TestMayMutationAuditRealRepo:
         no OS syscall of its own (a libc lookup over the process's
         already-mapped environment block), so `_SECCOMP_KIND_MAP`
         correctly has no entry for it (`_export.py`'s own docstring). This
-        is a genuine, disclosed second-detector gap, not spurious drift."""
+        is a genuine, disclosed second-detector gap, not spurious drift.
+
+        T-1589: `process-control` joins the disclosed set. `testsuite`
+        node's `may "process-control"` (design/frob.strata, T-1439's
+        `signal.signal(` needle for the SIGUSR1/kill-escalation test
+        fixtures) has no syscall-level seccomp entry either -- signal
+        delivery to the CURRENT process is not one of the syscalls
+        `_SECCOMP_KIND_MAP` enumerates, the same "no dedicated syscall of
+        its own" shape as `env`/`env.read` above."""
         repo_root = Path(__file__).resolve().parents[3]
         result = run_may_mutation_audit(repo_root)
         assert result.is_ok
@@ -89,6 +97,7 @@ class TestMayMutationAuditRealRepo:
             "fetch_url",
             "ffi",
             "install-hook",
+            "process-control",
             "sql",
         }
 

@@ -851,6 +851,12 @@ _KNOWN_GATE_RULES = frozenset(
         # covered by any of its declared cache-key inputs (its own
         # parameters) -- see src/frob/gates/_cache_gate.py.
         "CACHE001",
+        # T-1590: E501 is a real ruff rule id reused verbatim as the
+        # `FixApplied.rule` value for the targeted-ruff-format land-merge
+        # auto-fix in src/frob/gates/_fix_engine.py (not a frob-native
+        # gate family, but a legitimately emitted rule literal the T-1010
+        # scan picks up and this registry must therefore cover).
+        "E501",
     }
 )
 # frob-zone-end known-gate-rules T-1002

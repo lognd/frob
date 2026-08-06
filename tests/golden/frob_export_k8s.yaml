@@ -467,6 +467,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: frob-strata-security
+spec:
+  egress: []
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: security
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: frob-strata-serve
 spec:
   egress:

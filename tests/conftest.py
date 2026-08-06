@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from frob.lang import reset_parse_cache
+import frob.lang as lang_mod
+from frob.lang import PARSE_ARTIFACT_CACHE_ENV, reset_parse_cache
 from frob.mutate import restore_stale_journals
 
 # frob:ticket T-1433
@@ -212,6 +213,51 @@ def _reset_parse_cache_before_test() -> None:
     by `frob.check` alone.
     """
     reset_parse_cache()
+
+
+# frob:ticket T-1591
+@pytest.fixture(autouse=True)
+def _reset_parse_artifact_cache_env_before_test(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Drop `frob.lang.PARSE_ARTIFACT_CACHE_ENV` and reset the module's
+    process-lifetime `_artifact_conn`/`_artifact_conn_path` cache-
+    connection globals before EVERY test (T-1591).
+
+    `frob.gates._stamp_worker_parse_artifact_cache_env` stamps this env
+    var with `os.environ[PARSE_ARTIFACT_CACHE_ENV] = str(cache_path)`
+    DIRECTLY (not via a context manager or restore-on-exit), because in
+    its real production use it runs once per short-lived `frob check`
+    CLI process right before spawning a `ProcessPoolExecutor` -- there is
+    no "after" to restore to, the process exits soon after. That shape
+    becomes a real cross-test leak in a long-lived pytest-xdist worker:
+    any test that drives `frob.gates.run_gates` (or a wrapper that calls
+    it) in-process leaves the env var pointing at THAT test's now-
+    torn-down `tmp_path/.frob/parse-artifacts.db` for the rest of the
+    worker's lifetime. Every LATER test in the same worker that calls
+    `frob.lang.parse_file`/`walk_strata` then silently consults
+    `_artifact_cache_connection()` -- which many tests never expect since
+    the module docstring's own stated common case is "no persistent
+    cache configured" -- and can return a stale, content-hash-keyed
+    cache HIT for a real repo file (e.g. `design/litmus/*.strata`) that
+    some earlier, unrelated test happened to parse for real, defeating a
+    test that specifically monkeypatches the native parser unavailable
+    and expects a fresh `Err` (T-1591 incident:
+    `TestStrataNativeParserUnavailable`'s two `parse_file`/`outline_file`
+    assertions saw an `Ok` cache hit instead of the expected `Err`).
+
+    `monkeypatch.delenv` (not a bare `os.environ.pop`) so this itself
+    never leaks past the test even if a later assertion in the SAME test
+    sets the var again. The module-level connection globals are reset
+    directly (not monkeypatch-tracked, mirroring
+    `tests/unit/test_lang_artifact_cache.py`'s own manual reset pattern)
+    since a stale open `sqlite3.Connection` object surviving in
+    `_artifact_conn` would otherwise still be reused by
+    `_artifact_cache_connection` for a NEW env-var path whose fresh
+    connection was never actually opened."""
+    monkeypatch.delenv(PARSE_ARTIFACT_CACHE_ENV, raising=False)
+    lang_mod._artifact_conn = None
+    lang_mod._artifact_conn_path = None
 
 
 PY_SAMPLE = b"""\

@@ -464,6 +464,25 @@
       }
     ]
   },
+  "security": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
   "serve": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [

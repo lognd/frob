@@ -1912,17 +1912,20 @@ class TestCaughtByAuditExhaustive:
         # Exhaustiveness lock: the audited universe is EXACTLY these two
         # families' entries -- 21 OutOfScopeEntry (16 CWE_TOP_25 + 5
         # QUALITY; the two krb/host-isolation tuples are empty by design)
-        # + 15 BenignCapability (T-0771 added net.connect/net.listen once
+        # + 16 BenignCapability (T-0771 added net.connect/net.listen once
         # `net` joined WIRED_MODE_FAMILIES -- 9 + 2; T-1075 added
         # env.read/env.write once `env` joined WIRED_MODE_FAMILIES too --
         # 11 + 2; the fs/fs-read mode-qualified spelling migration added
-        # fs.write/fs.read alongside the deprecated bare entries -- 13 + 2).
-        # A future add to any of these tuples that forgets `caught_by`
-        # still satisfies pydantic's `min_length=1` (whitespace aside) but
-        # would change this count -- bumping it is the forcing function
-        # that re-triggers this audit's placeholder scan below.
+        # fs.write/fs.read alongside the deprecated bare entries -- 13 + 2;
+        # T-1439 added process-control once sys.exit/os._exit/signal.
+        # signal were reclassified out of the bare 'env' kind -- 14 + 1
+        # after the prior batch, 16 total). A future add to any of these
+        # tuples that forgets `caught_by` still satisfies pydantic's
+        # `min_length=1` (whitespace aside) but would change this count --
+        # bumping it is the forcing function that re-triggers this audit's
+        # placeholder scan below.
         assert len(all_out_of_scope) == 21
-        assert len(DEFAULT_BENIGN_CAPABILITIES) == 15
+        assert len(DEFAULT_BENIGN_CAPABILITIES) == 16
 
         for entry_id, caught_by in (
             *((e.id, e.caught_by) for e in all_out_of_scope),

@@ -152,7 +152,12 @@ class TestFrobSelfModel:
         """
         # T-1329: +1 node = `refactor` (the T-1197 rewrite engine, modeled
         # after landing unbound; SYS102 fallout from the T-1320 coverage run).
-        assert len(_model.nodes) == 21
+        # T-1591: +1 node = `security` (src/frob/security/** extracted
+        # from gates/_pii_structural.py, T-1318 -- pure regex/string
+        # logic with no `may` capabilities or flows of its own, so only
+        # the node count moves; T-1589 already re-derived the k8s/seccomp
+        # export goldens for this same addition but missed this counter).
+        assert len(_model.nodes) == 22
         assert len(_model.flows) == 44
         assert len(_model.boundaries) == 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume

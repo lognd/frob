@@ -103,7 +103,18 @@ SCANNED_BASES: tuple[str, ...] = ("src/frob/gates", "src/frob/strata")
 #: `_KNOWN_GATE_RULES` itself.
 # frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
 # above -- see T-1010's Done report"
-RETIRED_RULE_IDS: frozenset[str] = frozenset()
+RETIRED_RULE_IDS: frozenset[str] = frozenset(
+    {
+        # T-1481/T-1590: 'TIERBDEMO001' is a deliberately synthetic
+        # reference-handler rule id (src/frob/gates/_fix_engine_tier_b.py,
+        # see its own WIRE001 waiver) used only to demonstrate the Tier-B
+        # fix-handler wiring shape -- it must never become a real
+        # registered gate rule, so it is excluded from the generated set
+        # here exactly like a genuinely retired id, rather than pasted
+        # into _KNOWN_GATE_RULES.
+        "TIERBDEMO001",
+    }
+)
 
 
 # frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \

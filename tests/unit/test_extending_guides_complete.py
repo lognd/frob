@@ -47,7 +47,7 @@ _REGISTRY_PROBES: dict[str, tuple[str, str]] = {
     ),
     "pii-categories": ("src/frob/strata/_pii.py", r"PII_CATEGORIES"),
     "design-lint-rules": ("src/frob/strata/_lint.py", r"class LintViolation"),
-    "secrets-scan-providers": ("src/frob/gates/_secrets.py", r"class _SecretPattern"),
+    "secrets-scan-providers": ("src/frob/security/_redact.py", r"class _SecretPattern"),
     "prover-claim-kinds": ("src/frob/strata/_claims.py", r"_SKEW_PREFIX"),
     "scenario-kinds": ("src/frob/strata/_scenarios.py", r"class ScenarioResult"),
     "strata-surface-grammar": (

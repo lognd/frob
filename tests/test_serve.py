@@ -229,7 +229,15 @@ class TestCheckScope:
         _write(tmp_path, "src/pkg/a.py", "def helper(x):\n    return x\n")
         _git_init(tmp_path)
         write_ticket(
-            tmp_path, _ticket("T-0001", scope=("src/pkg/**", ".frob/**", "tickets.md"))
+            tmp_path,
+            # T-1591: "tickets/**" (not just legacy "tickets.md") covers
+            # write_ticket's real v2 per-ticket storage path
+            # (tickets/T-0001/ticket.md) -- SCOPE001 flags the ticket's
+            # own storage file itself as out-of-scope otherwise, since it
+            # is a real diff hunk like any other tracked file.
+            _ticket(
+                "T-0001", scope=("src/pkg/**", ".frob/**", "tickets.md", "tickets/**")
+            ),
         )
         _write(tmp_path, "src/pkg/a.py", "def helper(x):\n    return x + 1\n")
 

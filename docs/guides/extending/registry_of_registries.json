@@ -61,7 +61,7 @@
       "id": "secrets-scan-providers",
       "title": "Secrets-scan providers",
       "guide": "docs/guides/extending/secrets-scan-providers.md",
-      "anchor_file": "src/frob/gates/_secrets.py",
+      "anchor_file": "src/frob/security/_redact.py",
       "anchor_symbol": "_SecretPattern"
     },
     {
