@@ -6955,3 +6955,37 @@ Four real-repo self-model tests fail on main after the T-1518/T-1575/T-1576/T-15
 - test_export_golden::test_k8s -- the k8s golden export drifted (NetworkPolicy egress section).
 
 These are exactly the 'design must keep up with the code' checks the self-model exists to enforce, so they are real drift to close, not tests to relax. Update design/frob.strata declarations (frob sys sync-interface for interface= attrs), give the new threat entry a substantive caught_by, re-derive the k8s golden ONLY after confirming the diff is intended, and re-run the may-mutation audit until every may is load-bearing again.
+
+<!-- ticket:T-1590 -->
+```yaml
+id: T-1590
+title: 'suite red: extending-guides drift, exports residue, unregistered gate rule
+  literal'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/guides/**
+- src/frob/gates/_secrets.py
+- src/frob/**/__init__.py
+- src/frob/gates/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Three real (isolation-reproducible) suite failures on main:
+
+1. tests/unit/test_extending_guides_complete.py x3 -- docs/guides/extending-* drift against src/frob/gates/_secrets.py: the probe 'class _SecretPattern' for row 'secrets-scan-providers' no longer matches source, the row's anchor fragment does not resolve to a guide h1, and _secrets.py has no frob:doc anchor pointing back at the guide. Someone renamed/moved the secrets-scan provider shape without updating the guide's row+anchor pair.
+
+2. tests/unit/test_exports.py::TestFrobExportsPolicyResidue -- frob-exports reports missing symbols for src/frob (and possibly other packages); public symbols added during this drive were never added to their package __init__.
+
+3. tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known -- a rule id literal is constructed in src/frob/gates or src/frob/strata that is not in the known-rule registry. Every emitted rule must be registered (that registry is what WAIVE002/docs generation read).
+
+All three are 'the code moved, the declarations did not' -- fix the declarations, do not relax the tests.
