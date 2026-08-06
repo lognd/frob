@@ -5552,7 +5552,7 @@ Successor to T-1490 and T-1488, which closed while 16 frob:waive WIRE001 directi
 id: T-1559
 title: 'land/close guard: refuse or auto-migrate open frob:waive directives bound
   to the closing ticket (WIRE002 orphan prevention)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
