@@ -7125,7 +7125,7 @@ T-1579's declared scope) as a small follow-up commit
 ```yaml
 id: T-1580
 title: fold docs/modules/gates_e501_autofix.md into docs/modules/gates.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-05'
@@ -7140,6 +7140,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:bash -c "test ! -f docs/modules/gates_e501_autofix.md && grep -q E501 docs/modules/gates.md"
+  exit=0 sha256=e3b0c44298fc
 threat: null
 component: null
 ```
@@ -7228,7 +7230,6 @@ real land.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 553 warning(s), 798 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1581 -->
 ```yaml
 id: T-1581
