@@ -7769,7 +7769,7 @@ that is T-1591's job and the coordinator's land-time job.
 ```yaml
 id: T-1591
 title: 'suite: tests that pass in isolation but fail under xdist -- shared-state pollution'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -7948,7 +7948,6 @@ what pytest itself already verifies.
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 0 error(s), 5494 warning(s), 787 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1592 -->
 ```yaml
 id: T-1592
