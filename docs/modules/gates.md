@@ -2286,6 +2286,21 @@ a background daemon must not out-compete the foreground work it serves.
 `run_gates` itself is now a one-line uncapped wrapper; its public
 signature and behavior are unchanged.
 
+**T-0806: `FROB_WORKER_STDOUT_LOG_LEVEL` clamps a process-pool gate
+worker's own default-DEBUG logging before it can leak onto stdout.**
+`_run_process_gate` (a `ProcessPoolExecutor` entry point, picklable by
+`__module__`/`__qualname__`) re-runs each worker's module import chain on
+first use -- those fresh imports never see the PARENT process's in-memory
+`quiet_stdout_logs`/`stdout_log_level` clamp, since that only mutates the
+parent's own handler objects. Left unclamped, a worker's default-DEBUG
+per-file parse logging writes straight onto the stdout file descriptor it
+inherits from the parent, corrupting a quiet/`--json` `frob check` run's
+stdout payload. The pool owner stamps `_WORKER_STDOUT_LOG_LEVEL_ENV`
+(`"FROB_WORKER_STDOUT_LOG_LEVEL"`) before pool construction; every spawned
+worker reads it back on its own `_init()` re-run and clamps its own
+logging to match. Set only by frob itself, never by a user or agent
+directly.
+
 **T-1454: side-channel inputs (`frob.lock`, coverage, rules, the ticket
 queue, ...) now join the cache key, closing a real stale-DRIFT001 bug.**
 `TrackedSnapshot` only observes reads through the `GraphSnapshot` surface

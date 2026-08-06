@@ -293,6 +293,7 @@ Full-repo pessimistic capability audit (2026-07-20): every way a green
 - [docs/audits/lang-check-docs.md](audits/lang-check-docs.md) -- polyglot enforcement.
 - [docs/audits/perf.md](audits/perf.md) -- frob check hotpaths + caching.
 - [docs/audits/gates-vacuous.md](audits/gates-vacuous.md) -- gate-by-gate vacuous-satisfaction sweep, full catalog (125 rule ids, zero unswept): SCOPE001 empty-scope, partial-parse symbol drop, _KNOWN_GATE_RULES omissions, registry/design-dir-deletion, dup native-fallback, private-parse silent-skips, lang parser DoS boundary; 7 fix+gate ticket pairs filed.
+- [docs/audits/docs-completeness-2026-08-06.md](audits/docs-completeness-2026-08-06.md) -- T-1610's mechanical CLI/env-var/rule-catalog sweep against docs/: FROB_WORKER_STDOUT_LOG_LEVEL undocumented (fixed here), docs/modules/gates.md's rule-catalog table missing ~122 real rule ids, frob coverage lacking its own doc section; two follow-up tickets filed. Input to T-1611's detector-gap audit.
 - [docs/audits/check-performance.md](audits/check-performance.md) -- T-0928 end-to-end `frob check` profile: `frob.perf`'s own collectors are blind to thread-pool/process-pool gate dispatch; ranked wall-clock hot-path table anchored on `gate-summary` brackets instead; four follow-up tickets filed.
 - [docs/audits/test005-zero-classification-t1418.md](audits/test005-zero-classification-t1418.md) -- T-1418: all 306 symbol-level TEST005 findings at exactly 0.0% branch coverage classified as coverage-combine attribution artifacts, not genuine gaps.
 

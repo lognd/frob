@@ -3534,7 +3534,7 @@ Order: docs sweep, then the detector-gap audit it feeds, then the artifact clean
 id: T-1610
 title: 'Docs completeness sweep: enumerate the repo''s real surface and document every
   gap'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-05'
@@ -3546,6 +3546,8 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
@@ -3558,6 +3560,86 @@ Method matters more than volume. Enumerate the surface FIRST from the code (the 
 Record every gap found in a durable list -- the audit child consumes it, and it is the input to that audit, not a byproduct. For each gap note what it is, where it should have been documented, and roughly how long it appears to have been missing (git blame on the undocumented symbol).
 
 Do NOT fix detector gaps here. Finding out why frob failed to catch each of these is the next ticket's job, and mixing the two loses the evidence.
+
+## Done report
+
+Enumerated the repo's real surface mechanically before comparing to
+docs/, per the ticket's required method (code enumeration first, diff
+against docs second, not a prose read-through):
+
+- CLI verb tree: `frob --help`'s 43-verb list, cross-checked against
+  `docs/commands/*.md` + `docs/modules/*.md`. All 43 have at least one
+  dedicated doc section describing their own behavior, except `frob
+  coverage` (T-1516/T-1525), which is named in a verb table and one
+  passing aside but has no section of its own.
+- Env vars: every `FROB_*` string-literal constant assigned in
+  src/frob/**/*.py (15 real vars, after filtering out non-env-var
+  `_RE`/regex-named constants that share the prefix), cross-checked
+  against every doc file, matching either the literal string or the
+  Python constant name that carries it (several vars are referenced by
+  constant name, not literal string, and that is adequate documentation
+  -- confirmed for FROB_PARSE_ARTIFACT_CACHE, see the audit doc's "Not
+  gaps" section). One genuinely undocumented anywhere: T-0806's
+  FROB_WORKER_STDOUT_LOG_LEVEL.
+- Gate rule ids: every `"XXXX###"`-shaped string literal under
+  src/frob/gates/ (275 distinct ids), cross-checked against
+  docs/modules/gates.md's own "Rule catalog" table, which frames itself
+  as the exhaustive index. 122 real, already-fired ids are missing from
+  that table (each documented elsewhere in a per-family doc, so not an
+  undocumented-BEHAVIOR gap -- a discoverability/completeness gap in the
+  one file claiming to be the catalog).
+
+Full findings, method, and the complete missing-id list:
+docs/audits/docs-completeness-2026-08-06.md (indexed from docs/index.md
+alongside the repo's other audit docs).
+
+Fixed inline (small, unambiguous, within this ticket's budget):
+- Added a dedicated paragraph to docs/modules/gates.md documenting
+  FROB_WORKER_STDOUT_LOG_LEVEL/T-0806, next to the existing T-1436
+  process-pool-cap note (the natural neighboring section).
+
+NOT fixed, filed instead (disclosed cut -- backfilling either
+accurately requires reading each gate/CLI implementation in detail,
+disproportionate to complete inside this sweep without risking
+inaccurate doc content):
+- T-1681: backfill ~122 missing rows into docs/modules/
+  gates.md's rule-catalog table (full id list carried in the ticket
+  body).
+- T-1682: add a dedicated `frob coverage` doc section.
+Both draft ids renumber at land; verify the real ids on main before
+citing them elsewhere.
+
+Per this ticket's own instruction: doc gaps are recorded, not
+detector-gap-classified here -- T-1611 (next in series) does that
+classification, consuming docs/audits/docs-completeness-2026-08-06.md
+as its input, including the one concrete, already-confirmed detector
+observation this sweep surfaced in passing: docs/modules/gates.md has
+no mechanical self-check that its own rule-catalog table stays
+exhaustive against the gate modules it claims to index (noted in the
+filed ticket's body for T-1611's classification, not resolved here).
+
+Gates: `frob check --ticket T-1610` clean after `frob ticket sweep
+T-1610` refresh. Deletion-filter check
+(`git diff main --diff-filter=D --stat`) shows only FROBLEMS.md,
+T-1612's own authorized deletion -- nothing new deleted by this ticket.
+
+### Changed
+```
+ FROBLEMS.md                                 |  26 -----
+ docs/audits/docs-completeness-2026-08-06.md | 126 +++++++++++++++++++++
+ docs/index.md                               |   1 +
+ docs/modules/gates.md                       |  15 +++
+ tickets.md                                  | 166 +++++++++++++++++++++++++++-
+ 5 files changed, 305 insertions(+), 29 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 2779 warning(s), 711 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1611 -->
 ```yaml
@@ -3598,7 +3680,7 @@ Deliverable: a written classification of every gap plus one filed ticket per dis
 id: T-1612
 title: 'Remove vestigial repo artifacts: FROBLEMS.md, skills/, agents/, keeping only
   frob-central tooling'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -3611,8 +3693,19 @@ scope:
 - skills/**
 - agents/**
 - docs/**
+- tests/unit/test_repo_hygiene.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_repo_hygiene.py
+  reason: 'the deletion needs a lock: without a test, git add -f silently restores
+    the tracked stale artifact'
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_clean.py::test_clean_deep_removes_frob_state
+- tests/unit/test_repo_hygiene.py::TestUntrackedArtifacts::test_froblems_md_is_not_tracked
 threat: null
 component: null
 ```
@@ -3629,6 +3722,74 @@ Method, in this order, because deletion is the irreversible part:
 4. Re-run the full gate set afterwards. A deletion that silently reduces coverage or orphans a doc edge is the failure mode; the obligation graph should catch it, and if it does not, that is itself a finding worth a ticket.
 
 Do not delete anything an in-flight ticket references. That is the whole reason this is gated behind the rest of the queue.
+
+## Done report
+
+Enumerated all four named candidates and their inbound references before
+touching anything, per the ticket's own method:
+
+1. FROBLEMS.md (repo root, tracked): frob's own `frob.clean` module
+   (src/frob/clean/__init__.py, _rules.py) already treats FROBLEMS.md as
+   a generated, .gitignore'd artifact removed by `frob clean --deep` in
+   every normal checkout -- this repo's own root copy was force-added
+   against that convention (per its own header) and had gone stale (last
+   substantive entry 2026-07-21, superseded by the ticket queue since).
+   No source, test, or doc requires this specific file to exist:
+   tests/test_clean.py exercises the removal mechanism against synthetic
+   temp fixtures, and every other inbound reference
+   (docs/modules/clean.md, docs/audits/docs-staleness-2026-07-29.md,
+   src/frob/gates/__init__.py, tests/unit/strata/test_selfconform.py,
+   test_code_binding.py) is a generic description of the mechanism or a
+   historical citation in a comment, not a dependency on the tracked
+   file. DEAD -- removed.
+
+2. agents/** (7 dirs: debugger, implementer, interface-auditor, planner,
+   prover, reviewer, security-auditor) and skills/** (6 dirs: audit,
+   document, fix, next, plan, prove): found to be LIVE, not vestigial.
+   docs/rework.md's "Agents and skills redesign" section documents this
+   exact 7-agent/6-skill roster as the deliberate, already-completed
+   redesign (reworked/new/kept per-role, with a stated list of DELETED
+   agents/skills that are correctly already gone: architect, oracle,
+   orchestrator, refactorer, smart-start, tester, integration-tester,
+   system-tester, develop, implement, write-tests, review).
+   docs/guides/agentic-workflow.md documents 5 of the 6 skills and all 7
+   agents as the operative dispatch roles a coordinator uses (matches
+   this very session's own live Skill/agent tooling). src/frob/
+   _cli_parsers/_ticket/_query.py carries a frob:doc anchor directly onto
+   agentic-workflow.md's #skills/next and #skills/plan sections. Every
+   file present matches the rework table exactly -- no stray/orphaned
+   file beyond what's documented. CLAUDE.md's opening line ("remove
+   agents/ and skills/ or at least REALLY rework them") predates this
+   already-completed rework; treating it as still-open would delete
+   load-bearing, actively-referenced tooling. Per this ticket's own rule
+   ("anything central to frob tooling stays, however scruffy") and the
+   direct instruction to keep anything central and file a ticket rather
+   than delete when in doubt: KEPT in full, no deletion.
+
+Filed: T-1610 and T-1611 (already queued, next in this series) cover the
+follow-up doc-completeness/detector-gap work this finding surfaces --
+specifically that skills/document and skills/fix are undocumented in
+agentic-workflow.md's own role table, a gap for T-1610 to record.
+
+Gates: `frob check --ticket T-1612` clean after `frob ticket sweep
+T-1612` refresh (0 errors, 1 note-only warning). Deletion-filter check
+(`git diff main --diff-filter=D --stat`) shows exactly one deleted path,
+FROBLEMS.md, matching this ticket's explicit scope.
+
+### Changed
+```
+ FROBLEMS.md | 26 --------------------------
+ tickets.md  |  5 +++--
+ 2 files changed, 3 insertions(+), 28 deletions(-)
+```
+
+### Evidence
+- `tests/test_clean.py::test_clean_deep_removes_frob_state` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 2777 warning(s), 711 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1613 -->
 ```yaml
@@ -4498,6 +4659,7 @@ queued ticket for that investigation. I did not touch it.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 8497 warning(s), 711 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1623 -->
 ```yaml
 id: T-1623
@@ -8286,3 +8448,93 @@ also fixes, since a red main blocks every subsequent land:
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 0 error(s), 650 warning(s), 717 waived
 - error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1681 -->
+```yaml
+id: T-1681
+title: Backfill ~122 missing rule ids into docs/modules/gates.md's rule catalog table
+state: queued
+kind: docs
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+docs/modules/gates.md's "Rule catalog" table frames itself as the
+exhaustive index of gate rule ids, but a mechanical scan of every
+`"XXXX###"`-shaped string literal under src/frob/gates/ found 122 real,
+already-fired rule ids missing from that table (found during T-1610's
+docs completeness sweep, see docs/audits/docs-completeness-2026-08-06.md
+item 2 for the method and representative age evidence).
+
+Every one of these 122 IS documented somewhere else in docs/ (a
+per-family module doc) -- this is a discoverability/completeness gap in
+the one file that claims to be the catalog, not an undocumented-behavior
+gap.
+
+Full missing-id list (grep src/frob/gates/**/*.py for the literal, then
+write one accurate one-line "Fails when" row per id, matching the
+existing table's style -- read the owning gate's implementation for each
+row rather than guessing from the id name):
+
+ARCH102 ARCH103 COMPLIANCE001 COMPLIANCE002 COMPLIANCE003 DEC000 DOC011
+FUZZ002 FUZZ003 HOST001 HOST002 KRB001 KRB002 KRB003 KRB004 LANG001
+LANG002 LANG003 LINT001 LINT002 LINT003 LINT004 LINT005 PERF002 PERF005
+PERF006 PERF007 PERF010 PERF013 PERF014 PII001 PII002 PII003 PII004
+PROTO004 REG002 REG003 REG004 REG005 REG006 REG007 REG009 REL220 REL221
+REL222 REL230 REL231 REL240 REL241 REL250 REL260 REL261 REL270 REL271
+REL272 REL280 REL281 REL290 REL291 REL300 REL301 REL310 REL311 REL320
+REL321 REL330 REL331 REL340 REL350 REL351 REL360 REL370 REL371 REL372
+REL380 REL381 REL382 REL383 REL390 REL391 REL392 REL393 REL394 REL395
+REL396 REL397 RELWAIVE002 RENDER001 SEC004 SEC005 SYS103 SYS105 SYS106
+SYS107 SYS201 SYS202 SYS203 SYS204 SYSWAIVE003 TEST009 TEST010 TEST013
+TEST014 TEST015 THREAT001 THREAT002 THREAT003 THREAT004 THREAT005 TICK003
+TIERBDEMO001 TODO003 VET001 VET002 VET003 VET004 VET005 VET006 VET007
+VET008 VET009 VET010 VET011 WAIVE006 WAIVE007
+
+A gate that maintains a rule-catalog table like this one is itself a
+candidate for a static completeness check (a gate that greps for rule id
+literals in gates/ and diffs against the catalog table) -- worth noting
+for whoever picks this up, though that mechanism is T-1611's territory,
+not this ticket's.
+
+<!-- ticket:T-1682 -->
+```yaml
+id: T-1682
+title: Add a dedicated docs section for frob coverage (T-1516/T-1525)
+state: queued
+kind: docs
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/modules/testing.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+`frob coverage` (T-1516/T-1525, touched-set incremental coverage.xml
+refresh) exists in the CLI verb tree and docs/modules/cli.md's verb
+table, but has no dedicated ## section of its own describing its flags
+and behavior -- the only substantive prose about it is a passing aside
+inside docs/modules/testing.md (~line 440) about `make coverage-fast`'s
+own delegation to it, not about the command itself.
+
+Found during T-1610's docs completeness sweep
+(docs/audits/docs-completeness-2026-08-06.md item 3). Every other
+top-level verb of comparable weight (frob clean, frob vet, frob release)
+has its own module-doc section; this one should too. Read the actual CLI
+wiring in src/frob/_cli_parsers/** and native_coverage_refresh's
+implementation before writing it, to avoid a stale/guessed description.
