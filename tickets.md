@@ -4333,7 +4333,7 @@ T-1624` all read 0 errors.
 ```yaml
 id: T-1625
 title: 'strata: testsuite node declares 5277 test names as interface symbols'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
