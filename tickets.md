@@ -5743,3 +5743,46 @@ Known (c) candidates already evidenced, include them and verify:
 - REF001 -- "no inbound references" decided by full-path or BARE BASENAME text mention. A file reached via a constructed path or import alias is invisible; a file merely named in prose counts as referenced. Wrong in both directions.
 - WALK001 -- unpruned traversal detected by matching `os.walk`/`rglob` call text; an aliased or indirectly-bound traversal evades it.
 - The four prose-as-declaration detectors (T-1633, T-1640): they need a shared notion of "this span is explanatory text, not a declaration". The DSL already knows where directive attributes end and free text begins -- reuse that rather than three independent fixes.
+
+<!-- ticket:T-1664 -->
+```yaml
+id: T-1664
+title: Semantic checks must report UNRESOLVED, never silently pass when they cannot
+  analyse
+state: queued
+kind: security
+origin: human
+created: '2026-08-06'
+priority: high
+blocked_by:
+- T-1663
+parent: T-1662
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+- src/frob/lang/**
+- src/frob/check/**
+- docs/**
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+The rule this drive learned the hard way, made structural.
+
+Every serious incident in this drive traced to the same shape: an analysis layer that could not look, reporting that it found nothing, indistinguishable from a clean result.
+- The perf gate reported ZERO PERF004 findings with stale natives while every health check said healthy -- the escape hatch it unlocked deleted 55 live frob:waive directives.
+- A mypy oracle sharing .mypy_cache across xdist workers returned zero diagnostics for a file that had one.
+- A suite run truncated before its summary line and read as success.
+- The capability scanner returns an empty capability set for a language it has no pattern table for -- "no capabilities observed" and "I cannot analyse this language" are currently the same answer.
+
+Requirement: when a semantic check CANNOT resolve, it must say so. An unresolved call target, an unparseable file, a missing language adapter, a stale analysis substrate -- each must produce an explicit UNRESOLVED/DEGRADED finding demanding a declaration or a waiver, never a silent pass.
+
+Concretely:
+1. A distinguished outcome in the gate result model separating "checked, found nothing" from "could not check". Today both collapse to an empty violation list.
+2. Gates that depend on an optional substrate (natives, a language adapter, a resolver) declare that dependency and report degradation when it is absent -- the structural signal T-1620 asks for, generalised beyond perf.
+3. `frob check` surfaces degraded stages in its summary line, so a run that could not analyse half the repo cannot read as a clean run.
+
+This is the single highest-leverage item in the epic. Semantic checks FAIL DIFFERENTLY from lexical ones: a regex always produces an answer, while a resolver can genuinely not know -- so raising checks to semantics without this makes silent under-reporting MORE likely, not less. Sequence it early, ideally alongside the first (c)-class rewrite rather than after several.
