@@ -13,6 +13,7 @@ from frob.gitio import (
     GitError,
     common_dir_and_branch,
     current_branch,
+    excerpt,
     git_common_dir,
     repo_root,
     reset_common_dir_cache,
@@ -461,3 +462,21 @@ class TestSpawnRecorder:
         result = run_argv(["echo", "no-recorder"], cwd=tmp_path)
         assert result.is_ok
         assert result.danger_ok.stdout.strip() == "no-recorder"
+
+
+class TestExcerpt:
+    def test_short_text_returned_unchanged(self) -> None:
+        # frob:tests src/frob/gitio.py::excerpt kind="unit"
+        text = "line1\nline2\nline3"
+        assert excerpt(text, lines=40) == text
+
+    def test_text_at_exact_boundary_returned_unchanged(self) -> None:
+        # frob:tests src/frob/gitio.py::excerpt kind="unit"
+        text = "\n".join(f"line{i}" for i in range(5))
+        assert excerpt(text, lines=5) == text
+
+    def test_long_text_truncated_to_last_n_lines(self) -> None:
+        # frob:tests src/frob/gitio.py::excerpt kind="unit"
+        text = "\n".join(f"line{i}" for i in range(10))
+        result = excerpt(text, lines=3)
+        assert result == "...(truncated)...\nline7\nline8\nline9"

@@ -404,6 +404,72 @@ def test_record_journal_progress_tracks_last_written_content(tmp_path):
     assert after["current_sha256"] == hashlib.sha256(mutant).hexdigest()
 
 
+def test_record_journal_progress_is_a_noop_with_no_journal(tmp_path):
+    # frob:tests \
+    # tests/test_mutate_journal.py::test_record_journal_progress_is_a_noop_with_no_jour\
+    # nal kind="unit"
+    # T-0857: no journal was ever written for `target` (a mutation run that
+    # never got to write_journal, or one that already removed it) -- the
+    # entry-is-None branch must return silently, never raise or fabricate
+    # a journal.
+    target = tmp_path / "never-journaled.py"
+    target.write_bytes(b"content\n")
+    record_journal_progress(tmp_path, target, b"mutant\n")
+    assert _journal_file_count(tmp_path) == 0
+
+
+def test_record_journal_progress_swallows_write_failure(tmp_path, monkeypatch):
+    # frob:tests \
+    # tests/test_mutate_journal.py::test_record_journal_progress_swallows_write_failur\
+    # e kind="unit"
+    # T-0857: this is bookkeeping for a LATER restore's verification, never
+    # something a mutation run should abort over -- an OSError writing the
+    # updated journal (disk full, permissions) is logged and swallowed.
+    import frob.mutate._journal as journal_mod
+
+    target = tmp_path / "m.py"
+    original = b"original\n"
+    target.write_bytes(original)
+    write_journal(tmp_path, target, original, pid=_dead_pid())
+
+    real_replace = journal_mod.os.replace
+
+    def _raise(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(journal_mod.os, "replace", _raise)
+    # must not raise
+    record_journal_progress(tmp_path, target, b"mutant\n")
+    monkeypatch.setattr(journal_mod.os, "replace", real_replace)
+
+
+def test_remove_journal_swallows_oserror(tmp_path, monkeypatch):
+    # frob:tests tests/test_mutate_journal.py::test_remove_journal_swallows_oserror \
+    # kind="unit"
+    # T-0857: `remove_journal` is best-effort cleanup after a successful
+    # restore -- an OSError from unlink (not the ordinary missing-file
+    # case, which missing_ok already covers) must be logged and swallowed,
+    # never raised up into the caller's normal-exit path.
+    import frob.mutate._journal as journal_mod
+
+    target = tmp_path / "m.py"
+    target.write_bytes(b"bytes\n")
+    write_journal(tmp_path, target, b"bytes\n")
+    assert _journal_file_count(tmp_path) == 1
+
+    real_unlink = journal_mod.Path.unlink
+
+    def _raise(self, *args, **kwargs):
+        raise OSError("permission denied")
+
+    monkeypatch.setattr(journal_mod.Path, "unlink", _raise)
+    # must not raise
+    remove_journal(tmp_path, target)
+    monkeypatch.setattr(journal_mod.Path, "unlink", real_unlink)
+    # the journal survives untouched since the unlink was blocked
+    assert _journal_file_count(tmp_path) == 1
+
+
 def test_restore_refuses_when_stale_journal_no_longer_matches_on_disk_content(
     tmp_path,
 ):

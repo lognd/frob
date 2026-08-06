@@ -37,6 +37,8 @@ def git(repo_root: Path, *args: str, timeout: int = 30):
 # frob:doc docs/commands/refactor.md#working_tree_clean
 # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_true_when_no_changes kind="unit"  # noqa: E501
 # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_false_when_dirty kind="unit"  # noqa: E501
+# frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_not_a_git_repo kind="unit"  # noqa: E501
+# frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_spawn_failure_is_git_error kind="unit"  # noqa: E501
 def working_tree_clean(repo_root: Path) -> Result[bool, RefactorError]:
     """`True` iff `git status --porcelain` is empty -- the precondition
     every transaction (single move/rename or a split chunk) assumes before
@@ -52,6 +54,8 @@ def working_tree_clean(repo_root: Path) -> Result[bool, RefactorError]:
 
 # frob:doc docs/commands/refactor.md#current_sha
 # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_matches_head \
+# kind="unit"
+# frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_not_a_git_repo \
 # kind="unit"
 def current_sha(repo_root: Path) -> Result[str, RefactorError]:
     """The `HEAD` sha a transaction rolls back to on failure."""

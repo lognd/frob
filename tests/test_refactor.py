@@ -765,6 +765,52 @@ class TestGitOps:
         ).stdout.strip()
         assert result.danger_ok == expected
 
+    def test_working_tree_clean_not_a_git_repo(self, tmp_path):
+        # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_not_a_git_repo  # noqa: E501
+        # A directory that is not (and is not inside) a git repository:
+        # `git status --porcelain` exits nonzero, and the function must
+        # report NotAGitRepo rather than misreport "clean".
+        from frob.refactor._gitops import working_tree_clean
+        from frob.refactor._models import RefactorError
+
+        not_a_repo = tmp_path / "plain-dir"
+        not_a_repo.mkdir()
+        result = working_tree_clean(not_a_repo)
+        assert result.is_err
+        assert result.danger_err == RefactorError.NotAGitRepo
+
+    def test_working_tree_clean_spawn_failure_is_git_error(self, tmp_path, monkeypatch):
+        # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_spawn_failure_is_git_error  # noqa: E501
+        # The underlying spawn itself fails (e.g. FROB_DISABLE_EXEC=1's
+        # kill switch, or git missing from PATH) -- distinct from a
+        # nonzero git exit code, this is `guarded_subprocess_run` itself
+        # returning Err before any process ran.
+        import frob.refactor._gitops as gitops_mod
+        from frob.refactor._models import RefactorError
+        from typani import Err
+
+        root = _repo(tmp_path)
+        _write(root, "a.py", "x = 1\n")
+        _commit_all(root, "init")
+
+        monkeypatch.setattr(
+            gitops_mod, "guarded_subprocess_run", lambda *a, **kw: Err("disabled")
+        )
+        result = gitops_mod.working_tree_clean(root)
+        assert result.is_err
+        assert result.danger_err == RefactorError.GitError
+
+    def test_current_sha_not_a_git_repo(self, tmp_path):
+        # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_not_a_git_repo  # noqa: E501
+        from frob.refactor._gitops import current_sha
+        from frob.refactor._models import RefactorError
+
+        not_a_repo = tmp_path / "plain-dir"
+        not_a_repo.mkdir()
+        result = current_sha(not_a_repo)
+        assert result.is_err
+        assert result.danger_err == RefactorError.GitError
+
 
 class TestModuleToPath:
     def test_maps_dotted_module_under_src(self, tmp_path):

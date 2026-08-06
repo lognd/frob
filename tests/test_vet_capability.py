@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.strata import KernelModel, Node, bind_code, check_capability_conformance
+import frob.vet._capability as _capability_mod
 from frob.vet._capability import (
     non_executable_line_numbers,
     scan_file_capabilities,
@@ -171,4 +172,23 @@ class TestDocstringProseNotObservedLineLevel:
             return real_read_bytes(self)
 
         monkeypatch.setattr(_Path, "read_bytes", _raising_read_bytes)
+        assert non_executable_line_numbers(pkg) == frozenset()
+
+    # frob:tests src/frob/vet/_capability.py::non_executable_line_numbers kind="unit"
+    def test_non_executable_line_numbers_surprising_span_shape_is_empty(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # T-1371: "never raises" covers a surprising span shape from
+        # `_non_executable_byte_spans` too, not just the read failure --
+        # a non-int span element makes `raw.count(b"\n", 0, start)` raise
+        # TypeError, which the function's own except clause must swallow
+        # rather than propagate.
+        pkg = tmp_path / "plain.py"
+        pkg.write_text("x = 1\ny = 2\n")
+
+        monkeypatch.setattr(
+            _capability_mod,
+            "_non_executable_byte_spans",
+            lambda path: ((None, 3),),
+        )
         assert non_executable_line_numbers(pkg) == frozenset()

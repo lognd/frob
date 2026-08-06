@@ -715,6 +715,86 @@ class TestDoctorVenvShims:
 
         assert scan_venv_shims(tmp_path) == ()
 
+    # frob:tests src/frob/doctor.py::scan_venv_shims kind="unit"
+    def test_non_python_shebang_is_skipped(self, tmp_path: Path) -> None:
+        """A shim whose shebang names an interpreter other than python
+        (e.g. `#!/bin/sh`) is not a venv-shim drift candidate at all --
+        the `"python" not in Path(shebang_path).name` guard short-circuits
+        before any directory comparison."""
+        from frob.doctor import scan_venv_shims
+
+        venv_bin = self._make_venv_bin(tmp_path)
+        shim = venv_bin / "activate"
+        shim.write_text("#!/bin/sh\necho hi\n")
+        shim.chmod(0o755)
+
+        assert scan_venv_shims(tmp_path) == ()
+
+    # frob:tests src/frob/doctor.py::scan_venv_shims kind="unit"
+    def test_file_without_shebang_is_skipped(self, tmp_path: Path) -> None:
+        """A regular file under `.venv/bin/` that does not start with `#!`
+        (not every entry there is an executable script) is skipped, not
+        misparsed as a shebang."""
+        from frob.doctor import scan_venv_shims
+
+        venv_bin = self._make_venv_bin(tmp_path)
+        (venv_bin / "README").write_text("not a script\n")
+
+        assert scan_venv_shims(tmp_path) == ()
+
+    # frob:tests src/frob/doctor.py::scan_venv_shims kind="unit"
+    def test_directory_entry_is_skipped(self, tmp_path: Path) -> None:
+        """A subdirectory under `.venv/bin/` (not itself a file) is skipped
+        by the `entry.is_file()` guard rather than attempted as a script
+        read."""
+        from frob.doctor import scan_venv_shims
+
+        venv_bin = self._make_venv_bin(tmp_path)
+        (venv_bin / "nested-dir").mkdir()
+
+        assert scan_venv_shims(tmp_path) == ()
+
+    # frob:tests src/frob/doctor.py::scan_venv_shims kind="unit"
+    def test_symlink_entry_is_skipped(self, tmp_path: Path) -> None:
+        """A symlinked entry under `.venv/bin/` (e.g. `python3 ->
+        python3.12`) is skipped by the `entry.is_symlink()` guard -- only
+        the real script's own shebang is worth checking, not a link
+        pointing at it."""
+        from frob.doctor import scan_venv_shims
+
+        venv_bin = self._make_venv_bin(tmp_path)
+        real = venv_bin / "python3.12"
+        real.write_text("")
+        link = venv_bin / "python3"
+        link.symlink_to(real)
+
+        assert scan_venv_shims(tmp_path) == ()
+
+    # frob:tests src/frob/doctor.py::scan_venv_shims kind="unit"
+    def test_unreadable_entry_is_skipped_not_raised(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A script that raises `OSError` on open (permission denied, a
+        race where it vanished between `iterdir()` and `open()`) is
+        skipped, never propagated -- this is a diagnostic scan, not a gate
+        that should crash on one unreadable file."""
+        from frob.doctor import scan_venv_shims
+
+        venv_bin = self._make_venv_bin(tmp_path)
+        shim = venv_bin / "broken"
+        shim.write_text("#!/venv/bin/python\n")
+
+        real_open = Path.open
+
+        def _raise_on_broken(self: Path, *args: object, **kwargs: object):
+            if self.name == "broken":
+                raise OSError("permission denied")
+            return real_open(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "open", _raise_on_broken)
+
+        assert scan_venv_shims(tmp_path) == ()
+
 
 # frob:ticket T-1515
 # frob:ticket T-1634
