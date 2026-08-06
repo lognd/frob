@@ -3889,7 +3889,7 @@ no frob:until binding.
 ```yaml
 id: T-1485
 title: 'perf: fold arch nesting/cyclomatic/events into one walk; consolidate _walk_all/_find_if_statements'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-03'
