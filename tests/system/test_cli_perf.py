@@ -176,14 +176,55 @@ class TestCheckOnlyPerf:
             "            hits += 1\n"
             "    return hits\n"
         )
+        # frob:ticket T-1595
+        # T-1595: 3 unit cases, not 1 -- TEST002's min_unit_cases threshold
+        # (currently 3) tightened since this fixture was first written, and
+        # a fixture with only 1 case now trips TEST002 as an ERROR-level
+        # gate finding, which failed the whole `frob check --only gates`
+        # run this test asserts exits 0 -- unrelated to the PERF001
+        # severity this fixture exists to isolate. Padding to 3 genuine,
+        # distinct cases (empty input, one hit, one miss) satisfies TEST002
+        # without changing what this test is actually about.
         (tmp_path / "test_pkg.py").write_text(
             "from pkg import scan\n\n"
             "def test_scan() -> None:\n"
             "    # frob:tests pkg.py::scan\n"
-            "    assert scan([1]) == 1\n"
+            "    assert scan([1]) == 1\n\n"
+            "def test_scan_no_items() -> None:\n"
+            "    # frob:tests pkg.py::scan\n"
+            "    assert scan([]) == 0\n\n"
+            "def test_scan_no_hits() -> None:\n"
+            "    # frob:tests pkg.py::scan\n"
+            "    assert scan([9]) == 0\n"
         )
+        # frob:ticket T-1595
+        # T-1595: this fixture's `coverage.xml` used to be a bare
+        # `<coverage line-rate="1.0"></coverage>` with no per-file
+        # `<class>`/`<line>` data at all. That satisfied `frob check`
+        # once, but TEST017 (`_test017_deflated_coverage`,
+        # `src/frob/gates/__init__.py`) now reads `module_join_fraction`
+        # and ERRORs when a coverage.xml joins none of the repo's known
+        # modules against actual class/line entries -- an empty
+        # `<coverage>` element joins zero of `pkg.py`/`test_pkg.py`
+        # regardless of its top-level `line-rate` attribute, which TEST017
+        # never reads. Real per-file `<class>`/`<line>` entries (mirroring
+        # `tests/system/test_cli_check.py`'s own fixture shape) join both
+        # known modules, satisfying TEST017 without changing what this
+        # test isolates (PERF001's own warn-not-error severity).
         (tmp_path / "coverage.xml").write_text(
-            '<?xml version="1.0" ?><coverage line-rate="1.0"></coverage>'
+            '<?xml version="1.0" ?>\n'
+            '<coverage line-rate="1.0">\n'
+            "  <packages><package><classes>\n"
+            '    <class filename="pkg.py" line-rate="1.0">\n'
+            '      <lines><line number="1" hits="1"/>'
+            '<line number="7" hits="1"/></lines>\n'
+            "    </class>\n"
+            '    <class filename="test_pkg.py" line-rate="1.0">\n'
+            '      <lines><line number="1" hits="1"/>'
+            '<line number="3" hits="1"/></lines>\n'
+            "    </class>\n"
+            "  </classes></package></packages>\n"
+            "</coverage>\n"
         )
         _git("add", "-A", cwd=tmp_path)
         _git("commit", "-q", "-m", "init", cwd=tmp_path)

@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _kind
@@ -95,20 +96,41 @@ class TestSetKind:
 class TestKindCliInvalidKind:
     """`frob ticket kind` refuses a value outside the real `TicketKind`
     enum (T-0834: "kind must still validate strictly against the real
-    enum")."""
+    enum").
+
+    T-1594: this used to assert the refusal happens INSIDE `_kind()`
+    (a downstream `SystemExit`) -- but `AppConfig`'s own
+    `_check_ticket_kind_value` field_validator (`src/frob/app/config.py`)
+    already refuses an unrecognized `ticket_kind_value` at CONSTRUCTION
+    time, strictly before `_kind()` (or anything else) ever runs. That
+    validator is not a bug to remove: it is the SAME pattern this repo
+    already applies to every other enum-shaped CLI value
+    (`ticket_state`/`ticket_kind`/`ticket_tier`/`ticket_tier_value`, all
+    validated the identical way in `AppConfig`, all with their own
+    `test_app_config.py::TestEnumFieldValidation` coverage) -- removing it
+    only for this one field would make `ticket_kind_value` the
+    inconsistent one, not the other way around. `_kind()`'s own
+    `TicketKind(...)` try/except is genuinely unreachable for a value that
+    has already passed `AppConfig` construction (defense in depth against
+    a caller that builds a `TicketKind`-typed value some other way), which
+    is exactly why the real CLI (`src/frob/__main__.py`'s top-level
+    `except Exception` boundary) already turns this `ValidationError` into
+    a clean one-line `frob: ...` stderr message and `exit(1)` -- a
+    directly-constructed `AppConfig(...)`, as this test does, is the one
+    caller that sees the raw exception instead of that clean CLI-boundary
+    rendering, which is what this test now asserts on directly."""
 
     def test_invalid_kind_refused(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindCliInvalidKind.test_invalid_kind_refused  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
-        cfg = AppConfig(
-            ticket_command="kind",
-            ticket_id=ticket_id,
-            ticket_path=tmp_path,
-            ticket_kind_value="not-a-real-kind",
-        )
-        with pytest.raises(SystemExit) as exc:
-            _kind(tmp_path, cfg)
-        assert exc.value.code != 0
+        with pytest.raises(ValidationError) as exc_info:
+            AppConfig(
+                ticket_command="kind",
+                ticket_id=ticket_id,
+                ticket_path=tmp_path,
+                ticket_kind_value="not-a-real-kind",
+            )
+        assert "is not a valid ticket kind" in str(exc_info.value)
 
         reloaded = load_active(tmp_path)
         assert reloaded.is_ok

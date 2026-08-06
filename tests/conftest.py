@@ -154,6 +154,50 @@ def pytest_configure(config: pytest.Config) -> None:
     restore_stale_journals(_REPO_ROOT)
 
 
+# frob:ticket T-1596
+# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
+# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Print an always-visible `SUITE-RESULT:` line at the end of every run
+    (T-1596), independent of pytest's own verbosity-gated terminal summary.
+
+    Root cause investigated for T-1596: three background full-suite runs
+    appeared to "truncate" with no final `N passed, M failed in Ts` line and
+    no crash trace -- reproduced deterministically and traced to pytest's
+    verbosity stacking, NOT a crash/OOM/hang. This repo's own `addopts`
+    (`pyproject.toml`) already bakes in one `-q`; the exact invocation this
+    repo's own dispatch guidance recommends (`pytest tests/ -q ...`) adds a
+    SECOND `-q`, taking verbosity to -2 ("very quiet"), at which point
+    pytest's `TerminalReporter.summary_stats()` silently skips printing its
+    own final summary line entirely -- confirmed by isolating the flag: the
+    identical command with only one `-q` prints the summary, with two it
+    does not, with no other difference. A caller that greps a captured log
+    for that line to decide "did the suite finish" is silently fooled by
+    this, exactly the shape three prior background runs hit.
+
+    `TerminalReporter.write_line` (used here via the `terminalreporter`
+    plugin) is a low-level write, not gated by the verbosity level that
+    silences `summary_stats()` -- so this line survives `-q`, `-qq`, or any
+    other verbosity stacking and is always safe to grep for as the
+    "the run actually finished" signal, regardless of how the caller
+    invoked pytest. Controller-only under `pytest-xdist` (mirrors
+    `pytest_configure`'s own `workerinput` early-return above) -- printing
+    once per worker would defeat the "exactly one greppable line" contract
+    this exists to provide."""
+    if hasattr(session.config, "workerinput"):
+        return
+    total = getattr(session, "testscollected", 0)
+    failed = getattr(session, "testsfailed", 0)
+    line = (
+        f"SUITE-RESULT: exitstatus={exitstatus} collected={total} failed={failed}"
+    )
+    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+    if reporter is not None:
+        reporter.write_line(line)
+    else:  # pragma: no cover - defensive only, terminalreporter always registered
+        print(line)
+
+
 # frob:ticket T-1586
 @pytest.fixture(autouse=True)
 def _neutralize_inherited_color_env(

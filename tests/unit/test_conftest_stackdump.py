@@ -118,3 +118,83 @@ class TestSelfScanHeavyGrouping:
             group_names.add(marker.kwargs["name"])
         assert group_names == {"frob_self_scan_heavy"}
         assert items[3].own_markers == []
+
+
+class TestSuiteResultLine:
+    """T-1596: `pytest_sessionfinish`'s always-visible `SUITE-RESULT:` line
+    -- the fix for a confirmed, reproduced (not hypothetical) bug: doubling
+    `-q` (this repo's own `addopts` already bakes in one, and the exact
+    invocation this repo's dispatch guidance recommends adds a second)
+    takes pytest's verbosity to -2, at which point `TerminalReporter.
+    summary_stats()` silently skips its own final summary line -- with no
+    crash, no traceback, no nonzero-looking artifact. This line is written
+    via `TerminalReporter.write_line`, which is not gated by that verbosity
+    level, so it survives regardless of how many `-q` flags stack."""
+
+    class _FakeReporter:
+        """Records every `write_line` call so a test can assert on exactly
+        what `pytest_sessionfinish` sent it, without a real terminal."""
+
+        def __init__(self) -> None:
+            self.lines: list[str] = []
+
+        def write_line(self, line: str, **_markup: bool) -> None:
+            self.lines.append(line)
+
+    class _FakePluginManager:
+        def __init__(self, reporter: object | None) -> None:
+            self._reporter = reporter
+
+        def get_plugin(self, name: str) -> object | None:
+            assert name == "terminalreporter"
+            return self._reporter
+
+    class _FakeConfig:
+        def __init__(
+            self, *, reporter: object | None, is_worker: bool = False
+        ) -> None:
+            self.pluginmanager = TestSuiteResultLine._FakePluginManager(reporter)
+            if is_worker:
+                self.workerinput = {"workerid": "gw0"}
+
+    class _FakeSession:
+        def __init__(
+            self, *, config: object, collected: int = 0, failed: int = 0
+        ) -> None:
+            self.config = config
+            self.testscollected = collected
+            self.testsfailed = failed
+
+    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
+    def test_sessionfinish_prints_greppable_line_at_any_verbosity(self) -> None:
+        """On the controller (no `workerinput`), the hook writes exactly one
+        `SUITE-RESULT:` line carrying the real exit status and counts --
+        via `write_line`, which pytest's `-q`/`-qq` verbosity gating never
+        suppresses, unlike the built-in `summary_stats()` line this exists
+        to back up."""
+        module = _load_conftest()
+        reporter = self._FakeReporter()
+        config = self._FakeConfig(reporter=reporter, is_worker=False)
+        session = self._FakeSession(config=config, collected=50, failed=2)
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        assert len(reporter.lines) == 1
+        line = reporter.lines[0]
+        assert line == "SUITE-RESULT: exitstatus=1 collected=50 failed=2"
+
+    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
+    def test_sessionfinish_skips_on_xdist_worker(self) -> None:
+        """On an xdist WORKER (`workerinput` present, mirroring
+        `pytest_configure`'s own controller-only guard above the hook),
+        nothing is written -- printing once per worker would defeat the
+        "exactly one greppable line per run" contract this hook exists to
+        provide."""
+        module = _load_conftest()
+        reporter = self._FakeReporter()
+        config = self._FakeConfig(reporter=reporter, is_worker=True)
+        session = self._FakeSession(config=config, collected=50, failed=0)
+
+        module.pytest_sessionfinish(session=session, exitstatus=0)
+
+        assert reporter.lines == []

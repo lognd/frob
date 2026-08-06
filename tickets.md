@@ -7489,6 +7489,7 @@ Verification:
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 0 error(s), 1077 warning(s), 797 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1583 -->
 ```yaml
 id: T-1583
@@ -8341,7 +8342,7 @@ points relative to the `land()` call and the post-land sweep).
 ```yaml
 id: T-1594
 title: AppConfig.ticket_kind_value validation conflicts with _kind()'s own strict-refusal
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -8355,6 +8356,8 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_evidence.py::TestKindCliInvalidKind::test_invalid_kind_refused
 threat: null
 component: null
 ```
@@ -8389,12 +8392,64 @@ scope (tests/**, src/frob/lang/**, src/frob/serve/**, src/frob/app/**
 "correct" is a design call this ticket's own charter (shared-state
 pollution) does not cover).
 
+## Done report
+
+Design decision made and implemented: `AppConfig._check_ticket_kind_value`
+stays (removing it would make `ticket_kind_value` the ONE inconsistent
+field among ticket_state/ticket_kind/ticket_tier/ticket_tier_value, which
+all validate the identical way at `AppConfig` construction, each with its
+own `test_app_config.py::TestEnumFieldValidation` coverage already passing
+today). `_kind()`'s own `TicketKind(...)` try/except is legitimate
+defense-in-depth (unreachable for any value that already passed `AppConfig`
+construction, same shape `_tier()` already carries for `ticket_tier_value`
+with no test exercising its own dead branch either) -- not a bug, not
+something to remove.
+
+Confirmed the real CLI path already gives a clean, non-traceback message to
+an end user: `src/frob/__main__.py`'s top-level `except Exception` boundary
+catches the `ValidationError` from a bad `--kind`, prints a one-line
+`frob: ...` to stderr, and exits 1 -- never a raw traceback for an actual
+CLI invocation. The only place that saw the raw exception was this ONE
+test, which constructs `AppConfig(...)` directly, bypassing that top-level
+boundary entirely.
+
+Fixed `tests/test_ticket_evidence.py::TestKindCliInvalidKind::
+test_invalid_kind_refused` to assert what actually and correctly happens:
+`AppConfig(ticket_kind_value="not-a-real-kind")` itself raises
+`pydantic.ValidationError` with "is not a valid ticket kind" in the message
+(same assertion shape as the sibling
+`test_app_config.py::test_invalid_ticket_kind_value_lists_valid_values`,
+which was already passing and unchanged). No production code touched --
+`src/frob/app/config.py` and `src/frob/app/ticket_runner/**` are unchanged.
+
+Verified: `pytest tests/test_ticket_evidence.py::TestKindCliInvalidKind
+tests/test_app_config.py::TestEnumFieldValidation -q` -> 12 collected, 0
+failed (SUITE-RESULT confirmed). `ruff check` clean on the touched file.
+
+### Changed
+```
+ tests/conftest.py                     |  44 ++++++++
+ tests/system/test_cli_perf.py         |  45 ++++++++-
+ tests/test_coverage.py                |  30 +++++-
+ tests/unit/test_conftest_stackdump.py |  80 +++++++++++++++
+ tickets.md                            | 184 +++++++++++++++++++++++++++++++++-
+ 5 files changed, 374 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_evidence.py::TestKindCliInvalidKind::test_invalid_kind_refused` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 5817 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1595 -->
 ```yaml
 id: T-1595
 title: 'Stale test assertions: coverage-fast Makefile dry-run + PERF001 fixture below
   TEST002 threshold'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -8407,6 +8462,9 @@ scope:
 - src/frob/app/coverage_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
+- tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
 threat: null
 component: null
 ```
@@ -8433,12 +8491,75 @@ when this fixture was written). Needs the fixture's test_pkg.py updated
 to add 2 more unit cases, or confirmation TEST002's threshold change was
 intentional and this is simply a stale fixture.
 
+## Done report
+
+Both stale assertions decided and fixed; both are stale-test bugs, not
+production code bugs -- neither Makefile nor coverage_runner.py needed a
+change.
+
+1. TestCoverageTargetNativesGuard::
+   test_coverage_fast_incremental_branch_restores_and_verifies_natives:
+   confirmed the real cause via the Makefile's own `coverage-fast` target
+   (line 406-408) -- T-1525 deliberately moved this target off a literal
+   `pytest --cov` shell line and onto the frob-native `frob coverage .`
+   CLI verb (src/frob/app/coverage_runner.py, delegating to
+   run_coverage_wait/native_coverage_refresh). The Makefile change was
+   intentional (T-1525's whole point); the test's assertion asking for a
+   `pytest --cov` substring in this target's dry-run output was simply
+   never updated to match. Split `_assert_guard_precedes_pytest` into a
+   second helper, `_assert_guard_precedes_coverage_cli`, that looks for
+   `frob coverage .` instead, and repointed only the `coverage-fast` test
+   at it -- the plain `coverage` target's own test (which still runs a
+   literal `pytest --cov`) is untouched, since that literal invocation is
+   still real.
+
+2. TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero:
+   the ticket's own theory (TEST002 min_unit_cases=3) was NOT what the
+   fixture actually trips -- re-diagnosed from the real `frob check`
+   output, which shows the one ERROR is `gate:TEST` TEST017 (deflated
+   coverage: module_join_fraction=0.00), not TEST002. The fixture's
+   `coverage.xml` was a bare `<coverage line-rate="1.0"></coverage>` with
+   no per-file `<class>`/`<line>` data at all -- TEST017
+   (`_test017_deflated_coverage`) never reads the top-level `line-rate`
+   attribute, only whether known modules join real class/line entries, so
+   this fixture joined 0 of pkg.py/test_pkg.py regardless of that
+   attribute. Replaced it with a real per-file `<class>`/`<line>` shape
+   (mirroring the working fixture already used in
+   tests/system/test_cli_check.py), which joins both known modules and
+   clears TEST017. Also padded test_pkg.py from 1 to 3 unit cases while
+   investigating (empty-input and no-hit cases alongside the original) --
+   this did not turn out to be the actual TEST017 cause, but is a genuine,
+   harmless strengthening of the fixture's own test coverage that I am
+   disclosing rather than silently dropping since it is a real diff in
+   the ticket's scope.
+
+Both fixed tests pass individually and together:
+`pytest tests/test_coverage.py tests/system/test_cli_perf.py -q` ->
+28 collected, 0 failed (SUITE-RESULT confirmed, not a truncated read).
+
+### Changed
+```
+ tests/conftest.py                     |  44 +++++++++++++
+ tests/unit/test_conftest_stackdump.py |  80 +++++++++++++++++++++++
+ tickets.md                            | 118 +++++++++++++++++++++++++++++++++-
+ 3 files changed, 239 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 5870 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1596 -->
 ```yaml
 id: T-1596
 title: Residual xdist-order pollution (2nd wave) + full-suite runs truncating before
   the summary line
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -8452,6 +8573,9 @@ scope:
 - src/frob/tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_prints_greppable_line_at_any_verbosity
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_skips_on_xdist_worker
 threat: null
 component: null
 ```
@@ -8501,6 +8625,113 @@ of concurrent agent count -- worth a dedicated investigation with
 `/usr/bin/time -v` or dmesg correlation before trusting ANY future
 "clean full suite" claim in this repo without independently confirming
 the trailing summary line is actually present in the captured log.
+
+## Done report
+
+Root-caused BOTH problems in this ticket. The truncation problem (part 2 of
+the ticket) is the one that mattered most and is now fixed.
+
+TRUNCATION ROOT CAUSE (confirmed, deterministic, reproduced repeatedly):
+NOT an OOM kill, NOT a crash, NOT a hang. `dmesg`/`journalctl -k` show zero
+kill/OOM entries across every reproduction; every subprocess exited with a
+real, observed exit code every single time. The cause is pytest's own
+verbosity stacking: `pyproject.toml`'s `addopts` already bakes in one `-q`.
+This repo's OWN dispatch guidance (and my own initial reproduction attempts,
+copied verbatim from the brief) recommends running the suite as
+`pytest tests/ -q --timeout=600` -- a SECOND `-q` on top of the one already
+in `addopts`. Two `-q` flags take pytest's verbosity to -2 ("very quiet"),
+at which point `TerminalReporter.summary_stats()` silently skips printing
+its own final `N passed, M failed in Ts` line entirely -- with no error, no
+traceback, nothing to grep for. Isolated by bisecting flags one at a time
+on a small single-file run: the exact command with only one `-q` prints the
+summary; with two it does not; no other flag (not `--dist=loadgroup`, not
+`--timeout`, not xdist worker count) makes any difference either way.
+Confirmed at full-suite scale on 2 separate ~5min runs (8546 collected)
+using the exact "-q" doubled invocation: both completed with a real,
+observed process exit code and zero dmesg/journalctl kill signal, but
+neither one printed pytest's own final summary line.
+
+FIX: `tests/conftest.py` gains a `pytest_sessionfinish` hook that writes an
+always-visible `SUITE-RESULT: exitstatus=<n> collected=<n> failed=<n>` line
+via `TerminalReporter.write_line` (a low-level write NOT gated by the
+verbosity level that silences `summary_stats()`), controller-only under
+xdist (mirrors the existing `pytest_configure`'s own `workerinput`
+early-return). Verified this line survives -q, -qq (any verbosity
+stacking), and appears exactly once per run at both single-file and
+full-suite (8546-test) scale, including the exact doubled-`-q` invocation
+that previously produced zero visible signal. This makes truncation
+impossible to mistake for success: any caller that used to grep the log
+for pytest's own summary line now has a second, unsuppressable line to grep
+for instead; its absence is now unambiguous evidence of a real crash/hang,
+never a verbosity artifact.
+
+POLLUTION HALF (part 1 of the ticket): ran the FULL, unscoped suite twice
+end-to-end (8546 collected each time, ~5min per run) using the corrected
+`SUITE-RESULT:` line to confirm neither run silently truncated. NONE of the
+originally-listed pollution members from T-1596's own ticket body
+(TestMapRunner, TestOutlineRunner::test_directory_target_falls_back_to_map,
+TestParseCache::test_second_call_same_content_is_a_hit,
+TestClaimDivergencePostMerge, TestSetDoneReportClaims,
+TestLedgerV2LandMergeStory, TestReverifyCli, TestNewFileCarveOut) appeared
+as a failure in either run. I could NOT reproduce any of them and am
+stating that explicitly rather than claiming a fix for something I never
+saw fail -- either T-1591's fix already closed these (the ticket body
+itself frames them as "still red" only as of T-1591's own investigation,
+which predates this session), or they need a worker-count/scheduling shape
+neither of my two runs (both default `-n auto --dist=loadgroup`) happened
+to hit. I did NOT mark this as fixed by touching test isolation code for
+symptoms I never observed -- that would be exactly the "fix by reordering/
+skipping without cause" anti-pattern this ticket explicitly warns against.
+
+Two DIFFERENT failures appeared once in the first run and did NOT
+reproduce in the second (test_serve_socket.py::TestShutdownReapsChildren::
+test_frob_shutdown_exits_and_reaps_within_budget -- a 5s wall-clock budget
+assertion; test_tickets_ledger_concurrency.py::
+TestRenumberOneRaceWithConcurrentNew::
+test_concurrent_new_ticket_survives_a_racing_renumber_one -- a concurrency
+race). Both are consistent with transient system load (a sibling worktree
+was independently running a full pytest suite concurrently on the same
+host during my first run, confirmed via `ps aux`), not deterministic
+xdist-order pollution -- neither repeated on the clean second run. Noting
+by name per the ticket's own instruction, not silently dropping them.
+
+Every OTHER failure seen in both runs is already-known, already-ticketed,
+and out of THIS ticket's fix scope: TestCheckOnlyPerf::
+test_perf001_fixture_warns_but_check_exits_zero and
+TestCoverageTargetNativesGuard::
+test_coverage_fast_incremental_branch_restores_and_verifies_natives are
+T-1595's stale assertions; TestKindCliInvalidKind::
+test_invalid_kind_refused is T-1594's traceback-vs-clean-refusal bug. The
+3 self-conformance failures seen in both runs
+(TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant,
+TestCoverageTotality::test_repo_unrestricted_scan_is_clean,
+TestFrobSelfModel::test_sys_gate_zero_violations) plus
+TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
+are all the SAME single cause: my own two new public symbols
+(TestSuiteResultLine, pytest_sessionfinish) are not yet declared in
+design/frob.strata's `testsuite` node interface list. Confirmed via
+`frob sys sync-interface --check`, which names exactly these two symbols
+as the only drift in the whole repo. Per the agent playbook (section 0
+item 5), `frob ticket land` runs `frob sys sync-interface` (writing, not
+--check) automatically before its own merge -- this is expected,
+self-healing drift, not something to hand-fix in the worktree; hand-editing
+design/frob.strata is also outside this ticket's declared scope
+(tests/**, src/frob/lang/**, src/frob/tickets/**).
+
+### Changed
+```
+ tickets.md | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_prints_greppable_line_at_any_verbosity` (pytest node id, verified passing when recorded)
+- `tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_skips_on_xdist_worker` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 5353 warning(s), 797 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1597 -->
 ```yaml

@@ -195,6 +195,28 @@ class TestCoverageTargetNativesGuard:
             f"got indices {core_idx}, {doctor_idx}, {pytest_idx} in:\n{output}"
         )
 
+    # frob:ticket T-1595
+    def _assert_guard_precedes_coverage_cli(self, output: str) -> None:
+        """`make core` and `frob doctor` must both appear, in that relative
+        order, strictly before the `frob coverage .` invocation -- the same
+        T-0538 guard shape as `_assert_guard_precedes_pytest`, but for the
+        `coverage-fast` target specifically (T-1595): T-1525 moved
+        `coverage-fast`'s own coverage orchestration out of a literal
+        `pytest --cov` Makefile line and into the frob-native `frob
+        coverage` CLI verb (`src/frob/app/coverage_runner.py`), so
+        `pytest --cov` no longer appears anywhere in this target's dry-run
+        expansion at all -- asserting for it here was stale, not a real
+        regression (`frob coverage` still exercises pytest internally, via
+        `run_coverage_wait`/`native_coverage_refresh`, just not as a
+        Makefile-visible subprocess line)."""
+        core_idx = output.index("make core")
+        doctor_idx = output.index("frob doctor")
+        coverage_idx = output.index("frob coverage .")
+        assert core_idx < doctor_idx < coverage_idx, (
+            f"expected 'make core' < 'frob doctor' < 'frob coverage .', "
+            f"got indices {core_idx}, {doctor_idx}, {coverage_idx} in:\n{output}"
+        )
+
     def test_coverage_target_restores_and_verifies_natives_before_pytest(
         self,
     ) -> None:
@@ -209,9 +231,11 @@ class TestCoverageTargetNativesGuard:
         fall back to `make coverage`) is subject to the exact same
         `$(STAMP)`/`uv sync` clobber hazard, since it also depends on
         `$(STAMP)` -- this asserts its own `make core && frob doctor`
-        guard is present in the dry-run output before its own pytest
-        invocation."""
-        self._assert_guard_precedes_pytest(self._dry_run("coverage-fast"))
+        guard is present in the dry-run output before its own coverage
+        invocation. T-1595: that invocation is `frob coverage .` (T-1525
+        moved this target off a literal `pytest --cov` Makefile line), not
+        `pytest --cov` -- see `_assert_guard_precedes_coverage_cli`."""
+        self._assert_guard_precedes_coverage_cli(self._dry_run("coverage-fast"))
 
 
 class TestCoverageTargetFlakeTolerance:
