@@ -1535,35 +1535,6 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
 # frob:ticket T-0458
 # frob:ticket T-0601
 # frob:ticket T-0889
-# frob:ticket T-1583
-def _write_archive_v2(
-    root: Path, tickets: dict[str, Ticket]
-) -> Result[None, TicketError]:
-    """`write_archive`'s v2-mode body: upsert every entry into its own
-    `tickets/archive/T-####/ticket.md` (`write_archived_ticket`) and prune
-    any archived ticket directory whose id is absent from `tickets`, so
-    the wholesale-replace contract the monofile branch has holds here too.
-
-    Every prune is logged with its id -- this is the only path that
-    removes archived ledger content, and a silent removal here would be
-    indistinguishable from the T-1583 loss it exists to fix."""
-    for ticket in tickets.values():
-        written = write_archived_ticket(root, ticket)
-        if written.is_err:
-            return Err(written.danger_err)
-    for path in _v2_archive_glob(root):
-        ticket_id = path.parent.name
-        if ticket_id in tickets:
-            continue
-        _log.info(
-            "tickets: write_archive pruning archived %s -- absent from the "
-            "wholesale map this call replaces the archive with",
-            ticket_id,
-        )
-        shutil.rmtree(path.parent)
-    return Ok(None)
-
-
 def write_archive(
     root: Path,
     tickets: dict[str, Ticket],
@@ -1610,6 +1581,35 @@ def write_archive(
         if integrity.is_err:
             return Err(integrity.danger_err)
         return atomic_write(path, text)
+
+
+# frob:ticket T-1583
+def _write_archive_v2(
+    root: Path, tickets: dict[str, Ticket]
+) -> Result[None, TicketError]:
+    """`write_archive`'s v2-mode body: upsert every entry into its own
+    `tickets/archive/T-####/ticket.md` (`write_archived_ticket`) and prune
+    any archived ticket directory whose id is absent from `tickets`, so
+    the wholesale-replace contract the monofile branch has holds here too.
+
+    Every prune is logged with its id -- this is the only path that
+    removes archived ledger content, and a silent removal here would be
+    indistinguishable from the T-1583 loss it exists to fix."""
+    for ticket in tickets.values():
+        written = write_archived_ticket(root, ticket)
+        if written.is_err:
+            return Err(written.danger_err)
+    for path in _v2_archive_glob(root):
+        ticket_id = path.parent.name
+        if ticket_id in tickets:
+            continue
+        _log.info(
+            "tickets: write_archive pruning archived %s -- absent from the "
+            "wholesale map this call replaces the archive with",
+            ticket_id,
+        )
+        shutil.rmtree(path.parent)
+    return Ok(None)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
@@ -1663,20 +1663,7 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """
     mode = _store_mode(root)
     if mode == "v2":
-        # T-1587: `load_all` merges done-report.md back into `body`, so a
-        # load -> modify -> write round trip arrives here carrying the
-        # report. Split it back out (never write it into ticket.md) or the
-        # section would be duplicated on the next read and ticket.md would
-        # start contending with done-report.md writes again.
-        body, report_text = _split_done_report(ticket.body)
-        with ticket_lock(root, ticket.id):
-            written = atomic_write(
-                v2_ticket_path(root, ticket.id),
-                _serialize_ticket(ticket.model_copy(update={"body": body})),
-            )
-            if written.is_err or report_text is None:
-                return written
-            return atomic_write(v2_done_report_path(root, ticket.id), report_text)
+        return _write_ticket_v2_mode(root, ticket)
     with ledger_lock(root):
         if mode == "single":
             return _write_ticket_single_mode(root, ticket)
@@ -1692,6 +1679,30 @@ def _write_ticket_single_mode(root: Path, ticket: Ticket) -> Result[None, Ticket
     result re-parses cleanly with no id lost (`_post_splice_integrity_
     check`). Caller already holds `ledger_lock`."""
     return _splice_single_ticket(ledger_path(root), _LEDGER_HEADER, ticket)
+
+
+# frob:ticket T-1587
+def _write_ticket_v2_mode(root: Path, ticket: Ticket) -> Result[None, TicketError]:
+    """`write_ticket`'s v2-mode body, split out to keep the public
+    dispatcher under the ARCH001 length threshold.
+
+    `load_all` merges done-report.md back into `body`
+    (`_merge_sibling_done_report`), so a load -> modify -> write round
+    trip arrives here carrying the report. It is split back out and
+    written to its own file -- never into ticket.md, or the section would
+    be duplicated on the next read and ticket.md would start contending
+    with done-report.md writes again, losing exactly the lock
+    independence the v2 split exists for. Both writes are held under the
+    per-ticket `ticket_lock`."""
+    body, report_text = _split_done_report(ticket.body)
+    with ticket_lock(root, ticket.id):
+        written = atomic_write(
+            v2_ticket_path(root, ticket.id),
+            _serialize_ticket(ticket.model_copy(update={"body": body})),
+        )
+        if written.is_err or report_text is None:
+            return written
+        return atomic_write(v2_done_report_path(root, ticket.id), report_text)
 
 
 def _splice_single_ticket(
