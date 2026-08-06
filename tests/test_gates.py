@@ -10188,7 +10188,7 @@ class TestFixEngineTierA:
     def test_sys104_interface_union_applies_via_apply_tier_a_fixes(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_sys104_interface_union \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union \
         # kind="unit"
         from frob.gates import apply_tier_a_fixes
         from frob.tickets import TicketQueue
@@ -10215,7 +10215,7 @@ class TestFixEngineTierA:
 
     # frob:ticket T-1531
     def test_sys104_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_sys104_interface_union \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union \
         # kind="unit"
         from frob.gates import apply_tier_a_fixes
         from frob.tickets import TicketQueue
@@ -10233,7 +10233,8 @@ class TestFixEngineTierA:
     def test_sys100_may_via_union_applies_via_apply_tier_a_fixes(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_sys100_may_via_union kind="unit"
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union \
+        # kind="unit"
         from frob.gates import apply_tier_a_fixes
         from frob.tickets import TicketQueue
 
@@ -10258,7 +10259,8 @@ class TestFixEngineTierA:
 
     # frob:ticket T-1531
     def test_sys100_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_sys100_may_via_union kind="unit"
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union \
+        # kind="unit"
         from frob.gates import apply_tier_a_fixes
         from frob.tickets import TicketQueue
 
@@ -10393,8 +10395,8 @@ class TestAutofixManifest:
     # frob:ticket T-1348
     def test_write_then_clear_roundtrip(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip  # noqa: E501
-        from frob.gates._fix_engine import (
-            FixApplied,
+        from frob.gates._fix_engine import FixApplied
+        from frob.gates._fix_engine_shared import (
             _autofix_manifest_path,
             clear_autofix_manifest,
             write_autofix_manifest,
@@ -10422,7 +10424,7 @@ class TestAutofixManifest:
     ) -> None:
         # frob:tests tests/test_gates.py::TestAutofixManifest.test_apply_tier_a_fixes_clears_manifest_on_clean_finish  # noqa: E501
         from frob.gates import apply_tier_a_fixes
-        from frob.gates._fix_engine import _autofix_manifest_path
+        from frob.gates._fix_engine_shared import _autofix_manifest_path
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
@@ -10447,7 +10449,7 @@ class TestAutofixManifest:
         before completing) without discarding its own uncommitted work."""
         import frob.gates._fix_engine as fix_engine
         from frob.gates import apply_tier_a_fixes
-        from frob.gates._fix_engine import _autofix_manifest_path
+        from frob.gates._fix_engine_shared import _autofix_manifest_path
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
@@ -10537,7 +10539,7 @@ class TestFixEngineTierABatch2:
     def test_fmt001_wraps_overlong_directive_line_and_reverifies_clean(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap \
+        # frob:tests src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap \
         # kind="unit"
         from frob.gates._fix_engine import fix_fmt001_directive_wrap
         from frob.gates._fmt_directives import canonicalize_text, read_line_length
@@ -10562,7 +10564,7 @@ class TestFixEngineTierABatch2:
         assert canonicalize_text(rewritten, path="src/m.py", limit=limit) == rewritten
 
     def test_fmt001_already_canonical_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap \
+        # frob:tests src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap \
         # kind="unit"
         from frob.gates._fix_engine import fix_fmt001_directive_wrap
 
@@ -10581,7 +10583,8 @@ class TestFixEngineTierABatch2:
     def test_reg010_files_missing_entries_and_reverifies_clean(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_reg010_registry_sync kind="unit"
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_reg010_registry_sync \
+        # kind="unit"
         from frob.gates._fix_engine import fix_reg010_registry_sync
         from frob.registry._staleness import missing_gate_rule_ids
 
@@ -10620,7 +10623,8 @@ class TestFixEngineTierABatch2:
     def test_reg010_already_in_sync_is_a_no_op(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_reg010_registry_sync kind="unit"
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_reg010_registry_sync \
+        # kind="unit"
         from frob.gates._fix_engine import fix_reg010_registry_sync
 
         root = tmp_path / "repo"
@@ -10648,7 +10652,8 @@ class TestFixEngineTierABatch2:
     def test_rel002_resyncs_pyproject_and_uv_lock_from_manifest(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_rel002_release_sync kind="unit"
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_rel002_release_sync \
+        # kind="unit"
         from frob.gates._fix_engine import fix_rel002_release_sync
 
         root = tmp_path / "repo"
@@ -10671,7 +10676,8 @@ class TestFixEngineTierABatch2:
         assert 'version = "1.2.3"' in rewritten
 
     def test_rel002_already_in_sync_touches_nothing(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_rel002_release_sync kind="unit"
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_rel002_release_sync \
+        # kind="unit"
         from frob.gates._fix_engine import fix_rel002_release_sync
 
         root = tmp_path / "repo"
@@ -10692,9 +10698,9 @@ class TestFixEngineTierABatch2:
     def test_waive004_removes_stale_waiver_on_a_full_unscoped_run(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
-        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
@@ -10721,9 +10727,9 @@ class TestFixEngineTierABatch2:
         """`gates`/`ticket` set (a scoped run) refuses to act at all --
         the waiver is left untouched, matching this ticket's own
         acceptance criterion 3's second half."""
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
-        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
@@ -10753,9 +10759,9 @@ class TestFixEngineTierABatch2:
         """A `\\`-continued waiver is never the single-line shape this
         handler deletes -- Tier A never guesses which physical line of a
         multi-line directive to remove."""
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
-        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
@@ -10855,12 +10861,12 @@ class TestWaive004DegradedRunGuard:
         """A `NATIVE001` finding in the self-manufactured run (natives
         stale/missing) means `run_gates` returned its short-circuited
         single-finding report -- the guard must refuse to act on it."""
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
         from typani.result import Ok
 
         from frob.gates import GateReport, GateStats, Severity, Violation
-        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
@@ -10894,12 +10900,12 @@ class TestWaive004DegradedRunGuard:
         """A non-empty `GateStats.skipped` means at least one gate stage
         did not run at all -- the guard must refuse to act, even though
         the WAIVE004 violation itself looks completely ordinary."""
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
         from typani.result import Ok
 
         from frob.gates import GateReport, GateStats, Severity, Violation
-        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
@@ -10936,12 +10942,12 @@ class TestWaive004DegradedRunGuard:
         waivers of the SAME rule at once (the incident's own shape) is
         treated as anomalous-zero-findings evidence and refuses the
         WHOLE batch -- not just the excess above threshold."""
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
         from typani.result import Ok
 
         from frob.gates import GateReport, GateStats, Severity, Violation
-        from frob.gates._fix_engine import (
+        from frob.gates._fix_engine_sync import (
             _WAIVE004_MASS_INVALIDATION_THRESHOLD,
             fix_waive004_stale_waiver,
         )
@@ -10990,12 +10996,12 @@ class TestWaive004DegradedRunGuard:
         satisfies it just as easily, and doing so deleted 55 live waivers
         during a real land. Mass-staleness refuses regardless of live
         findings elsewhere."""
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
         from typani.result import Ok
 
         from frob.gates import GateReport, GateStats, Severity, Violation
-        from frob.gates._fix_engine import (
+        from frob.gates._fix_engine_sync import (
             _WAIVE004_MASS_INVALIDATION_THRESHOLD,
             fix_waive004_stale_waiver,
         )
@@ -11045,9 +11051,9 @@ class TestWaive004DegradedRunGuard:
         (no NATIVE001, no skipped stage, well under the mass-invalidation
         threshold) still deletes it -- the guard must not become a
         blanket no-op."""
-        # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
         # kind="unit"
-        from frob.gates._fix_engine import fix_waive004_stale_waiver
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"

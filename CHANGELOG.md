@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.351.0] - unreleased
+
+- T-1646: LARGE001 remainder: 52 oversized files T-1420 disclosed but did not attempt
+
 ## [0.350.0] - unreleased
 
 - T-1420: arch: 51-file LARGE001 residue after T-1270's 2-file split

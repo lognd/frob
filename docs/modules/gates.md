@@ -3763,13 +3763,13 @@ site -- no new mechanism needed.
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc002_unique_slug -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_tick002_renumber -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_fmt001_directive_wrap -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_reg010_registry_sync -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_rel002_release_sync -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_suppress001_paired_suppression -->
+<!-- frob:describes src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_reg010_registry_sync -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_rel002_release_sync -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver -->
+<!-- frob:describes src/frob/gates/_fix_engine_text.py::fix_suppress001_paired_suppression -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::TIER_A_HANDLERS -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::FixApplied -->
+<!-- frob:describes src/frob/gates/_fix_engine_shared.py::FixApplied -->
 
 First concrete slice of the T-1137 `--fix` epic ("tiered auto-fix
 engine"): `frob.gates._fix_engine` implements exactly the three fix
@@ -4064,9 +4064,9 @@ GIVEN/WHEN/THEN per each ticket's own acceptance criteria.
 
 ### `fix_e501_merge_introduced` auto-fix (T-1547)
 
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_e501_merge_introduced -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::_merge_touched_python_files -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::_e501_lines_for_file -->
+<!-- frob:describes src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced -->
+<!-- frob:describes src/frob/gates/_fix_engine_text.py::_merge_touched_python_files -->
+<!-- frob:describes src/frob/gates/_fix_engine_text.py::_e501_lines_for_file -->
 
 `fix_e501_merge_introduced` (registered in `TIER_A_HANDLERS["E501"]`)
 closes the E501 item T-1531's own deferral list named: an over-long line
@@ -4094,8 +4094,8 @@ an ordinary, still-live E501 finding rather than misreported as fixed.
 
 ### `fix_cov002_ticket_directive_insertion` auto-fix (T-1548)
 
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_cov002_ticket_directive_insertion -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::_insert_ticket_directive_above -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_cov002_ticket_directive_insertion -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::_insert_ticket_directive_above -->
 
 `fix_cov002_ticket_directive_insertion` (registered in
 `TIER_A_HANDLERS["COV002"]`) closes a COV002 finding (a changed symbol
@@ -4135,8 +4135,8 @@ nothing).
 
 ### SYS100/SYS104 `.strata` declaration auto-fix (T-1531)
 
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_sys104_interface_union -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_sys100_may_via_union -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union -->
 <!-- frob:describes src/frob/strata/_sync_may.py::sync_may_report -->
 <!-- frob:describes src/frob/strata/_sync_may.py::apply_sync_may -->
 

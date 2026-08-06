@@ -844,8 +844,8 @@ def _unowned_deletions(
 
 
 #: A single-physical-line `# frob:waive RULE ...` (or `//` for non-Python
-#: sources) comment -- mirrors `frob.gates._fix_engine._WAIVE_SINGLE_LINE_
-#: RE` exactly (same shape, independently defined here since importing
+#: sources) comment -- mirrors `frob.gates._fix_engine_text._WAIVE_SINGLE_
+#: LINE_RE` exactly (same shape, independently defined here since importing
 #: `frob.gates` from `frob.tickets` would cycle: `frob.gates` already
 #: imports `frob.tickets.TicketQueue`).
 _LAND_WAIVE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")

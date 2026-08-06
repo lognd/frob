@@ -295,7 +295,7 @@ def _catches(caught: str | None, raised: str) -> bool:
     clause against the bare name it genuinely discharges, producing a
     false-positive leak (EXHAUST002) on code that already handles the
     exception correctly (confirmed empirically:
-    `_fix_engine.py::_e501_lines_for_file` and
+    `_fix_engine_text.py::_e501_lines_for_file` and
     `_land.py::_read_land_lock_holder` both explicitly catch
     `json.JSONDecodeError` and still showed the leak before this fix).
     `raised` is never qualified by construction (every entry in

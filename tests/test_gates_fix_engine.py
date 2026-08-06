@@ -1,9 +1,14 @@
-"""Tests for `frob.gates._fix_engine`'s SUPPRESS001 Tier-A auto-fix handler
-(T-1341, phase 2 of T-1339): writing the paired suppression comment in
-canonical order, idempotently. Uses the REAL `ty`/`mypy` binaries against
+"""Tests for `frob.gates._fix_engine_text`'s SUPPRESS001 Tier-A auto-fix
+handler (T-1341, phase 2 of T-1339): writing the paired suppression comment
+in canonical order, idempotently. Uses the REAL `ty`/`mypy` binaries against
 small on-disk fixtures -- same precedent as `tests/test_gates_suppress.py`
 (the whole point of SUPPRESS001 is real, observed diagnostics, not mocked
-output), both tools already dev dependencies this suite requires."""
+output), both tools already dev dependencies this suite requires.
+
+T-1646 (LARGE001 residue burndown): FMT001/SUPPRESS001 and their private
+helpers moved from `frob.gates._fix_engine` to `frob.gates._fix_engine_text`
+-- `FixApplied` stays importable from `_fix_engine` (re-exported at its
+top), the rest now come from their real new home."""
 
 from __future__ import annotations
 
@@ -11,8 +16,8 @@ from pathlib import Path
 
 import pytest
 
-from frob.gates._fix_engine import (
-    FixApplied,
+from frob.gates._fix_engine import FixApplied
+from frob.gates._fix_engine_text import (
     _code_ignored_for_path,
     _merged_dialect_codes,
     _split_suppression_line,
@@ -538,7 +543,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         # est_strata_file_gets_slash_slash_leader kind="unit"
         """GIVEN a `.strata` target file, WHEN the directive is inserted,
         THEN it uses the `//` leader, not `#`."""
-        from frob.gates._fix_engine import _insert_ticket_directive_above
+        from frob.gates._fix_engine_sync import _insert_ticket_directive_above
 
         root = tmp_path / "repo"
         root.mkdir()
@@ -555,7 +560,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         # est_rust_file_gets_slash_slash_leader kind="unit"
         """GIVEN a `.rs` target file, WHEN the directive is inserted, THEN
         it uses the `//` leader."""
-        from frob.gates._fix_engine import _insert_ticket_directive_above
+        from frob.gates._fix_engine_sync import _insert_ticket_directive_above
 
         root = tmp_path / "repo"
         root.mkdir()
@@ -572,7 +577,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         # est_python_file_gets_hash_leader kind="unit"
         """GIVEN a `.py` target file, WHEN the directive is inserted, THEN
         it uses the `#` leader."""
-        from frob.gates._fix_engine import _insert_ticket_directive_above
+        from frob.gates._fix_engine_sync import _insert_ticket_directive_above
 
         root = tmp_path / "repo"
         root.mkdir()
@@ -590,7 +595,7 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         """GIVEN a target file whose suffix has no registered comment
         leader, WHEN the directive would be inserted, THEN the handler
         refuses (no-op) rather than guessing a leader."""
-        from frob.gates._fix_engine import _insert_ticket_directive_above
+        from frob.gates._fix_engine_sync import _insert_ticket_directive_above
 
         root = tmp_path / "repo"
         root.mkdir()

@@ -277,7 +277,7 @@ def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) 
     existed, CHANGELOG.md is absent (nothing to skeleton into), or the
     write itself failed (T-1359: `atomic_write`'s I/O failure path,
     logged, original left intact -- this function's bool contract has no
-    error channel, matching `frob.gates._fix_engine._write_text`'s same
+    error channel, matching `frob.gates._fix_engine_shared._write_text`'s same
     posture, T-1348)."""
     path = root / "CHANGELOG.md"
     if not path.exists():
@@ -295,7 +295,7 @@ def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) 
     lines[insert_at:insert_at] = [entry]
     written = _atomic_write_release(path, "".join(lines))
     if written.is_err:
-        # T-1359: matches `frob.gates._fix_engine._write_text`'s posture
+        # T-1359: matches `frob.gates._fix_engine_shared._write_text`'s posture
         # (T-1348) -- a write failure logs and reports "nothing changed"
         # rather than raising, since this function's bool contract has no
         # error channel to carry a `Result` through to its existing
