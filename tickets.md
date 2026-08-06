@@ -8342,7 +8342,7 @@ points relative to the `land()` call and the post-land sweep).
 ```yaml
 id: T-1594
 title: AppConfig.ticket_kind_value validation conflicts with _kind()'s own strict-refusal
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -8443,7 +8443,6 @@ failed (SUITE-RESULT confirmed). `ruff check` clean on the touched file.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 5817 warning(s), 797 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1595 -->
 ```yaml
 id: T-1595
