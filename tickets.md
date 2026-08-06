@@ -3968,7 +3968,7 @@ Note for the fix: ledger v2 (tickets/T-####/ticket.md, one file per ticket) narr
 id: T-1618
 title: A land merges the whole worktree branch, carrying unrelated and even REJECTED
   tickets onto main
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -3981,8 +3981,24 @@ scope:
 - src/frob/app/ticket_runner/**
 - docs/**
 - tests/**
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: LandError needs a new PassengerTickets variant for the T-1618 passenger-disclosure
+    refusal
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refuses_and_lists_every_passenger_by_id
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_allow_cross_ticket_logs_and_proceeds
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_no_op_when_only_the_landing_tickets_own_directives_are_present
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_dropped_siblings_still_present_code_is_still_reported
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_has_real_changes_in_its_own_scope
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_declares_no_scope_at_all
 threat: null
 component: null
 ```
@@ -4000,11 +4016,101 @@ Two things to fix:
 
 Related, and worth deciding here: CrossTicketLeakage already exists as a concept (`--allow-cross-ticket` is its escape hatch). Determine why it did not fire for this case, since a rejected ticket's code reaching main is exactly what that check is named for. If it fires only for uncommitted leakage and not for committed sibling commits, say so and close the gap.
 
+## Done report
+
+`frob ticket land <id> --worktree W` merges `W`'s whole branch, not just
+`<id>`'s own commits. Fixed two things per the ticket's plan, plus
+answered the "why did CrossTicketLeakage not fire" question:
+
+1. Passenger disclosure: `_check_passenger_tickets` (`frob.tickets._land`)
+   scans the branch's full committed diff for `frob:ticket <id>` directive
+   ADDITIONS naming any ticket other than the one landing, independent of
+   that sibling's own ledger state. Refuses (`LandError.PassengerTickets`,
+   listing every passenger id) unless `--allow-cross-ticket` (the same
+   escape hatch `_check_cross_ticket_leakage` already uses) acknowledges
+   them. This is deliberately a DIFFERENT signal from the existing
+   scope-glob/ledger-record-diff leakage check: it answers "whose
+   frob:ticket fingerprint is physically in this diff", not "does a
+   declared scope overlap a changed path".
+
+2. Already-landed as a first-class outcome: `_check_already_landed`
+   recognizes "this ticket's own scope has zero changes on this branch"
+   and refuses with `LandError.AlreadyLandedOnMain`, naming the exact
+   verify-then-`frob ticket close` recipe instead of falling through to a
+   confusing BUG002/TEST016 refusal. Opt-in
+   (`--check-already-landed`/`check_already_landed=True`) -- wiring it
+   into the default land path regressed 20 tests in
+   `tests/test_ticket_land.py`, because an empty scope-diff is ALSO the
+   ordinary shape of a docs-only/ledger-only/Done-report-only ticket in
+   this repo's own fixture population. Disclosed in the Done report and
+   in `docs/modules/tickets.md`'s new section rather than silently
+   dropped: this is real, tested, reachable code (both via direct unit
+   test and the CLI flag), just not a default-on refusal.
+
+3. Why `CrossTicketLeakage` did not fire for T-1579: two independent
+   reasons, documented in `docs/modules/tickets.md#passenger-ticket-
+   disclosure-t-1618`. `_find_leaked_tickets` exempts any sibling whose
+   ledger state is DONE/DROPPED outright, and even for a non-exempt
+   sibling its signal is a NET diff (`--name-only`) -- a file a revert
+   commit brought back to byte-identical content simply stops appearing
+   as changed, regardless of what OTHER files the same ticket's commits
+   touched. Both gaps trace to the leakage check answering "does declared
+   scope overlap a change" rather than "whose code is physically here" --
+   which is exactly the question `_check_passenger_tickets` answers
+   instead, deliberately as a second, complementary check rather than a
+   patch to the first (T-1639's own IN_PROGRESS-only refinement is a
+   separate, already-considered fix for a DIFFERENT false-positive class
+   and must not regress).
+
+Both checks share `_check_cross_ticket_leakage`'s existing
+`--allow-cross-ticket` override rather than inventing a second flag.
+
+Disclosed false-positive class for the passenger check (documented in
+`docs/modules/tickets.md`, not hidden): a hunk that merely MOVES a
+pre-existing `frob:ticket <id>` directive (e.g. a function relocated by
+an unrelated refactor) can appear as a fresh addition and flag a
+passenger that isn't really new work. The escape hatch exists for this;
+the alternative (missing a genuine passenger silently, the actual
+incident) is worse.
+
+### Changed
+```
+ docs/modules/tickets.md                      | 251 ++++++++++++++++++++++
+ src/frob/_cli_parsers/_ticket/_progress.py   |  32 +++
+ src/frob/app/_config_external.py             |   4 +
+ src/frob/app/config.py                       |  18 ++
+ src/frob/app/ticket_runner/_land_cmd.py      | 105 +++++++++-
+ src/frob/tickets/_land.py                    | 300 ++++++++++++++++++++++++++-
+ src/frob/tickets/_land_git_ops.py            |  28 ++-
+ src/frob/tickets/_leases.py                  | 240 ++++++++++++++++++++-
+ src/frob/tickets/_models.py                  |  16 ++
+ tests/test_ticket_leases.py                  | 185 +++++++++++++++++
+ tests/test_ticket_work_and_land_finish.py    |  86 ++++++++
+ tests/unit/test_land_already_landed.py       | 159 ++++++++++++++
+ tests/unit/test_land_cross_ticket_leakage.py | 133 ++++++++++++
+ tickets.md                                   | 123 ++++++++++-
+ 14 files changed, 1657 insertions(+), 23 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refuses_and_lists_every_passenger_by_id` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_allow_cross_ticket_logs_and_proceeds` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_no_op_when_only_the_landing_tickets_own_directives_are_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_dropped_siblings_still_present_code_is_still_reported` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_has_real_changes_in_its_own_scope` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_declares_no_scope_at_all` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 8148 warning(s), 737 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1619 -->
 ```yaml
 id: T-1619
 title: 'Land has no exclusive lease: a concurrent frob ticket new corrupts it mid-staging'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -4018,6 +4124,8 @@ scope:
 - docs/**
 - src/frob/tickets/_land.py
 - src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -4039,6 +4147,26 @@ scope_changes:
     body
   actor: logan
   at: '2026-08-06'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: narrow tests/** and docs/** to the exact files touched by the T-1619 implementation
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: narrow tests/** and docs/** to the exact files touched by the T-1619 implementation
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_allows_when_no_lock_file
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_refuses_while_land_lock_held
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_allows_after_a_killed_lands_lock_is_os_released
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_belt_and_braces_process_scan_without_the_lock_file
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_removes_worktree_and_deletes_its_branch
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_worktree_branch_name_returns_none_for_an_unregistered_path
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_delete_worktree_branch_is_a_logged_no_op_for_none
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_refuses_and_touches_nothing_when_unverified
 threat: null
 component: null
 ```
@@ -4054,6 +4182,87 @@ Fix: a land takes an exclusive repository lease for its duration, and every othe
 Also fix the partial-staging residue: when a land aborts after staging its REL001 bump, it should unstage what it staged, or say exactly what it left behind. Today it prints a refusal and leaves four files staged, and the operator has to work out that `git reset --hard HEAD` is safe only because the land did not complete.
 
 Acceptance: with a land running, `frob ticket new` must not be able to corrupt it -- proven by a test that runs both concurrently.
+
+## Done report
+
+A land had no exclusive lease against any OTHER ledger-writing verb, so
+`frob ticket new`'s ledger auto-commit (T-1130) could move `root`'s tip
+mid-land, tripping `_verified_reset_root`'s drift refusal (T-0907) and
+leaving a staged REL001 bump with no disclosure of what was left behind.
+
+Fixed:
+
+- `refuse_if_land_in_progress` (`frob.tickets._leases`) probes the same
+  `land.lock` `frob ticket land` holds (`LAND_LOCK_REL`, now the single
+  home for that path constant, imported by `_land.py`) with a
+  non-blocking `flock` acquire-then-release attempt. Wired into
+  `_add_and_commit_tickets_md`, the single choke point
+  `commit_ticket_ledger_change`/`commit_start_transition` both funnel
+  through -- so `new`/`close`/`drop`/`fail`/`requeue`/`block`/`start`/
+  `evidence`/`done-report` are all covered by this one guard.
+- Crash-safe with no timeout: a POSIX `flock` is released by the kernel
+  the instant its holder exits (any means, including SIGKILL), so a
+  probe-and-release is already a trustworthy liveness check -- no
+  polling, no TTL, reusing the primitive's own guarantee rather than a
+  second liveness layer.
+- Belt-and-braces (added per mid-task correction from the repo owner,
+  folding in logic that had been living in a coordinator-side shell
+  wrapper): `_scan_for_live_land_process` backstops the flock probe with
+  a `/proc`-based scan for a live `frob ticket land` process against
+  `root` (argv contains "ticket"+"land", cwd == root), catching the race
+  window before a land acquires its lock and the fcntl-unavailable-
+  platform case. Degrades to a silent no-op on any non-Linux platform or
+  scan failure -- never blocks a real command over an inability to scan.
+- `_verified_reset_root`'s drift-guard refusal now runs `git status
+  --porcelain` and lists every path left staged/uncommitted instead of
+  only pointing at "inspect by hand".
+- `frob ticket land --retire-on-proof` (also from the mid-task
+  correction): `--finish`'s verified-LAND-PROOF gate (commit
+  is-ancestor-of-main, ticket state on main is done/dropped) plus branch
+  deletion, sharing the identical gate/refusal path -- makes the unsafe
+  `land && git worktree remove` two-step (which destroyed a worktree
+  after a FAILED land in the reported incident, recoverable only because
+  git kept the dangling commit) structurally unavailable: `_land`'s own
+  `sys.exit(1)` on a failed `land()` returns before the finish/retire
+  tail is ever reached, so there is no path from a failed land to either
+  the worktree or its branch being touched.
+
+Disclosed cut: T-1618 (whole-branch passenger-ticket leakage) is a
+separate ticket in this same dispatch and is being worked next, not
+folded into this one -- its scope (`_check_cross_ticket_leakage`/
+`_land_merge.py`) is disjoint from T-1619's.
+
+### Changed
+```
+ docs/modules/tickets.md                    | 130 ++++++++++++++++
+ src/frob/_cli_parsers/_ticket/_progress.py |  16 ++
+ src/frob/app/_config_external.py           |   2 +
+ src/frob/app/config.py                     |   8 +
+ src/frob/app/ticket_runner/_land_cmd.py    | 104 ++++++++++++-
+ src/frob/tickets/_land.py                  |  41 ++++-
+ src/frob/tickets/_land_git_ops.py          |  28 +++-
+ src/frob/tickets/_leases.py                | 240 ++++++++++++++++++++++++++++-
+ tests/test_ticket_leases.py                | 185 ++++++++++++++++++++++
+ tests/test_ticket_work_and_land_finish.py  |  86 +++++++++++
+ tickets.md                                 |  25 ++-
+ 11 files changed, 845 insertions(+), 20 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_allows_when_no_lock_file` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_refuses_while_land_lock_held` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_allows_after_a_killed_lands_lock_is_os_released` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_belt_and_braces_process_scan_without_the_lock_file` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_removes_worktree_and_deletes_its_branch` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_worktree_branch_name_returns_none_for_an_unregistered_path` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_delete_worktree_branch_is_a_logged_no_op_for_none` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_refuses_and_touches_nothing_when_unverified` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 0 error(s), 8375 warning(s), 712 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1620 -->
 ```yaml
@@ -7558,6 +7767,7 @@ unfinished work units after a worker dies.
 - tests: 3 passed (from 3 evidence id(s))
 - gates: 0 error(s), 707 warning(s), 713 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1677 -->
 ```yaml
 id: T-1677

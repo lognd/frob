@@ -141361,6 +141361,7 @@ test --wait-coverage`, both native, both touched-set-incremental) never
 requires a manual `make coverage` invocation -- only the full-suite
 resilience path still does, by disclosed design, not oversight.
 ; logan, 2026-08-05)
+
 <!-- ticket:T-1206 -->
 ```yaml
 id: T-1206
@@ -183564,6 +183565,7 @@ effects must update) was touched.
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 1 error(s), 693 warning(s), 781 waived
 - error-findings: PRE001@tickets/T-1516
+
 <!-- ticket:T-1517 -->
 ```yaml
 id: T-1517

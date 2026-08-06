@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -114,6 +115,15 @@ def second_worktree(repo: Path) -> Path:
     wt = repo.parent / "wt"
     _run(["git", "worktree", "add", "-b", "feature-wt", str(wt)], repo)
     return wt
+
+
+def _proc_test_cwd_matches(pid: int, expected: Path) -> bool:
+    """`True` iff `/proc/<pid>/cwd` resolves to `expected` (test-only
+    startup-race helper for the T-1619 belt-and-braces scan test)."""
+    try:
+        return Path(os.readlink(f"/proc/{pid}/cwd")).resolve() == expected.resolve()
+    except OSError:
+        return False
 
 
 def _write_lease(
@@ -811,6 +821,181 @@ class TestCommitTicketLedgerChange:
 
         log = _run(["git", "log", "-1", "--pretty=%an <%ae>"], repo)
         assert log.stdout.strip() == "frob-bot <frob-bot@example.invalid>"
+
+
+# frob:ticket T-1619
+class TestRefuseIfLandInProgress:
+    """T-1619: `refuse_if_land_in_progress` -- the exclusive-lease probe
+    every ledger-committing verb now runs (via `_add_and_commit_tickets_md`)
+    before writing its own commit, so a concurrent `land()` can never race
+    a `frob ticket new`/`close`/`drop`/`fail`/`requeue`/`block`/`start`/
+    `evidence` commit against the same `root`."""
+
+    def test_allows_when_no_lock_file(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file  # noqa: E501
+        from frob.tickets._leases import refuse_if_land_in_progress
+
+        # A fresh checkout that has never landed anything has no land.lock
+        # at all -- must never block a first `frob ticket new`.
+        assert not (repo / ".frob" / "land.lock").exists()
+        result = refuse_if_land_in_progress(repo)
+        assert result.is_ok
+
+    def test_refuses_while_land_lock_held(self, repo: Path, caplog) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
+        import fcntl
+        import json
+
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            LeaseError,
+            refuse_if_land_in_progress,
+        )
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        os.write(
+            holder_fd,
+            (json.dumps({"pid": os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
+        )
+        try:
+            with caplog.at_level("WARNING"):
+                result = refuse_if_land_in_progress(repo)
+            assert result.is_err
+            assert result.danger_err == LeaseError.LandInProgress
+            assert "T-9999" in caplog.text
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+    def test_allows_after_a_killed_lands_lock_is_os_released(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
+        # Crash-safety without a timeout or a second liveness mechanism
+        # (T-1619's explicit requirement): a subprocess holds the flock,
+        # gets SIGKILLed, and the very next probe must see it as free --
+        # the kernel releases the lock the instant the holder dies, no
+        # polling/TTL/pid-liveness of our own needed.
+        from frob.tickets._leases import LAND_LOCK_REL, refuse_if_land_in_progress
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder = subprocess.Popen(
+            [
+                "python3",
+                "-c",
+                (
+                    "import fcntl, os, time, sys\n"
+                    "fd = os.open(sys.argv[1], os.O_CREAT | os.O_RDWR, 0o644)\n"
+                    "fcntl.flock(fd, fcntl.LOCK_EX)\n"
+                    "print('locked', flush=True)\n"
+                    "time.sleep(60)\n"
+                ),
+                str(lock_path),
+            ],
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            assert holder.stdout is not None
+            line = holder.stdout.readline()
+            assert line.strip() == "locked"
+
+            # While the holder is alive, the probe must refuse.
+            blocked = refuse_if_land_in_progress(repo)
+            assert blocked.is_err
+
+            holder.kill()
+            holder.wait(timeout=5)
+
+            # The instant the holder is gone, the kernel has already freed
+            # the flock -- no delay/retry required for the next probe to
+            # see it as free.
+            freed = refuse_if_land_in_progress(repo)
+            assert freed.is_ok
+        finally:
+            if holder.poll() is None:
+                holder.kill()
+                holder.wait(timeout=5)
+
+    @pytest.mark.skipif(
+        not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
+    )
+    def test_belt_and_braces_process_scan_without_the_lock_file(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
+        # T-1619, repo owner's explicit second requirement: refuse even
+        # when NO land.lock is held at all, as long as a real `frob ticket
+        # land`-shaped process is alive with `root` as its cwd -- catches
+        # the race window before a land has acquired its flock, and the
+        # fcntl-unavailable-platform case, neither of which the flock probe
+        # alone can see.
+        from frob.tickets._leases import LeaseError, refuse_if_land_in_progress
+
+        assert not (repo / ".frob" / "land.lock").exists()
+        holder = subprocess.Popen(
+            ["python3", "-c", "import time; time.sleep(30)", "ticket", "land", "T-4242"],
+            cwd=str(repo),
+        )
+        try:
+            # Wait for the process to actually appear in /proc under its
+            # own cwd before probing -- avoids a startup race against the
+            # scan itself.
+            for _ in range(50):
+                if _proc_test_cwd_matches(holder.pid, repo):
+                    break
+                time.sleep(0.1)
+
+            with caplog.at_level("WARNING"):
+                result = refuse_if_land_in_progress(repo)
+            assert result.is_err
+            assert result.danger_err == LeaseError.LandInProgress
+            assert "T-4242" in caplog.text
+        finally:
+            holder.kill()
+            holder.wait(timeout=5)
+
+    def test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger  # noqa: E501
+        # The end-to-end proof: a `land()` call holds `_land_lock` for its
+        # duration (simulated here directly, without running the full merge
+        # machinery, since this test's job is to prove the EXCLUSIVITY
+        # primitive, not re-test `land()` itself elsewhere) while a
+        # concurrent `frob ticket new` runs against the SAME root. Before
+        # T-1619, `commit_ticket_ledger_change` would happily commit onto
+        # `root`'s branch mid-land, moving its tip out from under the land
+        # in progress. After T-1619, the ledger write must be refused
+        # outright -- `root`'s tip must be UNCHANGED by the attempt, and no
+        # new commit may exist naming the ticket the concurrent `new` tried
+        # to file.
+        from frob.tickets._land import _land_lock
+
+        pre_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        with _land_lock(repo, "T-0001"):
+            with pytest.raises(SystemExit):
+                ticket_run(
+                    AppConfig(
+                        ticket_command="new",
+                        ticket_path=repo,
+                        ticket_title="racing ticket",
+                        ticket_kind="bug",
+                        ticket_scope=["src/feature.py"],
+                        ticket_body="## Done report\n\nDone.\n",
+                    )
+                )
+
+        post_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_tip == pre_tip, (
+            "a concurrent `frob ticket new` moved root's tip while a land "
+            "held the exclusive lease -- the exact corruption T-1619 closes"
+        )
+        log = _run(["git", "log", "--oneline"], repo).stdout
+        assert "racing ticket" not in log
 
 
 # frob:ticket T-1130

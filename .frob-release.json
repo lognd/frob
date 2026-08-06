@@ -1810,7 +1810,7 @@
     "src/frob/tickets/_evidence.py::transition": "4be34329f13f0df3b75eef24b7e7f855fd98d853c169aeb841c4c632712be963",
     "src/frob/tickets/_journal.py::JOURNAL_DIRNAME": "baac871bdabdf7bf8c896cdc00f538ab0ce46750cb788f5c75966ce1a7a59c8a",
     "src/frob/tickets/_land.py::LandLockTimeout": "36767c23a1765c7fcf63a04a08341d5189835687573a40d737ee3338c4967534",
-    "src/frob/tickets/_land.py::land": "fea0db23bb9c37608e4d92393c788a39311ee5de0704205d5cf56bed1ca29f04",
+    "src/frob/tickets/_land.py::land": "fa471804ff707510b09f6ef6fb3712384318c0dd65d81c689e3474f9126a2fa4",
     "src/frob/tickets/_land.py::land_plan": "1efd40c6ee9c060a5c5a0a726464e988fad0a6b6cc1d06dfb309cf62347e1217",
     "src/frob/tickets/_land_ledger_merge.py::splice_ledger": "e2d903a8d8049db7a1732853c334ed4e4029511926df136cffffc0a68f71175c",
     "src/frob/tickets/_land_queue.py::QueueEntry": "b57c492343391571459630c8488801ac16a2d4f4be22b87f9b5eebe47a514714",
@@ -1818,6 +1818,7 @@
     "src/frob/tickets/_land_queue.py::drain_next": "5a465759c6790368b7080679dbc53429207fe0c3978e7065c9505f22fa3f2be0",
     "src/frob/tickets/_land_queue.py::enqueue": "5cba629433b1f9305cfa4a2c809239d6a1d54cb842fabe8b177840c5beac2b53",
     "src/frob/tickets/_land_queue.py::queue_status": "2f97ac1ba8cd6f9804c572f696e5091e5d75e8535037b892730232666aa83c76",
+    "src/frob/tickets/_leases.py::LAND_LOCK_REL": "e821ab812412b08385d292907fbc155f7c021f60c52ce2990a16b2320b234d28",
     "src/frob/tickets/_leases.py::LEASES_DIRNAME": "fee506bf6466be5e840b3532d540285d0939d687ef8d30aad96b767b248ce75b",
     "src/frob/tickets/_leases.py::LEASE_TTL_SECONDS": "e88508fa4933b020e5e9420c23b5e51e967a9be9b46f3569da53fefe0d7a4c2a",
     "src/frob/tickets/_leases.py::LeaseError": "634afaf6d75db7b173f4ba37d4da98ee08baed5d35be4d92d475525a7c5a7dad",
@@ -1829,6 +1830,7 @@
     "src/frob/tickets/_leases.py::load_positive_int_config": "8806ebdc06658be05a6642c72d159821dd1c48cf0fcf3ee913b96ac45104b688",
     "src/frob/tickets/_leases.py::read_all_leases": "7d42f71cb790f455badef955102ba29e05e1fdac78ee9cb29dd988d6fc11c313",
     "src/frob/tickets/_leases.py::record_lease": "ffe05f96a779191678cc371b71f334b5157d8423ec6385c1fa1ce307d211b89a",
+    "src/frob/tickets/_leases.py::refuse_if_land_in_progress": "75471500390a89b7ca2e16bd0db5fbb9a646a3b226cd10988830f7644a696407",
     "src/frob/tickets/_leases.py::release_lease": "d67d35f4063182ea14399cf5bdbfb90449d04d593f0aa9f81fc36aca3377d7bb",
     "src/frob/tickets/_leases.py::rename_lease": "1a4ae34a2ceb7bf50b23d6f953c65eccaf0d93fa4cd40e1bb6798a07caf4915b",
     "src/frob/tickets/_leases.py::resolve_lease": "70492f907e5ac544f189da3bace6c81c99a36400c94c96bfed19cd3e8e0c2d66",
@@ -2067,5 +2069,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.352.0"
+  "version": "0.353.0"
 }

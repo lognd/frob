@@ -257,6 +257,22 @@ def _add_ticket_land_parser(ticket_sub):
             "own leaf's files -- not to wave through a real sibling leak."
         ),
     )
+    # frob:ticket T-1618
+    ticket_land_p.add_argument(
+        "--check-already-landed",
+        dest="ticket_check_already_landed",
+        action="store_true",
+        help=(
+            "T-1618: opt-in extra preflight -- refuse early, with a "
+            "specific diagnostic and a `frob ticket close` recipe, when "
+            "the ticket's own declared scope has no changes on this "
+            "branch relative to main (the common consequence of a "
+            "passenger-ticket land that already carried this ticket's "
+            "content onto main). Off by default: an empty scope-diff is "
+            "ALSO the ordinary shape of a docs-only/ledger-only ticket, "
+            "so this would false-positive too often to run unconditionally."
+        ),
+    )
     ticket_land_p.add_argument(
         "--push",
         dest="ticket_land_push",
@@ -327,6 +343,22 @@ def _add_ticket_land_parser(ticket_sub):
             "Never removes on a dry run, a failed land, or a failed "
             "verify -- the worktree branch is always the recovery path "
             "(playbook section 12b) unless the land is proven landed."
+        ),
+    )
+    # frob:ticket T-1619
+    ticket_land_p.add_argument(
+        "--retire-on-proof",
+        dest="ticket_land_retire_on_proof",
+        action="store_true",
+        help=(
+            "T-1619: same verified-LAND-PROOF gate as --finish (commit "
+            "is-ancestor-of-main and the ticket's state on main is "
+            "done/dropped), but ALSO deletes --worktree's branch after "
+            "removing the worktree checkout -- one command instead of "
+            "chaining `frob ticket land && git worktree remove`, which "
+            "runs the removal unconditionally even after a failed land. "
+            "Never removes or deletes anything on a dry run, a failed "
+            "land, or a failed verify."
         ),
     )
     return ticket_land_p

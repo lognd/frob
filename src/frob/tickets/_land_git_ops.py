@@ -145,17 +145,41 @@ def _verified_reset_root(
     if current.is_err:
         return Err(current.danger_err)
     if current.danger_ok != pre_land_tip:
+        # frob:ticket T-1619
+        # T-1619: name exactly what this refusal leaves behind, rather than
+        # a bare pointer to "inspect by hand" -- the 2026-08-05 incident
+        # this closes left four files staged with no disclosure of WHICH
+        # ones, so the operator had to discover them via a separate `git
+        # status` before they could even start cleaning up. `git status
+        # --porcelain` failing here is itself best-effort (the drift refusal
+        # above is the actual signal; a status failure just means the
+        # leftover-files line is omitted, never that the refusal is
+        # skipped).
+        leftover = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+        leftover_lines = (
+            [line for line in leftover.danger_ok.stdout.splitlines() if line.strip()]
+            if leftover.is_ok and leftover.danger_ok.returncode == 0
+            else []
+        )
         _log.error(
             "land: %s refused to unwind %s -- current tip is %s but this "
             "run's recorded pre-land tip is %s (drift detected mid-"
-            "staging, T-0907) -- NOT resetting; inspect `git -C %s reflog` "
-            "and `git -C %s log --oneline -5` by hand before retrying",
+            "staging, T-0907) -- NOT resetting (a blind reset here could "
+            "destroy the concurrent commit that caused the drift); "
+            "inspect `git -C %s reflog` and `git -C %s log --oneline -5` "
+            "by hand before retrying. Left staged/uncommitted in %s (%d "
+            "path(s)): %s",
             ticket_id,
             root,
             current.danger_ok,
             pre_land_tip,
             root,
             root,
+            root,
+            len(leftover_lines),
+            ", ".join(leftover_lines)
+            if leftover_lines
+            else "(could not list -- run `git status` by hand)",
         )
         return Err(LandError.GitFailed)
     reset = run_argv(["git", "-C", str(root), "reset", "--hard", pre_land_tip])

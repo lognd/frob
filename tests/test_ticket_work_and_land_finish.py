@@ -21,11 +21,14 @@ from frob.app.config import AppConfig
 from frob.app.ticket_runner import _work
 from frob.app.ticket_runner._land_cmd import (
     _absorb_pre_land_fixes,
+    _delete_worktree_branch,
     _drop_checkpoint_exempt_findings,
+    _finish_land_after_success,
     _finish_worktree,
     _post_land_unscoped_error_sweep,
     _pre_commit_unscoped_error_sweep,
     _print_land_proof,
+    _worktree_branch_name,
     land_parity_findings,
 )
 from frob.app.ticket_runner._lifecycle import _default_work_worktree
@@ -722,6 +725,89 @@ class TestLandProofAndFinish:
         assert not worktree.exists()
         worktree_list = _run(["git", "worktree", "list"], repo).stdout
         assert str(worktree) not in worktree_list
+
+    # frob:ticket T-1619
+    def test_retire_on_proof_removes_worktree_and_deletes_its_branch(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_retire\
+        # _on_proof_removes_worktree_and_deletes_its_branch
+        tid, worktree, report = self._land_a_real_ticket(repo)
+        assert _print_land_proof(repo, report) is True
+
+        branch = _worktree_branch_name(repo, worktree)
+        assert branch is not None
+
+        _finish_worktree(repo, worktree, tid)
+        _delete_worktree_branch(repo, branch, tid)
+
+        assert not worktree.exists()
+        branch_list = _run(["git", "branch", "--list"], repo).stdout
+        assert branch not in branch_list.split()
+
+    # frob:ticket T-1619
+    def test_worktree_branch_name_returns_none_for_an_unregistered_path(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_worktr\
+        # ee_branch_name_returns_none_for_an_unregistered_path
+        bogus = tmp_path / "not-a-real-worktree"
+        assert _worktree_branch_name(repo, bogus) is None
+
+    # frob:ticket T-1619
+    def test_delete_worktree_branch_is_a_logged_no_op_for_none(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_delete\
+        # _worktree_branch_is_a_logged_no_op_for_none
+        with caplog.at_level("WARNING"):
+            _delete_worktree_branch(repo, None, "T-0001")
+        assert "could not determine the worktree's branch name" in caplog.text
+
+    # frob:ticket T-1619
+    def test_retire_on_proof_refuses_and_touches_nothing_when_unverified(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_retire\
+        # _on_proof_refuses_and_touches_nothing_when_unverified
+        # The exact "one command, not two" property the repo owner asked
+        # for: an UNVERIFIED land (here, a report naming a commit that is
+        # not an ancestor of main -- the shape a failed/interrupted land
+        # would leave) must refuse outright, leaving both the worktree AND
+        # its branch untouched, instead of the unsafe two-step sequence
+        # (`land && git worktree remove`) that destroys the worktree
+        # regardless of the land's own outcome.
+        from types import SimpleNamespace
+
+        tid, worktree, real_report = self._land_a_real_ticket(repo)
+        assert worktree.exists()
+        branch = _worktree_branch_name(repo, worktree)
+        assert branch is not None
+        branch_list_before = _run(["git", "branch", "--list"], repo).stdout
+
+        fake_report = SimpleNamespace(
+            dry_run=False,
+            final_id=real_report.final_id,
+            commit_sha="0" * 40,  # never an ancestor of anything real
+        )
+        cfg = AppConfig(
+            ticket_command="land",
+            ticket_id=tid,
+            ticket_worktree=worktree,
+            ticket_land_retire_on_proof=True,
+        )
+        with pytest.raises(SystemExit):
+            _finish_land_after_success(repo, worktree, fake_report, cfg)
+
+        assert worktree.exists(), "unverified retire-on-proof removed the worktree"
+        branch_list_after = _run(["git", "branch", "--list"], repo).stdout
+        assert branch_list_after == branch_list_before, (
+            "unverified retire-on-proof touched a branch"
+        )
 
 
 # frob:ticket T-1535

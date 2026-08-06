@@ -35,6 +35,7 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import re
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -71,6 +72,7 @@ from frob.tickets._land_verify import (
     _reverify_done_report_claims_post_merge,
     _reverify_evidence_post_merge,
 )
+from frob.tickets._leases import LAND_LOCK_REL
 from frob.tickets._models import (
     LandError,
     LandPlanReport,
@@ -102,7 +104,15 @@ _log = get_logger(__name__)
 # be overwritten by merge") rather than silently picking a side. A
 # distinct filename `root` never shares with anything a worktree branch
 # legitimately commits sidesteps that collision entirely.
-_LAND_LOCK_REL = Path(".frob") / "land.lock"
+#
+# T-1619: the path constant itself now lives in `frob.tickets._leases`
+# (`LAND_LOCK_REL`) -- that module is the single home every OTHER ledger-
+# committing verb's auto-commit choke point
+# (`_leases._add_and_commit_tickets_md`) probes via `refuse_if_land_in_
+# progress` before writing its own commit, so both sides of the
+# exclusivity check must agree on exactly one path, never two
+# independently-defined copies that could silently drift apart.
+_LAND_LOCK_REL = LAND_LOCK_REL
 
 
 def _land_lock_path(root: Path) -> Path:
@@ -152,7 +162,8 @@ class LandLockTimeout(Exception):
 
 
 # frob:ticket T-1515
-def _land_lock_holder_metadata() -> dict:
+# frob:ticket T-1619
+def _land_lock_holder_metadata(ticket_id: str | None = None) -> dict:
     """This process's own identity for the land.lock content (T-1515): pid,
     a per-process session id (env `FROB_LAND_SESSION_ID` if a caller/test
     supplies one -- e.g. to give two `land()` calls in the SAME dispatched
@@ -164,7 +175,16 @@ def _land_lock_holder_metadata() -> dict:
     processes on ONE host, which is this lock file's only real scope (it
     lives under a single checkout's `.frob/`), and skipping it keeps this
     node's SYS100 capability surface at plain `env` (the `FROB_LAND_
-    SESSION_ID` read), not `net`."""
+    SESSION_ID` read), not `net`.
+
+    T-1619: `ticket_id` (the ticket THIS `land()` call is landing, when
+    known) is also recorded so a REFUSED sibling ledger-writing verb
+    (`frob.tickets._leases.refuse_if_land_in_progress`) can name it in its
+    own refusal message ("a land is in progress for T-####") instead of
+    only pointing at an opaque pid. `None` (the pre-T-1619 shape, e.g. a
+    caller that only wants a bare probe) omits the field from the dict
+    entirely rather than writing a `null` a reader would have to special-
+    case."""
     from datetime import datetime, timezone
 
     pid = os.getpid()
@@ -173,11 +193,14 @@ def _land_lock_holder_metadata() -> dict:
         # attribution, not a secret"
         os.environ.get("FROB_LAND_SESSION_ID") or f"pid-{pid}"
     )
-    return {
+    metadata = {
         "pid": pid,
         "session_id": session_id,
         "started_at": datetime.now(timezone.utc).isoformat(),
     }
+    if ticket_id is not None:
+        metadata["ticket_id"] = ticket_id
+    return metadata
 
 
 # frob:ticket T-1515
@@ -241,7 +264,10 @@ def _probe_land_lock_pid_liveness(pid: int) -> bool | None:
 @contextmanager
 # frob:ticket T-1495
 # frob:ticket T-1634
-def _land_lock(root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S) -> Iterator[None]:
+# frob:ticket T-1619
+def _land_lock(
+    root: Path, ticket_id: str | None = None, *, timeout: float = _LAND_LOCK_TIMEOUT_S
+) -> Iterator[None]:
     """Exclusive, cross-process lock serializing every `land()` call
     against `root` (T-0577) -- see `land`'s docstring for why this closes
     the REL001 version-bump-collision incident class. Degrades to a
@@ -330,7 +356,7 @@ def _land_lock(root: Path, *, timeout: float = _LAND_LOCK_TIMEOUT_S) -> Iterator
                     prior_holder.get("session_id"),
                     prior_holder.get("started_at"),
                 )
-    holder_metadata = _land_lock_holder_metadata()
+    holder_metadata = _land_lock_holder_metadata(ticket_id)
     try:
         os.ftruncate(fd, 0)
         os.write(fd, (json.dumps(holder_metadata) + "\n").encode("utf-8"))
@@ -721,8 +747,18 @@ def land(
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
+    check_already_landed: bool = False,
 ) -> Result[LandReport, LandError]:
-    """T-1514: `pre_commit_sweep(root, final_id)` (opt-in), if supplied, is
+    """T-1618: `check_already_landed` (default `False`, `frob ticket land
+    --check-already-landed`) opts into an early, distinct refusal
+    (`LandError.AlreadyLandedOnMain`) when the ticket's own declared scope
+    has no changes on this branch relative to main -- the common
+    consequence of a passenger-ticket land (see `PassengerTickets` above)
+    that already carried this ticket's content onto main ahead of its own
+    close. See `_land_precheck`'s own docstring for why this stays opt-in
+    rather than a default-on preflight.
+
+    T-1514: `pre_commit_sweep(root, final_id)` (opt-in), if supplied, is
     invoked at the last checkpoint before the final squash-apply commit --
     `root`'s working tree already holds the fully staged, uncommitted
     merge-preview changeset at that point, so a refusal there unwinds via
@@ -918,7 +954,7 @@ def land(
             root = resolved_root
 
     try:
-        with _land_lock(root):
+        with _land_lock(root, ticket_id):
             return _land_locked(
                 root,
                 ticket_id,
@@ -936,6 +972,7 @@ def land(
                 skip_mutation_evidence=skip_mutation_evidence,
                 allow_cross_ticket=allow_cross_ticket,
                 pre_commit_sweep=pre_commit_sweep,
+                check_already_landed=check_already_landed,
             )
     except LandLockTimeout as exc:
         _log.error(
@@ -1012,7 +1049,7 @@ def land_plan(
         return Err(dirty.danger_err)
 
     try:
-        with _land_lock(root):
+        with _land_lock(root, "<plan>"):
             return _land_plan_locked(
                 root, worktree, dry_run=dry_run, check_ticks=check_ticks
             )
@@ -1418,6 +1455,7 @@ def _land_locked(
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
+    check_already_landed: bool = False,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -1448,6 +1486,7 @@ def _land_locked(
         covers_scope=covers_scope,
         skip_mutation_evidence=skip_mutation_evidence,
         allow_cross_ticket=allow_cross_ticket,
+        check_already_landed=check_already_landed,
     )
     if precheck.is_err:
         return Err(precheck.danger_err)
@@ -2311,6 +2350,216 @@ def _find_leaked_tickets(
     return leaked
 
 
+# frob:ticket T-1618
+# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+_DIRECTIVE_TICKET_ID_RE = re.compile(r"frob:ticket\s+(T-[A-Za-z0-9_-]+)")
+
+
+# frob:ticket T-1618
+# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[str]:
+    """Every ticket id named by a `frob:ticket <id>` directive ADDED
+    (`+`-prefixed source line, never a context/removed line) anywhere in
+    `worktree`'s full committed diff against `base_ref` (T-1618) --
+    `git diff base_ref...HEAD`, the three-dot merge-base diff, NOT
+    `--name-only` like `_branch_changed_files` (T-1355) uses: this needs
+    the actual hunk CONTENT, since a `frob:ticket` directive is a source
+    line, not a file path.
+
+    This is a deliberately DIFFERENT, complementary signal from
+    `_check_cross_ticket_leakage`'s scope-glob-plus-ledger-record-diff
+    heuristic (T-1355/T-1390/T-1639): a declared `scope` is an intention a
+    sibling ticket's author wrote down, and that check explicitly exempts
+    a sibling once its ledger state reaches DONE/DROPPED (the ticket is
+    "closed", so its scope claim is assumed spent). A `frob:ticket`
+    directive is the OPPOSITE kind of signal -- it is written into the
+    source hunk itself, at the exact place code was added, and says
+    nothing about the sibling ticket's CURRENT ledger state at all. This
+    is precisely the T-1618 incident gap: T-1579 was reverted in its own
+    worktree and (per the incident write-up) judged unsafe -- however its
+    ledger ended up marked, the leakage check's DONE/DROPPED exemption (or
+    the scope-hit simply missing because the revert's own diff canceled
+    out that file's NET change) meant a sibling whose CODE was still
+    physically present in the landing branch's diff was never surfaced.
+    Scanning the diff's own directive additions catches that regardless of
+    any sibling's ledger state, because it asks a strictly narrower
+    question: whose `frob:ticket` fingerprint is on the code actually
+    riding along, full stop.
+
+    Degrades to an empty set (never refuses, never raises) on a `git
+    diff` failure -- this is an additional disclosure layer on top of
+    `_check_cross_ticket_leakage`'s own hard-fail path, not a replacement
+    for it if the git call itself cannot run at all."""
+    diffed = run_argv(["git", "-C", str(worktree), "diff", f"{base_ref}...HEAD"])
+    if diffed.is_err or diffed.danger_ok.returncode != 0:
+        return frozenset()
+    found: set[str] = set()
+    for line in diffed.danger_ok.stdout.splitlines():
+        if not line.startswith("+") or line.startswith("+++"):
+            continue
+        found.update(_DIRECTIVE_TICKET_ID_RE.findall(line))
+    return frozenset(found)
+
+
+# frob:ticket T-1618
+# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_refuses_and_lists_every_passenger_by_id  # noqa: E501
+# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_allow_cross_ticket_logs_and_proceeds  # noqa: E501
+# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_no_op_when_only_the_landing_tickets_own_directives_are_present  # noqa: E501
+# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_a_dropped_siblings_still_present_code_is_still_reported  # noqa: E501
+def _check_passenger_tickets(
+    worktree: Path, ticket: Ticket, base_ref: str, *, allow_cross_ticket: bool = False
+) -> Result[None, LandError]:
+    """Refuse (T-1618) when `worktree`'s branch diff carries ANY OTHER
+    ticket's `frob:ticket` directive additions -- landing silently, with
+    no disclosure at all, is the exact bug the 2026-08-05 incident hit:
+    landing T-1581 out of a shared series worktree carried T-1579's
+    already-reverted-in-worktree WAIVE004 change onto main, where it went
+    on to delete 55 live `frob:waive` directives across five gate families
+    before anyone noticed.
+
+    Unlike `_check_cross_ticket_leakage`, this check does not consult
+    EITHER ticket's ledger state at all (see `_directive_ticket_ids_in_
+    diff`'s own docstring for why that is the point, not an oversight) --
+    a passenger is a passenger regardless of whether its own ticket record
+    currently reads QUEUED, IN_PROGRESS, or DONE/DROPPED. `allow_cross_
+    ticket=True` (the SAME escape hatch `_check_cross_ticket_leakage`
+    already uses, `frob ticket land --allow-cross-ticket`) logs every
+    passenger id at WARNING and proceeds -- this is the "operator
+    acknowledges the passengers" path the ticket's own acceptance
+    criterion describes; the two checks share one flag rather than
+    stacking a second, differently-named override a caller would have to
+    learn."""
+    passengers = _directive_ticket_ids_in_diff(worktree, base_ref) - {ticket.id}
+    if not passengers:
+        return Ok(None)
+    sorted_passengers = sorted(passengers)
+    if allow_cross_ticket:
+        _log.warning(
+            "land: %s carrying %d passenger ticket(s) onto main: %s -- "
+            "--allow-cross-ticket acknowledges this explicitly (T-1618)",
+            ticket.id,
+            len(sorted_passengers),
+            sorted_passengers,
+        )
+        return Ok(None)
+    _log.error(
+        "land: %s refused -- this branch's diff carries frob:ticket "
+        "directive addition(s) naming %d OTHER ticket id(s): %s -- these "
+        "are about to ride onto main as UNDISCLOSED passengers of %s's "
+        "land (T-1618: landing a worktree branch merges everything "
+        "committed on it, not just %s's own commits). If this is "
+        "deliberate (a series worktree meant to land together), re-run "
+        "with --allow-cross-ticket to acknowledge and proceed; otherwise "
+        "land or verify each passenger ticket on its own first",
+        ticket.id,
+        len(sorted_passengers),
+        sorted_passengers,
+        ticket.id,
+        ticket.id,
+    )
+    return Err(LandError.PassengerTickets)
+
+
+# frob:ticket T-1618
+# frob:doc docs/modules/tickets.md#already-landed-on-main-first-class-outcome-t-1618
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_has_real_changes_in_its_own_scope  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_declares_no_scope_at_all  # noqa: E501
+def _check_already_landed(
+    worktree: Path, ticket: Ticket, base_ref: str
+) -> Result[None, LandError]:
+    """Refuse with a DISTINCT, self-explaining outcome (T-1618's second
+    requirement) when `worktree`'s branch has NO changes at all inside
+    `ticket`'s own declared scope, relative to `base_ref` -- the common,
+    confusing consequence of the T-1618 passenger-ticket class: once one
+    ticket's land has already carried a SIBLING's code onto main (the
+    passenger check above exists to stop that going forward, but does
+    nothing for a worktree that already leaked before this fix landed),
+    the sibling's own later `frob ticket land` finds an empty diff for its
+    own scope. Before this check, that fell through into whatever the
+    normal land path does with an empty changeset -- reported in the
+    incident as a confusing BUG002/TEST016 refusal the operator had to
+    diagnose and route around by hand (verify content by hand, `frob
+    ticket close --skip-mutation-evidence`) three times in one session.
+
+    This function only judges the DIFF -- it deliberately does NOT itself
+    verify the content is genuinely present and correct on `base_ref` (an
+    `AlreadyLandedOnMain` refusal is a strong hint, not a proof: `frob.
+    tickets` cannot run `base_ref`'s tests or gates to confirm the
+    content actually behaves as this ticket's evidence claims -- that
+    verification needs `frob.gates`/`frob.testing`, which this package
+    deliberately does not import, docs/rework.md's cycle-avoidance rule).
+    The refusal message names the exact manual recipe the incident's
+    operator worked out by hand three times: verify, then `frob ticket
+    close` directly (`--skip-mutation-evidence` if TEST016 also reports
+    an empty diff) instead of retrying the land.
+
+    A ticket with no declared `scope` at all is a no-op here (`Ok(None)`)
+    -- an empty scope matches nothing by this repo's own `scope_matches`
+    convention, so "no changes in an empty scope" is not evidence of
+    anything; whatever other precheck normally handles a scopeless ticket
+    still runs unaffected.
+
+    Also a no-op whenever `worktree` still has UNCOMMITTED changes
+    (`_porcelain_dirty`): this check runs in `_land_precheck`, strictly
+    BEFORE `land`'s own wip-commit stage folds any uncommitted work into
+    a real commit -- `_branch_changed_files` only ever sees committed
+    history, so a ticket whose work is genuinely present but simply not
+    yet committed would otherwise look identical to "already landed" and
+    be refused incorrectly. Only a CLEAN worktree's empty scope-diff is
+    unambiguous evidence that this ticket's own scope truly has nothing
+    new relative to `base_ref`."""
+    from frob.tickets._models import LEDGER_PATH, scope_matches
+    from frob.tickets._store import archive_path
+
+    if not ticket.scope:
+        return Ok(None)
+    dirty = _porcelain_dirty(worktree)
+    if dirty.is_err or dirty.danger_ok:
+        return Ok(None)
+    changed = _branch_changed_files(worktree, base_ref)
+    if changed.is_err:
+        # Best-effort: a git failure here is not this check's own finding
+        # to report -- another preflight step (or the merge itself) will
+        # surface the real git problem.
+        return Ok(None)
+    # The ledger (and its archive) is implicitly in EVERY ticket's scope
+    # (`scope_matches`'s always-in-scope rule, same exclusion `_check_
+    # cross_ticket_leakage` applies) and changes on every single land --
+    # it is never evidence that the ticket's OWN declared-scope work is
+    # present on this branch, so it must not count as a "real" hit here.
+    archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
+    relevant = frozenset(changed.danger_ok) - {LEDGER_PATH, archive_rel}
+    hits = [
+        path
+        for path in relevant
+        if scope_matches(path, ticket.scope, kind=ticket.kind)
+    ]
+    if hits:
+        return Ok(None)
+    _log.warning(
+        "land: %s refused -- this branch has NO changes inside %s's own "
+        "declared scope relative to %s (T-1618) -- its content is very "
+        "likely ALREADY on %s, most often because a sibling ticket's "
+        "earlier land already carried it there (the passenger-ticket "
+        "class T-1618's own %s check exists to stop, going forward). "
+        "Verify by hand that %s's evidence/acceptance criteria genuinely "
+        "hold against %s's current tree, then close directly: `frob "
+        "ticket close %s` (add --skip-mutation-evidence if TEST016 also "
+        "reports an empty diff) -- do not keep retrying this land",
+        ticket.id,
+        ticket.id,
+        base_ref,
+        base_ref,
+        LandError.PassengerTickets.name,
+        ticket.id,
+        base_ref,
+        ticket.id,
+    )
+    return Err(LandError.AlreadyLandedOnMain)
+
+
 # frob:ticket T-1355
 # frob:ticket T-1639
 # frob:doc \
@@ -2545,6 +2794,7 @@ def _land_precheck(
     covers_scope: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
+    check_already_landed: bool = False,
 ) -> Result[tuple[Ticket, str], LandError]:
     """Refuse on root/worktree being the same path (T-0795) or a dirty
     main, load+validate the worktree's ticket is closeable (including,
@@ -2553,7 +2803,23 @@ def _land_precheck(
     T-0854's live-tracker-citation preflight, and T-1355's cross-ticket
     leakage preflight, bypassable via `allow_cross_ticket`), and resolve
     main's current branch name -- everything `land` must check BEFORE any
-    git mutation."""
+    git mutation.
+
+    T-1618: `check_already_landed` (default `False`, `frob ticket land
+    --check-already-landed`) is a DELIBERATELY opt-in extra preflight
+    (`_check_already_landed`) that refuses early, with a specific
+    diagnostic and a `frob ticket close` recipe, when the ticket's own
+    declared scope has no changes on this branch at all -- the common
+    consequence of the T-1618 passenger-ticket class the check above this
+    one now prevents going forward. Off by default: measured against this
+    repo's own test/fixture population, an empty scope-diff is also the
+    ordinary shape of a docs-only, ledger-only, or Done-report-only
+    ticket that never needed to touch a file matching its own declared
+    scope -- refusing those by default would be a worse false-positive
+    rate than the confusion this check exists to replace. An operator who
+    already suspects the "this probably already landed via a passenger"
+    shape (the exact situation the incident hit three times) opts in
+    explicitly instead of hitting it as a surprise."""
     same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
     if same_path_check.is_err:
         return Err(same_path_check.danger_err)
@@ -2582,6 +2848,11 @@ def _land_precheck(
     scope_preflight = _validate_scope_covered_preflight(ticket, covers_scope)
     if scope_preflight.is_err:
         return Err(scope_preflight.danger_err)
+
+    if check_already_landed:
+        already_landed_check = _check_already_landed(worktree, ticket, main_branch_name)
+        if already_landed_check.is_err:
+            return Err(already_landed_check.danger_err)
 
     remaining = _land_precheck_remaining_checks(
         root,
@@ -2617,6 +2888,15 @@ def _land_precheck_remaining_checks(
     )
     if live_tracker_check.is_err:
         return Err(live_tracker_check.danger_err)
+
+    passenger_check = _check_passenger_tickets(
+        worktree,
+        ticket,
+        main_branch_name,
+        allow_cross_ticket=allow_cross_ticket,
+    )
+    if passenger_check.is_err:
+        return Err(passenger_check.danger_err)
 
     leakage_check = _check_cross_ticket_leakage(
         root,

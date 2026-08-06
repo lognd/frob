@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.353.0] - unreleased
+
+- T-1619: Land has no exclusive lease: a concurrent frob ticket new corrupts it mid-staging
+
 ## [0.352.0] - unreleased
 
 - T-1624: strata: sync-interface appends duplicate attr interface blocks instead of replacing

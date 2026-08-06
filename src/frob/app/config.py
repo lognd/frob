@@ -521,6 +521,16 @@ class AppConfig(BaseModel):
     # umbrella scope legitimately covers its own leaves' files, so the
     # refusal has false positives that would otherwise be unlandable.
     ticket_allow_cross_ticket: bool = False
+    # frob:ticket T-1618
+    # `frob ticket land <id> --check-already-landed` -- opt-in extra
+    # preflight (`_check_already_landed`) that refuses early, with a
+    # specific diagnostic, when the ticket's own declared scope has no
+    # changes on this branch relative to main -- the common consequence of
+    # a passenger-ticket land that already carried this ticket's content
+    # onto main. Off by default: an empty scope-diff is ALSO the ordinary
+    # shape of a docs-only/ledger-only ticket, so refusing by default
+    # would trade one false-positive class for a worse one.
+    ticket_check_already_landed: bool = False
     # frob:ticket T-0844
     # `frob ticket close <id> --skip-mutation-evidence` -- the close-path
     # twin of `ticket_skip_mutation_evidence` above: a TEST016 confirmatory-
@@ -536,6 +546,14 @@ class AppConfig(BaseModel):
     # (proof line: commit is-ancestor-of-main + ticket state on main),
     # remove --worktree.
     ticket_land_finish: bool = False
+    # frob:ticket T-1619
+    # `frob ticket land <id> --retire-on-proof`: same verified-LAND-PROOF
+    # gate as --finish, but ALSO deletes --worktree's branch after removing
+    # the worktree checkout -- the one-command "verify then destroy" that
+    # makes chaining `frob ticket land && git worktree remove` (unsafe: the
+    # removal runs unconditionally, even after a failed land) structurally
+    # unnecessary.
+    ticket_land_retire_on_proof: bool = False
     # frob:ticket T-1269
     # `frob ticket land --plan --worktree PATH`: land a design-phase
     # worktree (docs + ledger changes, no closeable worked ticket)

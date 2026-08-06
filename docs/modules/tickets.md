@@ -2217,6 +2217,257 @@ Three gaps found in one real landing session, closed together:
   is offered anyway as an explicit, documented manual override, never set
   by `land` itself since it never needs it.
 
+## Land exclusivity lease (T-1619)
+
+`_land_lock`'s `flock` (T-0577, "Land hardening" above) only ever
+serialized `land()` against ANOTHER `land()` call -- it said nothing to
+any OTHER ledger-writing verb. Real incident, 2026-08-05: `frob ticket new`
+auto-commits the ledger (T-1130); running it while a land was staging
+moved `root`'s tip mid-run, and `_verified_reset_root`'s drift guard
+(T-0907) correctly refused to unwind rather than risk destroying the
+concurrent commit -- but that left the land's staged REL001 bump (four
+files) dangling with no disclosure of what, specifically, was left
+behind. It happened three times in one session to an operator actively
+trying to avoid it.
+
+Two fixes, both scoped to this repo's actual ledger-commit choke point
+(`frob.tickets._leases._add_and_commit_tickets_md` -- the single function
+`commit_ticket_ledger_change`/`commit_start_transition` both funnel
+through, so `new`/`close`/`drop`/`fail`/`requeue`/`block`/`start`/
+`evidence`/`done-report` are all covered by one guard, not nine separate
+ones):
+
+- **`refuse_if_land_in_progress(root)`** (`frob.tickets._leases`) probes
+  `root`'s `LAND_LOCK_REL` (`.frob/land.lock`, the SAME file `_land_lock`
+  holds -- the path constant now lives in `_leases`, and
+  `frob.tickets._land` imports it, so both sides of the check share one
+  literal, never two independently-defined copies that could drift) with
+  a non-blocking `flock` acquire-then-release attempt. Failing to acquire
+  means a land is genuinely alive holding it right now; succeeding (or
+  finding no lock file at all) means it is safe to proceed.
+  `_add_and_commit_tickets_md` calls this before ever running `git add`,
+  so a refusal touches nothing -- the caller's own working-tree write (a
+  freshly filed ticket, a `--evidence` addition) stays uncommitted for a
+  later retry, but no commit races the land's.
+
+  Crash-safety comes from the primitive itself, not a second liveness
+  layer: POSIX `flock` is released by the kernel the instant its holding
+  process exits, by any means including `SIGKILL` -- there is no "dead
+  holder, lock still held" state to probe for, unlike a plain on-disk
+  lease file (`_probe_worktree_liveness`'s confirmed_absent/ambiguous
+  split exists precisely because a directory does not vanish just because
+  its creating process died; a kernel-held advisory lock has no such
+  gap). A killed land's lock is free for the very next probe, no TTL, no
+  polling, no timeout to tune.
+
+  `land()` itself writes the lock's holder metadata with `ticket_id` now
+  included (`_land_lock_holder_metadata`), so a refused caller's log line
+  names the actual landing ticket ("a land is in progress for T-1619 ...")
+  rather than a bare pid.
+
+- **Refusal message on the drift-guard's leftover state.** T-0907's
+  `_verified_reset_root` drift refusal (the exact path the incident above
+  hit) now runs `git status --porcelain` before logging and lists every
+  path it is leaving staged/uncommitted, instead of only pointing at
+  "inspect by hand". With the exclusivity lease above closing the actual
+  race, this refusal should no longer be reachable via a concurrent
+  ledger write -- it remains as defense for any OTHER process that
+  mutates `root` while holding no lock at all (manual coordinator
+  surgery outside `frob ticket` entirely, which no lease can see).
+
+**Belt-and-braces process scan.** The repo owner's own coordinator-side
+shell wrapper additionally refused a ledger write whenever a `frob ticket
+land` PROCESS was alive against `root`, even before it had acquired
+`land.lock` -- folded into `frob` itself rather than staying a wrapper only
+one operator ran (agents and CI bypassed it entirely). `refuse_if_land_
+in_progress` now also calls `_scan_for_live_land_process(root)`
+(`/proc`-based, Linux-only, degrading to a silent no-op finding on any
+other platform or scan failure) after the flock probe finds no held lock:
+it looks for a process whose argv contains the literal tokens `"ticket"`
+and `"land"` and whose `/proc/<pid>/cwd` resolves to `root` -- the exact
+shape a real `frob ticket land <id> --worktree <path>` invocation produces,
+run from the primary checkout's own directory per playbook convention.
+This closes the narrow window between a land process starting and its
+first `_land_lock` acquisition, and the fallback path for a platform where
+`fcntl` degrades to a no-op (the flock check never engages there at all).
+A finding refuses exactly like a held flock does, naming the ticket id
+parsed from the process's own argv (a `T-####`-shaped token) when one
+was found.
+
+## Verify-then-destroy: `frob ticket land --retire-on-proof` (T-1619)
+
+Real incident, same session as the lease gap above: an operator ran `frob
+ticket land <id> --worktree <path>` and then `git worktree remove
+<path>` as two separate commands. The land had actually FAILED; the
+`git worktree remove` ran anyway, destroying a worktree holding 38
+verified waiver-deletion commits -- recoverable only because git happened
+to keep the dangling commit in its object store. `--finish` (T-1175,
+above) already closes this for the CLI's own combined invocation (the
+worktree removal is gated on `_print_land_proof`'s `verified` bool and
+`_land`'s own `sys.exit(1)` on a failed `land()` never reaches the
+finish/retire tail at all) -- but `--finish` only ever removed the
+worktree CHECKOUT, leaving its branch (and every commit only reachable
+through it) in place, so an operator who also wanted the branch gone was
+back to a manual, unguarded `git branch -D` themselves.
+
+`--retire-on-proof` is `--finish` plus branch deletion, sharing the exact
+same `verified` gate (`_finish_land_after_success`):
+
+1. `_print_land_proof` computes `verified` (commit is-ancestor-of-main AND
+   the ticket's state on main is done/dropped) -- unchanged from `--finish`.
+2. If `not verified`: refuse (`sys.exit(1)`), touching neither the
+   worktree nor its branch. Identical posture to `--finish`'s own refusal,
+   now shared code path (`wants_finish = ticket_land_finish or
+   ticket_land_retire_on_proof`).
+3. If `verified`: `_worktree_branch_name(root, worktree)` reads the
+   worktree's checked-out branch name from `git worktree list --porcelain`
+   BEFORE `_finish_worktree` removes the checkout (branch deletion itself
+   does not need the worktree to still exist, but capturing the name
+   first avoids any ordering ambiguity), then `_finish_worktree` removes
+   the worktree exactly as `--finish` does, then `_delete_worktree_branch`
+   runs `git branch -D <branch>` -- logged at ERROR with the exact manual
+   recovery command on failure, never silent.
+
+Because `_land`'s own top-level `sys.exit(1)` on a failed `land()` call
+(`if result.is_err: ...; sys.exit(1)`) returns BEFORE `_finish_land_after_
+success` is ever invoked, there is no code path from a failed land to
+either the worktree or its branch being touched when `--retire-on-proof`
+is passed -- the unsafe two-step sequence the incident hit is no longer
+expressible as a single command.
+
+Test coverage: `tests/test_ticket_leases.py::TestRefuseIfLandInProgress`
+covers the no-lock-file pass-through, the held-lock refusal (and that the
+refusal names the landing ticket), the belt-and-braces process-scan
+refusal with no lock file at all, the SIGKILL-then-immediately-free
+crash-safety case, and an end-to-end proof that a `land()` call holding
+`_land_lock` makes a concurrent `frob ticket new` fail without moving
+`root`'s tip or committing the racing ticket.
+`tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish`
+covers `--retire-on-proof`'s branch deletion on a real verified land, the
+`None`-branch no-op, and the refuse-and-touch-nothing path on an
+unverified proof.
+
+## Passenger-ticket disclosure (T-1618)
+
+`frob ticket land <id> --worktree W` merges `W`'s BRANCH, not just the
+commits belonging to `<id>`. `_check_cross_ticket_leakage` (T-1355/T-1639,
+above) already refuses on a scope-glob-plus-ledger-record-diff heuristic
+when a sibling ticket is `IN_PROGRESS` -- but it explicitly EXEMPTS any
+sibling already `DONE`/`DROPPED` (`_find_leaked_tickets`'s `effective_
+state in (DONE, DROPPED): continue`), on the assumption that a closed
+ticket's scope claim is "spent". Real incident, 2026-08-05: worktree
+w24-waive-family held five tickets; T-1579's WAIVE004 self-heal escape
+was judged unsafe and reverted IN THE WORKTREE, but landing a DIFFERENT
+sibling (T-1581) still carried T-1579's code onto main, where it deleted
+55 live `frob:waive` directives across five gate families before anyone
+noticed. Whatever state T-1579's own ledger record ended up in, its CODE
+never actually left the branch -- exactly the shape the DONE/DROPPED
+exemption cannot see, because it never looks at the diff's own content at
+all, only at scope declarations and ledger state.
+
+`_check_passenger_tickets` (`frob.tickets._land`) is a deliberately
+DIFFERENT, complementary signal: it scans the branch's FULL diff (`git
+diff base_ref...HEAD`, not `--name-only`) for `frob:ticket <id>` directive
+additions (`+`-prefixed lines only, never context) naming any ticket OTHER
+than the one landing. This asks a narrower, more precise question than
+scope-matching -- whose fingerprint is on the code actually riding along,
+full stop -- and does not consult any sibling's ledger state at all, so a
+DROPPED sibling whose code is still physically present is caught exactly
+as readily as an IN_PROGRESS one. Wired into `_land_precheck_remaining_
+checks` alongside the existing leakage check, sharing the SAME `--allow-
+cross-ticket` escape hatch (`frob ticket land --allow-cross-ticket`) --
+one flag an operator already knows, not a second differently-named
+override. A refusal (`LandError.PassengerTickets`) lists every passenger
+id found; an acknowledged override logs the same list at WARNING before
+proceeding. Nothing about the land is silent either way -- the T-1618
+incident's own root complaint ("nothing in the output said T-1579 was
+going to main") no longer has a code path where that holds.
+
+The tradeoff, disclosed rather than hidden: this can flag a hunk that
+merely MOVED a pre-existing `frob:ticket <id>` directive (e.g. a function
+carrying one got relocated by an unrelated refactor, so git represents it
+as delete+re-add) as if it were a fresh addition. That is a real, known
+false-positive shape -- but it is arguably still an honest signal ("this
+diff touches code attributed to another ticket"), and the escape hatch
+exists precisely for a deliberately joint landing; the alternative
+(missing a genuine passenger silently, the actual incident) is strictly
+worse.
+
+## Already-landed-on-main: first-class outcome (T-1618)
+
+The second, benign-but-confusing half of the same incident: once one
+ticket's land has carried a sibling's code onto main (the passenger check
+above stops this going forward, but does nothing for a worktree that
+already leaked before this fix existed), that sibling's own later `frob
+ticket land` finds nothing left to contribute -- its scope's diff against
+main is empty. Before this fix, that fell through into whatever the
+normal land path does with an empty changeset: BUG002 finds the repro
+test already passing at the parent, TEST016 finds an empty diff with no
+mutants to kill. Both gates are technically CORRECT; the ticket is simply
+already done. The operator diagnosed and routed around this by hand three
+times in one session (verify content on main, `frob ticket close
+--skip-mutation-evidence`).
+
+`_check_already_landed` (`frob.tickets._land`) recognizes the shape
+directly: when `worktree` is CLEAN (`_porcelain_dirty` -- see below for
+why this matters) and the ticket's own declared scope (excluding the
+ledger path, which changes on every land regardless) has zero hits in
+`_branch_changed_files(worktree, base_ref)`, it refuses with `LandError.
+AlreadyLandedOnMain` and a message naming the exact manual recipe the
+incident's operator worked out by hand: verify the content against
+`base_ref`, then `frob ticket close <id>` directly. This function
+deliberately does NOT verify the content itself -- `frob.tickets` cannot
+run `base_ref`'s tests or gates (docs/rework.md's cycle-avoidance rule:
+that needs `frob.gates`/`frob.testing`, which this package does not
+import) -- so a `AlreadyLandedOnMain` refusal is a strong, well-targeted
+HINT, not a proof; the operator's own verification step is still real
+work, just no longer undirected work.
+
+**Deliberately opt-in, not wired into the default land path.** An early
+draft wired this into `_land_precheck` unconditionally and it regressed
+20 existing tests across this repo's own `test_ticket_land.py` suite: an
+empty scope-diff turns out to be the ORDINARY shape of a large legitimate
+class -- a docs-only ticket, a ledger-only/Done-report-only ticket, or
+simply a test fixture that declares a scope without ever writing a file
+under it (this repo's own test suite does this routinely; scope is
+declared intent, not a promise every land literally touches a byte inside
+it). Refusing on that by default would trade the T-1618 confusion for a
+strictly worse false-positive rate. `land(..., check_already_landed=True)`
+/ `frob ticket land --check-already-landed` opts in explicitly -- for an
+operator who already suspects the "this probably already landed via a
+passenger" shape, not for every land unconditionally. `_porcelain_dirty`
+gates it further: this check runs in `_land_precheck`, BEFORE `land`'s own
+wip-commit stage folds uncommitted work into a real commit, so a DIRTY
+worktree's empty COMMITTED diff would otherwise look identical to
+"already landed" even though the real work simply has not been committed
+yet -- the check is skipped entirely whenever the worktree is dirty,
+deferring to whatever the rest of the land pipeline does with that
+uncommitted work.
+
+**Why `CrossTicketLeakage` did not fire for the T-1579 case** (the
+ticket's own explicit question): two independent reasons, both closed by
+the passenger-ticket work above rather than by changing the leakage check
+itself (T-1639's IN_PROGRESS-only refinement was its own deliberate,
+already-considered fix for a different false-positive class and must not
+regress). First, `_find_leaked_tickets` exempts any sibling whose
+EFFECTIVE state is DONE/DROPPED outright -- if T-1579's in-worktree
+"revert" updated its OWN ticket record to a terminal state (even without
+fully reverting the code), the leakage check would treat it as settled
+and never re-examine its files at all. Second, even for a non-exempt
+sibling, the leakage check's signal is `changed_paths` from `--name-only`,
+a net diff -- if the revert's own commit brought a FILE back to byte-
+identical content relative to `base_ref`, that file simply stops
+appearing as changed at all, regardless of the sibling ticket's ledger
+state, so a scope hit against it can vanish even though other, un-reverted
+files the same ticket touched (per the incident, the 55 `frob:waive`
+deletions landed in files across arch/strata/perf/graph/vet, not
+necessarily the exact file that was "reverted") remain. Both gaps trace
+to the same root property: `_check_cross_ticket_leakage` was built to
+answer "does a scope declaration overlap a change", never "whose
+`frob:ticket` fingerprint is physically in this diff" -- the latter is
+what `_check_passenger_tickets` answers instead, deliberately not by
+patching the former's heuristics to try to cover both questions.
+
 ## Cross-ticket leakage only refuses on an IN_PROGRESS sibling (T-1639)
 
 <!-- frob:describes src/frob/tickets/_land.py::_find_leaked_tickets -->

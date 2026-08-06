@@ -312,6 +312,7 @@ class TestCrossTicketLeakage:
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
 
+    # frob:ticket T-1639
     # frob:tests \
     # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_planned\
     # _sibling_scope_overlap_does_not_block
@@ -342,3 +343,135 @@ class TestCrossTicketLeakage:
 
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
+
+
+# frob:ticket T-1618
+class TestPassengerTickets:
+    """`_check_passenger_tickets` -- the T-1618 fix. Unlike
+    `TestCrossTicketLeakage` above, this scans the branch diff's own
+    `frob:ticket <id>` directive additions directly, independent of ANY
+    sibling ticket's ledger state -- reproducing the real 2026-08-05
+    incident shape: a sibling ticket judged unsafe and reverted IN ITS OWN
+    WORKTREE, whose code still physically rode onto main via a DIFFERENT
+    ticket's land because nothing disclosed it was there."""
+
+    def test_refuses_and_lists_every_passenger_by_id(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-a", str(wt)], repo)
+
+        passenger = new_ticket(wt, _spec("Passenger work", scope=("src/passenger.py",)))
+        assert passenger.is_ok
+        passenger_id = passenger.danger_ok.id
+        (wt / "src" / "passenger.py").write_text(
+            f"# frob:ticket {passenger_id}\ndef passenger_fn():\n    pass\n"
+        )
+        _commit_all(wt, f"{passenger_id}: passenger's own work")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text("# independent fix\n")
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.PassengerTickets
+        # Nothing landed at all -- neither file made it onto main.
+        assert not (repo / "src" / "fix.py").exists()
+        assert not (repo / "src" / "passenger.py").exists()
+
+    def test_allow_cross_ticket_logs_and_proceeds(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-b", str(wt)], repo)
+
+        passenger = new_ticket(wt, _spec("Passenger work", scope=("src/passenger.py",)))
+        assert passenger.is_ok
+        passenger_id = passenger.danger_ok.id
+        (wt / "src" / "passenger.py").write_text(f"# frob:ticket {passenger_id}\n")
+        _commit_all(wt, f"{passenger_id}: passenger's own work")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text("# independent fix\n")
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        with caplog.at_level("WARNING"):
+            result = land(repo, landing_id, wt, dry_run=False, allow_cross_ticket=True)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "fix.py").exists()
+        assert (repo / "src" / "passenger.py").exists()
+        assert passenger_id in caplog.text
+
+    def test_no_op_when_only_the_landing_tickets_own_directives_are_present(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-directive", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text(f"# frob:ticket {landing_id}\n")
+        _commit_all(wt, f"{landing_id}: independent fix, own directive only")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "fix.py").exists()
+
+    def test_a_dropped_siblings_still_present_code_is_still_reported(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        # The exact T-1618 gap: `_check_cross_ticket_leakage` exempts a
+        # DONE/DROPPED sibling outright (`_find_leaked_tickets`'s own
+        # `effective_state in (DONE, DROPPED): continue`). A directive-
+        # based passenger check must NOT share that blind spot -- a
+        # sibling's code riding along onto main is exactly as dangerous
+        # whether its own ticket record says DROPPED or IN_PROGRESS.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-c", str(wt)], repo)
+
+        passenger = new_ticket(
+            wt, _spec("Rejected work", scope=("src/rejected.py",))
+        )
+        assert passenger.is_ok
+        passenger_id = passenger.danger_ok.id
+        (wt / "src" / "rejected.py").write_text(f"# frob:ticket {passenger_id}\n")
+        _commit_all(wt, f"{passenger_id}: work later judged unsafe")
+
+        # Mark it DROPPED on root's ledger directly -- simulating the
+        # incident's "reverted in the worktree" step having, at minimum,
+        # updated the ticket's own state to a terminal one, even though
+        # (per the incident) the CODE itself never actually left the
+        # branch.
+        dropped_ticket = load_all(wt).danger_ok[passenger_id]
+        dropped_ticket = dropped_ticket.model_copy(
+            update={"state": TicketState.DROPPED}
+        )
+        assert write_ticket(repo, dropped_ticket).is_ok
+        _commit_all(repo, f"seed {passenger_id}: dropped on main")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text("# independent fix\n")
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.PassengerTickets
+        assert not (repo / "src" / "fix.py").exists()

@@ -1843,6 +1843,22 @@ class LandError(ErrorSet):
         "can attribute the failure to its own ticket and continue "
         "draining the rest instead of the whole loop dying with it"
     )
+    # frob:ticket T-1618
+    PassengerTickets = (
+        "the branch's diff carries frob:ticket directive additions naming "
+        "ONE OR MORE OTHER ticket ids -- landing this worktree branch "
+        "would carry that other ticket's committed code onto main as an "
+        "undisclosed passenger of this ticket's own land (T-1618); pass "
+        "--allow-cross-ticket to acknowledge and proceed deliberately"
+    )
+    # frob:ticket T-1618
+    AlreadyLandedOnMain = (
+        "the ticket's own declared scope has no changes on this branch "
+        "relative to main -- its content is very likely ALREADY on main "
+        "(T-1618, the common consequence of a passenger-ticket land: "
+        "another ticket's land already carried this one's own code); "
+        "verify by hand and close directly instead of retrying this land"
+    )
 
 
 # frob:ticket T-0176

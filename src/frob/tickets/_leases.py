@@ -25,6 +25,7 @@ ledger's own `IN_PROGRESS` rows, to compute collisions.
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import re
@@ -34,6 +35,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from types import ModuleType
 
 from pydantic import BaseModel
 from typani.error_set import ErrorSet
@@ -43,10 +45,32 @@ from frob import gitio
 from frob.gitio import GitError, ProcResult
 from frob.logging import get_logger
 
+# frob:ticket T-1619
+# Same posix-only degradation as `frob.tickets._land`'s own `fcntl` import
+# (T-0577) -- `refuse_if_land_in_progress` degrades to a logged-once no-op
+# (never refuses) on a platform without `fcntl`, matching how the land.lock
+# it probes already degrades on the same platform.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
+
 _log = get_logger(__name__)
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 LEASES_DIRNAME = "frob-leases"
+
+# frob:ticket T-1619
+# frob:doc docs/modules/tickets.md#land-exclusivity-lease-t-1619
+# Canonical home for `frob ticket land`'s advisory `flock` path (T-0577,
+# originally defined only in `frob.tickets._land`). Moved here so this
+# module -- the single home for every OTHER ledger-writing verb's
+# auto-commit choke point (`_add_and_commit_tickets_md`) -- can probe the
+# SAME file `_land.py`'s `_land_lock` holds, instead of a second,
+# independently-invented lock/lease mechanism. `frob.tickets._land`
+# imports this constant rather than keeping its own copy.
+LAND_LOCK_REL = Path(".frob") / "land.lock"
 
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -205,6 +229,10 @@ class LeaseError(ErrorSet):
     NoLeaseForTicket = "the ticket has no recorded lease at all"
     LeaseWorktreeMismatch = "the ticket's recorded lease belongs to another worktree"
     CommitFailed = "committing the start transition into root's ledger failed"
+    # frob:ticket T-1619
+    LandInProgress = (
+        "a land is in progress for this repository; retry after it completes"
+    )
 
 
 # frob:ticket T-0601
@@ -860,6 +888,203 @@ def _retry_commit_with_fallback_identity(
     )
 
 
+# frob:ticket T-1619
+def _read_land_lock_holder_json(path: Path) -> dict | None:
+    """Best-effort read of `path`'s current land.lock holder metadata
+    (T-1619) -- mirrors `frob.tickets._land._read_land_lock_holder`'s exact
+    parse contract (any read/parse failure is `None`, never raised) so a
+    caller here reports the same holder shape (`pid`/`session_id`/
+    `started_at`/`ticket_id`) `land()`'s own diagnostics use, without this
+    module importing `frob.tickets._land` (which itself imports THIS
+    module -- importing back would be a cycle)."""
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+# frob:ticket T-1619
+def _proc_cmdline(pid: int) -> tuple[str, ...] | None:
+    """`/proc/<pid>/cmdline`'s argv, NUL-split (T-1619) -- `None` on any
+    read failure (pid gone, no permission, non-Linux with no `/proc`)."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return None
+    return tuple(
+        part.decode("utf-8", errors="replace") for part in raw.split(b"\0") if part
+    )
+
+
+# frob:ticket T-1619
+def _proc_cwd(pid: int) -> Path | None:
+    """`/proc/<pid>/cwd`'s resolved target (T-1619) -- `None` on any
+    readlink failure (pid gone, no permission, non-Linux)."""
+    try:
+        return Path(os.readlink(f"/proc/{pid}/cwd")).resolve()
+    except OSError:
+        return None
+
+
+# frob:ticket T-1619
+_TICKET_ID_ARGV_RE = re.compile(r"^T-\d+$")
+
+
+# frob:ticket T-1619
+# frob:doc docs/modules/tickets.md#land-exclusivity-lease-t-1619
+# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
+def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
+    """Belt-and-braces fallback (T-1619, the repo owner's explicit second
+    requirement): find a currently-running `frob ticket land` process whose
+    cwd is `root`, INDEPENDENT of whether it has (yet, or ever will, e.g. on
+    a platform where `fcntl` degrades to a no-op) acquired `LAND_LOCK_REL`.
+    Linux-only (`/proc`); degrades to `None` (no finding, never refuses)
+    the instant `/proc` itself is unavailable or any per-process read fails
+    -- this is a defense-in-depth backstop over the flock probe above, not
+    a replacement for it, and must never itself become a reason to block a
+    command over an inability to scan.
+
+    Matches a process whose argv contains the literal tokens `"ticket"` and
+    `"land"` (the shape `uv run frob ticket land T-#### --worktree ...`
+    always produces, argv-split) AND whose `/proc/<pid>/cwd` resolves to
+    `root` -- `frob ticket land` is invoked from the primary checkout's own
+    directory by convention (playbook section 0), so this is a precise
+    enough match for a backstop without needing to parse the full argv
+    grammar. Returns `(pid, ticket_id)` where `ticket_id` is the first
+    `T-####`-shaped argv token found (or `None` if none matched, e.g. a
+    `--plan`/`--queue`/`--drain` invocation with no positional ticket id)."""
+    proc_dir = Path("/proc")
+    if not proc_dir.is_dir():
+        return None
+    resolved_root = root.resolve()
+    self_pid = os.getpid()
+    try:
+        entries = tuple(proc_dir.iterdir())
+    except OSError:
+        return None
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid == self_pid:
+            continue
+        argv = _proc_cmdline(pid)
+        if not argv or "ticket" not in argv or "land" not in argv:
+            continue
+        if _proc_cwd(pid) != resolved_root:
+            continue
+        ticket_id = next(
+            (token for token in argv if _TICKET_ID_ARGV_RE.match(token)), None
+        )
+        return (pid, ticket_id)
+    return None
+
+
+# frob:ticket T-1619
+# frob:doc docs/modules/tickets.md#land-exclusivity-lease-t-1619
+# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
+def refuse_if_land_in_progress(root: Path) -> Result[None, LeaseError]:
+    """`Err(LeaseError.LandInProgress)` iff `root` currently has a LIVE
+    `frob ticket land` holding its `LAND_LOCK_REL` advisory `flock`
+    (T-0577/T-1619) -- the exclusive repository lease every OTHER ledger-
+    committing verb (`_add_and_commit_tickets_md`, so `new`/`close`/`drop`/
+    `fail`/`requeue`/`block`/`start`/`evidence`/`done-report`, every one of
+    them) must check before writing a commit onto `root`'s branch. `Ok
+    (None)` otherwise -- no lock file at all, or a lock file whose `flock`
+    this process can itself acquire (see below for why that is always safe).
+
+    Crash-safety without a timeout or a separate liveness probe (T-1619's
+    explicit requirement: reuse this module's existing liveness machinery
+    rather than inventing a second mechanism): a POSIX advisory `flock` is
+    released by the kernel itself the instant its holding process exits,
+    by ANY means, including an uncatchable `SIGKILL` mid-land -- so a
+    non-blocking acquire attempt on `LAND_LOCK_REL` is already a
+    structurally trustworthy liveness probe, with none of the confirmed_
+    absent/ambiguous uncertainty `_probe_worktree_liveness` has to draw
+    for a plain on-disk path (a worktree directory does not vanish just
+    because the process that created it died). Failing to acquire the
+    lock here can only mean a currently-alive process holds it -- there is
+    no "dead holder, lock still held" state for `flock` to be ambiguous
+    about, so a probe-and-release attempt is both sufficient and correct
+    without polling, without a TTL, and without touching the pid-liveness
+    probing `frob.tickets._land._probe_land_lock_pid_liveness` uses purely
+    for its own RECLAIM-DISCLOSURE logging (a separate, best-effort
+    diagnostic concern this refusal check does not need).
+
+    T-1619 (repo owner's explicit second requirement, "belt and braces
+    during the transition"): even when the `flock` probe above finds no
+    live holder, this ALSO runs `_scan_for_live_land_process` -- a
+    `/proc`-based backstop that catches the two gaps a pure `flock` check
+    cannot: the narrow race window between a land PROCESS starting and its
+    first `_land_lock` acquisition, and a platform where `fcntl` degrades
+    to a no-op (in which case the flock check above never engages at all).
+    A finding there refuses exactly like a held flock does, naming the
+    ticket id parsed from the process's own argv when one was found.
+
+    Best-effort like every other lease primitive in this module: a `root`
+    where the lock file cannot even be opened (permissions, a genuinely
+    missing `.frob/` directory, `fcntl` unavailable on this platform)
+    degrades to running the process-scan backstop alone rather than
+    refusing outright over an inability to probe -- the flock file itself
+    is created by `_land_lock` on the land side, so a fresh checkout that
+    has never landed anything has no lock file to probe at all, which must
+    never block a first `frob ticket new`."""
+    if fcntl is not None:
+        path = root / LAND_LOCK_REL
+        if path.exists():
+            try:
+                fd = os.open(str(path), os.O_RDWR)
+            except OSError:
+                fd = None
+            if fd is not None:
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except OSError:
+                    holder = _read_land_lock_holder_json(path)
+                    os.close(fd)
+                    landing_ticket = holder.get("ticket_id") if holder else None
+                    _log.warning(
+                        "tickets: %s refused -- a land is in progress for %s "
+                        "(land.lock held by %s) -- retry after it completes",
+                        root,
+                        landing_ticket if landing_ticket else "an unknown ticket",
+                        holder
+                        if holder is not None
+                        else "an unreadable/unwritten lock",
+                    )
+                    return Err(LeaseError.LandInProgress)
+                else:
+                    # Acquired it -- no live flock holder. Release
+                    # immediately; this call is a probe, not a real lease
+                    # acquisition (`_land.py`'s `_land_lock` is the actual
+                    # land-side critical section this call never overlaps).
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+                    os.close(fd)
+    found = _scan_for_live_land_process(root)
+    if found is not None:
+        pid, landing_ticket = found
+        _log.warning(
+            "tickets: %s refused -- a `frob ticket land` process (pid %s) "
+            "is running against this repository for %s, even though its "
+            "land.lock is not currently held (T-1619 belt-and-braces "
+            "process scan) -- retry after it completes",
+            root,
+            pid,
+            landing_ticket if landing_ticket else "an unknown ticket",
+        )
+        return Err(LeaseError.LandInProgress)
+    return Ok(None)
+
+
 # frob:ticket T-1054
 # frob:ticket T-1432
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_pre_staged_unrelated_file_never_rides_along_into_the_commit  # noqa: E501
@@ -887,7 +1112,20 @@ def _add_and_commit_tickets_md(
     it swept in. Pathspec-limiting means this commit can now NEVER contain
     anything but `tickets.md`'s own change -- any other staged content
     stays staged, untouched, exactly as `git commit -- <pathspec>`'s own
-    documented contract guarantees."""
+    documented contract guarantees.
+
+    T-1619: refuses BEFORE touching git at all (`Err(LandInProgress)`,
+    never `CommitFailed`) whenever `root` currently has a live `frob
+    ticket land` holding its exclusive `LAND_LOCK_REL` flock
+    (`refuse_if_land_in_progress`) -- this is the single choke point
+    every ledger-committing verb funnels through (`commit_ticket_ledger_
+    change`/`commit_start_transition`), so this one check closes the
+    concurrent-write hazard for `new`/`close`/`drop`/`fail`/`requeue`/
+    `block`/`start`/`evidence`/`done-report` at once, without each verb's
+    own call site needing to remember to check separately."""
+    land_check = refuse_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     pathspecs = _ledger_pathspecs(root, ticket_id)
     added = gitio.run_argv(["git", "-C", str(root), "add", *pathspecs])
     if added.is_ok and added.danger_ok.returncode == 0:

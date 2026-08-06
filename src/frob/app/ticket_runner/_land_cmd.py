@@ -1128,25 +1128,115 @@ def _finish_land_after_success(
 ) -> None:  # noqa: ANN001
     """`_land`'s post-success tail (T-1175, split out of `_land` itself to
     stay under ARCH001's line budget): print the `LAND-PROOF:` line for a
-    real (non-dry-run) land, then, if `--finish` was passed, remove
-    `worktree` -- but ONLY when the proof actually verified. A dry run
-    prints nothing here (there is nothing durable yet to prove or
-    finish)."""
+    real (non-dry-run) land, then, if `--finish`/`--retire-on-proof` was
+    passed, remove `worktree` -- but ONLY when the proof actually verified.
+    A dry run prints nothing here (there is nothing durable yet to prove or
+    finish).
+
+    T-1619: `--retire-on-proof` is `--finish` PLUS branch deletion -- the
+    one-command "verify then destroy" that makes chaining `frob ticket
+    land && git worktree remove` (the unsafe two-step sequence: the
+    removal runs unconditionally, even after a failed land, since `&&`
+    only guards on `land`'s own exit code and a caller can still chain a
+    bare `;` or run the two as separate commands) structurally
+    unavailable. The branch name is captured BEFORE `_finish_worktree`
+    removes the worktree checkout, and deletion only ever runs after the
+    SAME `verified` gate `--finish` already uses -- there is no path from
+    an unverified/failed land to either the worktree or its branch being
+    touched."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     if report.dry_run:
         return
     verified = _print_land_proof(root, report)
-    if not cfg.ticket_land_finish:
+    wants_finish = cfg.ticket_land_finish or cfg.ticket_land_retire_on_proof
+    if not wants_finish:
         return
     if not verified:
         _log.error(
-            "ticket land --finish: %s LAND-PROOF did not verify -- "
-            "worktree %s left in place",
+            "ticket land --finish/--retire-on-proof: %s LAND-PROOF did not "
+            "verify -- worktree %s left in place, branch untouched",
             cfg.ticket_id,
             worktree,
         )
         sys.exit(1)
+    branch = (
+        _worktree_branch_name(root, worktree)
+        if cfg.ticket_land_retire_on_proof
+        else None
+    )
     _finish_worktree(root, worktree, cfg.ticket_id)
+    if cfg.ticket_land_retire_on_proof:
+        _delete_worktree_branch(root, branch, cfg.ticket_id)
+
+
+# frob:ticket T-1619
+def _worktree_branch_name(root: Path, worktree: Path) -> str | None:
+    """The short branch name checked out in `worktree` (T-1619), parsed
+    from `git -C root worktree list --porcelain`'s stable machine-readable
+    format -- `None` if `worktree` is not a registered worktree of `root`,
+    is detached (no `branch` line in its record), or the `git` call itself
+    fails. Read BEFORE `_finish_worktree` removes the worktree checkout
+    (`--retire-on-proof`'s caller) so branch deletion always has a name to
+    act on even though `git branch -D` itself does not require the
+    worktree to still exist."""
+    resolved = worktree.resolve()
+    spawned = run_argv(["git", "-C", str(root), "worktree", "list", "--porcelain"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    for block in spawned.danger_ok.stdout.split("\n\n"):
+        lines = block.splitlines()
+        if not lines or not lines[0].startswith("worktree "):
+            continue
+        if Path(lines[0][len("worktree ") :]).resolve() != resolved:
+            continue
+        for line in lines[1:]:
+            if line.startswith("branch "):
+                ref = line[len("branch ") :]
+                return ref.removeprefix("refs/heads/")
+        return None
+    return None
+
+
+# frob:ticket T-1619
+def _delete_worktree_branch(root: Path, branch: str | None, ticket_id: str) -> None:
+    """`git -C root branch -D <branch>` (T-1619, `--retire-on-proof`'s
+    second half) -- called ONLY after `_finish_worktree` has already
+    removed the worktree checkout, and ONLY when the caller's own LAND-
+    PROOF gate (`_finish_land_after_success`) has already verified. A
+    missing/detached branch name (`branch is None`) is a no-op, logged at
+    WARNING rather than treated as a failure -- the worktree removal above
+    already succeeded and is the durable half of this operation; a branch
+    this repo could not identify is surfaced, not silently swallowed, but
+    never turned into a hard failure of an otherwise-successful retire.
+    A failed `git branch -D` (e.g. the branch has commits not reachable
+    from anything, which `-D` overrides anyway, or a lock contention) is
+    logged at ERROR with the exact manual recovery command -- the branch
+    is always the recovery path (playbook section 12b) until this step
+    itself succeeds, so a failure here must never look silent."""
+    if branch is None:
+        _log.warning(
+            "ticket land --retire-on-proof: %s could not determine the "
+            "worktree's branch name -- worktree removed, branch left in "
+            "place (nothing to delete blindly)",
+            ticket_id,
+        )
+        return
+    deleted = run_argv(["git", "-C", str(root), "branch", "-D", branch])
+    if deleted.is_err or deleted.danger_ok.returncode != 0:
+        detail = deleted.danger_err if deleted.is_err else deleted.danger_ok.stderr
+        _log.error(
+            "ticket land --retire-on-proof: %s could not delete branch %s: "
+            "%s -- run `git -C %s branch -D %s` by hand once resolved",
+            ticket_id,
+            branch,
+            detail,
+            root,
+            branch,
+        )
+        return
+    _log.info(
+        "ticket land --retire-on-proof: %s deleted branch %s", ticket_id, branch
+    )
 
 
 def _require_land_args(cfg: AppConfig) -> None:
@@ -2103,6 +2193,7 @@ def _land_core_invoke(
             if rapid_land
             else _land_pre_commit_sweep_fn(baseline_thread, baseline_holder, cfg)
         ),
+        check_already_landed=cfg.ticket_check_already_landed,
     )
 
 
