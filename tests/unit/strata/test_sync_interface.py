@@ -26,14 +26,28 @@ def _write_design(root: Path, design_dir: str, rel: str, source: str) -> Path:
     return path
 
 
+def _write_consumer(root: Path, rel: str, module: str, names: list[str]) -> None:
+    """T-1625: a symbol only becomes part of a node's REQUIRED interface
+    surface once some file owned by a DIFFERENT node imports it BY NAME
+    (`_selfconform._cross_node_referenced_symbols`) -- every fixture below
+    that wants a symbol to be required writes one of these alongside a
+    `consumer` node in its design text."""
+    src = f"from {module} import {', '.join(names)}\n"
+    _write(root, rel, src)
+
+
 class TestSyncInterfaceReport:
     """`sync_interface_report`'s pure-compute diff (never writes)."""
 
     def test_no_drift_reports_clean(self, tmp_path: Path):
-        """A node whose declared `interface=` set already equals its real
-        public surface, written in the compact T-1198 form, reports zero
-        drift and an unchanged file."""
+        """A node whose declared `interface=` set already equals its
+        REQUIRED (T-1625: real AND cross-node-referenced) surface, written
+        in the compact T-1198 form, reports zero drift and an unchanged
+        file."""
         _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write_consumer(
+            tmp_path, "src/frob/consumer/_use.py", "frob.widget._io", ["public_fn"]
+        )
         _write_design(
             tmp_path,
             "design",
@@ -44,6 +58,9 @@ class TestSyncInterfaceReport:
             "    attr interface=[\n"
             "        public_fn,\n"
             "    ];\n"
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
             "}\n",
         )
         result = sync_interface_report(tmp_path)
@@ -64,6 +81,9 @@ class TestSyncInterfaceReport:
         migration is not gated on symbol drift, or a repo would never
         get migrated off the legacy form."""
         _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write_consumer(
+            tmp_path, "src/frob/consumer/_use.py", "frob.widget._io", ["public_fn"]
+        )
         _write_design(
             tmp_path,
             "design",
@@ -72,6 +92,9 @@ class TestSyncInterfaceReport:
             "node widget : trusted {\n"
             '    code "src/frob/widget/**";\n'
             "    attr interface=public_fn;\n"
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
             "}\n",
         )
         result = sync_interface_report(tmp_path)
@@ -83,6 +106,99 @@ class TestSyncInterfaceReport:
         assert "attr interface=[" in file_result.new_text
         assert "attr interface=public_fn;" not in file_result.new_text
 
+    # frob:ticket T-1624
+    def test_duplicate_blocks_collapsed_to_one(self, tmp_path: Path) -> None:
+        """T-1624 regression: a node carrying TWO `interface=[...]` blocks
+        (the shape `design/frob.strata` itself accumulated -- 45 duplicated
+        blocks across ~17 nodes, byte-identical symbol sets) collapses down
+        to exactly ONE block, even though the union of both blocks' symbol
+        SET already equals real -- duplication itself must be flagged and
+        fixed, not just a symbol mismatch."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write_consumer(
+            tmp_path, "src/frob/consumer/_use.py", "frob.widget._io", ["public_fn"]
+        )
+        _write_design(
+            tmp_path,
+            "design",
+            "widget.strata",
+            "module widget\n"
+            "node widget : trusted {\n"
+            "    attr interface=[\n"
+            "        public_fn,\n"
+            "    ];\n"
+            '    code "src/frob/widget/**";\n'
+            "    attr interface=[\n"
+            "        public_fn,\n"
+            "    ];\n"
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
+            "}\n",
+        )
+        result = sync_interface_report(tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.has_drift
+        file_result = report.files[0]
+        assert file_result.changed
+        new_text = file_result.new_text
+        assert new_text.count("attr interface=[") == 1
+        assert new_text.count("public_fn") == 1
+
+        # Idempotent: re-running against the corrected text finds no more
+        # drift.
+        _write_design(tmp_path, "design", "widget.strata", new_text)
+        second = sync_interface_report(tmp_path)
+        assert second.is_ok
+        assert not second.danger_ok.has_drift
+
+    # frob:ticket T-1624
+    def test_comment_line_is_not_mistaken_for_a_block(self, tmp_path: Path) -> None:
+        """The line-anchored span regexes must not fire on a `//` comment
+        that merely LOOKS like an `attr interface=[...]` line -- this
+        language has no block-comment form (only `//`-prefixed line
+        comments, `strata-core/src/parse/lexer.rs`), so the open/close
+        regexes are anchored on the full stripped line and a `//`-prefixed
+        line can never match them; this pins that down as an explicit
+        regression test rather than relying on the anchoring being
+        obviously correct forever."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write_consumer(
+            tmp_path, "src/frob/consumer/_use.py", "frob.widget._io", ["public_fn"]
+        )
+        _write_design(
+            tmp_path,
+            "design",
+            "widget.strata",
+            "module widget\n"
+            "node widget : trusted {\n"
+            "    // fake: attr interface=[\n"
+            "    // fake:     phantom_from_comment,\n"
+            "    // fake: ];\n"
+            '    code "src/frob/widget/**";\n'
+            "    attr interface=[\n"
+            "        public_fn,\n"
+            "    ];\n"
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
+            "}\n",
+        )
+        result = sync_interface_report(tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        # No drift: the comment was never treated as a second span to
+        # merge/replace, so the file is untouched byte-for-byte (the
+        # comment text, including "phantom_from_comment", survives
+        # verbatim -- this test is about the span-finder not treating it
+        # as a DECLARATION, not about deleting comment text).
+        assert not report.has_drift
+        file_result = report.files[0]
+        assert not file_result.changed
+        assert file_result.new_text == file_result.old_text
+        assert file_result.diffs == ()
+
     def test_addition_and_removal_detected(self, tmp_path: Path):
         """A node with an undeclared real symbol AND a declared-but-absent
         symbol reports both, sorted, and the rewritten text reflects the
@@ -91,6 +207,12 @@ class TestSyncInterfaceReport:
             tmp_path,
             "src/frob/widget/_io.py",
             "def public_fn():\n    pass\n\ndef new_fn():\n    pass\n",
+        )
+        _write_consumer(
+            tmp_path,
+            "src/frob/consumer/_use.py",
+            "frob.widget._io",
+            ["public_fn", "new_fn"],
         )
         design_path = _write_design(
             tmp_path,
@@ -101,6 +223,9 @@ class TestSyncInterfaceReport:
             '    code "src/frob/widget/**";\n'
             "    attr interface=public_fn;\n"
             "    attr interface=phantom_fn;\n"
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
             "}\n",
         )
         result = sync_interface_report(tmp_path)
@@ -139,6 +264,9 @@ class TestSyncInterfaceReport:
             "src/frob/widget/_store.py",
             "def public_fn():\n    pass\n",
         )
+        _write_consumer(
+            tmp_path, "src/frob/consumer/_use.py", "frob.widget._store", ["public_fn"]
+        )
         design_path = _write_design(
             tmp_path,
             "design",
@@ -147,6 +275,9 @@ class TestSyncInterfaceReport:
             "store widget_store : trusted {\n"
             "    engine sqlite;\n"
             '    code "src/frob/widget/**";\n'
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
             "}\n",
         )
         result = sync_interface_report(tmp_path)
@@ -171,6 +302,9 @@ class TestSyncInterfaceReport:
         `interface=` attrs yet gets its block inserted right after the
         node's opening line (module docstring's insertion convention)."""
         _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write_consumer(
+            tmp_path, "src/frob/consumer/_use.py", "frob.widget._io", ["public_fn"]
+        )
         _write_design(
             tmp_path,
             "design",
@@ -178,6 +312,9 @@ class TestSyncInterfaceReport:
             "module widget\n"
             "node widget : trusted {\n"
             '    code "src/frob/widget/**";\n'
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
             "}\n",
         )
         result = sync_interface_report(tmp_path)
@@ -264,11 +401,16 @@ def test_report_and_apply_are_the_tier_a_ready_entry_points(tmp_path: Path):
     intermediate CLI-only glue -- this pins that call shape so a future
     handler wiring does not have to rediscover it."""
     _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+    _write_consumer(
+        tmp_path, "src/frob/consumer/_use.py", "frob.widget._io", ["public_fn"]
+    )
     _write_design(
         tmp_path,
         "design",
         "widget.strata",
-        'module widget\nnode widget : trusted {\n    code "src/frob/widget/**";\n}\n',
+        "module widget\n"
+        'node widget : trusted {\n    code "src/frob/widget/**";\n}\n'
+        'node consumer : trusted {\n    code "src/frob/consumer/**";\n}\n',
     )
     result = sync_interface_report(tmp_path)
     assert result.is_ok
@@ -288,6 +430,12 @@ class TestApplySyncInterface:
             "src/frob/widget/_io.py",
             "def public_fn():\n    pass\n\ndef new_fn():\n    pass\n",
         )
+        _write_consumer(
+            tmp_path,
+            "src/frob/consumer/_use.py",
+            "frob.widget._io",
+            ["public_fn", "new_fn"],
+        )
         design_path = _write_design(
             tmp_path,
             "design",
@@ -296,6 +444,9 @@ class TestApplySyncInterface:
             "node widget : trusted {\n"
             '    code "src/frob/widget/**";\n'
             "    attr interface=public_fn;\n"
+            "}\n"
+            "node consumer : trusted {\n"
+            '    code "src/frob/consumer/**";\n'
             "}\n",
         )
         result = sync_interface_report(tmp_path)

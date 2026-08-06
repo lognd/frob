@@ -414,6 +414,7 @@ from frob.strata._secrets import (
 from frob.strata._selfconform import (
     SYS_BINDING_TOTALITY,
     SYS_COVERAGE_TOTALITY,
+    SYS_DUPLICATE_INTERFACE,
     SYS_INTERFACE_CONFORMANCE,
     SYS_PURPOSE_CONTRACT,
     SYS_STALE_DESIGN,
@@ -563,6 +564,7 @@ __all__ = [
     "run_may_mutation_audit",
     "SYS_BINDING_TOTALITY",
     "SYS_COVERAGE_TOTALITY",
+    "SYS_DUPLICATE_INTERFACE",
     "SYS_INTERFACE_CONFORMANCE",
     "SYS_PURPOSE_CONTRACT",
     "SYS_STALE_DESIGN",

@@ -91,25 +91,46 @@ gap SYS102's `_PACKAGE_ROOT` scope leaves on every OTHER repo.
 SYS104 (T-0668) exact interface conformance -- a node's declared
 `interface=<symbol>` attrs (this ticket's convention, same "opaque attr
 string" mechanism `code=`/`managed` already use, T-0078/T-0172; no
-grammar change) must EQUAL the union of top-level public symbols
-(`__all__` if the module declares one, else every non-underscore-prefixed
-module-level `def`/`class`/assignment target) across the node's own
-`code=`-bound `.py` files. Fires TWO ways: a declared symbol absent from
-the real surface (`docs/design/structural-linter-adversarial-hardening.md`
-"declared-but-absent declaration" row), and a real public symbol the node
-never declared (the same doc's "undeclared public surface" row --
-`secret_backdoor` example). MANDATORY as of T-1113 (closes the T-0668
-disclosed opt-in scope cut): every node whose bound code has a non-empty
-real public surface is now evaluated, whether or not it has declared any
-`interface=` attr yet -- `design/frob.strata` itself now carries a real,
-measured `interface=` declaration for every node with a non-empty surface
-(one `attr interface=<symbol>;` per real public name, generated from the
-same `_module_public_symbols`/`_node_real_public_surface` this check
-uses, so declared and real agree by construction at the point they were
-added). A node with an EMPTY real surface (no bound `.py` files, or files
-with nothing public) stays exempt either way -- there is no obligation to
-declare an interface for code that exports nothing. Python-only, same
-boundary `bind_code` itself already draws (module docstring above).
+grammar change) must EQUAL the REQUIRED interface surface: the subset of
+the node's real public symbols (`__all__` if the module declares one,
+else every non-underscore-prefixed module-level `def`/`class`/assignment
+target across the node's `code=`-bound `.py` files, `_node_real_public_
+surface`) that is ALSO imported by name (`from <module> import <name>`,
+resolved in-repo) from at least one file owned by a DIFFERENT node
+(`_cross_node_referenced_symbols`). Fires TWO ways: a declared symbol
+absent from the required surface (`docs/design/structural-linter-
+adversarial-hardening.md` "declared-but-absent declaration" row), and a
+required-but-undeclared symbol (the same doc's "undeclared public
+surface" row -- `secret_backdoor` example, assuming some OTHER node
+imports it by name; module-internal-only symbols are simply not part of
+the contract at all, T-1625). MANDATORY as of T-1113 (closes the T-0668
+disclosed opt-in scope cut): every node whose REQUIRED surface is
+non-empty is evaluated, whether or not it has declared any `interface=`
+attr yet.
+
+T-1625 (option 3 of that ticket's three, chosen over exempting tests --
+see the ticket for the full reasoning): before this, `interface=`
+declared the WHOLE real public surface, verbatim, node by node -- and
+`design/frob.strata`'s `testsuite` node, whose real surface is every
+top-level test class/function name across `tests/**`, had grown to 5277
+declared symbols (more than half of the ~9000 across the whole file) even
+though NOTHING ever imports a test by name; a test exposes no contract to
+any consumer. Narrowing to "actually referenced across a node boundary"
+fixes the general problem, not just testsuite's instance of it: every
+node's declared list shrinks to the names some OTHER node's code genuinely
+depends on, matching what "interface" is supposed to mean (a CONTRACT,
+not an inventory), while `_node_real_public_surface` itself (SYS106's own
+side, `_module_public_symbols`, and every other consumer) is UNCHANGED --
+only SYS104's comparison and `sync-interface`'s writer narrow. A node
+with an EMPTY required surface (no bound `.py` files, files with nothing
+public, or a real surface nothing outside the node ever imports by name --
+true of every pure test-tree node) stays exempt. Python-only, same
+boundary `bind_code` itself already draws (module docstring above); the
+cross-reference walk is also Python-`from`-import-only (module docstring's
+"dominant intra-package style" note on `_python_imports_with_lines`) --
+a bare `import module` followed by `module.symbol` attribute access is a
+disclosed scope cut, not tracked as a reference (rare in this codebase's
+own style; T-1625 follow-up if it ever matters in practice).
 
 SYS105 (T-0669) purpose contract -- a node's declared `purpose=<profile>`
 attr (same opaque-attr convention, at most one per node) names a fixed,
@@ -139,6 +160,20 @@ direction (starting at a bound node and following its real import
 edges), so a file some future exclude-glob or walk boundary hides from
 SYS103's own walk but that a bound node still imports at runtime is
 still caught. Cycle-safe (visited-set BFS over resolved import targets).
+
+SYS108 (T-1624) duplicate interface declaration -- a node whose
+`interface=` attrs contain the SAME symbol name more than once (module
+attrs preserve every declared entry verbatim, T-1198's `interface=[...]`
+compact-block form included, so two byte-identical `attr interface=[...]`
+blocks on one node elaborate into every symbol appearing twice). Found and
+fixed for real in `design/frob.strata` itself: 45 duplicated blocks across
+~17 nodes, long-standing (predates any single sync-interface run), silent
+because the parser tolerates duplicate attrs and `_node_attr_values`
+(SYS104's own reader) never deduped its list -- a declaration language
+whose own declarations can silently duplicate cannot be the source of
+truth it is meant to be. ALWAYS ERROR (no advisory tier, unlike SYS107):
+there is no legitimate reason for a node to declare the same interface
+symbol twice.
 
 SYS107 (T-1451) via-less-may-on-a-large-node advisory -- a node whose
 `code=` glob(s) bind more than `_LARGE_NODE_FILE_THRESHOLD` real files but
@@ -181,8 +216,11 @@ from frob.vet._capability_modes import canonical_declared_kind, expand_declared_
 from ._code_binding import (
     FOREIGN,
     CodeBinding,
+    _dotted,
+    _join_dotted,
     _node_code_globs,
     _python_imports_with_lines,
+    _relative_base_dir,
     bind_code,
 )
 from ._effects import (
@@ -250,6 +288,12 @@ SYS_BINDING_TOTALITY = "SYS106"
 #: docstring's SYS107 section). WARN by default; escalated to ERROR by
 #: `[strata] require_may_scope` (`_scope_config.py`).
 SYS_VIA_LESS_LARGE_NODE = "SYS107"
+
+# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
+#: `frob sys audit` rule id for SYS108 (T-1624) duplicate interface
+#: declaration: a node whose `interface=` attrs name the same symbol more
+#: than once (module docstring's SYS108 section). Always ERROR.
+SYS_DUPLICATE_INTERFACE = "SYS108"
 
 #: `src/` subtree self-conformance actually scans -- our own package root
 #: (module docstring: `design/frob.strata` models exactly this one tree).
@@ -1131,7 +1175,12 @@ def _node_real_public_surface(
     binding: CodeBinding, root: Path, node_id: str
 ) -> frozenset[str]:
     """The union of `_module_public_symbols` across every `.py` file
-    `binding` binds to `node_id` -- SYS104's real (ground-truth) side."""
+    `binding` binds to `node_id` -- the full ground-truth exported surface
+    (SYS106 and every other consumer's notion of "real"). SYS104 itself
+    narrows this further via `_cross_node_referenced_symbols` (T-1625,
+    module docstring's SYS104 section) -- this function is deliberately
+    UNCHANGED by that narrowing, so nothing outside SYS104's own
+    comparison is affected."""
     surface: set[str] = set()
     for rel in sorted(binding.owner):
         if binding.owner[rel] != node_id or not rel.endswith(".py"):
@@ -1142,31 +1191,156 @@ def _node_real_public_surface(
     return frozenset(surface)
 
 
+def _imported_from_spec(node: ast.ImportFrom, file_dir: Path, root: Path) -> str | None:
+    """The absolute dotted module spec one `ast.ImportFrom` node targets
+    (level-0 absolute, or a relative `from .`/`from ..pkg` resolved
+    against the importing file's own package position, mirroring
+    `_code_binding.py::_relative_imports`'s resolution -- duplicated in
+    miniature here rather than imported because that helper returns
+    (spec, line) PER ALIAS, which would multiply-report the same module
+    spec once per imported name; this caller only ever wants the module
+    spec once, to resolve independently of which names were imported).
+    `None` for a `from . import x` form with no `module` (nothing to
+    resolve past the bare package) or one whose relative level walks
+    above `root`."""
+    if node.level == 0:
+        return node.module
+    base_dir = _relative_base_dir(file_dir, root, node.level)
+    if base_dir is None or node.module is None:
+        return None
+    return _join_dotted(_dotted(base_dir, root), node.module)
+
+
+# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
+def _src_root_prefixes(binding: CodeBinding) -> frozenset[str]:
+    """Every distinct FIRST path segment among `binding.owner`'s bound
+    files (e.g. `{"src"}` for this repo's own `src/frob/**` layout, `{}`
+    for a flat top-level-package repo) -- `resolve_local_import`'s python
+    branch resolves a dotted spec by literal `spec.replace(".", "/")`
+    against `root`, with NO src-layout awareness (verified directly:
+    `resolve_local_import("frob.excludes", ..., root=<repo root>)` returns
+    `None` even though `src/frob/excludes.py` genuinely exists -- only a
+    RELATIVE import's dotted prefix is derived from the importing file's
+    own on-disk position, `_code_binding.py::_relative_imports`/`_dotted`,
+    so it already carries the `src.` prefix and resolves fine). An
+    ABSOLUTE cross-package import (`from frob.excludes import x`) is
+    exactly the dominant shape a genuine CROSS-NODE reference takes in
+    this codebase (a same-node import is far more often the relative
+    form), so `_cross_node_referenced_symbols` -- unlike SYS106's
+    `_reachable_local_files`, whose prior silent under-resolution on
+    absolute specs was never load-bearing since an unreached file merely
+    stays unflagged -- cannot afford to silently drop every absolute
+    import; this derives the missing prefix from the ACTUAL bound layout
+    instead of hardcoding `"src"`."""
+    return frozenset(rel.split("/", 1)[0] for rel in binding.owner if "/" in rel)
+
+
+def _resolve_cross_package_import(
+    spec: str, file_dir: Path, root: Path, src_prefixes: frozenset[str]
+) -> str | None:
+    """`resolve_local_import(spec, ...)`, falling back to each `src_
+    prefixes` candidate prepended to `spec` (`_src_root_prefixes`'s
+    docstring) if the bare spec does not resolve -- the ONE extra step a
+    literal-path resolver needs to see through a src-layout repo's
+    absolute imports."""
+    target_rel = resolve_local_import(spec, "python", file_dir=file_dir, root=root)
+    if target_rel is not None:
+        return target_rel
+    for prefix in sorted(src_prefixes):
+        target_rel = resolve_local_import(
+            f"{prefix}.{spec}", "python", file_dir=file_dir, root=root
+        )
+        if target_rel is not None:
+            return target_rel
+    return None
+
+
+def _cross_node_referenced_symbols(
+    binding: CodeBinding, root: Path
+) -> dict[str, frozenset[str]]:
+    """T-1625 (SYS104 option 3): node id -> the names actually imported BY
+    NAME (`from <module> import <name>[, ...]`, module resolved in-repo
+    via `_resolve_cross_package_import`) from at least one file owned by a
+    DIFFERENT node. This is the "does anything outside this node's own
+    code actually depend on this symbol" join that narrows SYS104's
+    required interface surface down from the full real surface (module
+    docstring's SYS104/T-1625 sections) -- a symbol used only WITHIN its
+    own node's files never appears here, exactly like a test class/
+    function nothing else ever imports.
+
+    Deliberately Python-`from`-import-only (module docstring's disclosed
+    scope cut): a bare `import module` followed by `module.symbol`
+    attribute access is not tracked, matching `_python_imports_with_lines`'s
+    own "dominant intra-package style" observation about this codebase.
+    `import *` names are skipped (no way to know statically which real
+    names it binds without importing the module, and this pass is
+    deliberately static-only, same posture `_module_public_symbols` takes
+    on an unparseable file)."""
+    src_prefixes = _src_root_prefixes(binding)
+    referenced: dict[str, set[str]] = {}
+    for rel, owner in binding.owner.items():
+        if not rel.endswith(".py"):
+            continue
+        path = root / rel
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (SyntaxError, OSError, UnicodeDecodeError) as exc:
+            _log.warning(
+                "selfconform: SYS104 cross-node scan could not parse %s: %s", path, exc
+            )
+            continue
+        file_dir = path.parent
+        for stmt in ast.walk(tree):
+            if not isinstance(stmt, ast.ImportFrom):
+                continue
+            spec = _imported_from_spec(stmt, file_dir, root)
+            if spec is None:
+                continue
+            target_rel = _resolve_cross_package_import(
+                spec, file_dir, root, src_prefixes
+            )
+            if target_rel is None:
+                continue  # third-party/stdlib/unresolvable -- not in-repo
+            target_owner = binding.owner.get(target_rel)
+            if target_owner is None or target_owner == owner:
+                continue  # FOREIGN target, or a same-node (internal) import
+            names = referenced.setdefault(target_owner, set())
+            for alias in stmt.names:
+                if alias.name != "*":
+                    names.add(alias.name)
+    return {node_id: frozenset(names) for node_id, names in referenced.items()}
+
+
 # frob:tests tests/unit/strata/test_selfconform.py::TestInterfaceConformance.test_undeclared_public_symbol_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestInterfaceConformance.test_declared_but_absent_symbol_fires  # noqa: E501
 def _interface_conformance_violations(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
-    """SYS104 (T-0668, mandatory as of T-1113): for every node whose
-    `code=`-bound `.py` files expose at least one real public symbol, the
-    declared `interface=` set must equal that real public surface (module
-    docstring's SYS104 section). T-1113 closes the original opt-in scope
-    cut (T-0668's disclosed follow-up): a node is now evaluated whenever
-    its REAL surface is non-empty, not only when it has already declared
-    at least one `interface=` attr -- a node with zero declared attrs and
-    a non-empty real surface now fires (every real symbol reports as
-    missing), same as before for any node that already declares some but
-    not all of its surface. A node with an empty real surface (no bound
-    `.py` files, or files with nothing public) stays silent either way --
-    there is no obligation to declare an interface for code that exports
-    nothing."""
+    """SYS104 (T-0668, mandatory as of T-1113; narrowed T-1625): for every
+    node whose REQUIRED interface surface is non-empty, the declared
+    `interface=` set must equal it EXACTLY (module docstring's SYS104/
+    T-1625 sections). Required = real public surface (`_node_real_public_
+    surface`) INTERSECTED with what `_cross_node_referenced_symbols` shows
+    some OTHER node's code actually imports by name -- a symbol only ever
+    used within its own node's files is not part of any contract and is
+    never required, no matter how "public" its name looks (T-1625: this is
+    what shrinks a test-only node's obligation to zero, since nothing ever
+    imports a test by name, without a test-specific carve-out). T-1113
+    closes the original opt-in scope cut (T-0668's disclosed follow-up): a
+    node is evaluated whenever its REQUIRED surface is non-empty, not only
+    when it has already declared at least one `interface=` attr. A node
+    with an empty required surface (no bound `.py` files, files with
+    nothing public, or a real surface nothing outside the node ever
+    imports by name) stays silent either way."""
+    cross_referenced = _cross_node_referenced_symbols(binding, root)
     found: list[SelfConformViolation] = []
     for node in model.nodes:
         declared = frozenset(_node_attr_values(node, _INTERFACE_PREFIX))
         real = _node_real_public_surface(binding, root, node.id)
-        if not declared and not real:
-            continue  # nothing declared, nothing real to declare
-        for missing in sorted(real - declared):
+        required = real & cross_referenced.get(node.id, frozenset())
+        if not declared and not required:
+            continue  # nothing declared, nothing required to declare
+        for missing in sorted(required - declared):
             _log.warning(
                 "selfconform: SYS104 undeclared public symbol %s on %s",
                 missing,
@@ -1177,13 +1351,13 @@ def _interface_conformance_violations(
                     rule=SYS_INTERFACE_CONFORMANCE,
                     node=node.id,
                     detail=(
-                        f"public symbol {missing!r} exported by code but not "
-                        "declared in interface="
+                        f"public symbol {missing!r} imported by another node "
+                        "but not declared in interface="
                     ),
                     capability=missing,
                 )
             )
-        for absent in sorted(declared - real):
+        for absent in sorted(declared - required):
             _log.warning(
                 "selfconform: SYS104 declared-but-absent symbol %s on %s",
                 absent,
@@ -1194,9 +1368,49 @@ def _interface_conformance_violations(
                     rule=SYS_INTERFACE_CONFORMANCE,
                     node=node.id,
                     detail=(
-                        f"interface= declares {absent!r} but no bound file exports it"
+                        f"interface= declares {absent!r} but no other node "
+                        "imports it by name"
                     ),
                     capability=absent,
+                )
+            )
+    return found
+
+
+# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_duplicate_symbol_fires  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_no_duplicates_silent  # noqa: E501
+def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViolation]:
+    """SYS108 (T-1624): a node whose `interface=` attrs (module attrs
+    preserve every declared entry verbatim, `_node_attr_values`) name the
+    same symbol more than once -- the exact shape two byte-identical
+    `attr interface=[...]` blocks on one node elaborate into (module
+    docstring's SYS108 section). Pure text/model check, needs no code
+    binding at all."""
+    found: list[SelfConformViolation] = []
+    for node in model.nodes:
+        declared = _node_attr_values(node, _INTERFACE_PREFIX)
+        seen: set[str] = set()
+        dupes: set[str] = set()
+        for name in declared:
+            if name in seen:
+                dupes.add(name)
+            seen.add(name)
+        for name in sorted(dupes):
+            _log.warning(
+                "selfconform: SYS108 duplicate interface symbol %s on %s",
+                name,
+                node.id,
+            )
+            found.append(
+                SelfConformViolation(
+                    rule=SYS_DUPLICATE_INTERFACE,
+                    node=node.id,
+                    detail=(
+                        f"interface= declares {name!r} more than once "
+                        "-- duplicate attr interface= block"
+                    ),
+                    capability=name,
                 )
             )
     return found
@@ -1824,6 +2038,7 @@ def _collect_sys_violations(
     violations.extend(
         _interface_conformance_violations(model, capability_binding, root)
     )
+    violations.extend(_duplicate_interface_violations(model))
     violations.extend(_purpose_contract_violations(model, _all_kinds_view(raw_by_node)))
     violations.extend(_binding_totality_violations(model, capability_binding, root))
     scope_config = load_strata_scope_config(root)

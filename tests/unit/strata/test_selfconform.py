@@ -17,6 +17,7 @@ import pytest
 from frob.strata import (
     SYS_BINDING_TOTALITY,
     SYS_COVERAGE_TOTALITY,
+    SYS_DUPLICATE_INTERFACE,
     SYS_INTERFACE_CONFORMANCE,
     SYS_PURPOSE_CONTRACT,
     SYS_STALE_DESIGN,
@@ -1474,12 +1475,20 @@ class TestInterfaceConformance:
 
     # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
     def test_undeclared_public_symbol_fires(self, tmp_path: Path):
-        """A real public function the node's `interface=` set omits fires
-        SYS104 -- the "undeclared public surface" evasion row."""
+        """A real, CROSS-NODE-REFERENCED public function the node's
+        `interface=` set omits fires SYS104 -- the "undeclared public
+        surface" evasion row (T-1625: only fires for a symbol some OTHER
+        node's code actually imports by name, module docstring's SYS104/
+        T-1625 sections)."""
         _write(
             tmp_path,
             "src/frob/widget/_io.py",
             "def public_fn():\n    pass\n\ndef secret_backdoor():\n    pass\n",
+        )
+        _write(
+            tmp_path,
+            "src/frob/consumer/_use.py",
+            "from frob.widget._io import public_fn, secret_backdoor\n",
         )
         model = KernelModel(
             nodes=(
@@ -1487,6 +1496,11 @@ class TestInterfaceConformance:
                     id="widget",
                     trust="trusted",
                     attrs=("code=src/frob/widget/**", "interface=public_fn"),
+                ),
+                Node(
+                    id="consumer",
+                    trust="trusted",
+                    attrs=("code=src/frob/consumer/**",),
                 ),
             )
         )
@@ -1528,15 +1542,25 @@ class TestInterfaceConformance:
 
     # frob:tests src/frob/strata/_selfconform.py::_interface_conformance_violations kind="unit"  # noqa: E501
     def test_exact_match_is_silent(self, tmp_path: Path):
-        """A node whose `interface=` set EQUALS the real surface fires no
-        SYS104 at all."""
+        """A node whose `interface=` set EQUALS the REQUIRED surface (real
+        AND cross-node-referenced, T-1625) fires no SYS104 at all."""
         _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write(
+            tmp_path,
+            "src/frob/consumer/_use.py",
+            "from frob.widget._io import public_fn\n",
+        )
         model = KernelModel(
             nodes=(
                 Node(
                     id="widget",
                     trust="trusted",
                     attrs=("code=src/frob/widget/**", "interface=public_fn"),
+                ),
+                Node(
+                    id="consumer",
+                    trust="trusted",
+                    attrs=("code=src/frob/consumer/**",),
                 ),
             )
         )
@@ -1550,13 +1574,24 @@ class TestInterfaceConformance:
     # frob:waive DUP001 reason="shares the standard one-node/one-file check_self_conformance test scaffold with TestUndeclaredInterfaceCore.test_core_undeclared_interface_fires (SYS100), but asserts a DIFFERENT rule (SYS104) on a DIFFERENT observation (a real public symbol, not a net-effect capability) -- extracting a shared helper would only hide that these are two independent rules' own regression tests, each following this suite's established _write/Node/check_self_conformance idiom (T-1113)"  # noqa: E501
     def test_node_with_no_interface_attr_is_never_checked(self, tmp_path: Path):
         """T-1113: a node declaring no `interface=` attr at all is NO
-        LONGER silently skipped -- SYS104 is mandatory now, so a real
-        public symbol with nothing declared fires as missing (the old
-        opt-in scope cut this test used to assert is gone)."""
+        LONGER silently skipped -- SYS104 is mandatory now, so a real,
+        cross-node-referenced public symbol (T-1625) with nothing declared
+        fires as missing (the old opt-in scope cut this test used to
+        assert is gone)."""
         _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        _write(
+            tmp_path,
+            "src/frob/consumer/_use.py",
+            "from frob.widget._io import public_fn\n",
+        )
         model = KernelModel(
             nodes=(
                 Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+                Node(
+                    id="consumer",
+                    trust="trusted",
+                    attrs=("code=src/frob/consumer/**",),
+                ),
             )
         )
         result = check_self_conformance(model, tmp_path)
@@ -1597,6 +1632,127 @@ class TestInterfaceConformance:
             "__all__ = ['public_fn']\n\ndef public_fn():\n    pass\n\n"
             "def also_public_but_not_exported():\n    pass\n",
         )
+        _write(
+            tmp_path,
+            "src/frob/consumer/_use.py",
+            "from frob.widget._io import public_fn\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**", "interface=public_fn"),
+                ),
+                Node(
+                    id="consumer",
+                    trust="trusted",
+                    attrs=("code=src/frob/consumer/**",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_INTERFACE_CONFORMANCE for v in result.danger_ok.violations
+        )
+
+
+class TestDuplicateInterface:
+    """SYS108 (T-1624): a node's `interface=` attrs must not name the same
+    symbol more than once -- the elaborated-model shape two byte-identical
+    `attr interface=[...]` blocks on one node produce."""
+
+    # frob:tests src/frob/strata/_selfconform.py::_duplicate_interface_violations kind="unit"  # noqa: E501
+    def test_duplicate_symbol_fires(self, tmp_path: Path):
+        """A node whose `interface=` attrs repeat a name (the shape two
+        duplicate `attr interface=[...]` blocks elaborate into) fires
+        SYS108, naming the duplicated symbol."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=(
+                        "code=src/frob/widget/**",
+                        "interface=public_fn",
+                        "interface=public_fn",
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v
+            for v in result.danger_ok.violations
+            if v.rule == SYS_DUPLICATE_INTERFACE
+        ]
+        assert len(hits) == 1
+        assert hits[0].node == "widget"
+        assert hits[0].capability == "public_fn"
+
+    # frob:tests src/frob/strata/_selfconform.py::_duplicate_interface_violations kind="unit"  # noqa: E501
+    def test_grammar_parsed_duplicate_blocks_fire_not_lexical_text(
+        self, tmp_path: Path
+    ) -> None:
+        """SYS108 must judge duplication from the REAL parsed grammar
+        (`Node.attrs`, via `load_design_ids`/`merge_models`), not a text
+        scan of the raw `.strata` source: a `//` comment line that happens
+        to contain the literal text `attr interface=[public_fn];` is NOT a
+        declaration at all under this language's grammar (comments are
+        `//`-prefixed only, no block-comment form -- `strata-core/src/
+        parse/lexer.rs`) and must not be counted, while the two REAL
+        (non-commented) `attr interface=[...]` blocks on the same node
+        must still fire exactly once for the one genuinely duplicated
+        symbol."""
+        pytest.importorskip("strata_core")
+        from frob.strata._design_load import load_design_ids
+        from frob.strata._sysdoc import merge_models
+
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
+        design_dir = tmp_path / "design"
+        design_dir.mkdir()
+        (design_dir / "widget.strata").write_text(
+            "module widget\n"
+            "node widget : trusted {\n"
+            "    // NOT a real declaration -- a comment that merely LOOKS\n"
+            "    // like one: attr interface=[public_fn];\n"
+            '    code "src/frob/widget/**";\n'
+            "    attr interface=[\n"
+            "        public_fn,\n"
+            "    ];\n"
+            "    attr interface=[\n"
+            "        public_fn,\n"
+            "    ];\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        ids = load_design_ids(tmp_path, "design")
+        assert not ids.errors, f"design load failed: {ids.errors}"
+        model = merge_models(ids.models)
+
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok, result.err
+        hits = [
+            v
+            for v in result.danger_ok.violations
+            if v.rule == SYS_DUPLICATE_INTERFACE
+        ]
+        # Exactly one duplicated symbol, exactly one finding -- the comment
+        # contributed nothing (grammar-aware), and the two REAL blocks each
+        # contribute one `interface=public_fn` attr, giving 2 total (one
+        # duplicate pair), not 3 (which a lexical text-count including the
+        # comment line would have produced).
+        assert len(hits) == 1
+        assert hits[0].capability == "public_fn"
+
+    # frob:tests src/frob/strata/_selfconform.py::_duplicate_interface_violations kind="unit"  # noqa: E501
+    def test_no_duplicates_silent(self, tmp_path: Path):
+        """A node whose `interface=` attrs name every symbol exactly once
+        fires no SYS108 at all."""
+        _write(tmp_path, "src/frob/widget/_io.py", "def public_fn():\n    pass\n")
         model = KernelModel(
             nodes=(
                 Node(
@@ -1609,7 +1765,7 @@ class TestInterfaceConformance:
         result = check_self_conformance(model, tmp_path)
         assert result.is_ok
         assert not any(
-            v.rule == SYS_INTERFACE_CONFORMANCE for v in result.danger_ok.violations
+            v.rule == SYS_DUPLICATE_INTERFACE for v in result.danger_ok.violations
         )
 
 

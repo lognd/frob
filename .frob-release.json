@@ -1608,6 +1608,7 @@
     "src/frob/strata/_secrets.py::elaborate_secret": "e15ed46b1be7e097c6b4d5dee074edb5fedb577d6fe47459538f1545ad7b03eb",
     "src/frob/strata/_selfconform.py::SYS_BINDING_TOTALITY": "2260608eecce3d447bfb5b250b3db63ac4527387f1e7466e4e45effdedbf88f7",
     "src/frob/strata/_selfconform.py::SYS_COVERAGE_TOTALITY": "43b4bf36e49b6ddb443e2e2e61bf53f4606fb99ac37a28f3db83fbe42b52dc74",
+    "src/frob/strata/_selfconform.py::SYS_DUPLICATE_INTERFACE": "4cc286cdb4b1f91dfcc4ba1e9425b5946cdb993cd1873ddef3097573957c8ed0",
     "src/frob/strata/_selfconform.py::SYS_INTERFACE_CONFORMANCE": "ffa449855a198151693f5452172b218a2c369cfc48d297b0e088dc520da4d8c4",
     "src/frob/strata/_selfconform.py::SYS_PURPOSE_CONTRACT": "ce6d1b18e6fd6443e4de5b9b1bff99a7584e293914e38ee86799b506dc512379",
     "src/frob/strata/_selfconform.py::SYS_STALE_DESIGN": "8dc430cda31d121e654ad55c1662dbce2065f34e554abe4836f3304b0dfc6612",
@@ -2066,5 +2067,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.351.0"
+  "version": "0.352.0"
 }

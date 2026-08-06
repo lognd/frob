@@ -4137,7 +4137,7 @@ Umbrella for the strata self-model hardening reviewed on 2026-08-05. Findings, i
 id: T-1624
 title: 'strata: sync-interface appends duplicate attr interface blocks instead of
   replacing'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -4146,11 +4146,99 @@ parent: T-1623
 tier: ticket
 sprint: null
 scope:
-- src/frob/strata/**
 - design/frob.strata
-- tests/**
+- src/frob/strata/_sync_interface.py
+- src/frob/strata/_selfconform.py
+- tests/unit/strata/test_sync_interface.py
+- tests/unit/strata/test_selfconform.py
+- src/frob/strata/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/_sync_interface.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/strata/test_sync_interface.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: design/frob.strata
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/_sync_interface.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/strata/test_sync_interface.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'narrow to files actually touched: sync-interface fix, one-time dedup, new
+    lint'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: SYS_DUPLICATE_INTERFACE constant needs the same public re-export __init__.py
+    already does for every other SYS10x rule id
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/strata/**
+  reason: narrow to files actually touched; the two broad globs from ticket filing
+    are superseded by explicit adds
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: tests/**
+  reason: narrow to files actually touched; the two broad globs from ticket filing
+    are superseded by explicit adds
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_duplicate_blocks_collapsed_to_one
+- tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_duplicate_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_no_duplicates_silent
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_comment_line_is_not_mistaken_for_a_block
+- tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_grammar_parsed_duplicate_blocks_fire_not_lexical_text
 threat: null
 component: null
 ```
@@ -4166,11 +4254,86 @@ Add a lint: more than one `attr interface=` on a single node is an error. A decl
 
 Expected effect: the file loses several hundred lines of pure redundancy, and a whole class of "which block is authoritative?" ambiguity disappears.
 
+## Done report
+
+frob sys sync-interface's span-finder (_find_interface_span, now
+_find_interface_spans) used to stop scanning a node's body at the FIRST
+attr interface=[...] block it found and return that one span alone.
+_rewrite_node_interface_block then only ever replaced that first span --
+any SECOND interface block elsewhere in the same node body (this repo's
+own design/frob.strata has one right after the header AND another right
+before the closing brace, non-contiguous, separated by may/code/clearance
+attrs) was silently left in place forever. That produced exactly the
+observed damage: 45 byte-identical duplicate blocks across ~17 nodes,
+predating any single sync run (confirmed by inspecting an earlier commit).
+
+Fix: _find_interface_spans now scans the WHOLE node body and returns
+EVERY span found (compact [...] blocks and legacy one-line-per-symbol
+lines, freely mixed). _rewrite_node_interface_block merges every span's
+declared names, and rewrites whenever more than one span is found (not
+just on a symbol-set mismatch) -- collapsing them into exactly one
+compact block at the first span's position, deleting the rest.
+
+Applied the fix to design/frob.strata itself via `frob sys
+sync-interface` (no --check): 3191 -> 2363 lines, 34 -> 18 interface
+blocks (0 duplicates, one per node with a declared surface). Re-ran
+--check immediately after: 0 drift (idempotent). Confirmed the file
+still parses via frob.lang.parse_file.
+
+Added SYS108 (_duplicate_interface_violations, src/frob/strata/
+_selfconform.py): a node whose interface= attrs (read from the real
+ELABORATED grammar model, Node.attrs -- not a text scan) name the same
+symbol more than once is now a hard ERROR, always (no advisory tier),
+wired into _collect_sys_violations and re-exported from
+frob.strata.__init__ alongside every other SYS10x id. Ran `frob check
+--only sys --ticket T-1624`: 0 errors -- the repo's own now-deduped
+design/frob.strata does not trip its own new lint.
+
+Per a mid-task nudge, added two regression tests proving both the
+SYS108 check and the sync-interface span-finder are GRAMMAR-aware, not
+merely lexical: a '//' comment line containing literal
+"attr interface=[public_fn];" text is provably never counted as a
+declaration or a span (this language has no block-comment form, only
+'//'-prefixed line comments per strata-core/src/parse/lexer.rs), while
+the two REAL (non-commented) duplicate blocks on the same node still
+fire exactly once.
+
+`frob check --land-parity` could not complete inside its own 400s
+foreground budget under the current session's load (multiple concurrent
+agents/lands) -- reported here as an unmeasured result, not a clean
+result, per the playbook's own instruction not to claim more than was
+observed. Scoped `frob check --only test/sys/scope/prework --ticket
+T-1624` all read 0 errors.
+
+### Changed
+```
+ design/frob.strata                       | 1560 +++++++-----------------------
+ src/frob/strata/__init__.py              |    2 +
+ src/frob/strata/_selfconform.py          |   60 ++
+ src/frob/strata/_sync_interface.py       |  161 +--
+ tests/unit/strata/test_selfconform.py    |  112 +++
+ tests/unit/strata/test_sync_interface.py |   81 ++
+ tickets.md                               |   81 +-
+ 7 files changed, 790 insertions(+), 1267 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_duplicate_blocks_collapsed_to_one` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_duplicate_symbol_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_no_duplicates_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_comment_line_is_not_mistaken_for_a_block` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_grammar_parsed_duplicate_blocks_fire_not_lexical_text` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 258 warning(s), 865 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1625 -->
 ```yaml
 id: T-1625
 title: 'strata: testsuite node declares 5277 test names as interface symbols'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -4180,11 +4343,86 @@ tier: ticket
 sprint: null
 scope:
 - design/frob.strata
-- src/frob/strata/**
-- src/frob/gates/**
-- tests/**
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_sync_interface.py
+- tests/unit/strata/test_selfconform.py
+- tests/unit/strata/test_sync_interface.py
+- src/frob/strata/_code_binding.py
+- src/frob/strata/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/strata/**
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: tests/**
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: design/frob.strata
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/_sync_interface.py
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/strata/test_sync_interface.py
+  reason: 'narrow to files actually touched: SYS104 cross-node-reference narrowing
+    (option 3) + design file regen'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/_code_binding.py
+  reason: new cross-node-reference helper reuses _dotted/_join_dotted/_relative_base_dir
+    from _code_binding.py
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: 'shared worktree: __init__.py''s SYS_DUPLICATE_INTERFACE export was added
+    under T-1624, still shows in T-1625''s cumulative branch diff since neither has
+    landed yet'
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_undeclared_public_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_declared_but_absent_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_exact_match_is_silent
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_no_interface_attr_is_never_checked
+- tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_dunder_all_overrides_name_based_collection
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_no_drift_reports_clean
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_addition_and_removal_detected
+- tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_duplicate_blocks_collapsed_to_one
 threat: null
 component: null
 ```
@@ -4202,6 +4440,96 @@ Options, and the ticket should pick one with reasoning:
 Option 3 is the most principled and the most work; it is also the one that would fix the general problem rather than special-casing tests. Consider it seriously before defaulting to 1.
 
 Whichever is chosen, the acceptance is that the design file describes CONTRACTS, and that a reader can see the real architectural surface without scrolling past five thousand test names.
+
+## Done report
+
+Chose OPTION 3 (narrow SYS104 to symbols actually referenced across node
+boundaries), the option the ticket itself flagged as most principled,
+over option 1 (exempt test-tree nodes) or option 2 (an interface_exempt
+escape hatch). Reasoning: option 1/2 special-case tests specifically and
+leave the underlying problem -- "interface=" declaring the WHOLE real
+public surface rather than a genuine contract -- untouched for every
+other node; option 3 fixes the general problem, and the ticket's own
+prediction that it "would shrink every node's list, not just testsuite's"
+held (see numbers below).
+
+Implementation: `_cross_node_referenced_symbols` (src/frob/strata/
+_selfconform.py) walks every bound .py file's `from <module> import
+<name>` statements, resolves `<module>` in-repo, and -- when the target
+file is owned by a DIFFERENT node than the importer -- records `<name>`
+as required for the target's node. SYS104's required surface becomes
+`real_public_surface & cross_node_referenced`, computed once per
+check/sync run and threaded through both `_interface_conformance_
+violations` (the gate) and `_sync_interface.py`'s writer (so gate and
+writer agree on what "required" means -- otherwise every sync run would
+immediately re-drift against the gate it's meant to satisfy).
+
+A real infrastructure gap surfaced immediately on the whole-repo pass:
+`resolve_local_import`'s python branch resolves a dotted spec by literal
+`spec.replace(".", "/")` against `root`, with no src-layout awareness.
+A RELATIVE import's dotted prefix is derived from the importing file's
+own on-disk position (already carries the `src.` segment via
+`_code_binding.py`'s `_dotted`), so it resolves fine -- but an ABSOLUTE
+cross-package import (`from frob.excludes import x`, this repo's
+dominant CROSS-NODE shape) never resolved against the real repo root,
+confirmed directly:
+`resolve_local_import("frob.excludes", ..., root=<repo root>)` returns
+None even though `src/frob/excludes.py` exists. SYS106's own
+`_reachable_local_files` has silently eaten this gap for a while --
+invisible there since an unreached file just stays unflagged -- but my
+narrowing cannot afford to silently drop nearly every real cross-node
+reference. `_resolve_cross_package_import`/`_src_root_prefixes` derive
+the missing prefix from the bound file layout itself (no hardcoded
+"src") and retry.
+
+Applied via `frob sys sync-interface` (no --check) after the code
+change: design/frob.strata 2363 -> 1798 lines. testsuite's own
+interface collapsed to `[]` (0 symbols, from 5277) -- confirming nothing
+in the repo ever imports a test by name. Total declared interface
+symbols across the WHOLE file: ~9000 -> 1457 (smaller than the ticket's
+own back-of-envelope ~3700 estimate for "everything except testsuite",
+because the general narrowing also trimmed other nodes' previously
+over-declared surface, not only testsuite's -- exactly the effect the
+ticket predicted and preferred). Re-ran --check immediately after: 0
+drift (idempotent). Confirmed the file still parses via
+frob.lang.parse_file. `frob check --only sys --ticket T-1625`: 0 errors
+-- the full-repo `check_self_conformance` integration test
+(TestRealGateGreen.test_repo_design_and_declarations_are_self_conformant)
+passes with zero violations against the regenerated file.
+
+Every existing TestInterfaceConformance/TestSyncInterfaceReport unit
+test that asserted the OLD "declared == full real surface" semantics
+was updated to add an explicit cross-node consumer file/node -- the
+new semantics require one before a symbol is expected to be declared
+at all; each test's docstring/comment now says why.
+
+### Changed
+```
+ design/frob.strata                       | 1857 ++++--------------------------
+ src/frob/strata/__init__.py              |    2 +
+ src/frob/strata/_selfconform.py          |  295 ++++-
+ src/frob/strata/_sync_interface.py       |  187 +--
+ tests/unit/strata/test_selfconform.py    |  170 ++-
+ tests/unit/strata/test_sync_interface.py |  159 ++-
+ tickets.md                               |  237 +++-
+ 7 files changed, 1146 insertions(+), 1761 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_undeclared_public_symbol_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_declared_but_absent_symbol_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_exact_match_is_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_no_interface_attr_is_never_checked` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_dunder_all_overrides_name_based_collection` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_no_drift_reports_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_addition_and_removal_detected` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_duplicate_blocks_collapsed_to_one` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 0 error(s), 301 warning(s), 870 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1626 -->
 ```yaml
@@ -4251,6 +4579,7 @@ This repo already owns the machinery: frob.graph.callgraph does call-graph resol
 Fail-closed requirement: when resolution cannot determine a call's target (genuinely dynamic dispatch, a computed getattr), that must surface as an explicit UNRESOLVED finding demanding a declaration or a waiver -- never as "no capability found". This drive has repeatedly been burned by analysis that reported nothing when it could not look; the capability layer must not repeat it.
 
 Prerequisite for symbol-level `via`: attributing a capability to a specific declared symbol is only meaningful once the hit itself is symbol-resolved. Sequence this before, or together with, the via-granularity work.
+
 <!-- ticket:T-1627 -->
 ```yaml
 id: T-1627
@@ -4619,6 +4948,7 @@ My read is NO for waiver reasons specifically, but the decision should be delibe
 Note the pattern: this is the third detector this drive found reading PROSE as if it were a declaration (TICK006 on a marker quoted mid-sentence, T-1541; the live-tracker scan on Done-report narrative, T-1633; now INV006 on a waiver reason). Consider whether these want a shared notion of "this span is explanatory text, not a declaration" rather than three independent fixes -- the DSL already knows where directive attributes end and free text begins.
 
 Whatever is decided, add the case to the test suite so the behavior is pinned rather than incidental.
+
 <!-- ticket:T-1643 -->
 ```yaml
 id: T-1643

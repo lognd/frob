@@ -28,22 +28,23 @@ text edit rather than a hand patch:
 
 Text-editing strategy (never a full re-serialize -- MUST preserve every
 comment and every other attr/waive/access line untouched, module docstring
-promise): each node's `interface=` declaration forms one CONTIGUOUS block
-with no interleaved comments anywhere in this repo's own
-`design/frob.strata` today (verified by direct inspection at T-1150 write
-time). `_find_interface_span` finds that contiguous span (if any) inside
-one node's `{ ... }` body (brace-depth matched, since `on crash { ... }`/
+promise): a node's `interface=` declaration is EXPECTED to be one
+contiguous block (brace-depth matched, since `on crash { ... }`/
 `on breach { ... }`/`on deploy { ... }` sub-blocks nest their own braces
-inside a node body and a naive first-`}` search would truncate early),
-recognizing EITHER form the grammar accepts (module docstring's T-1198
-paragraph below), and `_rewrite_node_interface_block` replaces it in
-place with the sorted, measured set -- everything before/after that
-span, including every comment, is copied through byte-for-byte. A node
-with real symbols but no existing `interface=` declaration yet (a
-brand-new node, never hand-populated) gets its block inserted directly
-after the node's opening `{` line, the same "no established position,
-insert right after the header" convention `sync_interface_report`'s own
-tests pin down.
+inside a node body and a naive first-`}` search would truncate early), but
+`_find_interface_spans` does NOT assume there is only one -- it finds
+EVERY span in the body, recognizing EITHER form the grammar accepts
+(module docstring's T-1198 paragraph below). T-1624: an earlier version of
+this scan stopped at the first match, so a node carrying a duplicate (or
+stray leftover) second `interface=` block silently kept it forever --
+`_rewrite_node_interface_block` now collapses every span found into ONE,
+deleting all but the merged, re-rendered block at the first span's
+position -- everything else in the file, including every comment, is
+copied through byte-for-byte. A node with real symbols but no existing
+`interface=` declaration yet (a brand-new node, never hand-populated) gets
+its block inserted directly after the node's opening `{` line, the same
+"no established position, insert right after the header" convention
+`sync_interface_report`'s own tests pin down.
 
 T-1198 (`interface=` boilerplate elimination): before this ticket, SYS104's
 mechanical upkeep convention was ONE bare `attr interface=X;` LINE per
@@ -63,14 +64,16 @@ identical either way. This module is the WRITER half: `_render_
 interface_block` now emits that compact form, `NAMES_PER_LINE` symbol
 names per wrapped line purely for readability (the grammar does not care
 about the newlines inside `[...]`), instead of one line per symbol.
-`_find_interface_span` reads BOTH forms (the compact block it now
+`_find_interface_spans` reads BOTH forms (the compact block it now
 writes, and the legacy one-line-per-symbol form for backward
 compatibility on a file not yet migrated) and always WRITES the compact
 form -- including a one-time reformat of an already-correct legacy
-declaration whose symbol SET already matches real (`is_compact` in
-`_find_interface_span`'s return, forcing the rewrite even when nothing
-about the SYMBOLS changed), so running `frob sys sync-interface` once
-migrates an entire repo off the old form. Migrating this repo's own
+declaration whose symbol SET already matches real (`single_clean` in
+`_rewrite_node_interface_block`, forcing the rewrite whenever more than
+one span is found OR the sole span is not already compact, even when
+nothing about the SYMBOLS changed), so running `frob sys sync-interface`
+once migrates an entire repo off the old form AND collapses any
+already-duplicated node down to one block. Migrating this repo's own
 `design/frob.strata` measured 5588 -> 2207 lines (~60% reduction),
 confirmed idempotent (`frob sys sync-interface --check` reports zero
 drift immediately after).
@@ -106,7 +109,7 @@ from frob.logging import get_logger
 from ._code_binding import CodeBinding, bind_code
 from ._design_load import DEFAULT_DESIGN_DIR, load_design_ids
 from ._errors import StrataError
-from ._selfconform import _node_real_public_surface
+from ._selfconform import _cross_node_referenced_symbols, _node_real_public_surface
 from ._sysdoc import merge_models
 
 _log = get_logger(__name__)
@@ -217,20 +220,32 @@ def _node_body_span(lines: list[str], header_idx: int) -> int:
     return len(lines) - 1  # malformed input: no matching close, best effort
 
 
-def _find_interface_span(
+#: One located `interface=` declaration span: `(first_line, last_line,
+#: indent, names, is_compact)` -- see `_find_interface_spans`.
+_InterfaceSpan = tuple[int, int, str, list[str], bool]
+
+
+def _find_interface_spans(
     lines: list[str], header_idx: int, close_idx: int
-) -> tuple[int, int, str, list[str], bool] | None:
-    """Locate one node's existing `interface=` declaration, whichever form
-    it is written in (T-1198: the compact `[...]` block this module now
-    writes, or the legacy one-line-per-symbol form it still reads for
-    backward compatibility on a file not yet rewritten). Returns
-    `(first_line, last_line, indent, names, is_compact)` or `None` if the
-    node declares no `interface=` at all yet -- `is_compact` lets
-    `_rewrite_node_interface_block` force a ONE-TIME format migration on a
-    legacy-form block even when its symbol SET already matches (otherwise
-    a repo migrating from the old form would never get rewritten, since
-    `declared_set == real` looks clean by symbols alone)."""
-    for idx in range(header_idx + 1, close_idx):
+) -> list[_InterfaceSpan]:
+    """Locate EVERY `interface=` declaration inside one node's body, in
+    whichever form each is written (T-1198's compact `[...]` block, or the
+    legacy one-line-per-symbol form, freely mixed). T-1624: this used to
+    stop at the FIRST match and return it alone -- `_rewrite_node_
+    interface_block` then only ever replaced that first span, silently
+    leaving any SECOND (or later) block untouched. That is exactly how
+    `design/frob.strata` ended up with 45 byte-identical duplicate blocks
+    across ~17 nodes (T-1624): a node with an interface block anywhere but
+    the very first `interface=` occurrence in its body kept accumulating a
+    stale copy on every sync run that inserted at a different position (or
+    on any manual edit that left an old block in place). Returning every
+    span found lets the caller MERGE and dedupe them into exactly one.
+    Each compact block scan skips past its own close line so a legacy
+    line inside one block's symbol list (impossible today, but the regex
+    alone would not rule it out) cannot be double-counted."""
+    spans: list[_InterfaceSpan] = []
+    idx = header_idx + 1
+    while idx < close_idx:
         open_m = _INTERFACE_BLOCK_OPEN_RE.match(lines[idx])
         if open_m is not None:
             names: list[str] = []
@@ -242,24 +257,16 @@ def _find_interface_span(
                 names.extend(
                     part.strip() for part in lines[j].split(",") if part.strip()
                 )
-            return idx, close_idx_inner, open_m.group("indent"), names, True
-    first_iface = None
-    last_iface = None
-    indent = None
-    names_legacy: list[str] = []
-    for idx in range(header_idx + 1, close_idx):
-        m = _INTERFACE_LINE_RE.match(lines[idx])
-        if m is None:
+            spans.append((idx, close_idx_inner, open_m.group("indent"), names, True))
+            idx = close_idx_inner + 1
             continue
-        if first_iface is None:
-            first_iface = idx
-            indent = m.group("indent")
-        last_iface = idx
-        names_legacy.append(m.group("name"))
-    if first_iface is None:
-        return None
-    assert indent is not None and last_iface is not None
-    return first_iface, last_iface, indent, names_legacy, False
+        legacy_m = _INTERFACE_LINE_RE.match(lines[idx])
+        if legacy_m is not None:
+            spans.append(
+                (idx, idx, legacy_m.group("indent"), [legacy_m.group("name")], False)
+            )
+        idx += 1
+    return spans
 
 
 def _render_interface_block(indent: str, names: frozenset[str]) -> list[str]:
@@ -285,25 +292,28 @@ def _render_interface_block(indent: str, names: frozenset[str]) -> list[str]:
 def _rewrite_node_interface_block(
     lines: list[str], header_idx: int, real: frozenset[str]
 ) -> tuple[list[str], NodeInterfaceDiff | None]:
-    """Replace one node's `interface=` declaration (whichever form it is
-    currently written in, `_find_interface_span`) with a compact
+    """Replace one node's `interface=` declaration(s) (`_find_interface_spans`
+    -- possibly more than one span pre-T-1624) with a SINGLE compact
     `interface=[...]` block covering the sorted `real` surface (T-1198,
     `_render_interface_block`); returns the (possibly unchanged) full
-    `lines` list plus the diff record, or `None` if nothing changed.
-    Module docstring's "Text-editing strategy" section explains the
-    contiguous-span assumption this relies on."""
+    `lines` list plus the diff record, or `None` if nothing changed. T-1624:
+    when more than one span is found, this ALWAYS rewrites (collapsing
+    every span into one), even if the union of their declared names already
+    equals `real` -- duplication itself is the defect being fixed, not just
+    a symbol-set mismatch; a node that is merely duplicated, not drifted,
+    must still be corrected down to one block."""
     close_idx = _node_body_span(lines, header_idx)
-    span = _find_interface_span(lines, header_idx, close_idx)
-    if span is None:
-        first_iface = last_iface = None
+    spans = _find_interface_spans(lines, header_idx, close_idx)
+    if not spans:
         indent = None
-        declared: list[str] = []
-        is_compact = True  # nothing to migrate
+        declared_set: frozenset[str] = frozenset()
+        single_clean = True  # nothing to migrate, nothing to dedupe
     else:
-        first_iface, last_iface, indent, declared, is_compact = span
+        indent = spans[0][2]
+        declared_set = frozenset(name for span in spans for name in span[3])
+        single_clean = len(spans) == 1 and spans[0][4]  # one span, already compact
 
-    declared_set = frozenset(declared)
-    if declared_set == real and is_compact:
+    if declared_set == real and single_clean:
         return lines, None
 
     added = tuple(sorted(real - declared_set))
@@ -321,8 +331,17 @@ def _rewrite_node_interface_block(
 
     new_block = _render_interface_block(indent, real)
 
-    if first_iface is not None and last_iface is not None:
-        new_lines = lines[:first_iface] + new_block + lines[last_iface + 1 :]
+    if spans:
+        # Remove every span's line range, LAST span first, so removing a
+        # later span never shifts an earlier span's already-recorded line
+        # indices out from under it; the first span's own start index is
+        # therefore still valid once every later span is gone, and doubles
+        # as the insertion point for the single merged block.
+        new_lines = list(lines)
+        for first, last, _, _, _ in reversed(spans):
+            del new_lines[first : last + 1]
+        insert_at = spans[0][0]
+        new_lines[insert_at:insert_at] = new_block
     else:
         # Nothing declared yet: insert right after the node's opening line.
         new_lines = lines[: header_idx + 1] + new_block + lines[header_idx + 1 :]
@@ -330,11 +349,20 @@ def _rewrite_node_interface_block(
 
 
 def _sync_one_file(
-    text: str, binding: CodeBinding, root: Path
+    text: str,
+    binding: CodeBinding,
+    root: Path,
+    cross_referenced: dict[str, frozenset[str]],
 ) -> FileSyncResult | None:
     """Compute (and apply, in-memory) every node drift in one `.strata`
     file's raw `text`; returns `None` if the file declares no node headers
-    at all (nothing for this command to do)."""
+    at all (nothing for this command to do). `cross_referenced` (T-1625,
+    `_selfconform._cross_node_referenced_symbols`, computed ONCE per
+    report and threaded through rather than recomputed per file/node) is
+    the same required-surface narrowing SYS104 itself now enforces -- this
+    writer and that gate MUST agree on what "required" means, or every
+    sync run would immediately re-drift against the gate it is meant to
+    satisfy."""
     lines = text.splitlines()
     diffs: list[NodeInterfaceDiff] = []
     # Node headers never nest (a `.strata` node body cannot contain another
@@ -351,11 +379,12 @@ def _sync_one_file(
             continue  # defensive: should always still match post-shift
         node_id = m.group("id")
         real = _node_real_public_surface(binding, root, node_id)
+        required = real & cross_referenced.get(node_id, frozenset())
         declared = frozenset(_node_attr_values_at(lines, idx))
-        if not declared and not real:
+        if not declared and not required:
             continue
         before_len = len(lines)
-        lines, diff = _rewrite_node_interface_block(lines, idx, real)
+        lines, diff = _rewrite_node_interface_block(lines, idx, required)
         if diff is not None:
             diffs.append(diff)
             offset += len(lines) - before_len
@@ -367,13 +396,13 @@ def _sync_one_file(
 
 def _node_attr_values_at(lines: list[str], header_idx: int) -> list[str]:
     """The declared `interface=` symbol names inside the node body opened at
-    `lines[header_idx]`, whichever form they are written in
-    (`_find_interface_span`) -- used only for the early-continue "nothing
-    declared, nothing real" skip; the authoritative diff computation still
-    happens inside `_rewrite_node_interface_block`."""
+    `lines[header_idx]`, across EVERY span found (`_find_interface_spans`)
+    -- used only for the early-continue "nothing declared, nothing real"
+    skip; the authoritative diff computation still happens inside
+    `_rewrite_node_interface_block`."""
     close_idx = _node_body_span(lines, header_idx)
-    span = _find_interface_span(lines, header_idx, close_idx)
-    return [] if span is None else span[3]
+    spans = _find_interface_spans(lines, header_idx, close_idx)
+    return [name for span in spans for name in span[3]]
 
 
 # frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
@@ -405,6 +434,10 @@ def sync_interface_report(
         _log.error("sync_interface_report: bind_code failed: %s", bound.danger_err)
         return Err(bound.danger_err)
     binding = bound.danger_ok
+    # T-1625: computed ONCE for the whole report, not per file/node -- see
+    # `_sync_one_file`'s docstring for why this must be the SAME view
+    # SYS104 itself uses.
+    cross_referenced = _cross_node_referenced_symbols(binding, root)
 
     design_root = root / design_dir
     results: list[FileSyncResult] = []
@@ -422,7 +455,7 @@ def sync_interface_report(
         # substring fallback the check that actually mattered in practice.
         if "node " not in text and "store " not in text:
             continue
-        result = _sync_one_file(text, binding, root)
+        result = _sync_one_file(text, binding, root, cross_referenced)
         if result is None:
             continue
         rel = path.relative_to(root).as_posix()
