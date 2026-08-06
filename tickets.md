@@ -10976,7 +10976,7 @@ scope also includes (T-1262/T-1531 citation fixes above).
 ```yaml
 id: T-1642
 title: Burn down gate:TICK warnings (TICK003/004/007/009/011)
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-08-06'
@@ -10999,6 +10999,8 @@ scope_changes:
   at: '2026-08-06'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- cmd:bash -c "grep -q T-1544 tickets-archive.md && grep -q T-1549 tickets-archive.md"
+  exit=0 sha256=e3b0c44298fc
 threat: null
 component: null
 ```
@@ -11163,7 +11165,6 @@ dispatch declined to do, moved one layer of indirection away.
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 328 warning(s), 799 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1643 -->
 ```yaml
 id: T-1643
