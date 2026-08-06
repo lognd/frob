@@ -9298,3 +9298,37 @@ threat: null
 component: null
 ```
 Umbrella for the strata self-model hardening reviewed on 2026-08-05. Findings, in dependency order: the declaration file is half redundancy (duplicate attr blocks, 5277 test names declared as interface); interface= is a generated mirror that cannot be meaningfully violated; capability detection is lexical rather than symbol-resolved; and via grants whole FILES rather than single controllable locations, with permission lists that only ever grow. Children carry the detail. Sequence the mechanical cleanups first so the design work reasons over a smaller surface.
+
+<!-- ticket:T-1624 -->
+```yaml
+id: T-1624
+title: 'strata: sync-interface appends duplicate attr interface blocks instead of
+  replacing'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-05'
+priority: high
+parent: T-1623
+tier: ticket
+sprint: null
+scope:
+- src/frob/strata/**
+- design/frob.strata
+- tests/**
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Nearly every node in design/frob.strata carries TWO byte-identical `attr interface=[...]` blocks. 45 blocks across ~17 nodes. Measured on node `checker`: block 0 and block 1 both list the same 11 symbols, differing only in a trailing comma.
+
+This predates the 2026-08-05 sync-interface run (verified by inspecting the file at an earlier commit), so it is a long-standing bug, not fresh damage.
+
+Root cause to confirm: `frob sys sync-interface` APPENDS a fresh interface block rather than REPLACING the existing one. The parser evidently tolerates it (last-wins, or first-wins) which is exactly why nobody noticed -- the file stayed semantically correct while doubling in size.
+
+Fix: sync-interface replaces in place. Then a one-time pass removing the duplicate blocks.
+
+Add a lint: more than one `attr interface=` on a single node is an error. A declaration language whose own declarations can silently duplicate cannot be the source of truth for anything -- and this file is supposed to be the source of truth for the whole self-model.
+
+Expected effect: the file loses several hundred lines of pure redundancy, and a whole class of "which block is authoritative?" ambiguity disappears.
