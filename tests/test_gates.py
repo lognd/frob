@@ -428,6 +428,16 @@ class TestBaselineDelta:
         # frob:tests src/frob/gates/_baseline.py::load_baseline kind="unit"
         assert load_baseline(tmp_path) is None
 
+    def test_load_baseline_malformed_json_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_baseline.py::load_baseline kind="unit"
+        """A `.frob/baseline` file that exists but is not valid JSON must
+        hit the `except (OSError, ValueError)` branch and return `None`,
+        not raise -- distinct from the missing-file branch above."""
+        stamp_path = tmp_path / ".frob" / "baseline"
+        stamp_path.parent.mkdir(parents=True, exist_ok=True)
+        stamp_path.write_text("{not valid json", encoding="utf-8")
+        assert load_baseline(tmp_path) is None
+
     def test_delta_filters_known_violations(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_baseline.py::delta_violations kind="unit"
         _write(tmp_path, "src/a.py", "def f():\n    pass\n")
@@ -5280,6 +5290,53 @@ class TestScopePrework:
         assert result.is_ok
         loaded = load_prework(tmp_path, "T-0001")
         assert loaded == sweep
+
+    def test_record_prework_returns_err_on_oserror(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_prework.py::record_prework
+        """`record_prework` must return `Err(GateError.WriteFailed)`, not
+        raise, when the write fails -- induced here by pre-creating the
+        target path AS A DIRECTORY, so `path.write_text(...)` raises
+        `IsADirectoryError` (an `OSError`)."""
+        from frob.gates._models import GateError
+        from frob.gates._prework import _prework_path
+
+        sweep = PreworkSweep(
+            date=date(2026, 1, 1), dup_findings=0, xref_hits=(), digest="x"
+        )
+        path = _prework_path(tmp_path, "T-0002")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.mkdir()  # a directory where record_prework expects to write a file
+
+        result = record_prework(tmp_path, "T-0002", sweep)
+        assert result.is_err
+        assert result.danger_err == GateError.WriteFailed
+
+    def test_load_prework_returns_none_on_malformed_json(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_prework.py::load_prework
+        """`load_prework` must return `None` (never raise) when the
+        recorded file exists but is not valid JSON -- the documented
+        "unreadable" contract, induced with real malformed content on
+        disk rather than a mock."""
+        from frob.gates._prework import _prework_path, load_prework
+
+        path = _prework_path(tmp_path, "T-0003")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{not valid json", encoding="utf-8")
+
+        assert load_prework(tmp_path, "T-0003") is None
+
+    def test_load_prework_returns_none_on_schema_mismatch(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_prework.py::load_prework
+        """Valid JSON that does not satisfy `PreworkSweep`'s schema (a
+        pydantic `ValidationError`, itself a `ValueError` subclass) hits
+        the same swallow-and-return-None branch as malformed JSON."""
+        from frob.gates._prework import _prework_path, load_prework
+
+        path = _prework_path(tmp_path, "T-0004")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"totally": "wrong shape"}), encoding="utf-8")
+
+        assert load_prework(tmp_path, "T-0004") is None
 
     # frob:ticket T-0584
     def test_prework_sweep_default_partial_is_false_and_treated_as_final(
@@ -10492,6 +10549,31 @@ class TestAutofixManifest:
         assert not manifest_path.is_file()
         # clearing an already-absent manifest is a no-op, not an error
         clear_autofix_manifest(tmp_path)
+
+    # frob:ticket T-1657
+    def test_clear_autofix_manifest_swallows_oserror(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestAutofixManifest.test_clear_autofix_manifest_swallows_oserror  # noqa: E501
+        """A manifest path that is actually a DIRECTORY (not a file) makes
+        `Path.unlink()` raise `IsADirectoryError` (an `OSError` subclass,
+        not `FileNotFoundError`) -- the documented contract is that this
+        is swallowed too (best-effort recovery aid, not load-bearing
+        state), never raised to the caller."""
+        from frob.gates._fix_engine_shared import (
+            _autofix_manifest_path,
+            clear_autofix_manifest,
+        )
+
+        manifest_path = _autofix_manifest_path(tmp_path)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.mkdir()  # a directory where a file is expected
+        assert manifest_path.is_dir()
+
+        clear_autofix_manifest(tmp_path)  # must not raise
+
+        # the OSError path leaves the (undeletable-as-a-file) directory
+        # in place -- it was never able to unlink it, and it does not
+        # escalate that failure.
+        assert manifest_path.is_dir()
 
     # frob:ticket T-1348
     def test_apply_tier_a_fixes_clears_manifest_on_clean_finish(

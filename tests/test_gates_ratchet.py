@@ -76,6 +76,60 @@ class TestResolveRatchetSeverity:
         assert resolve_ratchet_severity("NEVERSEEN001", "x.py:1", lock) == "error"
 
 
+# frob:ticket T-1657
+class TestLoadRatchetLockErrorPaths:
+    def test_malformed_json_treated_as_empty(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestLoadRatchetLockErrorPaths.test_malformed_json_treated_as_empty  # noqa: E501
+        """A `frob-ratchet.lock.json` on disk that is not valid JSON must
+        make `load_ratchet_lock` return an empty `RatchetLock` (T-0569's
+        "no baseline is a valid starting state" contract), never raise."""
+        (tmp_path / "frob-ratchet.lock.json").write_text(
+            "{not valid json", encoding="utf-8"
+        )
+        lock = load_ratchet_lock(tmp_path)
+        assert lock.pool_for("DEAD001") is None
+
+    def test_schema_mismatch_treated_as_empty(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestLoadRatchetLockErrorPaths.test_schema_mismatch_treated_as_empty  # noqa: E501
+        """Valid JSON that fails `RatchetLock`'s schema (a pydantic
+        `ValidationError`, a `ValueError` subclass) hits the same
+        swallow-and-return-empty branch as malformed JSON."""
+        import json
+
+        (tmp_path / "frob-ratchet.lock.json").write_text(
+            json.dumps({"pools": "not-a-list"}), encoding="utf-8"
+        )
+        lock = load_ratchet_lock(tmp_path)
+        assert lock.pool_for("DEAD001") is None
+
+
+# frob:ticket T-1657
+class TestRatchetEnabledRulesErrorPaths:
+    def test_malformed_toml_returns_empty(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestRatchetEnabledRulesErrorPaths.test_malformed_toml_returns_empty  # noqa: E501
+        """A `frob.toml` that fails to PARSE (`tomllib.TOMLDecodeError`)
+        must make `ratchet_enabled_rules` return an empty frozenset, per
+        the missing-is-default contract -- never raise."""
+        from frob.gates._ratchet import ratchet_enabled_rules
+
+        (tmp_path / "frob.toml").write_text("not = [valid toml", encoding="utf-8")
+        assert ratchet_enabled_rules(tmp_path) == frozenset()
+
+    def test_non_list_rules_shape_returns_empty(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestRatchetEnabledRulesErrorPaths.test_non_list_rules_shape_returns_empty  # noqa: E501
+        """Valid TOML whose `[gates.ratchet] rules` is not iterable the
+        expected way (a bare table, not a list of strings) must still
+        return empty rather than raise -- the broad `except Exception`
+        missing-is-default branch, distinct from the OSError/TOMLDecodeError
+        one."""
+        from frob.gates._ratchet import ratchet_enabled_rules
+
+        (tmp_path / "frob.toml").write_text(
+            "[gates.ratchet]\nrules = 5\n", encoding="utf-8"
+        )
+        assert ratchet_enabled_rules(tmp_path) == frozenset()
+
+
 # frob:ticket T-0569
 class TestClearRatchetEntry:
     def test_clearing_requires_a_reason(self, tmp_path: Path) -> None:

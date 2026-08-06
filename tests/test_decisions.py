@@ -44,6 +44,48 @@ def test_malformed_record_is_err(tmp_path):
     assert result.danger_err == DecisionError.Malformed
 
 
+def test_bad_yaml_frontmatter_is_err(tmp_path):
+    # frob:tests src/frob/gates/decisions.py::load_decisions
+    """Frontmatter that IS present but is not valid YAML (unbalanced
+    flow-collection brackets) must hit the `yaml.YAMLError` branch, not
+    the "no frontmatter" one -- both must return `Err(Malformed)`."""
+    (tmp_path / "decisions").mkdir()
+    (tmp_path / "decisions" / "AD-001.md").write_text(
+        "---\nid: [unbalanced\n---\n\nbody\n", encoding="utf-8"
+    )
+    result = load_decisions(tmp_path)
+    assert result.is_err
+    assert result.danger_err == DecisionError.Malformed
+
+
+def test_frontmatter_not_a_mapping_is_err(tmp_path):
+    # frob:tests src/frob/gates/decisions.py::load_decisions
+    """Frontmatter that parses as valid YAML but is not a mapping (a
+    bare scalar) must hit the `isinstance(data, dict)` guard, distinct
+    from both the no-frontmatter and bad-YAML branches."""
+    (tmp_path / "decisions").mkdir()
+    (tmp_path / "decisions" / "AD-001.md").write_text(
+        "---\njust a scalar string\n---\n\nbody\n", encoding="utf-8"
+    )
+    result = load_decisions(tmp_path)
+    assert result.is_err
+    assert result.danger_err == DecisionError.Malformed
+
+
+def test_schema_validation_failure_is_err(tmp_path):
+    # frob:tests src/frob/gates/decisions.py::load_decisions
+    """Frontmatter that is a well-formed mapping but fails `Decision`'s
+    own pydantic schema (missing required fields) must hit the
+    `ValidationError` branch, not the YAML-parse or dict-shape ones."""
+    (tmp_path / "decisions").mkdir()
+    (tmp_path / "decisions" / "AD-001.md").write_text(
+        "---\nnot_a_real_field: true\n---\n\nbody\n", encoding="utf-8"
+    )
+    result = load_decisions(tmp_path)
+    assert result.is_err
+    assert result.danger_err == DecisionError.Malformed
+
+
 def test_dec001_dangling_decision_edge(tmp_path):
     # frob:tests src/frob/gates/_decisions_compliance.py::decisions_gate
     # frob:tests src/frob/gates/decisions.py::decision_gate
