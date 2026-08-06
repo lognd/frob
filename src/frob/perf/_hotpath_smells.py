@@ -35,8 +35,14 @@ no cross-language best-effort tier here the way PERF001/002 have one.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from pathlib import Path
+
+from tree_sitter import Node
 
 from frob.gates._models import Severity, Violation
+from frob.lang import child_by_field as _child_by_field
+from frob.lang import node_text as _node_text
+from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
 
@@ -295,47 +301,144 @@ def _perf013_repeated_ast_walk(symbol: RawSymbol, path: str) -> Violation | None
     return None
 
 
-# frob:ticket T-1225
-def _perf014_finditer_in_nested_loop(symbol: RawSymbol, path: str) -> Violation | None:
-    """PERF014: a `.finditer(...)` call preceded by THREE OR MORE `for`/
-    `while` tokens in the flattened stream -- mined from
-    `src/frob/gates/_secrets.py`'s pre-T-1211 shape (33 compiled patterns
-    x one `finditer` call per PHYSICAL LINE: a pattern-list loop nested
-    inside a per-line loop). The threshold is 3, not 2: the innermost
-    `for match in pattern.finditer(...)` loop that directly consumes
-    `finditer`'s own results always contributes one `for` token that
-    lexically precedes the call -- the fixed one-loop-per-pattern shape
-    (`for pattern in patterns: for match in pattern.finditer(text)`) has
-    exactly 2 preceding `for` tokens (that consuming loop plus the
-    pattern-list loop) and must stay silent; the pre-fix shape adds a
-    THIRD, genuinely separate per-line loop wrapping both. Coarse
-    count-based nesting check (this module's own docstring: false
-    negatives accepted over exact lexical block tracking), matching
-    `_rules.py`'s own PERF003 loop-count posture."""
-    tokens = symbol.body_tokens
-    for i, tok in enumerate(tokens):
-        if tok != "finditer" or i + 1 >= len(tokens) or tokens[i + 1] != "(":
+# T-1649: PERF014 used to fire the instant THREE OR MORE for/while tokens
+# appeared ANYWHERE earlier in the flattened token stream -- the same
+# flaw T-1647 found and fixed in PERF011 (no way to tell a genuinely
+# nested loop from an earlier, already-CLOSED sibling loop, since a flat
+# token stream carries no block/indent structure). Auditing every live
+# finding found the identical failure class here: `src/frob/gates/
+# _docptr.py::_prose_tokens` (a listcomp's own `for` plus a first,
+# single-level finditer loop, both SEQUENTIAL and preceding a second,
+# genuinely-nested finditer) and `src/frob/gates/_refs.py::
+# _python_import_targets` (two SEQUENTIAL top-level for-loops, each with
+# its own single level of real nesting) both misfired this way.
+#
+# Fixed by dropping the token-stream heuristic entirely and re-parsing
+# the file's real tree-sitter AST (the same substrate `frob.perf.
+# _loop_effects._iter_loop_call_sites` already uses for PERF008, in this
+# same package) to compute each `.finditer(...)` call's REAL ancestor
+# loop-nesting depth -- how many `for_statement`/`while_statement` nodes'
+# own BODY (not header/iterable) actually encloses the call, tracked via
+# a depth-tagged pre-order stack walk. This structurally cannot conflate
+# a sibling with a nested loop (a sibling loop is simply not an ancestor
+# at all) and automatically excludes comprehension/genexpr `for`-clauses
+# (they parse as `for_in_clause` inside `list_comprehension`/`generator_
+# expression`, never `for_statement`, so they were never eligible to
+# begin with -- no separate bracket-depth guard needed, unlike PERF011's
+# token-stream fix, because the AST already carries that distinction).
+#
+# frob:ticket T-1649
+_AST_LOOP_KINDS = frozenset({"for_statement", "while_statement"})
+
+
+# frob:ticket T-1649
+def _iter_calls_with_loop_depth(root: Node) -> list[tuple[Node, int]]:
+    """Every `call` node under `root` paired with the count of real
+    for/while loop ancestors whose BODY (not header/iterable expression)
+    encloses it. A loop's own iterable expression -- e.g. the
+    `pattern.finditer(text)` in `for match in pattern.finditer(text):` --
+    is not part of that loop's body, so a call used to build a loop's own
+    iterator is attributed to whatever loops enclose the `for`/`while`
+    statement ITSELF, never to the loop that call's return value feeds
+    (the same "this call IS the loop's own iterable, not a repeat"
+    exemption `_perf011_repo_scan_in_loop`'s T-1647 fix carries, derived
+    here for free from real AST containment instead of a header-span
+    token scan)."""
+    hits: list[tuple[Node, int]] = []
+    stack: list[tuple[Node, int]] = [(root, 0)]
+    while stack:
+        node, depth = stack.pop()
+        if node.type in _AST_LOOP_KINDS:
+            body = _child_by_field(node, "body")
+            for child in node.children:
+                # See `_iter_loop_call_sites`'s own note in _loop_effects.py:
+                # tree-sitter Node wrappers are not identity-stable, `==`
+                # compares the underlying node correctly.
+                child_depth = depth + 1 if child == body else depth
+                stack.append((child, child_depth))
             continue
-        preceding_loops = sum(1 for t in tokens[:i] if t in _LOOP_TOKENS)
-        if preceding_loops >= 3:
-            return _violation(
+        if node.type == "call":
+            hits.append((node, depth))
+        # frob:waive PERF003 reason="stack-based AST tree walk, one pass over nodes, not a cross join"  # noqa: E501
+        stack.extend((child, depth) for child in node.children)
+    return hits
+
+
+# frob:ticket T-1649
+def _is_finditer_call(call_node: Node) -> bool:
+    """True if `call_node`'s callee is a bare or dotted `finditer` --
+    `pattern.finditer(...)`/`re.compile(...).finditer(...)` (an
+    `attribute` function expression) or a locally-bound bare `finditer`
+    (an `identifier` function expression, e.g. `finditer = pat.finditer;
+    finditer(text)`)."""
+    func = _child_by_field(call_node, "function")
+    if func is None:
+        return False
+    if func.type == "attribute":
+        attr = _child_by_field(func, "attribute")
+        return attr is not None and _node_text(attr) == "finditer"
+    if func.type == "identifier":
+        return _node_text(func) == "finditer"
+    return False
+
+
+# T-1649's own threshold: depth 0 or 1 is the FIXED, desired shape (`for
+# pattern in patterns: for match in pattern.finditer(text):` -- the
+# consuming `for match in ...` loop's own iterable expression contributes
+# no depth per `_iter_calls_with_loop_depth`'s own exemption, so this
+# shape measures depth 1, the pattern-list loop's body containment
+# alone); depth >= 2 means the call sits inside a genuinely nested loop
+# body two or more real levels deep, the mined pre-T-1211
+# pattern-list-inside-per-line shape (or its structural equivalent, e.g.
+# a per-directory x per-file x per-line walk calling `.finditer(line)`
+# once per physical line three real levels deep).
+# frob:ticket T-1649
+_PERF014_NESTED_DEPTH_THRESHOLD = 2
+
+
+# frob:ticket T-1649
+def _perf014_ast_violations(path: str) -> list[Violation]:
+    """PERF014, file-level (T-1649 rewrite -- see the `_AST_LOOP_KINDS`
+    comment above for the full rationale): every `.finditer(...)` call
+    site in `path` whose real AST loop-nesting depth
+    (`_iter_calls_with_loop_depth`) is `>= _PERF014_NESTED_DEPTH_
+    THRESHOLD`. `[]` if `path` cannot be re-parsed (moved/deleted since
+    the original parse -- `frob.lang.raw_tree`'s own Result contract) or
+    is not python (this module's docstring: PERF010/011/013/014 are all
+    Python-only)."""
+    result = _raw_tree(Path(path))
+    if result.is_err:
+        return []
+    tree, _source, language = result.danger_ok
+    if language != "python":
+        return []
+    violations: list[Violation] = []
+    for call_node, depth in _iter_calls_with_loop_depth(tree.root_node):
+        if depth < _PERF014_NESTED_DEPTH_THRESHOLD or not _is_finditer_call(call_node):
+            continue
+        line = call_node.start_point[0] + 1
+        violations.append(
+            _violation(
                 "PERF014",
                 path,
-                symbol.span[0],
-                f"finditer(...) is preceded by {preceding_loops} nested "
-                f"loop(s) in {symbol.qualname} -- looks like a "
-                "pattern-list loop nested inside a per-line loop",
+                line,
+                f"finditer(...) is nested {depth} real loop level(s) deep "
+                "-- looks like a pattern-list loop nested inside a "
+                "per-line loop",
             )
-    return None
+        )
+    return violations
 
 
 # frob:ticket T-1225
 def _symbol_violations(symbol: RawSymbol, path: str) -> tuple[Violation, ...]:
-    """Every PERF010/011/013/014 finding for one function/method symbol --
-    each of the four checks called explicitly by name (not via a
-    dispatch-table loop) so a plain text/call-graph scan of this module
-    can see the real wiring (WIRE001's own call-shaped reachability
-    scan, `frob.gates._wire._is_reached_outside_diff_tests`)."""
+    """Every PERF010/011/013 finding for one function/method symbol -- each
+    check called explicitly by name (not via a dispatch-table loop) so a
+    plain text/call-graph scan of this module can see the real wiring
+    (WIRE001's own call-shaped reachability scan, `frob.gates._wire.
+    _is_reached_outside_diff_tests`). PERF014 (T-1649) is no longer a
+    per-symbol token-stream check -- see `_perf014_ast_violations` and
+    `hotpath_smell_violations`'s own per-file AST pass below."""
     if symbol.kind not in _FUNCTION_KINDS:
         return ()
     hits: list[Violation] = []
@@ -348,9 +451,6 @@ def _symbol_violations(symbol: RawSymbol, path: str) -> tuple[Violation, ...]:
     perf013 = _perf013_repeated_ast_walk(symbol, path)
     if perf013 is not None:
         hits.append(perf013)
-    perf014 = _perf014_finditer_in_nested_loop(symbol, path)
-    if perf014 is not None:
-        hits.append(perf014)
     return tuple(hits)
 
 
@@ -365,14 +465,18 @@ def hotpath_smell_violations(files: Sequence[ParsedFile]) -> tuple[Violation, ..
     """PERF010/011/013/014 over every Python function/method symbol in
     `files` -- the four EPIC A hot-graph root-cause detectors this
     module's own docstring names. Python-only (see module docstring);
-    non-Python files contribute nothing. Pure, consumed by
-    `frob.perf.perf_rules`."""
+    non-Python files contribute nothing. PERF014 (T-1649) runs as one
+    per-file AST pass (`_perf014_ast_violations`) rather than per-symbol
+    token scan, since real loop-nesting depth needs actual tree
+    containment, not a flat token count -- see that function's own
+    docstring. Pure, consumed by `frob.perf.perf_rules`."""
     violations: list[Violation] = []
     for file in files:
         if file.language != "python":
             continue
         for symbol in file.symbols:
             violations.extend(_symbol_violations(symbol, file.path))
+        violations.extend(_perf014_ast_violations(file.path))
     _log.info(
         "hotpath_smell_violations: scanned %d file(s), %d violation(s)",
         len(files),

@@ -3427,6 +3427,14 @@ invariant`): INV003+INV004 combined, 765 -> 604 warnings (INV003 88 ->
 ticket rather than hand-closed in one pass; see the INV004 section below
 for T-0515's further calibration of that residual.
 
+**T-1649 (PERF011 fix):** `inv003_gate`/`inv004_gate` used to call
+`iter_files` once PER `INV003_SPEC_DIRS` entry (2 directories), re-
+scanning the whole repo twice for a fixed, small tuple both gates already
+hold in full. `_spec_dir_md_files` (`src/frob/gates/_inv.py`) now runs
+one `iter_files(root, suffix=".md")` scan and filters its result to paths
+under any `INV003_SPEC_DIRS` prefix, shared by both gates -- same
+findings, one full-repo scan instead of two.
+
 ### INV004 (T-0452, T-0515)
 
 <!-- frob:describes src/frob/gates/invariants.py::find_normative_claims -->
@@ -3560,6 +3568,17 @@ only -- a reworded paraphrase of a waived claim is not recognized as
 lighter-weight sibling of `frob.dup`'s full clone pipeline (function/
 symbol-scoped, not applicable to bare docstring/comment prose), same
 "exact match first" posture as `frob.dup`'s own Type-1 rung.
+
+**T-1649 (PERF011 fix):** `inv006_gate` used to call `iter_files` once
+per `(src_dir, suffix)` pair (3 dirs x 2 suffixes = 6 full-repo scans);
+`find_carried_waiver`'s own search over `candidate_dirs`/
+`candidate_suffixes` had the identical shape. Both now run ONE
+`iter_files(root)` scan and filter the result by prefix/suffix in memory
+(`_inv006_src_files` for `inv006_gate`, inlined for `find_carried_waiver`
+since its dirs/suffixes are caller-supplied, not the fixed module
+constants `_inv006_src_files` closes over) -- same findings, a fraction
+of the repo scans.
+
 `find_carried_waiver` is written to be reusable outside INV006
 specifically so T-1135's refactor epic (this ticket is expected to become
 a child of it at design time) can wire the same detector into PII012's

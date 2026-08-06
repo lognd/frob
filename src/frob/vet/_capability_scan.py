@@ -599,6 +599,28 @@ def _is_self_path(path: Path, source_dir: Path) -> bool:
     return is_self_pattern_path(path, source_dir)
 
 
+# frob:ticket T-1649
+def _files_by_ext(source_dir: Path) -> dict[str, list[Path]]:
+    """Every scannable file under `source_dir`, grouped by lowercased
+    extension and IN `_EXT_LANGUAGE`'s OWN ORDER (T-1649) -- one
+    `iter_files(source_dir)` scan total, shared by `_aggregate_
+    capabilities`/`_aggregate_fingerprints` (this file's own docstrings
+    already noted these two as "candidate for a genuinely shared helper,
+    same walk/exclusion shape"). The pre-fix shape called `iter_files`
+    once per extension in `_EXT_LANGUAGE` FROM EACH of the two callers
+    separately (PERF011: a fixed, small, always-fully-known table),
+    re-walking/re-`git ls-files`-ing the same directory once per
+    extension per caller. Grouping (not one flat scan) preserves the
+    original per-extension iteration ORDER each caller's own truncation
+    logic (`scanned >= max_files`, an ext-major early-break) depends on."""
+    by_ext: dict[str, list[Path]] = {ext: [] for ext in _EXT_LANGUAGE}
+    for path in iter_files(source_dir):
+        lowered = path.suffix.lower()
+        if lowered in by_ext:
+            by_ext[lowered].append(path)
+    return by_ext
+
+
 def _aggregate_capabilities(
     source_dir: Path, max_files: int
 ) -> tuple[set[str], bool, int]:
@@ -607,11 +629,12 @@ def _aggregate_capabilities(
     capabilities: set[str] = set()
     decode_to_exec_hit = False
     scanned = 0
+    by_ext = _files_by_ext(source_dir)
     for ext in _EXT_LANGUAGE:
         if scanned >= max_files:
             break
         # frob:ticket T-0471
-        for path in iter_files(source_dir, suffix=ext):
+        for path in by_ext[ext]:
             if scanned >= max_files:
                 _log.warning(
                     "vet: %s: capability scan truncated at %d file(s)",
@@ -668,11 +691,12 @@ def _aggregate_fingerprints(
     sibling of `_aggregate_capabilities`, same walk/exclusion shape."""
     matched: set[CveFingerprint] = set()
     scanned = 0
+    by_ext = _files_by_ext(source_dir)
     for ext in _EXT_LANGUAGE:
         if scanned >= max_files:
             break
         # frob:ticket T-0471
-        for path in iter_files(source_dir, suffix=ext):
+        for path in by_ext[ext]:
             if scanned >= max_files:
                 _log.warning(
                     "vet: %s: fingerprint scan truncated at %d file(s)",

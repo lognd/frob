@@ -26,12 +26,23 @@ _log = get_logger(__name__)
 _CPP_EXCLUDED_DIRS = {"build", ".venv", "third_party", "extern"}
 
 
+# frob:ticket T-1649
 def _collect_sources(root: Path, exts: tuple[str, ...]) -> list[Path]:
-    """Source files under `root` with any of `exts`, excluding vendored dirs."""
-    files: list[Path] = []
-    for ext in exts:
-        files.extend(iter_files(root, suffix=ext))
-    return [f for f in files if not any(p in _CPP_EXCLUDED_DIRS for p in f.parts)]
+    """Source files under `root` with any of `exts`, excluding vendored dirs.
+
+    T-1649: `iter_files` (a full-repo scan) is called ONCE, unfiltered,
+    then filtered in-memory per extension -- the pre-fix shape called it
+    once per extension in `exts`, re-walking/re-`git ls-files`-ing the
+    same tree `len(exts)` times for a caller that already has every
+    extension it wants in hand up front (PERF011)."""
+    lowered_exts = {ext.lower() for ext in exts}
+    all_files = iter_files(root)
+    return [
+        f
+        for f in all_files
+        if f.suffix.lower() in lowered_exts
+        and not any(p in _CPP_EXCLUDED_DIRS for p in f.parts)
+    ]
 
 
 # ---------------------------------------------------------------------------

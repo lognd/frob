@@ -844,6 +844,14 @@ def perf_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Vi
 def hotpath_smell_violations(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
     # PERF010/011/013/014 (T-1225): the four hot-graph-mined anti-pattern
     # detectors, folded into perf_rules's return tuple above.
+    # T-1649: PERF014 is a per-FILE AST pass (re-parses via frob.lang.
+    # raw_tree, real for/while ancestor loop-nesting depth for each
+    # finditer(...) call site), not a per-symbol token-stream count like
+    # 010/011/013 -- the flat token-count heuristic could not tell a
+    # genuinely nested loop from an earlier, already-closed SIBLING loop
+    # (the same flaw T-1647 fixed in PERF011); real AST containment
+    # cannot make that mistake. See _hotpath_smells.py's own T-1649
+    # comment block for the full audit and fix rationale.
 
 # frob/perf/_recursion.py
 def recursion_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]

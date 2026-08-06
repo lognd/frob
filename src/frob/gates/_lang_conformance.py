@@ -161,9 +161,18 @@ def _lang002_unregistered_files(repo_root: Path) -> tuple[Violation, ...]:
     well-known candidate language (`_UNREGISTERED_CANDIDATE_LANGUAGES`)
     frob has no `frob.lang` grammar for at all -- split out of
     `project_lang_conformance_gate` for ARCH001."""
+    # T-1649: one iter_files(repo_root) scan, indexed by extension once --
+    # the pre-fix shape called iter_files once per entry in
+    # `_UNREGISTERED_CANDIDATE_LANGUAGES` (PERF011: a fixed, small dict
+    # this function already holds in full up front), re-scanning the
+    # whole repo once per candidate extension instead of hoisting one
+    # scan and indexing its result by suffix.
+    by_suffix: dict[str, list[Path]] = {}
+    for path in iter_files(repo_root):
+        by_suffix.setdefault(path.suffix.lower(), []).append(path)
     violations: list[Violation] = []
     for ext, language in sorted(_UNREGISTERED_CANDIDATE_LANGUAGES.items()):
-        for path in iter_files(repo_root, suffix=ext):
+        for path in by_suffix.get(ext.lower(), ()):
             rel = path.relative_to(repo_root).as_posix()
             violations.append(
                 Violation(
@@ -201,9 +210,15 @@ def _lang003_unsound_gaps(repo_root: Path) -> tuple[Violation, ...]:
     present_languages: set[str] = set()
 
     # Extension -> language via frob.lang's own canonical mapping (never a
-    # second hand-copied table).
+    # second hand-copied table). T-1649: one iter_files(repo_root) scan,
+    # indexed to a set of present suffixes once -- the pre-fix shape
+    # called iter_files once per `supported_extensions()` entry just to
+    # check truthiness (existence), re-scanning the whole repo once per
+    # candidate extension for a fixed, small set this function already
+    # holds up front (PERF011).
+    present_suffixes = {path.suffix.lower() for path in iter_files(repo_root)}
     for ext in supported_extensions():
-        if not iter_files(repo_root, suffix=ext):
+        if ext.lower() not in present_suffixes:
             continue
         language = language_for_extension(ext)
         if language is not None:

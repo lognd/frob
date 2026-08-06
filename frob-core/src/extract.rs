@@ -49,6 +49,12 @@ fn span_of(node: Node) -> (usize, usize) {
 /// `frob.lang._common._leaf_tokens` and `_extract._collect_comment_nodes`
 /// both walk, reimplemented once here so every collector below (comments,
 /// identifiers, the token stream) shares one recursion instead of three.
+// frob:ticket T-1649
+// frob:invariant terminates reason="each recursive call descends strictly into a \
+// child of node in tree-sitter's own parse tree, which is finite (bounded by the \
+// input source's own length/nesting); recursion stops the instant child_count() is 0 \
+// (a leaf), which every path through a finite tree reaches in finitely many steps" \
+// measure="remaining depth from node to its deepest leaf in the parse tree"
 fn walk_leaves<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {
     if node.child_count() == 0 {
         out.push(node);
@@ -251,6 +257,13 @@ const RUST_IDENTIFIER_KINDS: [&str; 3] = ["identifier", "type_identifier", "fiel
 /// themselves, unlike python's `comment` node. A leaf-only search would
 /// silently find zero rust comments (verified: it does, in the corpus
 /// golden-parity check this kernel was built against).
+// frob:ticket T-1649
+// frob:invariant terminates reason="each recursive call descends strictly into a \
+// child of node in tree-sitter's own parse tree, which is finite; recursion stops the \
+// instant a RUST_COMMENT_KINDS match is found (no further descent below a matched \
+// node) or, failing that, at a leaf with zero children, either of which every path \
+// through a finite tree reaches in finitely many steps" measure="remaining depth from \
+// node to its deepest leaf in the parse tree"
 fn collect_comment_nodes<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {
     if RUST_COMMENT_KINDS.contains(&node.kind()) {
         out.push(node);

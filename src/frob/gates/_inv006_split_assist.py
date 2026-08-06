@@ -114,51 +114,56 @@ def find_carried_waiver(
     )
     if not sentences:
         return None
-    for src_dir in candidate_dirs:
-        src_root = root / src_dir
-        if not src_root.is_dir():
+    # T-1649: one iter_files(root) scan, filtered in-memory by the fixed,
+    # small candidate_dirs x candidate_suffixes cross product this
+    # function's own caller already holds -- the pre-fix shape called
+    # iter_files once per (src_dir, suffix) pair, re-scanning the whole
+    # repo `len(candidate_dirs) * len(candidate_suffixes)` times
+    # (PERF011). This function's own docstring already notes it runs
+    # rarely (a handful of times per repo) -- the fix is still worth
+    # making honestly rather than waiving on rarity alone.
+    prefixes = tuple(f"{src_dir}/" for src_dir in candidate_dirs)
+    lowered_suffixes = {s.lower() for s in candidate_suffixes}
+    for path in iter_files(root):
+        if path.suffix.lower() not in lowered_suffixes:
             continue
-        for suffix in candidate_suffixes:
-            for path in iter_files(src_root, suffix=suffix):
-                rel = path.relative_to(root).as_posix()
-                if rel == exclude_rel:
-                    continue
-                try:
-                    candidate_text = path.read_text(encoding="utf-8")
-                except OSError:
-                    continue
-                try:
-                    normalized_candidate = _normalize_prose(candidate_text)
-                    if not any(s in normalized_candidate for s in sentences):
-                        continue
-                    covering = _covering_waiver_directive_attrs(rel, snapshot)
-                except Exception:
-                    # One candidate file's text/graph lookup being
-                    # surprising must not abort the whole carried-waiver
-                    # search over every OTHER candidate (EXHAUST001/
-                    # EXHAUST002, T-1371) -- this detector's own docstring
-                    # already tolerates "no match anywhere" as a normal
-                    # `None` result, so skipping one bad candidate is the
-                    # same outcome class.
-                    continue
-                if covering is not None:
-                    reason, preset = covering
-                    # T-1176/T-1177: carry a PRESET REFERENCE, not a copy
-                    # of its resolved reason text, whenever the source
-                    # itself was written with preset= -- the whole point
-                    # of a preset is that the reason prose lives in one
-                    # place; copying its resolved text at every carry
-                    # site would silently recreate the exact duplication
-                    # presets exist to remove.
-                    fixit = (
-                        f'frob:waive INV006 preset="{preset}"'
-                        if preset is not None
-                        else f'frob:waive INV006 reason="{reason}"'
-                    )
-                    return (rel, "waiver", fixit)
-                inv_id = _covering_invariant_id(rel, snapshot)
-                if inv_id is not None:
-                    return (rel, "invariant", f"frob:invariant {inv_id}")
+        rel = path.relative_to(root).as_posix()
+        if not rel.startswith(prefixes) or rel == exclude_rel:
+            continue
+        try:
+            candidate_text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        try:
+            normalized_candidate = _normalize_prose(candidate_text)
+            if not any(s in normalized_candidate for s in sentences):
+                continue
+            covering = _covering_waiver_directive_attrs(rel, snapshot)
+        except Exception:
+            # One candidate file's text/graph lookup being surprising
+            # must not abort the whole carried-waiver search over every
+            # OTHER candidate (EXHAUST001/EXHAUST002, T-1371) -- this
+            # detector's own docstring already tolerates "no match
+            # anywhere" as a normal `None` result, so skipping one bad
+            # candidate is the same outcome class.
+            continue
+        if covering is not None:
+            reason, preset = covering
+            # T-1176/T-1177: carry a PRESET REFERENCE, not a copy of its
+            # resolved reason text, whenever the source itself was
+            # written with preset= -- the whole point of a preset is
+            # that the reason prose lives in one place; copying its
+            # resolved text at every carry site would silently recreate
+            # the exact duplication presets exist to remove.
+            fixit = (
+                f'frob:waive INV006 preset="{preset}"'
+                if preset is not None
+                else f'frob:waive INV006 reason="{reason}"'
+            )
+            return (rel, "waiver", fixit)
+        inv_id = _covering_invariant_id(rel, snapshot)
+        if inv_id is not None:
+            return (rel, "invariant", f"frob:invariant {inv_id}")
     return None
 
 

@@ -276,6 +276,23 @@ _DOC_WAIVE_PLACEHOLDER_RE = re.compile(r"^\.{2,}$")
 INV003_SPEC_DIRS: tuple[str, ...] = ("docs/modules", "docs/strata")
 
 
+# frob:ticket T-1649
+def _spec_dir_md_files(root: Path) -> tuple[Path, ...]:
+    """Every `.md` file under any `INV003_SPEC_DIRS` entry, one `iter_files`
+    scan of `root` total (T-1649) -- the pre-fix shape both `inv003_gate`
+    and `inv004_gate` shared called `iter_files` once PER `spec_dir`
+    (PERF011: `INV003_SPEC_DIRS` is a fixed 2-entry tuple both callers
+    already hold, so re-walking/re-`git ls-files`-ing the whole repo once
+    per entry re-scans the same tree instead of filtering one scan's
+    result by prefix)."""
+    prefixes = tuple(f"{spec_dir}/" for spec_dir in INV003_SPEC_DIRS)
+    return tuple(
+        path
+        for path in iter_files(root, suffix=".md")
+        if path.relative_to(root).as_posix().startswith(prefixes)
+    )
+
+
 # frob:doc docs/modules/gates.md#invariants
 # frob:waive COV007 reason="docs/modules/gates.md's Invariants section (INV003/INV004 \
 # subsections) is a deliberate architecture doc walking through this exact helper's \
@@ -388,16 +405,12 @@ def inv003_gate(root: Path, invariants: tuple[Invariant, ...]) -> tuple[Violatio
     """
     known_ids = frozenset(inv.id for inv in invariants)
     violations: list[Violation] = []
-    for spec_dir in INV003_SPEC_DIRS:
-        docs_dir = root / spec_dir
-        if not docs_dir.is_dir():
+    for path in _spec_dir_md_files(root):
+        file_violations = _inv003_doc_violations(root, path, known_ids)
+        if file_violations and _file_has_reasoned_doc_waiver(path, "INV003"):
+            _log.debug("INV003: %s waived by markdown frob:waive marker", path)
             continue
-        for path in iter_files(docs_dir, suffix=".md"):
-            file_violations = _inv003_doc_violations(root, path, known_ids)
-            if file_violations and _file_has_reasoned_doc_waiver(path, "INV003"):
-                _log.debug("INV003: %s waived by markdown frob:waive marker", path)
-                continue
-            violations.extend(file_violations)
+        violations.extend(file_violations)
     return tuple(violations)
 
 
@@ -505,16 +518,12 @@ def inv004_gate(root: Path) -> tuple[Violation, ...]:
     to formalize, not a broken obligation; never fails `frob check`.
     """
     violations: list[Violation] = []
-    for spec_dir in INV003_SPEC_DIRS:
-        docs_dir = root / spec_dir
-        if not docs_dir.is_dir():
+    for path in _spec_dir_md_files(root):
+        file_violations = _inv004_doc_violations(root, path)
+        if file_violations and _file_has_reasoned_doc_waiver(path, "INV004"):
+            _log.debug("INV004: %s waived by markdown frob:waive marker", path)
             continue
-        for path in iter_files(docs_dir, suffix=".md"):
-            file_violations = _inv004_doc_violations(root, path)
-            if file_violations and _file_has_reasoned_doc_waiver(path, "INV004"):
-                _log.debug("INV004: %s waived by markdown frob:waive marker", path)
-                continue
-            violations.extend(file_violations)
+        violations.extend(file_violations)
     return tuple(violations)
 
 
@@ -543,6 +552,24 @@ INV006_SRC_DIRS: tuple[str, ...] = (
 # frob:doc docs/modules/gates.md#inv006-t-0408
 # frob:ticket T-0408
 INV006_SRC_SUFFIXES: tuple[str, ...] = (".py", ".rs")
+
+
+# frob:ticket T-1649
+def _inv006_src_files(root: Path) -> tuple[Path, ...]:
+    """Every file under any `INV006_SRC_DIRS` entry with any `INV006_SRC_
+    SUFFIXES` extension, one `iter_files` scan of `root` total (T-1649) --
+    the pre-fix shape called `iter_files` once per `(src_dir, suffix)`
+    pair (3 dirs x 2 suffixes = 6 full-repo scans for a fixed, small
+    cross product both loop variables' own callers already hold; PERF011).
+    """
+    prefixes = tuple(f"{src_dir}/" for src_dir in INV006_SRC_DIRS)
+    lowered_suffixes = {s.lower() for s in INV006_SRC_SUFFIXES}
+    return tuple(
+        path
+        for path in iter_files(root)
+        if path.suffix.lower() in lowered_suffixes
+        and path.relative_to(root).as_posix().startswith(prefixes)
+    )
 
 
 # frob:doc docs/modules/gates.md#invariants
@@ -682,15 +709,8 @@ def inv006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         load_ratchet_lock(root) if "INV006" in ratchet_rules else RatchetLock()
     )
     violations: list[Violation] = []
-    for src_dir in INV006_SRC_DIRS:
-        src_root = root / src_dir
-        if not src_root.is_dir():
-            continue
-        for suffix in INV006_SRC_SUFFIXES:
-            for path in iter_files(src_root, suffix=suffix):
-                violations.extend(
-                    _inv006_src_violations(
-                        root, path, snapshot, ratchet_rules, ratchet_lock
-                    )
-                )
+    for path in _inv006_src_files(root):
+        violations.extend(
+            _inv006_src_violations(root, path, snapshot, ratchet_rules, ratchet_lock)
+        )
     return tuple(violations)
