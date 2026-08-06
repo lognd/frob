@@ -8140,8 +8140,25 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/tickets/_land_git_ops.py
+- tests/test_evidence_integrity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: the breadth heuristic and its regression lock
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_evidence_integrity.py
+  reason: the breadth heuristic and its regression lock
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_exact_root_level_file_authorizes_its_own_deletion
+- tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_wildcard_breadth_rules_are_unchanged
 threat: null
 component: null
 ```
