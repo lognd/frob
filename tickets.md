@@ -7288,7 +7288,7 @@ Filed by the coordinator while reviewing T-1618 before landing it.
 ```yaml
 id: T-1676
 title: Coverage refresh must not discard a whole run because the suite was red
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-06'
