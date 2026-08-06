@@ -5569,7 +5569,7 @@ src/frob/tickets/_models.py: DEAD001 (AcceptanceCriterion._normalize_evidence wa
 id: T-1653
 title: Fix REF003 missing invariant back-refs + NEGEXIST001 false positives on historical/design
   prose
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
