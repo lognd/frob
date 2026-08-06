@@ -4923,7 +4923,7 @@ Regression test: from a cwd inside worktree A, `land <id> --worktree B` must ref
 id: T-1639
 title: CrossTicketLeakage treats a QUEUED ticket's scope as a lock, so filing a ticket
   blocks unrelated lands
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -5090,7 +5090,6 @@ needed no change.
 - tests: 5 passed (from 5 evidence id(s))
 - gates: 0 error(s), 711 warning(s), 851 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1640 -->
 ```yaml
 id: T-1640
