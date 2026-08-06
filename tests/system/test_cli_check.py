@@ -346,8 +346,20 @@ class TestCheckGatesStage:
             "    # frob:tests pkg.py::add\n"
             "    assert add(1, 2) == 3\n"
         )
+        # T-1489/T-1205: TEST017 blocks on a coverage.xml that joins far
+        # fewer known modules than the snapshot has, so this fixture must
+        # actually name pkg.py -- an empty <coverage/> reads as a deflated
+        # (subprocess-coverage-not-merged) run and fails the gate stage.
         (tmp_path / "coverage.xml").write_text(
-            '<?xml version="1.0" ?><coverage line-rate="1.0"></coverage>'
+            '<?xml version="1.0" ?>\n'
+            '<coverage line-rate="1.0">\n'
+            "  <packages><package><classes>\n"
+            '    <class filename="pkg.py" line-rate="1.0">\n'
+            '      <lines><line number="1" hits="1"/>'
+            '<line number="2" hits="1"/></lines>\n'
+            "    </class>\n"
+            "  </classes></package></packages>\n"
+            "</coverage>\n"
         )
         _git("add", "-A", cwd=tmp_path)
         _git("commit", "-q", "-m", "bound", cwd=tmp_path)
