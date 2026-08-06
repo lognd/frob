@@ -9,6 +9,16 @@ two halves (build the binding table; resolve expressions against it) are
 independently readable pieces of the same T-0377 pipeline."""
 
 # frob:ticket T-1420
+# frob:waive INV006 reason="the bare 'only' occurrences in this module header are \
+# HISTORICAL NARRATIVE describing bugs that were already fixed ('_resolve_ts_expr \
+# only ever inspected identifier/member_expression' -- past tense, describing round \
+# 1's gap before round 2 closed it), not normative claims about current behavior. \
+# The module's real recursion invariants live on the functions themselves in the \
+# sibling _capability_typescript.py as frob:invariant terminates edges. Rewording \
+# the history to dodge the word would make the narrative worse, not the code safer; \
+# whether INV006 should read explanatory prose at all is T-1640."
+
+# frob:ticket T-1420
 from __future__ import annotations
 
 from frob.lang import node_text
