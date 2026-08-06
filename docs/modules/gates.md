@@ -3887,26 +3887,30 @@ its finding message, so the handler just calls that existing remedy:
   guards itself. `tests/test_gates.py::TestWaive004DegradedRunGuard`
   reproduces the degraded-run and mass-invalidation shapes directly.
 
-  **Refinement (T-1579): mass-stale can self-heal when proven live.** As
-  originally landed, ANY mass-invalidation hit refused the whole batch
-  forever -- correct for a degraded run, but it also meant a rule whose
+  **Attempted refinement (T-1579), reverted (T-1592).** A mass-invalidation
+  hit refuses that rule's whole batch, which does mean a rule whose
   waivers become GENUINELY mass-stale (a detector tightened, a mass
-  refactor removed the pattern several waivers covered) could never be
-  cleaned by this handler again: every run re-flags the same waivers,
-  every run refuses. `_mass_invalidation_rules` now returns EVERY
-  mass-stale rule (not just the first), and each is judged independently
-  by `_rule_has_live_finding`: if this SAME self-manufactured run's
-  `report.violations` also contains at least one REAL (non-`WAIVE004`)
-  finding of that rule elsewhere in the tree, the detector demonstrably
-  ran and can still find it -- mass-staleness is then trustworthy, and
-  that rule's candidates proceed to deletion (still one rule's own
-  candidates at a time, still logged per waiver, still capped by the
-  same threshold). A mass-stale rule with ZERO live findings anywhere
-  keeps refusing exactly as before -- indistinguishable from the
-  degraded-run signature `_degraded_verification_reason` targets from
-  the structural direction. Every other, non-mass-stale rule's
-  candidates were never affected by this check either way, before or
-  after this refinement.
+  refactor removed the pattern several waivers covered) cannot be cleaned
+  by this handler: every run re-flags the same waivers, every run
+  refuses. T-1579 tried to escape that by judging each mass-stale rule
+  against a live-finding proof -- if the same self-manufactured run also
+  contained one REAL (non-`WAIVE004`) finding of that rule elsewhere, the
+  detector had demonstrably run and deletion proceeded.
+
+  That proof does not hold. A PARTIALLY degraded run satisfies it: a
+  stale-natives worktree still finds some `PERF004` lexically while
+  missing every site the waivers actually cover. Measured 2026-08-05
+  during a land -- the perf gate reported ZERO `PERF004` findings while
+  `_degraded_verification_reason` returned `None`, the escape opened, and
+  55 live waivers across `arch`/`strata`/`perf`/`graph`/`vet` were
+  deleted: precisely the T-1323 incident this guard exists to prevent.
+  `_drop_untrustworthy_mass_stale_candidates` therefore refuses every
+  flagged rule unconditionally again, logging each by name.
+
+  Reviving the escape requires a degraded-run signal that fires for a
+  silently under-reporting perf/reach substrate -- the zero-findings case
+  T-1578 does NOT yet cover. Until then, mass-stale waivers are cleaned
+  by hand, deliberately, with a human reading the diff.
 
   A companion guard closes the same incident's OTHER half at the land
   layer itself, independent of which Tier-A handler is at fault: `frob

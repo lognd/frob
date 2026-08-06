@@ -1568,10 +1568,9 @@ def _mass_invalidation_rules(candidates: list[tuple[str, int, str]]) -> dict[str
     T-1323 incident's own shape (one rule family's waivers ALL going
     stale in the same run) treated as anomalous-zero-findings evidence in
     its own right, without needing a separately recorded baseline pool to
-    compare against. T-1579: returns EVERY rule meeting the threshold
-    (not just the first), since each is now judged independently against
-    `_rule_has_live_finding` rather than the whole batch refusing on the
-    first hit."""
+    compare against. Returns EVERY rule meeting the threshold (not just
+    the first), so `_drop_untrustworthy_mass_stale_candidates` can report
+    and drop each one by name."""
     counts: dict[str, int] = {}
     for _file, _line, rule in candidates:
         counts[rule] = counts.get(rule, 0) + 1
@@ -1580,21 +1579,6 @@ def _mass_invalidation_rules(candidates: list[tuple[str, int, str]]) -> dict[str
         for rule, count in counts.items()
         if count >= _WAIVE004_MASS_INVALIDATION_THRESHOLD
     }
-
-
-def _rule_has_live_finding(report: GateReport, rule: str) -> bool:
-    """T-1579: True if `report.violations` (the SAME self-manufactured run
-    `_mass_invalidation_rules` is judging) contains at least one REAL
-    finding of `rule` itself (not a `WAIVE004` finding ABOUT `rule`)
-    anywhere in the tree -- proof the detector for `rule` demonstrably
-    ran and can still find violations this pass. This is what tells a
-    genuinely mass-stale rule (detector tightened, mass refactor cleaned
-    up every site at once -- deletion should proceed) apart from a
-    degraded run silently under-reporting `rule` to zero everywhere
-    (T-1578's structural-degradation signal targets the same failure
-    shape from the other direction: making the degradation itself
-    visible rather than inferring it here from an absence)."""
-    return any(v.rule == rule for v in report.violations)
 
 
 def _is_single_line_waiver(line: str, rule: str) -> bool:
@@ -1642,13 +1626,10 @@ def _waive004_verified_candidates(
     (`_degraded_verification_reason`) -- either means "delete nothing at
     all", per this handler's prove-fresh-or-do-nothing contract (T-1323).
     Otherwise the `(file, line, target_rule)` WAIVE004 deletion
-    candidates from a verified-trustworthy run, with any rule that shows
-    a mass-invalidation shape (`_mass_invalidation_rules`) filtered back
-    OUT unless this same run also proves the detector still ran for that
-    rule (`_rule_has_live_finding`, T-1579) -- a rule failing that proof
-    has its candidates dropped individually; every other rule's
-    candidates (mass-stale-but-proven, or never mass-stale at all)
-    proceed."""
+    candidates from a verified-trustworthy run, with every rule showing a
+    mass-invalidation shape (`_mass_invalidation_rules`) filtered back
+    OUT -- see `_drop_untrustworthy_mass_stale_candidates` for why that
+    refusal is unconditional again (T-1592)."""
     from frob.gates import GateConfig, run_gates
 
     result = run_gates(GateConfig(root=str(root), gates=gates, ticket=ticket))
@@ -1679,55 +1660,41 @@ def _waive004_verified_candidates(
             continue
         candidates.append((violation.file, violation.line, target_rule))
 
-    return _drop_untrustworthy_mass_stale_candidates(candidates, report)
+    return _drop_untrustworthy_mass_stale_candidates(candidates)
 
 
 def _drop_untrustworthy_mass_stale_candidates(
-    candidates: list[tuple[str, int, str]], report: GateReport
+    candidates: list[tuple[str, int, str]],
 ) -> list[tuple[str, int, str]]:
-    """T-1579: the per-rule mass-invalidation judgment half of
-    `_waive004_verified_candidates`, split out to keep that function
-    under ARCH001's line ceiling. For every rule `_mass_invalidation_
-    rules` flags, `_rule_has_live_finding` decides whether `report`
-    proves the detector for that rule demonstrably ran (keep its
-    candidates) or not (drop them) -- logged per rule either way. A rule
-    never flagged as mass-stale is untouched regardless."""
-    mass_rules = _mass_invalidation_rules(candidates)
-    untrustworthy_rules: set[str] = set()
-    for mass_rule, count in mass_rules.items():
-        if _rule_has_live_finding(report, mass_rule):
-            # This run's own violations prove the detector for
-            # `mass_rule` demonstrably ran and can still find it live
-            # elsewhere -- mass-staleness is trustworthy, not a
-            # degraded/under-reporting signature. Proceed for this rule
-            # (still one rule's own candidates at a time, still logged
-            # per waiver below via the normal deletion loop).
-            _log.warning(
-                "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one "
-                "run (>= %d threshold), but this run also found a LIVE %s "
-                "violation elsewhere -- the detector demonstrably ran; "
-                "proceeding with deletion (T-1579)",
-                count,
-                mass_rule,
-                _WAIVE004_MASS_INVALIDATION_THRESHOLD,
-                mass_rule,
-            )
-        else:
-            untrustworthy_rules.add(mass_rule)
-            _log.error(
-                "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one "
-                "run (>= %d threshold) and this run found NO live %s violation "
-                "anywhere -- treating as a degraded/under-reporting run, deleting "
-                "nothing for this rule",
-                count,
-                mass_rule,
-                _WAIVE004_MASS_INVALIDATION_THRESHOLD,
-                mass_rule,
-            )
+    """Drop every candidate belonging to a rule `_mass_invalidation_rules`
+    flags: one rule's waivers ALL going stale in a single run is the
+    signature of a degraded/under-reporting run, not of genuinely dead
+    waivers (T-1323, the 2026-07-29 incident).
 
-    if not untrustworthy_rules:
+    T-1592 restores this unconditional refusal. T-1579 had made it
+    conditional on `_rule_has_live_finding` -- "one live finding proves
+    the detector ran, so mass-staleness is trustworthy" -- which a
+    PARTIALLY degraded run defeats: a stale-natives worktree still finds
+    some PERF004 lexically while missing every site the waivers actually
+    cover. Measured 2026-08-05: the perf gate reported ZERO PERF004 while
+    `_degraded_verification_reason` returned None, the escape opened, and
+    55 live waivers across arch/strata/perf/graph/vet were deleted during
+    a land. The escape can only come back once the degraded-run signal
+    fires for a silently under-reporting perf/reach substrate -- which is
+    exactly what T-1578 does NOT yet cover."""
+    mass_rules = _mass_invalidation_rules(candidates)
+    for mass_rule, count in mass_rules.items():
+        _log.error(
+            "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one "
+            "run (>= %d threshold) -- treating as a degraded/under-reporting "
+            "run, deleting nothing for this rule",
+            count,
+            mass_rule,
+            _WAIVE004_MASS_INVALIDATION_THRESHOLD,
+        )
+    if not mass_rules:
         return candidates
-    return [c for c in candidates if c[2] not in untrustworthy_rules]
+    return [c for c in candidates if c[2] not in mass_rules]
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
@@ -1771,12 +1738,11 @@ def fix_waive004_stale_waiver(
     After collecting candidates, also checks for a mass-invalidation
     shape (`_mass_invalidation_rules` -- one rule's waivers ALL going
     stale together in a single run, the 2026-07-29 incident's own
-    signature) -- but T-1579 refined this from a whole-batch abort into a
-    PER-RULE escape: a mass-stale rule this same run also finds at least
-    one LIVE finding of elsewhere (`_rule_has_live_finding`) has
-    demonstrably had its detector run, so mass-staleness is trustworthy
-    and its candidates proceed to deletion; a mass-stale rule with ZERO
-    live findings anywhere keeps refusing exactly as before (the
+    signature). T-1579 briefly relaxed this into a per-rule escape keyed on
+    the rule having one live finding elsewhere; T-1592 reverted that after
+    it deleted 55 live waivers during a land, since a PARTIALLY degraded
+    run satisfies the escape. Each flagged rule now has its candidates
+    dropped, one rule at a time and logged by name (the
     degraded-run signature `_degraded_verification_reason` targets from
     the other, structural direction). Every other, non-mass-stale rule's
     candidates are never affected by this check either way."""

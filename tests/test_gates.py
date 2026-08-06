@@ -10728,14 +10728,16 @@ class TestWaive004DegradedRunGuard:
             content = (root / "src" / f"m{i}.py").read_text(encoding="utf-8")
             assert "frob:waive PERF00" in content
 
-    def test_mass_invalidation_with_live_finding_elsewhere_proceeds(
+    def test_mass_invalidation_with_live_finding_elsewhere_still_refuses(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-1579: the SAME mass-stale shape as the test above, but this
-        run ALSO reports a live, non-WAIVE004 finding of the target rule
-        elsewhere in the tree -- proof the detector demonstrably ran and
-        can still find that rule. Mass-staleness is then trustworthy and
-        deletion proceeds for every candidate of that rule."""
+        """T-1592 regression lock: the SAME mass-stale shape as the test
+        above, but this run ALSO reports a live, non-WAIVE004 finding of
+        the target rule elsewhere. T-1579 treated that as proof the
+        detector ran and deleted anyway; a PARTIALLY degraded run
+        satisfies it just as easily, and doing so deleted 55 live waivers
+        during a real land. Mass-staleness refuses regardless of live
+        findings elsewhere."""
         # frob:tests src/frob/gates/_fix_engine.py::fix_waive004_stale_waiver \
         # kind="unit"
         from typani.result import Ok
@@ -10781,11 +10783,10 @@ class TestWaive004DegradedRunGuard:
 
         applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
 
-        waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
-        assert len(waive004_applied) == _WAIVE004_MASS_INVALIDATION_THRESHOLD
+        assert [a for a in applied if a.rule == "WAIVE004"] == []
         for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD):
             content = (root / "src" / f"m{i}.py").read_text(encoding="utf-8")
-            assert "frob:waive PERF001" not in content
+            assert "frob:waive PERF001" in content
 
     def test_healthy_run_below_threshold_still_deletes(self, tmp_path: Path) -> None:
         """A genuine, non-degraded full run with a single stale waiver
