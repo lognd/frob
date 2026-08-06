@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.345.0] - unreleased
+
+- T-1575: Development profiles: frob.toml profile=rapid|standard|fortress with one-way auto-ratchet
+
 ## [0.344.0] - unreleased
 
 - T-1518: move TEST016 mutation evidence off the per-land critical path: batch/nightly cadence, land-blocking only for security-kind

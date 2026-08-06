@@ -6339,7 +6339,7 @@ v2-appropriate location/expectation where it is not.
 id: T-1575
 title: 'Development profiles: frob.toml profile=rapid|standard|fortress with one-way
   auto-ratchet'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
