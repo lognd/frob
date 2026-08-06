@@ -621,6 +621,10 @@ def _fake_marker_reason(lines: list[str], index: int) -> str | None:
     return None
 
 
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/gates/_secrets.py \
+# and src/frob/app/telemetry.py, but the best-effort callgraph (frob.graph.callgraph) \
+# does not trace this cross-package private import -- same class of gap as this repo's \
+# other cross-package DEAD001 waivers (T-1024 precedent)"
 def _scan_line(
     lines: list[str], index: int, *, ignore_marker: bool = False
 ) -> list[tuple[_SecretPattern, str]]:

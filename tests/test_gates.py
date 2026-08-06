@@ -2625,6 +2625,81 @@ class TestDeadSymbolGate:
         violations = dead_symbol_gate(tmp_path, snap)
         assert not any("_helper" in v.message for v in violations)
 
+    # frob:ticket T-1652
+    def test_waiver_directly_above_symbol_suppresses_it(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1651: DEAD001's Violation now carries `symref`, so a
+        `frob:waive DEAD001 reason="..."` placed directly above the
+        flagged symbol (the exact pattern the gate's own message
+        recommends) actually matches via `_match_waiver`'s symbol-exact
+        path -- previously every such waiver silently failed to bind
+        because the Violation left `symref` unset (None), forcing every
+        DEAD001 waiver onto the file-scoped fallback instead."""
+        from frob.gates import _apply_waivers
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:waive DEAD001 reason="reached only via getattr dispatch"\n'
+            "def _never_called() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        kept, waived = _apply_waivers(violations, snap)
+        assert not any("_never_called" in v.message for v in kept)
+        assert any("_never_called" in v.message for v in waived)
+
+    # frob:ticket T-1652
+    def test_pydantic_field_validator_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1651: a `@field_validator`/`@model_validator`-decorated private
+        method is dispatched by pydantic's own decorator registry, never by
+        a call token this gate's `build_reference_graph` scan can see --
+        `_is_pydantic_validator` rescues it the same way WIRE001's
+        autouse-pytest-fixture rescue covers that gate's own analogous
+        dynamic-dispatch shape."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "from pydantic import BaseModel, field_validator\n\n\n"
+            "class Foo(BaseModel):\n"
+            '    model_config = {}\n'
+            "    x: str\n\n"
+            '    @field_validator("x")\n'
+            "    @classmethod\n"
+            "    def _check_x(cls, v: str) -> str:\n"
+            "        return v\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("_check_x" in v.message for v in violations)
+
+    # frob:ticket T-1652
+    def test_autouse_pytest_fixture_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1651: an `@pytest.fixture(autouse=True)` fixture is invoked
+        implicitly by pytest's own injection machinery for every test in
+        its module, never by a name/call token this gate's reference-graph
+        scan can see -- `_is_autouse_pytest_fixture` (moved here from
+        WIRE001's own T-1510 rescue) exempts it. DEAD001 previously lacked
+        this exemption entirely."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "import pytest\n\n\n"
+            "@pytest.fixture(autouse=True)\n"
+            "def _reset_env() -> None:\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("_reset_env" in v.message for v in violations)
+
     # frob:ticket T-0422
     def test_dunder_method_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"

@@ -1212,6 +1212,8 @@ def coverage_lock_diff(
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:invariant INV-050
+# invariant spec: [INV-050](invariants/INV-050.md)
 def load_stamp(root: Path) -> dict | None:
     """The raw `.frob/coverage-stamp` document, or `None` if missing/unreadable."""
     stamp_path = root / _STAMP_REL

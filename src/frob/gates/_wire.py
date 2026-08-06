@@ -24,7 +24,12 @@ import re
 import tempfile
 from pathlib import Path
 
-from frob.gates._dead_symbols import _CALLABLE_KINDS, _is_dunder, _is_test_symbol
+from frob.gates._dead_symbols import (
+    _CALLABLE_KINDS,
+    _is_autouse_pytest_fixture,
+    _is_dunder,
+    _is_test_symbol,
+)
 from frob.gates._models import Severity, Violation
 from frob.gates._waive import known_gate_rule_ids
 from frob.gitio import Diff, run_argv
@@ -124,35 +129,6 @@ def _added_lines(
     return by_file
 
 
-# frob:ticket T-1510
-_AUTOUSE_FIXTURE_RE = re.compile(
-    r"@(?:pytest\.fixture|pytest_asyncio\.fixture)\s*\([^)]*\bautouse\s*=\s*True",
-    re.DOTALL,
-)
-
-
-# frob:ticket T-1510
-# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
-# _AUTOUSE_FIXTURE_RE.search, a compiled-regex search over an already-caught \
-# read_text() output; a compiled pattern search cannot raise"
-# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
-# unconditional _SUBSCRIPT_RAISE default for lines[start - 1 : end], a list SLICE \
-# (never raises KeyError, or any exception, for any start/end) that the resolver's \
-# syntactic bracket scan cannot distinguish from a dict lookup"
-def _is_autouse_pytest_fixture(root: Path, record) -> bool:
-    """True if `record`'s span opens with an `@pytest.fixture(autouse=True)`
-    (or `pytest_asyncio.fixture`) decorator -- pytest's own fixture-injection
-    machinery invokes an autouse fixture implicitly for every test in its
-    scope, never via a direct call token `_wire_reach_patterns`'s text scan
-    can see, so WIRE001 must treat it as reached rather than flag the
-    standard pytest idiom as dead code (T-1510)."""
-    try:
-        lines = (root / record.id.path).read_text(encoding="utf-8").splitlines()
-    except (OSError, UnicodeDecodeError):
-        return False
-    start, end = record.span
-    snippet = "\n".join(lines[start - 1 : end])
-    return bool(_AUTOUSE_FIXTURE_RE.search(snippet))
 
 
 def _new_callable_records(

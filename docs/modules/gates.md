@@ -4549,9 +4549,10 @@ mean a directive line specifically).
   machinery above was implemented against `tickets.md`'s monofile hunks
   before ledger v2 existed, and stayed v1-only after T-1553 made a fresh
   repo default to v2: `_ledger_states_at_base` read a ticket's pre-diff
-  state out of `git show <base>:tickets.md`, which simply does not exist
-  in a v2 repo, and `_ticket_marker_in_diff_hunk` scanned `tickets.md` for
-  a `<!-- ticket:<id> -->` marker block that likewise never exists there.
+  state out of `git show <base>:tickets.md`, a path absent from a v2
+  repo's own file layout, and `_ticket_marker_in_diff_hunk` scanned
+  `tickets.md` for a `<!-- ticket:<id> -->` marker block that likewise is
+  never present there.
   A v2 repo therefore got `{}`/`False` from both, silently denying grace
   on every single ticket-close-in-the-same-diff -- exactly the
   worktree-agent flow the grace exists to permit, false-firing COV002 on

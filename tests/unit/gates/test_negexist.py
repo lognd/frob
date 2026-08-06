@@ -85,6 +85,25 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert claims == []
 
+    # frob:ticket T-1653
+    def test_changelog_md_is_exempt_from_the_phrase_heuristic(self) -> None:
+        """T-1651: CHANGELOG.md entries describe PAST bug conditions inside
+        an already-shipped fix ("X hangs when the ref does not exist"),
+        never an open commitment -- and CHANGELOG.md is exclusively
+        `frob ticket land`-owned, so a worktree agent could never apply the
+        `frob:until` remedy there anyway. `_NEGEXIST_EXEMPT_DOCS` skips the
+        phrase scan for this doc entirely; the identical prose under any
+        OTHER doc path still matches (proven by the sibling
+        `test_negative_existence_phrase_emits_claims_absence_edge` case
+        above using the same phrase)."""
+        text = (
+            "## [0.1.0] - unreleased\n\n"
+            "- T-0001: done-report hangs when the named ref does not exist\n"
+        )
+        edges = markdown_anchors("CHANGELOG.md", text)
+        claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
+        assert claims == []
+
 
 class TestNegexist001Gate:
     """`negexist001_gate`'s unbound/stale grouping over already-parsed

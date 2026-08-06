@@ -532,6 +532,11 @@ def _land_verify_pending_marker_path(root: Path, ticket_id: str) -> Path:
 
 
 # frob:ticket T-1523
+# frob:waive DEAD001 reason="genuinely called directly from \
+# src/frob/app/ticket_runner/_land_cmd.py's post-land verification tail, but the \
+# best-effort callgraph (frob.graph.callgraph) does not trace this cross-package \
+# private import -- same class of gap as this repo's other cross-package DEAD001 \
+# waivers (T-1024 precedent)"
 def _write_post_land_verify_marker(root: Path, ticket_id: str, commit_sha: str) -> None:
     """Record `commit_sha` (the just-landed commit, ALREADY on `root`)
     under `ticket_id`'s post-land-verify-pending marker (T-1523) -- called
@@ -561,6 +566,11 @@ def _write_post_land_verify_marker(root: Path, ticket_id: str, commit_sha: str) 
 
 
 # frob:ticket T-1523
+# frob:waive DEAD001 reason="genuinely called directly from \
+# src/frob/app/ticket_runner/_land_cmd.py's post-land verification tail, but the \
+# best-effort callgraph (frob.graph.callgraph) does not trace this cross-package \
+# private import -- same class of gap as this repo's other cross-package DEAD001 \
+# waivers (T-1024 precedent)"
 def _clear_post_land_verify_marker(root: Path, ticket_id: str) -> None:
     """Remove `ticket_id`'s post-land-verify-pending marker, if any
     (T-1523) -- called once `_land_cmd._land`'s post-land verification

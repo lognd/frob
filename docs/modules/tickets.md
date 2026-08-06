@@ -2473,8 +2473,8 @@ scoped-out remainder.
 
 `frob.tickets._profile` reads `frob.toml`'s `[profile] profile = "..."`
 (`ProfileName`: `rapid` | `standard` | `fortress`) -- `standard` is the
-default, today's unchanged behavior, whenever `[profile]` is absent or
-the file does not exist, so an existing repo's ceremony is never silently
+default, today's unchanged behavior, whenever `[profile]` or `frob.toml`
+itself is absent, so an existing repo's ceremony is never silently
 relaxed just because `frob` shipped this feature.
 
 The ticket's own motivation: a small/new repo pays the same fixed land

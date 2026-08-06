@@ -32,9 +32,10 @@ commands" section for the un-deprecation this required.
 <!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
 ### `frob quality` -- correctness/hygiene gates
 
-`check`, `test`, `fix` (fix does not exist yet as a top-level verb --
-today `frob check`'s auto-fix handlers cover this; no action needed
-unless a standalone `fix` verb is added later), `dup`, `arch`, `bind`,
+`check`, `test`, `fix` (a standalone `fix` verb is not a live top-level
+command today -- `frob check`'s auto-fix handlers cover this ground
+already; this line is a candidate-name placeholder for the design
+proposal below, not a scheduled build item), `dup`, `arch`, `bind`,
 <!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->
 `cycle`, `mutate`, `perf`. Candidate subcommands: `frob quality check`,
 <!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->

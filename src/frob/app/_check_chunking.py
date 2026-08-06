@@ -74,6 +74,8 @@ def _baseline_chunks_path(root: Path) -> Path:
 
 # frob:ticket T-0751
 # frob:ticket T-1195
+# frob:invariant INV-050
+# invariant spec: [INV-050](invariants/INV-050.md)
 def _load_baseline_chunks(root: Path) -> dict[str, list[str]]:
     """The `--only`-keyed chunk accumulator (T-0751): `{group_name:
     [violation_json, ...]}`, or `{}` if no partial run is in flight yet or

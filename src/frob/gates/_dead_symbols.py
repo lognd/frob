@@ -31,9 +31,16 @@ Two independent "wired" signals, either one exempts a symbol:
 
 False-positive guards (T-0422's acceptance criteria): dunder methods
 (`__init__`, `__post_init__`, ...), pytest `test_*` functions/`Test*`
-classes, and anything a caller waives with `frob:waive DEAD001
-reason="..."` (the standard mechanism every other advisory-tier gate in
-this repo already uses for a case this best-effort token scan cannot
+classes, an `@field_validator`/`@model_validator`-decorated pydantic
+validator method (`_is_pydantic_validator`, T-1651 -- pydantic's own
+decorator-registry dispatch invokes these, never a call token), an
+`@pytest.fixture(autouse=True)` fixture (`_is_autouse_pytest_fixture`,
+T-1651 -- moved here from `frob.gates._wire`'s WIRE001, which `_wire.py`
+now imports back rather than duplicating; DEAD001 lacked this exemption
+entirely before T-1651 and flagged 5 of this repo's own autouse fixtures
+as dead), and anything a caller waives with `frob:waive
+DEAD001 reason="..."` (the standard mechanism every other advisory-tier
+gate in this repo already uses for a case this best-effort token scan cannot
 see -- e.g. a handler reached only via `getattr(obj, "_name")` string
 dispatch, which never appears as a bare identifier token at all).
 
@@ -56,6 +63,7 @@ dunder/test-symbol exemption logic).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path, PurePosixPath
 
 from frob.gates._models import Severity, Violation
@@ -86,6 +94,68 @@ def _is_dunder(qualname: str) -> bool:
     by name."""
     short = qualname.rsplit(".", 1)[-1]
     return short.startswith("__") and short.endswith("__")
+
+
+# frob:ticket T-1510
+_AUTOUSE_FIXTURE_RE = re.compile(
+    r"@(?:pytest\.fixture|pytest_asyncio\.fixture)\s*\([^)]*\bautouse\s*=\s*True",
+    re.DOTALL,
+)
+
+
+# frob:ticket T-1510
+# frob:ticket T-1652
+# frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
+# _AUTOUSE_FIXTURE_RE.search, a compiled-regex search over an already-caught \
+# read_text() output; a compiled pattern search cannot raise"
+# frob:waive EXHAUST002 reason="T-1636: leaked KeyError traces to the resolver's \
+# unconditional _SUBSCRIPT_RAISE default for lines[start - 1 : end], a list SLICE \
+# (never raises KeyError, or any exception, for any start/end) that the resolver's \
+# syntactic bracket scan cannot distinguish from a dict lookup"
+def _is_autouse_pytest_fixture(root: Path, record) -> bool:
+    """True if `record`'s span opens with an `@pytest.fixture(autouse=True)`
+    (or `pytest_asyncio.fixture`) decorator -- pytest's own fixture-injection
+    machinery invokes an autouse fixture implicitly for every test in its
+    scope, never via a direct call token a text scan can see. Originally
+    written for WIRE001 (T-1510); moved here (T-1651, `frob.gates._wire`
+    imports it back rather than duplicating) so DEAD001 shares the exact
+    same rescue -- DEAD001 was missing this exemption entirely and flagged
+    5 of this repo's own autouse fixtures as dead code before this fix."""
+    try:
+        lines = (root / record.id.path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    start, end = record.span
+    snippet = "\n".join(lines[start - 1 : end])
+    return bool(_AUTOUSE_FIXTURE_RE.search(snippet))
+
+
+# frob:ticket T-1652
+_PYDANTIC_VALIDATOR_RE = re.compile(
+    r"@(?:pydantic\.)?(?:field_validator|model_validator)\s*\(",
+)
+
+
+# frob:ticket T-1652
+def _is_pydantic_validator(root: Path, record) -> bool:
+    """True if `record`'s span opens with an `@field_validator(...)` or
+    `@model_validator(...)` decorator (bare or `pydantic.`-qualified) --
+    pydantic invokes a validator via its own decorator-registry dispatch
+    at model-construction/field-assignment time, never via a call token
+    this gate's package-scoped `build_reference_graph` scan (or any
+    text-adjacent scan) can see, the identical dynamic-dispatch shape
+    WIRE001's `_is_autouse_pytest_fixture` (T-1510) already rescues for
+    pytest fixtures. Confirmed empirically (T-1651): 9 of this repo's own
+    20 real (post-symref-fix) DEAD001 findings were exactly this shape --
+    `AppConfig`/`TicketSpec`/`AcceptanceCriterion` field validators with
+    zero call-graph callers by construction, not genuinely dead."""
+    try:
+        lines = (root / record.id.path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    start, end = record.span
+    snippet = "\n".join(lines[start - 1 : end])
+    return bool(_PYDANTIC_VALIDATOR_RE.search(snippet))
 
 
 def _is_test_symbol(qualname: str) -> bool:
@@ -188,6 +258,10 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
         symref = record.symref
         if symref in referenced:
             continue
+        if _is_pydantic_validator(root, record):
+            continue
+        if _is_autouse_pytest_fixture(root, record):
+            continue
         package = str(PurePosixPath(record.id.path).parent)
         called = called_by_package.get(package)
         if called is None:
@@ -205,6 +279,7 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
                 severity=Severity.WARN,
                 file=record.id.path,
                 line=record.span[0],
+                symref=symref,
                 message=(
                     f"DEAD001: {symref} is a private symbol with no call-graph "
                     "caller and no frob:tests/frob:describes/frob:invariant edge "

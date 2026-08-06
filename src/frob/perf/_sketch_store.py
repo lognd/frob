@@ -175,6 +175,8 @@ def _db_path(root: Path) -> Path:
     return root / ".frob" / "hotgraph_sketches.db"
 
 
+# frob:invariant INV-050
+# invariant spec: [INV-050](invariants/INV-050.md)
 def _connect(root: Path) -> Result[sqlite3.Connection, PerfError]:
     """A shared, process-cached connection to `root`'s
     `.frob/hotgraph_sketches.db`, creating the schema on first open."""

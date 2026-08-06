@@ -209,6 +209,18 @@ def dedupe_slug(slug: str, seen: dict[str, int]) -> str:
     return slug if count == 0 else f"{slug}-{count}"
 
 
+# T-1651: CHANGELOG.md entries describe PAST bug conditions ("X hangs when
+# the named ref does not exist") as part of explaining an already-shipped
+# fix, never an open commitment the way every other doc's negexist prose
+# does -- and CHANGELOG.md is exclusively `frob ticket land`-owned
+# (docs/guides/agent-playbook.md, section 4b, T-0731), so a worktree
+# agent can never even apply the documented remedy
+# (`frob:until T-####`) there. Confirmed empirically (T-1651): every one
+# of this repo's own historical NEGEXIST001 CHANGELOG.md hits was this
+# exact "bug-condition, not missing-feature" shape.
+_NEGEXIST_EXEMPT_DOCS = frozenset({"CHANGELOG.md"})
+
+
 def _negexist_phrase_edge(
     line: str, doc_path: str, slug: str, lineno: int
 ) -> Edge | None:
@@ -217,7 +229,11 @@ def _negexist_phrase_edge(
     `markdown_anchors`'s main loop (ARCH001) since this is the one match
     kind with its own pre-check (a directive comment line is never itself
     prose worth heuristic-scanning, so e.g. this very module's own
-    docstring/comment text describing the heuristic never self-matches)."""
+    docstring/comment text describing the heuristic never self-matches).
+    `doc_path` in `_NEGEXIST_EXEMPT_DOCS` (T-1651) short-circuits before
+    the phrase search -- see that set's own docstring."""
+    if doc_path in _NEGEXIST_EXEMPT_DOCS:
+        return None
     if "<!--" in line and "-->" in line:
         return None
     negexist = _NEGEXIST_PHRASE_RE.search(line)

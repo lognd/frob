@@ -42,6 +42,8 @@ def _prune_dirnames(
     return kept
 
 
+# frob:invariant INV-050
+# invariant spec: [INV-050](invariants/INV-050.md)
 def _load_cache(cache_path: Path, key: str) -> frozenset[str] | None:
     """The cached node id set if `cache_path` exists and matches `key`, else `None`."""
     if not cache_path.exists():

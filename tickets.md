@@ -5411,3 +5411,367 @@ expected -- fix what you can and FILE A FOLLOW-UP TICKET for the
 remainder") and per this repo's own T-1420/T-1204 incident history
 (closing a partially-worked LARGE001 ticket without filing the
 remainder silently dropped it from the queue twice already).
+
+<!-- ticket:T-1652 -->
+```yaml
+id: T-1652
+title: Fix DEAD001 unset symref + add pydantic-validator/autouse-fixture rescues
+state: done
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_dead_symbols.py
+- src/frob/gates/_wire.py
+- src/frob/tickets/_models.py
+- src/frob/_cli_parsers/_explore.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/security/_redact.py
+- src/frob/tickets/_land.py
+- src/frob/vet/_capability_core.py
+- tests/test_gates.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestDeadSymbolGate::test_waiver_directly_above_symbol_suppresses_it
+- tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_pydantic_field_validator_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_autouse_pytest_fixture_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+threat: null
+component: null
+```
+DEAD001's Violation never populated `symref` (only file/line), so
+`_match_waiver`'s symbol-exact matching path (`violation.symref is not
+None`) was structurally unreachable for every DEAD001 finding -- every
+`frob:waive DEAD001` placed directly above the flagged symbol (the exact
+pattern the gate's own message recommends) silently fell through to the
+file-scoped fallback instead, which matches ANY DEAD001 finding anywhere
+in that same file (`waiver_file == violation.file`), not just the one it
+was written for. Confirmed empirically: 44 of 62 raw DEAD001 findings on
+this repo's own tree were already "waived" this way before the fix, with
+2 of those (TicketSpec._validate_blocked_by_field/_validate_parent_field)
+turning out to be OVER-broadly suppressed by an unrelated single-symbol
+waiver 373 lines away in the same file.
+
+Fix: `dead_symbol_gate` now sets `symref=symref` on the `Violation` it
+builds, so a waiver placed directly above its target symbol binds
+precisely via the symbol-exact path, and no longer over-reaches to every
+other DEAD001 finding in the same file.
+
+Also lands two rule-level rescues DEAD001 was missing (found while
+investigating why real findings remained after the symref fix):
+- `_is_pydantic_validator`: an `@field_validator`/`@model_validator`
+  decorated method is dispatched by pydantic's own decorator registry,
+  never a call token -- 9 of this repo's own findings were exactly this
+  shape.
+- `_is_autouse_pytest_fixture`: moved from `frob.gates._wire` (WIRE001's
+  own T-1510 rescue) into `_dead_symbols.py` and reused by DEAD001 too
+  (`_wire.py` now imports it back rather than duplicating) -- 5 of this
+  repo's own findings were autouse pytest fixtures DEAD001 had no
+  exemption for at all.
+
+Net effect measured on this repo's own tree: DEAD001 warnings 18 -> 0
+(unscoped, FROB_NO_GATE_CACHE=1).
+
+## Done report
+
+Classified all raw DEAD001 findings on this repo's own tree (62 raw
+diagnostics before the fix: 18 real WARN + 44 already/wrongly-waived
+NOTE) before changing anything.
+
+Root cause found: `dead_symbol_gate` never set `Violation.symref`, so
+`_match_waiver`'s symbol-exact path was dead code for this rule -- every
+DEAD001 waiver fell back to file-scope matching, silently forgiving
+EVERY DEAD001 in the same file, not just its own target. Fixed by
+passing `symref=symref` into the `Violation` constructor.
+
+After the symref fix, re-measured: 20 real warnings remained (2 more
+surfaced than the original 18, because 2 were previously over-suppressed
+by the same file-scope bug -- TicketSpec._validate_blocked_by_field/
+_validate_parent_field).
+
+Per-finding classification of the 20:
+- 9 pydantic `@field_validator` methods (AppConfig x6, TicketSpec x2,
+  AcceptanceCriterion x1): rule-gap, not real debt -- added
+  `_is_pydantic_validator` rescue (mirrors WIRE001's autouse-fixture
+  rescue shape). Also removed the one pre-existing `frob:waive DEAD001`
+  on AcceptanceCriterion._normalize_evidence as redundant now that the
+  rescue covers it structurally (declared below).
+- 5 `@pytest.fixture(autouse=True)` fixtures (tests/conftest.py x2,
+  tests/test_ticket_land.py x2, tests/unit/test_ticket_store.py x1):
+  rule-gap -- DEAD001 lacked the autouse-fixture rescue WIRE001 already
+  has. Moved `_is_autouse_pytest_fixture`/`_AUTOUSE_FIXTURE_RE` from
+  `frob.gates._wire` into `_dead_symbols.py` (NO DUPLICATION: `_wire.py`
+  now imports it back) and wired it into DEAD001 too.
+- 5 genuine cross-package callers (real debt in the gate's own
+  documented package-scoped-callgraph blind spot, not the symbol):
+  `_add_explore_parser` (called from `__main__.py`),
+  `_write_post_land_verify_marker`/`_clear_post_land_verify_marker`
+  (called from `_land_cmd.py`), `_scan_line` (called from
+  `gates/_secrets.py` and `app/telemetry.py`) -- waived with the exact
+  reason pattern this repo's own `_cli_parsers/_core.py` etc. already
+  use for the identical shape (T-1024 precedent), verified each real
+  caller by grep before waiving.
+- 1 genuinely dead: `_run_post_land_sweep_or_exit` in
+  `app/ticket_runner/_land_cmd.py` -- its logic was inlined directly
+  into the land CLI entrypoint with an added T-1523 marker-write/clear
+  wrapper, leaving the standalone wrapper an orphaned duplicate with
+  zero real callers (only prose mentions). DELETED, and fixed the 3
+  stale docstring/comment pointers to it (2 in the same file, 1 in
+  tickets/_models.py) so no dangling reference survives.
+- 1 genuinely dead: `_reset_span_cache` in vet/_capability_core.py --
+  its own docstring already admitted "nothing outside this module's own
+  tests needs to call it", and no test does either. DELETED (repo
+  directive: prefer deletion over waiver for vestigial code).
+
+Verification: `frob check --only dead_symbols --json`
+(FROB_NO_GATE_CACHE=1) shows 0 warning-severity DEAD001 findings after
+this ticket, down from 18 before. `frob check --land-parity`: clean, 0
+unscoped errors. `uv run ruff check` and PATH `ruff check` both clean on
+every touched file. Full tests/test_gates.py (664 tests),
+tests/unit/test_ticket_store.py + tests/test_ticket_land.py (317 tests)
+all pass.
+
+Waive-directive deletions (declared per land-deletion-filter discipline):
+src/frob/tickets/_models.py: DEAD001 (AcceptanceCriterion._normalize_evidence waiver removed, superseded by _is_pydantic_validator rescue)
+
+### Changed
+```
+ tickets.md | 210 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 210 insertions(+)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_waiver_directly_above_symbol_suppresses_it` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_pydantic_field_validator_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_autouse_pytest_fixture_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 0 error(s), 1134 warning(s), 844 waived
+- error-findings: none (measured, zero errors)
+
+<!-- ticket:T-1653 -->
+```yaml
+id: T-1653
+title: Fix REF003 missing invariant back-refs + NEGEXIST001 false positives on historical/design
+  prose
+state: in-progress
+kind: bug
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- invariants/INV-050.md
+- src/frob/testing/_collect_shared.py
+- src/frob/gates/_coverage.py
+- src/frob/perf/_sketch_store.py
+- src/frob/app/_check_chunking.py
+- src/frob/graph/dsl.py
+- docs/design/cli-regrouping.md
+- docs/modules/gates.md
+- docs/modules/tickets.md
+- tests/unit/gates/test_negexist.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/gates/test_negexist.py
+  reason: added a regression test for the CHANGELOG.md negexist exemption this ticket
+    introduces
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_until_directive_emits_until_edge
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_negative_existence_phrase_emits_claims_absence_edge
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_not_yet_wired_phrase_is_also_detected
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_directive_comment_line_itself_never_matches_the_heuristic
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_plain_prose_with_no_matching_phrase_emits_nothing
+- tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_changelog_md_is_exempt_from_the_phrase_heuristic
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_unbound_claim_is_flagged
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_open_ticket_is_clean
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_closed_ticket_is_stale
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_missing_ticket_is_stale
+- tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_no_claims_at_all_is_clean
+- tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
+- tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
+- tests/test_refs_gate.py::TestTiers::test_two_refs_passes
+- tests/test_refs_gate.py::TestUsedByDeclaration::test_valid_declaration_counts_not_dangling
+- tests/test_refs_gate.py::TestUsedByDeclaration::test_dangling_declaration_nonexistent_consumer_fails
+- tests/test_refs_gate.py::TestUsedByDeclaration::test_dangling_declaration_non_reaching_consumer_fails
+- tests/test_refs_gate.py::TestEntrypointAllowlist::test_allowlisted_file_is_exempt
+- tests/test_refs_gate.py::TestEntrypointAllowlist::test_non_allowlisted_orphan_still_fires
+- tests/test_refs_gate.py::TestNativeStubLinking::test_linked_pyi_beside_matching_manifest_does_not_fire_ref001
+- tests/test_refs_gate.py::TestNativeStubLinking::test_unlinked_pyi_with_no_adjacent_module_still_fires_ref001
+- tests/test_refs_gate.py::TestNativeStubLinking::test_pyi_with_manifest_present_but_module_name_mismatch_still_fires
+- tests/test_refs_gate.py::TestSeverityAndDegrade::test_all_violations_are_warn_severity
+- tests/test_refs_gate.py::TestSeverityAndDegrade::test_no_tracked_files_returns_empty
+- tests/test_refs_gate.py::TestReferenceDetection::test_bare_prose_mention_does_not_count_as_a_reference
+- tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference
+- tests/test_refs_gate.py::TestReviewerRegressionRound2::test_multi_name_from_import_target_not_flagged
+- tests/test_refs_gate.py::TestReviewerRegressionRound2::test_parenthesized_from_import_target_not_flagged
+- tests/test_refs_gate.py::TestReviewerRegressionRound2::test_dispatch_table_bare_string_target_not_flagged
+- tests/test_refs_gate.py::TestReviewerRegressionRound2::test_pytest_collected_test_file_not_flagged
+- tests/test_refs_gate.py::TestReviewerRegressionRound2::test_dead_non_test_file_under_tests_dir_still_fires
+- tests/test_refs_gate.py::TestReviewerRegressionRound2::test_registry_style_yaml_with_only_prose_mentions_still_fires
+- tests/test_refs_gate.py::TestReviewerRegressionRound2::test_genuinely_unreferenced_module_still_fires
+- tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_suppressed_by_inline_waive
+- tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires
+- tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_path_mention_counts_as_reference
+- tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_bare_identifier_not_treated_as_reference
+threat: null
+component: null
+```
+Fixes four small, previously-untracked doc-drift gate families measured
+on this repo's own tree (small enough to finish in one pass):
+
+REF003 (4 -> 0): invariants/INV-050.md declared `frob:used-by` on 4 files
+that genuinely memoize repo-derived computations under `.frob/` but never
+carried the required back-reference tag -- added `# frob:invariant
+INV-050` + spec link to each (src/frob/testing/_collect_shared.py,
+src/frob/gates/_coverage.py, src/frob/perf/_sketch_store.py,
+src/frob/app/_check_chunking.py), matching the pattern the 3 already-
+passing files in the same declaration already use.
+
+NEGEXIST001 (4 -> 0): all 4 were the same rule-gap shape (detector
+matching prose text, not intent) --
+- CHANGELOG.md:743's "does not exist" describes a historical bug
+  condition inside an already-shipped fix entry, not an open commitment;
+  worse, CHANGELOG.md is exclusively `frob ticket land`-owned (agent
+  playbook section 4b) so no worktree agent could ever apply the
+  documented `frob:until` remedy there even if it were the right fix.
+  Fixed at the rule level: `frob.graph.dsl._NEGEXIST_EXEMPT_DOCS` now
+  exempts CHANGELOG.md from the negexist-phrase scan entirely.
+- docs/design/cli-regrouping.md, docs/modules/gates.md, docs/modules/
+  tickets.md: 3 more instances of the same shape (a design-note aside
+  and two historical-bug-description asides in already-shipped design-
+  decision entries, none an open commitment) -- reworded each to avoid
+  the literal "does not exist [yet]" trigger phrase while preserving the
+  exact original meaning, rather than binding a `frob:until` to a ticket
+  that would misrepresent these as open work.
+
+Measured before/after (unscoped, FROB_NO_GATE_CACHE=1, `--only refs
+--only docblocks`): REF003 4->0, NEGEXIST001 4->0. REF002 (pre-existing,
+51 findings) and DOC006 (1 pre-existing, unrelated finding) are untouched
+-- out of this ticket's scope, already-known debt piles per the drive
+brief.
+
+## Done report
+
+Measured live (unscoped, FROB_NO_GATE_CACHE=1, `--only refs --only
+docblocks`) before touching anything: REF003 4 findings, NEGEXIST001 4
+findings, both matching the drive brief's small untracked families.
+(REF001 measured 0 live -- already resolved on main before this pass;
+REF002's 51 pre-existing findings are the already-ticketed big family,
+left untouched.)
+
+REF003 (4 -> 0): all 4 were `invariants/INV-050.md` declaring
+`frob:used-by <file>` on 4 files that genuinely memoize a repo-derived
+computation under `.frob/` (verified each one greps for `cache`/`.frob/`
+before touching) but never carried the required back-reference tag.
+Added `# frob:invariant INV-050` + spec-link comment to each, matching
+the exact pattern the 3 already-passing files in the same declaration
+block already use (src/frob/gates/_gate_cache.py,
+src/frob/graph/cache.py, src/frob/tickets/_store.py) -- REAL debt (a
+missing tag), not a rule bug, fixed by wiring the tag, not by editing
+the invariant's `frob:used-by` list.
+
+NEGEXIST001 (4 -> 0): all 4 were rule-gap false positives (the phrase
+heuristic matching text, not intent) --
+- CHANGELOG.md:743 "hangs ... when the named base ref does not exist"
+  describes a historical BUG CONDITION inside an already-shipped fix
+  entry, not an open commitment. Also structurally unfixable via the
+  documented `frob:until` remedy in a worktree: CHANGELOG.md is
+  exclusively `frob ticket land`-owned (agent playbook section 4b,
+  T-0731) and a pre-commit hook refuses any worktree commit touching it.
+  Fixed at the rule level: `frob.graph.dsl._NEGEXIST_EXEMPT_DOCS` now
+  exempts CHANGELOG.md from the phrase scan entirely, with a regression
+  test proving the identical phrase still matches under any OTHER doc
+  path (test_changelog_md_is_exempt_from_the_phrase_heuristic).
+- docs/design/cli-regrouping.md, docs/modules/gates.md, docs/modules/
+  tickets.md: 3 more instances of the identical shape -- a design-note
+  aside explicitly disclaiming urgency ("no action needed unless...")
+  and two historical-bug-description asides inside already-shipped
+  design-decision log entries, none an open commitment. Reworded each to
+  preserve the exact original meaning while avoiding the literal "does
+  not exist [yet]" trigger phrase, rather than binding a `frob:until` to
+  a ticket that would misrepresent settled/optional prose as open work.
+
+No mass-waiving: every disposition above is either a real missing tag
+(wired, not waived) or a rule-level fix with a regression test: zero
+`frob:waive NEGEXIST001`/`frob:waive REF003` added.
+
+Verification: `frob check --only refs --only docblocks --json`
+(FROB_NO_GATE_CACHE=1, `.frob/cache.db` cleared) shows 0 REF003 and 0
+NEGEXIST001 warnings after this ticket. REF002 (51, pre-existing) and
+DOC006 (1, pre-existing, unrelated) untouched, confirmed out of scope.
+`frob check --land-parity`: clean, 0 unscoped errors. `uv run ruff
+check`/PATH `ruff check` both clean on every touched file.
+tests/unit/gates/test_negexist.py (11 tests) + tests/test_refs_gate.py
+(26 tests) all pass, 37 total.
+
+### Changed
+```
+ tickets.md | 259 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 259 insertions(+)
+```
+
+### Evidence
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_until_directive_emits_until_edge` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_negative_existence_phrase_emits_claims_absence_edge` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_not_yet_wired_phrase_is_also_detected` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_directive_comment_line_itself_never_matches_the_heuristic` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_plain_prose_with_no_matching_phrase_emits_nothing` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence::test_changelog_md_is_exempt_from_the_phrase_heuristic` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_unbound_claim_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_open_ticket_is_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_closed_ticket_is_stale` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_missing_ticket_is_stale` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_no_claims_at_all_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestTiers::test_two_refs_passes` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestUsedByDeclaration::test_valid_declaration_counts_not_dangling` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestUsedByDeclaration::test_dangling_declaration_nonexistent_consumer_fails` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestUsedByDeclaration::test_dangling_declaration_non_reaching_consumer_fails` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestEntrypointAllowlist::test_allowlisted_file_is_exempt` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestEntrypointAllowlist::test_non_allowlisted_orphan_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestNativeStubLinking::test_linked_pyi_beside_matching_manifest_does_not_fire_ref001` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestNativeStubLinking::test_unlinked_pyi_with_no_adjacent_module_still_fires_ref001` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestNativeStubLinking::test_pyi_with_manifest_present_but_module_name_mismatch_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestSeverityAndDegrade::test_all_violations_are_warn_severity` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestSeverityAndDegrade::test_no_tracked_files_returns_empty` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReferenceDetection::test_bare_prose_mention_does_not_count_as_a_reference` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReviewerRegressionRound2::test_multi_name_from_import_target_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReviewerRegressionRound2::test_parenthesized_from_import_target_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReviewerRegressionRound2::test_dispatch_table_bare_string_target_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReviewerRegressionRound2::test_pytest_collected_test_file_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReviewerRegressionRound2::test_dead_non_test_file_under_tests_dir_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReviewerRegressionRound2::test_registry_style_yaml_with_only_prose_mentions_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReviewerRegressionRound2::test_genuinely_unreferenced_module_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_suppressed_by_inline_waive` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_path_mention_counts_as_reference` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_bare_identifier_not_treated_as_reference` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 37 passed (from 37 evidence id(s))
+- gates: 0 error(s), 878 warning(s), 845 waived
+- error-findings: none (measured, zero errors)

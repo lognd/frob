@@ -1110,7 +1110,6 @@ class AcceptanceCriterion(BaseModel):
 
     @field_validator("evidence", mode="before")
     @classmethod
-    # frob:waive DEAD001 reason="T-1024: genuinely called on EVERY AcceptanceCriterion construction (a pydantic mode='before' field_validator runs unconditionally, not just when the input actually needs splitting) -- frob.graph.callgraph's best-effort BFS cannot trace through pydantic's validator-decorator dispatch, same class of gap as Ticket._normalize_scope/_normalize_labels above"  # noqa: E501
     def _normalize_evidence(cls, value: Sequence[str]) -> tuple[str, ...]:
         """Split any comma-joined entry the same way `Ticket.scope`/`labels`
         do (T-0241 precedent), so a hand-typed `--evidence 'a,b'` still
@@ -1823,8 +1822,8 @@ class LandError(ErrorSet):
         "Tier-A auto-fix could resolve -- the commit already landed on "
         "main and was reverted via `git reset --hard` back to its "
         "pre-land state; a single interactive `frob ticket land` call "
-        "reports this via sys.exit(1) directly (see "
-        "_run_post_land_sweep_or_exit), this member exists so a drain "
+        "reports this via sys.exit(1) directly (see the post-land sweep "
+        "sequence in _land_cmd.py), this member exists so a drain "
         "loop (T-1444) processing several queued lands in one process "
         "can attribute the failure to its own ticket and continue "
         "draining the rest instead of the whole loop dying with it"

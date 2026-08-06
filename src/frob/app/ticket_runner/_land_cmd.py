@@ -1725,7 +1725,8 @@ def _land_pre_commit_sweep_fn(
     baseline-capture thread first (a no-op if it already finished, which
     it almost always has by this point in `land()`'s own sequential work)
     so this reuses the SAME pre-land finding set the post-land sweep
-    (`_run_post_land_sweep_or_exit`) also consumes -- no second baseline
+    (the inline marker-write/sweep/marker-clear sequence in the land CLI
+    entrypoint, T-1523) also consumes -- no second baseline
     scan. `None` (skip) if the baseline thread produced nothing (e.g. a
     dry run, where `_capture_pre_land_baseline` returns `(None, None)`)."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
@@ -1741,38 +1742,6 @@ def _land_pre_commit_sweep_fn(
         )
 
     return sweep
-
-
-# frob:ticket T-1456
-def _run_post_land_sweep_or_exit(
-    root: Path,
-    cfg: AppConfig,
-    report,  # noqa: ANN001
-    pre_land_sha: str | None,
-    pre_land_findings: frozenset[tuple[str, str]] | None,
-) -> None:
-    """`_land`'s post-land sweep phase (T-1456): runs AFTER `land()`'s
-    squash-apply commit has already landed on `root` (a real, non-dry-run
-    success only -- `report.dry_run` means nothing actually mutated `root`
-    to sweep) and BEFORE this land is reported/pushed/finished, so a
-    reverted land is reported as a failure, never as a success followed by
-    a silent rollback. Exits the process non-zero if the sweep reverted
-    the land."""
-    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
-    if report.dry_run or pre_land_sha is None:
-        return
-    swept = _post_land_unscoped_error_sweep(
-        root, cfg.ticket_id, report.final_id, pre_land_sha, pre_land_findings
-    )
-    if not swept:
-        _log.error(
-            "ticket land failed: %s post-land unscoped error sweep "
-            "found residue no Tier-A auto-fix could resolve -- %s "
-            "reverted to its pre-land state, land refused",
-            report.final_id,
-            root,
-        )
-        sys.exit(1)
 
 
 # frob:ticket T-1269
@@ -1907,8 +1876,8 @@ def _land(root: Path, cfg: AppConfig) -> None:
 
     T-1463: the pre-land baseline capture (`_capture_pre_land_baseline`) is
     started in a background thread BEFORE `land()` is called, and joined
-    only once its result is actually needed (`_run_post_land_sweep_or_exit`,
-    after `land()` returns) -- it scans an isolated snapshot worktree, not
+    only once its result is actually needed (the post-land sweep sequence
+    below, after `land()` returns) -- it scans an isolated snapshot worktree, not
     `root` itself (see `_capture_pre_land_baseline`'s docstring), so it is
     safe to run while `land()` merges into `root` at the same time. This
     overlaps the baseline scan's own budget-bounded wall time with
@@ -1922,7 +1891,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
     while `root`'s working tree still holds only the staged, uncommitted
     squash-apply changeset. A refusal there costs nothing and reverts no
     real commit (`_verified_reset_root` on a staged-but-uncommitted tree),
-    unlike `_run_post_land_sweep_or_exit`'s post-commit `git reset --hard`
+    unlike the post-land sweep's own post-commit `git reset --hard`
     below, which stays wired in unchanged as a cheap final assertion."""
     if cfg.ticket_land_plan:
         _land_plan_cmd(root, cfg)

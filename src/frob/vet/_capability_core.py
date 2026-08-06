@@ -270,20 +270,6 @@ _span_cache_lock = threading.Lock()
 _span_cache: dict[tuple[str, str], tuple[ByteSpan, ...]] = {}
 
 
-def _reset_span_cache() -> None:
-    """Clear the process-lifetime `_non_executable_byte_spans` memo
-    (T-1210) -- mirrors `frob.lang.reset_parse_cache`'s per-invocation
-    hygiene job so a long-lived process (a test session, the MCP server)
-    does not accumulate stale entries across runs. Never required for
-    correctness: the cache is content-hash-keyed, so a changed file is
-    never served a stale entry; this only frees memory and resets the
-    memo for instrumentation/testing purposes. Kept private (no `frob
-    check`-facing public API surface added) -- nothing outside this
-    module's own tests needs to call it."""
-    with _span_cache_lock:
-        _span_cache.clear()
-
-
 def _non_executable_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
     """Every byte span in `path` that is prose, not executable code (T-0769):
     tree-sitter comment spans (T-0209) unioned with python docstring spans
