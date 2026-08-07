@@ -2,7 +2,7 @@
 id: T-1775
 title: T-1763's land silently re-added CHK-GATE-INV006 to check-coverage.yaml via
   Tier-A REG010 sync, main is REG002-red
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-07'
