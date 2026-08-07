@@ -2220,7 +2220,7 @@ the shape.
 ```yaml
 id: T-1538
 title: gates.md stale doc anchor for moved redaction engine (frob.security._redact)
-state: queued
+state: dropped
 kind: docs
 origin: human
 created: '2026-08-05'
@@ -2235,6 +2235,8 @@ component: null
 ```
 Refiled: original draft T-1538 (filed during T-1318) died in the t-1350 ledger corruption spans. One stale doc anchor in docs/modules/gates.md still points at the pre-move frob.gates._secrets redaction internals; file was leased by T-1205 at the time. Repoint to frob.security._redact's section.
 
+## Drop reason
+- 2026-08-06: already fixed: T-1318's own land (commit a579f23e) already corrected docs/modules/gates.md's frob:describes anchor to src/frob/security/_redact.py::_redact before this refile of the ledger-corrupted draft was even created; verified 0 DOC004/DOC006/DRIFT001 findings scoped to the file (frob check --only docanchor --only doclink --only drift --only docblocks --ticket T-1538, worktree agent-ad4d34f749af9b292)
 <!-- ticket:T-1539 -->
 ```yaml
 id: T-1539
