@@ -1,4 +1,24 @@
 {
+  "ack_log": [
+    {
+      "actor": "logan",
+      "at": "2026-08-07",
+      "facet": "body",
+      "new_digest": "a2fef5dd8c697ccf7b28237291a39fab22f3cde70250d5c38174086442230075",
+      "old_digest": null,
+      "reason": "T-1317: acknowledge now requires --reason and records the digest delta in ack_log; re-verified the new body against docs/modules/gates.md#ack-accountability-t-1317",
+      "ref": "src/frob/graph/lock.py::acknowledge"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-07",
+      "facet": "sig",
+      "new_digest": "c184e38b35ebf0bed3d515480523c3f24e005b5220ad7b471dd01d16fe298357",
+      "old_digest": "fa7492b15b796f86b6627da79468d2fcfa6926d24fbf6083e2f044e1f30fad50",
+      "reason": "T-1317: acknowledge now requires --reason and records the digest delta in ack_log; re-verified the new body against docs/modules/gates.md#ack-accountability-t-1317",
+      "ref": "src/frob/graph/lock.py::acknowledge"
+    }
+  ],
   "entries": [
     {
       "digest": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
@@ -306,7 +326,12 @@
       "ref": "src/frob/graph/_generated.py::is_generated_source"
     },
     {
-      "digest": "fa7492b15b796f86b6627da79468d2fcfa6926d24fbf6083e2f044e1f30fad50",
+      "digest": "a2fef5dd8c697ccf7b28237291a39fab22f3cde70250d5c38174086442230075",
+      "facet": "body",
+      "ref": "src/frob/graph/lock.py::acknowledge"
+    },
+    {
+      "digest": "c184e38b35ebf0bed3d515480523c3f24e005b5220ad7b471dd01d16fe298357",
       "facet": "sig",
       "ref": "src/frob/graph/lock.py::acknowledge"
     },

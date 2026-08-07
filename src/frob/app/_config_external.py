@@ -57,6 +57,8 @@ _STRING_FIELDS = (
     "graph_command",
     "graph_ref",
     "ack_facet",
+    # frob:ticket T-1317
+    "ack_reason",
     "registry_command",
     "registry_add_file",
     "registry_add_key",
@@ -156,6 +158,8 @@ _PATH_FIELDS = (
     "gitlog_path",
     "graph_path",
     "ack_path",
+    # frob:ticket T-1317
+    "ack_reason_file",
     "debt_path",
     "deprecated_path",
     "pool_path",
@@ -300,6 +304,8 @@ _BOOL_FLAGS = (
     "check_skip_prettier",
     "gitlog_all",
     "gitlog_json",
+    # frob:ticket T-1317
+    "ack_list",
     "check_stamp_coverage",
     "check_stamp_baseline",
     "check_delta",

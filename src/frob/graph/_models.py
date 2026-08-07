@@ -15,6 +15,7 @@ identity.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import date
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
@@ -22,6 +23,7 @@ from pydantic import BaseModel, ConfigDict
 from frob.lang import SymbolKind
 
 __all__ = [
+    "AckAuditEntry",
     "BuildStats",
     "Digests",
     "DriftReport",
@@ -261,14 +263,47 @@ class LockEntry(BaseModel):
     digest: str
 
 
+# frob:ticket T-1317
+# frob:doc docs/modules/gates.md#ack-accountability-t-1317
+class AckAuditEntry(BaseModel):
+    """One append-only audit line for a `frob ack` mutation (T-1317): the
+    `ScopeChangeEntry`/`AcceptanceAmendmentEntry`/`EvidenceChangeEntry`
+    discipline (T-0455/T-1422/T-1733) applied to `frob.lock` -- `frob ack`
+    is the one place the obligation graph accepts a HUMAN ASSERTION
+    (a re-verified doc is still true) in place of a mechanical check, so an
+    ack with no reason and no record of what it vouched for is
+    indistinguishable from a rubber stamp. `reason` is mandatory (`frob.
+    graph.lock.acknowledge` refuses with `LockError.AckReasonMissing` when
+    blank or boilerplate-detected -- see `_reject_boilerplate_reason`).
+    `old_digest` is `None` only for a genuinely first-ever ack of this
+    `(ref, facet)` pair -- never a stand-in for "delta could not be
+    computed"; `acknowledge` computes it from the entries dict it already
+    holds BEFORE overwriting them, so the delta is always the true
+    before/after pair, not a guess. Never edited or removed once written,
+    only appended to."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ref: str
+    facet: str
+    old_digest: str | None
+    new_digest: str
+    reason: str
+    actor: str
+    at: date
+
+
 # frob:doc docs/modules/graph.md#data-models
 class LockFile(BaseModel):
-    """The full `frob.lock` document: a version tag plus sorted entries."""
+    """The full `frob.lock` document: a version tag, sorted entries, and
+    the append-only `frob ack` audit trail (`ack_log`, T-1317) recording
+    every reason and digest delta an ack ever vouched for."""
 
     model_config = ConfigDict(frozen=True)
 
     version: int = 1
     entries: tuple[LockEntry, ...] = ()
+    ack_log: tuple[AckAuditEntry, ...] = ()
 
 
 # frob:doc docs/modules/graph.md#data-models

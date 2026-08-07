@@ -33,6 +33,12 @@ _WIDGET_PY = '''class Widget:
         return str(value)
 '''
 
+# frob:ticket T-1317
+# A real (non-boilerplate, non-blank) --reason for tests that need `run`
+# to actually reach `acknowledge` rather than refuse at the T-1317 reason
+# gate.
+_REASON = "re-verified against the current render() body, still accurate"
+
 
 class TestAckRunnerRun:
     def test_no_refs_exits_with_error(
@@ -55,7 +61,9 @@ class TestAckRunnerRun:
         caplog.set_level(logging.DEBUG)
         _write(tmp_path, "src/a.py", _WIDGET_PY)
         ref = "src/a.py::Widget.render"
-        cfg = AppConfig(ack_refs=[ref], ack_path=tmp_path, ack_facet="body")
+        cfg = AppConfig(
+            ack_refs=[ref], ack_path=tmp_path, ack_facet="body", ack_reason=_REASON
+        )
 
         run(cfg)
 
@@ -71,7 +79,9 @@ class TestAckRunnerRun:
         `acknowledge`'s error branch, not a raised exception."""
         caplog.set_level(logging.ERROR)
         _write(tmp_path, "src/a.py", _WIDGET_PY)
-        cfg = AppConfig(ack_refs=["src/a.py::NoSuchSymbol"], ack_path=tmp_path)
+        cfg = AppConfig(
+            ack_refs=["src/a.py::NoSuchSymbol"], ack_path=tmp_path, ack_reason=_REASON
+        )
         with pytest.raises(SystemExit):
             run(cfg)
         assert "ack failed" in caplog.text
@@ -137,7 +147,9 @@ class TestAckRunnerRun:
             return real_replace(src, dst)
 
         monkeypatch.setattr(os, "replace", _boom)
-        cfg = AppConfig(ack_refs=["src/a.py::Widget.render"], ack_path=tmp_path)
+        cfg = AppConfig(
+            ack_refs=["src/a.py::Widget.render"], ack_path=tmp_path, ack_reason=_REASON
+        )
         with pytest.raises(SystemExit):
             run(cfg)
         assert "could not write frob.lock" in caplog.text

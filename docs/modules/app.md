@@ -254,7 +254,10 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   (docs/design/check-fix-engine.md) -- a plain `frob check` (no `--fix`)
   is untouched by this, byte-identical to before T-1260.
 - `ack_runner.run` -- builds/loads the graph, acknowledges refs, writes the
-  lock file (docs/modules/graph.md).
+  lock file (docs/modules/graph.md); requires `--reason`/`--reason-file`
+  (refuses otherwise) and appends an `AckAuditEntry` per acked `(ref,
+  facet)`, or with `--list` renders the audit trail instead of acking
+  (T-1317, docs/modules/gates.md#ack-accountability-t-1317).
 - `ticket_runner.run` -- dispatches to the ticket subcommand named by
   `cfg.ticket_command` (docs/modules/tickets.md).
 - `outline_runner.run` -- runs `frob.outline.outline_file`, falling back to

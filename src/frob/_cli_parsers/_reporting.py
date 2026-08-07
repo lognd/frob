@@ -11,6 +11,8 @@ large-file gate threshold -- no behavior change, same argparse tree.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 
 def _add_gitlog_range_args(gitlog_p) -> None:
     """Register `frob gitlog`'s commit-range selection flags (since/until/limit)."""
@@ -114,16 +116,43 @@ def _add_graph_parser(sub) -> None:
 # does not trace this cross-package private import -- same class of gap as this repo's \
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_ack_parser(sub) -> None:
-    """Register the `frob ack` subcommand and its arguments."""
+    """Register the `frob ack` subcommand and its arguments.
+
+    T-1317: `--reason`/`--reason-file` (the `frob ticket scope --reason`
+    precedent, T-0455/T-0737) are required for a real ack -- `ack_runner.
+    run` refuses (exit 1) when neither is given and `--list` is not set.
+    `--list` renders the append-only `frob.lock` ack audit trail
+    (`AckAuditEntry`) instead of acking anything, so `ack_refs` is
+    optional (`nargs="*"`, not `"+"`) to allow `frob ack --list` with no
+    ref positional at all."""
     # -- ack ---------------------------------------------------------------
     ack_p = sub.add_parser(
         "ack", help="acknowledge current digests for one or more symbol refs"
     )
-    ack_p.add_argument("ack_refs", metavar="ref", nargs="+")
+    ack_p.add_argument("ack_refs", metavar="ref", nargs="*")
     ack_p.add_argument(
         "--facet", dest="ack_facet", choices=["sig", "body", "doc"], default="sig"
     )
     ack_p.add_argument("--path", dest="ack_path", metavar="DIR", default=".")
+    ack_p.add_argument(
+        "--reason",
+        dest="ack_reason",
+        metavar="TEXT",
+        help="what was re-verified and why the doc is still true (required)",
+    )
+    ack_p.add_argument(
+        "--reason-file",
+        dest="ack_reason_file",
+        metavar="PATH",
+        type=Path,
+        help="read --reason verbatim from PATH instead (T-0737 precedent)",
+    )
+    ack_p.add_argument(
+        "--list",
+        dest="ack_list",
+        action="store_true",
+        help="show the append-only frob ack audit trail instead of acking",
+    )
 
 
 # frob:ticket T-0412

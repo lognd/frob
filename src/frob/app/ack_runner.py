@@ -1,3 +1,9 @@
+# frob:waive INV006 reason="T-1317: this module's 'append-only audit trail' docstring \
+# wording is source-level design-rationale prose describing the already-implemented \
+# AckAuditEntry/ack_log contract (frob.graph._models, frob.graph.lock) -- verifiable \
+# by reading the code it annotates -- rather than a separate cross-module contract \
+# needing its own tracked invariant; same T-0585 INV006 first-turn-on-pool disposition \
+# every other module-docstring hit in this repo already carries"
 """CLI wiring for `frob ack <ref...> [--facet]` (docs/modules/graph.md)."""
 
 from __future__ import annotations
@@ -51,11 +57,60 @@ def _load_lock_for_ack(lock_path: Path):  # noqa: ANN201
     return lock_result.danger_ok
 
 
+# frob:ticket T-1317
+def _resolve_ack_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ack`'s `--reason`: `--reason-file` wins if given (read
+    verbatim via `frob.app.ticket_runner._mutate.read_reason_file_verbatim`
+    -- T-0737, same rationale as `frob ticket scope`'s `_resolve_scope_
+    reason`, shared rather than a second fs.read capability-declaration
+    site), else the inline `--reason` string. Exits 1 if both are given;
+    returns `None` if neither is given (the caller reports the "one is
+    required" error)."""
+    from frob.app.ticket_runner._mutate import read_reason_file_verbatim
+
+    if cfg.ack_reason_file is not None and cfg.ack_reason:
+        _log.error("frob ack: --reason and --reason-file are mutually exclusive")
+        sys.exit(1)
+    if cfg.ack_reason_file is not None:
+        return read_reason_file_verbatim(cfg.ack_reason_file, cli_label="ack")
+    return cfg.ack_reason
+
+
+# frob:ticket T-1317
+def _print_ack_log(lock) -> None:  # noqa: ANN001
+    """`frob ack --list`: render `lock.ack_log`'s append-only audit trail
+    (ref, facet, digest delta, reason, actor, date) -- the surface that
+    makes an ack auditable rather than a silent, unaccountable assertion.
+    Routed through `frob.render.Renderer` (INV-RENDER-SOLE-STDOUT,
+    docs/modules/render.md#renderer) rather than a bare `print`."""
+    from frob.render import Renderer
+
+    r = Renderer.for_stream(sys.stdout)
+    if not lock.ack_log:
+        r.line("frob ack --list: no acks recorded yet")
+        return
+    for entry in lock.ack_log:
+        old = entry.old_digest[:8] if entry.old_digest is not None else "(new)"
+        r.line(
+            f"{entry.at} {entry.actor} {entry.ref} facet={entry.facet} "
+            f"{old}->{entry.new_digest[:8]} reason={entry.reason!r}"
+        )
+
+
 def _acknowledge_and_write(cfg: AppConfig, lock, snapshot, lock_path: Path) -> None:  # noqa: ANN001
-    """Acknowledge `cfg.ack_refs` against `snapshot` and persist the updated lock."""
+    """Resolve `--reason`, acknowledge `cfg.ack_refs` against `snapshot`,
+    and persist the updated lock (with its new `AckAuditEntry` rows)."""
     from frob.graph.lock import acknowledge, write_lock
 
-    acked = acknowledge(lock, snapshot, cfg.ack_refs)
+    reason = _resolve_ack_reason(cfg)
+    if not reason:
+        _log.error(
+            "frob ack requires --reason TEXT or --reason-file PATH (T-1317): "
+            "what was re-verified and why the doc is still true"
+        )
+        sys.exit(1)
+
+    acked = acknowledge(lock, snapshot, cfg.ack_refs, reason=reason)
     if acked.is_err:
         _log.error("ack failed: %s", acked.danger_err)
         sys.exit(1)
@@ -71,6 +126,7 @@ def _acknowledge_and_write(cfg: AppConfig, lock, snapshot, lock_path: Path) -> N
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-1317
 # frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
 # frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_no_lease_reaches_normal_ack_failure  # noqa: E501
 # frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_no_refs_exits_with_error  # noqa: E501
@@ -79,26 +135,33 @@ def _acknowledge_and_write(cfg: AppConfig, lock, snapshot, lock_path: Path) -> N
 # frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_graph_unavailable_after_failed_build_exits_with_error  # noqa: E501
 # frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_malformed_lock_file_exits_with_error  # noqa: E501
 # frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_write_lock_failure_exits_with_error  # noqa: E501
+# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_cli_requires_reason  # noqa: E501
+# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_list_renders_audit_trail  # noqa: E501
 def run(cfg: AppConfig) -> None:
-    """Load (building if the cache is stale), acknowledge refs, and write the lock.
+    """Load (building if the cache is stale), acknowledge refs, and write the
+    lock -- or, with `--list`, render the audit trail instead (T-1317).
 
     T-0507: refuses LOUDLY (exit 1) if `FROB_WORKTREE` names a worktree
     other than `cfg.ack_path`'s resolved root -- the same guard `frob check
     --stamp-baseline`/`--stamp-coverage` and `frob release stamp` enforce
     (T-0431/T-0507)."""
-    if not cfg.ack_refs:
-        _log.error("frob ack requires at least one <ref>")
-        sys.exit(1)
-
     root = (cfg.ack_path or Path(".")).resolve()
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         _log.error("ack: worktree lease violation: %s", leased.danger_err)
         sys.exit(1)
-    snapshot = _load_snapshot_for_ack(root, root / _CACHE_REL)
 
     lock_path = root / "frob.lock"
     lock = _load_lock_for_ack(lock_path)
 
+    if cfg.ack_list:
+        _print_ack_log(lock)
+        return
+
+    if not cfg.ack_refs:
+        _log.error("frob ack requires at least one <ref> (or --list)")
+        sys.exit(1)
+
+    snapshot = _load_snapshot_for_ack(root, root / _CACHE_REL)
     _warn_facet_informational(cfg)
     _acknowledge_and_write(cfg, lock, snapshot, lock_path)

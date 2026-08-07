@@ -28,6 +28,23 @@ from ._new import _scope_closure_warnings
 _log = get_logger("frob.app.ticket_runner")
 
 
+# frob:ticket T-1317
+# frob:doc docs/modules/gates.md#ack-accountability-t-1317
+# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_cli_reason_file_reads_verbatim  # noqa: E501
+def read_reason_file_verbatim(path: Path, *, cli_label: str) -> str:
+    """Read a `--reason-file PATH` argument's contents verbatim (T-0737's
+    shell-injection-avoidance precedent), or `sys.exit(1)` with `cli_label`
+    named in the error. Shared here (this module already declares the
+    `cli` node's `fs.read` capability, T-0455) rather than duplicated as a
+    second capability-declaration site per caller -- `frob.app.ack_runner`
+    (T-1317's `frob ack --reason-file`) is the first cross-module reuse."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.error("%s: could not read --reason-file %s: %s", cli_label, path, exc)
+        sys.exit(1)
+
+
 def _resolve_scope_reason(cfg: AppConfig) -> str | None:
     """Resolve `frob ticket scope`'s `--reason`: `--reason-file` wins if
     given (read verbatim -- T-0737, same rationale as `_resolve_new_body`),

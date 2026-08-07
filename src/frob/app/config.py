@@ -349,6 +349,10 @@ class AppConfig(BaseModel):
     ack_refs: list[str] = []
     ack_facet: str = "sig"
     ack_path: Path | None = None
+    # frob:ticket T-1317
+    ack_reason: str | None = None
+    ack_reason_file: Path | None = None
+    ack_list: bool = False
 
     # debt (T-0412)
     debt_path: Path | None = None

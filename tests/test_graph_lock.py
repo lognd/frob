@@ -1,6 +1,5 @@
 """Tests for frob.graph.lock -- acknowledgement and drift (docs/modules/graph.md)."""
 
-
 from __future__ import annotations
 
 import sqlite3
@@ -45,7 +44,12 @@ class TestAckDrift:
         snap = self._snapshot(tmp_path)
         ref = "src/a.py::Widget.render"
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        acked = acknowledge(lock, snap, [ref]).danger_ok
+        acked = acknowledge(
+            lock,
+            snap,
+            [ref],
+            reason="re-verified against current source, still accurate",
+        ).danger_ok
         assert len(acked.entries) == 2
         assert {e.facet for e in acked.entries} == {"sig", "body"}
 
@@ -78,7 +82,12 @@ class TestAckDrift:
         snap = self._snapshot(tmp_path)
         ref = "src/a.py::Widget.render"
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        acked = acknowledge(lock, snap, [ref]).danger_ok
+        acked = acknowledge(
+            lock,
+            snap,
+            [ref],
+            reason="re-verified against current source, still accurate",
+        ).danger_ok
 
         _write(
             tmp_path,
@@ -176,7 +185,12 @@ class TestAckDrift:
         snap = build_graph(tmp_path, cache).danger_ok
         ref = "src/a.py::Widget.render"
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        acked = acknowledge(lock, snap, [ref]).danger_ok
+        acked = acknowledge(
+            lock,
+            snap,
+            [ref],
+            reason="re-verified against current source, still accurate",
+        ).danger_ok
         facets = {e.facet for e in acked.entries}
         assert facets == {"sig", "doc", "body"}
 
@@ -199,13 +213,23 @@ class TestAckDrift:
         snap = build_graph(tmp_path, cache).danger_ok
         ref = "src/a.py::Widget"
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        acked = acknowledge(lock, snap, [ref]).danger_ok
+        acked = acknowledge(
+            lock,
+            snap,
+            [ref],
+            reason="re-verified against current source, still accurate",
+        ).danger_ok
         assert acked.entries == ()
 
     def test_acknowledge_unknown_ref_is_err(self, tmp_path: Path) -> None:
         snap = self._snapshot(tmp_path)
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        result = acknowledge(lock, snap, ["src/a.py::NoSuchSymbol"])
+        result = acknowledge(
+            lock,
+            snap,
+            ["src/a.py::NoSuchSymbol"],
+            reason="re-verified against current source, still accurate",
+        )
         assert result.is_err
         assert result.danger_err == LockError.UnknownRef
 
@@ -220,7 +244,12 @@ class TestAckDrift:
         # at all" branch above.
         snap = self._snapshot(tmp_path)
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        result = acknowledge(lock, snap, ["docs/x.md#widget"])
+        result = acknowledge(
+            lock,
+            snap,
+            ["docs/x.md#widget"],
+            reason="re-verified against current source, still accurate",
+        )
         assert result.is_err
         assert result.danger_err == LockError.UnknownRef
 
@@ -228,7 +257,12 @@ class TestAckDrift:
         # frob:tests src/frob/graph/lock.py::write_lock
         snap = self._snapshot(tmp_path)
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        acked = acknowledge(lock, snap, ["src/a.py::Widget.render"]).danger_ok
+        acked = acknowledge(
+            lock,
+            snap,
+            ["src/a.py::Widget.render"],
+            reason="re-verified against current source, still accurate",
+        ).danger_ok
         path = tmp_path / "frob.lock"
         write_lock(acked, path)
         first = path.read_bytes()
@@ -240,7 +274,12 @@ class TestAckDrift:
     def test_write_lock_is_atomic(self, tmp_path: Path, monkeypatch) -> None:
         snap = self._snapshot(tmp_path)
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        acked = acknowledge(lock, snap, ["src/a.py::Widget.render"]).danger_ok
+        acked = acknowledge(
+            lock,
+            snap,
+            ["src/a.py::Widget.render"],
+            reason="re-verified against current source, still accurate",
+        ).danger_ok
         path = tmp_path / "frob.lock"
 
         calls: list[tuple[str, str]] = []
@@ -265,7 +304,12 @@ class TestAckDrift:
         # LockError.WriteFailed, not propagate the raw OSError.
         snap = self._snapshot(tmp_path)
         lock = load_lock(tmp_path / "frob.lock").danger_ok
-        acked = acknowledge(lock, snap, ["src/a.py::Widget.render"]).danger_ok
+        acked = acknowledge(
+            lock,
+            snap,
+            ["src/a.py::Widget.render"],
+            reason="re-verified against current source, still accurate",
+        ).danger_ok
         path = tmp_path / "frob.lock"
 
         def fail_replace(src: str, dst: str) -> None:

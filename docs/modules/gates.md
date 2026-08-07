@@ -2005,6 +2005,59 @@ Every DOCENUM001 finding is `frob:waive DOCENUM001 reason="..."`-able via
 the normal source-level waiver path (the markdown anchor's own `origin`
 line carries the edge, same as every other doc-facing gate).
 
+## Ack accountability (T-1317)
+
+<a id="ack-accountability-t-1317"></a>
+
+`frob ack` is the one place the obligation graph accepts a HUMAN
+ASSERTION -- "yes, this doc is still accurate against the changed code"
+-- in place of a mechanical check: it clears DRIFT001 (the digest-based
+staleness comparison, see the gate table above) by recording the CURRENT
+digest as the acked one, with nothing that used to distinguish a genuine
+re-verification from a rubber stamp. T-1317 closes that gap, following
+the same append-only audit-record precedent `frob ticket scope --reason`
+(T-0455, `ScopeChangeEntry`), `frob ticket accept --amend/--remove`
+(T-1422, `AcceptanceAmendmentEntry`), and `frob ticket evidence
+--replace` (T-1733, `EvidenceChangeEntry`) already established: every way
+to discharge an obligation cheaply must cost at least as much bookkeeping
+as the honest way.
+
+**`--reason` is required.** `frob.graph.lock.acknowledge` takes a
+keyword-only, mandatory `reason` parameter; the CLI (`frob ack --reason
+TEXT | --reason-file PATH`) refuses with `LockError.AckReasonMissing`
+when blank. A reason that is too short or matches a small literal
+boilerplate list ("ok", "lgtm", "still accurate", "n/a", ...) is refused
+with `LockError.AckReasonBoilerplate` instead -- rubber-stamping is a
+gate failure, mirroring WAIVE002's reason discipline, not a formality to
+route around with the shortest string that satisfies a non-empty check.
+
+**Every ack records the digest delta it vouches for.** Each `(ref,
+facet)` an ack touches appends one `AckAuditEntry` (`frob.graph._models`)
+to `frob.lock`'s new `ack_log` -- an append-only list, never edited or
+rewritten -- capturing `old_digest` (the value recorded before this call,
+or `None` for a genuine first-ever ack of that pair -- never a stand-in
+for "the delta could not be computed"; `acknowledge` always has the prior
+entries dict in hand before it overwrites anything), `new_digest`,
+`reason`, `actor` (best-effort OS login), and `at` (the ack date). This is
+what makes an ack auditable evidence rather than an unaccountable
+assertion: `frob ack --list` renders the full trail. `--reason-file`'s
+verbatim read (the `frob ticket scope --reason-file` precedent, T-0737 --
+routes multi-sentence prose around shell command substitution) is shared
+via `frob.app.ticket_runner._mutate.read_reason_file_verbatim` rather than
+a second capability-declaration site: that module already declares the
+`cli` node's `fs.read` capability, so `frob ack`'s `--reason-file` reuses
+it instead of `frob.app.ack_runner` declaring its own.
+
+**Ack never clears a content-verified finding.** DOCENUM001 and
+NEGEXIST001 AST-diff the doc's claim against the real code every run and
+are ack-immune by construction (see "DOCENUM001 (T-1227)" above) -- they
+never consult `frob.lock` at all, so no ack, however well-reasoned, can
+clear a finding a checker can already prove true or false. `frob ack`'s
+authority is scoped to exactly the one claim class that is NOT
+mechanically checkable: whether prose that describes behavior still
+matches that behavior, which is what DRIFT001's digest comparison stands
+in for.
+
 ## NEGEXIST001 (T-1229)
 
 <a id="negexist001-gate-t-1229"></a>

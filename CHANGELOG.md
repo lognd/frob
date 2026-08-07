@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.368.0] - unreleased
+
+- T-1317: ack accountability: frob ack requires a reason and records the digest delta it vouches for
+
 ## [0.367.0] - unreleased
 
 - T-1627: strata: via must name a SYMBOL and support exactly-one-site exclusivity, not whitelist whole files

@@ -49,7 +49,13 @@ class TestAckWorktreeLease:
         'some.ref' does not resolve in the graph, NOT the lease guard)."""
         monkeypatch.delenv(FROB_WORKTREE_ENV, raising=False)
         _init_repo(tmp_path)
-        cfg = AppConfig(ack_refs=["some.ref.that.does.not.exist"], ack_path=tmp_path)
+        cfg = AppConfig(
+            ack_refs=["some.ref.that.does.not.exist"],
+            ack_path=tmp_path,
+            # T-1317: a real reason so the call reaches acknowledge()'s own
+            # unresolved-ref failure rather than the reason-missing gate.
+            ack_reason="re-verified against the current source, still accurate",
+        )
         with pytest.raises(SystemExit):
             run(cfg)
         assert "worktree lease violation" not in caplog.text

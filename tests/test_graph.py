@@ -1,6 +1,5 @@
 """Tests for frob.graph -- obligation graph registry (docs/modules/graph.md)."""
 
-
 from __future__ import annotations
 
 import sqlite3
@@ -1942,7 +1941,12 @@ def test_graph_build_lock_drift_integration(tmp_path: Path) -> None:
     assert ref in snapshot.symbols
 
     lock = load_lock(tmp_path / "frob.lock").danger_ok
-    acked = acknowledge(lock, snapshot, [ref]).danger_ok
+    acked = acknowledge(
+        lock,
+        snapshot,
+        [ref],
+        reason="re-verified against current source, still accurate",
+    ).danger_ok
     assert write_lock(acked, tmp_path / "frob.lock").is_ok
     assert drift(acked, snapshot).stale == ()
 

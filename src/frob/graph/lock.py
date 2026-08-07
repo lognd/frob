@@ -9,10 +9,12 @@ fallible, effectful operations here.
 
 from __future__ import annotations
 
+import getpass
 import json
 import os
 import tempfile
 from collections.abc import Sequence
+from datetime import date
 from pathlib import Path
 
 from typani import Err, ErrorSet, Ok
@@ -21,6 +23,7 @@ from typani.unit import Unit
 
 from frob.graph import resolve
 from frob.graph._models import (
+    AckAuditEntry,
     DanglingEdge,
     DriftReport,
     Edge,
@@ -46,6 +49,37 @@ _BODY_FACET_MEANINGLESS_KINDS = frozenset(
 
 _DEFAULT_FACET = "sig"
 
+# frob:ticket T-1317
+# T-1317: reasons that read as a rubber stamp rather than a genuine vouch
+# ("what was re-verified and why the doc is still true") -- mirrors
+# WAIVE002's reason discipline. Deliberately small and literal (not an NLP
+# heuristic): anything a human would type without thinking, lowercased and
+# stripped of trailing punctuation.
+_BOILERPLATE_REASONS = frozenset(
+    {
+        "ok",
+        "okay",
+        "fine",
+        "done",
+        "ack",
+        "acked",
+        "reviewed",
+        "looks good",
+        "lgtm",
+        "still accurate",
+        "still true",
+        "no change",
+        "n/a",
+        "na",
+        "verified",
+        "yes",
+        "todo",
+        "tbd",
+        "fix",
+    }
+)
+_MIN_REASON_LEN = 15
+
 
 # frob:doc docs/modules/graph.md#error-types
 class LockError(ErrorSet):
@@ -54,6 +88,45 @@ class LockError(ErrorSet):
     Malformed = "frob.lock could not be parsed"
     UnknownRef = "Acknowledged ref is not an edge endpoint in the graph"
     WriteFailed = "Atomic write of frob.lock failed"
+    AckReasonMissing = (
+        "frob ack requires --reason: what was re-verified and why the doc is "
+        "still true (T-1317)"
+    )
+    AckReasonBoilerplate = (
+        "frob ack --reason reads as a rubber stamp, not a genuine vouch "
+        "(T-1317, mirrors WAIVE002's reason discipline)"
+    )
+
+
+def _current_actor() -> str:
+    """Best-effort identity for an `AckAuditEntry.actor` field (T-1317) --
+    the OS login name, or `"unknown"` if the platform/sandbox refuses to
+    report one (never raises). Duplicated one-liner from `frob.tickets.
+    _scope._current_actor`/`_accept._current_actor` rather than imported:
+    same load-order-independence tradeoff those two siblings already
+    accept relative to each other."""
+    try:
+        return getpass.getuser()
+    except OSError:
+        return "unknown"
+
+
+# frob:ticket T-1317
+def _reject_boilerplate_reason(reason: str) -> Result[Unit, LockError]:
+    """`Err(AckReasonMissing)` for a blank reason, `Err
+    (AckReasonBoilerplate)` for a too-short or literally-boilerplate one,
+    else `Ok`. Acceptance criterion [1]: an ack whose reason is empty or
+    boilerplate-detected is refused outright -- rubber-stamping is a gate
+    failure, not a formality to route around."""
+    stripped = reason.strip()
+    if not stripped:
+        _log.warning("acknowledge: refused, --reason is blank")
+        return Err(LockError.AckReasonMissing)
+    normalized = stripped.rstrip(".!").lower()
+    if len(stripped) < _MIN_REASON_LEN or normalized in _BOILERPLATE_REASONS:
+        _log.warning("acknowledge: refused, --reason reads as boilerplate: %r", reason)
+        return Err(LockError.AckReasonBoilerplate)
+    return Ok(Unit())
 
 
 # frob:doc docs/modules/graph.md#public-api
@@ -130,22 +203,55 @@ def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:doc docs/modules/gates.md#ack-accountability-t-1317
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_records_every_describes_facet  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_skips_meaningless_body_facet_on_class  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_endpoint_that_does_not_resolve_is_err  # noqa: E501
+# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_requires_reason  # noqa: E501
+# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_rejects_boilerplate_reason  # noqa: E501
+# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_ack_records_digest_delta  # noqa: E501
+# frob:tests tests/test_gates_drift_ack.py::TestAckAccountability.test_first_ack_records_none_old_digest  # noqa: E501
+# frob:ticket T-1317
 # frob:ticket T-0972
 # frob:waive OPAQUE001 reason="T-1038: facet ranges only over _facets_for_ref's own \
 # closed 'sig'/'body' vocabulary (a Digests model with exactly those two fields) -- \
 # not attacker- or externally-controlled input; a deliberate generic accessor over a \
 # fixed two-facet shape"
 def acknowledge(
-    lock: LockFile, snapshot: GraphSnapshot, refs: Sequence[str]
+    lock: LockFile,
+    snapshot: GraphSnapshot,
+    refs: Sequence[str],
+    *,
+    reason: str,
+    actor: str | None = None,
 ) -> Result[LockFile, LockError]:
-    """Record current digests for `refs`; each ref must be an edge endpoint."""
+    """Record current digests for `refs`; each ref must be an edge endpoint.
+
+    T-1317: `reason` is keyword-only and REQUIRED (`Err(AckReasonMissing)`
+    blank, `Err(AckReasonBoilerplate)` for a rubber-stamp reason -- see
+    `_reject_boilerplate_reason`) -- the `frob ticket scope --reason`
+    precedent (T-0455) applied to `frob ack`: it is the one place the
+    obligation graph accepts a human assertion in place of a mechanical
+    check, so it costs the same bookkeeping every other mutation that can
+    discharge an obligation already costs. Every (ref, facet) actually
+    (re-)acked here appends one `AckAuditEntry` to `lock.ack_log`
+    recording the digest DELTA (`old_digest` from the entries dict as it
+    stood BEFORE this call touched it -- `None` only for a genuine
+    first-ever ack, never a stand-in for "could not compute" -- and
+    `new_digest`, the value just written) plus `reason`/`actor`/`at`. The
+    audit log is append-only: existing entries are always carried forward
+    unchanged."""
+    reason_check = _reject_boilerplate_reason(reason)
+    if reason_check.is_err:
+        return Err(reason_check.danger_err)
+    resolved_actor = actor if actor is not None else _current_actor()
+    today = date.today()
+
     endpoints = _edge_endpoints(snapshot)
     entries: dict[tuple[str, str], LockEntry] = {
         (entry.ref, entry.facet): entry for entry in lock.entries
     }
+    new_audit: list[AckAuditEntry] = []
     for ref in refs:
         if ref not in endpoints:
             _log.warning("acknowledge: %r is not an edge endpoint", ref)
@@ -155,21 +261,65 @@ def acknowledge(
             _log.warning("acknowledge: %r does not resolve to a symbol", ref)
             return Err(LockError.UnknownRef)
         record = record_result.danger_ok
-        # frob:waive PERF004 reason="_facets_for_ref(ref, snapshot) is this loop's own per-ref distinct set, not a shared re-sort"  # noqa: E501
-        for facet in sorted(_facets_for_ref(ref, snapshot)):
-            if facet == "body" and record.kind in _BODY_FACET_MEANINGLESS_KINDS:
-                _log.warning(
-                    "acknowledge: skipping meaningless body-facet ack for "
-                    "%s (kind=%s has a constant body digest, G5)",
-                    ref,
-                    record.kind,
-                )
-                continue
-            digest = getattr(record.digests, facet)
-            entries[(ref, facet)] = LockEntry(ref=ref, facet=facet, digest=digest)
-            _log.info("acknowledge: %s facet=%s digest=%s", ref, facet, digest[:8])
+        new_audit.extend(
+            _ack_one_ref(ref, record, snapshot, entries, reason, resolved_actor, today)
+        )
     ordered = _sorted_entries(list(entries.values()))
-    return Ok(LockFile(version=lock.version, entries=ordered))
+    ack_log = tuple(lock.ack_log) + tuple(new_audit)
+    return Ok(LockFile(version=lock.version, entries=ordered, ack_log=ack_log))
+
+
+# frob:ticket T-1317
+# frob:waive PERF004 reason="_facets_for_ref(ref, snapshot) is this loop's own per-ref distinct set, not a shared re-sort"  # noqa: E501
+# frob:waive COV005 reason="T-1317: the ARCH001 line-count split moved this OPAQUE001 \
+# waiver from acknowledge (public) onto _ack_one_ref (private) DELIBERATELY -- the \
+# getattr call it covers moved with it verbatim, not a silent extraction-above-a-def \
+# displacement COV005 is designed to catch"
+# frob:waive OPAQUE001 reason="T-1038/T-1317: facet ranges only over _facets_for_ref's \
+# own closed 'sig'/'body' vocabulary (a Digests model with exactly those two fields) \
+# -- not attacker- or externally-controlled input; a deliberate generic accessor over \
+# a fixed two-facet shape, moved here verbatim from acknowledge's own pre-T-1317 body \
+# by the ARCH001 line-count split"
+def _ack_one_ref(
+    ref: str,
+    record,  # noqa: ANN001
+    snapshot: GraphSnapshot,
+    entries: dict[tuple[str, str], LockEntry],
+    reason: str,
+    actor: str,
+    at: date,
+) -> list[AckAuditEntry]:
+    """`acknowledge`'s per-ref body, split out to keep the outer loop under
+    the ARCH001 line threshold (T-1317): (re-)ack every facet `_facets_for_
+    ref` requests for `ref`, mutating `entries` in place and returning the
+    `AckAuditEntry` rows to append to the audit log."""
+    audit: list[AckAuditEntry] = []
+    for facet in sorted(_facets_for_ref(ref, snapshot)):
+        if facet == "body" and record.kind in _BODY_FACET_MEANINGLESS_KINDS:
+            _log.warning(
+                "acknowledge: skipping meaningless body-facet ack for "
+                "%s (kind=%s has a constant body digest, G5)",
+                ref,
+                record.kind,
+            )
+            continue
+        digest = getattr(record.digests, facet)
+        old_entry = entries.get((ref, facet))
+        old_digest = old_entry.digest if old_entry is not None else None
+        entries[(ref, facet)] = LockEntry(ref=ref, facet=facet, digest=digest)
+        audit.append(
+            AckAuditEntry(
+                ref=ref,
+                facet=facet,
+                old_digest=old_digest,
+                new_digest=digest,
+                reason=reason,
+                actor=actor,
+                at=at,
+            )
+        )
+        _log.info("acknowledge: %s facet=%s digest=%s", ref, facet, digest[:8])
+    return audit
 
 
 def _dependents(ref: str, snapshot: GraphSnapshot) -> tuple[str, ...]:
@@ -295,11 +445,16 @@ def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_write_lock_oserror_on_replace_is_write_failed  # noqa: E501
 # frob:raises BaseException
 def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]:
-    """Atomically write `lock` as deterministic, sorted, diff-friendly JSON."""
+    """Atomically write `lock` as deterministic, sorted, diff-friendly JSON.
+
+    T-1317: `ack_log` is written in its existing append order (never
+    resorted -- it is a chronological audit trail, not a lookup table like
+    `entries`) so `frob ack --list` can render it oldest-first."""
     ordered = _sorted_entries(lock.entries)
     document = {
         "version": lock.version,
         "entries": [entry.model_dump() for entry in ordered],
+        "ack_log": [entry.model_dump(mode="json") for entry in lock.ack_log],
     }
     text = json.dumps(document, indent=2, sort_keys=True) + "\n"
     try:

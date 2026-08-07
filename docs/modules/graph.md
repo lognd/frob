@@ -65,16 +65,22 @@ def edges_to(snapshot: GraphSnapshot, target: str) -> tuple[Edge, ...]
 def load_lock(path: Path) -> Result[LockFile, LockError]
     # A missing frob.lock is Ok(LockFile()) (empty), not an error -- first ack
     # creates the file. Only malformed JSON/schema is Err(Malformed).
-def acknowledge(lock: LockFile, snapshot: GraphSnapshot,
-                refs: Sequence[str]) -> Result[LockFile, LockError]
+def acknowledge(lock: LockFile, snapshot: GraphSnapshot, refs: Sequence[str],
+                *, reason: str, actor: str | None = None) -> Result[LockFile, LockError]
     # Records current digests for refs; each ref must be an edge endpoint AND
     # resolve to a symbol (else Err(UnknownRef)). Facet is looked up from any
     # DESCRIBES edge targeting the ref (attrs["facet"]), default "sig".
+    # T-1317: `reason` is keyword-only and REQUIRED -- Err(AckReasonMissing)
+    # blank, Err(AckReasonBoilerplate) for a rubber-stamp reason. Every
+    # (ref, facet) actually (re-)acked appends one AckAuditEntry to the
+    # returned LockFile's `ack_log` (old_digest/new_digest/reason/actor/at)
+    # -- see "Ack accountability (T-1317)" in docs/modules/gates.md.
 def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport
     # Pure comparison; never fails. Dangling edges and stale acks.
 def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]
     # Atomic (temp + os.replace). Deterministic: entries sorted by (ref,
-    # facet), indent=2, trailing newline.
+    # facet), indent=2, trailing newline; `ack_log` is written in its
+    # existing append (chronological) order, never resorted (T-1317).
 ```
 
 ## Affects
@@ -514,6 +520,7 @@ All pydantic `BaseModel`, `frozen=True`.
 <!-- frob:describes src/frob/graph/_models.py::GraphSnapshot -->
 <!-- frob:describes src/frob/graph/_models.py::LockEntry -->
 <!-- frob:describes src/frob/graph/_models.py::LockFile -->
+<!-- frob:describes src/frob/graph/_models.py::AckAuditEntry -->
 <!-- frob:describes src/frob/graph/_models.py::StaleItem -->
 <!-- frob:describes src/frob/graph/_models.py::DanglingEdge -->
 <!-- frob:describes src/frob/graph/_models.py::DriftReport -->
@@ -543,8 +550,12 @@ All pydantic `BaseModel`, `frozen=True`.
   symbols, edges, malformed directives, and file hashes.
 - `LockEntry` -- one acknowledged `(ref, facet)` pair and the digest it
   was acked at.
-- `LockFile` -- the full `frob.lock` document: a version tag plus sorted
-  entries.
+- `LockFile` -- the full `frob.lock` document: a version tag, sorted
+  entries, and the append-only `ack_log` audit trail (`AckAuditEntry`,
+  T-1317 -- see "Ack accountability (T-1317)" in docs/modules/gates.md).
+- `AckAuditEntry` -- one append-only `frob ack` audit line (T-1317): the
+  `(ref, facet)` acked, the digest delta (`old_digest`/`new_digest`),
+  `reason`, `actor`, and `at`.
 - `StaleItem` -- a locked entry whose current digest no longer matches
   the ack (drift).
 - `DanglingEdge` -- an edge whose endpoint no longer resolves in the
@@ -603,9 +614,19 @@ class LockEntry(BaseModel):
     facet: str                  # "sig" | "body" | "doc"
     digest: str
 
+class AckAuditEntry(BaseModel):   # T-1317, append-only
+    ref: str
+    facet: str
+    old_digest: str | None        # None only for a genuine first-ever ack
+    new_digest: str
+    reason: str
+    actor: str
+    at: date
+
 class LockFile(BaseModel):
     version: int
     entries: tuple[LockEntry, ...]
+    ack_log: tuple[AckAuditEntry, ...]   # T-1317
 
 class StaleItem(BaseModel):     # digest moved since last ack
     entry: LockEntry
@@ -656,9 +677,11 @@ class GraphError(ErrorSet):
 # plus LangError via composition: BuildError = GraphError | LangError
 
 class LockError(ErrorSet):
-    Malformed    = "frob.lock could not be parsed"
-    UnknownRef   = "Acknowledged ref is not an edge endpoint in the graph"
-    WriteFailed  = "Atomic write of frob.lock failed"
+    Malformed          = "frob.lock could not be parsed"
+    UnknownRef         = "Acknowledged ref is not an edge endpoint in the graph"
+    WriteFailed        = "Atomic write of frob.lock failed"
+    AckReasonMissing     = "frob ack requires --reason (T-1317)"
+    AckReasonBoilerplate = "frob ack --reason reads as a rubber stamp (T-1317)"
 ```
 
 ## Cache
