@@ -2,7 +2,7 @@
 id: T-1772
 title: 'Delete root agents/ and skills/: nothing reads them, the real load path is
   ~/.claude'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -76,3 +76,6 @@ registry read by no code presented as implemented, SYS109 landing as a
 tested detector wired into no gate, and this. The check that settles it
 is always the same: find the code that reads it, or accept that nothing
 does.
+
+## Drop reason
+- 2026-08-07: Already done. Root agents/ and skills/ are absent from main, deleted in T-1767's repo cleanup along with the 13 tracked SKILL.md files; verified with 'git cat-file -e main:agents' and 'main:skills', both absent. No work remains. This is a false queue signal of exactly the class T-1744 exists to detect: a queued ticket whose described fix already landed outside its own ticket workflow. (absorbed by T-1767)
