@@ -3473,6 +3473,78 @@ narrower than what `attribute_batch` itself already accepted, and a real
 (line-bearing) shape caught it. No behavior changed; the split is a pure
 extraction and the widened type is a correction, not a new capability.
 
+## Backpressure (T-1692)
+
+<!-- frob:describes src/frob/verify/_backpressure.py::BackpressureError -->
+<!-- frob:describes src/frob/verify/_backpressure.py::BackpressureCeilings -->
+<!-- frob:describes src/frob/verify/_backpressure.py::BackpressureStatus -->
+<!-- frob:describes src/frob/verify/_backpressure.py::ceilings_for_profile -->
+<!-- frob:describes src/frob/verify/_backpressure.py::current_status -->
+<!-- frob:describes src/frob/verify/_backpressure.py::block_until_watermark_advances -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_apply_backpressure -->
+
+Deferral is a credit line, not free money. Without this leaf, T-1687's
+durable queue plus T-1688's coalescing worker is a mechanism for
+accumulating unbounded unverified debt with a pleasant user experience --
+strictly worse than the synchronous sweep it replaces. `frob.verify.
+_backpressure` is what makes the deferral BOUNDED.
+
+**Two independent ceilings, either one sufficient to trip.**
+`BackpressureStatus.tripped` is `True` the moment EITHER axis is
+exceeded:
+
+- DEPTH: the number of entries currently in the verify queue exceeds
+  `max_depth`. Depth alone is not enough -- one commit can sit unverified
+  all weekend behind a dead worker without depth ever growing past a
+  small number.
+- AGE: the oldest unverified entry's `enqueued_at` is older than
+  `max_age_s`. Age alone is not enough either -- a burst of forty lands
+  in quick succession stays inside any reasonable age window while depth
+  grows unbounded.
+
+Both axes are read from the SAME durable queue T-1687/T-1688 already
+maintain (`frob.verify.queue_status`) -- no new storage.
+
+**Block, never fail.** `block_until_watermark_advances` is the land-path
+entrypoint (wired into `frob.app.ticket_runner._land_cmd._land_core_
+prepare` via `_apply_backpressure`, called once profile resolution
+completes and skipped entirely under `--dry-run`). At the ceiling it does
+not refuse the land -- a refusal just makes the developer re-run the
+whole thing. It BLOCKS, logging the trip LOUDLY at WARNING (current
+depth, age, and the watermark commit being waited on -- T-1686's own
+standing rule: "blocking silently is the one unacceptable outcome"), and
+ACTIVELY drives the coalescing worker itself
+(`frob.verify.run_coalesced_verification`) on each iteration rather than
+passively waiting for some other process to drain the queue -- "a block
+simply pays back the deferred cost at the moment it came due" (T-1686's
+own framing). This is what keeps the design correct even with no daemon
+watching the queue: the blocked land IS the thing that unblocks itself.
+A persistently red (quarantined) batch that never clears trips
+`block_until_watermark_advances`'s own last-resort timeout
+(`_DEFAULT_BLOCK_TIMEOUT_S`, 30 minutes) -- logged at ERROR, and the land
+PROCEEDS anyway rather than wedging every future land behind one
+unresolved batch forever; the loud WARNING trail already logged is the
+safeguard, not a second refusal on top of it.
+
+**Per-profile ceilings are the profile-collapse dial.**
+`ceilings_for_profile` resolves `fortress` to depth 0 / age 0
+(synchronous -- any queued-but-unverified commit trips it, though this
+module still BLOCKS rather than refuses even here), `standard` to a
+bounded depth/age pair (`_STANDARD_DEFAULT_MAX_DEPTH`=5,
+`_STANDARD_DEFAULT_MAX_AGE_S`=3600s, overridable via `frob.toml`'s
+`[profile] backpressure_max_depth`/`backpressure_max_age_s`), and
+`rapid` to `None`/`None` on both axes -- unbounded, so rapid NEVER
+blocks, by construction rather than a separate `if profile == rapid:
+skip` branch at every call site.
+
+**Disclosed scope cut.** The full profile-to-queue-depth collapse
+(deleting every remaining `if rapid:` seam scattered through the land
+pipeline, T-1686's own "payoff" framing) is not this leaf's job --
+`_apply_backpressure` is additive, wired alongside the existing
+rapid/standard branching `_land_core_prepare` already has, not a
+replacement for it. That collapse is later work this ticket does not
+claim to close.
+
 ## Development profiles (`frob.toml [profile]`, T-1575)
 
 <!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->

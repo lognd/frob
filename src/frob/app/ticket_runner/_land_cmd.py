@@ -2143,12 +2143,14 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
 
 
 # frob:ticket T-1593
+# frob:ticket T-1692
 def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path, bool]:
     """Pre-merge setup seam of `_land_core` (T-1593 split): T-1175 auto-fix
     absorption, root resolution, T-1523 stale-marker reconciliation, T-1575
-    profile check, and the override-flag warning -- pure extraction of the
-    original leading block, unchanged. Returns `(resolved_root,
-    rapid_land)`."""
+    profile check, the override-flag warning, and (T-1692) the
+    backpressure check -- pure extraction of the original leading block,
+    plus the new backpressure block appended after profile resolution.
+    Returns `(resolved_root, rapid_land)`."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
@@ -2182,16 +2184,64 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     from frob.tickets._profile import ProfileName, effective_profile
 
     _profile_result = effective_profile(worktree)
-    rapid_land = _profile_result.is_ok and _profile_result.danger_ok is (
-        ProfileName.RAPID
-    )
+    effective = _profile_result.danger_ok if _profile_result.is_ok else ProfileName.STANDARD
+    rapid_land = effective is ProfileName.RAPID
     if rapid_land:
         _log.info(
             "ticket land: %s effective profile is rapid (T-1575) -- "
             "skipping the pre-commit sweep, single post-land sweep only",
             cfg.ticket_id,
         )
+
+    _apply_backpressure(root, cfg, effective)
     return root, rapid_land
+
+
+# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:ticket T-1692
+# frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_dry_run_skips_the_check  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_not_tripped_is_a_noop  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_tripped_blocks_then_proceeds  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_block_timeout_logs_and_proceeds  # noqa: E501
+def _apply_backpressure(root: Path, cfg: AppConfig, profile) -> None:  # noqa: ANN001
+    """T-1692: bound the unverified window before this land proceeds any
+    further. Resolves `profile`'s ceilings (`frob.verify.
+    ceilings_for_profile`) and, if the verify queue is currently past
+    either ceiling, BLOCKS (`frob.verify.block_until_watermark_advances`)
+    -- never refuses the land outright, per T-1692's own design: a refusal
+    just makes the developer re-run the whole thing, a block pays back the
+    deferred cost right here.
+
+    Skipped entirely under `--dry-run`: a dry run previews what a land
+    WOULD do without taking any real action, and blocking (which actively
+    drains the queue as a side effect) is a real action -- see this
+    function's own test, `test_dry_run_skips_the_check`.
+
+    A block that times out (`BackpressureError.BlockTimedOut` -- a
+    persistently red, quarantined batch) is logged at ERROR and the land
+    PROCEEDS anyway rather than refusing: the backpressure axis exists to
+    bound the deferred-verification WINDOW, not to become a second gate
+    that can wedge every future land behind one unresolved batch forever.
+    The error is already loud (this function's own log line plus every
+    WARNING `block_until_watermark_advances` emitted while waiting) --
+    that visibility is the safeguard, not an additional refusal on top of
+    it."""
+    if cfg.ticket_dry_run:
+        return
+
+    from frob.verify import ceilings_for_profile, block_until_watermark_advances
+
+    ceilings = ceilings_for_profile(profile, root)
+    blocked = block_until_watermark_advances(root, ceilings, cfg.ticket_id)
+    if blocked.is_err:
+        _log.error(
+            "ticket land: %s backpressure block did not clear (%s) -- "
+            "proceeding anyway; the batch is likely quarantined red and "
+            "needs a human fix, see the WARNING lines above for depth/"
+            "age/watermark",
+            cfg.ticket_id,
+            blocked.danger_err,
+        )
 
 
 # frob:ticket T-1593
