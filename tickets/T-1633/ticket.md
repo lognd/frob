@@ -12,10 +12,31 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/tickets/_live_tracker.py
-- tests/**
-- docs/**
+- tests/test_tickets_live_tracker.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: TICK009 pre-dispatch narrowing
+  actor: logan
+  at: '2026-08-07'
+- op: remove
+  glob: docs/**
+  reason: TICK009 pre-dispatch narrowing
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_tickets_live_tracker.py
+  reason: TICK009 pre-dispatch narrowing
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: TICK009 pre-dispatch narrowing
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null
