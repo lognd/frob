@@ -174,6 +174,42 @@ def _shift_cut_off_boundary_space(remaining: str, budget: int) -> int:
     return cut
 
 
+def _try_wrap_without_forced_break(
+    text: str, *, marker: str, indent: str, limit: int
+) -> list[str] | None:
+    """Like `_canonical_lines`, but returns `None` instead of ever cutting
+    mid-token: if any segment has no whitespace to break on within its
+    budget, `text` is genuinely a single unbreakable token too long for
+    `limit` and wrapping cannot help it (T-1605). Used to decide whether a
+    `# noqa`-suffixed run can lose its pragma -- a run only stays exempt
+    (`_rewrite_lines_via_runs`) when this returns `None`; whenever a clean,
+    word-boundary-only wrap exists, `noqa` was never load-bearing."""
+    prefix = f"{indent}{marker} "
+    if len(prefix) + len(text) <= limit:
+        return [prefix + text]
+
+    lines: list[str] = []
+    remaining = text
+    while True:
+        room = limit - len(prefix)
+        if len(remaining) <= room:
+            lines.append(prefix + remaining)
+            return lines
+        budget = room - 1
+        if budget <= 0:
+            return None
+        cut = remaining.rfind(" ", 0, budget)
+        if cut <= 0:
+            # No breakable space within budget -- this segment can only be
+            # split by cutting mid-token. That is exactly the case the
+            # `noqa` escape hatch exists for; report "cannot wrap cleanly"
+            # rather than forcing the break.
+            return None
+        head, tail = remaining[: cut + 1], remaining[cut + 1 :]
+        lines.append(f"{prefix}{head}\\")
+        remaining = tail
+
+
 def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list[str]:
     """Split `text` (one logical directive's delimiter-stripped content,
     e.g. `frob:waive RULE reason="..."`) into the fewest physical comment
@@ -267,6 +303,55 @@ def _fmt_marker_entries_with_indents(
     return indents, entries
 
 
+# frob:ticket T-1605
+def _rewrite_directive_run(
+    logical_text: str,
+    lines: list[str],
+    *,
+    i: int,
+    count: int,
+    marker: str,
+    indent: str,
+    limit: int,
+) -> list[str]:
+    """One `frob:` directive run's replacement, canonicalized -- the
+    per-run body of `_rewrite_lines_via_runs`, split out to keep that
+    function's dispatch loop under the ARCH001 line threshold.
+
+    T-0985/T-1605: a run ending in a `# noqa`/`# noqa: CODE` pragma
+    (`_NOQA_SUFFIX_RE`) is a deliberate escape hatch for an unwrappable
+    single token. The pragma is self-retiring, not a permanent exemption:
+    with the pragma stripped, a clean word-boundary wrap is attempted
+    (`_try_wrap_without_forced_break`) -- if every resulting physical line
+    fits within `limit` without cutting mid-token, that wrap is used and
+    the `noqa` is DROPPED (it was never load-bearing). Only when no such
+    wrap exists (the genuine single-unbreakable-token case) is the run
+    passed through verbatim, byte-identical, exactly as T-0985 did."""
+    # `fold_comment_runs` already rstrips "\r" off every constituent line
+    # while folding (T-0286's own fold rule), so `logical_text` is always
+    # "\r"-free regardless of the run's original convention -- reapply it
+    # here, once per run, from the run's FIRST physical line.
+    run_had_cr = lines[i].endswith("\r")
+    noqa_match = _NOQA_SUFFIX_RE.search(logical_text)
+    if noqa_match is None:
+        canonical = _canonical_lines(
+            logical_text, marker=marker, indent=indent, limit=limit
+        )
+        return [line + "\r" for line in canonical] if run_had_cr else canonical
+
+    stripped_text = logical_text[: noqa_match.start()].rstrip()
+    wrapped = _try_wrap_without_forced_break(
+        stripped_text, marker=marker, indent=indent, limit=limit
+    )
+    if wrapped is not None:
+        # The pragma was never load-bearing -- a clean, word-boundary-only
+        # wrap exists without it. Drop it.
+        return [line + "\r" for line in wrapped] if run_had_cr else wrapped
+    # Genuinely unwrappable: restore the pragma and pass the run through
+    # byte-identical, per T-0985.
+    return lines[i : i + count]
+
+
 # frob:ticket T-0976
 # frob:ticket T-0985
 def _rewrite_lines_via_runs(
@@ -278,15 +363,10 @@ def _rewrite_lines_via_runs(
     limit: int,
 ) -> list[str]:
     """Rebuild `lines` with each `frob:`-prefixed folded `run` replaced by
-    its T-0441 canonical form (`_canonical_lines`, preserving the run's
-    own CR convention), and every other run/line passed through verbatim
-    -- the run-rewrite half of `canonicalize_text`, split from the
-    marker-scan half that built `runs`/`indents`.
-
-    T-0985: a run ending in a `# noqa`/`# noqa: CODE` pragma
-    (`_NOQA_SUFFIX_RE`) is a deliberate escape hatch for an unwrappable
-    single token and is passed through verbatim like a non-`frob:` run,
-    rather than being canonicalized."""
+    its T-0441 canonical form (`_rewrite_directive_run`, preserving the
+    run's own CR convention), and every other run/line passed through
+    verbatim -- the run-rewrite half of `canonicalize_text`, split from
+    the marker-scan half that built `runs`/`indents`."""
     out: list[str] = []
     run_idx = 0
     i = 0
@@ -295,28 +375,18 @@ def _rewrite_lines_via_runs(
         if run_idx < len(runs) and runs[run_idx][1] == i:
             logical_text, _lineno, _src, count = runs[run_idx]
             run_idx += 1
-            # frob:waive PERF008 reason="_NOQA_SUFFIX_RE is a compiled re.Pattern \
-            # constant; .search(logical_text) is a plain regex match with no I/O. \
-            # PERF008 resolves the bare method name 'search' by name-only \
-            # coincidence to an unrelated same-named function that genuinely reaches \
-            # walk_pruned elsewhere in the repo -- a resolver ambiguity, not a real \
-            # fs-walk on this call. Tracked as a resolver precision follow-up \
-            # (T-1041's Done report)"  # noqa: E501
-            if logical_text.strip().startswith("frob:") and not _NOQA_SUFFIX_RE.search(
-                logical_text
-            ):
-                # `fold_comment_runs` already rstrips "\r" off every
-                # constituent line while folding (T-0286's own fold rule),
-                # so `logical_text` is always "\r"-free regardless of the
-                # run's original convention -- reapply it here, once per
-                # run, from the run's FIRST physical line.
-                run_had_cr = lines[i].endswith("\r")
-                canonical = _canonical_lines(
-                    logical_text, marker=marker, indent=indents[i], limit=limit
+            if logical_text.strip().startswith("frob:"):
+                out.extend(
+                    _rewrite_directive_run(
+                        logical_text,
+                        lines,
+                        i=i,
+                        count=count,
+                        marker=marker,
+                        indent=indents[i],
+                        limit=limit,
+                    )
                 )
-                if run_had_cr:
-                    canonical = [line + "\r" for line in canonical]
-                out.extend(canonical)
             else:
                 out.extend(lines[i : i + count])
             i += count
@@ -348,8 +418,15 @@ def _rewrite_lines_via_runs(
 # frob:tests \
 # tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985.test_canonicalizing_\
 # twice_over_real_repo_files_is_a_no_op
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_wrappable_reason_lo\
+# ses_its_noqa
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_idempotent_after_dr\
+# opping_noqa
 # frob:ticket T-0972
 # frob:ticket T-0985
+# frob:ticket T-1605
 def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     """Rewrite every `frob:` directive comment run in `text` (source for
     `path`, consulted only to pick the line-comment marker via

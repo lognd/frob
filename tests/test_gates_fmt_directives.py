@@ -21,6 +21,7 @@ from hypothesis import strategies as st
 from frob.excludes import iter_files
 from frob.gates._fmt_directives import (
     _canonical_lines,
+    _fmt_marker_entries_with_indents,
     _write_formatted,
     canonicalize_text,
     format_paths,
@@ -653,6 +654,49 @@ class TestNoqaSuffixPragmaT0985:
         assert out != src
         for line in out.splitlines():
             assert len(line) <= 88
+
+
+class TestNoqaSelfRetiresT1605:
+    """T-1605: a `noqa` pragma on an over-long `frob:` directive is only a
+    ratchet if it survives forever regardless of whether it was ever
+    load-bearing. When the pragma's logical text (minus the pragma) has a
+    clean word-boundary wrap available, `canonicalize_text` must take that
+    wrap and DROP the `noqa` -- it restores the pragma only when no such
+    wrap exists. The "genuinely unwrappable, stays byte-identical" branch
+    is already covered by `TestNoqaSuffixPragmaT0985`'s own tests above
+    (this rule reuses that exact behavior for its "else" branch), so this
+    class only adds the NEW branch: wrappable-with-noqa loses the pragma."""
+
+    def test_wrappable_reason_loses_its_noqa(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_wrappable_r\
+        # eason_loses_its_noqa
+        # Space-separated words throughout -- a clean wrap exists, so the
+        # noqa pragma was never load-bearing and must be dropped.
+        words = " ".join(["word"] * 20)
+        src = f'    # frob:waive RULE-1 reason="{words}"  # noqa: E501\n'
+        assert len(src.splitlines()[0]) > 88
+        out = canonicalize_text(src, path="a.py", limit=88)
+        assert out != src
+        assert "noqa" not in out
+        for line in out.splitlines():
+            assert len(line) <= 88
+        # Round-trip: `fold_comment_runs` (T-0441's own fold) reassembles
+        # the wrapped run back into the original reason text (minus the
+        # now-dropped pragma) exactly.
+        indents, entries = _fmt_marker_entries_with_indents(out.splitlines(), "#")
+        folded = fold_comment_runs(entries)
+        assert folded[0][0] == f'frob:waive RULE-1 reason="{words}"'
+
+    def test_idempotent_after_dropping_noqa(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_idempotent_\
+        # after_dropping_noqa
+        words = " ".join(["word"] * 20)
+        src = f'    # frob:waive RULE-1 reason="{words}"  # noqa: E501\n'
+        once = canonicalize_text(src, path="a.py", limit=88)
+        twice = canonicalize_text(once, path="a.py", limit=88)
+        assert twice == once
 
 
 class TestRepoWideIdempotenceT0985:

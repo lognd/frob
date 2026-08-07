@@ -2,7 +2,7 @@
 id: T-1605
 title: 'frob directives: wrap long lines and self-retire the noqa E501 pragma instead
   of honoring it forever'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -30,6 +30,12 @@ scope_changes:
     and blocks every other agent'
   actor: logan
   at: '2026-08-07'
+evidence:
+- tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605::test_wrappable_reason_loses_its_noqa
+- tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605::test_idempotent_after_dropping_noqa
+- tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_single_line_with_noqa_e501_is_byte_identical
+- tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_single_line_with_bare_noqa_is_byte_identical
+- tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985::test_canonicalizing_twice_over_real_repo_files_is_a_no_op
 designated_repro_test: null
 threat: null
 component: null
