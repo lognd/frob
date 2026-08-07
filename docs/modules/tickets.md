@@ -1983,6 +1983,47 @@ Order of operations, and why it is this order:
     incoherent quartet explicitly and prescribes `frob release sync`
     instead of the bare "not strictly greater than main's pre-land
     version" message.
+
+    **T-1760 recompute-not-carry fix**: none of `pyproject.toml`/
+    `CHANGELOG.md`/`.frob-release.json` is protected by `ticket.scope`,
+    so `git merge --squash` can resolve a change to any of them CLEANLY
+    (no conflict object at all -- `_auto_resolve_out_of_scope_conflicts`
+    only ever fires on a genuine git conflict) by taking the worktree's
+    side, if the worktree's own copy differs from root's current HEAD in
+    a way git's 3-way merge does not treat as contested. When that
+    happens, root's working tree can already hold a REGRESSED version/
+    manifest before `_apply_release_bump` ever runs -- and, critically,
+    the T-0992 monotonicity guard above only ever validates a bump
+    `bump_version` itself REPORTS (`bumped.danger_ok is not None`); a
+    `bump_version` callback that legitimately reports `Ok(None)` (this
+    land's own diff needs no new bump) left that regression completely
+    uncontested, since `_ensure_release_quartet_coherent`'s own check
+    only compares the two ALREADY-regressed files to EACH OTHER, which a
+    self-consistent stale pair passes trivially. Measured on main across
+    four consecutive lands (T-1692/T-1754/T-1755/T-1756): the version
+    oscillated 0.366.0 -> 0.365.0 -> 0.366.0 -> 0.365.0, with the
+    REL001 baseline manifest regressing right along with it -- silently,
+    since the version string going backwards was the only visible
+    symptom.
+
+    `_reset_release_artifacts_to_pre_land` now runs UNCONDITIONALLY, as
+    the very first step of `_apply_release_bump`, before `bump_version` is
+    even invoked: `git checkout <pre_land_tip> -- pyproject.toml
+    CHANGELOG.md .frob-release.json` discards whatever the squash carried
+    for these three files and resets them to root's own true, last-
+    committed state. This is RECOMPUTE, NOT CARRY -- the bump is a
+    function of (root's manifest, the landing API) and is now always
+    evaluated from root's own pre-land state, never from anything a
+    worktree happened to bring along, closing the regression class at its
+    source rather than only detecting it after the fact. `_assert_no_
+    monotonicity_regression` runs as an unconditional final check
+    afterward (even on the `Ok(None)` branch) as belt-and-braces defense
+    in depth, comparing the working tree's final versions against
+    `pre_bump_version`/`pre_manifest_version` via `_version_not_regressed`
+    (the `>=` sibling of `_release_bump_is_monotonic`'s strict `>`, since
+    "unchanged" is the CORRECT outcome on a no-bump-needed land) --
+    refusing and unwinding the squash if it ever fires, which after the
+    reset above should never happen in practice.
 9.7. **Native rebuild trigger** (T-0338, only when `rebuild_natives` was
     supplied AND the landed changeset touches a native source tree --
     `frob-core/` or `strata-core/`): `rebuild_natives(root)` runs `make

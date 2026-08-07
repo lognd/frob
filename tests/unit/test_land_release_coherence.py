@@ -11,6 +11,7 @@ left at 0.289.0)."""
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, cast
@@ -191,3 +192,139 @@ class TestApplyReleaseBumpCoherenceGuard:
         assert result.is_ok
         assert result.danger_ok == "0.290.0"
         assert _read_working_manifest_version(tmp_path) == "0.290.0"
+
+
+def _git(root: Path, *args: str) -> None:
+    """Run a real `git` command against `root`, failing the test loudly on
+    any non-zero exit -- these T-1760 tests need real git history (a
+    genuine 3-way squash-merge is the whole mechanism under test), not the
+    `_fake_run_argv` stub the rest of this module uses."""
+    result = subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0, f"git {args} failed: {result.stderr}"
+
+
+class TestResetReleaseArtifactsRealGitRepo:
+    """T-1760, against a REAL git repository (not the `_fake_run_argv`
+    stub): whatever `git merge --squash` staged for `pyproject.toml`/
+    `.frob-release.json` in `root`'s working tree/index BEFORE
+    `_apply_release_bump` ever runs must not survive it -- the artifacts
+    are RECOMPUTED from `pre_land_tip`, never CARRIED from whatever
+    happened to already be staged (required item 3 of T-1760).
+
+    Deliberately does not attempt to reproduce the EXACT git-diff3
+    decision tree that let a real squash-merge land a regression cleanly
+    (multiple candidate mechanisms exist -- an intermediate `git merge
+    main` captured into a worktree's own history, a stale merge-base from
+    a long-lived branch, or a genuine conflict whose resolution this
+    investigation did not fully isolate) -- instead, it reproduces the
+    STATE the defect produces (root's working tree/index already holding
+    a version/manifest below `pre_land_tip`'s own committed value,
+    established via a real `git add`, not a hand-built fixture object)
+    and proves the fix is unconditional: regardless of HOW that state
+    arose, `_apply_release_bump` must still leave `root` at `pre_land_tip`
+    's value or later, never behind it. `tests/test_ticket_land.py` (T-1721
+    precedent) is the home for a full-CLI, real-squash-merge reproduction;
+    out of this ticket's own declared scope."""
+
+    @pytest.fixture(autouse=True)
+    def _real_git_ops(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Undo the module's `_fake_run_argv` autouse patch for this class
+        only -- these tests need `_land_release.run_argv` to hit a real
+        git subprocess, since the checkout/show plumbing under test IS
+        the mechanism being verified."""
+        from frob.gitio import run_argv as real_run_argv
+
+        monkeypatch.setattr(_land_release, "run_argv", real_run_argv)
+
+    def _init_repo(self, root: Path) -> None:
+        _git(root, "init", "-q")
+        _git(root, "config", "user.email", "test@example.com")
+        _git(root, "config", "user.name", "Test")
+
+    def _commit_release_state(self, root: Path, version: str, *, message: str) -> str:
+        """Write `pyproject.toml`/`.frob-release.json` at `version` and
+        commit them, returning the new commit sha -- one rung of the
+        T-1760 repro's commit ladder."""
+        _write_pyproject(root, version)
+        _write_manifest(root, version)
+        _git(root, "add", "pyproject.toml", ".frob-release.json")
+        _git(root, "commit", "-m", message)
+        return subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+    def test_regressed_working_tree_is_reset_before_bump_runs(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_release_coherence.py::TestResetReleaseArtifactsRealGitRepo.test_regressed_working_tree_is_reset_before_bump_runs  # noqa: E501
+        #
+        # Reproduces the T-1760 field incident's STATE directly: main
+        # (`pre_land_tip`) is committed at 0.366.0 (a sibling's already-
+        # landed bump); the working tree/index -- as a squash-apply would
+        # leave it -- already holds a REGRESSED 0.365.0 for both files,
+        # staged via a real `git add`, before `_apply_release_bump` ever
+        # runs. A `bump_version` callback reporting `Ok(None)` (this
+        # land's own diff needs no new public-API bump -- the exact
+        # branch that used to leave the regression uncorrected) must
+        # still leave root at 0.366.0, not 0.365.0.
+        self._init_repo(tmp_path)
+        pre_land_tip = self._commit_release_state(
+            tmp_path,
+            "0.366.0",
+            message="main @ 0.366.0 (a sibling's already-landed bump)",
+        )
+
+        # Simulate whatever the squash-apply left behind: a regressed,
+        # internally-coherent pair, staged in the index exactly as
+        # `git merge --squash` would leave it (uncommitted, but `git add`ed).
+        _write_pyproject(tmp_path, "0.365.0")
+        _write_manifest(tmp_path, "0.365.0")
+        _git(tmp_path, "add", "pyproject.toml", ".frob-release.json")
+
+        # Confirm the corrupted state is real before any fix runs.
+        assert _read_working_pyproject_version(tmp_path) == "0.365.0"
+        assert _read_working_manifest_version(tmp_path) == "0.365.0"
+
+        def bump_version(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN202
+            return Ok(None)
+
+        result = _apply_release_bump(
+            tmp_path, _fake_ticket(), "T-1760", bump_version, pre_land_tip=pre_land_tip
+        )
+
+        assert result.is_ok, result.err
+        assert _read_working_pyproject_version(tmp_path) == "0.366.0"
+        assert _read_working_manifest_version(tmp_path) == "0.366.0"
+
+    def test_legitimate_bump_still_advances_past_the_reset_baseline(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_release_coherence.py::TestResetReleaseArtifactsRealGitRepo.test_legitimate_bump_still_advances_past_the_reset_baseline  # noqa: E501
+        #
+        # The reset must not fight a REAL bump this land itself needs --
+        # after resetting to pre_land_tip's 0.366.0, a `bump_version`
+        # callback that legitimately writes 0.367.0 must still land at
+        # 0.367.0, not be clobbered back to 0.366.0.
+        self._init_repo(tmp_path)
+        pre_land_tip = self._commit_release_state(
+            tmp_path, "0.366.0", message="base @ 0.366.0"
+        )
+
+        def bump_version(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN202
+            _write_pyproject(root, "0.367.0")
+            _write_manifest(root, "0.367.0")
+            return Ok("0.367.0")
+
+        result = _apply_release_bump(
+            tmp_path, _fake_ticket(), "T-1760", bump_version, pre_land_tip=pre_land_tip
+        )
+
+        assert result.is_ok, result.err
+        assert result.danger_ok == "0.367.0"
+        assert _read_working_pyproject_version(tmp_path) == "0.367.0"
+        assert _read_working_manifest_version(tmp_path) == "0.367.0"

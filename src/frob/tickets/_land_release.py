@@ -146,6 +146,29 @@ def _release_bump_is_monotonic(pre_bump_version: str | None, new_version: str) -
         return new_version != pre_bump_version and new_version > pre_bump_version
 
 
+# frob:ticket T-1760
+def _version_not_regressed(pre_version: str | None, current_version: str) -> bool:
+    """Whether `current_version` is greater than OR EQUAL TO `pre_version`
+    (T-1760) -- the `>=` sibling of `_release_bump_is_monotonic`'s strict
+    `>`. A REPORTED bump must be strictly greater (a bump that computes to
+    the same version it started from is a bug in the bump math, not a
+    legitimate no-op); but `_assert_no_monotonicity_regression`'s
+    unconditional belt-and-braces check runs even when NO bump was
+    reported at all, where "unchanged" is the expected, correct outcome
+    (this ticket's own diff needed no new version) -- using the strict
+    `>` there would wrongly refuse every land that legitimately bumps
+    nothing. No prior version (`pre_version=None`) is vacuously not
+    regressed, same as `_release_bump_is_monotonic`."""
+    if pre_version is None:
+        return True
+    try:
+        from packaging.version import Version
+
+        return Version(current_version) >= Version(pre_version)
+    except Exception:
+        return current_version == pre_version or current_version > pre_version
+
+
 # frob:ticket T-0338
 # frob:ticket T-0907
 # frob:ticket T-0992
@@ -317,6 +340,87 @@ def _resync_release_manifest(
     return Ok(None)
 
 
+#: T-1760: the three files a land-time release bump governs together --
+#: `pyproject.toml`'s version line, the changelog, and the REL001 baseline
+#: manifest. `uv.lock` is a fourth, separately-synced artifact
+#: (`_sync_uv_lock_for_land`) with its own re-derivation from
+#: `pyproject.toml`, not part of this specific reset (a stale `uv.lock` is
+#: harmless -- it gets re-synced unconditionally after the bump either
+#: way -- unlike these three, which are the ones a stale worktree copy can
+#: silently regress).
+_LAND_OWNED_RELEASE_FILES = ("pyproject.toml", "CHANGELOG.md", ".frob-release.json")
+
+
+# frob:ticket T-1760
+def _reset_release_artifacts_to_pre_land(root: Path, pre_land_tip: str) -> None:
+    """RECOMPUTE, DO NOT CARRY (T-1760): discard whatever `git merge
+    --squash` staged for `pyproject.toml`/`CHANGELOG.md`/
+    `.frob-release.json` in `root`'s working tree and INDEX, resetting all
+    three back to `pre_land_tip` -- root's own true, last-committed state
+    -- before `bump_version` (or anything else in this module) ever reads
+    or writes them.
+
+    ROOT CAUSE this closes: none of these three files is protected by
+    `ticket.scope` (`_auto_resolve_out_of_scope_conflicts` only fires on a
+    genuine git CONFLICT, keep="ours"), and `git merge --squash` performs
+    an ordinary clean 3-way merge on any file that does NOT conflict. A
+    worktree branched before a sibling's land already advanced these
+    files carries its own (older) copies of them at whatever content they
+    held at the worktree's OWN merge-base -- when that content differs
+    from root's current HEAD, the squash's per-file 3-way merge can
+    resolve CLEANLY (no conflict object at all) by taking the worktree's
+    side, silently regressing `root`'s working tree to a version/manifest
+    OLDER than what `root`'s last real commit already declared. The
+    existing T-0992 monotonicity guard (`_release_bump_is_monotonic`)
+    only ever validates a bump `bump_version` itself REPORTS computing
+    (the `bumped.danger_ok is not None` branch below) -- when this
+    ticket's own diff needs no NEW bump (`Ok(None)`, e.g. no public-API
+    change), that branch never runs, so a regression already sitting on
+    disk from the squash's clean merge sailed straight into the final
+    commit uncontested: `_ensure_release_quartet_coherent`'s own check
+    only compares the working tree's pyproject.toml against the working
+    tree's manifest to EACH OTHER, which a wholly-regressed-but-internally
+    -matched pair passes trivially. Measured on main across four
+    consecutive lands (T-1692/T-1754/T-1755/T-1756): the version
+    oscillated 0.366.0 -> 0.365.0 -> 0.366.0 -> 0.365.0, each backward
+    step exactly this shape.
+
+    Resetting FIRST, unconditionally, on every land (not just when a
+    regression is detected) is the fix the ticket asks for directly: the
+    bump is a function of (root's manifest, the landing API) and should be
+    evaluated from root's own state at squash time, never from whatever a
+    worktree happened to carry -- so there is nothing to detect, only a
+    baseline to always start from. A file missing at `pre_land_tip` (a
+    fresh repo with no manifest yet) or already identical to it is a
+    harmless no-op `git checkout`; failures are logged, not fatal --
+    absence of these files is a legitimate repo state this module already
+    treats as "nothing to compare" throughout (`_read_root_pyproject_
+    version`/`_read_root_manifest_version` both return `None` the same
+    way), so a checkout failure here degrades to the pre-T-1760 behavior
+    for that one file rather than aborting the whole land."""
+    for rel in _LAND_OWNED_RELEASE_FILES:
+        checkout = run_argv(
+            ["git", "-C", str(root), "checkout", pre_land_tip, "--", rel]
+        )
+        if checkout.is_err or checkout.danger_ok.returncode != 0:
+            _log.debug(
+                "land: %s reset of %s to pre-land %s skipped (not present at "
+                "that commit, or nothing to reset) -- treated as a no-op",
+                root,
+                rel,
+                pre_land_tip,
+            )
+            continue
+        staged = run_argv(["git", "-C", str(root), "add", "--", rel])
+        if staged.is_err or staged.danger_ok.returncode != 0:
+            _log.warning(
+                "land: %s could not stage the pre-land reset of %s -- a stale "
+                "squash-carried copy may still be in the index",
+                root,
+                rel,
+            )
+
+
 def _apply_release_bump(
     root: Path,
     ticket: Ticket,
@@ -329,6 +433,13 @@ def _apply_release_bump(
     (T-0338). `bump_version=None` is a no-op returning `Ok(None)` -- see
     `land`'s docstring for why this is a caller-supplied callback.
 
+    T-1760: BEFORE any of that, `_reset_release_artifacts_to_pre_land`
+    unconditionally discards whatever `git merge --squash` carried for
+    `pyproject.toml`/`CHANGELOG.md`/`.frob-release.json`, resetting all
+    three to root's own pre-land committed state -- RECOMPUTE, DO NOT
+    CARRY, closing the class of regression this ticket exists for at its
+    source rather than only detecting it after the fact.
+
     T-0992: captures main's own pre-`pre_land_tip` `pyproject.toml`
     version and hard-refuses (via `_log_monotonicity_refusal`, T-1078)
     unless a reported bump is strictly greater than it -- guards against a
@@ -340,9 +451,18 @@ def _apply_release_bump(
     SAME step, regardless of whether `bump_version` itself wrote the
     manifest correctly -- the fix for a REL001 bump that updated
     pyproject.toml/CHANGELOG.md but left the manifest stale, desyncing the
-    quartet and blocking every subsequent land on the T-0992 guard."""
+    quartet and blocking every subsequent land on the T-0992 guard.
+
+    T-1760: even when `bump_version` reports `Ok(None)` (no new bump
+    needed), `_assert_no_monotonicity_regression` is now still run as an
+    unconditional belt-and-braces assertion -- required item 4 of T-1760:
+    "never less than its own manifest's, and never less than the previous
+    commit's" -- defense in depth alongside the reset above, in case a
+    future caller reintroduces a carry path this function does not yet
+    know about."""
     if bump_version is None:
         return Ok(None)
+    _reset_release_artifacts_to_pre_land(root, pre_land_tip)
     pre_bump_version = _read_root_pyproject_version(root, pre_land_tip)
     pre_manifest_version = _read_root_manifest_version(root, pre_land_tip)
     bumped = bump_version(root, ticket, final_id)
@@ -363,18 +483,97 @@ def _apply_release_bump(
         if applied.is_err:
             unwound = _verified_reset_root(root, pre_land_tip, final_id)
             return Err(unwound.danger_err if unwound.is_err else applied.danger_err)
+    finalized = _finalize_release_coherence(
+        root, final_id, pre_land_tip, pre_bump_version, pre_manifest_version
+    )
+    if finalized.is_err:
+        return Err(finalized.danger_err)
+    return bumped
+
+
+# frob:ticket T-1760
+def _finalize_release_coherence(
+    root: Path,
+    final_id: str,
+    pre_land_tip: str,
+    pre_bump_version: str | None,
+    pre_manifest_version: str | None,
+) -> Result[None, LandError]:
+    """`_apply_release_bump`'s last two checks (T-1760: split out to keep
+    the parent under ARCH001's line threshold), run unconditionally
+    regardless of which branch above produced `root`'s current working
+    tree: T-1358's quartet-coherence check, then T-1760's own belt-and-
+    braces monotonicity assertion. Either failing unwinds the staged
+    squash via `_verified_reset_root`, same as every other failure path
+    in this module."""
     # T-1358: unconditional final coherence check -- covers the gap the
-    # branch above leaves open (a `bump_version` callback reporting
-    # `Ok(None)` while pyproject.toml's on-disk version has already
-    # diverged from the manifest, e.g. a worktree-carried stale file, or a
-    # callback that wrote pyproject.toml itself without reporting it back
-    # through this return value) as well as defense-in-depth against the
-    # branch above's own resync silently not sticking.
+    # caller's own branch above leaves open (a `bump_version` callback
+    # reporting `Ok(None)` while pyproject.toml's on-disk version has
+    # already diverged from the manifest, e.g. a worktree-carried stale
+    # file, or a callback that wrote pyproject.toml itself without
+    # reporting it back through the return value) as well as defense-in-
+    # depth against that branch's own resync silently not sticking.
     coherent = _ensure_release_quartet_coherent(root, final_id)
     if coherent.is_err:
         unwound = _verified_reset_root(root, pre_land_tip, final_id)
         return Err(unwound.danger_err if unwound.is_err else coherent.danger_err)
-    return bumped
+    regressed = _assert_no_monotonicity_regression(
+        root, final_id, pre_bump_version, pre_manifest_version
+    )
+    if regressed.is_err:
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        return Err(unwound.danger_err if unwound.is_err else regressed.danger_err)
+    return Ok(None)
+
+
+# frob:ticket T-1760
+def _assert_no_monotonicity_regression(
+    root: Path,
+    final_id: str,
+    pre_bump_version: str | None,
+    pre_manifest_version: str | None,
+) -> Result[None, LandError]:
+    """Required item 4 of T-1760: an unconditional final check that
+    `root`'s working-tree `pyproject.toml`/`.frob-release.json` versions
+    are never LESS than main's own pre-land versions (`pre_bump_version`/
+    `pre_manifest_version`), run regardless of whether `bump_version`
+    reported a new bump. Belt-and-braces alongside `_reset_release_
+    artifacts_to_pre_land`'s prevention: that reset already makes a
+    regression structurally unreachable through the path this module
+    controls, so this assertion should never actually fire in practice --
+    it exists so a regression introduced by a FUTURE change to this
+    module (or a caller that bypasses the reset) fails LOUDLY and refuses
+    the land, instead of silently repeating the T-1760 incident. `None`
+    inputs (no prior version recorded, e.g. a manifest-less test root) are
+    vacuously fine -- nothing to regress against, mirrors `_release_bump_
+    is_monotonic`'s own `pre_bump_version is None` short-circuit."""
+    working_pyproject = _read_working_pyproject_version(root)
+    working_manifest = _read_working_manifest_version(root)
+    if working_pyproject is not None and pre_bump_version is not None:
+        if not _version_not_regressed(pre_bump_version, working_pyproject):
+            _log.error(
+                "land: %s pyproject.toml version %s is not >= main's "
+                "pre-land version %s after the release-bump step -- T-1760 "
+                "monotonicity assertion refusing rather than landing a "
+                "backward version move",
+                final_id,
+                working_pyproject,
+                pre_bump_version,
+            )
+            return Err(LandError.ReleaseBumpFailed)
+    if working_manifest is not None and pre_manifest_version is not None:
+        if not _version_not_regressed(pre_manifest_version, working_manifest):
+            _log.error(
+                "land: %s .frob-release.json version %s is not >= main's "
+                "pre-land manifest version %s after the release-bump step "
+                "-- T-1760 monotonicity assertion refusing rather than "
+                "landing a regressed REL001 baseline",
+                final_id,
+                working_manifest,
+                pre_manifest_version,
+            )
+            return Err(LandError.ReleaseBumpFailed)
+    return Ok(None)
 
 
 # frob:ticket T-1358
