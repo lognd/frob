@@ -9099,3 +9099,35 @@ Regression coverage: a sweep that files a regression ticket leaves the
 repo CLEAN, and a subsequent land succeeds. Assert the actual invariant
 -- root clean after the sweep completes -- not that a commit helper was
 called.
+
+<!-- ticket:T-1756 -->
+```yaml
+id: T-1756
+title: 'post-land sweep regression from T-1692: 3 new error(s) (E501, invalid-argument-type)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-07'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- /home/logan/projects/frob/src/frob/app/ticket_runner/_land_cmd.py
+- /home/logan/projects/frob/src/frob/verify/_backpressure.py
+- src/frob/app/ticket_runner/_land_cmd.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+```
+The deferred post-land unscoped sweep (T-1684) for T-1692 at commit 1647eb98b3f9a373c9c47effef78ea141857c48f found 3 error identit(ies) that were not present in the previous sweep's baseline.
+
+New (rule, file) pairs filed here:
+
+- E501  /home/logan/projects/frob/src/frob/app/ticket_runner/_land_cmd.py
+- E501  /home/logan/projects/frob/src/frob/verify/_backpressure.py
+- invalid-argument-type  src/frob/app/ticket_runner/_land_cmd.py
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
