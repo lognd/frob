@@ -3150,6 +3150,7 @@ created: '2026-08-05'
 priority: medium
 blocked_by:
 - T-1725
+- T-1764
 parent: T-1238
 tier: ticket
 sprint: null
@@ -3160,7 +3161,6 @@ threat: null
 component: null
 ```
 Refiled from T-1571 (T-1238 slice, draft-loss class; also cited by T-1238's Done report). Rework the top-level frob --help output to present the T-1238 verb groups instead of the flat 30+ subcommand list.
-
 <!-- ticket:T-1572 -->
 ```yaml
 id: T-1572
