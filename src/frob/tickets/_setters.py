@@ -233,6 +233,55 @@ def set_scope_breadth_ack(
     return Ok(updated)
 
 
+# frob:ticket T-1670
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evidence_id  # noqa: E501
+# frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_evidence  # noqa: E501
+def set_designated_repro_test(
+    root: Path, ticket_id: str, node_id: str
+) -> Result[Ticket, TicketError]:
+    """`frob ticket evidence <id> --designate-repro NODE-ID` (T-1670): mark
+    `node_id` as the explicit BUG002 repro test, regardless of bind order
+    -- `_designated_repro_test` (`frob.gates._mutation_evidence`) reads
+    this field first, falling back to the old positional-first-match rule
+    only when it is unset. `node_id` must already be one of `ticket_id`'s
+    bound `evidence` entries (`Err(DesignatedReproNotInEvidence)`
+    otherwise) -- a caller adding NEW evidence and designating one of the
+    new ids in the SAME `frob ticket evidence` invocation must bind it
+    first, so this check sees it; designating an id that was never bound
+    (a typo, or the wrong ticket) is rejected at set time rather than
+    silently recorded as a designation that can never match anything in
+    `_designated_repro_test`'s own `designated in ticket.evidence` guard."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    from frob.tickets import _load_ticket_and_queue
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        if node_id not in ticket.evidence:
+            _log.warning(
+                "tickets: %s --designate-repro %r is not one of this "
+                "ticket's bound evidence ids %s -- bind it first "
+                "(`frob ticket evidence %s %r`), then designate it",
+                ticket_id,
+                node_id,
+                list(ticket.evidence),
+                ticket_id,
+                node_id,
+            )
+            return Err(TicketError.DesignatedReproNotInEvidence)
+        updated = ticket.model_copy(update={"designated_repro_test": node_id})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s designated_repro_test set to %s", ticket_id, node_id)
+    return Ok(updated)
+
+
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field

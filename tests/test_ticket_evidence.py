@@ -19,14 +19,16 @@ from frob.tickets import (
     TicketKind,
     TicketState,
     add_cmd_evidence,
+    add_evidence,
     load_active,
     new_ticket,
     run_cmd_evidence,
+    set_designated_repro_test,
     set_kind,
     set_priority,
     transition,
 )
-from frob.tickets._models import TicketSpec
+from frob.tickets._models import TicketError, TicketSpec
 
 
 def _seed_ticket(
@@ -311,3 +313,41 @@ class TestKindHistoryLandNotice:
         with caplog.at_level("WARNING"):
             _warn_kind_history_at_land(ticket)
         assert not any("T-9002" in record.getMessage() for record in caplog.records)
+
+
+# frob:ticket T-1670
+class TestSetDesignatedReproTest:
+    """`set_designated_repro_test` (T-1670): explicit BUG002 repro
+    designation, independent of evidence bind order."""
+
+    def test_designates_a_bound_evidence_id(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evidence_id  # noqa: E501
+        tid = _seed_ticket(tmp_path)
+        added = add_evidence(
+            tmp_path,
+            tid,
+            ["tests/test_a.py::test_a", "tests/test_b.py::test_b"],
+        )
+        assert added.is_ok, added.err
+
+        result = set_designated_repro_test(tmp_path, tid, "tests/test_b.py::test_b")
+
+        assert result.is_ok, result.err
+        assert result.danger_ok.designated_repro_test == "tests/test_b.py::test_b"
+        reloaded = load_active(tmp_path).danger_ok.tickets[tid]
+        assert reloaded.designated_repro_test == "tests/test_b.py::test_b"
+
+    def test_refuses_an_id_not_in_evidence(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_evidence  # noqa: E501
+        tid = _seed_ticket(tmp_path)
+        added = add_evidence(tmp_path, tid, ["tests/test_a.py::test_a"])
+        assert added.is_ok, added.err
+
+        result = set_designated_repro_test(
+            tmp_path, tid, "tests/test_never_bound.py::test_x"
+        )
+
+        assert result.is_err
+        assert result.danger_err is TicketError.DesignatedReproNotInEvidence
+        reloaded = load_active(tmp_path).danger_ok.tickets[tid]
+        assert reloaded.designated_repro_test is None

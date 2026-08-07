@@ -221,15 +221,37 @@ def _no_behavior_change_reason(ticket: Ticket) -> str | None:
 
 # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_first_pytest_node_id_is_designated  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_no_pytest_evidence_is_none  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_explicit_designation_wins_over_bind_order  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_explicit_designation_not_in_evidence_falls_back_to_positional  # noqa: E501
 def _designated_repro_test(ticket: Ticket) -> str | None:
-    """The single evidence test BUG002 re-runs at the parent commit: the
-    FIRST pytest-node-id-shaped entry (`path::name`, excluding `cmd:`
-    entries -- same shape `frob.tickets._mutation_evidence._evidence_test_ids`
+    """The single evidence test BUG002 re-runs at the parent commit
+    (T-1670): `ticket.designated_repro_test` if explicitly set (via `frob
+    ticket evidence <id> --designate-repro`) AND still present in
+    `ticket.evidence` (a designation whose id was since `--replace`d or
+    dropped falls back to the positional default below, rather than
+    silently checking a test no longer bound at all); otherwise the FIRST
+    pytest-node-id-shaped entry (`path::name`, excluding `cmd:` entries --
+    same shape `frob.tickets._mutation_evidence._evidence_test_ids`
     filters to) in `ticket.evidence`, deterministic and cheap (T-1421's
     cost constraint: check ONE test at ONE prior commit, never the whole
-    bound evidence set). `None` when the ticket has no such evidence yet
-    -- nothing to check, matching `check_ticket_mutation_evidence`'s own
-    "no pytest evidence, nothing to check" posture."""
+    bound evidence set).
+
+    T-1670's whole point: before `designated_repro_test` existed, this was
+    ALWAYS the positional-first match, an invisible bind-ORDER dependency
+    nothing in `frob ticket evidence` surfaced at bind time -- an agent
+    who bound a pre-existing (already-passing-everywhere) test first and
+    its real new repro test second got BUG002 checking the wrong one,
+    passing at parent, and refusing land for a reason unrelated to the
+    actual evidence quality. Explicit designation removes the ordering
+    dependency; the positional fallback stays for every ticket that never
+    designates one, so pre-T-1670 behavior is unchanged by default.
+
+    `None` when the ticket has no pytest evidence at all -- nothing to
+    check, matching `check_ticket_mutation_evidence`'s own "no pytest
+    evidence, nothing to check" posture."""
+    designated = ticket.designated_repro_test
+    if designated is not None and designated in ticket.evidence:
+        return designated
     for entry in ticket.evidence:
         if "::" in entry and not entry.startswith("cmd:"):
             return entry

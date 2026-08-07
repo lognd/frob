@@ -87,6 +87,8 @@ _STRING_FIELDS = (
     # frob:ticket T-1492
     "ticket_migrate_to",
     "ticket_evidence_cmd",
+    # frob:ticket T-1670
+    "ticket_designate_repro",
     "ticket_review_verdict",
     "ticket_reviewer",
     "ticket_review_commit",

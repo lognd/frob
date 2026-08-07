@@ -34,44 +34,30 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
     and append the resolvable ones to the ticket's structured evidence list;
     or, with `--evidence-cmd`, record the T-0215 non-pytest cmd-evidence
     entry instead (docs-kind tickets only); or, with `--replace OLD NEW`
-    (T-1537), rebind an existing evidence id everywhere it appears. Requires
-    at least one of the three -- neither is silently a no-op."""
+    (T-1537), rebind an existing evidence id everywhere it appears; or,
+    with `--designate-repro NODE-ID` (T-1670), mark one bound evidence id
+    as BUG002's explicit repro test. Requires at least one of the four --
+    none of them is silently a no-op. Each channel's own apply-and-exit-on-
+    error step is a small helper (`_evidence_apply_*`, ARCH001 split) so
+    this dispatcher stays a thin sequence of "if given, apply" checks."""
     has_evidence = (
         cfg.ticket_evidence_ids
         or cfg.ticket_evidence_cmd
         or cfg.ticket_evidence_replace
+        or cfg.ticket_designate_repro
     )
     if cfg.ticket_id is None or not has_evidence:
         _log.error(
             "frob ticket evidence requires <id> and one of "
-            "<pytest-node-id>..., --evidence-cmd 'command', or "
-            "--replace OLD-NODE-ID NEW-NODE-ID"
+            "<pytest-node-id>..., --evidence-cmd 'command', "
+            "--replace OLD-NODE-ID NEW-NODE-ID, or --designate-repro NODE-ID"
         )
         sys.exit(1)
 
-    if cfg.ticket_evidence_ids:
-        result = _apply_evidence(
-            root, cfg.ticket_id, cfg.ticket_evidence_ids, cfg.ticket_accepts
-        )
-        if result.is_err:
-            sys.exit(1)
-
-    if cfg.ticket_evidence_cmd:
-        cmd_result = _apply_cmd_evidence(
-            root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
-        )
-        if cmd_result.is_err:
-            sys.exit(1)
-
-    if cfg.ticket_evidence_replace:
-        replace_result = _apply_replace_evidence(
-            root,
-            cfg.ticket_id,
-            cfg.ticket_evidence_replace,
-            archived=cfg.ticket_evidence_archived,
-        )
-        if replace_result.is_err:
-            sys.exit(1)
+    _evidence_apply_node_ids(root, cfg)
+    _evidence_apply_cmd(root, cfg)
+    _evidence_apply_replace(root, cfg)
+    _evidence_apply_designate_repro(root, cfg)
 
     # frob:ticket T-1178
     from frob.tickets._leases import commit_ticket_ledger_change
@@ -83,6 +69,66 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
         no_commit=cfg.ticket_no_commit,
     )
     if committed.is_err:
+        sys.exit(1)
+
+
+def _evidence_apply_node_ids(root: Path, cfg: AppConfig) -> None:
+    """`_evidence`'s positional-node-id channel (ARCH001 split): a no-op
+    when `cfg.ticket_evidence_ids` is empty, else applies and exits 1 on
+    failure -- same shape every `_evidence_apply_*` helper follows."""
+    if not cfg.ticket_evidence_ids:
+        return
+    assert cfg.ticket_id is not None
+    result = _apply_evidence(
+        root, cfg.ticket_id, cfg.ticket_evidence_ids, cfg.ticket_accepts
+    )
+    if result.is_err:
+        sys.exit(1)
+
+
+def _evidence_apply_cmd(root: Path, cfg: AppConfig) -> None:
+    """`_evidence`'s `--evidence-cmd` channel (ARCH001 split)."""
+    if not cfg.ticket_evidence_cmd:
+        return
+    assert cfg.ticket_id is not None
+    cmd_result = _apply_cmd_evidence(
+        root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
+    )
+    if cmd_result.is_err:
+        sys.exit(1)
+
+
+def _evidence_apply_replace(root: Path, cfg: AppConfig) -> None:
+    """`_evidence`'s `--replace OLD NEW` channel (ARCH001 split, T-1537)."""
+    if not cfg.ticket_evidence_replace:
+        return
+    assert cfg.ticket_id is not None
+    replace_result = _apply_replace_evidence(
+        root,
+        cfg.ticket_id,
+        cfg.ticket_evidence_replace,
+        archived=cfg.ticket_evidence_archived,
+    )
+    if replace_result.is_err:
+        sys.exit(1)
+
+
+# frob:ticket T-1670
+def _evidence_apply_designate_repro(root: Path, cfg: AppConfig) -> None:
+    """`_evidence`'s `--designate-repro NODE-ID` channel (ARCH001 split,
+    T-1670): marks `cfg.ticket_designate_repro` as the ticket's explicit
+    BUG002 repro test via `set_designated_repro_test` -- see that
+    function's own docstring for the "must already be bound as evidence"
+    requirement."""
+    if not cfg.ticket_designate_repro:
+        return
+    assert cfg.ticket_id is not None
+    from frob.tickets import set_designated_repro_test
+
+    designate_result = set_designated_repro_test(
+        root, cfg.ticket_id, cfg.ticket_designate_repro
+    )
+    if designate_result.is_err:
         sys.exit(1)
 
 

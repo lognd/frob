@@ -171,16 +171,32 @@ def _show(root: Path, cfg: AppConfig) -> None:
 
     color = _stdout_color()
     _log.info(
-        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s\n\n%s",
+        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s%s\n\n%s",
         style_ticket_id(ticket.id, color),
         style_state(display_state(ticket, root), color),
         ticket.title,
         ticket.kind.value,
         list(ticket.blocked_by),
         list(ticket.scope),
+        _render_designated_repro(ticket),
         _render_acceptance(ticket),
         ticket.body,
     )
+
+
+# frob:ticket T-1670
+def _render_designated_repro(ticket) -> str:  # noqa: ANN001
+    """The `\\ndesignated_repro_test: <id>` line `frob ticket show` appends
+    after `scope=` (T-1670) whenever a ticket has an explicit BUG002 repro
+    designation -- surfaces which id currently wins over the positional-
+    first-match default, so an agent binding a second/third evidence id
+    can see at a glance whether it will silently become the new repro
+    (it will not, once a designation exists) rather than discovering the
+    ordering rule only at land time. Empty string (no extra line) when no
+    designation is set, matching pre-T-1670 output exactly."""
+    if ticket.designated_repro_test is None:
+        return ""
+    return f"\ndesignated_repro_test: {ticket.designated_repro_test}"
 
 
 # frob:ticket T-0572

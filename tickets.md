@@ -16,6 +16,7 @@ tier: epic
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -59,6 +60,7 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN frob refactor move/rename/split on a symbol or module family WHEN it
     completes THEN all imports and call sites are rewritten (absolute imports, auto-aliasing
@@ -117,6 +119,7 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+designated_repro_test: null
 acceptance:
 - text: GIVEN the design doc WHEN reviewed THEN it covers file-per-ticket layout (block
     + done report), draft lifecycle without splice restores, cross-ticket operations
@@ -166,6 +169,7 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --fix WHEN Tier-A findings exist THEN deterministic semantics-preserving
     fixes are applied (directive-form rewrite, unique anchor-slug correction, fmt,
@@ -206,6 +210,7 @@ scope:
 - frob-core/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -271,6 +276,7 @@ evidence:
 - tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_functions_structs_comments_and_field_access
 - tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_unparseable_source_returns_empty_not_a_crash
 - tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_this_repos_own_extract_rs_matches_byte_for_byte
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN frob.lang._extract.extract and _walk_python do pure per-node Python
     recursion over py-tree-sitter Node objects (measured shares: perf 38 pct, clones
@@ -453,6 +459,7 @@ scope:
 - frob-core/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN vet/_capability.py''s 5 Python recursions per file (import table walk,
     alias walk, candidate walk, comment spans, docstring spans -- 37 pct of sys, est
@@ -484,6 +491,7 @@ scope:
 - frob-core/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _run_python_checks is 97 pct of archgate and _py_build_module alone
     is 31 pct, doing body-event/nesting/cyclomatic extraction as separate Python recursions
@@ -555,6 +563,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -615,6 +624,7 @@ evidence:
 - tests/unit/test_app_runners.py::TestExploreRunner::test_xref_subcommand_missing_symbol_exits_1
 - tests/unit/test_app_runners.py::TestExploreRunner::test_docs_search_subcommand_missing_path_exits_1
 - tests/unit/test_app_runners.py::TestExploreRunner::test_unknown_subcommand_exits_1
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN frob --help THEN the top level presents a small set of verb groups
     (target: under ~15 entries) with subcommands grouped by intent, every old invocation
@@ -760,6 +770,7 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN every known gate rule id THEN generated_fixability() maps it to exactly
     one of auto/verified/assisted/manual, with manual as the correct default for a
@@ -812,6 +823,7 @@ tier: epic
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN this epic WHEN all child packages reach zero TEST005 findings at unit_branch_cov=75/module_line_cov=70
     THEN frob ticket epic reports 0 open children and the floor-ratchet child has
@@ -853,6 +865,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a package that has reached zero TEST005 findings at 75/70 WHEN the ratchet
     schedule lands THEN that package's effective floor is documented to step toward
@@ -965,6 +978,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN frob ack clears a DRIFT finding THEN it requires a reason string (waiver-style:
     what was re-verified and why the doc is still true) and records the acked digest
@@ -1002,6 +1016,7 @@ scope:
 - strata-core/src/parse/grammar_flow.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1085,6 +1100,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1130,6 +1146,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 acceptance:
 - text: given a line carrying one checker's suppression and an unsuppressed diagnostic
     from another configured checker, when frob check runs, then SUPPRESS001 reports
@@ -1206,6 +1223,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 acceptance:
 - text: given frob check on main, when the suppress gate runs, then it reports 0 SUPPRESS001
     findings
@@ -1266,6 +1284,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 acceptance:
 - text: given N concurrent agents finishing work, when each lands, then no agent is
     refused for DirtyMain and no agent touches another agent uncommitted state
@@ -1312,6 +1331,7 @@ scope:
 - src/frob/gates/_baseline.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a CI run WHEN the coverage stamp or delta baseline is absent, stale
     or tampered THEN the build fails rather than silently degrading to a pass
@@ -1352,6 +1372,7 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
     each works via a frob subcommand alone
@@ -1399,6 +1420,7 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1470,6 +1492,7 @@ scope:
 - docs/strata/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1500,6 +1523,7 @@ scope:
 - tests/test_vet_capability.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1646,6 +1670,7 @@ scope:
 - src/frob/testing/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1691,6 +1716,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1721,6 +1747,7 @@ scope:
 - docs/modules/serve.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1777,6 +1804,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1805,6 +1833,7 @@ scope:
 - docs/design/check-fix-engine.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1857,6 +1886,7 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1887,6 +1917,7 @@ scope:
 - src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1923,6 +1954,7 @@ evidence:
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_errorset_style_assignment_is_not_a_docstring
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_unparseable_source_returns_empty_not_a_crash
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_this_repos_own_lang_module_matches_byte_for_byte
+designated_repro_test: null
 acceptance:
 - text: GIVEN the delivered kernel WHEN the golden-parity tests run THEN they pass
     and ffi_boundary reads 0 errors
@@ -1985,6 +2017,7 @@ scope:
 - tests/unit/test_extract_native.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2018,6 +2051,7 @@ scope:
 - tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2061,6 +2095,7 @@ scope:
 - src/frob/gates/_docenum.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2097,6 +2132,7 @@ scope:
 - pyproject.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2137,6 +2173,7 @@ scope:
 - src/frob/strata/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2164,6 +2201,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2200,6 +2238,7 @@ scope:
 - src/frob/gates/_wire.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2232,6 +2271,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2292,6 +2332,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2327,6 +2368,7 @@ scope_changes:
 evidence:
 - tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_unknown_ticket_id_fires_at_error_severity
 - tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_known_active_ticket_id_passes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2446,6 +2488,7 @@ scope:
 - src/frob/tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2468,6 +2511,7 @@ scope:
 - src/frob/strata/_sync_may.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2491,6 +2535,7 @@ scope:
 - src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2513,6 +2558,7 @@ scope:
 - src/frob/tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2536,6 +2582,7 @@ scope:
 - tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2573,6 +2620,7 @@ scope:
 - docs/design/ledger-v2.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2633,6 +2681,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2668,6 +2717,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a command emits repeated advisory warnings (scope-closure on ticket
     new can flood thousands of lines) THEN they collapse to a counted summary with
@@ -2711,6 +2761,7 @@ scope:
 - docs/design/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2871,6 +2922,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestWireGate::test_shared_test_fixture_called_from_a_sibling_test_file_is_not_flagged
 - tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_its_own_defining_file_is_still_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a module-local pytest helper (fixture factory, git-init scaffold, parametrized-data
     builder) with no direct call-site the callgraph can see THEN WIRE001 either recognizes
@@ -2949,6 +3001,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2968,6 +3021,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2987,6 +3041,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3007,6 +3062,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3026,6 +3082,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3045,6 +3102,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3074,6 +3132,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_proceeds
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3180,6 +3239,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3207,6 +3267,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3230,6 +3291,7 @@ scope:
 - src/frob/app/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3252,6 +3314,7 @@ scope:
 - docs/modules/logging.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3276,6 +3339,7 @@ scope:
 - docs/design/ledger-v2.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3311,6 +3375,7 @@ evidence:
 - tests/test_gates.py::TestWireGate::test_wire002_still_fires_when_permanent_true_outside_tests_tree
 - tests/test_gates.py::TestWireGate::test_wire002_still_fires_when_permanent_true_on_public_test_symbol
 - tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep::test_enqueue_persists_entry
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3382,6 +3447,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3414,6 +3480,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3455,6 +3522,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3494,6 +3562,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3530,6 +3599,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3566,6 +3636,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3602,6 +3673,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3638,6 +3710,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3674,6 +3747,7 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3723,6 +3797,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3770,6 +3845,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3800,6 +3876,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3834,6 +3911,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3864,6 +3942,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:grep -q 'docs-completeness-2026-08-06' docs/index.md && test -s docs/audits/docs-completeness-2026-08-06.md
   exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3976,6 +4055,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4022,6 +4102,7 @@ scope_changes:
 evidence:
 - tests/test_clean.py::test_clean_deep_removes_frob_state
 - tests/unit/test_repo_hygiene.py::TestUntrackedArtifacts::test_froblems_md_is_not_tracked
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4148,6 +4229,7 @@ scope_changes:
     body
   actor: logan
   at: '2026-08-06'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4187,6 +4269,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4245,6 +4328,7 @@ scope_changes:
     body
   actor: logan
   at: '2026-08-06'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4293,6 +4377,7 @@ evidence:
 - tests/test_ticket_evidence.py::TestKindHistory::test_history_is_append_only
 - tests/test_ticket_evidence.py::TestKindHistoryLandNotice::test_notice_logged_at_land
 - tests/test_ticket_evidence.py::TestKindHistoryLandNotice::test_no_history_no_notice
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4413,6 +4498,7 @@ scope_changes:
     body
   actor: logan
   at: '2026-08-06'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4476,6 +4562,7 @@ evidence:
 - tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty
 - tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_has_real_changes_in_its_own_scope
 - tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_declares_no_scope_at_all
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4644,6 +4731,7 @@ evidence:
 - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_worktree_branch_name_returns_none_for_an_unregistered_path
 - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_delete_worktree_branch_is_a_logged_no_op_for_none
 - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_refuses_and_touches_nothing_when_unverified
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4762,6 +4850,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4800,6 +4889,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4871,6 +4961,7 @@ scope_changes:
   at: '2026-08-06'
 evidence:
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4996,6 +5087,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5108,6 +5200,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_no_duplicates_silent
 - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_comment_line_is_not_mistaken_for_a_block
 - tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_grammar_parsed_duplicate_blocks_fire_not_lexical_text
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5292,6 +5385,7 @@ evidence:
 - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_no_drift_reports_clean
 - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_addition_and_removal_detected
 - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_duplicate_blocks_collapsed_to_one
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5422,6 +5516,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5472,6 +5567,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5515,6 +5611,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5551,6 +5648,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5590,6 +5688,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_store_stale_snapshot.py::TestRenumberV2StaleSnapshotGuard::test_renumber_root_refuses_when_a_ticket_changes_under_it
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5674,6 +5773,7 @@ scope:
 - tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5716,6 +5816,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5786,6 +5887,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestWriteTicket::test_first_write_for_a_new_id_is_never_refused
 - tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promotes_a_draft_carrying_evidence_and_done_report
 - tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promoting_an_already_final_id_is_a_no_op
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5961,6 +6063,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6000,6 +6103,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_inside_a_waiver_reason_is_not_flagged
 - tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_outside_a_reason_attribute_still_warns
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6095,6 +6199,7 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6118,6 +6223,7 @@ scope:
 - src/frob/vet/_capability_typescript_bindtable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6147,6 +6253,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6222,6 +6329,7 @@ evidence:
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_kotlin_file_no_longer_flagged_by_lang002
 - tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_aggregates_across_files
 - tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_aggregates_across_files
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6414,6 +6522,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6478,6 +6587,7 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6568,6 +6678,7 @@ evidence:
 - tests/test_decisions.py::test_bad_yaml_frontmatter_is_err
 - tests/test_decisions.py::test_frontmatter_not_a_mapping_is_err
 - tests/test_decisions.py::test_schema_validation_failure_is_err
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6736,6 +6847,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: Every WAIVE004 finding classified (a/b/c); obsolete waivers removed; deletions
     declared in the Done report
@@ -7004,6 +7116,7 @@ evidence:
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
+designated_repro_test: null
 acceptance:
 - text: CACHE001 and OPAQUE001 Violations carry symref; waiver matching re-verified
     against the new symref for OPAQUE001's existing 166-waiver population
@@ -7214,6 +7327,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7260,6 +7374,7 @@ scope:
 - src/frob/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7345,6 +7460,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7401,6 +7517,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7491,6 +7608,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7533,6 +7651,7 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7574,6 +7693,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7702,6 +7822,7 @@ scope_changes:
 evidence:
 - tests/test_lang.py::TestParsePython::test_comment_before_a_methods_last_statement_binds_to_that_method
 - tests/test_lang.py::TestParsePython::test_comment_directly_above_a_nested_method_still_binds_to_it
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8082,6 +8203,7 @@ evidence:
 - tests/unit/test_dup_core.py::test_core_unavailable_path_is_err_not_exception
 - cmd:bash -c "uv run --frozen frob check . --only opaque 2>&1 | grep -q \"0 errors\""
   exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8232,6 +8354,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8274,7 +8397,7 @@ SEQUENCING: T-1631 migrates main's own ledger to v2 (coordinator task, quiet win
 id: T-1670
 title: 'frob ticket evidence: designate repro test explicitly + validate node-id shape
   at bind time'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -8288,8 +8411,27 @@ scope:
 - src/frob/gates/**
 - docs/**
 - tests/**
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: CLI flag + external-config allowlist wiring for --designate-repro
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: CLI flag + external-config allowlist wiring for --designate-repro
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_gates_mutation_evidence.py::TestDesignatedReproTest::test_explicit_designation_wins_over_bind_order
+- tests/test_gates_mutation_evidence.py::TestDesignatedReproTest::test_explicit_designation_not_in_evidence_falls_back_to_positional
+- tests/test_ticket_evidence.py::TestSetDesignatedReproTest::test_designates_a_bound_evidence_id
+- tests/test_ticket_evidence.py::TestSetDesignatedReproTest::test_refuses_an_id_not_in_evidence
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8329,6 +8471,96 @@ Both parts turn a land-time diagnosis into an immediate, local error at
 the point the mistake is made -- that is the whole point (filed from
 T-1616's own mission text, which named this as follow-up work).
 
+## Done report
+
+T-1670 had two distinct evidence-binding defects, both diagnosed only at
+land time. This lands PART 1 (explicit repro designation) in full; PART 2
+(node-id shape validation) is investigated below and split into a residue
+ticket rather than implemented as literally worded, because the literal
+ask would have broken correct, tested behavior.
+
+PART 1 -- explicit repro designation (implemented):
+
+`_designated_repro_test` (`frob.gates._mutation_evidence`) always took the
+FIRST pytest-node-id in `ticket.evidence` as BUG002's repro test -- an
+invisible bind-ORDER dependency (T-1652/T-1653/T-1635 all hit it: a
+pre-existing, already-passing test bound first, the real new repro test
+bound second, so BUG002 checked the wrong test and refused land for a
+reason unrelated to evidence quality).
+
+Fix: a new `Ticket.designated_repro_test: str | None` field, set via
+`frob ticket evidence <id> --designate-repro NODE-ID`
+(`set_designated_repro_test` in `frob.tickets._setters`, exported from
+`frob.tickets`). `_designated_repro_test` now reads this field first (only
+if it still resolves against `ticket.evidence` -- a designation whose id
+was since `--replace`d falls back to the old positional rule rather than
+checking a test no longer bound at all), falling back to the positional-
+first rule for every ticket that never designates one, so pre-T-1670
+behavior is unchanged by default. `set_designated_repro_test` refuses
+(`Err(DesignatedReproNotInEvidence)`) designating an id not already bound
+as evidence, naming the bind-first recipe. `frob ticket show` now prints a
+`designated_repro_test: <id>` line whenever one is set, so the current
+designation is visible without `--json`.
+
+PART 2 -- node-id shape validation (investigated, NOT implemented as
+worded; split to a residue ticket):
+
+T-1670's text asks to "reject the pytest ::-separated form" at bind time
+in favor of a dotted `path::Class.method` convention. Investigation found
+this cannot be implemented as literally stated without breaking real,
+tested behavior:
+- `ticket.evidence` resolves against real pytest node ids
+  (`matches_collected`) via an EXACT match against `collected`, which is
+  always pytest's native `path::Class::method` (double-`::`) form --
+  never dotted. Rejecting that form would make it impossible to bind
+  evidence using a real id copied verbatim from `pytest --collect-only`.
+- `normalize_evidence_separator` (T-0293) already converts DOTTED input
+  INTO the pytest `::` form for storage -- the opposite direction from
+  what the literal ask implies.
+- The real CLI path (`_apply_evidence`) already resolves every id against
+  a live collected set and rejects unresolvable/non-passing ids
+  (`UnknownEvidence`/`EvidenceNotPassing`) -- most of "verify the test
+  actually exists at bind time" is already true today.
+
+Filed T-1706 (renumbers at land) with this investigation and a
+narrower, safe follow-up plan: reject only genuinely malformed 3+-segment
+ids at the schema layer, and separately investigate whether `frob ticket
+evidence` should hint the dotted `frob:tests`-directive form of a newly-
+bound id (a directive-authoring UX gap, distinct from `ticket.evidence`'s
+own resolution-critical storage format).
+
+Evidence: `tests/test_gates_mutation_evidence.py::TestDesignatedReproTest`
+(2 new cases: explicit designation wins over bind order; a stale
+designation not in evidence falls back to positional) and
+`tests/test_ticket_evidence.py::TestSetDesignatedReproTest` (2 new cases:
+designates a bound id; refuses an id not in evidence). Full
+`tests/test_ticket_evidence.py` + `tests/test_gates_mutation_evidence.py`
++ `tests/test_tickets.py` (188 tests) pass unmodified elsewhere.
+
+### Changed
+```
+ docs/modules/tickets.md                    |  84 ++++----
+ src/frob/_cli_parsers/_ticket/_progress.py |  16 --
+ src/frob/app/_config_external.py           |   2 -
+ src/frob/app/config.py                     |  10 -
+ src/frob/app/ticket_runner/_land_cmd.py    |   5 +-
+ src/frob/tickets/_land.py                  | 198 ++++++++++--------
+ tests/unit/test_land_already_landed.py     |  90 ++++++--
+ tickets.md                                 | 317 ++++++++++++++++++++++++++++-
+ 8 files changed, 548 insertions(+), 174 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_mutation_evidence.py::TestDesignatedReproTest::test_explicit_designation_wins_over_bind_order` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestDesignatedReproTest::test_explicit_designation_not_in_evidence_falls_back_to_positional` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestSetDesignatedReproTest::test_designates_a_bound_evidence_id` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_evidence.py::TestSetDesignatedReproTest::test_refuses_an_id_not_in_evidence` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 6247 warning(s), 717 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-1671 -->
 ```yaml
 id: T-1671
@@ -8344,6 +8576,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8372,6 +8605,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8420,6 +8654,7 @@ scope_changes:
 evidence:
 - tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_lists_failing_node_ids
 - tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_caps_failing_node_ids_with_and_n_more
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8476,6 +8711,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8563,6 +8799,7 @@ evidence:
 - tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_has_real_changes_in_its_own_scope
 - tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_declares_no_scope_at_all
 - tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8825,6 +9062,7 @@ evidence:
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_red_suite_keeps_coverage_data
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_green_suite_records_not_degraded
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8936,6 +9174,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8973,6 +9212,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9009,6 +9249,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9087,6 +9328,7 @@ evidence:
 - tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_exact_root_level_file_authorizes_its_own_deletion
 - tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_wildcard_breadth_rules_are_unchanged
 - tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_refuses_while_land_lock_held
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9202,6 +9444,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9316,6 +9559,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9402,6 +9646,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9606,6 +9851,7 @@ evidence:
 - tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_exec_disabled_records_debt_and_refuses
 - tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_records_a_commit_field_even_outside_a_git_repo
 - tests/unit/test_profile.py::TestRatchetOverride::test_explicit_true_overrides
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9712,6 +9958,7 @@ scope:
 - docs/audits/docs-completeness-2026-08-06.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9755,6 +10002,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -9881,6 +10129,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -9962,6 +10211,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10018,6 +10268,7 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
+
 <!-- ticket:T-1689 -->
 ```yaml
 id: T-1689
@@ -10038,6 +10289,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10111,6 +10363,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10167,6 +10420,7 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
+
 <!-- ticket:T-1691 -->
 ```yaml
 id: T-1691
@@ -10186,6 +10440,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10259,6 +10514,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10334,6 +10590,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10408,6 +10665,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10479,6 +10737,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10552,6 +10811,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10630,6 +10890,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: verification
 labels:
@@ -10723,6 +10984,7 @@ evidence:
 - tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_stages_only_the_debt_file
 - tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_a_real_dirty_file
 - tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_truncation_declares_itself
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10865,6 +11127,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10935,6 +11198,7 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11006,6 +11270,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11063,6 +11328,7 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11141,6 +11407,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11235,6 +11502,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11308,6 +11576,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11357,3 +11626,95 @@ Regression coverage: under `rapid`, a ticket with a public-API change
 closes without a bump and records the relaxation as debt; under
 `standard`, the refusal message names `frob ticket land` as the remedy
 rather than a bare "bump outstanding".
+
+<!-- ticket:T-1706 -->
+```yaml
+id: T-1706
+title: 'frob ticket evidence node-id shape validation: investigate the malformed-id
+  gap without breaking pytest-form binding'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-06'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner/_verify.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+```
+## Description
+
+Follow-up to T-1670's part 2 ("malformed ids accepted silently"), split
+out after investigation found the naive literal reading would be harmful.
+
+T-1670's own text says: "This graph's convention is `path::Class.method`
+-- one `::` then a DOTTED class/method. Pytest's own `path::Class::method`
+form is accepted by `frob ticket evidence` without complaint... Fix:
+validate the node-id shape AT BIND TIME... and reject the pytest
+`::`-separated form."
+
+Investigation while implementing T-1670's part 1 found this cannot be
+implemented as literally stated without breaking real, tested, documented
+behavior:
+
+- `ticket.evidence` entries are resolved against real pytest node ids via
+  `frob.tickets._models.matches_collected`, which requires an EXACT string
+  match against `collected` -- and `collected` (from `collect_python_tests`/
+  `pytest --collect-only`) is always in pytest's native `path::Class::method`
+  (double-`::`) form, never dotted. Rejecting that form at bind time would
+  make it impossible to bind evidence using a real collected node id copied
+  verbatim from `pytest --collect-only` output -- the most natural, lowest-
+  error way to get a correct id.
+- `frob.tickets.__init__.normalize_evidence_separator` (T-0293) already
+  converts a DOTTED `path::Class.method` id INTO the pytest `::` form for
+  storage/resolution -- the existing direction is dot-to-`::`, the opposite
+  of what T-1670's literal ask would require.
+- The CLI path (`_apply_evidence` in `src/frob/app/ticket_runner/_verify.py`)
+  already resolves every id against a real collected set
+  (`_collect_python_and_rust_ids`) and rejects (`UnknownEvidence`/
+  `EvidenceNotPassing`) anything that does not resolve or pass -- so a
+  genuinely malformed/typo'd id is already caught at bind time through the
+  real CLI, not silently accepted.
+
+What's still plausibly a real, addressable gap:
+
+1. `normalize_evidence_separator`'s early-return (`if "::" in remainder:
+   return entry`) passes through UNCHANGED any id with a remainder that
+   already contains `::` -- this correctly leaves a legitimate 2-segment
+   pytest id (`path::Class::method`) alone, but ALSO passes through
+   unchanged a genuinely malformed 3+-segment id (`path::Class::method::
+   extra`) with no rejection at the schema-validation layer
+   (`validate_evidence`) itself -- it is only caught later, and only if a
+   `collected` set happens to be supplied (true for the real CLI path,
+   NOT true for a bare library `add_evidence(root, id, ids)` call with no
+   collector, which only WARNS "recorded UNRESOLVED").
+2. `frob:tests` DIRECTIVE comments (a SEPARATE namespace from
+   `ticket.evidence`, playbook section 5) use the dotted `path::Class.method`
+   qualname form by this repo's own convention -- DOC007 flags a `frob:tests`
+   directive using pytest's own `::`-form target. If an agent habitually
+   copies a `ticket.evidence` id (already normalized to `::` form) verbatim
+   into a NEW `frob:tests` directive, DOC007 fires. This is a
+   directive-authoring UX gap, not a `frob ticket evidence` bind-time bug --
+   worth its own investigation into whether `frob ticket evidence` should
+   print the frob:tests-directive-form of a newly-bound id as a hint.
+
+## Plan (sketch, for whoever picks this up)
+
+- Investigate (1): add a schema-level check in `validate_evidence` that
+  rejects an id whose remainder-after-first-`::` contains MORE than one
+  additional `::` (i.e. 3+ total `::`-segments) -- never reject the
+  ordinary 1-or-2-`::` pytest shapes, only the genuinely malformed ones.
+- Investigate (2) separately: does `frob ticket evidence` need to print a
+  "for a frob:tests directive citing this id, use: <dotted form>" hint
+  line, to close the copy-paste UX gap without touching `ticket.evidence`'s
+  own resolution-critical `::` storage format at all?
+- Do NOT implement "reject the pytest `::`-separated form" as literally
+  worded in T-1670's original text -- see the investigation above for why
+  that breaks the primary, correct way to bind evidence.

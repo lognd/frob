@@ -21,6 +21,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_rungs.py::TestR4NearMiss::test_fires_on_gapped_clone
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -61,6 +62,7 @@ scope:
 - src/frob/fuzz/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -85,6 +87,7 @@ scope:
 - src/frob/gates/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -109,6 +112,7 @@ scope:
 - src/frob/graph/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -133,6 +137,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -157,6 +162,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -181,6 +187,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -204,6 +211,7 @@ scope:
 - src/frob/vet/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -229,6 +237,7 @@ scope:
 - src/frob/tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -256,6 +265,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -285,6 +295,7 @@ scope:
 - src/frob/testing/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -309,6 +320,7 @@ scope:
 - src/frob/tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -332,6 +344,7 @@ scope:
 - frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -374,6 +387,7 @@ scope:
 - src/frob/ast/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -405,6 +419,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestSeverityOverrides::test_override_downgrades_and_ignores_garbage
 - tests/test_gates.py::TestSeverityOverrides::test_no_frob_toml_is_identity
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -442,6 +457,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_integration.py::test_cycle_detected_in_mini_project
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -470,6 +486,7 @@ scope:
 - src/frob/gates/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -494,6 +511,7 @@ scope:
 - src/frob/testing/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -519,6 +537,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestCorruptCacheRecovery::test_garbage_cache_file_is_recreated
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -555,6 +574,7 @@ evidence:
 - tests/test_gates.py::TestSeverityOverrides::test_override_downgrades_and_ignores_garbage
 - tests/test_prework_parity.py::TestCliStartRecordsGateCompatibleDigest::test_start_then_gate_is_clean
 - tests/test_graph.py::TestCorruptCacheRecovery::test_garbage_cache_file_is_recreated
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -608,6 +628,7 @@ evidence:
 - tests/system/test_cli_perf.py::TestPerfProfileAndHeat::test_heat_json_output_is_valid_json
 - tests/system/test_cli_perf.py::TestPerfProfileAndHeat::test_heat_without_artifact_fails_cleanly
 - tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -667,6 +688,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_ts_parsers.py::TestParseTsc::test_clean_output
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -695,6 +717,7 @@ scope:
 - src/frob/app/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -717,6 +740,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestDuplicateSymrefs::test_overload_and_property_setter_do_not_crash
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -747,6 +771,7 @@ evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 - tests/test_gates.py::TestDoclinkGate::test_new_file_is_auto_obligated_by_glob
 - tests/system/test_cli_check.py::TestFrobTomlCheckDefaults::test_check_skip_from_frob_toml
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -780,6 +805,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_excludes.py::test_dup_scanner_honors_exclude
 - tests/test_excludes.py::test_load_and_match_globs
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -812,6 +838,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_perf.py::test_profile_records_workload_exit_code
 - tests/test_perf.py::test_profile_clean_workload_exit_zero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -844,6 +871,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 - tests/system/test_cli_check.py::TestFrobTomlCheckDefaults::test_check_skip_from_frob_toml
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -876,6 +904,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestConcurrentCache::test_concurrent_connections_do_not_raise_disk_io
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -910,6 +939,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_plan_then_sweep_flow
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -946,6 +976,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets.py::TestSingleFileLedger::test_migrate_collapses_dir_into_ledger
 - tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -979,6 +1010,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets.py::TestSchemaExtras::test_renumber_makes_ids_contiguous
 - tests/test_tickets.py::TestSchemaExtras::test_acceptance_and_threat_round_trip
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1006,6 +1038,7 @@ scope:
 - tests/test_perf.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1041,6 +1074,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_independent_gates_run_without_git
 - tests/test_vet.py::TestLockfileParsers::test_find_lockfile_uv
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1078,6 +1112,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_release.py::test_release_gate_flags_missing_bump
 - tests/test_release.py::test_changed_signature_is_major
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1112,6 +1147,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_stats.py::test_collect_combines_both
 - tests/test_stats.py::test_commit_stats_classifies_conventional_types
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1150,6 +1186,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_smart.py::TestFindClones::test_finds_renamed_clone_pair
 - tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_independent_gates_run_without_git
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1183,6 +1220,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_decisions.py::test_dec002_accepted_decision_unanchored
 - tests/test_decisions.py::test_dec001_dangling_decision_edge
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1212,6 +1250,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestConventionUnitBinding::test_test001_satisfied_by_convention_name
 - tests/test_gates.py::TestConventionUnitBinding::test_short_symbol_names_do_not_match_everything
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1247,6 +1286,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_mutate.py::test_run_mutations_survivors_when_tests_weak
 - tests/test_mutate.py::test_run_mutations_all_killed_by_strong_test
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1284,6 +1324,7 @@ evidence:
 - tests/test_dup_rungs.py::TestR6Probing::test_refuses_keyword_only_params_instead_of_vacuous_pass
 - tests/test_dup_rungs.py::TestR6Probing::test_refuses_mismatched_arity_instead_of_vacuous_pass
 - tests/test_dup_rungs.py::test_cli_probe_equivalent_functions
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1459,6 +1500,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestPairLevelIntegration::test_test007_fires_on_uncovered_boundary
 - tests/test_gates.py::TestPairLevelIntegration::test_test007_passes_when_boundary_tested
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1495,6 +1537,7 @@ evidence:
 - tests/test_lang.py::test_lang_pipeline_integration
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1573,6 +1616,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestDsl::test_binds_to_nested_method_not_enclosing_class
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1640,6 +1684,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_perf.py::test_heat_joins_pstats_rows_onto_symbol_spans
 - tests/test_perf.py::test_perf001_fires_on_list_membership_in_loop
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1779,6 +1824,7 @@ evidence:
 - tests/test_testing.py::TestCollectPythonTests::test_parses_node_ids_and_caches_on_content_hash
 - tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
 - tests/unit/test_ts_parsers.py::TestParseEslint::test_errors_and_warnings
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1825,6 +1871,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
 - tests/unit/strata/test_litmus_audit_hardened.py::TestAuditHardenedGolden::test_proves_clean_in_security_and_quality
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -1860,6 +1907,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+designated_repro_test: null
 acceptance:
 - text: GIVEN the doc tree WHEN frob check runs THEN DOC001 passes and every strata
     page is reachable from docs/index.md
@@ -1911,6 +1959,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_1_third_party_response_reaches_ledger_unendorsed
 - tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_2_refund_decision_reads_a_stale_replica
+designated_repro_test: null
 acceptance:
 - text: GIVEN hand-written kernel facts for the payments litmus WHEN the prover runs
     THEN all golden findings fire with path counterexamples and quantifier-tagged
@@ -1954,6 +2003,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_golden_1_third_party_response_reaches_ledger_unendorsed
 - tests/unit/strata/test_litmus_surface.py::TestHardenedSurfaceGoldens::test_every_assert_holds_after_the_remedies
+designated_repro_test: null
 acceptance:
 - text: GIVEN design/litmus/payments.strata WHEN frob sys check runs THEN it parses,
     elaborates, and reproduces the phase-0 golden findings via CI
@@ -2001,6 +2051,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_off_the_approximate_counter_path
 - tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hottest_shard_utilization_refutes_under_zipf_skew
+designated_repro_test: null
 acceptance:
 - text: GIVEN tube.strata and chirp.strata WHEN frob sys check runs THEN stampede,
     fanout-ceiling, staleness, and CDN-declassification findings fire per goldens
@@ -2045,6 +2096,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_crash.py::TestNoHangCheck::test_timeout_shorter_than_restart_bound_fails_closed
 - tests/unit/strata/test_atomic.py::TestEvaluateSagaContractsJoin::test_flow_into_coordinator_marked_at_least_once_and_joined
+designated_repro_test: null
 acceptance:
 - text: GIVEN scenario Breach(Gateway) in the payments litmus WHEN frob sys check
     runs THEN blast radius, revocation SLA, and recovery-path-independence verdicts
@@ -2100,6 +2152,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
 - tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_cross_component_import_without_declared_flow_is_a_violation
+designated_repro_test: null
 acceptance:
 - text: GIVEN design/frob.strata WHEN frob check runs on this repo THEN SYS gates
     enforce frob's own declared architecture (self-hosting)
@@ -2144,6 +2197,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
 - tests/unit/strata/test_secrets.py::TestReadersExactSetClosure::test_readers_claim_proved_on_exact_match
+designated_repro_test: null
 acceptance:
 - text: GIVEN a refuted or undischarged claim WHEN frob sys plan runs THEN scoped
     tickets are filed idempotently and a sys ticket cannot close until its claim discharges
@@ -2189,6 +2243,7 @@ evidence:
 - tests/unit/strata/test_models.py::TestLattice::test_leq_is_reflexive_transitive_and_ordered
 - tests/unit/strata/test_models.py::TestQuantity::test_leq_across_dimensions_is_an_error_not_false
 - tests/unit/strata/test_models.py::TestKernelModel::test_frozen_models_compare_by_value
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2234,6 +2289,7 @@ evidence:
 - tests/unit/strata/test_facts.py::TestClosure::test_boundaries_stop_taint_unless_asked_otherwise
 - tests/unit/strata/test_facts.py::TestClosure::test_worst_age_accumulates_along_the_stalest_path
 - tests/unit/strata/test_facts.py::TestBuildFacts::test_at_least_once_into_non_idempotent_node_is_diagnosed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2275,6 +2331,7 @@ evidence:
 - tests/unit/strata/test_claims.py::TestNoFlow::test_refuted_with_witness_path_when_no_boundary_intervenes
 - tests/unit/strata/test_claims.py::TestReach::test_refutation_of_exists_is_a_forall
 - tests/unit/strata/test_claims.py::TestBounds::test_age_bound_refuted_with_stalest_path_and_number
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2321,6 +2378,7 @@ evidence:
 - tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_2_refund_decision_reads_a_stale_replica
 - tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_3_at_least_once_webhook_into_non_idempotent_consumer
 - tests/unit/strata/test_litmus_payments.py::TestHardenedModel::test_every_assert_holds_after_the_remedies
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2372,6 +2430,7 @@ evidence:
 - tests/unit/strata/test_parse.py::TestParseModule::test_parses_bare_module
 - tests/unit/strata/test_parse.py::TestParseModule::test_round_trip_small_design
 - tests/unit/strata/test_parse.py::TestParseModule::test_module_missing_is_parse_failed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2472,6 +2531,7 @@ evidence:
 - tests/unit/strata/test_elaborate.py::TestElaborateValidation::test_boundary_referencing_unknown_flow_fails_closed
 - tests/unit/strata/test_elaborate.py::TestElaborateAbstract::test_abstract_marker_preserved_in_attrs
 - tests/unit/strata/test_elaborate.py::TestElaborateEndToEnd::test_parse_elaborate_evaluate_matches_expected_verdicts
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2553,6 +2613,7 @@ evidence:
 - tests/unit/strata/test_report.py::TestCounterexamplePath::test_refuted_line_followed_by_exact_path_line
 - tests/unit/strata/test_report.py::TestOrdering::test_refuted_sorts_first_regardless_of_input_order
 - tests/unit/strata/test_report.py::TestSummarize::test_all_four_keys_always_present
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2608,6 +2669,7 @@ evidence:
 - tests/unit/strata/test_refine.py::TestRefineHappyPath::test_noflow_claim_proved_at_abstract_level_stays_proved_after_refinement
 - tests/unit/strata/test_refine.py::TestRefineViolations::test_foreign_inner_node_under_trusted_abstract_fails_trust_laundering
 - tests/unit/strata/test_refine.py::TestUnrefinedFrontier::test_unrefined_abstract_node_keeps_marker
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2697,6 +2759,7 @@ evidence:
 - tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_golden_2_refund_decision_reads_a_stale_replica
 - tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_render_report_shows_refuted_before_proved_with_the_witness_path
 - tests/unit/strata/test_litmus_surface.py::TestHardenedSurfaceGoldens::test_every_assert_holds_after_the_remedies
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2786,6 +2849,7 @@ evidence:
 - tests/unit/strata/test_infra.py::TestCdnDesugar::test_cdn_tls_terminates_adds_declassify_boundary
 - tests/unit/strata/test_infra.py::TestQueueDesugar::test_queue_delivery_propagates_to_outbound_flows_and_fires_diagnostic
 - tests/unit/strata/test_infra.py::TestEndToEnd::test_cache_staleness_refutes_age_bound_claim
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -2915,6 +2979,7 @@ evidence:
 - tests/unit/strata/test_facts.py::TestBuildFacts::test_negative_age_fails_closed
 - tests/unit/strata/test_facts.py::TestBuildFacts::test_negative_rate_fails_closed
 - tests/unit/strata/test_facts.py::TestBuildFacts::test_nonnegative_age_is_accepted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3076,6 +3141,7 @@ evidence:
 - tests/unit/strata/test_capacity.py::TestSkewUtilization::test_skew_refutes_where_mean_would_prove
 - tests/unit/strata/test_capacity.py::TestGrowthHorizon::test_growth_flips_proved_to_refuted_with_month_count
 - tests/unit/strata/test_capacity.py::TestPropagatedDemand::test_positive_rate_cycle_is_unbounded
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3134,6 +3200,7 @@ evidence:
 - tests/unit/strata/test_policy.py::TestGrammarRoundTrip::test_forbid_call_round_trips
 - tests/unit/strata/test_policy.py::TestScopeResolution::test_trust_scope_resolves_via_lattice
 - tests/unit/strata/test_policy.py::TestScopeResolution::test_unknown_component_scope_fails_closed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3193,6 +3260,7 @@ evidence:
 - tests/unit/strata/test_packs.py::TestEnablesCascade::test_end_to_end_parse_elaborate_compile_evaluate
 - tests/unit/strata/test_packs.py::TestEnablesCascade::test_waiving_a_policy_that_enables_nothing_downgrades_nothing
 - tests/unit/strata/test_packs.py::TestEnablesCascade::test_waiving_a_nonexistent_policy_id_is_a_logged_no_op
+designated_repro_test: null
 threat: elevation-of-privilege
 component: null
 ```
@@ -3253,6 +3321,7 @@ evidence:
 - tests/unit/strata/test_boundary_phases.py::TestPhaseBlockHappyPath::test_effect_and_record_phases_generate_flows
 - tests/unit/strata/test_boundary_phases.py::TestOperationFailClosed::test_cross_store_atomic_via_without_coordinator_is_refused
 - tests/unit/strata/test_observe.py::TestEndToEnd::test_phases_operation_and_observe_together
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3305,6 +3374,7 @@ evidence:
 - tests/unit/strata/test_observe.py::TestObservabilityHappyPath::test_errors_total_and_panics_become_node_attrs
 - tests/unit/strata/test_observe.py::TestObservabilityFailClosed::test_unknown_log_class_is_rejected
 - tests/unit/strata/test_observe.py::TestObservabilityHappyPath::test_errors_total_without_observe_is_non_fatal
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3354,6 +3424,7 @@ evidence:
 - tests/unit/strata/test_facts.py::TestClosure::test_boundaries_stop_taint_unless_asked_otherwise
 - tests/unit/strata/test_facts.py::TestClosure::test_worst_age_reports_unbounded_on_a_positive_cycle
 - tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_2_refund_decision_reads_a_stale_replica
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3405,6 +3476,7 @@ evidence:
 - tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_off_the_approximate_counter_path
 - tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hottest_shard_utilization_refutes_under_zipf_skew
 - tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_growth_horizon_flips_a_passing_utilization_to_refuted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3457,6 +3529,7 @@ evidence:
 - tests/unit/strata/test_scenarios.py::TestEvaluateScenarios::test_remove_node_cascades_to_flows_and_boundaries
 - tests/unit/strata/test_scenarios.py::TestEvaluateScenarios::test_scale_rate_fails_closed_on_unrated_flow
 - tests/unit/strata/test_scenarios.py::TestElaborateScenario::test_fails_closed_on_unknown_trust_level
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3527,6 +3600,7 @@ evidence:
 - tests/unit/strata/test_crash.py::TestAutoGeneratedCrashScenario::test_crash_scenario_re_checks_every_declared_claim
 - tests/unit/strata/test_crash.py::TestAutoGeneratedCrashScenario::test_two_crashable_nodes_generate_scenarios_in_sorted_id_order
 - tests/unit/strata/test_crash.py::TestAutoGeneratedCrashScenario::test_crash_scenario_removing_the_node_can_refute_a_reach_claim
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3640,6 +3714,7 @@ evidence:
 - tests/unit/strata/test_atomic.py::TestGenerateFaultInjectionCases::test_operation_missing_from_error_sets_generates_nothing
 - tests/unit/strata/test_atomic.py::TestEvaluateAtomicContracts::test_joins_saga_diagnostics_and_fault_injection_cases
 - tests/unit/strata/test_atomic.py::TestEvaluateAtomicContracts::test_defaults_to_no_fault_injection_cases_without_error_sets
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -3759,6 +3834,7 @@ evidence:
 - tests/unit/strata/test_breach.py::TestRecoveryPathIndependence::test_recovery_path_disjoint_from_blast_radius_is_proved
 - tests/unit/strata/test_breach.py::TestRecoveryPathIndependence::test_recovery_path_through_blast_radius_is_refuted
 - tests/unit/strata/test_breach.py::TestIndependentClaimDirectly::test_independent_claim_unknown_reference_fails_closed
+designated_repro_test: null
 threat: info-disclosure
 component: null
 ```
@@ -3840,6 +3916,7 @@ evidence:
 - tests/unit/test_lang_strata.py::TestParseStrata::test_comment_inside_a_block_binds_as_enclosing
 - tests/unit/test_lang_strata.py::TestParseStrata::test_walk_strata_err_on_bad_syntax
 - tests/unit/test_lang_strata.py::TestStrataTreeSitterEscapeHatchesUnsupported::test_raw_tree_unsupported_for_strata
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4044,6 +4121,7 @@ evidence:
 - tests/unit/strata/test_code_binding.py::TestBindCode::test_partitions_files_by_glob_and_defaults_unmatched_to_foreign
 - tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_cross_component_import_without_declared_flow_is_a_violation
 - tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_declared_flow_in_reverse_direction_only_still_refuses_the_import
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4095,6 +4173,7 @@ evidence:
 - tests/unit/strata/test_effects.py::TestCheckCapabilityConformance::test_declared_may_of_different_kind_does_not_cover_effect
 - tests/unit/strata/test_effects.py::TestCheckCapabilityConformance::test_foreign_code_is_not_checked
 - tests/unit/strata/test_effects.py::TestCheckCapabilityConformance::test_fs_write_effect_needs_fs_kind_declaration
+designated_repro_test: null
 threat: tampering
 component: null
 ```
@@ -4174,6 +4253,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_design_load.py::TestLoadIds::test_merges_ids
 - tests/unit/strata/test_design_load.py::TestLoadIds::test_excluded_no_ids
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4225,6 +4305,7 @@ evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4293,6 +4374,7 @@ evidence:
 - tests/unit/strata/test_secrets.py::TestSecretLabelViolations::test_secret_resting_at_secret_clearance_node_is_not_flagged
 - tests/unit/strata/test_secrets.py::TestRevocationReachability::test_revocation_edge_is_a_real_reach_claim_target
 - tests/unit/strata/test_secrets.py::TestReadersExactSetClosure::test_readers_claim_refutes_across_a_declassify_boundary
+designated_repro_test: null
 threat: info-disclosure
 component: null
 ```
@@ -4381,6 +4463,7 @@ evidence:
 - tests/unit/strata/test_deploy.py::TestCanaryLevelValidation::test_known_canary_level_passes
 - tests/unit/strata/test_deploy.py::TestAutoGeneratedScenarios::test_canary_and_rollback_scenarios_re_check_every_declared_claim
 - tests/unit/strata/test_deploy.py::TestAutoGeneratedScenarios::test_multiple_stages_generate_one_scenario_each_in_order
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4440,6 +4523,7 @@ evidence:
 - tests/unit/strata/test_design_load.py::TestUnbound::test_unbound_pair
 - tests/unit/strata/test_design_load.py::TestUnbound::test_bound_excluded
 - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dropped_ticket_is_not_recreated
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4631,6 +4715,7 @@ evidence:
 - tests/test_gates.py::TestSysGate::test_doc003_marker_in_fenced_block_ignored
 - tests/test_gates.py::TestSysGate::test_doc003_marker_in_inline_code_ignored
 - tests/test_gates.py::TestSysGate::test_doc003_real_marker_with_fenced_example_extracts_once
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -4809,6 +4894,7 @@ evidence:
 - tests/system/test_cli_sys_export.py::TestCliSysExport::test_deterministic_across_two_processes
 - tests/system/test_cli_sys_export.py::TestCliSysExport::test_missing_design_file_errors
 - tests/system/test_cli_sys_export.py::TestCliSysExport::test_bad_format_errors
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5310,6 +5396,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_lang.py::TestParsePython::test_module_level_literal_const_extracted
 - tests/test_lang.py::TestParsePython::test_module_level_call_expression_const_extracted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5399,6 +5486,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+designated_repro_test: null
 acceptance:
 - text: GIVEN the moved docs WHEN frob check runs THEN doclink/drift/coverage gates
     pass with zero dangling frob:doc or describes edges
@@ -5443,6 +5531,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5483,6 +5572,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTestGate::test_test002_satisfied_by_rust_directive_bound_cross_file
 - tests/test_gates.py::TestTestGate::test_test002_rust_directive_from_non_test_symbol_does_not_satisfy
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5534,6 +5624,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_crash.py::TestEvaluateCrashContractsNoContracts::test_empty_report_when_no_node_declares_a_crash_contract
 - tests/unit/strata/test_crash.py::TestNoHangCheck::test_timeout_shorter_than_restart_bound_fails_closed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5590,6 +5681,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_rust_evidence_id
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5635,6 +5727,7 @@ evidence:
 - tests/unit/strata/test_infra.py::TestQueueDesugar::test_queue_no_trust_clause_defaults_to_trusted
 - tests/unit/strata/test_infra.py::TestQueueDesugar::test_queue_explicit_trust_clause_wins_over_default
 - tests/unit/strata/test_infra.py::TestBalancerDesugar::test_balancer_explicit_trust_clause_wins_over_default
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5763,6 +5856,7 @@ evidence:
 - tests/test_tickets.py::TestEvidence::test_mixed_batch_rejected_wholesale
 - tests/test_tickets.py::TestEvidence::test_dedupes_against_existing_evidence
 - tests/test_tickets.py::TestEvidence::test_unknown_ticket_not_found
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5825,6 +5919,7 @@ evidence:
 - tests/test_gates.py::TestBaselineDelta::test_delta_filters_known_violations
 - tests/test_gates.py::TestBaselineDelta::test_baseline_stale_when_file_changes
 - tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5884,6 +5979,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestArchiveLedger::test_load_archive_missing_file_is_empty
 - tests/unit/test_ticket_store.py::TestArchiveLedger::test_write_then_load_archive_round_trips
 - tests/unit/test_ticket_store.py::TestArchiveLedger::test_archive_format_matches_ledger_marker
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5951,6 +6047,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -5990,6 +6087,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6045,6 +6143,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_capacity.py::TestPropagatedDemand::test_unresolvable_rate_propagates_upstream_demand
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6122,6 +6221,7 @@ evidence:
 - tests/test_graph.py::TestDsl::test_binds_three_stacked_directives_to_def
 - tests/test_graph.py::TestDsl::test_binds_five_stacked_directives_to_def
 - tests/test_graph.py::TestDsl::test_directive_separated_from_def_by_non_directive_comment
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6169,6 +6269,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_waive002_flags_arch_category_as_ineffective
 - tests/test_gates.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
 - tests/test_gates.py::TestCoverageGate::test_waive002_end_to_end_via_run_gates
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6225,6 +6326,7 @@ evidence:
 - tests/unit/test_check.py::TestRunGatesQueueFailure::test_malformed_tickets_md_is_hard_error_not_silent_skip
 - tests/test_tickets.py::TestEvidenceValidation::test_add_evidence_rejects_malformed_entry_before_write
 - tests/test_tickets.py::TestEvidenceValidation::test_new_ticket_validates_evidence
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6270,6 +6372,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_infra.py::TestStoreCapacity::test_store_capacity_maps_through_to_the_kernel_node
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6310,6 +6413,7 @@ evidence:
 - tests/test_tickets_evidence_cli.py::TestTicketCloseEvidence::test_resolvable_evidence_recorded_then_closed
 - tests/test_tickets_evidence_cli.py::TestTicketCloseEvidence::test_unresolvable_evidence_blocks_close_entirely
 - tests/test_tickets_evidence_cli.py::TestTicketCloseEvidence::test_dedupes_against_ids_already_on_ticket
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6400,6 +6504,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_stamp_baseline_writes_stamp
 - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6441,6 +6546,7 @@ evidence:
 - tests/test_gates.py::TestScopePrework::test_scope001_exempts_file_committed_by_earlier_ticket
 - tests/test_gates.py::TestScopePrework::test_scope001_still_flags_uncommitted_out_of_scope_edit
 - tests/test_gates.py::TestScopePrework::test_scope001_does_not_exempt_when_referenced_ticket_lacks_scope
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6554,6 +6660,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_litmus_audit_vuln.py::TestAuditVulnGolden::test_fires_undischarged_in_security_and_quality
 - tests/unit/strata/test_threat.py::TestCatalogCompleteness::test_missing_entry_is_a_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -6616,6 +6723,7 @@ evidence:
 - tests/test_vet_containment.py::TestRenderContainmentReport::test_empty_report_renders_explicit_note
 - tests/test_vet_containment.py::TestRenderContainmentReport::test_live_findings_sort_before_contained
 - tests/test_vet_containment.py::TestRenderContainmentReport::test_unverified_sorts_between_live_and_contained
+designated_repro_test: null
 acceptance:
 - text: GIVEN a dependency CVE mapping to CWE-89 WHEN the design's CWE-89 obligation
     is discharged THEN vet reports 'contained in depth'; WHEN missing THEN 'live exposure'
@@ -6854,6 +6962,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_threat.py::TestCatalogCompleteness::test_missing_entry_is_a_violation
 - tests/unit/strata/test_threat.py::TestDischargeCompleteness::test_discharge_claim_that_evaluates_refuted_is_a_violation
+designated_repro_test: null
 acceptance:
 - text: GIVEN an owasp-top-10 baseline WHEN a model omits a required weakness entry
     THEN THREAT001 fails; WHEN a fired weakness has no mitigation THEN THREAT003 fails
@@ -6913,6 +7022,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCapabilityCompleteness::test_thin_catalog_shrinks_the_taxonomy_with_it
 - tests/unit/strata/test_threat.py::TestEvaluateThreats::test_unclassified_capability_reports_threat002
 - tests/unit/strata/test_threat.py::TestEvaluateThreats::test_benign_capability_param_excuses_threat002
+designated_repro_test: null
 acceptance:
 - text: GIVEN capability client_storage WHEN CWE-922 undischarged THEN it fires; GIVEN
     an unclassified sink THEN THREAT002 errors
@@ -7011,6 +7121,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges
 - tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_mixed_paths_matching_on_one_wrong_kind_on_other_does_not_discharge
 - tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_assumed_claim_bypasses_the_mitigation_kind_check
+designated_repro_test: null
 acceptance:
 - text: GIVEN localStorage.setItem without a declared capability THEN it errors; GIVEN
     sql not through the parameterized chokepoint THEN CWE-89 refutes
@@ -7235,6 +7346,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_quality_catalog_never_leaks_into_owasp_top_10_view
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_dynamic_orm_scope_reuses_the_sql_capability_join
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_no_kind_field_asserted_out_of_scope_entries_have_reasons
+designated_repro_test: null
 acceptance:
 - text: GIVEN Public immutable content served from origin not cdn THEN refutes; GIVEN
     a large uncompressed structured flow THEN fires; GIVEN a synchronous over-budget
@@ -7319,6 +7431,7 @@ evidence:
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_clean_model_exits_zero
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_undischarged_capability_exits_nonzero_with_named_gap
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_no_design_dir_is_a_noop
+designated_repro_test: null
 acceptance:
 - text: GIVEN a deliberately vulnerable+unoptimized litmus WHEN frob sys audit runs
     THEN every planted anti-pattern is flagged per family; hardened twin discharges
@@ -7412,6 +7525,7 @@ evidence:
 - tests/unit/strata/test_compliance.py::TestEvaluateCompliance::test_conjunction_of_catalog_discharge_and_policy
 - tests/unit/strata/test_compliance.py::TestEvaluateCompliance::test_unknown_view_fails_closed
 - tests/unit/strata/test_compliance.py::TestCoppa::test_declassify_only_boundary_does_not_discharge_coppa
+designated_repro_test: null
 acceptance:
 - text: GIVEN a child-tagged collection flow with no consent boundary THEN COPPA refutes;
     GIVEN eu-resident Pii with no deletion path THEN erasure refutes; GIVEN a flow
@@ -7577,6 +7691,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_rungs.py::TestR5Dataflow::test_no_false_positive_against_unrelated_function
 - tests/test_dup_rungs.py::TestR5Dataflow::test_fires_on_reordered_dataflow_identical_functions
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7678,6 +7793,7 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7711,6 +7827,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_perf.py::test_heat_joins_pstats_rows_onto_symbol_spans
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7743,6 +7860,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7772,6 +7890,7 @@ scope:
 - tests/test_perf.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7809,6 +7928,7 @@ evidence:
 - tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_racing_tasks_restore_original_stdout_handler_level
 - tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_all_none_tasks_still_restore_level
 - tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7895,6 +8015,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_perf.py::TestPerfProfileAndHeat::test_profile_then_heat_shows_hot_function
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7927,6 +8048,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -7970,6 +8092,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_interleaved_enter_exit_across_threads_never_sticks
 - tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8014,6 +8137,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_lang.py::TestParsePython::test_module_level_literal_const_extracted
 - tests/test_lang.py::TestParsePython::test_module_level_call_expression_const_extracted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8050,6 +8174,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8091,6 +8216,7 @@ evidence:
 - tests/test_testing.py::TestMultipleRunnersPerLanguage::test_routes_each_crate_to_its_own_runner
 - tests/test_testing.py::TestMultipleRunnersPerLanguage::test_unowned_item_is_hard_error_not_vacuous_skip
 - tests/test_testing.py::TestMultipleRunnersPerLanguage::test_all_sentinel_runs_every_same_language_runner
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8137,6 +8263,7 @@ evidence:
 - tests/unit/test_lang_primitives.py::test_supported_extensions_includes_tree_sitter_and_strata
 - tests/unit/test_lang_primitives.py::test_tree_sitter_extensions_excludes_strata
 - tests/unit/test_lang_primitives.py::test_language_for_extension_covers_every_supported_extension
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8181,6 +8308,7 @@ evidence:
 - tests/test_excludes.py::test_repo_excludes_litmus_strata_from_obligation_surface
 - tests/test_excludes.py::test_load_and_match_globs
 - tests/test_excludes.py::test_dup_scanner_honors_exclude
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8259,6 +8387,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_ticket_worktree_root.py::TestTicketRootFromLinkedWorktree::test_new_ticket_no_dot_frob_lands_in_worktree
 - tests/system/test_cli_ticket_worktree_root.py::TestTicketRootFromLinkedWorktree::test_ticket_show_reads_worktrees_own_ledger
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8300,6 +8429,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_parse.py::TestParseModule::test_parses_node_code_globs_and_may_capabilities
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8365,6 +8495,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_parse_file_returns_native_parser_unavailable
 - tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_graph_build_skips_quietly
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8411,6 +8542,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_facts.py::TestBuildFactsNativeExtensionUnavailable::test_build_facts_returns_native_extension_unavailable
 - tests/unit/strata/test_parse.py::TestParseModuleNativeExtensionUnavailable::test_parse_module_returns_native_extension_unavailable
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8508,6 +8640,7 @@ evidence:
 - tests/test_gates.py::TestSysGate::test_no_design_dir_never_imports_frob_strata
 - tests/test_gates.py::TestSysGate::test_design_dir_degrades_with_typed_error_on_native_extension_missing
 - tests/test_gates.py::TestSysGate::test_default_design_dir_mirror_stays_in_sync
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8620,6 +8753,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_litmus_deploy_secret.py::TestDeploySecretGoldens::test_secret_desugars_to_issue_revoke_reads_flows
 - tests/unit/strata/test_litmus_deploy_secret.py::TestDeploySecretGoldens::test_on_deploy_lands_on_worker_node
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8668,6 +8802,7 @@ evidence:
 - tests/test_testing.py::TestSelect::test_unbound_fallback_package
 - tests/test_testing.py::TestSelect::test_unbound_fallback_suite
 - tests/test_testing.py::TestSelect::test_unbound_fallback_warn
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8822,6 +8957,7 @@ evidence:
 - strata-core/src/parse/mod.rs::tests::bare_ident_claim_id_still_parses
 - strata-core/src/parse/mod.rs::tests::error_unterminated_string_claim_id
 - strata-core/src/parse/mod.rs::tests::error_malformed_claim_id_neither_ident_nor_string
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -8892,6 +9028,7 @@ evidence:
 - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 - tests/unit/test_strata_tmlanguage.py::test_string_pattern_terminates_at_end_of_line
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9008,6 +9145,7 @@ evidence:
 - tests/test_tickets.py::TestArchive::test_new_ticket_id_continues_past_archived_max
 - tests/test_tickets.py::TestArchive::test_new_ticket_fresh_repo_no_archive_file
 - tests/test_tickets.py::TestArchive::test_new_ticket_corrupt_archive_fails_loudly
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9079,6 +9217,7 @@ evidence:
 - tests/test_graph.py::TestCorruptCacheRecovery::test_garbage_cache_file_is_recreated
 - tests/test_graph.py::TestCorruptCacheRecovery::test_truncated_sqlite_header_is_recreated
 - tests/test_graph.py::TestCorruptCacheRecovery::test_ddl_failure_after_connect_probe_passes_is_recovered
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9161,6 +9300,7 @@ evidence:
 - tests/unit/test_check_tool_unavailable.py::TestCargoUnavailable::test_run_cargo_test_missing_binary_returns_failing_result
 - tests/unit/test_check_tool_unavailable.py::TestTscUnavailable::test_run_tsc_missing_npx_returns_failing_result
 - tests/unit/test_check_tool_unavailable.py::TestCheckResultRendersUnavailableTool::test_as_text_shows_unavailable_tool_line
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9225,6 +9365,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_77_discloses_duplicate_coverage_of_cwe_78
 - tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_94_fires_and_discharges_on_exec_capability
 - tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_94_fires_and_is_undischarged_with_no_claim
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9327,6 +9468,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_testing.py::TestCollectPythonTests::test_parses_node_ids_and_caches_on_content_hash
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9401,6 +9543,7 @@ evidence:
 - tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_never_fires_even_in_a_plausible_vulnerable_scenario[CWE-352]
 - tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_never_fires_even_in_a_plausible_vulnerable_scenario[CWE-798]
 - tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_capability_kind_is_none_for_all_three
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9458,6 +9601,7 @@ evidence:
 - tests/unit/cve/test_parser.py::test_iter_mirror_invalid_root
 - tests/unit/cve/test_parser.py::test_cve_module_end_to_end_over_mirror
 - tests/unit/cve/test_parser.py::test_fixtures_are_ascii_and_escaped_unicode_round_trips
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9565,6 +9709,7 @@ evidence:
 - tests/unit/cve/test_vet_match.py::test_missing_mirror_is_loud_typed_failure
 - tests/unit/cve/test_vet_match.py::test_no_dependencies_still_walks_mirror_cleanly
 - tests/unit/cve/test_vet_match.py::test_unconfigured_mirror_is_a_silent_no_op
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9633,6 +9778,7 @@ evidence:
 - tests/test_gates.py::TestCoverageLoad::test_zero_join_is_loud_not_silent
 - tests/test_gates.py::TestTestGate::test_test008_fires_on_unjoined_root
 - tests/test_gates.py::TestTestGate::test_test008_cannot_be_waived
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9893,6 +10039,7 @@ evidence:
 - tests/test_testing.py::TestRunners::test_placeholder_files
 - tests/test_testing.py::TestRunners::test_no_runner_error
 - tests/test_testing.py::TestRunners::test_valid_runner_loaded
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -9968,6 +10115,7 @@ evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10067,6 +10215,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected
 - tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
 - tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10201,6 +10350,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared
 - tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_packaging_regression_is_locked
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10281,6 +10431,7 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
 - tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_cve_fingerprint_catalog_checked_every_call
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10463,6 +10614,7 @@ evidence:
 - tests/unit/strata/test_litmus_pii.py::TestPiiHardenedLitmus::test_hardened_discharges_every_fired_obligation
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_pii_gap_reported
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10558,6 +10710,7 @@ evidence:
 - tests/unit/strata/test_audit.py::TestHardenedLitmus::test_hardened_clean
 - tests/unit/strata/test_litmus_audit_hardened.py::TestAuditHardenedGolden::test_proves_clean_in_security_and_quality
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_clean_model_exits_zero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10630,6 +10783,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -10811,6 +10965,7 @@ evidence:
 - tests/test_secrets_gate.py::TestOverlapClaim::test_embedded_overlapping_match_is_not_double_claimed
 - tests/test_secrets_gate.py::TestTrackedFilesGitFailure::test_spawn_error_yields_no_tracked_files
 - tests/test_secrets_gate.py::TestTrackedFilesGitFailure::test_nonzero_exit_yields_no_tracked_files
+designated_repro_test: null
 threat: info-disclosure
 component: null
 ```
@@ -10936,6 +11091,7 @@ evidence:
 - tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_pre_registry_needle_still_fires_somewhere
 - tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_reclassified_needle_actually_still_fires_under_its_new_kind
 - tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_popen_bare_call_still_flags_exec
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11112,6 +11268,7 @@ evidence:
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_no_orphan_guides
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -11574,6 +11731,7 @@ evidence:
 - tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_reads_from_stdin_and_logs_json
 - tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_passthrough_propagates_failing_exit_code
 - tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_no_passthrough_does_not_exit_on_failure
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -12801,6 +12959,7 @@ evidence:
 - tests/test_perf.py::test_perf003_does_not_fire_on_sibling_comprehensions
 - tests/test_perf.py::test_perf003_does_not_fire_on_sibling_statement_loops
 - tests/test_perf.py::test_perf004_does_not_fire_when_sorted_is_the_loop_iterable
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13074,6 +13233,7 @@ evidence:
 - tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_draft_id_on_default_branch_is_a_violation
 - tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_tick002_is_unwaivable
 - tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13142,6 +13302,7 @@ evidence:
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_clean_model_exits_zero
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_undischarged_capability_exits_nonzero_with_named_gap
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_no_design_dir_is_a_noop
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13208,6 +13369,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
 - tests/test_gates.py::TestCov002StrataModuleCoverage::test_declaration_without_module_edge_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13266,6 +13428,7 @@ evidence:
 - tests/test_gates.py::TestDocanchorGate::test_missing_file_fires
 - tests/test_gates.py::TestDocanchorGate::test_malformed_target_missing_fragment_fires
 - tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13336,6 +13499,7 @@ evidence:
 - tests/unit/strata/test_store_code_may.py::TestStoreCodeMayGrammar::test_store_code_glob_elaborates_to_code_attr
 - tests/unit/strata/test_store_code_may.py::TestStoreCodeMayGrammar::test_store_may_capability_lands_on_node_may
 - tests/unit/strata/test_store_code_may.py::TestStoreMayFeedsThreat003::test_store_with_exec_may_fires_undischarged_cwe_94
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13448,6 +13612,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13500,6 +13665,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13566,6 +13732,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_rust_core_exec_undeclared_fires
 - tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_rust_core_exec_discharges_once_declared
 - tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13737,6 +13904,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScan::test_language_for_known_and_unknown_extensions
 - tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
 - tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_language_for_is_consistent_with_scanned_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13859,6 +14027,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_threat.py::TestCapabilityCompleteness::test_taxonomy_param_classifies_beyond_the_narrower_catalog
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_security_only_capability_does_not_fire_threat002_in_quality_view
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13899,6 +14068,7 @@ evidence:
 - tests/unit/strata/test_managed.py::TestManagedDischargeFromParsedSurfaceSource::test_managed_node_still_requires_a_discharging_claim
 - tests/unit/strata/test_managed.py::TestManagedTier2ImportConformance::test_managed_node_owned_files_produce_no_violation
 - tests/unit/strata/test_managed.py::TestManagedTier2ImportConformance::test_non_managed_node_with_same_shape_still_violates
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -13955,6 +14125,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_audit.py::TestGroupGaps::test_group_gaps_by_view
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14085,6 +14256,7 @@ evidence:
 - tests/unit/strata/test_elaborate.py::TestElaborateWaivers::test_multi_instance_family_without_sub_target_fails_closed
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14292,6 +14464,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14372,6 +14545,7 @@ evidence:
 - tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 - tests/test_ticket_land.py::TestDraftFinalizeRewritesCodeAndLeavesWorktreeClean::test_code_directive_rewritten_and_worktree_clean_after_land
 - tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14592,6 +14766,7 @@ evidence:
 - tests/test_serve.py::TestCheckDelta::test_verify_true_matches_when_no_drift
 - tests/test_serve.py::TestRunTouchedTests::test_no_diff_selects_nothing
 - tests/test_serve.py::TestRunTouchedTests::test_bad_base_is_git_failed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14698,6 +14873,7 @@ scope_changes:
 evidence:
 - tests/test_telemetry.py::test_timed_call_records_event_and_returns_value
 - tests/test_telemetry_hook_script.py::test_hook_redacts_secret_looking_input
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14769,6 +14945,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app_style.py::test_ticket_list_json_never_has_ansi_even_with_force_color
 - tests/unit/test_app_style.py::test_stats_json_never_has_ansi
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14813,6 +14990,7 @@ evidence:
 - tests/test_vet.py::TestClosedWorldAccounting::test_closed_world_accounting_full_pass
 - tests/test_vet.py::TestClosedWorldAccounting::test_closed_world_accounting_closed_when_no_unknowns
 - tests/test_vet.py::TestClosedWorldAccounting::test_import_resolution_model_fields
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14846,6 +15024,7 @@ evidence:
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_operation_kind_and_language_registered
 - tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_operations
 - tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_absent_from_benign_source
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -14953,6 +15132,7 @@ evidence:
 - tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_operations
 - tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_capabilities
 - tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_absent_from_benign_source
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15023,6 +15203,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_without_evidence_fails
 - tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_with_evidence_and_done_report_succeeds
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15075,6 +15256,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_research_assets.py::test_mcp_json_parses_and_declares_required_servers
 - tests/unit/test_research_assets.py::test_skill_frob_doc_anchor_resolves_in_guide
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15180,6 +15362,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_research_assets.py::test_docs_index_links_the_guide
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15236,6 +15419,7 @@ evidence:
 - tests/test_dup_exhaustiveness.py::TestMatrixClaimsFire::test_r1_python_type1
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
 - tests/test_dup_prefilter.py::TestPrefilterPreservesRecall::test_verified_clone_set_unchanged[dup_smart]
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15283,6 +15467,7 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_no_match_on_reject_unauthorized_true_node
 - tests/test_vet.py::TestFingerprintScan::test_matches_tls_danger_accept_invalid_certs_rust
 - tests/test_vet.py::TestFingerprintScan::test_no_match_on_default_reqwest_builder_rust
+designated_repro_test: null
 threat: spoofing
 component: null
 ```
@@ -15417,6 +15602,7 @@ evidence:
 - tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_catalog_entry_has_a_fixture_mapping
 - tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_unfired_ids_are_exactly_the_capability_kind_none_entries
 - tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_never_fires_even_in_a_plausible_vulnerable_scenario[CWE-611]
+designated_repro_test: null
 threat: info-disclosure
 component: null
 ```
@@ -15539,6 +15725,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_secrets_gate.py::TestGitHubPushProtectionUnflaggable::test_this_file_contains_no_github_flaggable_literal
 - tests/test_secrets_gate.py::TestGitHubPushProtectionUnflaggable::test_pattern_source_module_contains_no_github_flaggable_literal
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15606,6 +15793,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
 - tests/test_gates.py::TestOptInGates::test_dup_gate_planted_clone_waived_passes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15802,6 +15990,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_rungs.py::test_cli_probe_equivalent_functions
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -15920,6 +16109,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_region.py::TestRegionKernelFindsPartialClone::test_enabled_finds_shared_region_between_otherwise_different_functions
 - tests/test_dup_region.py::TestRegionKernelOffByDefault::test_whole_symbol_rungs_miss_the_partial_clone
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16099,6 +16289,7 @@ evidence:
 - tests/unit/test_dup_core.py::TestAntiUnify::test_deterministic_across_repeated_calls
 - tests/unit/test_dup_core.py::test_frob_core_module_registers_exported_kernels
 - tests/unit/test_dup_core.py::test_core_unavailable_path_is_err_not_exception
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16238,6 +16429,7 @@ evidence:
 - tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_unrecoverable_subtree_returns_none_not_raises
 - tests/test_dup_smart.py::TestGateRules::test_dup001_fires_when_one_side_touched
 - tests/test_dup_smart.py::TestGateRules::test_dup002_fires_when_both_sides_touched
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16403,6 +16595,7 @@ evidence:
 - tests/test_dup_r5_multilang.py::TestRealDataflowGraphPerGrammar::test_c_compound_statement_matches_and_labels_def_use
 - tests/test_dup_r5_multilang.py::TestRealDataflowGraphPerGrammar::test_cpp_compound_statement_matches_and_labels_def_use
 - tests/test_dup_r5_multilang.py::TestRealDataflowGraphHonestFallback::test_unrecognized_grammar_label_returns_none
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16613,6 +16806,7 @@ evidence:
 - tests/test_dup_prefilter.py::TestPrefilterPreservesRecall::test_prefilter_never_exceeds_unfiltered_verification_count[dup_rungs]
 - tests/test_dup_prefilter.py::TestPrefilterPreservesRecall::test_prefilter_never_exceeds_unfiltered_verification_count[dup_region]
 - tests/test_dup_prefilter.py::TestPrefilterPreservesRecall::test_prefilter_never_exceeds_unfiltered_verification_count[dup_inline]
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16730,6 +16924,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_symbols_are_individually_fingerprinted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16829,6 +17024,7 @@ evidence:
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_matrix_covers_every_rung_clone_type_and_language
 - tests/test_dup_exhaustiveness.py::TestMatrixClaimsFire::test_r1_python_type1
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16901,6 +17097,7 @@ scope_changes:
 evidence:
 - tests/unit/test_process_guard.py::TestExecEnabled::test_truthy_values_disable
 - tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_disabled_returns_err_without_spawning
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -16942,6 +17139,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/test_vet.py::TestFingerprintScan::test_own_catalog_file_excluded_from_directory_aggregation
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -17063,6 +17261,7 @@ evidence:
 - tests/unit/test_logging_quiet.py::TestStdoutLogLevel::test_restores_on_exception
 - tests/system/test_cli_check.py::TestCheckVerbosity::test_default_has_no_dispatch_or_digest_lines
 - tests/system/test_cli_check.py::TestCheckVerbosity::test_verbose_restores_dispatch_and_parse_lines
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -17236,6 +17435,7 @@ evidence:
 - tests/test_gates.py::TestOptInGates::test_perf_gate_silences_unscannable_files
 - tests/test_gates.py::TestOptInGates::test_perf_gate_still_reports_genuine_parse_failure
 - tests/test_gates.py::test_gates_run_gates_integration
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -17380,6 +17580,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -17481,6 +17682,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_testing.py::TestSelect::test_direct_hit
 - tests/test_gates.py::TestCoverageGate::test_waive002_honors_loaded_policy_rule_ids
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -17523,6 +17725,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets_collision.py::TestRealLedgerIntegrity::test_no_duplicate_ids_within_or_across_ledgers
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -17590,6 +17793,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestEnvAccess::test_unrelated_call_does_not_fire
 - tests/test_pii_structural_gate.py::TestSelfMatchExclusion::test_own_file_not_scanned
 - tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_own_module_source_produces_no_self_finding
+designated_repro_test: null
 threat: info-disclosure
 component: null
 ```
@@ -17699,6 +17903,7 @@ evidence:
 - tests/test_vet.py::TestObfuscationEnsemble::test_high_entropy_strings_empty_for_plain_text
 - tests/test_vet.py::TestObfuscationEnsemble::test_scan_directory_obfuscation_finds_signal_in_one_file
 - tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -17962,6 +18167,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval
 - tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected
 - tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18015,6 +18221,7 @@ evidence:
 - tests/test_testing.py::TestRunners::test_pytest_exit_5_no_tests_collected_is_neutral_not_fail
 - tests/test_testing.py::TestRunners::test_package_fallback_with_zero_tests_is_ok_end_to_end
 - tests/test_testing.py::TestRunners::test_exit_code_is_data
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18101,6 +18308,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_selfconform.py::TestUnmodeledCodeMissingPackageRoot::test_missing_package_root_produces_no_warning
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18208,6 +18416,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestSlugify::test_lowercases_and_strips_disallowed_punctuation
 - tests/test_graph.py::TestMarkdownAnchors::test_describes_edge_with_heading_slug_and_facet
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18386,6 +18595,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov001_message_wording_for_docstring_without_doc_edge
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18448,6 +18658,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
 - tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_without_grace_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18612,6 +18823,7 @@ evidence:
 - tests/test_tickets_cmd_evidence.py::TestKindConsistencyAtClose::test_transition_refuses_close_when_kind_flipped_after_recording
 - tests/test_tickets_cmd_evidence.py::TestKindConsistencyAtClose::test_land_validate_closeable_refuses_hand_pasted_cmd_entry
 - tests/test_tickets_cmd_evidence.py::TestKindConsistencyAtClose::test_land_validate_closeable_accepts_docs_cmd_entry
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18789,6 +19001,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestMalformedFileVisibility::test_cache_hit_rebuild_still_names_malformed_file
 - tests/test_graph.py::TestMalformedFileVisibility::test_fresh_build_names_malformed_file
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18865,6 +19078,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_threat.py::TestEvaluateThreats::test_pre_discharge_count_log_is_honest_and_debug_level
 - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_threat_pre_discharge_count_never_reads_as_contradicting_output
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -18982,6 +19196,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestBuildIncremental::test_cache_hit_build_reports_real_edge_count
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19055,6 +19270,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_secrets_gate.py::TestFindsTokens::test_generic_live_key_adjacent_to_other_content_sec001
 - tests/test_secrets_gate.py::TestFakeMarking::test_digit_free_mixed_case_your_token_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19320,6 +19536,7 @@ scope_breadth_ack_reason: null
 evidence:
 - cmd:grep -n 'frob:waive SCOPE001 reason="T-0176 scope omitted this file, filed T-0220"'
   src/frob/__main__.py exit=0 sha256=5215691879a9
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19395,6 +19612,7 @@ evidence:
 - tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_unsupp_err
 - tests/test_vet.py::TestVetRunnerLockArg::test_run_lockfile_arg
 - tests/test_vet.py::TestVetRunnerLockArg::test_run_unsupp_nonzero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19480,6 +19698,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_operations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19600,6 +19819,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge::test_foreign_less_library_model_discharges_cwe_78_by_absence
 - tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge::test_real_foreign_source_reaching_the_sink_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19704,6 +19924,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_sysdoc.py::TestRenderAuditMatrix::test_assumed_discharge_renders_distinct_from_proved
 - tests/unit/strata/test_sysdoc.py::TestRenderAuditMatrix::test_discharged_obligation_renders_proved
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19792,6 +20013,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test003_exempts_strata_design_files
 - tests/test_gates.py::TestConventionUnitBinding::test_test009_fires_on_unbound_design_file
 - tests/test_gates.py::TestConventionUnitBinding::test_test009_satisfied_by_e2e_edge
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19883,6 +20105,7 @@ evidence:
 - tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove
 - strata-core/src/parse/mod.rs::tests::parses_flow_utility
 - strata-core/src/parse/mod.rs::tests::parses_flow_utility
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -19988,6 +20211,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gitio.py::TestWorkingDiff::test_untracked_directory_is_skipped_not_read_as_file
 - tests/test_gitio.py::TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20076,6 +20300,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings
 - tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20181,6 +20406,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
 - tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20274,6 +20500,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_perf.py::test_perf002_anchors_to_index_call_line_not_def_line
 - tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20367,6 +20594,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_version_flag_prints_version_and_exits_zero
 - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_names_apply_flag_in_label
 - tests/test_gates.py::TestDoclinkGate::test_orphan_hint_does_not_point_at_missing_docs_root
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20450,6 +20678,7 @@ evidence:
 - tests/test_gates.py::TestRunJobsTimingAttribution::test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing
 - tests/test_graph.py::TestCacheModule::test_connect_readonly_rejects_writes_no_lock_contention
 - tests/test_graph.py::TestConcurrentCache::test_connect_on_current_schema_does_not_block_on_a_held_write_lock
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20572,6 +20801,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov001_broken_doc_edge_does_not_suppress_finding
 - tests/test_gates.py::TestCoverageGate::test_cov001_passes_when_documented
 - tests/test_gates.py::test_gates_run_gates_integration
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20665,6 +20895,7 @@ evidence:
 - tests/test_graph.py::TestGeneratedSource::test_is_generated_source_false_for_missing_file
 - tests/test_gates.py::TestCoverageGate::test_cov001_exempts_generated_file_with_marker
 - tests/test_gates.py::TestCoverageGate::test_cov001_still_fires_without_generated_marker
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20712,6 +20943,7 @@ evidence:
 - tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
 - tests/test_vet.py::TestScanTreeMultipleLockfiles::test_scan_tree_scans_every_lockfile
 - tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20841,6 +21073,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestPreworkSweepRefresh::test_land_refreshes_stale_sweep_after_unrelated_main_change
 - tests/test_ticket_land.py::TestPreworkSweepRefresh::test_sweep_refresh_failure_does_not_block_landing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20874,6 +21107,7 @@ evidence:
 - tests/test_gates.py::TestTest010KindValidation::test_valid_kind_not_reported
 - tests/test_gates.py::TestTest010KindValidation::test_dangling_tests_endpoint_still_caught_by_drift002
 - tests/test_graph.py::TestDsl::test_tests_verb_invalid_kind_is_malformed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -20932,6 +21166,7 @@ evidence:
 - tests/unit/test_outline.py::test_rust_outline_classes
 - tests/unit/test_outline.py::test_rust_outline_methods
 - tests/unit/test_outline.py::test_rust_outline_as_text
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21028,6 +21263,7 @@ evidence:
 - tests/test_excludes.py::test_should_prune_dir_covers_all_three_signals
 - tests/test_graph.py::TestExclude::test_nested_git_worktree_pruned_without_config
 - tests/test_graph.py::TestExclude::test_walk_source_files_prunes_before_descent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21161,6 +21397,7 @@ evidence:
 - tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
 - tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_skips_builtin_skip_dirs
 - tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_xref_hits_are_real_symbols
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21273,6 +21510,7 @@ evidence:
 - tests/test_gates.py::TestScopePrework::test_scope001_comma_joined_entry_splits_and_matches
 - tests/test_gates.py::TestScopePrework::test_scope001_dir_prefix_globs_recursively
 - tests/test_gates.py::TestScopePrework::test_scope001_ledger_implicitly_in_scope
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21356,6 +21594,7 @@ evidence:
 - tests/test_testing.py::TestNativeStrataAudit::test_no_runner_config_needed
 - tests/test_testing.py::TestNativeStrataAudit::test_no_models_is_neutral_pass
 - tests/test_testing.py::TestNativeStrataAudit::test_bad_design_file_fails
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21408,6 +21647,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestBuildIncremental::test_fingerprint_bump_rebuilds
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21480,6 +21720,7 @@ evidence:
 - tests/test_vet.py::TestEmbeddedCodeCapability::test_embedded_code_region_below_size_threshold_not_detected
 - tests/test_vet.py::TestEmbeddedCodeCapability::test_embedded_code_declared_even_when_content_opaque_to_needles
 - tests/test_vet.py::TestEmbeddedCodeCapability::test_embedded_code_regions_scanned_via_operations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21638,6 +21879,7 @@ evidence:
 - tests/test_graph.py::TestBuildIncremental::test_touch_without_edit_skips_reparse
 - tests/test_graph.py::TestLoadGraph::test_touch_without_edit_is_not_stale
 - tests/test_graph.py::TestCacheModule::test_get_file_meta_and_touch_file_stat
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21675,6 +21917,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_perf.py::test_perf003_fires_on_call_operand_join
 - tests/test_perf.py::test_perf003_call_operand_join_stays_narrow_no_recursive_unwind
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21770,6 +22013,7 @@ evidence:
 - tests/unit/strata/test_store_observability.py::TestStoreObservabilityFailClosed::test_store_unknown_log_class_is_rejected
 - tests/unit/strata/test_store_observability.py::TestStoreOnDeploy::test_store_on_deploy_lands_on_node_deploy_contract
 - tests/unit/strata/test_store_observability.py::TestStoreOnDeploy::test_store_without_on_deploy_leaves_node_deploy_none
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -21913,6 +22157,7 @@ evidence:
 - tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit::test_returns_none_when_not_stale
 - tests/test_ticket_land.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning
 - tests/test_ticket_land.py::TestWarnIfNativeStale::test_real_land_no_warning_when_native_fresh
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22010,6 +22255,7 @@ evidence:
 - tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_with_sub_target_elaborates_cleanly
 - tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_without_sub_target_fails_closed
 - tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_matched_store_waiver_suppresses_the_finding
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22072,6 +22318,7 @@ evidence:
 - tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
 - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22155,6 +22402,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22194,6 +22442,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22393,6 +22642,7 @@ evidence:
 - tests/integration/test_deploy_malmberg_pilot.py::TestMalmbergPilotChain::test_vertical_isolation_discharges_with_no_waivers
 - tests/integration/test_deploy_malmberg_pilot.py::TestMalmbergPilotChain::test_generate_and_conform_round_trip_clean
 - tests/integration/test_deploy_malmberg_pilot.py::TestMalmbergPilotChain::test_every_service_reaches_media_store_only_via_declared_flow
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22530,6 +22780,7 @@ evidence:
 - tests/unit/strata/test_host.py::TestHostManifest::test_node_with_no_host_attrs_returns_none
 - tests/unit/strata/test_litmus_host.py::TestHostDeclaredLitmus::test_declared_manifest_round_trips_every_field
 - tests/unit/strata/test_litmus_host.py::TestHostUndeclaredLitmus::test_undeclared_node_has_no_manifest
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22646,6 +22897,7 @@ evidence:
 - tests/unit/strata/test_litmus_host_isolation.py::TestHostIsolationHardenedLitmus::test_isolated_model_discharges
 - tests/unit/strata/test_host_isolation.py::test_movement_flows
 - tests/unit/strata/test_host_isolation.py::test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow
+designated_repro_test: null
 threat: elevation-of-privilege
 component: null
 ```
@@ -22842,6 +23094,7 @@ evidence:
 - tests/unit/strata/test_effects.py::TestNodeMayKinds::test_kinds
 - tests/unit/strata/test_effects.py::TestNodeMayKinds::test_no_may_atoms_is_empty
 - tests/integration/test_interfaces.py::TestInterfaces::test_deploy_generate_writes_and_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -22962,6 +23215,7 @@ evidence:
 - tests/unit/deploy/test_conform.py::TestEvasion::test_bare_word
 - tests/unit/deploy/test_conform.py::TestEvasion::test_evasion_fires_through_full_check
 - tests/unit/deploy/test_conform.py::TestEvasion::test_env_wrapper
+designated_repro_test: null
 threat: tampering
 component: null
 ```
@@ -23182,6 +23436,7 @@ evidence:
 - tests/unit/deploy/test_audit.py::TestProofs::test_af_fails
 - tests/unit/deploy/test_audit.py::TestProofs::test_ie_extra
 - tests/unit/deploy/test_vm_runner.py::TestAvail::test_run_vm_audit_skips_cleanly
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -23364,6 +23619,7 @@ evidence:
 - tests/integration/test_deploy_malmberg_pilot.py::TestMalmbergPilotChain::test_vertical_isolation_discharges_with_no_waivers
 - tests/integration/test_deploy_malmberg_pilot.py::TestMalmbergPilotChain::test_generate_and_conform_round_trip_clean
 - tests/integration/test_deploy_malmberg_pilot.py::TestMalmbergPilotChain::test_every_service_reaches_media_store_only_via_declared_flow
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -23531,6 +23787,7 @@ evidence:
 - tests/unit/strata/test_host.py::TestHostAclRuleValidation::test_unknown_flag_rejected
 - tests/unit/strata/test_host.py::TestHostAclRuleValidation::test_no_colon_rejected
 - tests/unit/strata/test_litmus_host.py::TestHostWindowsDeclaredLitmus::test_declared_manifest_round_trips_every_windows_field
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -23640,6 +23897,7 @@ evidence:
 - tests/unit/strata/test_krb.py::TestKrbValidation::test_spn_with_runs_as_elaborates_cleanly
 - tests/unit/strata/test_krb.py::TestTrustChainReachability::test_transitive_chain_reaches_across_both_hops
 - tests/unit/strata/test_krb.py::TestTrustChainReachability::test_non_transitive_chain_currently_over_reaches_known_gap
+designated_repro_test: null
 threat: elevation-of-privilege
 component: null
 ```
@@ -23892,6 +24150,7 @@ evidence:
 - tests/unit/strata/test_krb_movement.py::TestKrbCatalog::test_catalog_completeness_over_own_view
 - tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules
 - tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementHardenedLitmus::test_hardened_model_discharges
+designated_repro_test: null
 threat: elevation-of-privilege
 component: null
 ```
@@ -24072,6 +24331,7 @@ evidence:
 - tests/unit/deploy/test_generate_windows.py::TestKrbIntegration::test_no_krb_manifest_issues_no_krb_commands
 - tests/unit/deploy/test_drift.py::TestDrift::test_windows_file_no_longer_produced_is_flagged
 - tests/unit/deploy/test_drift.py::TestDrift::test_windows_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24169,6 +24429,7 @@ scope_changes:
   at: '2026-07-20'
 evidence:
 - tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24287,6 +24548,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceCrossPassDedup::test_same_site_observed_by_both_passes_yields_one_finding
 - tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceCrossPassDedup::test_dedupe_helper_drops_extended_when_core_already_reports_same_site
 - tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceCrossPassDedup::test_dedupe_helper_keeps_distinct_node_or_capability_sites
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24334,6 +24596,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:grep -q "\"clones\"" src/frob/gates/__init__.py exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24376,6 +24639,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_dup_core.py::test_candidate_pairs_never_returns_a_self_pair
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24425,6 +24689,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestDsl::test_invalid_kind_in_module_docstring_is_surfaced_not_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24486,6 +24751,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_host.py::TestHostOwnsModeValidation::test_non_octal_mode_rejected
 - tests/unit/strata/test_host.py::TestHostManifestListensValidation::test_out_of_range_port_rejected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24527,6 +24793,7 @@ evidence:
 - tests/test_testing.py::TestFindCrates::test_unparseable_manifest_keeps_old_behavior_and_warns
 - tests/test_testing.py::TestIntegrationTestCollection::test_integration_module_path_to_symref_flat_case
 - tests/test_testing.py::TestIntegrationTestCollection::test_find_integration_test_files_lists_and_skips_missing_dir
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24638,6 +24905,7 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::TestLateralIsolation::test_disjoint_groups_do_not_fire_shared_group
 - tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_sudoers_does_not_fire_when_undeclared
 - tests/unit/strata/test_litmus_host_isolation.py::TestHostIsolationHardenedLitmus::test_isolated_model_discharges
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24698,6 +24966,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_dup_core.py::TestExactRegions::test_run_size_guard_bounds_pair_emission_and_signals_truncation
 - tests/unit/test_dup_core.py::TestExactRegions::test_run_size_guard_does_not_trip_below_the_cap
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24751,6 +25020,7 @@ evidence:
 - tests/unit/strata/test_code_binding.py::TestBindCode::test_graph_exclude_dir_is_never_bound_even_when_glob_matches
 - tests/unit/strata/test_selfconform.py::TestNonPythonLanguageWiring::test_sorted_capability_files_honors_graph_exclude
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24837,6 +25107,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTestGate::test_test003_satisfied_by_parametrized_test_node_id
 - tests/test_gates.py::TestTestGate::test_node_id_collected_direct
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -24929,6 +25200,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTestGate::test_test003_waiver_in_a_file_under_the_package_matches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -25075,6 +25347,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -25116,6 +25389,7 @@ evidence:
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_above_single_attribute
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_directly_above_keyword_no_attrs
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_below_attributes_workaround_placement
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -25190,6 +25464,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestCacheModule::test_tests_edge_direction_agrees_fresh_parse_vs_cache_roundtrip
 - tests/test_graph.py::TestCacheModule::test_schema_version_mismatch_wipes_derived_rows
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -25247,6 +25522,7 @@ evidence:
 - tests/unit/strata/test_audit.py::TestHostWiring::test_shared_model_gaps
 - tests/system/test_system.py::test_sys_audit_shared_writable_two_user_model_exits_nonzero_with_host001
 - tests/unit/strata/test_audit.py::TestHostWiring::test_hardened_model_proved
+designated_repro_test: null
 threat: elevation-of-privilege
 component: null
 ```
@@ -26494,6 +26770,7 @@ evidence:
 - tests/unit/deploy/test_generate.py::TestUninstall::test_shared_runs_as_userdel_block_rendered_once
 - tests/unit/deploy/test_generate.py::TestAll::test_returns_all
 - tests/integration/test_interfaces.py::TestInterfaces::test_deploy_generate_writes_and_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -26595,6 +26872,7 @@ evidence:
 - tests/unit/strata/test_krb.py::TestTrustChainReachability::test_transitive_chain_reaches_across_both_hops
 - tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_sync
 - tests/unit/strata/test_kernel_properties.py::test_reachable_matches_bfs_oracle
+designated_repro_test: null
 threat: elevation-of-privilege
 component: null
 ```
@@ -26690,6 +26968,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/deploy/test_generate.py::TestSorted::test_sorted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -26785,6 +27064,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/deploy/test_vm_runner.py::TestFullSequence::test_run_vm_audit_runs_full_sequence
 - tests/unit/deploy/test_deploy_runner.py::TestGenerate::test_generate_writes_files
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -26896,6 +27176,7 @@ evidence:
 - tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_same_digest_and_rung_overwrites_prior_payload
 - tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_connect_error_is_propagated_without_writing
 - tests/test_capability_registry.py::TestIsSelfPatternPath::test_root_not_frob_repo_returns_false
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -27018,6 +27299,7 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestContinuation::test_dangling_backslash_on_last_comment_line_is_literal
 - tests/unit/graph/test_dsl.py::TestContinuation::test_crlf_before_trailing_backslash_is_safe
 - tests/unit/graph/test_dsl.py::TestContinuation::test_verb_agnostic_multiline_tests_directive
+designated_repro_test: null
 acceptance:
 - text: given a frob:waive whose reason would exceed ruff line-length when written
     on one line, when the directive line ends with a backslash and continues on the
@@ -27221,6 +27503,7 @@ evidence:
 - tests/unit/test_dup_template.py::TestTypeHoleClassification::test_matching_type_annotations_propose_one_shared_type_var
 - tests/unit/test_dup_template.py::TestTypeHoleClassification::test_value_divergence_alongside_type_divergence_stays_separate
 - tests/unit/test_dup_template.py::TestTypeHoleClassification::test_type_position_in_one_member_only_stays_a_value_hole
+designated_repro_test: null
 acceptance:
 - text: given two functions identical modulo a type (e.g. sort(list[int]) vs sort(list[str]),
     or a C++ overload set differing only in element type), when dup triage runs anti-unification,
@@ -27343,6 +27626,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_inline.py::TestHelperInliningLitmus::test_split_helpers_detected_with_inlining
 - tests/test_dup_inline.py::TestSharedHelperNotDuplication::test_shared_helper_not_flagged_at_threshold_0_7
+designated_repro_test: null
 acceptance:
 - text: given two functions whose shared logic was each extracted into differently-named
     PRIVATE helpers (per frob arch small-helper pressure), when dup triage compares
@@ -27588,6 +27872,7 @@ evidence:
 - tests/test_arch_gate.py::TestArchComplexityAware::test_complex_long_function_flagged
 - tests/test_arch_gate.py::TestArchGateWaivers::test_reasoned_waive_honored
 - tests/test_arch_gate.py::TestArchGateWaivers::test_unreasoned_waive_rejected
+designated_repro_test: null
 acceptance:
 - text: 'given a genuinely atomic long function (big match/case, dispatch table, literal
     data, flat sequential pipeline) with low nesting/cyclomatic complexity, when frob
@@ -27655,6 +27940,7 @@ evidence:
 - tests/test_perf.py::test_perf005_fires_when_descent_is_outside_the_call_args
 - tests/test_perf.py::test_perf005_does_not_fire_on_super_init_call
 - tests/test_perf.py::test_perf005_does_not_pair_same_named_methods_across_classes
+designated_repro_test: null
 acceptance:
 - text: given any function, when analysis runs, then a static call graph is built
     and every recursive SCC (direct AND mutual recursion) is identified -- purely
@@ -27719,6 +28005,7 @@ evidence:
 - tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
 - tests/system/test_cli_check.py::TestCheckSkipFlags::test_json_output
 - tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -27831,6 +28118,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_remediation_hint_names_no_nonexistent_flag
+designated_repro_test: null
 acceptance:
 - text: given a COV003 evidence-resolution failure, when the error message prints
     its remediation hint, then the suggested command is one that actually exists (frob
@@ -27887,6 +28175,7 @@ evidence:
 - tests/test_tickets.py::TestEvidenceValidation::test_validate_evidence_normalizes_dot_separator_to_double_colon
 - tests/test_tickets.py::TestEvidenceValidation::test_validate_evidence_normalizes_dot_with_parametrized_suffix
 - tests/test_tickets.py::TestEvidenceValidation::test_add_evidence_normalizes_dot_form_before_resolving_and_storing
+designated_repro_test: null
 acceptance:
 - text: given evidence recorded as file::Class.method (dot before method), when it
     is stored, then it is either normalized to the canonical pytest file::Class::method
@@ -27955,6 +28244,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
 - tests/test_dup_rungs.py::TestR6Probing::test_fires_on_equivalent_functions_with_renamed_multi_arg_params
 - tests/test_gates.py::TestCoverageLoad::test_parses_line_to_symbol_span
+designated_repro_test: null
 acceptance:
 - text: given the intentional frob:secret-fake fixture marker (_secrets.py _FAKE_MARKER,
     a deliberately-unregistered literal the secrets gate scans for), when parse_directives
@@ -28124,6 +28414,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_krb.py::TestTrustChainReachability::test_non_transitive_chain_currently_over_reaches_known_gap
 - tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_attr_stops_chaining_past_that_hop
+designated_repro_test: null
 acceptance:
 - text: given `frob arch .`, when scoped to src/frob/strata/_export.py, _facts.py,
     _host.py, _host_isolation.py, _infra.py, then zero long-function warnings remain
@@ -28259,6 +28550,7 @@ evidence:
 - tests/test_testing.py::TestCargoEnv::test_cargo_env_err_when_no_qualifying_interpreter
 - tests/test_lang.py::TestErrors::test_supported_languages
 - tests/test_fuzz.py::TestFuzz001::test_flags_obligated_symbol_with_no_fuzz_test
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -28410,6 +28702,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov005_directive_rebound_to_private_symbol_flags
 - tests/test_gates.py::TestCoverageGate::test_cov005_same_symbol_no_rebind_is_clean
 - tests/test_gates.py::TestCoverageGate::test_cov005_no_old_blob_is_clean
+designated_repro_test: null
 acceptance:
 - text: given a frob:tests/doc/waive/ticket directive that a refactor displaced from
     its intended public function onto a newly-extracted private helper (the exact
@@ -28530,6 +28823,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_directory_level_evidence
 - tests/test_gates.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
 - tests/test_gates.py::TestCoverageGate::test_cov003_prefers_node_level_over_path_level
+designated_repro_test: null
 acceptance:
 - text: given ticket evidence naming a whole test FILE (tests/test_vet.py) or a DIRECTORY
     (tests/unit/deploy), when COV003 resolves it, then it resolves iff the collected
@@ -28634,6 +28928,7 @@ evidence:
 - tests/test_graph.py::TestBuildIncremental::test_second_build_is_all_cache_hits
 - tests/unit/test_exports.py::TestExportsPackage::test_as_text_output
 - tests/test_gitio.py::TestCurrentBranch::test_returns_branch_name
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -28807,6 +29102,7 @@ evidence:
 - tests/test_fuzz.py::TestResolve::test_registered_type_resolves
 - tests/test_fuzz.py::TestRunFuzz::test_derived_model_produces_examples
 - tests/test_fuzz.py::TestRunFuzz::test_digests_map_is_stamped_onto_matching_ref
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -28875,6 +29171,7 @@ evidence:
 - tests/test_tickets_evidence_cli.py::TestTicketEvidenceRustOracle::test_no_rust_runner_declared_never_collects_rust
 - tests/test_tickets_evidence_cli.py::TestTicketEvidenceRustOracle::test_rust_collection_failure_degrades_to_python_only
 - frob-core/src/lib.rs::tests::wl_hash_empty_graph_is_zero
+designated_repro_test: null
 acceptance:
 - text: Given a repo with a rust [[test.runner]] entry, when --evidence names a collected
     cargo test id, then it resolves instead of rejecting the batch
@@ -29030,6 +29327,7 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::TestHostIsolationWaivers::test_propagates_vertical_isolation_error
 - tests/test_ticket_land.py::TestSpliceLedger::test_malformed_ours_propagates_as_err
 - tests/test_ticket_land.py::TestSpliceLedger::test_malformed_theirs_propagates_as_err
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -29117,6 +29415,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_blank_reason_is_malformed
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_unparseable_toml_is_malformed
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_repo_declared_excuse_resolves_threat002
+designated_repro_test: null
 acceptance:
 - text: A repo can declare [[strata.benign_capabilities]] entries in frob.toml with
     kind+reason, merged with DEFAULT_BENIGN_CAPABILITIES by frob sys audit
@@ -29194,6 +29493,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestStaleDesign::test_fs_read_declaration_discharges_on_read_only_observation
 - tests/unit/strata/test_selfconform.py::TestStaleDesign::test_fs_read_declaration_stays_stale_when_only_writes_observed
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 acceptance:
 - text: A new fs-read capability kind is patterned in python/typescript/rust/c-cpp,
     added to _EXTENDED_KINDS, and given a DEFAULT_BENIGN_CAPABILITIES excuse
@@ -29278,6 +29578,7 @@ evidence:
 - tests/test_capability_registry.py::TestNegativeFixtures::test_real_napi_import_still_fires_ffi
 - tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_pre_registry_needle_still_fires_somewhere
 - tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_reclassified_needle_actually_still_fires_under_its_new_kind
+designated_repro_test: null
 acceptance:
 - text: scan_file_capabilities does not report ffi for source containing only the
     word openapi/OpenAPI (no real node-ffi/ffi-napi usage)
@@ -29346,6 +29647,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceFsReadAlias::test_broad_fs_declaration_discharges_read_only_observation
 - tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceFsReadAlias::test_narrow_fs_read_declaration_does_not_cover_fs_read
 - tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceFsReadAlias::test_fs_read_only_declaration_still_fires_on_fs_write_observation
+designated_repro_test: null
 acceptance:
 - text: declared may fs covers observed fs-read with no SYS100 finding
   evidence: []
@@ -29410,6 +29712,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTestGate::test_test002_parametrized_test_counts_each_case
 - tests/test_gates.py::TestTestGate::test_case_count_direct
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -29504,6 +29807,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 - tests/test_capability_registry.py::TestNegativeFixtures::test_openapi_generated_ts_is_not_ffi
 - tests/test_capability_registry.py::TestNegativeFixtures::test_real_napi_import_still_fires_ffi
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -29551,6 +29855,7 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestNoqaTail::test_waive_with_trailing_noqa_parses
 - tests/unit/graph/test_dsl.py::TestNoqaTail::test_tests_with_trailing_bare_noqa_binds
 - tests/unit/graph/test_dsl.py::TestNoqaTail::test_hash_inside_quoted_value_is_preserved
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -29620,6 +29925,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestStaleDesign::test_stale_design_skips_node_fully_within_graph_exclude
 - tests/unit/strata/test_selfconform.py::TestStaleDesign::test_stale_design_still_fires_when_node_has_non_excluded_file
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -29724,6 +30030,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageLoad::test_multi_root_resolves_each_class_to_its_real_root
+designated_repro_test: null
 acceptance:
 - text: Given a coverage.xml with two declared source roots and a class filename that
     exists as a real repo path under only one of them, when load_coverage resolves
@@ -29801,6 +30108,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_lint.py::TestLintKillSwitch::test_risky_capability_with_no_flag_is_lint004
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -29843,6 +30151,7 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestBlockBinding::test_doc_before_two_ticket_lines_still_binds_via_generic_walker
 - tests/unit/graph/test_dsl.py::TestBlockBinding::test_narrow_following_window_propagates_backward_through_run
 - tests/unit/graph/test_dsl.py::TestBlockBinding::test_gap_still_breaks_propagation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -29939,6 +30248,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_check.py::TestCheckDocAnchorScopedVsUnscoped::test_scoped_docanchor_matches_unscoped
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30047,6 +30357,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTestGate::test_test005_skips_test_file_symbols
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30084,6 +30395,7 @@ evidence:
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_sys_audit_fails_loud_when_strata_present
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30191,6 +30503,7 @@ evidence:
 - tests/test_testing.py::TestCollectPythonTestsNestedRunner::test_nested_test_runner_cwd_is_collected_and_rerooted
 - tests/test_testing.py::TestCollectPythonTestsNestedRunner::test_missing_nested_runner_dir_degrades_to_empty_not_err
 - tests/test_testing.py::TestCollectPythonTests::test_parses_node_ids_and_caches_on_content_hash
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30296,6 +30609,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test003_satisfied_by_proptest_macro_block
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_above_proptest_macro_block
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_non_test_macro_does_not_bind
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30444,6 +30758,7 @@ evidence:
 - tests/test_doctor.py::test_run_diagnosis_natives_absent
 - tests/test_doctor.py::test_run_diagnosis_natives_present
 - tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_fails_loud_when_native_missing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30499,6 +30814,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_marker_touch_without_state_transition_still_fires
 - tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_without_grace_still_fires
 - tests/test_gates.py::TestCoverageGate::test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
+designated_repro_test: null
 acceptance:
 - text: given a symbol bound to an ALREADY-DONE (stale) ticket and a diff that edits
     that same ticket entry for a non-close reason (typo fix / evidence append touching
@@ -30558,6 +30874,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_affects_json_daemon_matches_in_process
 - tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_identical_digest_worktrees_share_one_run
 - tests/test_serve_leases.py::TestConnectionCrashReleasesLease::test_closing_connection_without_explicit_release_frees_the_lease
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30798,6 +31115,7 @@ evidence:
 - tests/test_app.py::TestRunCoverageWait::test_failed_command_is_err
 - tests/test_app.py::TestWaitCoverage::test_wait_coverage_flag_dispatches_and_exits_zero_on_success
 - tests/test_app.py::TestWaitCoverage::test_wait_coverage_flag_exits_1_on_failure
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30900,6 +31218,7 @@ evidence:
 - tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_real_git_merge_auto_splices_both_sides_append
 - tests/test_ticket_merge_driver.py::TestMergeDriverHandler::test_same_id_newer_state_wins_and_is_written_back
 - tests/test_ticket_merge_driver.py::TestMergeDriverHandler::test_malformed_theirs_exits_nonzero_and_leaves_ours_untouched
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -30965,6 +31284,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id
 - tests/test_gates.py::TestTestGate::test_test003_satisfied_by_parametrized_case_with_dot_in_case_id
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31066,6 +31386,7 @@ evidence:
 - tests/test_serve.py::TestAffects::test_direct_symbol_no_dependents
 - tests/test_serve.py::TestAffects::test_transitive_dependent_docs_included
 - tests/test_serve.py::TestAffects::test_unknown_symbol_is_err
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31143,6 +31464,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_release.py::test_breaking_change_in_0x_bumps_minor_not_to_1_0_0
+designated_repro_test: null
 acceptance:
 - text: given a repo at 0.y.z, when a breaking public-API change is made, then REL001
     requires 0.(y+1).0 (minor bump), NOT >= 1.0.0 -- staying in 0.x per semver section
@@ -31181,6 +31503,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_lang_primitives.py::test_export_tree_and_flatten_tree_round_trip
 - tests/unit/test_lang_primitives.py::test_symbol_tree_covers_span
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31247,6 +31570,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_direct_call_still_detected_via_resolver
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_attribute_only_env_access_via_alias_detected
+designated_repro_test: null
 acceptance:
 - text: given 'import subprocess as sp' then 'sp.run(x)', when scanned, then exec
     is observed (alias resolved to subprocess.run) -- currently MISSED
@@ -31323,6 +31647,7 @@ evidence:
 - tests/unit/test_arch.py::TestSharedCheckOnPythonAndTypeScript::test_long_complex_function_flags_identically_across_languages
 - tests/unit/test_arch.py::TestSharedCheckOnPythonAndRust::test_long_complex_function_flags_identically_across_languages
 - tests/unit/test_arch.py::TestSharedCheckOnPythonAndKotlin::test_long_complex_function_flags_identically_across_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31378,6 +31703,7 @@ scope_changes:
   at: '2026-07-20'
 evidence:
 - tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31454,6 +31780,7 @@ scope_changes:
 evidence:
 - tests/unit/strata/test_starvation.py::TestUtilization::test_over_capacity_demand_fires_with_arithmetic
 - tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_multi_store_write_op_without_boundary_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31559,6 +31886,7 @@ evidence:
 - tests/unit/test_arch.py::TestPatternRecommender::test_non_state_attribute_chain_not_flagged_state_machine
 - tests/unit/test_arch.py::TestPatternRecommender::test_two_method_delegating_wrapper_not_flagged_decorator
 - tests/unit/test_arch.py::TestPatternRecommender::test_class_at_threshold_not_flagged_god_object
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31715,6 +32043,7 @@ evidence:
 - tests/test_testing.py::TestNativeFingerprint::test_single_file_extension_fingerprinted
 - tests/test_gates.py::TestCoverageGate::test_cov003_names_unbuilt_native_as_remedy
 - tests/test_gates.py::TestCoverageGate::test_cov003_honest_remedy_when_no_native_missing
+designated_repro_test: null
 acceptance:
 - text: given a repo whose test suite importorskip-gates on a native extension, when
     the extension is built (or rebuilt) after a prior collection ran with it absent,
@@ -31826,6 +32155,7 @@ evidence:
 - tests/unit/test_lang_primitives.py::TestCanonicalTokensCrossGrammarVocabulary::test_identifier_and_literal_renaming_does_not_change_body_norm
 - tests/unit/test_lang_primitives.py::TestCanonicalTokensCrossGrammarVocabulary::test_unmapped_keyword_falls_back_to_other_tag
 - tests/unit/test_lang_primitives.py::TestCanonicalTokensCrossGrammarVocabulary::test_deterministic_and_reformatting_insensitive
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -31875,6 +32205,7 @@ scope_changes:
 evidence:
 - tests/test_walk_lint_gate.py::TestHelper::test_walk_pruned_call_is_silent
 - tests/test_walk_lint_gate.py::TestSelfMatchExclusion::test_own_files_not_scanned
+designated_repro_test: null
 acceptance:
 - text: given 100+ gitignored nested worktrees under .claude/worktrees/, when frob
     check runs secrets/sys/tickets/archgate/prework, then each prunes excluded/nested-worktree
@@ -31948,6 +32279,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTestGate::test_test001_002_explicit_unit_edge_honored_regardless_of_test_name
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -32078,6 +32410,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_benign_rebind_not_detected
 - tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_parameter_shadow_still_not_detected
 - tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_dangerous_then_benign_rebind_stays_detected
+designated_repro_test: null
 acceptance:
 - text: given 'from subprocess import run\nxyz = run\nxyz(["pwned"])', when scan_file_capabilities
     runs, then it reports the exec capability (the local alias xyz resolves to subprocess.run)
@@ -32263,6 +32596,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails
 - tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_success_returns_true
 - tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_failure_returns_false_and_logs
+designated_repro_test: null
 acceptance:
 - text: given an implementer's worktree branch with a single commit (code + new files
     + evidence + Done report), when the coordinator runs frob ticket land <id> --from
@@ -32391,6 +32725,7 @@ evidence:
 - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
+designated_repro_test: null
 acceptance:
 - text: given a per-language-spec denominator of every name-binding/aliasing/re-export
     construct that can route a call to a dangerous target (Python, TypeScript/JS,
@@ -32479,6 +32814,7 @@ scope_changes:
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
+designated_repro_test: null
 acceptance:
 - text: given the editable maturin-develop natives (strata_core, frob_core) are built,
     when any uv operation that re-syncs the environment runs (uv lock, uv sync, uv
@@ -32650,6 +32986,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestConformanceWaiverStaleness::test_expired_waiver_refires_and_is_flagged
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestDenominatorFullyDispositioned::test_arch_checks_gate_reports_zero_unaccounted_slh_entries
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestConformanceChecksBoundToDenominator::test_each_conformance_row_handled_by_its_real_check
+designated_repro_test: null
 acceptance:
 - text: 'COVERAGE TOTALITY (SYS-COV): every deployable/public module -- and every
     module the binding-aware scanner finds ANY capability in -- must bind to exactly
@@ -32808,6 +33145,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestDsl::test_function_docstring_directive_binds_to_function
 - tests/test_graph.py::TestDsl::test_module_docstring_directive_binds_to_bare_file
+designated_repro_test: null
 acceptance:
 - text: 'given a frob: directive (e.g. frob:tests, frob:ticket) inside a module-level
     or function docstring, when frob.lang parses the file, then the directive is extracted
@@ -32886,6 +33224,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestSplitReconciliation::test_documented_split_with_empty_cross_refs_fails
 - tests/test_registry_exhaustiveness.py::TestSplitReconciliation::test_documented_split_with_cross_refs_passes
 - tests/test_registry_exhaustiveness.py::TestMissingDir::test_missing_registry_dir_returns_empty
+designated_repro_test: null
 acceptance:
 - text: given each design corpus (architecture-check-catalog, design-pattern-catalog,
     design-pattern-traps-corpus, system-design-corpus, capability-evasion-taxonomy)
@@ -33074,6 +33413,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - cmd:python3 /tmp/verify_dup_r5_table.py exit=0 sha256=a324feb9a679
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -33144,6 +33484,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_200_matches_the_weaknesses_registrys_own_disposition
 - tests/unit/strata/test_threat.py::TestCweTop25::test_buffer_overflow_trio_name_the_same_missing_bounds_model
 - tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_639_reuses_the_sql_capability_join
+designated_repro_test: null
 acceptance:
 - text: given MITRE's current (2025) CWE Top 25 Most Dangerous Software Weaknesses,
     when CWE_TOP_25_CATALOG/_CWE_TOP_25_IDS and its staleness pin are updated, then
@@ -33234,6 +33575,7 @@ evidence:
 - tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_declared_cwe_total_is_944
 - tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_audit_reports_exhausted
 - tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_is_mutually_navigable
+designated_repro_test: null
 acceptance:
 - text: every item across ALL corpora (design patterns, arch checks, traps, system-design,
     capability-evasion, security/CWE, compliance, secrets, PII, supply-chain) has
@@ -33370,6 +33712,7 @@ evidence:
 - tests/test_gates.py::TestSysGate::test_sys004_names_stale_native_as_likely_remedy
 - tests/test_gates.py::TestSysGate::test_sys004_load_failure
 - tests/test_gates.py::TestSysGate::test_sys004_suppresses_sys001
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -33450,6 +33793,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_email_fires
 - tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_unrelated_columns_do_not_fire
 - tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_unrelated_field_does_not_fire
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -33567,6 +33911,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_same_line_discharges
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_line_above_discharges
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_plain_string_literal_does_not_fire
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -33696,6 +34041,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_unrelated_identifier_does_not_fire
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_tokenizer_identifier_does_not_falsely_match_token
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -33823,6 +34169,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_discharged_by_secret_clearance_binding
 - tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_still_fires_with_no_design_directory
 - tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_load_declared_surface_empty_with_no_design_dir
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -33986,6 +34333,7 @@ evidence:
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_allowlisted_env_var_is_silent
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_tuple_struct_field_not_matched
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_and_rust_findings_joined_against_declared_surface
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -34128,6 +34476,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestDriftLock::test_signature_fires[fingerprint_template]
 - tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_own_module_source_produces_no_self_finding
 - tests/test_testing.py::TestCargoEnv::test_env_overlay_restores_prior_values
+designated_repro_test: null
 acceptance:
 - text: PII010's bare 'fingerprint' biometric signature (matches fingerprint_id/cache-fingerprint/git-fingerprint
     far more than biometric data) is narrowed to genuine biometric field names (fingerprint_template/fingerprint_image)
@@ -34270,6 +34619,7 @@ evidence:
 - tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_spawns_detached_sweep_subprocess
 - tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_popen_failure_falls_back_to_synchronous_sweep
 - tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_exec_kill_switch_forces_synchronous_sweep
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -34340,6 +34690,7 @@ evidence:
 - tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
 - tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected
 - tests/test_prework_parity.py::TestScopeDigestParity::test_digest_is_content_only_portable_across_checkouts
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -34424,6 +34775,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_dup_legacy_py.py::test_collect_locals_py_covers_every_binding_shape
 - tests/unit/test_dup_legacy_py.py::test_collect_locals_py_with_tuple_target
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -34541,6 +34893,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present
 - tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_missing_evidence_when_nothing_recoverable
 - tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -34659,6 +35012,7 @@ evidence:
 - tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch
 - tests/unit/test_config.py::test_stale_install_warning_none_for_editable_checkout
 - tests/unit/test_config.py::test_stale_install_warning_none_when_versions_match
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -34760,6 +35114,7 @@ evidence:
 - tests/unit/test_arch.py::TestTestFileExemption::test_equivalent_src_file_still_flagged
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 - tests/test_excludes.py::test_is_test_file_typescript_naming
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -34831,6 +35186,7 @@ evidence:
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_init_reexport_does_not_suppress
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_test_file_co_mention_does_not_suppress
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35002,6 +35358,7 @@ evidence:
 - tests/test_ticket_land.py::TestPreworkSweepRefresh::test_land_refreshes_stale_sweep_after_unrelated_main_change
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35065,6 +35422,7 @@ evidence:
 - tests/unit/test_exports.py::TestExportsPackage::test_no_source_files
 - tests/unit/test_exports.py::TestExportsPackage::test_as_text_output
 - tests/unit/test_exports.py::TestExportsPackage::test_classes_included
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35314,6 +35672,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_three_member_group_folds_to_one_shared_skeleton
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35367,6 +35726,7 @@ evidence:
 - tests/unit/test_check.py::test_check_run_check_arch_integration
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
 - tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_unwaived_group_still_counts
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35659,6 +36019,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35775,6 +36136,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_prefilter.py::TestCharacteristicVector::test_identical_streams_have_identical_vectors
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35823,6 +36185,7 @@ evidence:
 - tests/test_perf.py::test_perf004_does_not_fire_when_sorted_is_the_loop_iterable
 - tests/test_perf.py::test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop
 - tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -35961,6 +36324,7 @@ evidence:
 - tests/unit/test_arch.py::TestLargeFile::test_fixtures_json_not_flagged
 - tests/unit/test_arch.py::TestDeepNestingExemption::test_deeply_nested_test_file_no_finding
 - tests/unit/test_arch.py::TestDeepNestingExemption::test_equivalent_src_file_still_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -36058,6 +36422,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestSerializeAndParse::test_round_trip
 - tests/test_vet.py::TestVerdictCache::test_store_and_retrieve_latest
 - tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -36227,6 +36592,7 @@ evidence:
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_init_reexport_does_not_suppress
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_test_file_co_mention_does_not_suppress
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -36290,6 +36656,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -36330,6 +36697,7 @@ evidence:
 - tests/unit/test_arch.py::TestLargeFile::test_large_py_src_still_flagged
 - tests/unit/test_arch.py::TestLargeFile::test_large_src_file_still_flagged
 - tests/unit/test_arch.py::TestLargeFile::test_large_test_file_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -36414,6 +36782,7 @@ evidence:
 - tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
 - tests/test_gates.py::TestArchGateThresholds::test_arch_gate_uses_calibrated_default_not_library_default
 - tests/test_gates.py::TestArchGateThresholds::test_arch001_respects_explicit_frob_toml_override
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -37328,6 +37697,7 @@ evidence:
 - tests/test_gates.py::TestCoverageLoad::test_joins_via_repo_relative_source
 - tests/test_gates.py::TestCoverageLoad::test_multi_source_picks_the_root_that_joins
 - tests/test_gates.py::TestCoverageLoad::test_missing_coverage_xml
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -37381,6 +37751,7 @@ evidence:
 - tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_partial_group_waiver_does_not_hide_whole_group
 - tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiver_on_shared_symbol_does_not_hide_distinct_superset_group
 - tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waiving_every_fragment_of_superset_group_waives_it_too
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -37442,6 +37813,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_fabricated_cwe_reference_fails_closed
 - tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_honest_none_caught_by_never_fails
 - tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_real_cwe_reference_resolves
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -37494,6 +37866,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_computed_subscript_not_detected
 - tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_static_template_literal_subscript_detected
 - tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_interpolated_template_subscript_not_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -37832,6 +38205,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanRustBindingResolution::test_call_before_rebinding_still_detected
 - tests/test_vet.py::TestCapabilityScanRustBindingResolution::test_call_after_rebinding_still_not_detected
 - tests/test_vet.py::TestCapabilityScanRustBindingResolution::test_use_as_alias_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -37889,6 +38263,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanCBindingResolution::test_call_before_local_shadow_still_detected
 - tests/test_vet.py::TestCapabilityScanCBindingResolution::test_local_shadowing_macro_alias_not_detected
 - tests/test_vet.py::TestCapabilityScanCBindingResolution::test_transitive_macro_alias_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -37992,6 +38367,7 @@ evidence:
 - tests/test_vet.py::TestFingerprintBindingResolution::test_rust_clean_source_does_not_match
 - tests/test_vet.py::TestFingerprintBindingResolution::test_c_aliased_macro_still_matches
 - tests/test_vet.py::TestFingerprintBindingResolution::test_c_clean_source_does_not_match
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38098,6 +38474,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestBenignCapability::test_empty_caught_by_is_rejected
 - tests/unit/strata/test_threat.py::TestBenignCapability::test_missing_caught_by_is_rejected
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_missing_caught_by_is_malformed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38171,6 +38548,7 @@ evidence:
 - tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity::test_free_text_with_no_rule_id_token_is_not_checked_further
 - tests/unit/strata/test_compliance.py::TestEvaluateCompliance::test_caught_by_integrity_folds_into_the_conjunction
 - tests/unit/strata/test_compliance.py::TestEvaluateCompliance::test_caught_by_integrity_passes_when_control_is_real
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38354,6 +38732,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_passes_real_production_verification
 - tests/unit/strata/test_compliance.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_has_a_substantive_caught_by
 - tests/unit/strata/test_compliance.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_passes_real_production_verification
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38485,6 +38864,7 @@ evidence:
 - tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 - tests/test_registry_reconciliation_weaknesses.py::TestExhaustivenessGateOverRealWeaknesses::test_no_weaknesses_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38575,6 +38955,7 @@ evidence:
 - tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_audit_reports_exhausted
 - tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns::test_no_patterns_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38665,6 +39046,7 @@ evidence:
 - tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness::test_audit_reports_exhausted
 - tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_secrets.py::TestExhaustivenessGateOverRealSecrets::test_no_secrets_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38749,6 +39131,7 @@ evidence:
 - tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness::test_audit_reports_exhausted
 - tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_pii.py::TestExhaustivenessGateOverRealPii::test_no_pii_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38843,6 +39226,7 @@ evidence:
 - tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 - tests/test_registry_reconciliation_compliance.py::TestExhaustivenessGateOverRealCompliance::test_no_compliance_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -38957,6 +39341,7 @@ evidence:
 - tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 - tests/test_registry_reconciliation_supply_chain.py::TestExhaustivenessGateOverRealSupplyChain::test_no_supply_chain_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39034,6 +39419,7 @@ evidence:
 - tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 - tests/test_registry_reconciliation_evasion.py::TestExhaustivenessGateOverRealEvasion::test_no_evasion_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39103,6 +39489,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_handled_by_real_rule_passes
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_out_of_scope_no_reason_fails
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_fails
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39285,6 +39672,7 @@ evidence:
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 - tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39361,6 +39749,7 @@ scope:
 - src/frob/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39407,6 +39796,7 @@ evidence:
 - tests/unit/test_arch.py::TestCollectDispatchRefs::test_call_keyword_argument_non_identifier_not_counted
 - tests/unit/test_arch.py::TestCollectDispatchRefs::test_call_string_argument_not_counted
 - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_imports
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39506,6 +39896,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39620,6 +40011,7 @@ evidence:
 - tests/test_refs_gate.py::TestReviewerRegressionRound2::test_registry_style_yaml_with_only_prose_mentions_still_fires
 - tests/test_refs_gate.py::TestReviewerRegressionRound2::test_genuinely_unreferenced_module_still_fires
 - tests/test_refs_gate.py::TestReviewerRegressionRound2::test_dead_non_test_file_under_tests_dir_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39778,6 +40170,7 @@ evidence:
 - tests/test_ticket_reverify.py::TestReverifyCloseGuard::test_passes_on_strengthened_done_ticket
 - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
 - tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39865,6 +40258,7 @@ evidence:
 - tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_empty_done_report
 - tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_succeeds_with_covering_passing_evidence_and_substantive_report
 - tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_docs_kind_cmd_evidence_path_still_works
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -39978,6 +40372,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 acceptance:
 - text: given [dup].enforce=true and frob-core unavailable, dup_gate FAILS closed
     with a DUP003 ERROR through the production `dup_gate` invocation (before this
@@ -40063,6 +40458,7 @@ evidence:
 - tests/test_vet.py::TestObfuscationEnsemble::test_bidi_override_detected_in_c_file
 - tests/test_vet.py::TestObfuscationEnsemble::test_bidi_override_detected_in_kotlin_file
 - tests/test_vet.py::TestObfuscationEnsemble::test_split_string_payload_still_not_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40162,6 +40558,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestEvalFiresCwe94::test_eval_capability_is_classified_not_benign_excused
 - tests/unit/strata/test_threat.py::TestEvalFiresCwe94::test_eval_capability_fires_a_real_cwe94_obligation
 - tests/unit/strata/test_threat.py::TestEvalFiresCwe94::test_eval_capability_discharges_with_a_real_mitigation_claim
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40247,6 +40644,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestLoadGraph::test_cache_stale_after_new_file_added
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40299,6 +40697,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
 - tests/test_gates.py::TestTestGate::test_changelog_mentions_rejects_substring_in_prose
 - tests/test_gates.py::TestTestGate::test_changelog_mentions_accepts_real_heading_entry
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40406,6 +40805,7 @@ evidence:
 - tests/test_gates.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged
 - tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit::test_run_vitest_warns_on_unparseable_zero_exit
 - tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40552,6 +40952,7 @@ evidence:
 - tests/test_lang_support.py::TestConformanceViolations::test_unreasoned_known_gap_fails
 - tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean
 - tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_missing_facet_becomes_error_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40697,6 +41098,7 @@ evidence:
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_all_conformant_project_passes
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_present_known_gap_with_open_ticket_warns
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_present_known_gap_with_bad_ticket_ref_errors
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40864,6 +41266,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_across_files_fails
 - tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_same_file_fails
 - tests/test_registry_exhaustiveness.py::TestDuplicateId::test_no_duplicate_ids_no_reg007
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -40986,6 +41389,7 @@ evidence:
 - tests/test_gates.py::TestInv006Gate::test_no_exclusivity_language_is_silent
 - tests/test_gates.py::TestInv006Gate::test_outside_src_dirs_is_silent
 - tests/test_gates.py::TestInv006Gate::test_missing_src_dir_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -41175,6 +41579,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestClosedTicketIds::test_orders_oldest_first
 - tests/unit/test_ticket_store.py::TestClosedTicketIds::test_empty_queue_is_empty
 - tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -41318,6 +41723,7 @@ evidence:
 - tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
 - tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
 - tests/test_excludes.py::test_builtin_skip_dirs
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -41476,6 +41882,7 @@ evidence:
 - tests/test_tickets_priority.py::TestSetPriority::test_updates_priority_field
 - tests/test_tickets_priority.py::TestTick004QueueRot::test_stale_critical_ticket_flags
 - tests/test_tickets_priority.py::TestTick004QueueRot::test_fresh_ticket_does_not_flag
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -41692,6 +42099,7 @@ evidence:
 - tests/test_debt_runner.py::TestDebtRunner::test_no_debt_logs_clean_message
 - tests/test_debt_runner.py::TestDebtRunner::test_human_mode_reports_expired_flag
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -41881,6 +42289,7 @@ evidence:
 - tests/test_perf.py::TestPerf007RedundantComputation::test_single_shared_call_site_is_not_flagged
 - tests/test_perf.py::TestPerf007RedundantComputation::test_cached_definition_suppresses_the_warning
 - tests/test_perf.py::TestPerf007RedundantComputation::test_no_config_means_no_perf007_checking
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -41988,6 +42397,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_lang.py::TestParseCache::test_cross_entry_point_reuse_is_one_parse_per_file
 - tests/test_lang.py::TestParseCache::test_content_change_forces_a_reparse
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42036,6 +42446,7 @@ evidence:
 - tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
 - tests/test_gates.py::TestProcessPoolGates::test_run_gates_output_is_identical_across_repeated_runs
 - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42305,6 +42716,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42403,6 +42815,7 @@ evidence:
 - tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_collection_failure_returns_false
 - tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_still_passing_returns_true
 - tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42512,6 +42925,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42582,6 +42996,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
 - tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
 - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42677,6 +43092,7 @@ scope_changes:
 evidence:
 - tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings
 - tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42812,6 +43228,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_unchanged_python_reports_skipped_not_silent
 - tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_changed_python_still_runs
 - tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_absent_language_never_shown
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -42959,6 +43376,7 @@ evidence:
 - tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged
 - tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
 - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43151,6 +43569,7 @@ evidence:
 - tests/unit/test_memo.py::test_run_memo_scope_deactivates_on_exit
 - tests/unit/test_memo.py::test_run_memo_scope_nests_without_truncating_outer
 - tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43327,6 +43746,7 @@ evidence:
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_no_malformed_entries
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_audit_reports_exhausted
 - tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43439,6 +43859,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive
 - tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
 - tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43519,6 +43940,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_severity_is_error
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43573,6 +43995,7 @@ evidence:
 - tests/test_secrets_gate.py::TestProviderParityT0427::test_hashicorp_vault_service_token_flagged_sec001
 - tests/test_secrets_gate.py::TestProviderParityT0427::test_hashicorp_vault_batch_token_flagged_sec001
 - tests/test_secrets_gate.py::TestProviderParityT0427::test_basic_auth_url_flagged_sec001_warn
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43618,6 +44041,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_no_snapshot_skips_reg008_reg009
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_phantom_enforces_edge_warns
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_matching_enforces_edge_no_reg009
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43728,6 +44152,7 @@ evidence:
 - tests/test_registry_corpus.py::TestAppendEntry::test_missing_file_rejected
 - tests/test_registry_corpus.py::TestAppendEntry::test_missing_key_rejected
 - tests/test_registry_corpus.py::TestAppendEntry::test_no_declared_total_left_untouched
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -43853,6 +44278,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestDriftLock::test_signature_fires[sexual_orientation]
 - tests/test_pii_structural_gate.py::TestDriftLock::test_signature_fires[genetic_data]
 - tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44006,6 +44432,7 @@ evidence:
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_not_a_git_repo_fails
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_aborts_commit_under_frob_agent
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_allows_commit_without_frob_agent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44117,6 +44544,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_multi_substitution_template_subscript_not_detected
 - tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_computed_subscript_not_detected
 - tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_interpolated_template_subscript_not_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44291,6 +44719,7 @@ scope_changes:
 evidence:
 - tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry
 - tests/test_graph.py::TestBuildIncremental::test_stored_hash_matches_bytes_actually_parsed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44409,6 +44838,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning
 - tests/test_lang.py::TestParsePython::test_directive_binds_across_two_blank_lines
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44491,6 +44921,7 @@ evidence:
 - tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_count_claim_mismatch_fails
 - tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_count_claim_matching_passes
 - tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_no_config_means_no_readme_checking
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44579,6 +45010,7 @@ evidence:
 - tests/test_docblocks_gate.py::TestPythonNamespace::test_waive_doc004_suppresses
 - tests/test_docblocks_gate.py::TestPythonNamespace::test_package_name_differs_from_directory_name
 - tests/test_docblocks_gate.py::TestRustNamespace::test_rust_use_of_missing_item_is_stale
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44674,6 +45106,7 @@ evidence:
 - tests/test_docptr_gate.py::TestDoc006Waive::test_waive_suppresses
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_double_separator_target_flagged
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_single_separator_target_not_flagged
+designated_repro_test: null
 acceptance:
 - text: given frob.gates._docptr.doc006_gate did not exist before this change (a doc
     mentioning src/frob/gone.py, frob check --nonexistent-flag, [bogus.section], or
@@ -44861,6 +45294,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -44917,6 +45351,7 @@ evidence:
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_smelly_text_fires
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_clean_text_does_not_fire
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45019,6 +45454,7 @@ evidence:
 - tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_deploy_declares_every_real_effect_it_exercises
 - tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_mutate_declares_every_real_effect_it_exercises
 - tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_serve_declares_zero_may_and_exercises_zero_effects
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45201,6 +45637,7 @@ evidence:
 - tests/test_gates_fmt_directives.py::TestCrlfPreservation::test_canonicalize_text_preserves_crlf_on_untouched_lines
 - tests/test_gates_fmt_directives.py::TestCrlfPreservation::test_canonicalize_text_is_a_no_op_on_second_pass
 - tests/test_gates_fmt_directives.py::TestCrlfPreservation::test_format_paths_preserves_crlf_end_to_end
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45416,6 +45853,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_uses_calibrated_default_not_library_default
 - tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_arch_stage_respects_explicit_frob_toml_override
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45483,6 +45921,7 @@ evidence:
 - tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
 - tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_waive_suppresses_console_stale
 - tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_no_config_means_no_console_checking
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45553,6 +45992,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_evidence_integrity.py::TestD02ScopeBinding::test_evidence_covers_scope_true_for_docs_kind_with_cmd_evidence
 - tests/test_evidence_integrity.py::TestD02ScopeBinding::test_evidence_covers_scope_false_for_code_kind_with_cmd_shaped_evidence
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45606,6 +46046,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets.py::TestEvidence::test_unresolvable_id_warning_names_no_nonexistent_flag
 - tests/test_tickets_evidence_cli.py::TestLogEvidenceResultRemedy::test_error_remedy_names_no_nonexistent_flag
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45696,6 +46137,7 @@ evidence:
 - tests/test_tickets.py::TestScopeMatching::test_non_feature_kind_does_not_imply_cli_wiring_files
 - tests/test_gates.py::TestScopePrework::test_scope001_feature_ticket_cli_wiring_files_implicitly_in_scope
 - tests/test_gates.py::TestScopePrework::test_scope001_non_feature_ticket_cli_wiring_files_still_out_of_scope
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45808,6 +46250,7 @@ evidence:
 - tests/test_dup.py::TestCrossLanguageR5Litmus::test_both_languages_parse_into_the_snapshot
 - tests/test_dup.py::TestCrossLanguageR5Litmus::test_r5_fires_across_languages
 - tests/test_dup.py::TestCrossLanguageR5Litmus::test_r1_r2_r3_do_not_fire_across_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -45921,6 +46364,7 @@ evidence:
 - tests/unit/test_render.py::TestResolveColor::test_no_color_flag_wins_over_everything
 - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
 - tests/unit/test_render.py::TestRenderIntegration::test_renderer_end_to_end_report
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -46029,6 +46473,7 @@ evidence:
 - tests/test_refs_gate.py::TestNativeStubLinking::test_linked_pyi_beside_matching_manifest_does_not_fire_ref001
 - tests/test_refs_gate.py::TestNativeStubLinking::test_unlinked_pyi_with_no_adjacent_module_still_fires_ref001
 - tests/test_refs_gate.py::TestNativeStubLinking::test_pyi_with_manifest_present_but_module_name_mismatch_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -46132,6 +46577,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -46218,6 +46664,7 @@ evidence:
 - tests/test_gates.py::TestInv004Gate::test_section_with_no_normative_language_is_silent
 - tests/test_gates.py::TestInv004Gate::test_two_sections_only_flags_the_underspecified_one
 - tests/test_gates.py::TestInv004Gate::test_missing_docs_dir_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -46332,6 +46779,7 @@ evidence:
 - tests/test_tickets_lease.py::TestBreadthPerf::test_breadth_context_uses_git_ls_files_when_available
 - tests/test_tickets_lease.py::TestLeasedBy::test_precise_in_progress_does_not_hide_disjoint
 - tests/test_tickets_lease.py::TestLargeGlobWarnings::test_silent_on_precise_test_file
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -46550,6 +46998,7 @@ evidence:
 - tests/test_tickets_organization.py::TestEpicRollup::test_blocked_leaf_surfaced
 - tests/test_tickets_organization.py::TestEpicRollup::test_childless_epic_is_zero_percent_not_a_crash
 - tests/unit/test_ticket_store.py::TestLoadAllAndWriteTicket::test_component_and_labels_round_trip
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -46770,6 +47219,7 @@ evidence:
 - tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_add_leased_path_exits_nonzero
 - tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_requires_reason
 - tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_requires_add_or_remove
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -46959,6 +47409,7 @@ evidence:
 - tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_dry_run_reports_but_does_not_clear
 - tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_apply_clears_the_orphaned_intent
 - tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_no_intents_reports_empty
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -47161,6 +47612,7 @@ evidence:
 - tests/test_clean.py::test_clean_never_touches_src
 - tests/test_clean.py::test_clean_deep_removes_frob_state
 - tests/test_clean.py::test_scan_skips_tracked_files
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -47273,6 +47725,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestRenderChangedBlock::test_lines_rendered_fenced
 - tests/unit/test_ticket_store.py::TestComposeDoneReport::test_composes_all_three_sections
 - tests/unit/test_ticket_store.py::TestLockPath::test_lock_path_under_frob_dir
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -47495,6 +47948,7 @@ evidence:
 - tests/test_gates.py::TestRenderLintGate::test_bare_print_fires
 - tests/test_gates.py::TestRenderLintGate::test_render_package_exempt
 - tests/test_gates.py::TestRenderLintGate::test_stderr_directed_print_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -47691,6 +48145,7 @@ evidence:
 - tests/unit/test_render.py::TestProgress::test_progress_context_manager_clears_on_exit
 - tests/unit/test_render.py::TestProgress::test_progress_context_manager_clears_even_on_exception
 - tests/unit/test_render.py::TestProgress::test_progress_shorter_next_line_pads_over_stale_tail
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -47782,6 +48237,7 @@ evidence:
 - tests/system/test_cli_sys_doc.py::TestSysDocCli::test_renders_matrix_for_default_view
 - tests/system/test_cli_vet.py::TestHookMode::test_old_package_passes
 - tests/test_mutate.py::test_run_mutations_survivors_when_tests_weak
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -47906,6 +48362,7 @@ evidence:
 - tests/test_gates.py::TestInv003Gate::test_marker_naming_unknown_invariant_still_warns
 - tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
 - tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -47978,6 +48435,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestLandCompleteness::test_land_brings_tracked_edit_untracked_new_file_and_deletion
 - tests/test_ticket_land.py::TestLandCompleteness::test_incomplete_land_fails_loudly_and_commits_nothing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48028,6 +48486,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test011_fires_on_stale_mtime
 - tests/test_gates.py::TestTestGate::test_test011_silent_when_fresh_and_fully_joined
 - tests/test_gates.py::TestCoverageLoad::test_load_coverage_flags_stale_by_mtime
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48132,6 +48591,7 @@ evidence:
 - tests/test_gates.py::TestExcludeHazardGate::test_exact_tracked_file_entry_fires
 - tests/test_gates.py::TestExcludeHazardGate::test_empty_exclude_file_is_silent
 - tests/test_gates.py::TestExcludeHazardGate::test_non_git_root_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48252,6 +48712,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_suppressed_by_inline_waive
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48291,6 +48752,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_path_mention_counts_as_reference
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_bare_identifier_not_treated_as_reference
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48331,6 +48793,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_call_before_rebinding_still_detected
 - tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_call_after_rebinding_still_not_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48409,6 +48872,7 @@ evidence:
 - tests/test_fuzz.py::TestFuzzRegistry::test_scoped_registry_registration_is_isolated
 - tests/test_fuzz.py::TestFuzzRegistry::test_register_accepts_explicit_registry_kwarg
 - tests/test_fuzz.py::TestRunFuzz::test_budget_s_is_a_real_wall_clock_cutoff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48458,6 +48922,7 @@ scope_changes:
   at: '2026-07-20'
 evidence:
 - tests/test_gates.py::TestTestGate::test_waive003_flags_waiver_reaching_multiple_packages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48514,6 +48979,7 @@ evidence:
 - tests/test_excludes.py::test_iter_files_falls_back_to_walk_pruned_outside_git
 - tests/test_excludes.py::test_iter_files_suffix_filter
 - tests/test_excludes.py::test_iter_files_git_fast_path_matches_ls_files
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48708,6 +49174,7 @@ evidence:
 - tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_unknown_id_exits_1
 - tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_requeue_success
 - tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_requeue_not_in_progress_exits_1
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48820,6 +49287,7 @@ evidence:
 - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_release_on_close_removes_the_lease
 - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_stale_lease_for_a_removed_worktree_is_skipped
 - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_mutation_refreshes_the_lease
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -48955,6 +49423,7 @@ evidence:
 - tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_popen_failure_falls_back_to_synchronous_sweep
 - tests/system/test_cli_ticket_worktree_root.py::TestTicketRootFromLinkedWorktree::test_ticket_start_prework_written_under_worktree
 - tests/test_prework_parity.py::TestCliStartRecordsGateCompatibleDigest::test_start_then_gate_is_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49053,6 +49522,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49160,6 +49630,7 @@ evidence:
 - tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree::test_worktree_holding_a_live_lease_is_not_orphan
 - tests/unit/test_app_runners_batch7.py::TestTicketReconcileCli::test_no_anomalies_logs_clean_summary
 - tests/unit/test_app_runners_batch7.py::TestTicketReconcileCli::test_load_error_exits_1
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49282,6 +49753,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49321,6 +49793,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49400,6 +49873,7 @@ evidence:
 - tests/test_ticket_land.py::TestSpliceOnlyTicket::test_sibling_state_never_taken_from_worktree
 - tests/test_ticket_land.py::TestSpliceOnlyTicket::test_landed_tickets_own_divergence_still_resolved
 - tests/test_ticket_land.py::TestOutOfScopeConflictAutoResolved::test_conflict_outside_scope_takes_mains_side_and_lands
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49518,6 +49992,7 @@ evidence:
 - tests/unit/test_dup_template.py::TestHoleParamName::test_reuses_shared_plain_identifier
 - tests/unit/test_dup_template.py::TestHoleParamName::test_falls_back_when_members_disagree
 - tests/unit/test_dup_template.py::TestHoleParamName::test_falls_back_when_shared_text_is_not_a_plain_identifier
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49604,6 +50079,7 @@ evidence:
 - tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
 - tests/test_walk_lint_gate.py::TestSelfMatchExclusion::test_own_files_not_scanned
 - tests/test_walk_migration.py::test_arch_does_not_walk_nested_worktree
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49686,6 +50162,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
 - tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
 - tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49820,6 +50297,7 @@ evidence:
 - tests/test_coverage.py::TestPythonCoverageTargets::test_touched_source_selects_test
 - tests/test_coverage.py::TestPythonCoverageTargets::test_nothing_touched_returns_empty
 - tests/test_coverage.py::TestPythonCoverageTargets::test_bad_base_ref_returns_empty
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -49966,6 +50444,7 @@ evidence:
 - tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_under_double_star_is_subset
 - tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_wildcard_bearing_narrow_is_never_subset
 - tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_outside_broad_glob_is_not_subset
+designated_repro_test: null
 acceptance:
 - text: given a queued ticket whose existing scope glob already overlaps an in-progress
     ticket's lease, when frob ticket scope --add adds a strict subset of that overlap
@@ -50082,6 +50561,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/unit/test_dup.py::TestFindDuplicates::test_with_target_alpha_rename_matches_at_renamed_rung
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50178,6 +50658,7 @@ evidence:
 - tests/test_dup.py::TestR3LiteralAbstraction::test_r3_fires_where_r2_does_not
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_cell_is_both_claimed_and_excused
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50273,6 +50754,7 @@ scope:
 - .frob-release.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50296,6 +50778,7 @@ scope:
 - tests/unit/strata/test_code_binding.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50320,6 +50803,7 @@ scope:
 - tests/unit/strata/test_code_binding.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50375,6 +50859,7 @@ scope_changes:
 evidence:
 - tests/unit/test_memo.py::test_find_duplicates_second_call_is_memo_hit
 - tests/unit/test_memo.py::test_find_duplicates_no_cross_run_leak
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50466,6 +50951,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/test_tickets_evidence_cli.py::TestDotFormEvidenceNormalizesBeforePassingCheck::test_dot_form_id_passes_exactly_like_its_colon_form
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50535,6 +51021,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/unit/test_ticket_store.py::TestReplaceDoneReportSection::test_stray_empty_heading_before_real_one_collapses_to_one
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50620,6 +51107,7 @@ evidence:
 - tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_is_not_gated_by_a_threshold_above_its_own_similarity
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_symbols_are_individually_fingerprinted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50773,6 +51261,7 @@ evidence:
 - tests/unit/test_dup_template.py::TestTypeHoleClassificationRust::test_value_only_divergence_is_never_misclassified_as_a_type_hole
 - tests/unit/test_dup_template.py::TestTypeHoleClassificationC::test_matching_type_annotations_propose_one_shared_type_var
 - tests/unit/test_dup_template.py::TestTypeHoleClassification::test_type_position_in_one_member_only_stays_a_value_hole
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -50949,6 +51438,7 @@ evidence:
 - tests/unit/strata/test_claims.py::TestNoFlow::test_real_leak_through_a_utility_hub_still_refutes
 - tests/unit/strata/test_claims.py::TestNoFlow::test_utility_hub_with_no_further_edges_still_discharges
 - tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51138,6 +51628,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_effect_on_a_file_absent_from_owner_does_not_crash
 - tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_latency_on_a_real_flow_is_refused_not_silently_refuted
 - tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_latency_unknown_flow_fails_closed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51277,6 +51768,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1
 - tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges
 - tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51397,6 +51889,7 @@ evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 - tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_known_rule_ids_reaches_compliance_caught_by_check
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51506,6 +51999,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_discharges_once_globbed
 - tests/unit/strata/test_selfconform.py::TestUnmodeledCode::test_unmodeled_code_fires
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51596,6 +52090,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestFlowCompletenessGap::test_foreign_node_present_and_connected_elsewhere_still_fails_closed
 - tests/unit/strata/test_threat.py::TestFlowCompletenessGap::test_no_foreign_node_anywhere_still_discharges_by_absence
 - tests/unit/strata/test_threat.py::TestDischargeChokepointShape::test_noflow_from_a_specific_foreign_trust_node_discharges
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51694,6 +52189,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - cmd:uv run frob check --only docblocks exit=0 sha256=475855667bb8
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51770,6 +52266,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_compliance_out_of_scope_reaches_real_audit_path
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51805,6 +52302,7 @@ evidence:
 - tests/test_gates.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
 - tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
 - tests/test_gates.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51909,6 +52407,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -51974,6 +52473,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
 - tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
 - tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52059,6 +52559,7 @@ evidence:
 - tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
 - tests/test_ack_worktree_lease.py::TestAckWorktreeLease::test_mismatched_lease_refuses
 - tests/test_ack_worktree_lease.py::TestAckWorktreeLease::test_no_lease_reaches_normal_ack_failure
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52156,6 +52657,7 @@ evidence:
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_real_catalog_pickle_needle_fires
 - tests/unit/strata/test_cve_fingerprint.py::TestXxeFingerprint::test_fp_xxe_parse_001_exists_and_joins_cwe_611
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52256,6 +52758,7 @@ evidence:
 - tests/test_gates.py::TestInv004Gate::test_missing_docs_dir_is_silent
 - tests/test_gates.py::TestInv004Gate::test_markdown_waive_marker_with_reason_is_silent
 - tests/test_gates.py::TestInv004Gate::test_claim_without_verb_in_sentence_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52433,6 +52936,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_t0510_entries_are_cataloged_with_no_capability_kind_or_view[CWE-1333]
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_t0510_entries_are_cataloged_with_no_capability_kind_or_view[CWE-601]
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_t0510_entries_are_cataloged_with_no_capability_kind_or_view[CWE-1336]
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52551,6 +53055,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_client_storage_excused_for_security_family_is_rejected
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_repo_declared_excuse_resolves_threat002
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_declared_entry_is_loaded
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52722,6 +53227,7 @@ evidence:
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_default_run_discloses_narrower_than_baseline
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_explicit_full_security_views_clears_the_disclosure
 - tests/unit/strata/test_audit.py::TestGroupGaps::test_group_gaps_by_view
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52824,6 +53330,7 @@ evidence:
 - tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_real_rebuild_after_edit_is_not_a_false_positive
 - tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_fresh_native_reports_nothing
 - tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_reports_native_grammar_ahead_of_native
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -52937,6 +53444,7 @@ evidence:
 - tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle
 - tests/unit/strata/test_kernel_properties.py::test_propagated_demand_is_deterministic
 - tests/unit/strata/test_kernel_properties.py::TestZeroDeclaredRateFedCycle::test_self_loop_fed_by_literal_zero_rate_reports_unbounded
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -53072,6 +53580,7 @@ evidence:
 - tests/test_gates.py::TestInv004Gate::test_markdown_waive_marker_with_reason_is_silent
 - tests/test_gates.py::TestInv004Gate::test_markdown_waive_marker_without_reason_still_warns
 - tests/test_gates.py::TestInv004Gate::test_claim_without_verb_in_sentence_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -53193,6 +53702,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
 - tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
 - tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -53336,6 +53846,7 @@ scope_changes:
 evidence:
 - tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_stale_fingerprint_row_is_not_served
 - tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_matching_fingerprint_row_still_served
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -53439,6 +53950,7 @@ evidence:
 - tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_matrix_covers_every_rung_clone_type_and_language
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -53533,6 +54045,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -53767,6 +54280,7 @@ evidence:
 - tests/unit/strata/test_elaborate.py::TestElaborateValidation::test_duplicate_node_id_fails_closed
 - tests/unit/strata/test_threat.py::TestCatalogCompleteness::test_missing_entry_is_a_violation
 - tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus::test_sub_target_waiver_does_not_suppress_a_different_sub_target
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54038,6 +54552,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/test_tickets.py::TestScopeMatching::test_bare_dir_entry_no_trailing_slash_globs_recursively
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54091,6 +54606,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/test_gates.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54148,6 +54664,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity
 - tests/unit/strata/test_waive.py::TestStaleDetail::test_names_rule_node_and_reason
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54243,6 +54760,7 @@ evidence:
 - tests/test_tickets_lease.py::TestBreadthPerf::test_computed_once_per_doable_call
 - tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass
 - tests/test_gates.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54352,6 +54870,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_violation_carries_edge_src_as_symref
 - tests/test_gates.py::TestCoverageGate::test_cov006_waiver_does_not_blanket_suppress_the_whole_file
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54458,6 +54977,7 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_unpaired_debt_registers_implicit_todo
 - tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_explicit_paired_todo_same_ticket_no_implicit_duplicate
 - tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_mismatched_explicit_todo_is_debt001_shaped_malformed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54568,6 +55088,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/test_gates.py::TestScopePrework::test_scope001_merge_commit_with_no_ticket_ref_falls_back_to_parent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54659,6 +55180,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain
 - tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_wrapper_called_via_import_alias
 - tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -54878,6 +55400,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov005_directive_rebound_to_private_symbol_flags
 - tests/test_gates.py::TestCoverageGate::test_cov005_same_symbol_no_rebind_is_clean
 - tests/test_gates.py::TestCoverageGate::test_cov005_no_old_blob_is_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -55162,6 +55685,7 @@ evidence:
 - tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry
 - tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -55282,6 +55806,7 @@ evidence:
 - tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked
 - tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged
 - tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -55382,6 +55907,7 @@ scope_changes:
 evidence:
 - tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest
 - tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -55513,6 +56039,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires
 - tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_corpus_detector_files_produce_no_finding[src/frob/gates/_secrets.py]
 - tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_own_module_source_produces_no_self_finding
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -55647,6 +56174,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -55765,6 +56293,7 @@ evidence:
 - tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
 - tests/test_gates.py::TestRunGates::test_run_gates_skips_scope_without_ticket
 - tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -55857,6 +56386,7 @@ evidence:
 - tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
 - tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
 - tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56000,6 +56530,7 @@ evidence:
 - tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005
 - tests/test_gates.py::TestInvariantGate::test_inv001_passes_via_explicit_tests_edge_to_anchor
 - tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56135,6 +56666,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/test_graph.py::TestExclude::test_walk_repo_files_classifies_top_level_readme_as_doc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56215,6 +56747,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test012_matching_lock_is_clean
 - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refreshes_committed_lock
 - tests/test_gates.py::TestCoverageLoad::test_coverage_lock_diff_flags_drift_and_missing_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56315,6 +56848,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56373,6 +56907,7 @@ evidence:
 - tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
 - tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_symbol_has_explicit_edge
 - tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_no_leaf_name_collision
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56459,6 +56994,7 @@ evidence:
 - tests/test_gates.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body
 - tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_any_matching_test_asserts
 - tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_no_test_matches_at_all
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56544,6 +57080,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test002_noop_parametrize_does_not_inflate_case_count
 - tests/test_gates.py::TestTestGate::test_case_count_root_none_skips_assertion_check
 - tests/test_gates.py::TestTestGate::test_case_count_root_aware_caps_noop_parametrize
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56637,6 +57174,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56713,6 +57251,7 @@ evidence:
 - tests/unit/test_check.py::TestDetectProjectType::test_cargo_toml_is_rust
 - tests/unit/test_check.py::TestDetectProjectType::test_cmakelists_is_cpp
 - tests/unit/test_check.py::TestDetectProjectType::test_no_sentinel_is_unknown
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56777,6 +57316,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
 - tests/test_gates.py::TestTest013NativeUnverified::test_silent_on_executed_edge
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56854,6 +57394,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol
 - tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -56956,6 +57497,7 @@ evidence:
 - tests/unit/test_check.py::TestRunCheckCpp::test_gates_stage_runs_by_default
 - tests/unit/test_check.py::TestRunCheckRust::test_gates_stage_runs_by_default
 - tests/unit/test_check.py::TestRunCheckTs::test_gates_stage_runs_by_default
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57075,6 +57617,7 @@ scope_changes:
   at: '2026-07-21'
 evidence:
 - tests/test_lang.py::TestParseCache::test_reset_clears_counters
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57162,6 +57705,7 @@ evidence:
 - tests/test_graph_lock.py::TestAckDrift::test_ack_then_sig_edit_yields_stale
 - tests/test_graph_lock.py::TestAckDrift::test_ack_then_body_only_rewrite_yields_stale
 - tests/test_graph_lock.py::TestAckDrift::test_acknowledge_records_every_describes_facet
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57254,6 +57798,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero
 - tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57375,6 +57920,7 @@ evidence:
 - tests/test_graph.py::TestParseFailures::test_native_parser_unavailable_is_not_a_parse_failure
 - tests/test_gates.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
 - tests/test_gates.py::TestParseFailureGate::test_no_parse_failures_is_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57459,6 +58005,7 @@ evidence:
 - tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference
 - tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
 - tests/test_refs_gate.py::TestTiers::test_two_refs_passes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57536,6 +58083,7 @@ evidence:
 - tests/test_registry_staleness.py::TestSyncGateRuleEntries::test_missing_file_rejected
 - tests/test_registry_staleness.py::TestReg010Gate::test_missing_gate_rule_entry_warns
 - tests/test_registry_staleness.py::TestReg010Gate::test_fully_covered_no_reg010
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57691,6 +58239,7 @@ evidence:
 - tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_existing_file_under_broad_lease_still_conflicts
 - tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_non_test_file_under_broad_lease_still_conflicts
 - tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_new_file_exact_match_of_holder_scope_still_conflicts
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57802,6 +58351,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/unit/test_app_runners_batch5.py::TestBindRunner::test_list_bindings_text_mode
 - tests/system/test_cli_vet.py::TestHookMode::test_old_package_passes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57854,6 +58404,7 @@ evidence:
 - tests/unit/test_app_runners.py::TestGitlogRunner::test_json_mode_prints_json
 - tests/test_debt_runner.py::TestDebtRunner::test_json_mode_lists_debt_entries
 - tests/test_gates.py::TestRenderLintGate::test_bare_print_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57931,6 +58482,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -57983,6 +58535,7 @@ evidence:
 - tests/test_lang.py::TestParsePython::test_private_module_level_const_extracted
 - tests/unit/test_dup_cache.py::TestConnectionReuse::test_close_all_drops_cached_connections
 - tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -58177,6 +58730,7 @@ evidence:
 - tests/test_docblocks_gate.py::TestCCppNamespace::test_angle_bracket_system_include_never_flagged
 - tests/test_docblocks_gate.py::TestCCppNamespace::test_waive_suppresses_unbound_c_include
 - tests/test_lang_support.py::TestDeriveLanguageRegistry::test_c_and_cpp_docblock_facet_is_implemented
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -58255,6 +58809,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestRunJobsTimingAttribution::test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -58314,6 +58869,7 @@ evidence:
 - tests/test_tickets_brief.py::TestBriefTicket::test_unknown_ticket_not_found
 - tests/test_tickets_brief.py::TestBriefCli::test_cli_prints_briefing
 - tests/test_tickets_brief.py::TestBriefCli::test_cli_requires_id
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -58594,6 +59150,7 @@ evidence:
 - tests/test_pool_runner.py::TestPoolClearCli::test_clear_removes_entry_with_reason
 - tests/test_pool_runner.py::TestPoolClearCli::test_clear_requires_reason
 - tests/test_pool_runner.py::TestPoolRunDispatch::test_unknown_command_exits_nonzero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -58751,6 +59308,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_verify_derived_state_accepts_valid_json_stamp
 - tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_run_diagnosis_unhealthy_when_derived_state_corrupt
 - tests/system/test_cli_doctor.py::TestDoctorDerivedStateManifest::test_run_diagnosis_healthy_with_no_derived_state
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -58893,6 +59451,7 @@ evidence:
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_matching_approve_review
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_abbreviated_review_commit
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_blocks_close_with_stale_approve_review
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -59104,6 +59663,7 @@ scope_changes:
   at: '2026-07-22'
 evidence:
 - tests/test_tickets_acceptance.py::TestCloseGate::test_unbound_acceptance_criterion_refuses_close
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -59369,6 +59929,7 @@ evidence:
 - tests/unit/test_fleet_runner.py::TestFleetRunner::test_run_route_ok
 - tests/unit/test_fleet_runner.py::TestFleetRunner::test_run_route_missing_flags
 - tests/integration/test_fleet_integration.py::TestFleetIntegration::test_fleet_status_table_over_real_repos
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -59599,6 +60160,7 @@ evidence:
 - tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_refuses_to_clobber_foreign_reference_transaction_hook
 - tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_stale_ours_stash_guard_hook_is_updated
 - tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus::test_clean_after_apply
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -59732,6 +60294,7 @@ evidence:
 - tests/unit/testing/test_stability.py::TestCapture::test_spawn_err
 - tests/unit/testing/test_stability.py::TestCapture::test_parses_junit
 - tests/unit/testing/test_stability.py::TestTrack::test_captures_then_records
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -59925,6 +60488,7 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestDeprecatedDirective::test_missing_sunset_is_malformed
 - tests/unit/graph/test_dsl.py::TestDeprecatedDirective::test_missing_ticket_is_malformed
 - tests/unit/graph/test_dsl.py::TestDeprecatedDirective::test_non_date_sunset_is_malformed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60071,6 +60635,7 @@ evidence:
 - tests/test_ticket_land.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_raw_merge_of_worktree_agent_branch_is_refused
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_raw_merge_override_env_var_allows_it
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60193,6 +60758,7 @@ evidence:
 - tests/unit/test_main_entry.py::TestDidYouMean::test_far_off_flag_gets_no_suggestion
 - tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_list_status_alias_sets_state_dest
 - tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_done_report_body_alias_sets_why_dest
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60278,6 +60844,7 @@ evidence:
 - tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason
 - tests/test_tickets.py::TestDropCli::test_cli_requires_reason
 - tests/test_tickets.py::TestDropCli::test_cli_requires_id
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60448,6 +61015,7 @@ evidence:
 - tests/unit/test_app_runners.py::TestXrefRunner::test_missing_symbol_exits_1
 - tests/unit/test_app_runners.py::TestOutlineRunner::test_directory_target_falls_back_to_map
 - tests/unit/test_app_runners_batch5.py::TestDocsRunner::test_search_finds_match_text_mode
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60623,6 +61191,7 @@ evidence:
 - tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
 - tests/test_gates.py::TestProcessPoolGates::test_run_gates_output_is_identical_across_repeated_runs
 - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60745,6 +61314,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/test_lang.py::TestParseCache::test_cross_entry_point_reuse_is_one_parse_per_file
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60801,6 +61371,7 @@ evidence:
 - tests/test_lang.py::TestParsePython::test_directive_binds_across_two_blank_lines
 - tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60879,6 +61450,7 @@ evidence:
 - tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_partial_on_budget_exceeded
 - tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_resumes_pending_patterns
 - tests/test_gates.py::TestScopePrework::test_prework_sweep_default_partial_is_false_and_treated_as_final
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -60996,6 +61568,7 @@ evidence:
 - tests/unit/test_render.py::TestElementsPlainShapeInvariant::test_heading_subhead_shape_stable_under_color
 - tests/unit/test_render.py::TestElementsPlainShapeInvariant::test_kv_row_shape_stable_under_color
 - tests/unit/test_render.py::TestElementsPlainShapeInvariant::test_count_summary_shape_stable_under_color
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -61218,6 +61791,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_passes_loaded_snapshot
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_calls_stamp_and_returns
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -61340,6 +61914,7 @@ evidence:
 - tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_genuine_failure_is_err
 - tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_unparseable_json_is_err
 - tests/test_testing.py::TestFindCmakeProjects::test_skips_build_dir_copy_of_cmakelists
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -61599,6 +62174,7 @@ evidence:
 - tests/unit/test_process.py::test_pytest_as_text_shows_failures
 - tests/unit/test_process.py::test_pytest_as_json
 - tests/system/test_cli_check.py::TestCheckBadCode::test_unused_import_output_mentions_error
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -61857,6 +62433,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_flags_when_opted_in
 - tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_silent_when_flag_off
 - tests/test_gates.py::TestTestGate::test_test001_nonzero_branch_coverage_stays_silent_when_opted_in
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62014,6 +62591,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_grace_covers_ticket_created_and_closed_in_same_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62156,6 +62734,7 @@ scope_changes:
   at: '2026-07-22'
 evidence:
 - tests/test_registry_models.py::TestParseDisposition::test_handled_by
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62234,6 +62813,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/test_secrets_gate.py::TestTrackedEnvFile::test_env_file_sec002
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62340,6 +62920,7 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62406,6 +62987,7 @@ evidence:
 - tests/test_gates.py::TestInv006Gate::test_ratchet_baselined_finding_stays_warn
 - tests/test_gates.py::TestInv006Gate::test_ratchet_rule_not_enabled_stays_static_warn
 - tests/test_gates.py::TestInv006Gate::test_this_repos_frob_toml_and_ratchet_lock_calibrate
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62665,6 +63247,7 @@ evidence:
 - tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_mention_with_no_call_is_not_observed
 - tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_call_in_a_different_nodes_files_is_not_observed
 - tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_unparseable_file_contributes_no_call_names
+designated_repro_test: null
 acceptance:
 - text: GIVEN a .strata model with an ENDORSE boundary whose sanitizer does not appear
     at any observed call site in the guarded code path WHEN strata selfconform/threat
@@ -62755,6 +63338,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_across_files_fails
 - tests/test_gates.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
 - tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62897,6 +63481,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -62936,6 +63521,7 @@ evidence:
 - tests/test_perf.py::TestPerf007RedundantComputation::test_two_stages_calling_the_same_uncached_parse_is_flagged
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_declared_entry_is_loaded
 - tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -63050,6 +63636,7 @@ evidence:
 - tests/unit/test_memo.py::test_reset_run_memo_activates_an_unbounded_scope
 - tests/unit/test_memo.py::test_run_memo_scope_deactivates_on_exit
 - tests/unit/test_check.py::TestRunCheck::test_all_stages_skipped_returns_empty_result_for_root
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -63198,6 +63785,7 @@ evidence:
 - tests/test_registry_staleness.py::TestMissingGateRuleIds::test_finds_rules_with_no_entry
 - tests/unit/test_process_guard.py::TestCheckStagesHonorExecKillSwitch::test_run_ruff_disabled
 - tests/test_graph.py::TestCacheModule::test_schema_version_mismatch_wipes_derived_rows
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -63555,6 +64143,7 @@ evidence:
 - tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_bare_call_name_is_observed
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_deferred_disposition_is_refused
 - tests/unit/strata/test_threat.py::TestCaughtByUnresolvedTokens::test_unknown_rule_id_is_unresolved
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -63744,6 +64333,7 @@ evidence:
 - tests/test_gate_cache.py::TestRunGatesUseCache::test_use_cache_false_is_default_and_unaffected
 - tests/test_gate_cache.py::TestRunGatesUseCache::test_use_cache_true_produces_identical_report_to_cold
 - tests/test_gate_cache.py::TestColdDiffOracle::test_cache_agrees_with_cold_across_random_edits
+designated_repro_test: null
 acceptance:
 - text: GIVEN a warm daemon and a one-file edit WHEN frob_check_delta runs THEN only
     obligations whose inputs include that file are re-evaluated AND verify mode shows
@@ -63989,6 +64579,7 @@ evidence:
 - tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs
 - tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation
 - tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+designated_repro_test: null
 acceptance:
 - text: GIVEN a truncated .frob/cache.db WHEN frob check runs THEN the run fails closed
     naming the corrupt artifact before any gate consumes it
@@ -64175,6 +64766,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_drift_is_informational_and_does_not_affect_healthy
 - tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_unchanged_artifact_reports_no_drift
 - tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_malformed_manifest_is_treated_as_no_prior_run
+designated_repro_test: null
 acceptance:
 - text: GIVEN a derived artifact rewritten out-of-band between two doctor runs WHEN
     run_diagnosis executes THEN the drift is reported naming the artifact and both
@@ -64358,6 +64950,7 @@ evidence:
 - tests/unit/test_arch.py::TestPatternRecommender::test_two_accessor_class_not_flagged_anemic
 - tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns::test_no_patterns_violations
 - tests/unit/test_arch.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both
+designated_repro_test: null
 acceptance:
 - text: GIVEN each of the 6 rows WHEN this ticket closes THEN the row is either detected
     by a tested high-precision detector or carries a reasoned not-checkable/out-of-scope
@@ -64601,6 +65194,7 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_deny_acl_does_not_fire_shared_writable_path
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_service_with_no_account_is_root_run
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_compromised_windows_service_account_scenario
+designated_repro_test: null
 acceptance:
 - text: GIVEN a windows node whose service_account lacks an acl to a sibling service's
     data dir WHEN HOST001/HOST002 evaluate THEN a movement-impossibility finding (or
@@ -64775,6 +65369,7 @@ evidence:
 - tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 - tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness::test_cmpl_registry_units_carry_handled_by_or_out_of_scope
 - tests/test_registry_reconciliation_compliance.py::TestExhaustivenessGateOverRealCompliance::test_no_compliance_violations
+designated_repro_test: null
 acceptance:
 - text: GIVEN the 17 re-pointed CMPL-* entries WHEN this ticket closes THEN each is
     handled_by a real check or carries a reasoned terminal disposition AND the compliance
@@ -64933,6 +65528,7 @@ evidence:
 - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged
 - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors
 - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a TS-only repo WHEN frob check --ticket T-X runs THEN _run_gates receives
     ticket=T-X (asserted via test) and same for --base/--delta/--skip-gates across
@@ -65012,6 +65608,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape
 - tests/unit/test_arch.py::TestNormalizedModel::test_language_adapter_is_a_runtime_checkable_protocol
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -65093,6 +65690,7 @@ evidence:
 - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_arch_python_fixture_shape
 - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_long_func_fixture_structural_events
 - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_deep_nest_fixture_nesting_depth
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -65259,6 +65857,7 @@ evidence:
 - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_export_wrapped_declarations
 - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_stays_sane_on_realistic_snippet
 - tests/unit/test_arch.py::TestSharedCheckOnPythonAndTypeScript::test_long_complex_function_flags_identically_across_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -65430,6 +66029,7 @@ evidence:
 - tests/unit/test_arch.py::TestRustAdapter::test_adapt_result_match_err_arm_is_a_catch
 - tests/unit/test_arch.py::TestRustAdapter::test_adapt_stays_sane_on_realistic_snippet
 - tests/unit/test_arch.py::TestSharedCheckOnPythonAndRust::test_long_complex_function_flags_identically_across_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -65618,6 +66218,7 @@ evidence:
 - tests/unit/test_lang_kotlin.py::TestRawKotlinTree::test_returns_tree_node
 - tests/unit/test_lang_kotlin.py::TestRawKotlinTree::test_comments_are_stripped
 - tests/unit/test_lang_kotlin.py::TestRawKotlinTree::test_comment_types_cover_kotlin_line_and_block_comments
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -65778,6 +66379,7 @@ evidence:
 - tests/unit/test_arch.py::TestKotlinAdapter::test_adapt_throw_and_catch
 - tests/unit/test_arch.py::TestKotlinAdapter::test_adapt_stays_sane_on_realistic_snippet
 - tests/unit/test_arch.py::TestSharedCheckOnPythonAndKotlin::test_long_complex_function_flags_identically_across_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -65980,6 +66582,7 @@ evidence:
 - tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_shared_complexity_check_fires_identically_four_ways
 - tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_dispatch_branch_counts_pin_the_documented_per_language_divergence
 - tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_every_module_agrees_the_dispatch_function_exists_and_is_flat
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -66138,6 +66741,7 @@ evidence:
 - tests/unit/test_arch_srp.py::TestRunSrpChecks::test_combines_all_three_checks
 - tests/unit/test_arch_srp.py::TestCrossLanguage::test_lcom4_fires_on_typescript_adapter_output
 - tests/unit/test_arch_srp.py::TestCrossLanguage::test_lcom4_does_not_fire_on_cohesive_typescript_class
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -66352,6 +66956,7 @@ evidence:
 - tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch::test_union_pattern_covers_multiple_members
 - tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch::test_unresolvable_pattern_shape_not_flagged
 - tests/unit/test_arch.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -66467,6 +67072,7 @@ evidence:
 - tests/unit/test_arch.py::TestNoOpOverride::test_empty_body_override_of_value_returning_base_flagged
 - tests/unit/test_arch.py::TestNoOpOverride::test_override_with_real_body_not_flagged
 - tests/unit/test_arch.py::TestRunLspChecks::test_combines_multiple_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -66609,6 +67215,7 @@ evidence:
 - tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged
 - tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged
 - tests/unit/test_arch.py::TestRunIspChecks::test_combines_both_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -66758,6 +67365,7 @@ evidence:
 - tests/unit/test_arch.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged
 - tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged
 - tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -66916,6 +67524,7 @@ evidence:
 - tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
 - tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged
 - tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -67072,6 +67681,7 @@ evidence:
 - tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_flagged
 - tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_in_cli_module_not_flagged
 - tests/unit/test_arch.py::TestRunLoggingChecks::test_combines_all_three_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -67181,6 +67791,7 @@ evidence:
 - tests/unit/test_arch.py::TestOverBroadExcept::test_specific_except_not_flagged
 - tests/unit/test_arch.py::TestOverBroadExcept::test_reraise_with_different_type_loses_context_flagged
 - tests/unit/test_arch.py::TestRunFallibilityChecks::test_combines_all_four_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -67327,6 +67938,7 @@ evidence:
 - tests/unit/test_arch.py::TestTemporalCoupling::test_guard_clause_on_initialized_flag_flagged
 - tests/unit/test_arch.py::TestTemporalCoupling::test_field_not_guarded_not_flagged
 - tests/unit/test_arch.py::TestRunSmellChecks::test_combines_all_seven_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -67477,6 +68089,7 @@ scope_changes:
 evidence:
 - tests/unit/test_arch.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged
 - tests/unit/test_arch.py::TestModuleDependencyCycles::test_acyclic_imports_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -67623,6 +68236,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_no_frob_enforces_edge_warns
 - tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy::test_substantive_reasoned_none_is_silent
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -67798,6 +68412,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckAgentRefusal::test_stage_selected_check_runs_under_frob_agent
 - tests/system/test_cli_check.py::TestCheckAgentRefusal::test_allow_full_check_override_bypasses_refusal
 - tests/system/test_cli_check.py::TestCheckAgentRefusal::test_bare_check_unaffected_without_frob_agent
+designated_repro_test: null
 acceptance:
 - text: GIVEN a dispatched sub-agent in a fresh worktree WHEN it verifies a ticket
     using the documented invocation sequence THEN no single command exceeds 120s wall-clock
@@ -68091,6 +68706,7 @@ evidence:
 - tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_doc_flagged
 - tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_code_flagged
 - tests/test_gates_affect_drift.py::TestAffectDriftGate::test_clean_when_closure_also_touched
+designated_repro_test: null
 acceptance:
 - text: GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the
     affected code/docs/tests print with truncation flagged; GIVEN a diff changing
@@ -68172,6 +68788,7 @@ evidence:
 - strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause
 - strata-core/src/parse/mod.rs::tests::parses_node_bin_path_clause_without_args
 - strata-core/src/parse/mod.rs::tests::parses_store_bin_path_clause
+designated_repro_test: null
 acceptance:
 - text: GIVEN a windows node declaring service with a binPath WHEN install.ps1 is
     generated THEN it idempotently creates the SCM service with that image path before
@@ -68279,6 +68896,7 @@ evidence:
 - tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_root_with_real_call_site_still_proves_clean
 - tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_no_root_preserves_pre_t0630_model_only_posture
 - tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture repo whose ENDORSE boundary predicate has no observed call
     site WHEN the production strata audit gate runs (not a unit test) THEN the THREAT003
@@ -68464,6 +69082,7 @@ evidence:
 - tests/test_ticket_land.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
 - tests/test_ticket_land.py::TestPushAfterLand::test_push_failure_exits_nonzero
 - tests/test_ticket_land.py::TestPushAfterLand::test_exec_disabled_exits_nonzero
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land with --push WHEN the land completes THEN the push happens only
     after every land verification passed; GIVEN the TICK005 rule defined WHEN land
@@ -68578,6 +69197,7 @@ evidence:
 - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
 - tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged
 - tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN the existing T-0360/T-0370 regression tests unmodified WHEN both check
     families run through the normalized model THEN all pass and no raw-tree walk remains
@@ -68714,6 +69334,7 @@ evidence:
 - tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_archive
 - tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_renumber_one
 - tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations::test_concurrent_ledger_lock_acquisition_serializes
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket start whose background sweep completes after a concurrent frob
     ticket new WHEN both finish THEN both tickets' ledger blocks are fully intact
@@ -68816,6 +69437,7 @@ scope_changes:
   at: '2026-07-26'
 evidence:
 - tests/unit/testing/test_import_cycle.py::test_frob_testing_imports_standalone_in_fresh_interpreter
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fresh python process WHEN import frob.testing runs as the first frob
     import THEN it succeeds and the test-file workaround import is removed
@@ -68926,6 +69548,7 @@ evidence:
 - tests/test_app.py::TestStabilityGate::test_all_sentinel_selection_is_noop
 - tests/test_app.py::TestStabilityGate::test_empty_python_selection_is_noop
 - tests/test_app.py::TestStabilityGate::test_capture_error_skips_gate
+designated_repro_test: null
 acceptance:
 - text: GIVEN a flaky test with an open quarantine ticket WHEN frob test runs via
     the CLI THEN the run records history, the quarantined failure does not fail the
@@ -69044,6 +69667,7 @@ evidence:
 - tests/unit/testing/test_stability.py::TestAlarms::test_hard_alarm
 - tests/unit/testing/test_stability.py::TestAlarms::test_hard_no_alarm_flaky
 - tests/unit/testing/test_stability.py::TestGate::test_hard_regress_fails
+designated_repro_test: null
 acceptance:
 - text: GIVEN a quarantined test whose last N runs are all failures WHEN quarantine_alarms
     or evaluate_gate runs THEN the condition is surfaced as a hard-regression alarm
@@ -69136,6 +69760,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand::test_sibling_draft_ticket_finalized_and_lands_alongside
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ledger with a standalone T-draft block WHEN frob ticket land
     runs for any ticket in that worktree THEN the draft block lands finalized with
@@ -69247,6 +69872,7 @@ evidence:
 - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_no_deprecations_logs_clean_message
 - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_past_sunset_status
 - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_orphaned_status_for_closed_ticket
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with frob:deprecated directives WHEN frob deprecated runs THEN
     each deprecation prints with its DEPR status and the README command table includes
@@ -69341,6 +69967,7 @@ evidence:
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_never_absorbs_a_new_reference
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_first_seen_symbol_is_seeded_whole
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_symbol_no_longer_deprecated_is_dropped
+designated_repro_test: null
 acceptance:
 - text: GIVEN a design decision recorded WHEN implemented THEN a change adding a call
     to a deprecated public symbol produces a DEPR finding naming the new call site
@@ -69543,6 +70170,7 @@ evidence:
 - tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst
 - tests/unit/strata/test_reliability.py::TestCrossFamilyWaiverScoping::test_timeout_entrypoint_ignores_health_family_and_health_entrypoint_ignores_timeout_family
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+designated_repro_test: null
 acceptance:
 - text: Given a .strata flow crossing a service/process boundary with no timeout attr,
     when frob check runs, then REL2xx fires unless waived with a reason
@@ -69655,6 +70283,7 @@ evidence:
 - tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_only_dst_bound
 - tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_self_loop_deduped
 - tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_neither_bound_empty
+designated_repro_test: null
 acceptance:
 - text: Given a flow with retry=true and no backoff/jitter declared, when checked,
     then it fails
@@ -69763,6 +70392,7 @@ evidence:
 - tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given an external-dependency node with no circuit-breaker/bulkhead declared,
     when checked, then the obligation fires
@@ -69869,6 +70499,7 @@ evidence:
 - tests/unit/strata/test_fallback.py::TestUnprovenFallback::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_fallback.py::TestUnprovenFallback::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_fallback.py::TestUnprovenFallback::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given a CRITICAL dependency with no fallback declared, when checked, then
     the obligation fires
@@ -69963,6 +70594,7 @@ evidence:
 - tests/unit/strata/test_reliability.py::TestUnprovenHealth::test_declared_health_with_real_code_evidence_discharges
 - tests/unit/strata/test_reliability.py::TestUnprovenHealth::test_declared_health_with_no_bound_code_is_uncheckable_not_a_violation
 - tests/unit/strata/test_reliability.py::TestCrossFamilyWaiverScoping::test_timeout_entrypoint_ignores_health_family_and_health_entrypoint_ignores_timeout_family
+designated_repro_test: null
 acceptance:
 - text: Given a service node with no liveness/readiness declared, when checked, then
     the obligation fires
@@ -70134,6 +70766,7 @@ evidence:
 - tests/unit/strata/test_spof.py::TestSpof::test_redundant_exemption_clean
 - tests/unit/strata/test_spof.py::TestSpof::test_non_critical_flow_clean
 - tests/unit/strata/test_spof.py::TestSpof::test_waiver_on_one_node_keeps_sibling_node_finding
+designated_repro_test: null
 acceptance:
 - text: Given a node with inbound critical flows and replicas_max=1, when checked,
     then SPOF obligation fires unless waived
@@ -70239,6 +70872,7 @@ evidence:
 - tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given a queue/consumer node with no bounded-intake policy declared, when checked,
     then the obligation fires
@@ -70356,6 +70990,7 @@ evidence:
 - tests/unit/strata/test_observability.py::TestUnprovenObservability::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 - tests/unit/strata/test_observability.py::TestMissingCorrelation::test_second_hop_without_correlation_fires
 - tests/unit/strata/test_observability.py::TestMissingCorrelation::test_first_hop_and_discharged_hop_clean
+designated_repro_test: null
 acceptance:
 - text: Given a boundary flow with no metrics/traces/logs declared, when checked,
     then the obligation fires
@@ -70466,6 +71101,7 @@ evidence:
 - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given a service node with no golden-signal SLOs + error budget declared, when
     checked, then the obligation fires
@@ -70537,6 +71173,7 @@ evidence:
 - tests/unit/strata/test_ssot.py::TestUnprovenOwner::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_ssot.py::TestUnprovenOwner::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_ssot.py::TestUnprovenOwner::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given a store with >=2 distinct writer nodes and no declared single-owner/reconciliation,
     when checked, then the obligation fires
@@ -70664,6 +71301,7 @@ evidence:
 - tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given a multi-write op with no transactional-boundary declared, when checked,
     then the obligation fires
@@ -70768,6 +71406,7 @@ evidence:
 - tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_message_schema.py::TestUnprovenSchemaVersion::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given an event/queue node with no schema version declared, when checked, then
     the obligation fires
@@ -70863,6 +71502,7 @@ evidence:
 - tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given a queue node with no delivery-semantics declared, when checked, then
     the obligation fires
@@ -70959,6 +71599,7 @@ evidence:
 - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_declared_retention_discharges
 - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_revocation_edge_discharges
 - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_no_pii_no_finding
+designated_repro_test: null
 acceptance:
 - text: Given a PII-tagged store with no retention/TTL declared, when checked, then
     the obligation fires
@@ -71052,6 +71693,7 @@ evidence:
 - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_deep_chain_ok_exemption_discharges
 - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_sync_cycle_is_unbounded_and_fires
 - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_waiver_discharges_finding
+designated_repro_test: null
 acceptance:
 - text: Given a sync call chain exceeding the declared/default depth bound, when checked,
     then the obligation fires
@@ -71169,6 +71811,7 @@ evidence:
 - tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: Given a cross-service transaction with no saga/compensation declared, when
     checked, then the obligation fires
@@ -71277,6 +71920,7 @@ evidence:
 - tests/unit/strata/test_shared_state.py::TestSharedState::test_shared_state_ok_exemption_discharges
 - tests/unit/strata/test_shared_state.py::TestSharedState::test_owner_attr_alone_does_not_discharge
 - tests/unit/strata/test_shared_state.py::TestSharedState::test_waiver_discharges_finding
+designated_repro_test: null
 acceptance:
 - text: Given two services sharing a mutable store/memory region across their boundary
     with no declared exception, when checked, then the obligation fires
@@ -71403,6 +72047,7 @@ evidence:
 - tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 - tests/unit/strata/test_clock_ordering.py::TestWallClockOnly::test_bare_wall_clock_read_fires_rel372
+designated_repro_test: null
 acceptance:
 - text: Given a cross-node flow with an implicit clock/ordering assumption and no
     declared strategy, when checked, then the obligation fires
@@ -71548,6 +72193,7 @@ evidence:
 - tests/unit/strata/test_system_design_coverage.py::TestSystemDesignCorpusCoverage::test_every_corpus_entry_is_dispositioned_and_total_matches
 - tests/unit/strata/test_system_design_coverage.py::TestSystemDesignGateLiveZero::test_no_system_design_violations
 - tests/unit/strata/test_system_design_coverage.py::TestSystemDesignCorpusCoverage::test_at_least_one_systems_checks_family_rule_is_bound
+designated_repro_test: null
 acceptance:
 - text: Given the full system-design-corpus.md denominator, when the meta-test runs,
     then every entry has a disposition (addressed-by-check | reasoned-deferral) and
@@ -71681,6 +72327,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_benign_destructuring_not_detected
 - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_untracked_module_not_claimed
 - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_both_safe_not_detected
+designated_repro_test: null
 acceptance:
 - text: Given every Python static-resolvable construct in the taxonomy's Python table,
     when the resolver runs on a litmus fixture for that construct, then the aliased
@@ -71861,6 +72508,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_default_param_alias_skips_missing_default_value
 - tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_destructure_alias_tolerates_length_mismatch
 - tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_destructure_alias_binds_only_identifier_elements
+designated_repro_test: null
 acceptance:
 - text: Given every TS/JS static-resolvable construct in the taxonomy table, when
     the resolver runs on its litmus fixture, then the aliased dangerous call is detected
@@ -72130,6 +72778,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_default_param_alias_skips_missing_default_value
 - tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_destructure_alias_tolerates_length_mismatch
 - tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_destructure_alias_binds_only_identifier_elements
+designated_repro_test: null
 acceptance:
 - text: Given every Rust static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
@@ -72383,6 +73032,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_bare_identifier
 - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_init_declarator
 - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_uninitialized_fn_ptr
+designated_repro_test: null
 acceptance:
 - text: Given every C static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
@@ -72510,6 +73160,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_records_resolvable_default
 - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_scope_bind_step_binds_optional_parameter_declaration
 - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_declaration_alias_dispatches_structured_binding_declarator
+designated_repro_test: null
 acceptance:
 - text: Given every C++ static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
@@ -72621,6 +73272,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_uncurated_wildcard_not_recorded
 - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_returns_none_none_without_variable_declaration
 - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_extracts_name_and_value
+designated_repro_test: null
 acceptance:
 - text: Given every Kotlin static-resolvable construct in the taxonomy table, when
     the resolver runs on its litmus fixture, then the aliased dangerous call is detected
@@ -72777,6 +73429,7 @@ evidence:
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
+designated_repro_test: null
 acceptance:
 - text: Given code containing a spec-defined runtime-resolved indirection construct
     with no waiver, when checked, then the obligation fires
@@ -72977,6 +73630,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_detected
 - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_detected
 - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_detected
+designated_repro_test: null
 acceptance:
 - text: Given the full evasion taxonomy denominator, when the meta-test runs, then
     every entry maps to >=1 registered litmus fixture
@@ -73217,6 +73871,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_sys103_waivable_as_bare_rule
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
+designated_repro_test: null
 acceptance:
 - text: Given a module with an observed capability effect and no strata node binding,
     when checked, then SYS-COV fires
@@ -73340,6 +73995,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_exact_match_is_silent
 - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_no_interface_attr_is_never_checked
 - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_dunder_all_overrides_name_based_collection
+designated_repro_test: null
 acceptance:
 - text: Given a node declaring fewer public symbols than the bound module exports,
     when checked, then the obligation fires
@@ -73458,6 +74114,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestPurposeContract::test_unrecognized_profile_fires
 - tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_inside_profile_is_silent
 - tests/unit/strata/test_selfconform.py::TestPurposeContract::test_node_with_no_purpose_attr_is_never_checked
+designated_repro_test: null
 acceptance:
 - text: Given a node whose purpose declares a read-only effect profile but whose bound
     code performs a write, when checked, then the obligation fires
@@ -73570,6 +74227,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestBindingTotality::test_laundered_capable_file_fires
 - tests/unit/strata/test_selfconform.py::TestBindingTotality::test_unreachable_foreign_file_does_not_fire_sys106
 - tests/unit/strata/test_selfconform.py::TestBindingTotality::test_bound_reachable_file_does_not_fire_sys106
+designated_repro_test: null
 acceptance:
 - text: Given dangerous logic moved into a helper module not directly bound to any
     node but reachable from a bound node, when checked, then the effect is still attributed
@@ -73676,6 +74334,7 @@ evidence:
 - tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_parses_embedded_expiry_date
 - tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_no_marker_returns_none
 - tests/unit/strata/test_waive.py::TestConformanceWaiverExpiry::test_malformed_date_returns_none
+designated_repro_test: null
 acceptance:
 - text: Given a waiver older than its staleness bound, when checked, then it is treated
     as expired and the underlying obligation re-fires
@@ -73809,6 +74468,7 @@ evidence:
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestDenominatorFullyDispositioned::test_arch_checks_gate_reports_zero_unaccounted_slh_entries
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestConformanceChecksBoundToDenominator::test_each_conformance_row_handled_by_its_real_check
 - tests/unit/strata/test_structural_linter_hardening_totality.py::TestConformanceChecksBoundToDenominator::test_bound_rules_are_real_known_gate_rules
+designated_repro_test: null
 acceptance:
 - text: Given the structural-linter-adversarial-hardening.md denominator, when the
     meta-test runs, then every SLH-* entry has a disposition (addressed-by-check |
@@ -73928,6 +74588,7 @@ evidence:
 - tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavigable::test_every_member_cross_refs_every_other_member
 - tests/unit/strata/test_registry_cross_refs.py::TestRejectedPairsStayUnlinked::test_rejected_pairs_not_cross_linked
 - tests/unit/strata/test_registry_cross_refs.py::TestReconciliationSplitSectionFullyLinked::test_finding_b_ids_all_linked
+designated_repro_test: null
 acceptance:
 - text: Given the 10 named concepts, when the registry is queried, then each has a
     reviewed cross_refs linkage (either merged to one canonical id or explicitly justified
@@ -74038,6 +74699,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/test_registry_reconciliation_weaknesses.py::TestExhaustivenessGateOverRealWeaknesses::test_no_weaknesses_violations
+designated_repro_test: null
 acceptance:
 - text: Given the 6 tension CWEs, when reviewed, then each has one final ruling recorded
     in weaknesses.yaml with a cross_ref to security-corpus.md's Top-25 entry
@@ -74149,6 +74811,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: Given the decision made, when RECONCILIATION.md is reread, then finding (f)
     is marked resolved with either the leaf-level registry built or a written granularity-freeze
@@ -74268,6 +74931,7 @@ scope_changes:
 evidence:
 - tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_declared_total_is_41
 - tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_audit_reports_exhausted
+designated_repro_test: null
 acceptance:
 - text: Given supply-chain-corpus.md after the fix, when its own TOTAL field is compared
     to registry entry count, then they match
@@ -74392,6 +75056,7 @@ evidence:
 - 'cmd:test "$(grep -c "^- id: " docs/design/system-design-corpus.md)" = 119 && test
   "$(grep -c "^- id: .*artifact: true" docs/design/system-design-corpus.md)" = 14
   exit=0 sha256=e3b0c44298fc'
+designated_repro_test: null
 acceptance:
 - text: Given system-design-corpus.md after the fix, when its manifest is parsed,
     then TOTAL reflects only genuine entries or artifact rows are machine-distinguishable
@@ -74504,6 +75169,7 @@ evidence:
 - tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_resolves_to_a_real_id
 - tests/unit/strata/test_registry_cross_corpus_totality.py::TestProseOnlyRetrofitIntegrity::test_retrofit_counts_and_source_doc_pointers_hold
 - tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_is_mutually_navigable
+designated_repro_test: null
 acceptance:
 - text: Given the full registry, when the meta-test runs, then every cross_refs-eligible
     concept has exactly one canonical id or a recorded justification for staying split
@@ -74626,6 +75292,7 @@ evidence:
 - tests/unit/testing/test_stability.py::TestHardRegression::test_tail_cfg
 - tests/unit/testing/test_stability.py::TestAlarms::test_hard_alarm_tail
 - tests/unit/testing/test_stability.py::TestGate::test_hard_regress_tail_fails
+designated_repro_test: null
 acceptance:
 - text: GIVEN history [P] followed by K consecutive fails under live quarantine WHEN
     evaluate_gate and hard_regression_alarms run THEN the gate stays red and the alarm
@@ -74712,6 +75379,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy::test_reason_naming_resolved_rule_is_silent
 - tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy::test_substantive_reasoned_none_is_silent
 - tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy::test_bare_none_is_not_substantive
+designated_repro_test: null
 acceptance:
 - text: GIVEN a registry entry with out_of_scope disposition whose reason names no
     catching control and is not a substantive reasoned-none WHEN the registry gate
@@ -74811,6 +75479,7 @@ evidence:
 - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_exported_interface_enum_type_alias
 - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_tsx_component
 - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_class_bases_and_fields
+designated_repro_test: null
 acceptance:
 - text: GIVEN TS fixtures with interface, type alias, enum, and a TSX component WHEN
     TypeScriptAdapter.adapt runs THEN each is represented in the NormalizedModule
@@ -74906,6 +75575,7 @@ evidence:
 - tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference::test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on
 - tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference::test_neither_side_reporting_still_falls_back_to_state_rank
 - tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState::test_landing_tickets_in_progress_report_survives_the_merge_stage
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ledger with the landing ticket in-progress plus Done report
     and main's copy queued WHEN the merge driver splices during land THEN the in-progress
@@ -75028,6 +75698,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN docs/modules/gates.md WHEN a reader checks --only semantics THEN the
     always-evaluated drift behavior is documented with the T-0265 rationale
@@ -75098,6 +75769,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_threat.py::TestEvalFiresCwe94::test_eval_capability_is_classified_not_benign_excused
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -75191,6 +75863,7 @@ evidence:
 - tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
 - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
 - tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
+designated_repro_test: null
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on a fixture with a known exception
     surface THEN the may-raise sets are queryable and every child gate/advisory fires
@@ -75309,6 +75982,7 @@ evidence:
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and
     f calls dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError}
@@ -75363,6 +76037,7 @@ evidence:
 - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire
 - tests/unit/test_arch.py::TestCppMayThrow::test_non_noexcept_function_never_fires
 - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_vector_at_fires_curated_thrower
+designated_repro_test: null
 acceptance:
 - text: GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs
     THEN an error finding names the call site AND a try/catch(...) boundary discharges
@@ -75494,6 +76169,7 @@ evidence:
 - tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_handling_caller_not_flagged
 - tests/test_gates.py::TestErrorsAsValuesAdvisory::test_private_raiser_not_flagged
 - tests/test_gates.py::TestErrorsAsValuesAdvisory::test_only_ubiquitous_or_unknown_raises_not_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN
     the gate runs THEN the missing exception types are named; GIVEN a public raiser
@@ -75632,6 +76308,7 @@ evidence:
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
 - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line
+designated_repro_test: null
 acceptance:
 - text: GIVEN a call into an undeclared ctypes function WHEN the resolver runs THEN
     Unknown appears in the caller's may-raise set; GIVEN the same call with a frob:raises
@@ -75729,6 +76406,7 @@ evidence:
 - tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_declared_matches_no_drift
 - tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
 - tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_with_empty_declaration_clean
+designated_repro_test: null
 acceptance:
 - text: GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
     omits it WHEN the gate runs THEN a drift error names both sides; GIVEN a ctypes
@@ -75851,6 +76529,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN the estate language survey WHEN this ticket closes THEN docs/design
     records the chosen next adapter tier with rationale and per-language tickets exist
@@ -75962,6 +76641,7 @@ scope_changes:
   at: '2026-07-22'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN a test that deadlocks WHEN the suite runs in CI THEN that test fails
     with a timeout naming it within minutes and the run completes; GIVEN the known-slow
@@ -76072,6 +76752,7 @@ evidence:
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
 - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
 - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+designated_repro_test: null
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures reproducing each
     hazard class THEN each fires per its own acceptance
@@ -76176,6 +76857,7 @@ evidence:
 - tests/unit/test_arch.py::TestLockOrderingHazards::test_consistent_global_order_does_not_fire
 - tests/unit/test_arch.py::TestLockOrderingHazards::test_reentrant_same_lock_does_not_fire
 - tests/unit/test_arch.py::TestLockOrderingHazards::test_unresolvable_lock_identity_is_advisory
+designated_repro_test: null
 acceptance:
 - text: GIVEN two functions acquiring locks A-then-B and B-then-A WHEN the check runs
     THEN a finding names both call paths; GIVEN consistent global ordering THEN silence
@@ -76314,6 +76996,7 @@ evidence:
 - tests/unit/test_arch.py::TestForkPoolHazards::test_pipe_wait_deadlock_does_not_fire_with_communicate
 - tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
 - tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture spawning a process pool inside a thread-pool task WHEN the
     check runs THEN an error-tier finding fires AND the check fires on src/frob/gates/_run_combined_jobs
@@ -76411,6 +77094,7 @@ evidence:
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting
+designated_repro_test: null
 acceptance:
 - text: GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests
     asyncio.sleep/to_thread; GIVEN an un-awaited coroutine call THEN a finding names
@@ -76519,6 +77203,7 @@ evidence:
 - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_write_reachable_via_callee_of_dispatched_function_fires
 - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_write_not_reachable_from_any_dispatch_does_not_fire
 - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_async_create_task_dispatch_fires_same_as_thread_submit
+designated_repro_test: null
 acceptance:
 - text: GIVEN a module-level dict written from a thread-submitted function with no
     enclosing lock WHEN the check runs THEN an advisory names the write site and the
@@ -76644,6 +77329,7 @@ evidence:
 - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire
 - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead
 - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory
+designated_repro_test: null
 acceptance:
 - text: GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN
     advisories run THEN a GIL-bound suggestion fires naming the loop; GIVEN a socket-read
@@ -76770,6 +77456,7 @@ evidence:
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_two_writers_fires_mode_blind
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_single_writer_clean
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_empty_store_ids_is_silent
+designated_repro_test: null
 acceptance:
 - text: GIVEN two nodes listening on the same port WHEN sys checks run THEN a contention
     error names both nodes; GIVEN overlapping owns paths THEN a finding fires; GIVEN
@@ -76951,6 +77638,7 @@ evidence:
 - strata-core/src/parse/mod.rs::tests::parses_resource_with_lock
 - strata-core/src/parse/mod.rs::tests::parses_bare_resource_with_no_arbiter
 - strata-core/src/parse/mod.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
+designated_repro_test: null
 acceptance:
 - text: GIVEN two nodes with write-mode access to one resource and no arbiter WHEN
     sys checks run THEN a fail-closed error; GIVEN the same with a declared arbiter
@@ -77107,6 +77795,7 @@ evidence:
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_alpha_mode_fails_on_an_unguarded_write
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_write_mode_is_unrestricted_in_v0
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_node_with_no_access_declarations_is_never_checked
+designated_repro_test: null
 acceptance:
 - text: GIVEN a node declaring mode=read whose bound code opens the resource for writing
     WHEN sys checks run THEN a fail-closed error names the write site; GIVEN mode=exclusive
@@ -77247,6 +77936,7 @@ evidence:
 - strata-core/src/parse/mod.rs::tests::parses_node_users_only_no_rate
 - strata-core/src/parse/mod.rs::tests::parses_store_users_and_rate
 - strata-core/src/parse/mod.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
+designated_repro_test: null
 acceptance:
 - text: GIVEN two entry nodes declaring users 300k and 200k both flowing into one
     db resource WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable;
@@ -77407,6 +78097,7 @@ evidence:
 - tests/unit/strata/test_starvation.py::TestUnboundedWait::test_contended_write_access_with_no_timeout_fires
 - tests/unit/strata/test_starvation.py::TestUnboundedWait::test_declared_timeout_discharges
 - tests/unit/strata/test_starvation.py::TestUnboundedWait::test_lone_accessor_is_not_contended
+designated_repro_test: null
 acceptance:
 - text: GIVEN 500k declared users flowing to a db with mode=exclusive and default
     holding time WHEN sys checks run THEN a utilization error fires showing the arithmetic;
@@ -77489,6 +78180,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -77542,6 +78234,7 @@ scope_changes:
 evidence:
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_gitless_target_gates_warn_not_error
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
+designated_repro_test: null
 acceptance:
 - text: GIVEN the ~12 currently-failing system tests WHEN the suite runs THEN they
     pass AND a git-less target produces a consistent, documented behavior across all
@@ -77648,6 +78341,7 @@ evidence:
 - tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1
+designated_repro_test: null
 acceptance:
 - text: GIVEN the 4 failing drift tests WHEN the suite runs THEN they pass with real
     registry entries and resolving anchors, tests unmodified
@@ -77715,6 +78409,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 acceptance:
 - text: GIVEN the strata selfconform gate WHEN it runs on this repo THEN TestRealGateGreen
     passes with src/frob/registry bound to a node
@@ -77826,6 +78521,7 @@ evidence:
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_sys_audit_fails_loud_when_strata_present
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with .strata files and no built native WHEN frob check runs THEN
     SYS004 fails loud AND both tests pass
@@ -77953,6 +78649,7 @@ scope_changes:
 evidence:
 - tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label
 - tests/unit/perf/test_hot_query.py::TestListSketches::test_empty_store_is_empty
+designated_repro_test: null
 acceptance:
 - text: GIVEN the children closed WHEN the perf harness runs THEN a queryable hot-graph
     exists under .frob at sub-100KB with per-section decile readouts
@@ -78050,6 +78747,7 @@ evidence:
 - tests/unit/perf/test_harness_sampling.py::TestHarnessSampling::test_sampled_run_resolves_the_hot_loop_section
 - tests/unit/perf/test_hotgraph.py::TestResolveStream::test_loop_body_after_nested_branch_never_attributes_to_branch
 - tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture with a hot inner loop calling an external function WHEN the
     collector runs THEN samples attribute to the loop section and the call edge with
@@ -78252,6 +78950,7 @@ evidence:
 - tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_merge_is_associative
 - tests/unit/perf/test_sketch_store.py::TestSketchStore::test_decayed_merge_converges_toward_recent_run_distribution
 - tests/unit/perf/test_sketch_store.py::TestSketchStore::test_store_cap_evicts_coldest_section_first
+designated_repro_test: null
 acceptance:
 - text: GIVEN bimodal latencies (1ms and 100ms modes) WHEN sketched at alpha=2 percent
     THEN p10/p50/p90 read back within relative error and the serialized sketch is
@@ -78381,6 +79080,7 @@ evidence:
 - tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight
 - tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order
 - tests/unit/perf/test_persist_run_cli.py::TestRatchetFindingRendering::test_regression_prints_label_and_exact_percentage
+designated_repro_test: null
 acceptance:
 - text: GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN
     frob check runs with the ratchet enabled THEN a PERF finding names the section
@@ -78519,6 +79219,7 @@ evidence:
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_no_orphan_guides
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -78633,6 +79334,7 @@ evidence:
 - tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport::test_no_leases_directory_is_silent
 - tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_no_nudges_prints_nothing
 - tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_multiple_stale_leases_collapse_to_one_summary_line
+designated_repro_test: null
 acceptance:
 - text: GIVEN 5 stale lease files WHEN frob ticket doable runs THEN the queue prints
     with at most one summary line about leases AND frob check (or doctor) reports
@@ -78750,6 +79452,7 @@ evidence:
 - tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent::test_doable_by_parent_groups_leaves
 - tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketSprintAssignShow::test_assign_then_show
 - tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketSprintAssignShow::test_show_json_mode
+designated_repro_test: null
 acceptance:
 - text: GIVEN an epic with two stories each with open leaf tickets WHEN frob ticket
     doable runs THEN only leaves surface and closing the epic is refused while descendants
@@ -79031,6 +79734,7 @@ evidence:
 - tests/test_tickets_lease_overlay.py::TestDisplayState::test_queued_with_stale_lease_undecorated
 - tests/test_tickets_lease_overlay.py::TestDisplayState::test_ledger_in_progress_undecorated
 - tests/test_tickets_lease_overlay.py::TestDisplayState::test_no_root_never_decorates
+designated_repro_test: null
 acceptance:
 - text: GIVEN a queued ticket with a live lease from an existing worktree WHEN frob
     ticket list runs on main THEN it renders in-progress@worktree; GIVEN the lease
@@ -79176,6 +79880,7 @@ evidence:
 - tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_non_legacy_declaration_is_not_flagged
 - tests/unit/strata/test_selfconform.py::TestModeQualifiedFsStaleDesign::test_fs_read_declaration_discharges_on_read_only_code
 - tests/unit/strata/test_selfconform.py::TestModeQualifiedFsStaleDesign::test_fs_read_declaration_stays_stale_when_only_writes_observed
+designated_repro_test: null
 acceptance:
 - text: GIVEN a node whose code only reads files WHEN it declares may fs.read THEN
     SYS101 discharges narrowly and a write observation fails conformance; GIVEN a
@@ -79373,6 +80078,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output
 - tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested
 - tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -79484,6 +80190,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff
 - tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_pass_quietly_on_a_genuinely_gitless_root
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -79579,6 +80286,7 @@ evidence:
 - tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
 - tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error
 - tests/system/test_natives_build_integration.py::test_build_natives_compiles_and_imports_real_crate
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -79668,6 +80376,7 @@ evidence:
 - tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_declared_total_is_41
 - tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_audit_reports_exhausted
 - tests/test_registry_reconciliation_supply_chain.py::TestExhaustivenessGateOverRealSupplyChain::test_no_supply_chain_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -79786,6 +80495,7 @@ evidence:
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -79889,6 +80599,7 @@ evidence:
 - tests/unit/test_lang_kotlin.py::TestParseFileDispatchesKotlin::test_kt_file_parses_into_the_symbol_graph
 - tests/unit/test_lang_kotlin.py::TestParseFileDispatchesKotlin::test_kts_extension_also_dispatches
 - tests/unit/test_lang_kotlin.py::TestParseFileDispatchesKotlin::test_kotlin_is_a_supported_language_and_extension
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with a .kt file WHEN frob check runs THEN the file parses into
     the symbol graph (no KeyError) and its symbols appear in frob map output
@@ -80083,6 +80794,7 @@ scope_changes:
 evidence:
 - tests/system/test_cli_sys_plan.py::TestSysAuditContentionCli::test_duplicate_port_fires_sys200_through_cli
 - tests/unit/strata/test_contention.py::TestDuplicatePort::test_two_nodes_same_port_fires
+designated_repro_test: null
 acceptance:
 - text: GIVEN a model with a duplicate-port conflict WHEN frob sys audit runs via
     the CLI THEN SYS200 appears in the command output
@@ -80274,6 +80986,7 @@ evidence:
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -80390,6 +81103,7 @@ evidence:
 - tests/test_gates.py::TestTick006PhantomFiling::test_description_prose_mentioning_other_ticket_is_silent
 - tests/test_gates.py::TestTick006PhantomFiling::test_no_done_report_heading_is_silent
 - tests/test_gates.py::TestTick006PhantomFiling::test_filed_bare_draft_without_colon_fires
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a Done report claiming Filed: T-draft-abc123 with no such block WHEN
     close or land runs THEN an error names the phantom reference; GIVEN the block
@@ -80614,6 +81328,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method
+designated_repro_test: null
 acceptance:
 - text: GIVEN class Foo with an annotated field WHEN PythonAdapter.adapt runs THEN
     the field appears in NormalizedClass.fields AND the T-0615 waiver test is updated
@@ -80738,6 +81453,7 @@ evidence:
 - tests/unit/test_arch_srp.py::TestArchGateSrpWiring::test_arch101_respects_explicit_frob_toml_override
 - tests/unit/test_arch_srp.py::TestArchConfigThresholds::test_reads_srp_overrides
 - tests/unit/test_arch_srp.py::TestArchConfigThresholds::test_srp_defaults_without_frob_toml
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture repo with a two-cluster class WHEN frob check runs THEN ARCH101
     appears in arch output with frob.toml-tunable thresholds AND the rule ids are
@@ -80926,6 +81642,7 @@ evidence:
 - tests/unit/test_arch_srp.py::TestMixedConcernFunction::test_io_compute_and_formatting_together_trigger
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
+designated_repro_test: null
 acceptance:
 - text: GIVEN main after the fix WHEN frob sys audit runs THEN zero SYS100 gaps and
     no dishonest may declarations were added
@@ -81000,6 +81717,7 @@ evidence:
 - tests/test_gates.py::TestNativeTestCollectors::test_ts_structural_only_edge_no_longer_credited
 - tests/test_gates.py::TestNativeTestCollectors::test_ts_no_longer_in_native_extensions
 - tests/test_gates.py::TestNativeTestCollectors::test_load_tests_merges_all_four_collectors
+designated_repro_test: null
 acceptance:
 - text: GIVEN a vitest project with a frob:tests directive naming a real vitest test
     WHEN gates run THEN the edge resolves against the collected id and the structural
@@ -81090,6 +81808,7 @@ evidence:
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_pyproject_edit_without_version_change_allowed
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_override_env_var_allows_it
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_tickets_md_change_warns_but_does_not_refuse
+designated_repro_test: null
 acceptance:
 - text: GIVEN two concurrent public-API worktrees WHEN both land THEN neither ever
     edited version/changelog files, the land bumps once each, and zero merge conflicts
@@ -81209,6 +81928,7 @@ scope_changes:
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fresh worktree after the change WHEN make core runs THEN it completes
     in under 10s with warm shared cache (measured), and a cold clone still builds
@@ -81322,6 +82042,7 @@ evidence:
 - tests/test_serve_daemon.py::TestRunDaemonCycle::test_runs_both_jobs_and_returns_status
 - tests/test_serve_daemon.py::TestStartDaemon::test_background_loop_runs_a_cycle_then_stops
 - tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land on main WHEN the daemon is running THEN a fresh delta verdict
     is available via MCP within a minute without any agent invoking frob check; GIVEN
@@ -81454,6 +82175,7 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -81515,6 +82237,7 @@ evidence:
 - tests/unit/test_natives_build.py::TestMakefileCoreShim::test_core_recipe_is_one_line_natives_build_shim
 - tests/unit/test_scaffold_natives_shim.py::TestMakefileCoreShimTemplate::test_applying_to_fresh_repo_installs_one_line_shim
 - tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_unmanaged_core_target_reports_stale
+designated_repro_test: null
 acceptance:
 - text: GIVEN any frob-enabled repo with [natives] WHEN uv run frob natives build
     runs THEN natives compile with the shared per-clone cache and the repo Makefile
@@ -81673,6 +82396,7 @@ evidence:
 - tests/system/test_cli_scaffold_apply.py::TestScaffoldApplyCli::test_apply_reports_changes
 - tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_unhealthy_when_scaffold_blocks_missing
 - tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_healthy_after_scaffold_apply
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo missing the current guard hooks or Makefile shim WHEN frob doctor
     runs THEN a finding names each missing/stale managed block with frob scaffold
@@ -81888,6 +82612,7 @@ evidence:
 - tests/unit/test_ticket_file_flags.py::TestScopeReasonFile::test_reason_file_round_trips_byte_exact
 - tests/unit/test_ticket_file_flags.py::TestScopeReasonFile::test_reason_and_reason_file_together_errors_cleanly
 - tests/unit/test_ticket_file_flags.py::TestScopeReasonFile::test_neither_reason_nor_reason_file_errors_cleanly
+designated_repro_test: null
 acceptance:
 - text: GIVEN a body file containing backticks, quotes, and dollar signs WHEN frob
     ticket new --body-file runs THEN the ledger body matches the file byte-for-byte
@@ -81998,6 +82723,7 @@ evidence:
 - tests/system/test_scaffold_pool.py::TestLeaseWorktree::test_lease_merges_base_ref_current
 - tests/system/test_scaffold_pool.py::TestRefillAsync::test_refill_thread_rewarms_slot
 - tests/system/test_scaffold_pool.py::TestPoolStatus::test_status_reflects_manifest
+designated_repro_test: null
 acceptance:
 - text: GIVEN a warm pool of N WHEN an agent leases a worktree THEN it starts with
     natives built and main current, and the pool refills in the background
@@ -82104,6 +82830,7 @@ evidence:
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
 - tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
 - tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
+designated_repro_test: null
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures for each fragment
     THEN each child gate/advisory fires per its own acceptance
@@ -82227,6 +82954,7 @@ scope_changes:
   at: '2026-07-26'
 evidence:
 - tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -82279,6 +83007,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -82305,6 +83034,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+designated_repro_test: null
 acceptance:
 - text: GIVEN the slow scaffold test WHEN the suite runs under the global 120s ceiling
     THEN the test carries its own measured override and passes cold-cache
@@ -82369,6 +83099,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_arch.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes
+designated_repro_test: null
 acceptance:
 - text: GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs
     THEN variant payload shapes are represented and asserted by a test
@@ -82497,6 +83228,7 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestInitDeinitInference::test_init_deinit_pair_infers_a_protocol
 - tests/unit/graph/test_dsl.py::TestInitDeinitInference::test_open_close_pair_also_infers
 - tests/unit/graph/test_dsl.py::TestInitDeinitInference::test_unpaired_init_infers_nothing
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob:protocol with transitions and requires bindings WHEN parsed THEN
     the machine round-trips; GIVEN a malformed declaration or an unbound protocol
@@ -82639,6 +83371,7 @@ evidence:
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
+designated_repro_test: null
 acceptance:
 - text: GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN
     summaries converge and match hand-computed values; GIVEN an unresolvable callee
@@ -82808,6 +83541,7 @@ evidence:
 - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
 - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
 - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
+designated_repro_test: null
 acceptance:
 - text: GIVEN a C fixture where net_requires-annotated functions are reachable without
     net_init WHEN the gate runs THEN an ERROR names the unestablished state and the
@@ -83056,6 +83790,7 @@ evidence:
 - tests/test_gates.py::TestCleanupObligationGate::test_exceptional_exit_with_no_release_anywhere_is_an_error
 - tests/test_gates.py::TestCleanupObligationGate::test_deinit_never_called_for_cleanup_always_protocol_is_an_error
 - tests/test_gates.py::TestCleanupObligationGate::test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a C fixture acquiring a resource with an early-error return skipping
     cleanup WHEN the gate runs THEN an ERROR names the leaking path; GIVEN the Python
@@ -83331,6 +84066,7 @@ evidence:
 - tests/unit/perf/test_collectors.py::TestParseJfrPrint::test_unmapped_class_is_unattributed_not_dropped
 - tests/unit/perf/test_collectors.py::TestParseJfrPrint::test_unparseable_profile_errors_naming_the_file
 - tests/unit/perf/test_collectors.py::TestParseJfrPrint::test_resolves_through_shared_hotgraph_stream
+designated_repro_test: null
 acceptance:
 - text: GIVEN committed fixture profiles (perf script, .cpuprofile, JFR) for equivalent
     hot-loop programs WHEN each collector ingests THEN section hits land in the shared
@@ -83553,6 +84289,7 @@ evidence:
 - tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_evidence_cli_binds_acceptance_via_path_flag
 - tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_evidence_cli_binds_acceptance_in_repo_no_path_flag
 - tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_close_time_verification_consumes_the_accepts_binding
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket evidence X node --accepts 0 --path DIR WHEN the ledger is
     re-read THEN acceptance[0].evidence contains the node id
@@ -83647,6 +84384,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_stamp_baseline_writes_stamp
 - tests/system/test_cli_check.py::TestCheckSkipFlags::test_skip_ruff
 - tests/system/test_cli_check.py::TestCheckDocAnchorScopedVsUnscoped::test_scoped_docanchor_matches_unscoped
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -83740,6 +84478,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_gate_error_exits_1
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_completes_and_stamps
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -83854,6 +84593,7 @@ evidence:
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_high_past_threshold_alarms
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_configured_threshold_from_frob_toml
 - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
+designated_repro_test: null
 acceptance:
 - text: GIVEN a critical ticket unleased past threshold WHEN frob ticket doable runs
     THEN its row shows priority and an UNDISPATCHED alarm at the top of the dispatchable
@@ -83945,6 +84685,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_waive005_future_until_passes
 - tests/test_gates.py::TestTestGate::test_waive_until_bad_date_is_malformed
 - tests/test_gates.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
+designated_repro_test: null
 acceptance:
 - text: GIVEN a waiver naming an unrecognized rule THEN error; GIVEN a valid-rule
     waiver whose site produces zero findings with waivers ignored THEN WAIVE003 fires;
@@ -84095,6 +84836,7 @@ evidence:
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_warning_or_waived_count_alone_still_lands
 - tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
+designated_repro_test: null
 acceptance:
 - text: GIVEN a done-report whose typed test count differs from the actual evidence
     run WHEN done-report captures THEN it records the real count and flags the divergence;
@@ -84371,6 +85113,7 @@ evidence:
 - tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence::test_other_error_does_not_name_skip_flag_remedy
 - tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_skip_flag_bypasses_error_verdict
 - tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_no_skip_flag_refuses_on_error_verdict
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket whose recorded evidence tests all pass against a mutant of
     the changed logic WHEN close/land verifies THEN a confirmatory-only-test finding
@@ -84635,6 +85378,7 @@ evidence:
 - tests/test_tickets_new_gate_rule_acceptance.py::TestTransitionRefusesOnUnacceptedNewGateRule::test_close_refused_when_new_rule_has_no_fixture_acceptance
 - tests/test_tickets_new_gate_rule_acceptance.py::TestTransitionRefusesOnUnacceptedNewGateRule::test_close_allowed_when_fixture_acceptance_bound
 - tests/test_tickets_new_gate_rule_acceptance.py::TestTransitionRefusesOnUnacceptedNewGateRule::test_close_allowed_when_no_new_rule_added
+designated_repro_test: null
 acceptance:
 - text: GIVEN a change that reddens frob sys audit WHEN land preflight runs THEN land
     errors naming the new self-audit gap; GIVEN a ticket adding a gate rule id with
@@ -84936,6 +85680,7 @@ evidence:
 - tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal
 - tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins
 - tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank
+designated_repro_test: null
 acceptance:
 - text: GIVEN _normalized.py gains a tree_sitter import WHEN the INV gate runs THEN
     an error fires; GIVEN a comparator invariant declared with a property test THEN
@@ -85054,6 +85799,7 @@ evidence:
 - tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_code_evidence_fires
 - tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_real_code_evidence_discharges
 - tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 acceptance:
 - text: GIVEN f_registry_fetch (foreign src, real timeout=code in the vet caller)
     WHEN REL201 runs THEN it proves against the endpoint with bound code and reports
@@ -85123,6 +85869,7 @@ scope:
 - tests/unit/perf/test_hotgraph.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -85191,6 +85938,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent
+designated_repro_test: null
 acceptance:
 - text: GIVEN the overhead test WHEN the full suite runs under -n auto THEN it passes
     reliably (serial marker, CPU-time measure, or documented-tolerance margin), not
@@ -85289,6 +86037,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree branch adding a new source file WHEN frob ticket land runs
     THEN the landed commit contains that file OR land refuses with a completeness
@@ -85422,6 +86171,7 @@ evidence:
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_secrecy_secretstring_type_field_fires
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_secret_newtype_type_field_fires
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_plain_string_field_type_does_not_fire
+designated_repro_test: null
 acceptance:
 - text: GIVEN a TS field typed as a known secret-wrapper or a Rust field typed secrecy::SecretString
     WHEN pii_structural runs THEN a type-kind PII finding fires; a plain String field
@@ -85514,6 +86264,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket with an unbound acceptance criterion WHEN frob ticket land
     runs THEN it errors naming the unbound criterion and creates NO merge/finalize
@@ -85608,6 +86359,7 @@ evidence:
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_a_side_only_id_missing_from_theirs_survives_the_splice
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_malformed_side_is_refused_not_silently_treated_as_empty
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
+designated_repro_test: null
 acceptance:
 - text: GIVEN a live non-stale lease WHEN frob ticket archive runs THEN it refuses
     without --force; GIVEN an in-flight ticket WHEN main ledger is rewritten under
@@ -85742,6 +86494,7 @@ evidence:
 - tests/system/test_cli_perf.py::TestPerfCollect::test_collect_json_output_is_valid_json
 - tests/system/test_cli_perf.py::TestPerfCollect::test_collect_without_file_or_sampler_fails_cleanly
 - tests/system/test_cli_perf.py::TestPerfCollect::test_collect_autodetects_cpuprofile_format
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo and a recorded profile artifact (perf script output, .cpuprofile,
     or JFR print output) WHEN the user runs the frob perf collect subcommand THEN
@@ -85815,6 +86568,7 @@ evidence:
 - tests/test_tickets_leases.py::TestResolveLease::test_never_returns_a_sibling_tickets_lease
 - tests/test_tickets_leases.py::TestResolveLease::test_no_lease_for_ticket_fails_loudly
 - tests/test_tickets_leases.py::TestResolveLease::test_lease_recorded_for_a_different_worktree_fails_loudly
+designated_repro_test: null
 acceptance:
 - text: GIVEN two agents with leases on different tickets in different worktrees WHEN
     one runs frob check --ticket for its own ticket THEN the check resolves that ticket's
@@ -85932,6 +86686,7 @@ evidence:
 - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 - tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
 - tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
+designated_repro_test: null
 acceptance:
 - text: GIVEN main after the T-0695 checks WHEN frob check runs THEN gate:ARCH reports
     zero fork/pool-hazard warnings on src/frob/gates while the T-0581 process-pool/thread-pool
@@ -86092,6 +86847,7 @@ evidence:
 - tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_default_clamps_frob_tree_but_pins_runner_output
 - tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_verbose_skips_the_clamp
 - tests/unit/test_logging_quiet.py::TestLoggerLevels::test_sets_and_restores_mapped_levels
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket list at default verbosity WHEN it runs THEN no gitio/tickets
     DEBUG or INFO diagnostic lines appear while ticket rows still print; GIVEN frob
@@ -86243,6 +86999,7 @@ evidence:
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_real_exec_call_still_flagged_via_selfconform
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_executable_line_numbers_covers_docstring_and_comment
 - tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+designated_repro_test: null
 acceptance:
 - text: GIVEN a module whose docstrings mention subprocess.Popen/os.fork prose but
     whose code never resolves an exec-capable call WHEN scan_file_capabilities runs
@@ -86448,6 +87205,7 @@ scope:
 - tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -86553,6 +87311,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds
 - tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_coarse_net_covers_union_of_modes
 - tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_unwired_family_stays_coarse
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -86687,6 +87446,7 @@ scope:
 - tests/unit/strata/test_effects.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a node declaring may net.connect WHEN only listen behavior is observed
     THEN conformance fails narrowly per mode; GIVEN existing bare may net/env/proc/ffi
@@ -86739,6 +87499,7 @@ evidence:
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_new_lease_file_written_by_a_sibling_process_is_seen_next_call
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_lease_file_removed_by_a_sibling_process_is_seen_next_call
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_unchanged_lease_file_content_is_reused_from_cache
+designated_repro_test: null
 acceptance:
 - text: GIVEN one frob ticket list/doable/show invocation WHEN it completes THEN git
     rev-parse --git-common-dir was spawned at most once and the lease directory was
@@ -87047,6 +87808,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge::test_scope_unbound_refused_pre_merge_no_commits_created
 - tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge::test_covers_scope_true_still_lands_normally
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket whose evidence does not cover its scope WHEN frob ticket land
     runs THEN it refuses before creating any merge/finalize commit, naming the uncovered
@@ -87144,6 +87906,7 @@ evidence:
 - tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_loop_varying_argument_is_not_flagged
 - tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_no_effectful_call_in_loop_is_not_flagged
 - tests/test_perf_loop_invariant_effect_lock.py::test_loop_invariant_spawning_callee_in_loop_is_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture where a loop body calls a function that transitively spawns
     a process with arguments invariant across iterations WHEN frob check runs THEN
@@ -87263,6 +88026,7 @@ evidence:
 - tests/system/test_spawn_budget.py::test_ticket_show_spawns_each_argv_at_most_once
 - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
 - tests/system/test_spawn_budget.py::test_exclude_hazard_gate_spawns_each_argv_at_most_once
+designated_repro_test: null
 acceptance:
 - text: GIVEN a spawn-budget test running frob ticket list against a fixture repo
     WHEN the same argv is spawned more than its declared budget (default 1 for idempotent
@@ -87374,6 +88138,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -87437,6 +88202,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
+designated_repro_test: null
 acceptance:
 - text: GIVEN FROB_DISABLE_EXEC=1 WHEN any frob code path attempts a git spawn via
     run_argv (including the serve daemon and lease reads) THEN the spawn is refused
@@ -87558,6 +88324,7 @@ evidence:
 - tests/test_waive_gate.py::TestWaive006Registration::test_waive006_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive006Registration::test_waivable_via_frob_waive_comment
 - tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
+designated_repro_test: null
 acceptance:
 - text: GIVEN a waive directive (frob:waive or strata waive) whose reason or ticket
     attribute references a ticket that is DONE or DROPPED in the ledger/archive WHEN
@@ -87723,6 +88490,7 @@ evidence:
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_resolve_lease_treats_an_evil_branch_as_no_lease
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_rejection_is_logged_once_per_process
 - tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard::test_evil_lease_branch_never_reaches_git_argv
+designated_repro_test: null
 acceptance:
 - text: GIVEN a lease JSON with branch or worktree starting with a dash or containing
     a git-invalid ref shape WHEN read_all_leases loads it THEN the record is rejected
@@ -87852,6 +88620,7 @@ evidence:
 - tests/unit/vet/test_taint.py::TestTaintFindings::test_unparseable_file_returns_empty
 - tests/unit/vet/test_taint.py::TestTaintGate::test_taint_gate_no_findings_on_empty_tracked_set
 - tests/unit/vet/test_taint.py::TestTaintGate::test_taint_gate_emits_warn_severity_violation
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture where a value parsed from a file under .git/ or .frob/ flows
     into a subprocess argv position without passing a registered validator or a preceding
@@ -87995,6 +88764,7 @@ evidence:
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_ambiguous_stat_failure_does_not_unlink
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_ambiguous_failure_is_logged_once_per_process
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_genuine_enoent_still_unlinks
+designated_repro_test: null
 acceptance:
 - text: GIVEN a lease whose worktree path no longer exists WHEN read_all_leases judges
     it stale THEN the file is unlinked (guarded so a live worktree lease is never
@@ -88112,6 +88882,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_todo003_fires_after_version_bump_since_deferral_landed
 - tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_no_version_bump_since_deferral
 - tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_ticket_closes
+designated_repro_test: null
 acceptance:
 - text: GIVEN a shipped comment deferring work to ticket T-X (that ticket's job shape
     or frob:todo) WHEN T-X remains open across a REL001 version bump since the comment
@@ -88206,6 +88977,7 @@ evidence:
 - tests/test_gitio.py::TestGitCommonDir::test_reset_clears_cache
 - tests/test_gitio.py::TestCommonDirAndBranch::test_single_spawn_parses_both_lines
 - tests/test_gitio.py::TestCommonDirAndBranch::test_err_when_not_a_repo
+designated_repro_test: null
 acceptance:
 - text: GIVEN the repo WHEN searched for rev-parse --git-common-dir call sites THEN
     exactly one implementation exists (frob.gitio) and _leases/_exclude_hazard delegate
@@ -88323,6 +89095,7 @@ evidence:
 - tests/test_dup.py::TestErrorChannelNormalization::test_nested_err_argument_parens_do_not_confuse_the_close_paren_scan
 - tests/test_dup.py::TestErrorChannelDupPairing::test_result_and_optional_git_common_dir_register_as_a_duplicate_group
 - tests/test_dup.py::TestErrorChannelNormalizationDoesNotOverFire::test_genuinely_different_logic_does_not_falsely_pair
+designated_repro_test: null
 acceptance:
 - text: GIVEN two functions identical except one returns Result and the other Optional-with-None
     WHEN the dup scan runs THEN they register as a duplicate group; GIVEN genuinely
@@ -88499,6 +89272,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN the audit doc WHEN complete THEN every gate in gates/__init__.py has
     a recorded verdict for empty-diff/empty-scope/cached-stale satisfaction (can it
@@ -88630,6 +89404,7 @@ evidence:
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_pins_to_own_worktree_lease
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_refuses_when_lease_recorded_for_another_worktree
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_no_ticket_resolved_skips_the_check_entirely
+designated_repro_test: null
 acceptance:
 - text: GIVEN an agent invoking frob check --ticket T-X from a worktree WHEN T-X has
     a lease THEN the check pins to T-X's own lease/worktree via resolve_lease and
@@ -88831,6 +89606,7 @@ evidence:
 - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 - tests/test_gates.py::TestComplianceGate::test_compliance005_missing_registry_dir_is_silent
 - tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
+designated_repro_test: null
 acceptance:
 - text: GIVEN a compliance.yaml entry regressed to deferred or undispositioned WHEN
     frob check runs THEN COMPLIANCE005 fires as a registered, waivable gate rule;
@@ -88970,6 +89746,7 @@ scope_changes:
 evidence:
 - tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump
 - tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -89047,6 +89824,7 @@ scope:
 - tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land that failed post-merge with CloseFailed and was retried after
     a ledger fix in the worktree WHEN land runs again THEN it either completes the
@@ -89082,6 +89860,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_narrow_deny_then_broad_allow_same_principal_denies
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_broad_allow_then_narrow_deny_same_principal_still_denies
+designated_repro_test: null
 acceptance:
 - text: GIVEN an ACL rule carrying the :deny flag on a write-capable RIGHTS value
     WHEN _acl_grants_write evaluates it THEN write_capable is False and a shared-writable-path
@@ -89139,6 +89918,7 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_no_write_rights_entries_denies
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_explicit_deny_acl_flag_does_not_fire_shared_writable_path
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_explicit_deny_acl_flag_fires_when_write_rights_present_elsewhere
+designated_repro_test: null
 acceptance:
 - text: GIVEN two acl entries on the same path (a broad allow after a narrow deny)
     WHEN the movement-impossibility join runs THEN deny-overrides-allow NTFS semantics
@@ -89298,6 +90078,7 @@ evidence:
 - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
 - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
 - tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land whose version bump changes pyproject WHEN the land commits THEN
     uv.lock is re-synced and committed in the same land commit and a subsequent uv
@@ -89423,6 +90204,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN frob check runs THEN zero self-join-deadlock warnings on src/frob/vet
     while the timeout behavior is preserved and a regression test locks the discharge
@@ -89467,6 +90249,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
 - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
 - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land that merged and finalized in the worktree but failed before committing
     to main WHEN land is retried with identical arguments THEN it completes the squash-apply
@@ -89579,6 +90362,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_evidence_cmd_with_accepts_binds_acceptance_via_cli
 - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket evidence T-X --evidence-cmd CMD --accepts 0 WHEN the command
     verifies THEN the cmd evidence is bound to acceptance index 0 exactly like pytest-node
@@ -89677,6 +90461,7 @@ evidence:
 - tests/test_gates.py::TestDeprecatedGate::test_deprecated_is_registered_in_all_gates
 - tests/test_gates.py::TestDeprecatedGate::test_deprecated_fires_through_real_gate_dispatch
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob:deprecated directive in the tree WHEN frob check runs (no --only
     filter) THEN the deprecated gate evaluates and DEPR003 in-window warnings appear
@@ -89778,6 +90563,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation::test_dup_code_fingerprint_change_invalidates_cached_verdict
 - tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation::test_unchanged_dup_code_fingerprint_still_serves_cached_verdict
+designated_repro_test: null
 acceptance:
 - text: GIVEN a dup rule/normalization change WHEN frob check runs the dup gate THEN
     cached verdicts computed under the old rules are invalidated (cache key includes
@@ -89836,6 +90622,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/graph/test_cache.py::TestSchemaDriftRebuild::test_missing_symbols_table_rebuilds_clean
 - tests/unit/graph/test_cache.py::TestSchemaDriftRebuild::test_missing_mtime_ns_column_rebuilds_clean
+designated_repro_test: null
 acceptance:
 - text: GIVEN a .frob/cache.db created by an older schema WHEN load_graph opens it
     THEN it detects the schema mismatch and rebuilds the cache instead of raising
@@ -89918,6 +90705,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup.py::TestRealGitCommonDirPairRegisters::test_real_git_common_dir_pair_registers_as_a_duplicate_group
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -90023,6 +90811,7 @@ evidence:
 - tests/test_dup.py::TestConditionalShapeDupPairing::test_combined_vs_split_guard_git_common_dir_registers_as_a_duplicate_group
 - tests/test_dup.py::TestConditionalShapeNormalization::test_abstracts_if_and_elif_conditions_uniformly
 - tests/test_dup.py::TestErrorChannelNormalizationDoesNotOverFire::test_genuinely_different_guard_bodies_do_not_falsely_pair
+designated_repro_test: null
 acceptance:
 - text: GIVEN the real _leases.py::git_common_dir and _exclude_hazard.py::_git_common_dir
     pair WHEN the dup scan runs with both error-channel and control-flow normalization
@@ -90155,6 +90944,7 @@ scope:
 - docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN the sunset date 2026-10-01 has passed WHEN this ticket is worked THEN
     the four deprecated navigation commands and their parsers, tests, and doc/test/export
@@ -90267,6 +91057,7 @@ evidence:
 - tests/unit/deploy/test_vm_runner.py::TestAvail::test_kill_switch_refuses_without_spawning
 - tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawning
 - tests/test_app.py::TestRunCoverageWait::test_kill_switch_refuses_without_spawning
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -90412,6 +91203,7 @@ scope:
 - src/frob/app/map_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -90443,6 +91235,7 @@ evidence:
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_command_substitution_is_not_expanded
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_malformed_quoting_fails_cleanly_instead_of_shelling_out
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_exec_kill_switch_stops_evidence_commands
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a cmd: evidence entry WHEN _run_evidence_command executes it THEN it
     runs without shell=True (argv form or an explicitly justified sanctioned shell
@@ -90584,6 +91377,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
 - tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
 - tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN tests/system/test_cli_check.py runs THEN TestCheckCleanProject::test_clean_code_exits_zero,
     TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation, and TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
@@ -90751,6 +91545,7 @@ evidence:
 - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
 - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
 - tests/test_gates.py::TestDebtGate::test_rel001_linked_worktree_detected
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --ticket T-X running in a worktree (or against a ticket with
     a live worktree lease) WHEN the public API changed THEN REL001's version-bump
@@ -90876,6 +91671,7 @@ evidence:
 - tests/test_waive_gate.py::TestWaive007Registration::test_waive007_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive007Registration::test_waivable_via_frob_waive_comment
 - tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
+designated_repro_test: null
 acceptance:
 - text: GIVEN a waiver whose binding ticket reference resolves to no ticket in active
     or archive WHEN frob check runs THEN a WARNING-tier finding names the site and
@@ -91067,6 +91863,7 @@ evidence:
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_resource_sets_join_across_a_recursive_cluster
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_release_escapes_round_trip
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_missing_target_is_malformed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -91293,6 +92090,7 @@ evidence:
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -91346,6 +92144,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ledger whose Done reports reference T-draft ids WHEN land
     renumbers those drafts to real ids THEN every reference to the old draft id anywhere
@@ -91428,6 +92227,7 @@ evidence:
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree whose design/frob.strata or source frob:waive comments cite
     a draft id that land renumbers WHEN the land completes THEN those refs are rewritten
@@ -91532,6 +92332,7 @@ evidence:
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_exempts_super_dunder_call_from_unresolved
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_still_marks_unresolved_self_attribute_call
+designated_repro_test: null
 acceptance:
 - text: GIVEN a real repo scan through the protocol-summary entrypoint WHEN a private-convention
     callee has no candidates THEN the summary shows UNRESOLVED_CALLEE poisoning end
@@ -91653,6 +92454,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
 - tests/test_gates.py::TestDupPipelineClosureConsumers::test_is_symref_dup
 - tests/test_gates.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
+designated_repro_test: null
 acceptance:
 - text: GIVEN a call-graph closure containing a sentinel or non path::qualname entry
     WHEN _cov006_third_file_reachable and sibling closure consumers process it THEN
@@ -91777,6 +92579,7 @@ evidence:
 - tests/integration/test_mutate_runner.py::TestMutateRunnerJson::test_human_mode_still_shows_diagnostics
 - tests/integration/test_fleet_integration.py::TestFleetIntegrationJson::test_fleet_status_json_is_clean
 - tests/integration/test_gitlog.py::TestGitlogJson::test_json_valid
+designated_repro_test: null
 acceptance:
 - text: GIVEN every runner module with a json flag whose payload path can reach guarded_subprocess_run
     WHEN the json mode runs THEN stdout parses as clean JSON (conditional quiet_stdout_logs
@@ -91924,6 +92727,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app_runners_batch7.py::TestSysAudit::test_clean_model_passes
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN TestSysAudit::test_clean_model_passes runs THEN it passes
     with every audit leg PROVED, with the fixture updated to current rules (or the
@@ -92041,6 +92845,7 @@ scope:
 - tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN FROB_DISABLE_NET=1 (or the guard's net flag) WHEN any vet code path
     attempts a network operation THEN it is refused and logged without connecting;
@@ -92078,6 +92883,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckTypescript::test_type_error_fails_tsc
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_gitless_target_gates_warn_not_error
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -92252,6 +93058,7 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -92284,6 +93091,7 @@ evidence:
 - tests/test_gates.py::TestTick007UndispatchedStale::test_medium_priority_never_fires
 - tests/test_gates.py::TestTick007UndispatchedStale::test_blocked_ticket_is_silent
 - tests/test_gates.py::TestTick007UndispatchedStale::test_real_repo_scan_runs_end_to_end_without_crashing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -92411,6 +93219,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ticket in planned state with evidence bound and a Done report
     WHEN land runs THEN it either advances planned->in-progress->done transparently
@@ -92517,6 +93326,7 @@ evidence:
 - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
 - tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 acceptance:
 - text: Given FROB_DISABLE_NET=1, when vet looks up a registry publish date or an
     NVD CVE->CWE mapping, then no urlopen call happens and the result degrades to
@@ -92616,6 +93426,7 @@ evidence:
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_adopter_repo_with_no_frob_internal_tickets_does_not_error
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_present_known_gap_with_open_ticket_warns
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_present_known_gap_with_bad_ticket_ref_errors
+designated_repro_test: null
 acceptance:
 - text: GIVEN an adopter repo whose queue carries no frob-internal ticket ids WHEN
     LANG003 evaluates a known-gap facet THEN it does not hard-error on the unresolvable
@@ -92722,6 +93533,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -92784,6 +93596,7 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_write_deny_modify_allow_same_principal_still_denies
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_deny_for_one_principal_does_not_cancel_another_principals_allow
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_no_write_rights_entries_denies
+designated_repro_test: null
 acceptance:
 - text: GIVEN a principal with a narrow deny and a broad allow on one path WHEN the
     join evaluates THEN the WRITE_DAC indirection corner has a recorded disposition
@@ -92914,6 +93727,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_ticket_store.py::TestComposeDoneReport::test_strips_duplicate_leading_heading_from_why
 - tests/unit/test_ticket_store.py::TestComposeDoneReport::test_composes_all_three_sections
+designated_repro_test: null
 acceptance:
 - text: GIVEN a why-file that already begins with a Done report heading WHEN frob
     ticket done-report renders it THEN exactly one heading appears in the ledger block;
@@ -92981,6 +93795,7 @@ scope:
 - README.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93036,6 +93851,7 @@ evidence:
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
+designated_repro_test: null
 acceptance:
 - text: GIVEN the T-0731 pre-commit hook active via core.hooksPath WHEN land creates
     its wip snapshot and bump commits in the worktree THEN those internal commits
@@ -93101,6 +93917,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_param_shadowing_import_not_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_local_variable_shadowing_import_not_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93190,6 +94007,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93304,6 +94122,7 @@ evidence:
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_path_mention_counts_as_reference
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_bare_identifier_not_treated_as_reference
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93449,6 +94268,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93519,6 +94339,7 @@ evidence:
 - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 - cmd:sh /tmp/claude-1000/-home-logan-projects-frob/28006941-9d5c-4153-b3fb-399b3b532639/scratchpad/t0833-evidence.sh
   exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93633,6 +94454,7 @@ evidence:
 - tests/test_ticket_evidence.py::TestEvidenceCmdCwd::test_relative_probe_only_succeeds_from_worktree
 - tests/test_ticket_evidence.py::TestEvidenceCmdCwd::test_add_cmd_evidence_runs_against_ticket_path_worktree
 - tests/test_ticket_evidence.py::TestEvidenceCmdCwd::test_failure_message_names_resolved_cwd
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93776,6 +94598,7 @@ evidence:
 - tests/test_ticket_leases.py::TestRefusesForeignLiveLease::test_same_worktree_restart_stays_idempotent
 - tests/test_ticket_leases.py::TestStealOverride::test_steal_succeeds_and_invalidates_the_other_worktrees_lease
 - tests/test_ticket_leases.py::TestDoubleDispatchIncidentRegression::test_incident_shape_end_to_end
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -93942,6 +94765,7 @@ evidence:
 - tests/test_ticket_leases.py::TestSweepWorktrees::test_branches_survive_removal
 - tests/test_ticket_leases.py::TestSweepWorktrees::test_min_age_keeps_recent_worktree
 - tests/test_ticket_leases.py::TestWorktreeSweepCli::test_sweep_cli_prints_verdicts_and_summary
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -94093,6 +94917,7 @@ scope_changes:
   at: '2026-07-26'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -94187,6 +95012,7 @@ evidence:
 - tests/test_tickets.py::TestUnknownFieldForwardCompat::test_unknown_field_logs_warning_named
 - tests/test_tickets.py::TestUnknownFieldForwardCompat::test_unknown_field_preserved_verbatim_on_reserialize
 - tests/test_tickets.py::TestUnknownFieldForwardCompat::test_known_field_still_validated_strictly
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -94317,6 +95143,7 @@ evidence:
 - tests/test_gates.py::TestGateOrderSetEquality::test_canonical_order_names_no_nonexistent_gate
 - tests/test_gates.py::TestMergeCanonicalOrder::test_unknown_gate_key_raises_with_name
 - tests/test_gates.py::TestMergeCanonicalOrder::test_all_current_gates_merge_without_raising
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -94442,6 +95269,7 @@ evidence:
 - tests/test_gates.py::TestProtocolOrderingGate::test_python_with_block_discharges_the_ordering_violation
 - tests/test_graph.py::TestCallGraph::test_build_ordered_call_graph_preserves_source_text_call_order
 - tests/test_graph.py::TestCallGraph::test_build_ordered_call_graph_resolves_a_rust_private_callee
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -94569,6 +95397,7 @@ evidence:
 - tests/test_gates.py::TestProtocolVerificationGate::test_typescript_using_discharges_the_requirement
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_resolves_a_rust_private_callee_by_pub_keyword
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_does_not_resolve_a_rust_pub_callee
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -94691,6 +95520,7 @@ evidence:
 - tests/test_gates.py::TestTick008UnknownLedgerFields::test_silent_on_clean_ledger
 - tests/test_gates.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean
 - tests/test_gates.py::TestTick008UnknownLedgerFields::test_waivable
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -94924,6 +95754,7 @@ evidence:
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
 - tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork::test_archive_refuses_when_a_live_lease_exists
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -95085,6 +95916,7 @@ evidence:
 - tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence::test_other_error_does_not_name_skip_flag_remedy
 - tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_skip_flag_bypasses_error_verdict
 - tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_no_skip_flag_refuses_on_error_verdict
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -95249,6 +96081,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_infra.py::TestCacheDesugar::test_cache_node_and_fill_flow
 - tests/unit/strata/test_reliability.py::TestMissingTimeout::test_cache_fill_and_invalidation_flows_are_local_exempt
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -95339,6 +96172,7 @@ evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_falls_back_to_sys_executable_when_no_tree_venv
 - tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gate_findings_fn_spawns_the_tree_venv_python
 - tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gates_summary_fn_spawns_the_tree_venv_python
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -95575,6 +96409,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -95662,6 +96497,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/test_evidence_integrity.py::TestDoneReportSectionEndStructuralSentinel::test_narrative_h2_subheadings_do_not_end_the_section
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -95947,6 +96783,7 @@ evidence:
 - tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_audit_reports_exhausted
 - tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns::test_no_patterns_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -96055,6 +96892,7 @@ evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_scoped_run_flaky_rule_excluded_from_findings
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn::test_scoped_run_flaky_rule_excluded_from_error_count
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn::test_unparsable_errors_section_falls_back_to_raw_summary_count
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -96258,6 +97096,7 @@ evidence:
 - tests/test_gates.py::TestFmt001Gate::test_long_code_line_not_flagged
 - tests/test_gates.py::TestFmt001Gate::test_untouched_line_not_flagged
 - tests/test_gates.py::TestFmt001Gate::test_short_directive_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -96395,6 +97234,7 @@ scope_changes:
 evidence:
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
 - tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -96467,6 +97307,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation::test_lookalike_heading_before_real_report_ignored
 - tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation::test_lookalike_heading_without_changed_marker_not_real
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -96601,6 +97442,7 @@ evidence:
 - tests/test_ticket_land.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_repointed_citation_no_longer_matches
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_unresolvable_base_ref_fails_closed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -96823,6 +97665,7 @@ evidence:
 - tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_false_for_differing_content
 - tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python
 - tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -96959,6 +97802,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_release.py::TestReverifyFailingBucketIndividually::test_quarantined_failing_id_still_counts_as_passing
 - tests/unit/test_ticket_runner_land_release.py::TestReverifyFailingBucketIndividually::test_non_quarantined_failing_id_excluded
 - tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingRoutesToIndividualReverify::test_batch_not_ok_falls_back_to_per_id_attribution
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -97157,6 +98001,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_ignores_journal_owned_by_live_pid
 - tests/test_mutate_journal.py::test_recycled_pid_with_mismatched_starttime_is_treated_stale
 - tests/test_mutate_journal.py::test_write_journal_cleans_up_temp_file_on_replace_failure
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -97240,6 +98085,7 @@ evidence:
 - tests/unit/test_exports.py::TestExportsConsumers::test_no_source_files
 - tests/unit/test_exports.py::TestExportsConsumers::test_as_text_output
 - tests/unit/test_exports.py::TestExportsConsumers::test_as_json_output
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -97376,6 +98222,7 @@ evidence:
 - tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_cpp_build_failure_skips_tests_under_held_lock
 - tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_rust_holds_shared_lock_across_precheck_and_stages
 - tests/unit/test_check.py::TestDerivedStateLockWiring::test_run_check_ts_holds_shared_lock_across_precheck_and_stages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -97536,6 +98383,7 @@ evidence:
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -97676,6 +98524,7 @@ evidence:
 - tests/test_tickets_organization.py::TestSetComponent::test_updates_component_field
 - tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch
 - tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_logs_with_exc_info
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -97836,6 +98685,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -98067,6 +98917,7 @@ scope:
 - tests/test_tickets_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -98202,6 +99053,7 @@ evidence:
 - tests/unit/test_natives_build.py::TestNativesRunner::test_build_failure_exits_1
 - tests/unit/test_natives_build.py::TestMakefileCoreShim::test_core_recipe_is_one_line_natives_build_shim
 - tests/unit/test_natives_build.py::TestMakefileCoreShim::test_core_recipe_has_no_cargo_target_dir_variable
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob-enabled repo with [natives] declared WHEN `uv run frob natives
     build` runs THEN each declared native crate compiles via maturin develop into
@@ -98293,6 +99145,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_scaffold_natives_shim.py::TestMakefileCoreShimTemplate::test_applying_to_fresh_repo_installs_one_line_shim
 - tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_unmanaged_core_target_reports_stale
+designated_repro_test: null
 acceptance:
 - text: GIVEN a scaffolded frob-enabled repo WHEN `frob scaffold apply` runs THEN
     the Makefile core target is the one-line `uv run frob natives build` shim
@@ -98344,6 +99197,7 @@ scope:
 - tests/unit/test_typestate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a module declaring an explicit protocol (states, transitions, per-function
     state requirements) WHEN the declaration is parsed THEN the model exposes the
@@ -98380,6 +99234,7 @@ scope:
 - tests/unit/test_summaries.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a call graph with cycles WHEN the summary fixpoint runs THEN it terminates
     with sound summaries and per-function results are queryable
@@ -98416,6 +99271,7 @@ scope:
 - tests/unit/test_typestate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture calling a state-requiring function with no path establishing
     that state WHEN frob check runs THEN the typestate violation fires naming the
@@ -98453,6 +99309,7 @@ scope:
 - tests/unit/test_typestate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture establishing a state then returning early on one branch without
     cleanup WHEN frob check runs THEN the cleanup-on-all-paths violation fires naming
@@ -98490,6 +99347,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_pack_refs_succeeds_with_existing_stash_and_multiple_worktrees
 - tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_stash_still_refused_with_multiple_worktrees
+designated_repro_test: null
 acceptance:
 - text: GIVEN a clone with >1 worktree, a pre-existing refs/stash, and the stash-guard
     hook installed WHEN git gc (pack-refs) runs THEN it succeeds
@@ -98857,6 +99715,7 @@ evidence:
 - tests/test_doctor.py::test_run_diagnosis_natives_present
 - tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
 - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+designated_repro_test: null
 acceptance:
 - text: GIVEN the repo at this ticket's close WHEN frob check runs THEN every frob-exports
     package line reports zero public symbols missing from __init__.py, with each resolution
@@ -99017,6 +99876,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN the repo at this ticket's close WHEN frob check runs THEN gate:ARCH
     reports zero unwaived warnings and every remaining waiver carries a current, specific
@@ -99048,6 +99908,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN the repo at this ticket's close WHEN frob check runs THEN gate:PERF
     reports zero unwaived warnings and every remaining waiver has been re-verified
@@ -99083,6 +99944,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash
 - tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check after the purge WHEN gate:WAIVE evaluates THEN it
     reports zero warnings, and no previously-masked ERROR was introduced (any resurfaced
@@ -99502,6 +100364,7 @@ evidence:
 - tests/unit/perf/test_collectors.py::TestParseCollectorFormat::test_dispatches_to_the_matching_adapter
 - tests/unit/perf/test_collectors.py::TestBuildIndexForFiles::test_resolves_a_real_python_file_in_the_repo
 - tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_precise_kind_passes_through
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check at close WHEN gate:TEST evaluates THEN it reports
     zero warnings, with every resolution a real test or a reasoned per-symbol disposition,
@@ -99577,6 +100440,7 @@ evidence:
 - tests/unit/test_app_runners.py::TestExportsRunner::test_consumers_mode_logs_result
 - tests/unit/test_app_runners.py::TestExportsRunner::test_consumers_mode_json_output
 - tests/unit/test_app_runners.py::TestExportsRunner::test_consumers_mode_err_result_exits_1
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -99665,6 +100529,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_warm_lease_status_roundtrip
 - tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_lease_on_empty_pool_fails
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob-enabled repo WHEN `uv run frob scaffold pool warm 2` then `pool
     status` then `pool lease` run THEN two worktrees are warmed, status lists them,
@@ -99829,6 +100694,7 @@ evidence:
 - tests/unit/test_exports.py::TestExportsConsumers::test_as_json_output
 - tests/unit/test_exports.py::TestExportsConsumers::test_finds_import_consumer
 - tests/unit/test_exports.py::TestExportsConsumers::test_excludes_prose_mention
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -99916,6 +100782,7 @@ scope_changes:
 evidence:
 - tests/test_mutate.py::test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader
 - tests/test_doctor.py::test_run_diagnosis_holds_exclusive_lock_blocking_a_shared_reader
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -100062,6 +100929,7 @@ scope_changes:
 evidence:
 - tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_strips_dispatch_agent_env_vars
 - tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_explicit_env_can_still_set_frob_agent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -100157,6 +101025,7 @@ scope:
 - docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -100226,6 +101095,7 @@ evidence:
 - tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_genuine_bare_eval_call_still_fires
 - tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_genuine_bare_exec_call_still_fires
 - tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
+designated_repro_test: null
 acceptance:
 - text: GIVEN a scanned tree containing a function named _mutation_for_eval and no
     real eval/exec calls WHEN the SYS100 scan runs THEN no eval capability finding
@@ -100325,6 +101195,7 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -100369,6 +101240,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_strips_worktree_and_agent_env
 - tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_missing_lease_env_is_fine
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -100461,6 +101333,7 @@ scope_changes:
 evidence:
 - tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal
 - tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_worker
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -100543,6 +101416,7 @@ evidence:
 - tests/test_gates.py::TestCppSourceAccurateCollection::test_multi_source_target_falls_back_loudly
 - tests/test_gates.py::TestCppSourceAccurateCollection::test_no_compile_commands_falls_back_loudly
 - tests/test_gates.py::TestCppSourceAccurateCollection::test_gtest_discover_tests_include_and_dot_names
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -100719,6 +101593,7 @@ evidence:
 - tests/test_ticket_runner_done_report.py::TestSetDoneReportBaseRefFailsFast::test_unresolvable_base_ref_returns_err_immediately
 - tests/test_ticket_runner_done_report.py::TestSetDoneReportBaseRefFailsFast::test_resolvable_base_ref_behavior_unchanged
 - tests/test_ticket_runner_done_report.py::TestSetDoneReportBaseRefFailsFast::test_non_git_root_still_succeeds_best_effort
+designated_repro_test: null
 acceptance:
 - text: GIVEN a clone with no local or remote-tracking main WHEN done-report --base-ref
     main runs THEN it exits nonzero within seconds naming the unresolvable ref
@@ -100818,6 +101693,7 @@ scope:
 - tests/test_check_coverage_registry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob check runs WHEN the registry gate summary renders THEN REG011 appears
     as a known rule and REG010 reports no missing CHK-GATE-REG011 registry entry
@@ -100856,6 +101732,7 @@ evidence:
 - tests/test_ticket_store_stale_snapshot.py::TestLedgerDigest::test_missing_ledger_digests_to_empty_string
 - tests/test_ticket_store_stale_snapshot.py::TestLedgerDigest::test_digest_changes_when_content_changes
 - tests/test_ticket_store_stale_snapshot.py::TestLedgerDigest::test_digest_stable_for_unchanged_content
+designated_repro_test: null
 acceptance:
 - text: GIVEN tickets.md is externally replaced between a CLI process's load and its
     write-back WHEN the write happens THEN no unrelated ticket block regresses (reload-and-merge
@@ -100977,6 +101854,7 @@ scope:
 - src/frob/mutate/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101035,6 +101913,7 @@ scope:
 - src/frob/app/ticket_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101100,6 +101979,7 @@ evidence:
 - tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
 - tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged
 - tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101183,6 +102063,7 @@ scope_changes:
 evidence:
 - tests/test_lang.py::TestSizeCapAndTimeout::test_oversized_file_is_skipped_loudly
 - tests/test_lang.py::TestSizeCapAndTimeout::test_parse_timeout_returns_err_not_hang
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101345,6 +102226,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestDeletedRegistry::test_deleted_after_adoption_fires_reg012
 - tests/test_decisions.py::test_never_adopted_decisions_dir_is_silent
 - tests/test_decisions.py::test_deleted_after_adoption_fires_dec003
+designated_repro_test: null
 acceptance:
 - text: Given a repo that committed docs/design/registry/compliance.yaml and then
     deleted it, compliance_gate through its real production invocation FAILS (raises
@@ -101443,6 +102325,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101506,6 +102389,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101673,6 +102557,7 @@ evidence:
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_unparseable_file_under_graph_exclude_is_silent
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_undecodable_file_fires_parse001
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_undecodable_file_under_graph_exclude_is_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101802,6 +102687,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestRenderLintGate::test_unparseable_file_fires_parse001
 - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_unparseable_python_file_fires_parse001
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101860,6 +102746,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestScopePrework::test_scope001_empty_scope_never_returns_bare_empty_tuple_for_a_real_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101936,6 +102823,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
 - tests/test_gates.py::TestComplianceGate::test_compliance006_silent_on_never_adopted_registry
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -101996,6 +102884,7 @@ evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 - tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102048,6 +102937,7 @@ evidence:
 - tests/test_gates.py::TestParseFailureGate::test_no_partial_parses_is_clean
 - tests/test_gates.py::TestParseFailureGate::test_no_parse_failures_is_clean
 - tests/test_gates.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102137,6 +103027,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 - tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102222,6 +103113,7 @@ evidence:
 - tests/unit/test_lang_parse_guard.py::TestParseGuardIsWired::test_parse_strata_file_source_calls_the_guard_helpers
 - tests/unit/test_lang_parse_guard.py::TestParseGuardIsInvoked::test_python_file_invokes_size_cap_and_timeout
 - tests/unit/test_lang_parse_guard.py::TestParseGuardIsInvoked::test_strata_file_invokes_size_cap_and_timeout
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102339,6 +103231,7 @@ evidence:
 - tests/test_gates.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
 - tests/test_gates.py::TestParseFailureGate::test_no_parse_failures_is_clean
 - tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102462,6 +103355,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestScopePrework::test_scope001_fires_when_no_scope_declared
 - tests/test_gates.py::TestScopePrework::test_scope001_empty_scope_ledger_still_implicitly_in_scope
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102567,6 +103461,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
 - tests/test_ticket_land.py::TestLandRepairMarker::test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker
 - tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land killed by SIGTERM mid-staging WHEN the next frob command runs
     THEN main's tip equals the pre-land tip and the repair path reports what was cleaned
@@ -102663,6 +103558,7 @@ evidence:
 - tests/system/test_spawn_budget.py::test_ticket_show_spawns_each_argv_at_most_once
 - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
 - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dropped_ticket_is_not_recreated
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102735,6 +103631,7 @@ evidence:
 - tests/system/test_cli_ticket.py::TestTicketNewNonInteractive::test_new_does_not_prompt_or_hang_without_a_tty
 - tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_strips_dispatch_agent_env_vars
 - tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_explicit_env_can_still_set_frob_agent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102828,6 +103725,7 @@ scope_changes:
 evidence:
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_logging_checks_needle_tuples
 - tests/test_vet.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_logging_checks_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102926,6 +103824,7 @@ scope:
 - design/*.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -102973,6 +103872,7 @@ scope_changes:
   at: '2026-07-26'
 evidence:
 - tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103036,6 +103936,7 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103105,6 +104006,7 @@ evidence:
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103176,6 +104078,7 @@ scope_changes:
 evidence:
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_async_hazards_needle_tuples
 - tests/test_vet.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_async_hazards_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103250,6 +104153,7 @@ evidence:
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103338,6 +104242,7 @@ evidence:
 - tests/test_serve.py::TestPerfHot::test_top_truncates_results
 - tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
 - tests/integration/test_interfaces.py::TestInterfaces::test_serve_tools
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103398,6 +104303,7 @@ evidence:
 - tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_nested_inside_shared_holder_does_not_deadlock
 - tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_concurrent_separate_process_writer_still_blocked
 - tests/test_graph.py::TestBuildIncremental::test_stats_sum_source_and_doc_counts_not_difference
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103717,6 +104623,7 @@ evidence:
 - tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 - tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_kwargs_capture_output_text_and_no_check
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103822,6 +104729,7 @@ scope:
 - src/frob/app/ticket_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103844,6 +104752,7 @@ scope:
 - x
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -103878,6 +104787,7 @@ evidence:
 - tests/unit/perf/test_effect_summaries.py::TestUnknownIdentityEquality::test_two_unknowns_with_the_same_reason_text_are_not_equal
 - tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate
 - tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_unresolvable_callee_does_not_crash_and_does_not_fire
+designated_repro_test: null
 acceptance:
 - text: given an expensive effect (spawn/fs-walk/net/heavy-parse) occurring only inside
     a callee 2+ hops below the analyzed function, when any PERF rule that keys on
@@ -104010,6 +104920,7 @@ evidence:
 - tests/test_gates.py::TestProtocolOrderingGate::test_call_before_establishing_transition_is_an_ordering_error
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 - tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -104061,6 +104972,7 @@ evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 - tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -104189,6 +105101,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -104248,6 +105161,7 @@ evidence:
 - tests/unit/test_conftest_parse_reset.py::TestConftestParseReset::test_a_leaves_a_partial_parse_behind
 - tests/unit/test_conftest_parse_reset.py::TestConftestParseReset::test_b_does_not_see_a_leaked_partial_parse
 - tests/unit/test_conftest_parse_reset.py::TestConftestParseReset::test_reset_before_each_test_isolates_partial_parse_state
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -104378,6 +105292,7 @@ scope_changes:
 evidence:
 - tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
 - tests/test_gates.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -104440,6 +105355,7 @@ scope_changes:
 evidence:
 - cmd:bash /tmp/claude-1000/-home-logan-projects-frob/5bfbdf34-54a2-426c-89be-ade390652f3f/scratchpad/verify_audit.sh
   exit=0 sha256=de02c1947993
+designated_repro_test: null
 acceptance:
 - text: given a full frob check run on this repo profiled with the T-0765/T-0712 tooling
     (frob perf collect --sampler or equivalent), when the audit doc is written, then
@@ -104546,6 +105462,7 @@ evidence:
 - tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors
 - tests/test_tickets_collision.py::TestRealLedgerIntegrity::test_no_duplicate_ids_within_or_across_ledgers
 - tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_colon_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -104762,6 +105679,7 @@ evidence:
 - tests/test_graph.py::TestResolveCallEdgesNative::test_native_matches_python_fallback_on_a_real_package
 - tests/test_graph.py::TestResolveCallEdgesNative::test_native_matches_python_fallback_on_a_synthetic_edge_case
 - tests/test_graph.py::TestResolveCallEdgesNative::test_core_available_true_dispatches_to_native_spy_and_false_does_not
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -104950,6 +105868,7 @@ evidence:
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
 - tests/test_gates.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105077,6 +105996,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105146,6 +106066,7 @@ evidence:
 - tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_concurrent_separate_process_writer_still_blocked
 - tests/unit/test_process_lock.py::TestProcessRegistryCanonicalKey::test_shared_unresolved_then_nested_write_resolved_does_not_deadlock
 - tests/unit/test_process_lock.py::TestProcessRegistryCanonicalKey::test_write_resolved_then_nested_shared_unresolved_agrees
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105295,6 +106216,7 @@ scope:
 - src/frob/gates/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105322,6 +106244,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105392,6 +106315,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - 'cmd:grep -c ''tier: epic'' tickets.md exit=0 sha256=06e9d52c1720'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105484,6 +106408,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105593,6 +106518,7 @@ evidence:
 - tests/test_tickets_velocity.py::TestSprintVelocity::test_non_git_root_returns_empty_transitions
 - tests/test_tickets_velocity.py::TestModelsAreFrozen::test_sprint_transition_rejects_field_assignment
 - tests/test_tickets_velocity.py::TestModelsAreFrozen::test_sprint_velocity_report_rejects_field_assignment
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105729,6 +106655,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105786,6 +106713,7 @@ evidence:
 - tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
 - tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketNewTierSprint::test_new_carries_tier_and_sprint
 - tests/test_tickets_tiers.py::TestTierField::test_default_tier_is_ticket
+designated_repro_test: null
 acceptance:
 - text: given current main plus this fix, when uv run frob check runs cleanly rebuilt,
     then gate-summary reports 0 errors
@@ -105852,6 +106780,7 @@ evidence:
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
 - tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -105925,6 +106854,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestParseFailureGate::test_partial_parse_in_graph_excluded_path_is_silent
 - tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
+designated_repro_test: null
 acceptance:
 - text: given tests/fixtures/lang/broken.py (graph-excluded, intentionally malformed),
     when the full frob check runs, then PARSE002 reports no finding for it while a
@@ -105971,6 +106901,7 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106004,6 +106935,7 @@ scope:
 - src/frob/check/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106086,6 +107018,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_conftest_parse_reset.py::TestConftestParseReset::test_b_does_not_see_a_leaked_partial_parse
+designated_repro_test: null
 acceptance:
 - text: given the fix, when frob check runs, then gate:DRIFT reports 0 errors
   evidence:
@@ -106137,6 +107070,7 @@ scope_changes:
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106193,6 +107127,7 @@ evidence:
 - tests/test_gates.py::TestProcessPoolGates::test_run_gates_output_is_identical_across_repeated_runs
 - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 - tests/test_gates.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106393,6 +107328,7 @@ evidence:
 - tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision::test_env_unset_installs_serial_pools
 - tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision::test_env_one_installs_serial_pools
 - tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision::test_env_zero_skips_serial_pools
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106528,6 +107464,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test002_parametrized_test_counts_each_case
 - tests/test_gates.py::TestTestGate::test_test002_noop_parametrize_does_not_inflate_case_count
 - tests/test_gates.py::TestTestGate::test_case_count_root_aware_caps_noop_parametrize
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106696,6 +107633,7 @@ evidence:
 - tests/unit/test_cycle.py::test_two_independent_cycles
 - tests/unit/test_cycle.py::test_self_loop
 - tests/unit/test_cycle.py::test_cycle_not_duplicated
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106811,6 +107749,7 @@ scope_changes:
 evidence:
 - tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_near_duplicate_bodies_still_flagged
 - tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -106953,6 +107892,7 @@ evidence:
 - tests/unit/test_cycle.py::test_long_chain_would_have_crashed_recursive_tarjan
 - tests/unit/test_cycle.py::test_long_chain_no_recursion_error
 - tests/unit/test_cycle.py::test_long_chain_with_cycle_no_recursion_error
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -107025,6 +107965,7 @@ evidence:
 - tests/test_arch_near_duplicate_native.py::test_native_kernel_matches_difflib_on_synthetic_archgate_fixture
 - tests/test_arch_near_duplicate_native.py::test_native_kernel_matches_difflib_over_this_repos_own_arch_tree
 - tests/test_arch_near_duplicate_native.py::test_near_duplicate_cluster_dispatches_to_native_and_matches_reference
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -107172,6 +108113,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
 - tests/test_gates.py::TestCoverageGate::test_cov002_grace_covers_ticket_created_and_closed_in_same_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -107239,6 +108181,7 @@ evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -107302,6 +108245,7 @@ evidence:
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_two_writers_fires_mode_blind
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -107407,6 +108351,7 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -107534,6 +108479,7 @@ evidence:
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 - tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
+designated_repro_test: null
 acceptance:
 - text: given the 56 rows, when the registry gate runs, then zero rows cite T-0331
     and every disposition resolves (REG002/REG008/REG011 clean)
@@ -107629,6 +108575,7 @@ evidence:
 - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites
 - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish
 - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
+designated_repro_test: null
 acceptance:
 - text: given a worktree whose tickets-archive.md predates an archive sweep on main,
     when its ticket lands, then every block in main's pre-land archive survives in
@@ -107860,6 +108807,7 @@ evidence:
 - tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -107972,6 +108920,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+designated_repro_test: null
 acceptance:
 - text: 'FAIL before this ticket''s fix: tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
     would newly flag REL201/REL210/REL211/REL222/REL230/REL231/REL240/REL241/REL250/REL261/REL271/REL281/REL290/REL291/REL300/REL301/REL310/REL311/REL321/REL331/REL340/REL351/REL360/REL371/REL372/REL380/REL381/REL382/REL383/SYS204
@@ -108131,6 +109080,7 @@ evidence:
 - tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_code_evidence_fires
 - tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_real_code_evidence_discharges
 - tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -108271,6 +109221,7 @@ scope_changes:
 evidence:
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
 - tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -108327,6 +109278,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 acceptance:
 - text: given a rule id referenced only via a module-level constant and absent from
     _KNOWN_GATE_RULES, when the drift-lock test runs, then it fails naming that id
@@ -108376,6 +109328,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff
 - tests/test_gates.py::TestCoverageGate::test_cov002_scope_grace_without_same_diff_close_still_fires
 - tests/test_gates.py::TestCoverageGate::test_open_scopes_grace_requires_both_root_and_diff
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -108476,6 +109429,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_scope_grace_without_same_diff_close_still_fires
 - tests/test_gates.py::TestCoverageGate::test_open_scopes_grace_requires_both_root_and_diff
 - tests/test_gates.py::TestCoverageGate::test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff
+designated_repro_test: null
 acceptance:
 - text: given SYS100/SYS101/SYS102/SYS200/SYS201/SYS202/SYS203 are emitted by the
     production `frob sys audit` invocation (_selfconform.py/_contention.py) but absent
@@ -108563,6 +109517,7 @@ evidence:
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -108800,6 +109755,7 @@ evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_line_above_discharges
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_same_line_discharges
+designated_repro_test: null
 acceptance:
 - text: 'FAIL before T-0968: secrets_gate(repo) on a fixture repo whose tracked file
     carries a bare `# frob:secret-fake` (no reason=) produces no SEC004 finding at
@@ -108889,6 +109845,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_gate_error_exits_1
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -109021,6 +109978,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestFieldNames::test_camelcase_date_of_birth_field_fires
 - tests/test_pii_structural_gate.py::TestFieldNames::test_orm_declarative_base_field_fires
 - tests/test_pii_structural_gate.py::TestFieldNames::test_django_model_field_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -109189,6 +110147,7 @@ evidence:
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_executable_line_numbers_covers_docstring_and_comment
 - tests/test_arch_near_duplicate_native.py::test_native_kernel_matches_difflib_over_this_repos_own_arch_tree
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -109462,6 +110421,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_bare_check_refuses_under_frob_agent
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_allow_full_check_override_bypasses_refusal
 - tests/test_tickets_mutation_evidence.py::TestEvidenceTestIds::test_filters_non_node_id_entries
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -109700,6 +110660,7 @@ evidence:
 - tests/test_gates.py::TestOptInGates::test_dup_gate_off_by_default
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -109875,6 +110836,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -109974,6 +110936,7 @@ evidence:
 - tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_true_mutation_evidence_with_skip_flag_is_never_downgraded
 - tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_false_mutation_evidence_with_skip_flag_is_downgraded_to_none
 - tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_false_mutation_evidence_without_skip_flag_stays_false
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -110255,6 +111218,7 @@ evidence:
 - tests/unit/test_arch_srp.py::TestLcom4::test_disjoint_field_groups_trigger_lcom4
 - tests/unit/test_arch_srp.py::TestLcom4::test_shared_fields_do_not_trigger_lcom4
 - tests/unit/test_arch_srp.py::TestMixedConcernFunction::test_io_compute_and_formatting_together_trigger
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -110436,6 +111400,7 @@ evidence:
 - tests/test_secrets_gate.py::TestFakeMarkerStaleness::test_marker_discharging_email_shaped_pii_does_not_fire
 - tests/test_secrets_gate.py::TestFakeMarkerStaleness::test_bare_marker_without_reason_is_not_a_staleness_site
 - tests/test_secrets_gate.py::TestFakeMarkerStaleness::test_docstring_style_mention_is_not_a_staleness_site
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -110525,6 +111490,7 @@ evidence:
 - tests/unit/test_natives_build.py::TestBuildNatives::test_builds_declared_rust_natives
 - tests/unit/test_natives_build.py::TestBuildNatives::test_skips_native_with_no_matching_crate_dir
 - tests/unit/test_natives_build.py::TestBuildNatives::test_skips_non_rust_native
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -110672,6 +111638,7 @@ scope_changes:
 evidence:
 - tests/unit/test_arch_srp.py::TestGodModule::test_unrelated_export_clusters_trigger_god_module
 - tests/unit/test_arch_srp.py::TestGodModule::test_related_exports_do_not_trigger_god_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -110820,6 +111787,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_real_pool_worker_under_parent_shared_holder_completes
 - tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_independent_process_without_marker_still_blocks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -110977,6 +111945,7 @@ evidence:
 - tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_independent_process_without_marker_still_blocks
 - tests/unit/test_process_lock.py::TestProcessRegistryCanonicalKey::test_shared_unresolved_then_nested_write_resolved_does_not_deadlock
 - tests/unit/test_process_lock.py::TestProcessRegistryCanonicalKey::test_write_resolved_then_nested_shared_unresolved_agrees
+designated_repro_test: null
 acceptance:
 - text: given frob check's main process holding SHARED derived_state_lock, when a
     pool worker runs a gate that takes derived_state_write_lock, then the check completes
@@ -111048,6 +112017,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/test_app.py::TestStabilityGate::test_dotted_symref_converted_to_pytest_node_id
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -111189,6 +112159,7 @@ evidence:
 - tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984::test_directive_line_at_exact_limit_is_byte_identical
 - tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984::test_directive_line_one_under_limit_is_byte_identical
 - tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984::test_directive_line_one_over_limit_wraps_and_stays_in_bounds
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -111305,6 +112276,7 @@ evidence:
 - tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_single_line_with_bare_noqa_is_byte_identical
 - tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_line_without_noqa_still_wraps
 - tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985::test_canonicalizing_twice_over_real_repo_files_is_a_no_op
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -111402,6 +112374,7 @@ evidence:
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_double_separator_target_flagged
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_single_separator_target_not_flagged
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 acceptance:
 - text: given a frob:tests directive whose target uses ::-separated class-method form,
     when frob check runs, then it fails at ERROR severity naming the directive, while
@@ -111500,6 +112473,7 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestVerbShapedContinuationProse::test_property_wrap_at_every_width_preserves_reason
 - tests/unit/graph/test_dsl.py::TestVerbShapedContinuationProse::test_stacked_directives_still_parse_independently
 - tests/unit/graph/test_dsl.py::TestVerbShapedContinuationProse::test_unrelated_directives_corruption_repro_still_rejects_fold
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -111671,6 +112645,7 @@ evidence:
 - tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken::test_matches_a_real_token
 - tests/test_evidence_integrity.py::TestD02ScopeBinding::test_transition_allows_when_covers_scope_true
 - tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_requires_reason
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -111930,6 +112905,7 @@ evidence:
 - tests/unit/test_lang_primitives.py::test_cpp_function_nodes_public_wrapper
 - tests/unit/test_lang_primitives.py::test_resolve_local_import_maps_to_repo_relative
 - tests/test_lang.py::test_lang_pipeline_integration
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -111996,6 +112972,7 @@ evidence:
 - tests/test_gates.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
 - tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_real_pool_worker_under_parent_shared_holder_completes
 - tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_independent_process_without_marker_still_blocks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -112130,6 +113107,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates_fmt_directives.py::TestConventionUnitBinding::test_target_plus_kind_attribute_splitting_after_target_round_trips
 - tests/test_gates_fmt_directives.py::TestConventionUnitBinding::test_logical_text_is_identical_across_widths_and_attribute_counts
+designated_repro_test: null
 acceptance:
 - text: given any directive with trailing attributes, when canonicalize_text wraps
     and the parser rejoins it, then the token stream is identical to the unwrapped
@@ -112227,6 +113205,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestReleaseBump::test_stale_worktree_version_bump_yields_main_plus_one
 - tests/test_ticket_land.py::TestReleaseBump::test_downgrade_bump_is_refused
+designated_repro_test: null
 acceptance:
 - text: given a worktree whose pyproject carries an older version than main, when
     its ticket lands with a REL001 bump, then the resulting version is strictly greater
@@ -112318,6 +113297,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_natives_build.py::TestBuildNatives::test_builds_declared_rust_natives
 - tests/system/test_natives_build_integration.py::test_build_natives_compiles_and_imports_real_crate
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -112381,6 +113361,7 @@ scope:
 - tests/unit/graph/test_dsl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -112501,6 +113482,7 @@ evidence:
 - tests/test_evidence_integrity.py::TestD02ScopeBinding::test_transition_allows_when_covers_scope_true
 - tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_allows_when_evidence_reverified_true
 - tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_requires_reason
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -112590,6 +113572,7 @@ evidence:
 - tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
 - tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_extra_search_path_and_python_pin_to_root
 - tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_no_src_or_venv_omits_the_pinning_flags
+designated_repro_test: null
 acceptance:
 - text: given current main, when both named tests run in isolation, then both pass
   evidence:
@@ -112751,6 +113734,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_lock_excludes_graph_excluded_modules
+designated_repro_test: null
 acceptance:
 - text: given a fresh make coverage + re-stamp, when frob check runs, then TEST011
     deflation and TEST012 j2-divergence findings are gone and join fraction reflects
@@ -112883,6 +113867,7 @@ evidence:
 - tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
 - tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target
 - tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
+designated_repro_test: null
 acceptance:
 - text: given a ticket scoped to a code file with a frob:doc edge to an unscoped doc,
     when the scope is declared or validated, then the missing doc counterpart is surfaced
@@ -113016,6 +114001,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages
 - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_persists_resume_state_for_deferred_groups
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -113060,6 +114046,7 @@ evidence:
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_strictly_improved_test_count_auto_accepts_and_rewrites_recap
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands
+designated_repro_test: null
 acceptance:
 - text: given a done ticket whose recorded claim is 0/0 and whose fresh re-run shows
     N/N passing, when it lands, then the land succeeds with the recap rewritten to
@@ -113134,6 +114121,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed
 - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
 - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
+designated_repro_test: null
 acceptance:
 - text: given a worktree whose earlier land already carried this ticket's files and
     ledger state, when this ticket lands, then land exits success reporting absorption
@@ -113229,6 +114217,7 @@ evidence:
 - tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_refuses
 - tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages
 - tests/test_ticket_land.py::TestUnionZoneMerge::test_append_only_union_concatenates
+designated_repro_test: null
 acceptance:
 - text: given two worktrees each appending a distinct severity line and rule id, when
     both land sequentially, then the second land succeeds without manual conflict
@@ -113347,6 +114336,7 @@ evidence:
 - tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit
 - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
 - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
+designated_repro_test: null
 acceptance:
 - text: given a shell whose cwd is inside the worktree and flapped uv.lock files on
     both sides, when frob ticket land runs, then it lands correctly with no manual
@@ -113486,6 +114476,7 @@ evidence:
 - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_clears_resume_state_once_every_group_has_run
 - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_stale_remaining_group_is_dropped_and_falls_back_to_full_set
 - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_budget_deferred_result_names_every_deferred_group
+designated_repro_test: null
 acceptance:
 - text: given frob check --budget 120 on this repo, when it runs, then it completes
     under the budget having executed a coherent chunk subset and persists resume state
@@ -113595,6 +114586,7 @@ evidence:
 - tests/test_ticket_reverify.py::TestReverifyCli::test_reruns_verification_and_refreshes_recap_state_unchanged
 - tests/test_ticket_reverify.py::TestReverifyCli::test_surfaces_now_failing_evidence_loudly
 - tests/test_ticket_reverify.py::TestReverifyCli::test_refuses_non_done_ticket
+designated_repro_test: null
 acceptance:
 - text: given a done ticket with newly-bound evidence, when frob ticket reverify runs,
     then the full close verification executes and the refreshed recap reflects the
@@ -114507,6 +115499,7 @@ evidence:
 - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 - tests/system/test_cli_exports.py::TestExportsFlags::test_json_output
 - tests/system/test_cli_exports.py::TestExportsFlags::test_json_modules_have_symbols
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -114770,6 +115763,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails
 - tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_reads_head_manifest_not_worktree_disk_copy
 - tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_no_manifest_at_head_returns_none
+designated_repro_test: null
 acceptance:
 - text: given a worktree carrying a stale version, when its ticket lands, then the
     bump computes main+1 on the first attempt with no guard refusal
@@ -114848,6 +115842,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/test_release.py::TestReleaseGateCoherence::test_hand_edited_pyproject_fires_rel002
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -114965,6 +115960,7 @@ evidence:
 - tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_uv_lock_failure_exits_1
 - tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_bad_pyproject_version_line_exits_1
 - tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+designated_repro_test: null
 acceptance:
 - text: given any one artifact hand-edited out of agreement, when frob check runs,
     then a REL error names the disagreeing files; given frob release sync, all four
@@ -115118,6 +116114,7 @@ evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_retired_id_stays_excluded
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 - tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+designated_repro_test: null
 acceptance:
 - text: given a new gate emitting a fresh rule id via constant or literal, when generation
     runs, then the registry contains it with no hand edit; the drift-lock passes with
@@ -115279,6 +116276,7 @@ evidence:
 - tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_doc005_freshness_flags_stale_generated_block
 - tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_doc005_freshness_passes_after_sync
 - tests/unit/test_app_runners_batch5.py::TestDocsRunner::test_sync_commands_writes
+designated_repro_test: null
 acceptance:
 - text: given a land whose diff adds a gate rule id, when it lands, then check-coverage.yaml
     carries the new row with no manual sync; given a new CLI subcommand, docs sync
@@ -115400,6 +116398,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_same_name_self_match_is_silent
 - tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_genuine_cross_file_helper_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -115515,6 +116514,7 @@ scope_changes:
   reason: widen for smoke test
   actor: logan
   at: '2026-07-27'
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -115537,6 +116537,7 @@ scope:
 - src/frob/graph/affects.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -115581,6 +116582,7 @@ evidence:
 - tests/test_docptr_gate.py::TestDoc006Waive::test_waive_suppresses
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_double_separator_target_flagged
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_single_separator_target_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -115671,6 +116673,7 @@ evidence:
 - tests/test_docptr_gate.py::TestDoc006Config::test_declared_but_unset_section_not_flagged
 - tests/test_docptr_gate.py::TestDoc006Symbol::test_reexported_class_attribute_chain_not_flagged
 - tests/test_docptr_gate.py::TestDoc006Symbol::test_dunder_init_mid_chain_resolves_to_module
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -115855,6 +116858,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
 - tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -115926,6 +116930,7 @@ evidence:
 - tests/unit/perf/test_dup_spawn.py::TestPerf012CalibrationT1018::test_splat_forwarding_wrapper_called_with_different_args_is_not_flagged
 - tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown::test_splat_argument_nested_in_a_literal_yields_an_unknown_member
 - tests/unit/perf/test_effect_summaries.py::TestSplatArgumentDegradesToUnknown::test_plain_named_parameter_forward_is_not_treated_as_a_splat
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check run WHEN PERF012 fires THEN every remaining finding
     is a true independently-reachable duplicate spawn (spot-check 10) and the total
@@ -116062,6 +117067,7 @@ evidence:
 - tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_is_mutually_navigable
 - tests/unit/strata/test_registry_cross_corpus_totality.py::TestProseOnlyRetrofitIntegrity::test_retrofit_counts_and_source_doc_pointers_hold
 - tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy::test_reason_naming_no_control_warns
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check run THEN REG011 warnings are zero and no disposition
     was silently weakened (spot-check 10 rewrites read as substantive)
@@ -116216,6 +117222,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestArchChecksReg008BurnDown::test_no_reg008_findings_for_arch_checks_yaml
 - tests/unit/test_arch_srp.py::TestLcom4::test_disjoint_field_groups_trigger_lcom4
 - tests/unit/test_arch_srp.py::TestLcom4::test_shared_fields_do_not_trigger_lcom4
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check run THEN REG008 warnings are zero
   evidence:
@@ -116322,6 +117329,7 @@ evidence:
 - tests/test_tickets_lease.py::TestDoable::test_ignore_lease_returns_raw_list
 - tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface
 - tests/test_gates.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full unscoped frob check THEN WAIVE004 warnings are zero and gate
     errors remain zero
@@ -116419,6 +117427,7 @@ evidence:
 - tests/unit/test_cycle_runner_process_path.py::TestProcessPathGating::test_cpp_file_requested_as_cpp_is_scanned_as_cpp
 - tests/unit/test_cycle_runner_process_path.py::TestProcessPathGating::test_cpp_file_requested_as_python_is_not_scanned
 - tests/unit/test_cycle_runner_process_path.py::TestProcessPathGating::test_plain_python_file_default_lang_is_scanned
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check THEN EXHAUST001+EXHAUST002 warnings are zero or reduced
     to a ticketed, justified residue
@@ -116553,6 +117562,7 @@ evidence:
 - tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_doc005_freshness_flags_stale_generated_block
 - tests/unit/strata/test_reliability.py::TestMissingTimeout::test_flow_without_timeout_fires
 - tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check THEN INV003-INV006 warnings are zero
   evidence:
@@ -116726,6 +117736,7 @@ evidence:
 - tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires
 - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_undispositioned_entry_fails
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check THEN REF001/REF002/COV006/COV007/DEAD001/PLACE001
     warnings are zero
@@ -116976,6 +117987,7 @@ evidence:
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_still_fires_without_module
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_unarbitered_store_still_fires_with_module
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_two_writers_fires_mode_blind
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -117115,6 +118127,7 @@ scope:
 - docs/modules/arch.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -117165,6 +118178,7 @@ evidence:
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_fires_on_unrelated_calls
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_when_second_reads_first
 - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_on_single_await
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -117313,6 +118327,7 @@ evidence:
 - tests/test_lang.py::TestParsePython::test_py312_type_statement_extracted_as_type_symbol
 - tests/test_lang.py::TestParsePython::test_private_type_alias_is_not_public
 - tests/test_lang.py::TestParsePython::test_ordinary_assignments_are_unaffected_by_type_alias_detection
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -117502,6 +118517,7 @@ evidence:
 - tests/test_tickets.py::TestAddAcceptance::test_appends_criteria_to_existing_ticket
 - tests/test_tickets.py::TestAddAcceptance::test_empty_criteria_is_rejected
 - tests/test_tickets.py::TestAddAcceptance::test_blank_criteria_are_dropped
+designated_repro_test: null
 acceptance:
 - text: GIVEN an existing queued ticket WHEN the new subcommand adds a criterion THEN
     ticket show displays it and the ledger write went through the CLI
@@ -117609,6 +118625,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fresh dispatch worktree THEN its base contains local main's tip or
     the playbook's warm-up section documents the mandatory fix prominently
@@ -117702,6 +118719,7 @@ scope_changes:
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:uv run frob check --ticket T-1031 --only docblocks exit=0 sha256=382bff877fb0
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -117816,6 +118834,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -117871,6 +118890,7 @@ scope_changes:
 evidence:
 - tests/test_lang.py::TestParsePython::test_bare_widened_alias_rhs_extracted_as_type_symbol
 - tests/test_lang.py::TestParsePython::test_bare_unrelated_call_still_unindexed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -117985,6 +119005,7 @@ evidence:
 - tests/test_arch_gate.py::TestArchGateCppThrow::test_noexcept_with_catch_all_does_not_fire_cppthrow001
 - tests/test_arch_gate.py::TestArchGateCppThrow::test_cppthrow001_is_waivable_with_reason
 - tests/test_arch_gate.py::TestArchGateCppThrow::test_noexcept_may_throw_fires_cppthrow001_error
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -118102,6 +119123,7 @@ evidence:
 - tests/unit/test_dup_legacy_py.py::test_iter_functions_py_yields_qualified_names
 - tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_finds_class_for_method
 - tests/unit/test_dup_legacy_py.py::test_collect_locals_py_empty_for_body_with_no_bindings
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -118320,6 +119342,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+designated_repro_test: null
 acceptance:
 - text: GIVEN the ledger changes on disk between a ticket verb's read and write THEN
     the verb refuses and retries from fresh state instead of writing a stale full-file
@@ -118378,6 +119401,7 @@ scope:
 - src/frob/gates/_registry_exhaustiveness.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -118533,6 +119557,7 @@ evidence:
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
 - tests/unit/test_logging_module.py::test_below_level_filter
 - tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_interleaved_enter_exit_across_threads_never_sticks
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -118717,6 +119742,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -118762,6 +119788,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -118873,6 +119900,7 @@ evidence:
 - tests/test_perf.py::test_perf_end_to_end_profile_load_and_heat
 - tests/test_serve.py::test_warm_state_rebuilds_iff_tree_changed
 - tests/system/test_cli_vet.py::TestHookMode::test_old_package_passes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119147,6 +120175,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestSystemDesignReg008BurnDown::test_no_reg008_findings_for_system_design_yaml
 - tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 - tests/test_registry_exhaustiveness.py::TestComplianceReg008BurnDown::test_no_reg008_findings_for_compliance_yaml
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119308,6 +120337,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestGitSubprocessFailures::test_unowned_deletions_diff_failure_after_merge
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119360,6 +120390,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_completes_and_stamps
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119450,6 +120481,7 @@ scope:
 - tests/unit/test_app_runners_batch6.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119477,6 +120509,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_clean_model_exits_zero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119571,6 +120604,7 @@ evidence:
 - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
 - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
 - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119686,6 +120720,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/system/test_cli_ticket_worktree_root.py::TestTicketRootFromLinkedWorktree::test_ticket_show_reads_worktrees_own_ledger
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119792,6 +120827,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119881,6 +120917,7 @@ scope:
 - tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -119976,6 +121013,7 @@ evidence:
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_cpp_array_runtime_index_not_addressed
 - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_structural_construct_is_frozen
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -120147,6 +121185,7 @@ evidence:
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_shrinkage_drops_stale_references
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_never_absorbs_a_new_reference
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_symbol_no_longer_deprecated_is_dropped
+designated_repro_test: null
 acceptance:
 - text: given a repo where subprocess.run is called in a new file, when DEPR005 evaluates
     a deprecated symbol named run, then the new file is NOT reported as a caller unless
@@ -120392,6 +121431,7 @@ evidence:
 - tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection::test_undecorated_symbol_is_not_memoized
 - tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection::test_bare_cache_named_parameter_is_not_mistaken_for_a_decorator
 - tests/unit/perf/test_effect_summaries.py::TestMemoizedCalleeDetection::test_functools_dotted_lru_cache_decorator_is_memoized
+designated_repro_test: null
 acceptance:
 - text: 'given a loop ''for line in lines: line.count(x)'', when PERF002 evaluates,
     then no finding fires because the receiver is the loop''s own per-iteration element,
@@ -120605,6 +121645,7 @@ evidence:
 - tests/test_ticket_leases.py::TestCommitStartTransition::test_no_op_when_ledger_already_clean
 - tests/test_ticket_leases.py::TestCommitStartTransition::test_reports_exact_recovery_command_on_commit_failure
 - tests/test_ticket_leases.py::TestCommitStartTransition::test_commits_cleanly_even_when_caller_shell_has_frob_agent_set
+designated_repro_test: null
 acceptance:
 - text: 'given a worktree, when frob ticket start transitions a ticket to in-progress,
     then the root tickets.md change is committed by the verb itself (message form:
@@ -120705,6 +121746,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_parses_multiple_findings_from_errors_section
 - tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_uses_tree_venv_python_when_present
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -120816,6 +121858,7 @@ evidence:
 - tests/test_decisions.py::test_no_decisions_dir_skips
 - tests/test_decisions.py::test_never_adopted_decisions_dir_is_silent
 - tests/test_decisions.py::test_deleted_after_adoption_fires_dec003
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -121032,6 +122075,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute
 - tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged
+designated_repro_test: null
 acceptance:
 - text: given frob ticket land invoked with a RELATIVE --worktree path from the repo
     root, when land runs worktree-venv subprocesses, then the venv python resolves
@@ -121134,6 +122178,7 @@ scope_breadth_ack_reason: null
 evidence:
 - cmd:python3 -c "import json,sys; sys.exit(0 if json.load(open('.claude/settings.json'))['worktree']['baseRef']=='head'
   else 1)" exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -121205,6 +122250,7 @@ evidence:
 - tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_reads_configured_value
 - tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_non_positive_value_falls_back_to_default
 - tests/test_ticket_leases.py::TestLoadPositiveIntConfig::test_malformed_toml_falls_back_to_default
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -121314,6 +122360,7 @@ evidence:
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_write_mode_is_unrestricted_in_v0
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_write_mode_fails_outside_the_declared_path
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_write_mode_with_no_extractable_literal_stays_silent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -121573,6 +122620,7 @@ evidence:
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_a_waived_sys205_finding_is_discharged_and_reported_waived
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_mode_nonconformance_exits_nonzero_with_named_gap
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -122164,6 +123212,7 @@ evidence:
 - tests/unit/test_docs_module.py::test_docs_module_integration
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
 - tests/unit/test_lang_primitives.py::test_resolve_local_import_maps_to_repo_relative
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -122340,6 +123389,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_detected
 - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_detected
 - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_detected
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -122526,6 +123576,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestTestGate::test_waive004_exempts_a_structurally_unverifiable_rule
 - tests/test_gates.py::TestTestGate::test_waive004_still_fires_for_a_non_exempt_rule_with_the_same_shape
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -122633,6 +123684,7 @@ scope:
 - x
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -122684,6 +123736,7 @@ evidence:
 - tests/unit/test_arch.py::TestDeepNestingArchExempt::test_reasoned_exempt_suppresses_finding
 - tests/unit/test_arch.py::TestDeepNestingArchExempt::test_unreasoned_exempt_still_fires
 - tests/unit/test_arch.py::TestDeepNestingArchExempt::test_exempt_on_unrelated_function_does_not_leak
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -122811,6 +123864,7 @@ evidence:
 - tests/test_vet_containment.py::TestFetchCweForCve::test_cached_body_parses_cwe_ids
 - tests/test_vet_containment.py::TestFetchCweForCve::test_malformed_cached_body_degrades_without_raising
 - tests/test_vet_containment.py::TestFetchCweForCve::test_expired_cache_entry_triggers_a_fresh_fetch
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -122939,6 +123993,7 @@ evidence:
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[untagged_member]
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -123067,6 +124122,7 @@ evidence:
 - tests/test_tickets_tiers.py::TestSetTier::test_updates_tier_field
 - tests/test_tickets_tiers.py::TestSetTier::test_unknown_ticket_id_is_err
 - tests/test_tickets_tiers.py::TestSetTier::test_structural_rules_apply_to_new_tier_on_next_read
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -123176,6 +124232,7 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -123268,6 +124325,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - cmd:uv run frob check --ticket T-1071 --only gates-fast exit=0 sha256=9ab894d95b1e
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -123440,6 +124498,7 @@ evidence:
 - tests/test_waive_gate.py::TestWaive006Registration::test_waive006_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive007Registration::test_waive007_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -123589,6 +124648,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/unit/vet/test_capability_modes.py::TestProcFamilyNamingReconciliation::test_proc_family_kept_distinct_from_registry_exec_kind
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -123706,6 +124766,7 @@ evidence:
 - tests/test_testing.py::TestCollectRustTests::test_collect_rust_tests_parses_and_caches
 - tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_parses_and_caches
 - tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_parses_and_caches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -123936,6 +124997,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 - tests/test_capability_registry.py::TestValidateRegistryKinds::test_every_threat_catalog_kind_is_registered
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -124162,6 +125224,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_remediation_hint_names_no_nonexistent_flag
 - tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -124332,6 +125395,7 @@ evidence:
 - tests/test_gates.py::TestFmt001Gate::test_long_code_line_not_flagged
 - tests/test_gates.py::TestFmt001Gate::test_untouched_line_not_flagged
 - tests/test_gates.py::TestFmt001Gate::test_short_directive_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -124504,6 +125568,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_manifest_version_written_same_step_as_pyproject
 - tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_incoherent_quartet_refusal_names_desync
+designated_repro_test: null
 acceptance:
 - text: given a land whose REL001 bump succeeds, when the land commit is inspected,
     then .frob-release.json's version field equals pyproject.toml's version (quartet
@@ -124611,6 +125676,7 @@ evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+designated_repro_test: null
 acceptance:
 - text: given the SYS103 coverage-totality check runs repo-wide, when the modeled-or-excluded
     disposition lands, then SYS103 reports zero unbound capable modules without narrowing
@@ -124727,6 +125793,7 @@ scope:
 - tickets-archive.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -124768,6 +125835,7 @@ evidence:
 - tests/test_waive_gate.py::TestWaive007StrataChannel::test_strata_ticket_attr_bound_to_unresolvable_id_fires
 - tests/test_gates.py::TestActiveTicket::test_explicit_flag_wins
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -124880,6 +125948,7 @@ evidence:
 - tests/test_secrets_gate.py::TestTrackedFilesGitFailure::test_nonzero_exit_yields_no_tracked_files
 - tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -125033,6 +126102,7 @@ scope:
 - src/frob/vet/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -125110,6 +126180,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -125356,6 +126427,7 @@ evidence:
 - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_json_mode_lists_deprecated_entries
 - tests/unit/test_app_runners_batch5.py::TestReleaseRunner::test_snapshot_build_graph_err_exits_1
 - tests/unit/test_app_runners_batch5.py::TestReleaseRunner::test_stamp_success_writes_manifest
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -125518,6 +126590,7 @@ evidence:
 - tests/test_dup_rungs.py::TestR4NearMiss::test_fires_on_gapped_clone
 - tests/test_dup_prefilter.py::TestCharacteristicVector::test_identical_streams_have_identical_vectors
 - tests/unit/test_dup_smt.py::test_degrades_to_smt_unavailable_without_z3
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -125664,6 +126737,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_handled_by_real_rule_passes
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_frob_enforces_edge_is_silent
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_no_frob_enforces_edge_warns
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -125868,6 +126942,7 @@ evidence:
 - tests/test_vet.py::TestSupplyChainOpaqueBinaryArtifact::test_tracked_so_without_recipe_flagged
 - tests/test_vet.py::TestSupplyChainOpaqueBinaryArtifact::test_so_with_nearby_cargo_toml_not_flagged
 - tests/test_vet.py::TestSupplyChainOpaqueBinaryArtifact::test_no_binary_files_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -126085,6 +127160,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead::test_reads_head_manifest_not_worktree_disk_copy
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_parses_multiple_findings_from_errors_section
 - tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn
+designated_repro_test: null
 acceptance:
 - text: given the three files, when the splits land, then each follows the T-1072/T-1076/T-1086
     package discipline (families to private modules, surface re-exported, zero caller
@@ -126269,6 +127345,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace::test_two_concurrent_finalize_draft_calls_get_distinct_ids
+designated_repro_test: null
 acceptance:
 - text: given two lands renumbering drafts concurrently, when both allocate ids, then
     the ids are distinct and both blocks survive (allocation is atomic under the ledger
@@ -126369,6 +127446,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_fires_outside_src_frob_layout
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -126536,6 +127614,7 @@ evidence:
 - tests/test_serve_socket.py::TestDispatchRequest::test_unknown_method_is_error
 - tests/test_serve_socket.py::TestRunSocketDaemon::test_contended_lock_is_err
 - tests/test_serve_socket.py::TestRunSocketDaemon::test_stale_socket_file_is_replaced
+designated_repro_test: null
 acceptance:
 - text: GIVEN no daemon is running WHEN a client connects to the project's .frob/daemon.sock
     THEN an atomic flock/socket-bind guard spawns exactly one daemon process even
@@ -126682,6 +127761,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_noop_when_version_matches
 - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_perf_hot_json_daemon_matches_in_process
+designated_repro_test: null
 acceptance:
 - text: GIVEN a fresh clone with no daemon running WHEN a user runs frob check THEN
     it autostarts the daemon transparently (no init/deinit command issued) and the
@@ -126794,6 +127874,7 @@ evidence:
 - tests/test_serve_watch.py::TestWatchTick::test_watch_tick_never_disagrees_with_pull_signal
 - tests/test_serve_watch.py::TestWatchThread::test_change_fires_on_change_callback
 - tests/test_serve_watch.py::TestWatchThread::test_stop_joins_promptly
+designated_repro_test: null
 acceptance:
 - text: GIVEN the daemon is running and a source file changes on disk WHEN the change
     is saved (no frob command run) THEN the warm GraphSnapshot is invalidated and
@@ -126923,6 +128004,7 @@ evidence:
 - tests/test_coverage_wait_shared.py::TestSharedStateDir::test_no_git_falls_back_to_worktree_local
 - tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_identical_digest_worktrees_share_one_run
 - tests/test_coverage_wait_shared.py::TestCrossWorktreeSingleFlight::test_differing_digest_worktrees_each_run_independently
+designated_repro_test: null
 acceptance:
 - text: GIVEN two worktrees checked out to commits whose tracked source content hashes
     identically WHEN both concurrently request coverage via run_coverage_wait THEN
@@ -127060,6 +128142,7 @@ evidence:
 - tests/test_serve_events.py::TestSubscribeAndWait::test_receives_graph_changed_after_edit
 - tests/test_serve_events.py::TestSubscribeAndWait::test_receives_coverage_fresh_on_stamp_write
 - tests/test_serve_events.py::TestSubscribeAndWait::test_times_out_with_no_matching_event
+designated_repro_test: null
 acceptance:
 - text: GIVEN a client subscribed over the socket connection WHEN the daemon finishes
     an incremental graph rebuild or a coverage run completes THEN the client receives
@@ -127225,6 +128308,7 @@ evidence:
 - tests/test_serve_leases.py::TestLeaseRpc::test_explicit_release_frees_the_slot_for_the_next_waiter
 - tests/test_serve_leases.py::TestLeaseRpc::test_second_client_blocks_until_first_releases
 - tests/test_serve_leases.py::TestConnectionCrashReleasesLease::test_closing_connection_without_explicit_release_frees_the_lease
+designated_repro_test: null
 acceptance:
 - text: GIVEN N concurrent clients requesting a coverage run WHEN the daemon arbitrates
     access THEN exactly one holds the coverage writer semaphore at a time and the
@@ -127347,6 +128431,7 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -127414,6 +128499,7 @@ evidence:
 - strata-core/src/parse/mod.rs::tests::parses_policy_forbid_call_and_import
 - strata-core/src/parse/mod.rs::tests::parses_refine_happy_path
 - strata-core/src/parse/mod.rs::tests::fuzz_safe_random_bytes_never_panic
+designated_repro_test: null
 acceptance:
 - text: given the strata-core crate, when the split lands, then parse.rs holds only
     the parser spine, grammar families live in their own modules, no file exceeds
@@ -127614,6 +128700,7 @@ evidence:
 - tests/test_tickets_velocity.py::TestTicketFlow::test_zero_activity_days_are_filled_not_sparse
 - tests/test_tickets_velocity.py::TestTicketFlow::test_eta_none_when_queue_not_shrinking
 - tests/test_tickets_velocity.py::TestTicketFlow::test_eta_computed_when_queue_shrinking
+designated_repro_test: null
 acceptance:
 - text: 'given a frob-enabled repo, when frob ticket flow runs, then it prints per-day
     filed/landed/net counts (created: fields + ledger git history via the T-0938 transition
@@ -127723,6 +128810,7 @@ evidence:
 - tests/test_vet.py::TestTyposquat::test_requets_flags_requests
 - tests/test_vet.py::TestOsvAdapter::test_run_osv_scan_none_when_binary_absent
 - tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_flags_undeclared_capability
+designated_repro_test: null
 acceptance:
 - text: given the 11 SC-* entries T-1087 flipped to handled_by VET-family rules, when
     REG008 runs, then every one carries a frob:enforces edge at the real emitting
@@ -127845,6 +128933,7 @@ evidence:
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_test_file_exempt_from_large001
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_single_file_mode_matches_directory_walk
+designated_repro_test: null
 acceptance:
 - text: given a production source file over max_file_lines in any language in the
     obligation surface, when frob check runs, then a registered LARGE001 violation
@@ -127971,6 +129060,7 @@ evidence:
 - tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_renumber_one
 - tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace::test_two_concurrent_finalize_draft_calls_get_distinct_ids
 - tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations::test_concurrent_ledger_lock_acquisition_serializes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -128072,6 +129162,7 @@ scope_changes:
 evidence:
 - tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_single_file_mode_matches_directory_walk
+designated_repro_test: null
 acceptance:
 - text: given docs/modules/arch.md, when the section lands, then analyze_project's
     single-file behavior and the LARGE001 channel are documented at the anchors its
@@ -128184,6 +129275,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_noop_when_version_matches
 - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_version_handshake_end_to_end
 - tests/test_app_daemon_proxy.py::TestEnsureDaemon::test_restarts_on_version_skew
+designated_repro_test: null
 acceptance:
 - text: given a running daemon of a different frob version, when the proxy queries
     it, then skew is detected via a daemon-side version RPC (not the .frob/daemon.meta.json
@@ -128299,6 +129391,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_graph_affects_json_daemon_matches_in_process
+designated_repro_test: null
 acceptance:
 - text: given each query-shaped CLI command from T-0321's integration map (outline,
     map, xref, graph, exports, stats, ...), when the daemon runs, then the command
@@ -128404,6 +129497,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/test_gates.py::TestInv006Gate::test_new_renumber_file_has_no_unanchored_exclusivity_claim
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -128513,6 +129607,7 @@ evidence:
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_past_threshold_alarms
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_under_threshold_no_alarm
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_medium_priority_never_alarms
+designated_repro_test: null
 acceptance:
 - text: GIVEN the tickets package WHEN the remaining verb families (doable/leases/scope-breadth,
     scope mutation, field setters/sprint, evidence/transition, done-report/review/drop/attach)
@@ -128679,6 +129774,7 @@ scope_changes:
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:uv run frob check --only docblocks exit=0 sha256=e5cda9cbf307
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check WHEN the doc gate runs THEN DOC006 reports zero unwaived
     warnings, with every fixed pointer resolving to a real heading slug and no matcher
@@ -128819,6 +129915,7 @@ evidence:
 - tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check WHEN the dead/coverage/refs gates run THEN DEAD001,
     COV00x, and REF00x report zero unwaived warnings, each finding either root-fixed
@@ -129089,6 +130186,7 @@ evidence:
 - tests/test_vet.py::TestSupplyChainOpaqueBinaryArtifact::test_tracked_so_without_recipe_flagged
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check WHEN all gates run THEN the DEPR, LANG, INV, REG,
     WAIVE, and WALK families each report zero unwaived warnings
@@ -129243,6 +130341,7 @@ evidence:
 - tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged
 - tests/unit/test_arch.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged
 - tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_registry_regex_matches_both_shapes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -129422,6 +130521,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestInterfaceConformance::test_node_with_empty_real_surface_stays_exempt
 - tests/unit/strata/test_selfconform.py::TestUnmodeledCodeMissingPackageRoot::test_missing_package_root_produces_no_warning
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -129575,6 +130675,7 @@ evidence:
 - tests/test_gates.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
 - tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires
 - tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_pending_phrasing_is_binding
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -129722,6 +130823,7 @@ evidence:
 - tests/test_gates.py::TestDeprecatedGate::test_depr005_new_caller_errors
 - tests/test_gates.py::TestDeprecatedGate::test_clean_deprecated_produces_no_violations
 - tests/test_gates.py::TestDeprecatedGate::test_lists_every_deprecated_entry
+designated_repro_test: null
 acceptance:
 - text: GIVEN src/frob/gates/__init__.py WHEN the remaining gate families (DEBT/DEPR,
     SCOPE/PREWORK, INV00x, TEST00x, DECISIONS, TICK00x, COMPLIANCE00x, SYS00x/DOC00x,
@@ -129867,6 +130969,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -129962,6 +131065,7 @@ scope:
 - tests/test_registry_reconciliation_weaknesses.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -130007,6 +131111,7 @@ scope:
 - src/frob/app/_daemon_proxy.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -130048,6 +131153,7 @@ scope:
 - tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -130085,6 +131191,7 @@ scope:
 - tests/test_registry_reconciliation_weaknesses.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -130131,6 +131238,7 @@ scope:
 - tests/test_registry_reconciliation_weaknesses.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -130209,6 +131317,7 @@ evidence:
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_past_threshold_alarms
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_critical_under_threshold_no_alarm
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_medium_priority_never_alarms
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -130355,6 +131464,7 @@ evidence:
 - tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_new_file_under_broad_lease_is_exempt
 - tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_existing_file_under_broad_lease_still_conflicts
 - tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_new_file_exact_match_of_holder_scope_still_conflicts
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -130490,6 +131600,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_profile_and_heat_round_trip
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_deploy_stages_appended_when_deploy_dir_present
 - tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath::test_missing_perf_path_resolves_to_cwd
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --only arch scoped to src/frob/app WHEN the remaining abstraction-opportunity
     groups are extracted or dispositioned with grounded reasons THEN zero unaccounted
@@ -130642,6 +131753,7 @@ scope_changes:
 evidence:
 - tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_renumber_one_rewrites_a_sibling_ticket_done_report_prose
 - tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ledger whose done-report prose cites T-draft-X WHEN frob
     ticket land renumbers T-draft-X to T-#### THEN every prose reference to T-draft-X
@@ -130748,6 +131860,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_coverage_wait_shared.py::TestWorktreeLock::test_uses_daemon_lease_when_daemon_up
 - tests/test_coverage_wait_shared.py::TestWorktreeLock::test_falls_back_to_file_lock_when_no_daemon
+designated_repro_test: null
 acceptance:
 - text: GIVEN a running daemon WHEN run_coverage_wait needs the coverage writer THEN
     it acquires via the frob_lease_acquire RPC (crash-released per T-1097) instead
@@ -130879,6 +131992,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_exports_json_daemon_matches_in_process
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_stats_json_daemon_matches_in_process
 - tests/unit/test_app_runners.py::TestExportsRunner::test_json_mode_logs_result
+designated_repro_test: null
 acceptance:
 - text: GIVEN a running daemon WHEN frob exports or frob stats runs THEN it is served
     warm through the proxy with differential parity against in-process execution,
@@ -131094,6 +132208,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_touched_tests_json_daemon_matches_in_process
 - tests/test_serve.py::TestDoableTickets::test_lists_queued_ticket
 - tests/test_serve.py::TestRunTouchedTests::test_no_diff_selects_nothing
+designated_repro_test: null
 acceptance:
 - text: GIVEN a running daemon WHEN frob graph query, frob check --delta, frob test
     (touched-set), or frob ticket doable runs THEN each is served through the proxy
@@ -131252,6 +132367,7 @@ evidence:
 - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_one_finding_per_ticket_not_per_phrase
 - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_numeric_count_residual_is_not_a_disclosure
 - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_rule_id_shaped_residue_is_not_a_disclosure
+designated_repro_test: null
 acceptance:
 - text: GIVEN a done report whose prose discloses deferred work (left for a follow-up,
     not yet ticketed, deferred, residue, cut) WHEN frob check runs THEN a TICK-family
@@ -131456,6 +132572,7 @@ evidence:
 - tests/test_ticket_leases.py::TestNewDropFailAutoCommit::test_new_no_commit_leaves_ledger_dirty
 - tests/test_ticket_leases.py::TestNewDropFailAutoCommit::test_drop_auto_commits_the_state_change
 - tests/test_ticket_leases.py::TestNewDropFailAutoCommit::test_fail_auto_commits_the_failure_log_and_requeue
+designated_repro_test: null
 acceptance:
 - text: GIVEN a coordinator files, drops, or fails a ticket on main WHEN the verb
     completes THEN the ledger change is committed automatically (with an opt-out flag),
@@ -131617,6 +132734,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_scan_flags_in_progress_ticket_with_no_lease
 - tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_scan_ignores_live_leased_ticket
 - tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_scan_degrades_to_empty_on_a_malformed_ledger
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket fail records a dead end from a worktree WHEN the worktree
     is subsequently removed THEN the ticket does not stay in-progress holding a stale
@@ -131801,6 +132919,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorMalformedTicketEdges::test_scan_flags_empty_string_blocked_by
 - tests/system/test_cli_doctor.py::TestDoctorMalformedTicketEdges::test_scan_flags_malformed_parent
 - tests/system/test_cli_doctor.py::TestDoctorMalformedTicketEdges::test_scan_ignores_well_formed_edges
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket write with an empty-string or non-T-#### blocked_by/parent
     entry WHEN the verb runs THEN it refuses with a clear error; frob doctor flags
@@ -131942,6 +133061,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_waive004_suppressed_entirely_on_a_scoped_run
 - tests/test_gates.py::TestTestGate::test_waive004_fires_on_valid_rule_zero_findings
 - tests/test_gates.py::TestTestGate::test_waive004_stays_silent_on_a_genuinely_needed_waiver
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --only <stage> or any diff-scoped run WHEN a waiver matches
     0 findings because its gate did not run THEN no WAIVE004 advisory is emitted (the
@@ -132053,6 +133173,7 @@ evidence:
 - tests/test_gates.py::TestInv006SplitAssist::test_no_match_when_no_other_file_shares_the_claim
 - tests/test_gates.py::TestInv006SplitAssist::test_reworded_claim_is_not_detected_v1_disclosed
 - tests/test_gates.py::TestInv006SplitAssist::test_find_exclusivity_claim_sentences_returns_actual_prose
+designated_repro_test: null
 acceptance:
 - text: GIVEN a module split moves docstring/comment prose containing exclusivity
     vocabulary from a file with an INV006 waiver or invariant binding WHEN frob check
@@ -132184,6 +133305,7 @@ evidence:
 - tests/test_gates.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed
 - tests/test_gates.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
 - tests/test_gates.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a frob:tests edge in pytest :: form WHEN --fix runs THEN it is rewritten
     to the dotted Class.method form and DRIFT002/DOC007 re-verify clean'
@@ -132337,6 +133459,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -132426,6 +133549,7 @@ evidence:
 - tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_precisely_scoped_ticket_is_clean
 - tests/test_tickets_priority.py::TestTick004QueueRot::test_stale_critical_ticket_flags
 - tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_draft_id_on_default_branch_is_a_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -132550,6 +133674,7 @@ evidence:
 - tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_violation_returning_group_not_flagged
 - tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_non_violation_returning_group_still_flagged
 - tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_return_type_membership_matches_all_three_shapes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -132692,6 +133817,7 @@ scope_changes:
 evidence:
 - tests/test_tickets_velocity.py::TestTicketFlow::test_archived_ticket_still_counts_toward_landed
 - tests/test_tickets_velocity.py::TestTicketFlow::test_archived_ticket_still_counts_toward_filed
+designated_repro_test: null
 acceptance:
 - text: GIVEN days on which archived tickets landed (e.g. 2026-07-26/27 with ~50 lands
     each) WHEN frob ticket flow runs THEN the landed column reflects them (sourced
@@ -132784,6 +133910,7 @@ evidence:
 - cmd:sh -c 'test "$(grep -c "strata-core/src/parse.rs::tests::" tickets-archive.md)"
   = 0 && test "$(grep -c "strata-core/src/parse/mod.rs::tests::" tickets-archive.md)"
   = 101' exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -132918,6 +134045,7 @@ evidence:
 - tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_toolresult_returning_group_not_flagged
 - tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_non_toolresult_returning_group_still_flagged
 - tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_return_type_membership_matches_both_shapes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -133059,6 +134187,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - cmd:grep -q tickets-package-scope-precedent docs/index.md exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -133177,6 +134306,7 @@ evidence:
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_discharges
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -133361,6 +134491,7 @@ evidence:
 - tests/test_serve.py::TestCheckDelta::test_check_result_matches_only_gates_delta_cli_shape
 - tests/test_serve.py::TestCheckDelta::test_delta_against_fresh_baseline_is_empty
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_check_delta_gates_only_json_daemon_matches_in_process
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -133546,6 +134677,7 @@ evidence:
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_is_none_when_nothing_broken
 - tests/test_gates.py::TestNativeAvailabilityGate::test_unimportable_native_short_circuits_run_gates_with_one_finding
 - tests/test_gates.py::TestNativeAvailabilityGate::test_every_native_importable_runs_the_normal_pipeline
+designated_repro_test: null
 acceptance:
 - text: GIVEN a checkout whose installed natives are missing or stale relative to
     the native source tree WHEN frob check runs any stage that needs them THEN it
@@ -133685,6 +134817,7 @@ evidence:
 - tests/unit/strata/test_contention.py::TestOverlappingPath::test_common_arbitered_resource_still_fires_without_module
 - tests/unit/strata/test_contention.py::TestOverlappingPath::test_unarbitered_overlap_still_fires_with_module
 - tests/unit/strata/test_contention.py::TestDuplicatePort::test_two_nodes_same_port_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -133842,6 +134975,7 @@ evidence:
 - tests/unit/strata/test_sync_interface.py::test_fixture_design_binds_cleanly
 - tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch::test_unknown_command_exits_1
 - tests/unit/strata/test_sync_interface.py::test_report_and_apply_are_the_tier_a_ready_entry_points
+designated_repro_test: null
 acceptance:
 - text: GIVEN a node whose bound code's public surface changed WHEN frob sys sync-interface
     runs THEN design/frob.strata's interface= attrs for that node are updated to the
@@ -133993,6 +135127,7 @@ evidence:
 - tests/test_tickets_velocity.py::TestSprintVelocity::test_transitions_mined_from_history
 - tests/test_tickets_velocity.py::TestTicketFlow::test_filed_and_landed_counted_per_day
 - tests/test_tickets_organization.py::TestSetComponent::test_updates_component_field
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -134187,6 +135322,7 @@ evidence:
 - tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_epic_close_allowed_once_descendant_done
 - tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_epic_close_refused_with_open_descendant
 - tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_plain_ticket_close_unaffected_by_guard
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -134389,6 +135525,7 @@ evidence:
 - cmd:python3 -c "import sys; t=open('tickets-archive.md',encoding='utf-8').read();
   n=t.count('strata-core/src/parse.rs::'); print('stale-citations:',n); sys.exit(1
   if n else 0)" exit=0 sha256=51847bc6527b
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -134461,6 +135598,7 @@ evidence:
 - tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins
 - tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done
 - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree whose tickets-archive.md (or tickets.md blocks outside the
     landing ticket's own edits) is merely stale relative to main WHEN frob ticket
@@ -134599,6 +135737,7 @@ evidence:
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_detects_freshly_added_rule_id
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_no_new_rules_is_empty
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_unresolvable_base_ref_degrades_to_none
+designated_repro_test: null
 acceptance:
 - text: GIVEN the new-gate-rule-acceptance preflight WHEN _KNOWN_GATE_RULES lives
     in any gates module THEN the preflight finds it (import-time resolution or the
@@ -134704,6 +135843,7 @@ scope:
 - src/frob/strata/_design_load.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -134757,6 +135897,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_sys205_waiver_is_not_reported_stale_by_exhaustiveness_pass
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -134850,6 +135991,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -134968,6 +136110,7 @@ scope_changes:
 evidence:
 - tests/test_decisions.py::test_dec001_dangling_decision_edge
 - tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
+designated_repro_test: null
 acceptance:
 - text: GIVEN src/frob/gates/__init__.py WHEN the remaining families (SCOPE/PREWORK,
     INV00x, TEST00x, DECISIONS, COMPLIANCE00x, SYS00x/DOC00x, DUP00x, REL00x, FUZZ00x,
@@ -135120,6 +136263,7 @@ scope_changes:
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:uv run frob sys sync-interface --check exit=0 sha256=0a692ca85d0b
+designated_repro_test: null
 acceptance:
 - text: GIVEN docs/commands/sys.md WHEN a reader looks up sys subcommands THEN sync-interface
     (and its --check mode) is documented with the SYS104-mandatory upkeep rationale
@@ -135276,6 +136420,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorVenvShims::test_no_venv_directory_reports_nothing
 - tests/test_gates.py::TestCoverageGate::test_load_tests_captures_python_collection_failure_detail
 - tests/test_gates.py::TestCoverageGate::test_coverage_gate_reports_one_violation_on_python_collection_failure
+designated_repro_test: null
 acceptance:
 - text: GIVEN .venv/bin entrypoint scripts whose shebang points outside this venv
     (e.g. a removed worktree's python) WHEN frob doctor runs THEN it reports each
@@ -135386,6 +136531,7 @@ evidence:
 - tests/test_tickets_velocity.py::TestTicketFlow::test_eta_computed_when_queue_shrinking
 - tests/test_tickets_velocity.py::TestTicketFlow::test_archived_ticket_still_counts_toward_landed
 - tests/test_tickets_velocity.py::TestTicketFlow::test_archived_ticket_still_counts_toward_filed
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --only arch THEN zero ARCH001/ARCH103 errors remain at the
     four wave-18 sites (_try_check_delta_via_daemon 70 lines + mixed concerns, _fail
@@ -135488,6 +136634,7 @@ scope_changes:
 evidence:
 - tests/test_tickets.py::TestScopeMatching::test_cli_wiring_files_resolve_to_real_paths_on_disk
 - tests/test_tickets.py::TestScopeMatching::test_feature_kind_implies_cli_wiring_files_in_scope
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -135556,6 +136703,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/unit/strata/test_audit.py::TestHostWiring::test_owns_without_runs_as_no_blast_radius_scenario
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -135679,6 +136827,7 @@ evidence:
 - tests/test_ticket_merge_driver.py::TestMergeDriverHandler::test_base_o_arg_prevents_wrong_side_merge_via_live_driver
 - tests/test_ticket_merge_driver.py::TestMergeDriverHandler::test_missing_base_file_degrades_to_newer_only_tiebreak
 - tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_real_git_merge_auto_splices_both_sides_append
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -135785,6 +136934,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_serve_declares_zero_may_and_exercises_zero_effects
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -135905,6 +137055,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -135989,6 +137140,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -136050,6 +137202,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_names_the_native_and_the_fix_command
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_is_none_when_nothing_broken
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -136157,6 +137310,7 @@ evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 - tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
 - tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -136287,6 +137441,7 @@ evidence:
 - tests/test_tickets.py::TestAttach::test_file_source_copies_and_records_sha256
 - tests/test_tickets_review.py::TestRecordReview::test_appends_approve_entry
 - tests/test_tickets_review.py::TestHasApprovedReviewForCommit::test_true_only_for_matching_approve
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -136401,6 +137556,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_command_substitution_is_not_expanded
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -136482,6 +137638,7 @@ evidence:
 - tests/test_ticket_leases.py::TestRenameLease::test_rename_is_a_no_op_when_no_lease_exists_for_old_id
 - tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd::test_renumber_one_migrates_the_lease_the_worktree_still_holds
 - tests/test_ticket_leases.py::TestRenumberMigratesLeaseEndToEnd::test_finalize_draft_for_land_migrates_the_lease_the_worktree_still_holds
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -136572,6 +137729,7 @@ evidence:
 - tests/test_gates.py::TestOptInGates::test_dup_gate_off_by_default
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
 - tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -136690,6 +137848,7 @@ evidence:
 - tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_fmt_half_canonicalizes_a_non_canonical_directive
 - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_verifies_a_real_land
 - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_finish_removes_the_worktree
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket work T-#### WHEN run from root THEN it creates/reuses the
     named worktree, verifies base freshness against main tip, builds natives, and
@@ -136898,6 +138057,7 @@ evidence:
 - tests/test_gates.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
 - tests/test_gates.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
 - tests/test_gates.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob:waive directive using preset=<name> WHEN gates evaluate it THEN
     the reason resolves from a single documented preset table (docs/modules/gates.md
@@ -137048,6 +138208,7 @@ evidence:
 - tests/test_gates.py::TestFixEngineTierA::test_inv006_carries_waiver_verbatim_moved_from_waived_source
 - tests/test_gates.py::TestFixEngineTierA::test_inv006_carries_a_preset_reference_not_a_reason_copy
 - tests/test_gates.py::TestFixEngineTierA::test_inv006_never_auto_waives_a_non_carried_finding
+designated_repro_test: null
 acceptance:
 - text: GIVEN a module split moves prose verbatim from a file whose waiver covered
     it (T-1134's find_carried_waiver detects the source) WHEN frob check --fix runs
@@ -137177,6 +138338,7 @@ evidence:
 - tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit::test_close_auto_commits
 - tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit::test_requeue_auto_commits
 - tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit::test_requeue_no_commit_leaves_ledger_dirty
+designated_repro_test: null
 acceptance:
 - text: GIVEN any ledger-writing ticket verb run on main WHEN it completes THEN its
     transition is committed automatically (T-1130's commit_ticket_ledger_change, --no-commit
@@ -137292,6 +138454,7 @@ evidence:
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer
 - tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree land whose draft renumbering runs WHEN main has allocated
     new ids since the worktree's last merge THEN renumbering reads the id ceiling
@@ -137472,6 +138635,7 @@ evidence:
 - tests/test_coverage.py::TestCoverageTargetFlakeTolerance::test_rerun_is_serial_and_scoped_to_last_failed
 - tests/test_coverage.py::TestCoverageTargetFlakeTolerance::test_combine_xml_stamp_run_unconditionally_after_the_rerun
 - tests/test_coverage.py::TestCoverageTargetFlakeTolerance::test_target_exit_reflects_final_status_not_always_zero
+designated_repro_test: null
 acceptance:
 - text: GIVEN make coverage WHEN the parallel suite has failures THEN the failed tests
     are re-run once serially without coverage-halting, and only still-failing tests
@@ -137620,6 +138784,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN same-signature groups whose member names differ only by language tag
     WHEN the language-parity family exclusion runs THEN the synonym map recognizes
@@ -137683,6 +138848,7 @@ evidence:
 - tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_distinct_named_self_forwarders_not_flagged
 - tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_group_with_one_non_self_named_member_still_flagged
 - tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_forwarder_helper_requires_self_named_short_body
+designated_repro_test: null
 acceptance:
 - text: GIVEN a group whose members are same-name single-statement forwarders to another
     symbol WHEN abstraction-opportunity clusters by signature THEN forwarders are
@@ -137754,6 +138920,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -137860,6 +139027,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
 - tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_is_ignored_path_refusal_matches_gits_fixed_message
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -137954,6 +139122,7 @@ evidence:
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138132,6 +139301,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138309,6 +139479,7 @@ evidence:
 - tests/test_gates.py::TestSysGate::test_sys001_dangling
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138418,6 +139589,7 @@ evidence:
 - tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns
 - tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_with_bound_invariant_anchor_is_silent
 - tests/test_gates.py::TestInv006SplitAssist::test_finds_carried_waiver_for_verbatim_moved_claim
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138533,6 +139705,7 @@ evidence:
 - tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_refuses
 - tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages
 - tests/test_ticket_land.py::TestUnionZoneMerge::test_append_only_union_concatenates
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138621,6 +139794,7 @@ scope:
 - src/frob/serve/_watch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138677,6 +139851,7 @@ scope:
 - tests/test_serve_watch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138769,6 +139944,7 @@ evidence:
 - tests/test_tickets_collision.py::TestRenumberRewritesLedgerProse::test_finalize_draft_rewrites_a_sibling_ticket_done_report_prose
 - tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view
 - tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace::test_two_concurrent_finalize_draft_calls_get_distinct_ids
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -138911,6 +140087,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_or_handled
 - tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
+designated_repro_test: null
 acceptance:
 - text: GIVEN the six audit-concern rows this ticket tracks (python-only COV/DOC/DRIFT
     enforcement, fail-open residue incl second-lockfile and non-UTF-8 docs, gitignored
@@ -139008,6 +140185,7 @@ evidence:
 - tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -139167,6 +140345,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns
 - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
 - tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -139372,6 +140551,7 @@ evidence:
 - tests/unit/strata/test_multifile.py::TestElaborateMerged::test_resolves_cross_file_flow
 - tests/unit/strata/test_design_load.py::TestLoadIds::test_cross_file_reference_to_missing_id_fails_closed
 - tests/unit/strata/test_multifile.py::TestElaborateMerged::test_fails_closed_on_missing_id
+designated_repro_test: null
 acceptance:
 - text: GIVEN design/frob.strata split into multiple .strata files under design/ WHEN
     frob check --only sys runs THEN elaboration resolves cross-file node/flow/boundary
@@ -139500,6 +140680,7 @@ evidence:
 - tests/test_refactor.py::TestVerify::test_check_delta_uses_current_interpreter
 - tests/test_refactor.py::TestVerify::test_import_resolution_catches_dangling_reference
 - tests/test_refactor.py::TestVerify::test_import_resolution_local_import_resolves
+designated_repro_test: null
 reviews:
 - verdict: reject
   reviewer: review-pass
@@ -139764,6 +140945,7 @@ evidence:
 - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_store_block_missing_interface_attr_is_written
 - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_missing_interface_block_is_inserted_after_header
 - tests/unit/strata/test_sync_interface.py::TestApplySyncInterface::test_writes_only_changed_files
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN the interface surface of a node WHEN it is machine-derivable (sync_interface
     already rewrites attr interface= lines to match code exactly) THEN the hand-authored
@@ -139970,6 +141152,7 @@ evidence:
 - tests/test_refactor.py::TestDirectiveCarrier::test_move_carries_attached_waiver_end_to_end
 - tests/test_refactor.py::TestDirectiveCarrier::test_directive_target_elsewhere_rewritten
 - tests/test_refactor.py::TestDirectiveCarrier::test_lock_ack_carried_to_new_symref
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a symbol with a `frob:waive ARCH101 reason="..."` placed directly
 
@@ -140132,6 +141315,7 @@ evidence:
 - tests/test_refactor.py::TestRepointer::test_pii_allowlist_entry_rekeyed_on_move
 - tests/test_refactor.py::TestRepointer::test_registry_cross_ref_rewritten
 - tests/test_refactor.py::TestRepointer::test_ticket_evidence_symref_rewritten
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a PII012 allowlist entry keyed on (old_file_path, token) WHEN the
 
@@ -140268,6 +141452,7 @@ evidence:
 - tests/test_refactor.py::TestRunSplit::test_split_chunk_failure_does_not_touch_later_chunks
 - tests/test_refactor.py::TestCli::test_run_refactor_command_dispatches_split_end_to_end
 - tests/test_refactor.py::TestCli::test_run_refactor_command_split_refusal_exit_code
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a source module with N symbols named for a split into a new sibling
 
@@ -140484,6 +141669,7 @@ evidence:
 - tests/test_refactor.py::TestAliasPolicy::test_rename_dest_renames_existing_symbol_and_its_callers
 - tests/test_refactor.py::TestAliasPolicy::test_build_plan_rename_dest_policy_proceeds
 - tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN an import-site name collision during a move/rename with no
 
@@ -140610,6 +141796,7 @@ evidence:
 - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_baseline_sys101_is_zero
 - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_no_undetectable_kinds
 - tests/unit/strata/test_mutation_audit.py::TestDetectableKindsVocabulary::test_proc_family_is_currently_undetectable
+designated_repro_test: null
 acceptance:
 - text: GIVEN any single may declaration in any loaded .strata model WHEN it is deleted
     in a mutated copy THEN self-conformance yields at least one SYS100 AND the seccomp/export
@@ -140768,6 +141955,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_under_active_coverage_tracer
 - tests/test_vet.py::TestLockfileParsers::test_parse_pnpm_lock
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -141008,6 +142196,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
 - tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
 - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
+designated_repro_test: null
 acceptance:
 - text: GIVEN a tracked source change WHEN the user runs frob coverage, or frob test
     --wait-coverage (via run_coverage_wait) THEN coverage data is refreshed automatically
@@ -141399,6 +142588,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml
 - tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_skips_reparse_when_content_hash_unchanged
 - tests/unit/test_ticket_store.py::TestLoadArchiveCache::test_reparses_when_archive_content_changes
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN load_queue parses the tickets-archive.md ledger (1235+ yaml documents)
     WHEN yaml.safe_load is replaced with yaml.CSafeLoader (with pure-python SafeLoader
@@ -141495,6 +142685,7 @@ evidence:
 - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_growth_beyond_baseline_fires_at_the_right_file_and_line
 - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_same_count_as_baseline_does_not_fire
 - tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating::test_unrelated_same_name_call_in_non_importing_file_is_excluded
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _depr005_violations currently runs exports_consumers+xref per baselined
     deprecated symbol (8 full-repo scans for 4 symbols today, ~4.5s native/symbol,
@@ -141588,6 +142779,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestBindingTotality::test_laundered_capable_file_fires
 - tests/unit/strata/test_selfconform.py::TestBindingTotality::test_unreachable_foreign_file_does_not_fire_sys106
 - tests/unit/strata/test_selfconform.py::TestBindingTotality::test_bound_reachable_file_does_not_fire_sys106
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _reachable_local_files (_selfconform.py:1096) and check_import_conformance
     (_code_binding.py:425) each independently ast.parse+ast.walk the same 807 python
@@ -141686,6 +142878,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _scan_one_python_file dispatches to 8 sub-scans (_scan_python_ddl,
     _keywords.py keyword sweep, _python_fields.py orm columns/fields, _emails.py,
@@ -141825,6 +143018,7 @@ evidence:
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
 - tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
 - tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _comment_byte_spans/_docstring_byte_spans (per-node Python recursion)
     are recomputed independently by sys and opaque, and _fully_in_any_span does an
@@ -141938,6 +143132,7 @@ evidence:
 - tests/test_secrets_gate.py::TestFindsTokens::test_anthropic_key_flagged_sec001
 - tests/test_secrets_gate.py::TestFakeMarking::test_fake_marker_same_line
 - tests/test_secrets_gate.py::TestDriftLock::test_every_provider_has_a_fixture
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _scan_line runs 33 compiled patterns x finditer per line (544k lines,
     17.97M finditer calls, 94 pct of the gate) plus _fake_marker_reason regex against
@@ -142019,6 +143214,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_identical_subprocess_is_flagged
 - tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _entry_occurrences (perf/_dup_spawn.py:195) re-scans occurrences for
     every (def, entry) pair (44,124 calls, 44.6s profiled, called from _def_violations
@@ -142191,6 +143387,7 @@ evidence:
 - tests/test_natives.py::TestNativeAutorebuild::test_build_failure_falls_through_to_native001
 - tests/test_natives.py::TestNativeAutorebuild::test_build_natives_err_falls_through_to_native001
 - tests/test_natives.py::TestNativeAutorebuild::test_nothing_stale_or_missing_skips_build
+designated_repro_test: null
 acceptance:
 - text: GIVEN NATIVE001/StaleNative detects a source-newer-than-artifact native WHEN
     any frob command that needs the native runs THEN the rebuild happens automatically
@@ -142309,6 +143506,7 @@ evidence:
 - tests/test_graph.py::TestCacheModule::test_store_and_load_file_data_roundtrip
 - tests/test_graph.py::TestCacheModule::test_set_root_and_get_root_roundtrip
 - tests/test_graph.py::TestCacheModule::test_tests_edge_direction_agrees_fresh_parse_vs_cache_roundtrip
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN load_file_data (graph/cache.py:560) issues 3 sqlite execute calls per
     file (5595 execute calls per load_all across ~1865 files) plus json.loads on every
@@ -142407,6 +143605,7 @@ evidence:
 - tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
 - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
 - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN archgate''s _run_python_checks does ~8-10 independent full-tree walks
     per file (_py_build_function alone runs nesting/cyclomatic/events as 3 separate
@@ -142544,6 +143743,7 @@ evidence:
 - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_unknown_attribute_still_raises_attribute_error
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_unknown_subcommand_returns_none
+designated_repro_test: null
 acceptance:
 - text: GIVEN src/frob/app/__init__.py:14 imports every runner eagerly so 'frob ticket
     list' pays the deploy -> strata (417ms, incl strata._threat 280ms) -> vet._capability
@@ -142663,6 +143863,7 @@ scope:
 - src/frob/check/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN _run_process_gate (gates/__init__.py:6050) has no run_memo_scope or
     shared parse artifacts, so perf/clones/dead_symbols/sys/pii/arch each independently
@@ -142789,6 +143990,7 @@ evidence:
 - tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor
 - tests/unit/test_config.py::test_stale_binary_warning_none_when_no_floor_declared
 - tests/unit/test_config.py::test_stale_binary_warning_none_when_version_meets_floor
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob invocation in a repo whose frob.toml declares a minimum frob
     version WHEN the invoked frob is older THEN every command prints a prominent stale-binary
@@ -142891,6 +144093,7 @@ evidence:
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
 - tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
 - tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+designated_repro_test: null
 acceptance:
 - text: GIVEN _comment_byte_spans (vet/_capability.py:212) and _docstring_byte_spans
     (:286) are per-node Python recursions independently re-run by sys and opaque (12
@@ -143042,6 +144245,7 @@ evidence:
 - tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_put_then_get_returns_same_payload
 - tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_concurrent_separate_process_writer_still_blocked
 - tests/unit/test_dup_cache.py::TestVerdictRoundTrip::test_put_verdict_evicts_lru_rows_beyond_cache_entries
+designated_repro_test: null
 acceptance:
 - text: GIVEN the clones profile observed a 240s fcntl.flock wait on derived_state_write_lock
     (src/frob/process/_lock.py:372) caused by a concurrent frob process contending
@@ -143256,6 +144460,7 @@ evidence:
 - tests/unit/perf/test_hotpath_smells.py::TestPerf014FinditerInNestedLoop::test_does_not_fire_on_whole_text_single_pass
 - tests/unit/perf/test_hotpath_smells.py::TestHotpathSmellsWiredIntoPerfRules::test_perf_rules_includes_perf010_finding
 - tests/unit/perf/test_hotpath_smells.py::TestPerf011SkipsNonFunctionSymbols::test_module_level_constant_produces_no_findings
+designated_repro_test: null
 acceptance:
 - text: GIVEN the 2026-07-29 hot-graph report identified 4 recurring anti-patterns
     (yaml.safe_load/yaml.load without the C loader in non-test code; a repo-scan API
@@ -143433,6 +144638,7 @@ evidence:
 - tests/test_docenum_gate.py::TestDocenum001Gate::test_unresolvable_shape_is_disclosed_not_silently_passed
 - tests/test_graph.py::TestDsl::test_enumerates_verb_binds_bare_doc_anchor_target
 - tests/test_graph.py::TestMarkdownAnchors::test_enumerates_edge_carries_claimed_members
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -143609,6 +144815,7 @@ evidence:
 - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_absent_everywhere_without_twin_not_flagged
 - tests/test_docptr_gate.py::TestDoc006LedgerExclusion::test_ledger_file_symbol_placeholder_not_flagged
 - tests/test_docptr_gate.py::TestDoc006LedgerExclusion::test_ledger_bare_identifier_placeholder_not_flagged
+designated_repro_test: null
 reviews:
 - verdict: reject
   reviewer: coordinator
@@ -143893,6 +145100,7 @@ evidence:
 - tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_closed_ticket_is_stale
 - tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_claim_bound_to_missing_ticket_is_stale
 - tests/unit/gates/test_negexist.py::TestNegexist001Gate::test_no_claims_at_all_is_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -144100,6 +145308,7 @@ evidence:
 - tests/test_gates.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
 - tests/test_gates.py::TestDocmakeGate::test_real_make_target_passes
 - tests/test_gates.py::TestDocmakeGate::test_no_makefile_is_a_noop
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -144238,6 +145447,7 @@ evidence:
 - tests/test_gates.py::TestDoclinkGate::test_broken_relative_link_target_fires_doc008
 - tests/test_gates.py::TestDoclinkGate::test_broken_fragment_on_existing_target_fires_doc008
 - tests/test_gates.py::TestDoclinkGate::test_resolvable_relative_link_and_fragment_pass
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -144495,6 +145705,7 @@ evidence:
 - tests/test_gates.py::TestDocstatusGate::test_dated_status_header_passes
 - tests/test_gates.py::TestDocstatusGate::test_superseded_header_with_missing_target_fires_doc009
 - tests/test_gates.py::TestDocstatusGate::test_superseded_header_with_real_target_passes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -144568,6 +145779,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - cmd:uv run frob check --only docanchor --only docblocks exit=0 sha256=d1e1254bdf68
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -144697,6 +145909,7 @@ scope_changes:
   at: '2026-07-29'
 evidence:
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_kotlin_file_no_longer_flagged_by_lang002
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -144796,6 +146009,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_rc_remaps_paths_back_to_source
 - tests/unit/test_makefile_coverage.py::TestSubprocessRcIsAbsoluteAndConcurrencyAware::test_pyproject_declares_concurrency_and_sigterm
 - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
+designated_repro_test: null
 acceptance:
 - text: GIVEN make coverage runs THEN a generated .frob/coverage-subprocess.rc (absolute
     source and data_file, branch/parallel/relative_files/sigterm true, concurrency
@@ -144910,6 +146124,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_zero_canary_module
 - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_canary_check_skipped_when_module_unknown
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a coverage run that lost subprocess or pool-worker data THEN the stamp
     is refused: guard checks fraction-of-known-modules-with-nonzero-coverage and named
@@ -145021,6 +146236,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_clean.py::test_safe_tier_clean_preserves_frob_junitxml_forensics
 - tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
+designated_repro_test: null
 acceptance:
 - text: GIVEN a make coverage run with failures THEN the failing test ids survive
     the recipe (junitxml or equivalent persisted under .frob/ before frob clean -y)
@@ -145119,6 +146335,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestSchemaLockContentionRecovery::test_locked_error_retries_instead_of_recreating
 - tests/test_graph.py::TestSchemaLockContentionRecovery::test_non_locked_database_error_still_recreates
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN concurrent frob processes racing on a cold cache.db THEN schema application
     retries/serializes instead of surfacing database is locked followed by no such
@@ -145205,6 +146422,7 @@ evidence:
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_stderr_handler_never_emits_against_a_closed_captured_stream
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stderr]
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stdout]
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
     under xdist parallel load THEN the worker completes (root cause found: OOM, recursion,
@@ -145326,6 +146544,7 @@ evidence:
 - tests/unit/strata/test_compliance.py::TestPrivacyNotice::test_public_web_node_with_no_mitigation_refutes
 - tests/unit/strata/test_compliance.py::TestPrivacyNotice::test_declared_privacy_policy_attr_discharges
 - tests/unit/strata/test_compliance.py::TestPrivacyNotice::test_owner_and_review_override_clears_privacy_notice
+designated_repro_test: null
 acceptance:
 - text: GIVEN this epic's children all close WHEN a fresh reader asks 'is CCPA/GDPR
     notice enforced' THEN the answer is a named RegulationEntry+mitigation+test+gate,
@@ -145439,6 +146658,7 @@ evidence:
 - tests/unit/strata/test_compliance.py::TestPrivacyNotice::test_public_web_node_with_no_mitigation_refutes
 - tests/unit/strata/test_compliance.py::TestPrivacyNotice::test_declared_privacy_policy_attr_discharges
 - tests/unit/strata/test_compliance.py::TestPrivacyNotice::test_no_public_web_exposure_is_silent
+designated_repro_test: null
 acceptance:
 - text: GIVEN a strata model with a public web-facing Node (exposure:public-web) handling
     Pii-or-above data and no privacy-policy mitigation and no Claim override WHEN
@@ -145940,6 +147160,7 @@ evidence:
 - tests/test_tickets_brief.py::TestClusterDescendants::test_dependency_order_respects_intra_cluster_blocked_by
 - tests/test_tickets_lease.py::TestWorkCluster::test_leases_every_dispatchable_member_into_one_worktree
 - tests/test_tickets_lease.py::TestClusterScopeConflict::test_refuses_when_union_scope_collides_with_a_foreign_lease
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN frob ticket brief --cluster <epic-or-story-id> THEN one briefing is
     emitted covering every doable descendant in dependency order: shared playbook
@@ -146107,6 +147328,7 @@ evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistryBacking::test_self_referential_handled_by_is_flagged
 - tests/test_gates.py::TestComplianceGate::test_compliance007_fires_warn_on_self_referential_handled_by
 - tests/test_gates.py::TestComplianceGate::test_compliance007_silent_on_frob_catalog_entries_self_reference
+designated_repro_test: null
 acceptance:
 - text: GIVEN a CMPL-* row whose handled_by names a rule/RegulationEntry id that does
     not exist anywhere in COMPLIANCE_CATALOG or the known gate rule set WHEN compliance_gate
@@ -146310,6 +147532,7 @@ scope_changes:
   at: '2026-07-29'
 evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
+designated_repro_test: null
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
     one of (a)/(b)/(c)/(d) above, recorded as a follow-on ticket reference or an explicit
@@ -146387,6 +147610,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
+designated_repro_test: null
 acceptance:
 - text: GIVEN this ticket closes WHEN CMPL-GDPR-ARTICLES is inspected THEN its handled_by
     target is confirmed to be a real GDPR-* RegulationEntry set (or a follow-on ticket
@@ -146470,6 +147694,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
+designated_repro_test: null
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 3 rows is inspected THEN each carries
     a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
@@ -146536,6 +147761,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
+designated_repro_test: null
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
     a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
@@ -146603,6 +147829,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
+designated_repro_test: null
 acceptance:
 - text: GIVEN this ticket closes WHEN each of the 4 rows is inspected THEN each carries
     a follow-on ticket reference (for a/b/c) or an explicit out_of_scope reason recorded
@@ -146675,6 +147902,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
 - tests/unit/strata/test_compliance.py::TestCmplRegistryBacking::test_frob_catalog_entries_self_reference_is_not_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN this ticket closes WHEN CMPL-FROB-CATALOG-ENTRIES's disposition comment
     is reviewed THEN it explicitly states it is verified via the 6 real COMPLIANCE_CATALOG
@@ -146852,6 +148080,7 @@ evidence:
 - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish
 - tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit
 - tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -147020,6 +148249,7 @@ scope_changes:
 evidence:
 - tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_has_a_substantive_caught_by
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+designated_repro_test: null
 acceptance:
 - text: design/frob.strata contains zero fs or fs-read plain declarations.
   evidence:
@@ -147147,6 +148377,7 @@ evidence:
 - tests/unit/test_process_lock.py::TestAllocatorLock::test_lock_file_created_under_frob_dir
 - tests/unit/test_process_lock.py::TestAllocatorLock::test_two_concurrent_allocations_get_distinct_ids
 - tests/unit/test_process_lock.py::TestAllocatorLock::test_reentrant_in_same_thread_does_not_deadlock
+designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 3) needs a per-ticket
 
@@ -147385,6 +148616,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestV2DoneReport::test_write_then_read_back_byte_for_byte
 - tests/unit/test_ticket_store.py::TestV2Attachments::test_attachment_written_under_ticket_dir
 - tests/unit/test_ticket_store.py::TestLoadAllAndWriteTicket::test_write_then_load_single_mode
+designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 1) needs the actual
 
@@ -147590,6 +148822,7 @@ evidence:
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found
+designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 4.1) needs renumber
 
@@ -147815,6 +149048,7 @@ evidence:
 - tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
 - tests/test_ticket_land.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker
 - tests/test_ticket_land.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback
+designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 4.3) needs archive to
 
@@ -148034,6 +149268,7 @@ evidence:
 - tests/test_tickets.py::TestV2IndexCache::test_missing_index_never_raises
 - tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
 - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
+designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md sections 4.2, 4.4, 6) needs
 
@@ -148251,6 +149486,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 5) needs `frob ticket
 
@@ -148540,6 +149776,7 @@ evidence:
 - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_monofile_mode_errors_past_sunset
 - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_is_silent
 - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_no_ledger_content_at_all_is_silent
+designated_repro_test: null
 acceptance:
 - text: "Deliverables (design section 7, this ticket owns ALL of them):\n1. `frob\
     \ ticket migrate --to v2`: one-shot, reversible migrator reading\n   today's `tickets.md`/`tickets-archive.md`\
@@ -148910,6 +150147,7 @@ evidence:
 - tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
 - tests/test_check_runner.py::TestResultAsJsonWithFix::test_fix_report_adds_fix_key_with_fixits_and_rolled_back_present
 - tests/test_check_runner.py::TestResultAsJsonWithFix::test_no_fix_report_is_byte_identical_to_plain_as_json
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with a live DOC007 finding WHEN `frob check --fix` runs THEN
     the directive is rewritten and the summary line reports it fixed with DOC007 re-verified
@@ -149095,6 +150333,7 @@ evidence:
 - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
 - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run
 - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
+designated_repro_test: null
 acceptance:
 - text: GIVEN an E501 finding on a line carrying a frob:waive comment WHEN --fix runs
     THEN frob fmt is invoked and the line re-verifies clean
@@ -149296,6 +150535,7 @@ evidence:
 - tests/test_gates.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back
 - tests/test_gates.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched
 - tests/test_gates.py::TestFixEngineTierB::test_no_marker_files_is_a_no_op
+designated_repro_test: null
 acceptance:
 - text: GIVEN a Tier-B fix that applies cleanly WHEN its affected_gates and bound_tests
     all re-verify clean THEN the fix is committed and reported as fixed
@@ -149457,6 +150697,7 @@ evidence:
 - tests/test_gates.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list
 - tests/test_gates.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list
 - tests/test_gates.py::TestFixEngineTierC::test_todo001_emitter_never_touches_any_file
+designated_repro_test: null
 acceptance:
 - text: GIVEN a content-required finding with a registered Tier-C emitter WHEN --fix
     runs THEN no file is edited and a FixIt record with a non-empty reason_unfixable
@@ -149621,6 +150862,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
 - tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
+designated_repro_test: null
 acceptance:
 - text: GIVEN a PR that would locally fail TEST005/006 (stale/missing coverage-stamp)
     or TEST012 (frob-coverage.lock.json drift) WHEN the same change runs through the
@@ -149768,6 +151010,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
 - tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
+designated_repro_test: null
 acceptance:
 - text: GIVEN a CMake C/C++ project with CMAKE_EXPORT_COMPILE_COMMANDS enabled and
     an unambiguous single-source build target, and a frob:tests directive naming a
@@ -149943,6 +151186,7 @@ evidence:
 - tests/test_refactor.py::TestProseCarrier::test_heading_and_anchor_rewritten_together
 - tests/test_refactor.py::TestProseCarrier::test_unrelated_heading_not_touched
 - tests/test_refactor.py::TestProseCarrier::test_unreadable_doc_file_disclosed_in_unresolved
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a docstring or comment in a file unrelated to a moved symbol''s own
 
@@ -150085,6 +151329,7 @@ scope:
 - tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a docstring or comment in a file unrelated to a moved symbol''s own
 
@@ -150456,6 +151701,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
 - tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge
 - tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a planner worktree containing only docs plus ledger changes (no closeable
     worked ticket) WHEN frob ticket land --plan --worktree PATH runs THEN it performs
@@ -150887,6 +152133,7 @@ evidence:
 - tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_with_evidence_and_done_report_succeeds
 - tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
 - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy::test_healthy_plain_prints_all_available_and_does_not_exit
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -151122,6 +152369,7 @@ evidence:
 - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_priority_level_lists_valid_values
 - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_origin_lists_valid_values
 - tests/test_app_config.py::TestEnumFieldValidation::test_invalid_ticket_review_verdict_lists_valid_values
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN any enum-valued flag receives an invalid value THEN the error lists
     every valid value inline (today: frob ticket list --status open yields ''open''
@@ -151343,6 +152591,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
 - tests/test_gates.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -151380,6 +152629,7 @@ scope:
 - tests/app/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN the app package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/app/**
@@ -151469,6 +152719,7 @@ scope:
 - tests/app/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN the app package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/app/**
@@ -151616,6 +152867,7 @@ evidence:
 - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_defaults_false
 - tests/unit/test_app_config_from_external_t1276.py::TestFromExternal::test_bool_flag_from_the_second_copy_loop_is_set_true
 - tests/unit/test_app_config_from_external_t1276.py::TestFromArgs::test_delegates_to_from_external_with_pyproject_default
+designated_repro_test: null
 acceptance:
 - text: GIVEN the app package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/app/**
@@ -151943,6 +153195,7 @@ evidence:
 - tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_color_has_no_ansi_in_plain
 - tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_color_positive_delta_paints_critical
 - tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_color_zero_delta_paints_muted
+designated_repro_test: null
 acceptance:
 - text: GIVEN the render package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/render/**
@@ -152123,6 +153376,7 @@ evidence:
 - tests/unit/deploy/test_generate_windows.py::TestStatus::test_one_line
 - tests/unit/deploy/test_generate_windows.py::TestUninstall::test_removes
 - tests/unit/deploy/test_audit.py::TestDiff::test_no_diff
+designated_repro_test: null
 acceptance:
 - text: GIVEN the deploy package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/deploy/**
@@ -152317,6 +153571,7 @@ evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
 - tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride::test_default_retired_set_is_module_constant
+designated_repro_test: null
 acceptance:
 - text: GIVEN a 0.0%-branch symbol in gates WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
@@ -152521,6 +153776,7 @@ evidence:
 - tests/test_fuzz.py::TestStamp::test_write_failure_returns_stamp_failed
 - tests/test_fuzz.py::TestResolve::test_resolve_without_hypothesis_installed_is_no_generator
 - tests/test_fuzz.py::TestResolve::test_pydantic_derivation_failure_is_no_generator
+designated_repro_test: null
 acceptance:
 - text: GIVEN the fuzz package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/fuzz/**
@@ -152662,6 +153918,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/test_release.py::test_load_manifest_missing_is_no_manifest
+designated_repro_test: null
 acceptance:
 - text: GIVEN the release package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/release/**
@@ -152760,6 +154017,7 @@ scope_changes:
 evidence:
 - tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
 - tests/test_clean.py::test_reclaimed_bytes_is_zero_for_no_matches
+designated_repro_test: null
 acceptance:
 - text: GIVEN the clean package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/clean/**
@@ -152881,6 +154139,7 @@ scope_changes:
   at: '2026-07-29'
 evidence:
 - tests/unit/test_cycle.py::test_cross_edge_to_finished_component_does_not_affect_lowlink
+designated_repro_test: null
 acceptance:
 - text: GIVEN the cycle package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/cycle/**
@@ -153020,6 +154279,7 @@ evidence:
 - tests/unit/test_gitlog.py::test_git_log_since_tag_form_uses_range_syntax
 - tests/unit/test_gitlog.py::test_git_log_until_and_limit_filter_output
 - tests/unit/test_gitlog.py::test_git_log_missing_git_binary_returns_empty_result
+designated_repro_test: null
 acceptance:
 - text: GIVEN the gitlog package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/gitlog/**
@@ -153167,6 +154427,7 @@ evidence:
 - tests/unit/fleet/test_status.py::TestCollectStatus::test_doable_count_missing_ledger_returns_zero
 - tests/unit/fleet/test_status.py::TestCollectStatus::test_doable_count_delegates_to_tickets_api
 - tests/unit/fleet/test_route.py::TestRouteTicket::test_route_ticket_new_ticket_failure_wrapped
+designated_repro_test: null
 acceptance:
 - text: GIVEN the fleet package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/fleet/**
@@ -153307,6 +154568,7 @@ evidence:
 - tests/unit/test_docs_module.py::test_overview_no_keyword_match_falls_back_to_all_entries
 - tests/unit/test_docs_module.py::test_overview_symbol_keyword_narrows_match
 - tests/unit/test_docs_module.py::test_search_tracks_heading_and_joins_surrounding_lines
+designated_repro_test: null
 acceptance:
 - text: GIVEN the docs package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/docs/**
@@ -153419,6 +154681,7 @@ evidence:
 - tests/test_serve.py::TestBuildServer::test_require_mcp_raises_when_unavailable
 - tests/test_serve_daemon.py::TestPollRebaseBot::test_conflicting_branch_warns
 - tests/test_serve_daemon.py::TestPollRebaseBot::test_clean_branch_no_warning
+designated_repro_test: null
 acceptance:
 - text: GIVEN the serve package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/serve/**
@@ -153526,6 +154789,7 @@ scope_changes:
 evidence:
 - tests/unit/test_natives_build.py::TestBuildNatives::test_unparseable_frob_toml_is_err_load_failed
 - tests/unit/test_natives_build.py::TestBuildNatives::test_crate_dir_outside_root_falls_back_to_absolute_display
+designated_repro_test: null
 acceptance:
 - text: GIVEN the natives package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/natives/**
@@ -153651,6 +154915,7 @@ evidence:
 - tests/unit/test_map.py::test_map_depth_limits_recursion
 - tests/unit/test_map.py::test_map_as_text
 - tests/unit/test_map.py::test_map_as_json
+designated_repro_test: null
 acceptance:
 - text: GIVEN the map package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/map/**
@@ -153764,6 +155029,7 @@ evidence:
 - tests/test_graph.py::TestResolveCallEdgesNative::test_core_available_true_dispatches_to_native_spy_and_false_does_not
 - tests/test_gates.py::TestWaivePresets::test_resolve_preset_known_name
 - tests/test_gates.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
+designated_repro_test: null
 acceptance:
 - text: GIVEN the graph package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/graph/**
@@ -153867,6 +155133,7 @@ evidence:
 - tests/unit/test_bind.py::test_scan_bindings_finds_cpp_and_rust
 - tests/unit/test_bind.py::test_scan_sources_finds_header_and_rust
 - tests/unit/test_bind.py::test_check_reports_mismatch_for_unbound_binding
+designated_repro_test: null
 acceptance:
 - text: GIVEN the bind package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/bind/**
@@ -153970,6 +155237,7 @@ evidence:
 - tests/test_policy.py::TestRules::test_norm_passes_under_limit
 - tests/test_policy.py::TestRules::test_norm_malformed_missing_max_lines
 - tests/test_policy.py::TestRules::test_no_frob_toml_is_ok_empty
+designated_repro_test: null
 acceptance:
 - text: GIVEN the policy package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/policy/**
@@ -154105,6 +155373,7 @@ evidence:
 - tests/unit/perf/test_ratchet.py::TestPersistRoundTrip::test_wrong_schema_json_is_empty_not_a_crash
 - tests/unit/perf/test_ratchet.py::TestRatchetViolations::test_findings_become_perf009_violations
 - tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision::test_env_unset_installs_serial_pools
+designated_repro_test: null
 acceptance:
 - text: GIVEN the perf package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/perf/**
@@ -154291,6 +155560,7 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_resolve_oserror_is_false
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_surprising_parts_shape_is_false
 - tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a TEST005 finding in src/frob/vet that is fixable from a scoped
 
@@ -154490,6 +155760,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
+designated_repro_test: null
 acceptance:
 - text: GIVEN the tickets package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/tickets/**
@@ -154638,6 +155909,7 @@ evidence:
 - tests/unit/strata/test_circuit_breaker.py::TestBindCodeErrorPropagation::test_ambiguous_code_binding_error_propagates
 - tests/unit/strata/test_fallback.py::TestBindCodeErrorPropagation::test_ambiguous_code_binding_error_propagates
 - tests/unit/strata/test_deploy.py::TestScenarioEvaluationErrorPropagation::test_evaluate_scenarios_error_propagates
+designated_repro_test: null
 acceptance:
 - text: GIVEN the strata package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/strata/**
@@ -154861,6 +156133,7 @@ evidence:
 - tests/test_testing.py::TestSelect::test_direct_hit
 - tests/test_testing_collect.py::TestPythonCollectionFailureDetail::test_none_before_any_call
 - tests/unit/testing/test_stability.py::TestRecord::test_persists
+designated_repro_test: null
 acceptance:
 - text: GIVEN the testing package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/testing/**
@@ -154959,6 +156232,7 @@ evidence:
 - tests/test_stats.py::test_ticket_stats_counts_states_and_doable
 - tests/test_stats_agentic.py::test_category_time_buckets_by_subcommand
 - tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash
+designated_repro_test: null
 acceptance:
 - text: GIVEN the stats package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/stats/**
@@ -155073,6 +156347,7 @@ evidence:
 - tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks::test_creates_missing_and_updates_stale
 - tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
 - tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift::test_legacy_marker_detection_true_for_old_recipe
+designated_repro_test: null
 acceptance:
 - text: GIVEN the scaffold package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/scaffold/**
@@ -155193,6 +156468,7 @@ evidence:
 - tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries
 - tests/test_registry_staleness.py::TestReg010Gate::test_missing_gate_rule_entry_warns
 - tests/test_capability_registry.py::TestNegativeFixtures::test_re_compile_is_not_eval
+designated_repro_test: null
 acceptance:
 - text: GIVEN the registry package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/registry/**
@@ -155313,6 +156589,7 @@ evidence:
 - tests/unit/test_process.py::test_pytest_all_pass
 - tests/unit/test_process_lock.py::TestDerivedStateLock::test_lock_file_created_under_frob_dir
 - tests/unit/test_process_guard.py::TestExecEnabled::test_unset_env_is_enabled
+designated_repro_test: null
 acceptance:
 - text: GIVEN the process package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/process/**
@@ -155421,6 +156698,7 @@ evidence:
 - tests/unit/test_outline.py::test_py_outline_nested_class_method_has_no_top_level_owner
 - tests/unit/test_outline.py::test_py_outline_doc_with_no_period_uses_80_char_fallback
 - tests/unit/test_outline.py::test_py_outline_dedupes_repeated_import_root
+designated_repro_test: null
 acceptance:
 - text: GIVEN the outline package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/outline/**
@@ -155537,6 +156815,7 @@ evidence:
 - tests/test_mutate.py::test_generate_mutants_covers_operators
 - tests/test_mutate_journal.py::test_write_journal_is_idempotent_for_same_content
 - tests/integration/test_mutate_runner.py::TestMutateRunnerJson::test_json_output_is_clean
+designated_repro_test: null
 acceptance:
 - text: GIVEN the mutate package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/mutate/**
@@ -155636,6 +156915,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color
 - tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
+designated_repro_test: null
 acceptance:
 - text: GIVEN the logging package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/logging/**
@@ -155745,6 +157025,7 @@ evidence:
 - tests/unit/test_lang_primitives.py::test_resolve_local_import_cpp_resolves_relative_to_file_dir
 - tests/unit/test_lang_primitives.py::test_resolve_local_import_cpp_outside_root_is_none
 - tests/unit/test_lang_primitives.py::test_resolve_local_import_unknown_language_is_none
+designated_repro_test: null
 acceptance:
 - text: GIVEN the lang package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/lang/**
@@ -155861,6 +157142,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_exports.py::TestExportsPackage::test_as_text_skips_module_with_no_symbols
 - tests/unit/test_exports.py::TestExportsPackage::test_as_text_aliases_duplicate_symbol_names
+designated_repro_test: null
 acceptance:
 - text: GIVEN the exports package at the 75%/70% floors WHEN frob check --only test
     runs THEN it reports 0 TEST005 findings under src/frob/exports/**
@@ -155963,6 +157245,7 @@ evidence:
 - tests/unit/test_dup_legacy_cpp.py::test_iter_functions_cpp_yields_qualified_names
 - tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_covers_bindings
 - tests/unit/test_dup_legacy_cpp.py::test_serialize_cpp_body_normalizes_locals_strings_and_numbers
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a TEST005 finding in src/frob/dup that is fixable from this
 
@@ -156171,6 +157454,7 @@ evidence:
 - tests/unit/cve/test_parser.py::test_parse_rejected_record
 - tests/unit/cve/test_parser.py::test_iter_mirror_yields_records_and_errors
 - tests/unit/cve/test_vet_match.py::test_log4shell_end_to_end_cwe_linkage_via_mirror
+designated_repro_test: null
 acceptance:
 - text: GIVEN the cve package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/cve/**
@@ -156281,6 +157565,7 @@ evidence:
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_success_parses_cargo_json
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoFmtCheckRealPaths::test_unformatted_lines_produce_warning_diagnostics
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoTestRealPaths::test_success_parses_cargo_json
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a TEST005 finding in src/frob/check that this dispatch''s scope
 
@@ -156469,6 +157754,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/test_arch_gate.py::TestArchComplexityAware::test_flat_long_function_not_flagged
 - tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
+designated_repro_test: null
 acceptance:
 - text: GIVEN the arch package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/arch/**
@@ -156728,6 +158014,7 @@ scope_changes:
   at: '2026-08-03'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN the _cli_parsers package at the 75%/70% floors WHEN frob check --only
     test runs THEN it reports 0 TEST005 findings under src/frob/_cli_parsers/**
@@ -156830,6 +158117,7 @@ evidence:
 - tests/unit/test_xref.py::test_as_text_cross_file_filters_and_reports_skipped
 - tests/unit/test_xref.py::test_text_search_finds_usages_in_strata_file
 - tests/unit/test_xref.py::test_collect_source_files_skips_hidden_directory
+designated_repro_test: null
 acceptance:
 - text: GIVEN the xref package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/xref/**
@@ -156948,6 +158236,7 @@ evidence:
 - tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
 - tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
 - tests/unit/test_main_entry.py::TestMainUnhandledException::test_unhandled_exception_prints_clean_message_and_exits_1
+designated_repro_test: null
 acceptance:
 - text: GIVEN the root package at the 75%/70% floors WHEN frob check --only test runs
     THEN it reports 0 TEST005 findings under src/frob/root/**
@@ -157079,6 +158368,7 @@ evidence:
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error
+designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with a design/ directory WHEN frob check runs THEN evaluate_compliance
     executes per discovered .strata model inside the sys gate family (SELFAUDIT001-style
@@ -157163,6 +158453,7 @@ scope_breadth_ack_reason: null
 evidence:
 - cmd:uv run frob check --only docanchor --only docblocks --only doclink exit=0 sha256=9f385d517f7f
 - cmd:uv run frob check --only docanchor --only docblocks --only doclink exit=0 sha256=f3301ec23b5f
+designated_repro_test: null
 acceptance:
 - text: GIVEN the three residual findings from the T-1233 post-land verification THEN
     cve.md and index.md describe T-0147 (vet CVE matching) as shipped (src/frob/vet/_cve.py),
@@ -157354,6 +158645,7 @@ evidence:
 - tests/unit/security/test_redact.py::TestGatesSecretsStillWorksViaTheExtractedModule::test_secrets_gate_module_still_exposes_redact_and_scan_line
 - tests/unit/security/test_redact.py::TestGatesSecretsStillWorksViaTheExtractedModule::test_severity_round_trips_through_the_plain_string_boundary
 - tests/test_secrets_gate.py::TestRedact::test_never_returns_the_token
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -157541,6 +158833,7 @@ evidence:
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunnerDispatchTotality::test_every_non_bind_subcommand_resolves_a_callable_runner[bind]
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunnerDispatchTotality::test_every_non_bind_subcommand_resolves_a_callable_runner[ticket]
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN docs/modules/app.md THEN the frob:describes anchors and prose for doctor_runner.run,
     fleet_runner.run, registry_runner.run, worktree_runner.run (deleted by T-1216's
@@ -157632,6 +158925,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - cmd:uv run --frozen frob check --only test exit=0 sha256=5383529021de
+designated_repro_test: null
 acceptance:
 - text: GIVEN main's HEAD WHEN make coverage + frob check --stamp-coverage runs THEN
     the TEST005 finding list for src/frob/app is re-derived and T-1276 is re-scoped
@@ -157745,6 +159039,7 @@ evidence:
 - tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_identity_less_environment_falls_back_to_throwaway_git_identity
 - tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_without_serial_pools_worker_is_unattributed
 - tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -157843,6 +159138,7 @@ scope:
 - tests/test_check_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -157931,6 +159227,7 @@ evidence:
 - tests/test_gates.py::TestWaive004DegradedRunGuard::test_skipped_stage_degraded_run_deletes_nothing
 - tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_of_one_rule_deletes_nothing
 - tests/test_gates.py::TestWaive004DegradedRunGuard::test_healthy_run_below_threshold_still_deletes
+designated_repro_test: null
 reviews:
 - verdict: reject
   reviewer: reviewer-agent (coordinator-relayed)
@@ -158134,6 +159431,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - 'cmd:grep -c ''count: 7'' docs/design/compliance-corpus.md exit=0 sha256=4355a46b19d3'
+designated_repro_test: null
 acceptance:
 - text: GIVEN this ticket closes WHEN docs/design/compliance-corpus.md's FROB-CATALOG-ENTRIES
     manifest row and TOTAL_LEAF_CONTROLS_ENUMERATED are inspected THEN both reflect
@@ -158197,6 +159495,7 @@ evidence:
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_declared_in_done_report_waive_deletion_is_allowed
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
+designated_repro_test: null
 acceptance:
 - text: GIVEN a branch commit that deletes an out-of-scope undeclared frob:waive line
     WHEN frob ticket land runs THEN it refuses before merge naming file and rule
@@ -158306,6 +159605,7 @@ evidence:
 - tests/test_mutate_journal.py::test_restore_refuses_and_drops_a_legacy_journal_missing_current_sha256
 - tests/test_mutate_journal.py::test_restore_stale_journals_is_byte_exact_crlf
 - tests/test_mutate_journal.py::test_run_mutations_restores_stale_journal_from_prior_crash
+designated_repro_test: null
 acceptance:
 - text: GIVEN a mutation journal whose recorded pre-mutation hash no longer matches
     the on-disk file WHEN restore runs THEN the file is left untouched and the stale
@@ -158442,6 +159742,7 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
 - tests/test_gates.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -158490,6 +159791,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v2_mode_mines_via_v2_state_transitions
 - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v1_v2_parity_for_equivalent_history
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -158603,6 +159905,7 @@ evidence:
 - tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd::test_frob_scratch_files_are_gitignored_not_tracked
 - tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd::test_two_branches_with_divergent_frob_scratch_never_add_add_conflict
 - tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -158710,6 +160013,7 @@ evidence:
 - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
 - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
 - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
+designated_repro_test: null
 acceptance:
 - text: GIVEN a branch that merged main after main legitimately deleted a waiver WHEN
     land runs THEN no refusal occurs (locked by test)
@@ -158885,6 +160189,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_detects_coverage_tracer_by_module_name
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_no_active_tracer_is_not_coverage
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_under_active_coverage_tracer
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -159022,6 +160327,7 @@ evidence:
 - tests/test_ticket_land.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
 - tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop
 - tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -159220,6 +160526,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestStampFailurePropagation::test_green_suite_and_green_stamp_still_exits_zero
 - tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_coverage_xml_invocations_pass_ignore_errors
 - tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_combine_then_xml_survives_a_stale_fixture_path
+designated_repro_test: null
 acceptance:
 - text: GIVEN a green suite but a failing stamp-coverage WHEN make coverage runs THEN
     it exits nonzero naming the stamp failure
@@ -159368,6 +160675,7 @@ evidence:
 - tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
 - tests/test_refactor.py::TestApplyPlan::test_overlapping_ops_refuse_before_write
 - tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree
+designated_repro_test: null
 acceptance:
 - text: given frob check, when gate:RENDER runs, then src/frob/refactor/_cli.py raises
     0 RENDER001 findings
@@ -159477,6 +160785,7 @@ evidence:
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_unknown_subcommand_returns_none
 - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
 - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_unknown_attribute_still_raises_attribute_error
+designated_repro_test: null
 acceptance:
 - text: given frob check, when gate:OPAQUE runs, then src/frob/app raises 0 OPAQUE001
     errors
@@ -159609,6 +160918,7 @@ evidence:
 - tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating::test_unrelated_same_name_call_in_non_importing_file_is_excluded
 - tests/test_gates.py::TestDebtGate::test_clean_debt_produces_no_violations
 - tests/test_gates.py::TestDeprecatedGate::test_clean_deprecated_produces_no_violations
+designated_repro_test: null
 acceptance:
 - text: given frob check, when gate:ARCH runs, then _depr005_violations is under the
     60-line threshold
@@ -159759,6 +161069,7 @@ evidence:
 - tests/test_gates_suppress.py::TestSuppress001Gate::test_both_dialects_present_reports_nothing
 - tests/test_gates_suppress.py::TestSuppress001Gate::test_no_suppression_no_finding
 - tests/test_gates_suppress.py::TestSuppress001Gate::test_no_available_oracle_reports_nothing
+designated_repro_test: null
 acceptance:
 - text: given a python line carrying a mypy type:ignore and an unsuppressed ty diagnostic
     on the same line, when the suppress gate runs, then SUPPRESS001 reports it naming
@@ -159955,6 +161266,7 @@ evidence:
 - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_idempotent_second_fix_pass_is_a_no_op
 - tests/test_gates_fix_engine.py::TestSuppress001NoOpSuppressionRefusal::test_no_op_suppression_never_added_under_tests_glob
 - tests/test_gates_fix_engine.py::TestSuppress001FMT001Precedence::test_frob_directive_bearing_line_is_left_untouched
+designated_repro_test: null
 acceptance:
 - text: given a SUPPRESS001 finding, when frob check --fix runs, then the paired suppression
     is appended using the reporting checker's own rule code and the line then passes
@@ -160092,6 +161404,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_unknown_subcommand_returns_none
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -160202,6 +161515,7 @@ evidence:
 - tests/unit/test_land_queue.py::TestDrainNext::test_drains_fifo_order
 - tests/unit/test_land_queue.py::TestDrainNext::test_successful_land_marks_entry_landed
 - tests/unit/test_land_queue.py::TestStoreCorrupt::test_corrupt_queue_file_errors
+designated_repro_test: null
 acceptance:
 - text: given two agents landing at once, when both enqueue, then both land in sequence
     with neither refused for DirtyMain and neither writing to main directly
@@ -160438,6 +161752,7 @@ evidence:
 - tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_default_true
 - tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_no_cache_true
 - tests/unit/test_check.py::TestRunGatesCacheWiring::test_gate_cache_enabled_false_when_env_var_set
+designated_repro_test: null
 acceptance:
 - text: given an unchanged file set, when frob check re-runs, then unchanged gates
     are served from cache and the run is materially faster
@@ -160665,6 +161980,7 @@ scope_changes:
 evidence:
 - tests/test_tickets_brief.py::TestConcurrentLeases::test_lists_others
 - tests/test_tickets_brief.py::TestBriefTicket::test_concurrent_leases
+designated_repro_test: null
 acceptance:
 - text: given other tickets in progress, when frob ticket brief runs, then it lists
     their ids, titles, and scope globs under a do-not-touch heading
@@ -160770,6 +162086,7 @@ evidence:
 - tests/test_gates.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
 - tests/test_gates.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
 - tests/test_gates.py::TestTierAAutofixCrashSafety::test_kill_between_write_and_rename_leaves_original_file_intact
+designated_repro_test: null
 acceptance:
 - text: given a land killed mid-auto-fix, when the worktree is inspected, then no
     source file is left half-rewritten
@@ -160920,6 +162237,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage::test_absorbed_land_report_none_when_staged_files_nonempty
 - tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage::test_staged_files_diff_ok_but_nonzero_returncode_is_failed
 - tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage::test_land_commit_details_rev_parse_ok_but_nonzero_returncode_is_no_sha
+designated_repro_test: null
 acceptance:
 - text: given the split land modules, when the mutation harness runs, then every surviving
     mutant is either killed by a new test or individually justified by name
@@ -161119,6 +162437,7 @@ evidence:
 - tests/unit/perf/test_harness_main_branches.py::TestHarnessMainExitCodeNormalization::test_clean_run_returns_zero_without_exit
 - tests/unit/perf/test_serial_pools_import_failure.py::TestInstallSerialPoolsGatesImportError::test_import_error_still_patches_concurrent_futures_only
 - tests/unit/perf/test_serial_pools_import_failure.py::TestInstallSerialPoolsGatesUnexpectedException::test_unexpected_import_time_exception_is_swallowed
+designated_repro_test: null
 acceptance:
 - text: given an unscoped frob check --only test, when TEST005 lines under src/frob/perf
     are counted, then the count is materially below 65 and the report states the exact
@@ -161301,6 +162620,7 @@ evidence:
 - tests/unit/test_check.py::TestScopeDisclosure::test_only_names_the_gate_families_it_did_not_run
 - tests/unit/test_check.py::TestScopeDisclosure::test_ticket_flag_notes_which_families_are_actually_diff_scoped
 - tests/unit/test_check.py::TestScopeDisclosure::test_full_unfiltered_run_adds_no_disclosure
+designated_repro_test: null
 acceptance:
 - text: given frob check --ticket T-XXXX, when it reports a gate as clean, then the
     output states that the run was scope-filtered and how many findings were suppressed
@@ -161446,6 +162766,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
+designated_repro_test: null
 acceptance:
 - text: given an unscoped frob check, when gate:INV runs, then src/frob/app/app.py
     and src/frob/app/__init__.py raise 0 INV006 findings
@@ -161562,6 +162883,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestStampFailurePropagation::test_stamp_failure_after_green_suite_fails_the_recipe
 - tests/unit/test_makefile_coverage.py::TestStampFailurePropagation::test_green_suite_and_green_stamp_still_exits_zero
 - tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_coverage_xml_invocations_pass_ignore_errors
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -161718,6 +163040,7 @@ scope:
 - Makefile
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -161781,6 +163104,7 @@ evidence:
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_ticket_already_done_on_main_does_not_block
+designated_repro_test: null
 acceptance:
 - text: given a worktree hosting two tickets where one is deliberately open, when
     the other lands, then the open ticket's committed work does not silently reach
@@ -161924,6 +163248,7 @@ evidence:
 - tests/unit/test_scope_lease_deadlock.py::TestRemoveKeepsEvidenceCoveredByRemainingScope::test_unit_helper_directly_permits_when_remaining_covers
 - tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_sibling_scope_same_worktree_is_permitted
 - tests/unit/test_scope_lease_deadlock.py::TestSameWorktreeLeaseIsNotAConflict::test_add_into_different_worktree_sibling_scope_still_refused
+designated_repro_test: null
 acceptance:
 - text: given a glob whose recorded evidence stays covered by a remaining narrower
     glob, when scope --remove runs, then it is permitted
@@ -162057,6 +163382,7 @@ evidence:
 - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_same_count_as_baseline_does_not_fire
 - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_growth_beyond_baseline_fires_at_the_right_file_and_line
 - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_two_baselined_symbols_each_evaluated_independently
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -162160,6 +163486,7 @@ evidence:
 - tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_missing_manifest_is_noop
 - tests/unit/test_land_release_coherence.py::TestApplyReleaseBumpCoherenceGuard::test_callback_reports_none_but_pyproject_already_diverged
 - tests/unit/test_land_release_coherence.py::TestApplyReleaseBumpCoherenceGuard::test_callback_reports_new_version_normally
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -162309,6 +163636,7 @@ evidence:
 - tests/test_release.py::TestCrashSafeReleaseWrites::test_rewrite_pyproject_version_leaves_original_on_replace_failure
 - tests/test_release.py::TestCrashSafeReleaseWrites::test_changelog_skeleton_entry_leaves_original_on_replace_failure
 - tests/test_release.py::TestCrashSafeReleaseWrites::test_set_manifest_version_leaves_original_on_replace_failure
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -162712,6 +164040,7 @@ evidence:
 - tests/test_telemetry.py::test_usage_report_aggregates_time_and_failures
 - tests/test_telemetry.py::test_usage_report_counts_redundant_reruns
 - tests/test_telemetry.py::test_usage_report_counts_fast_exit1
+designated_repro_test: null
 acceptance:
 - text: given a command re-run at an identical tree_hash with identical args, when
     it completes, then a tip names the prior run and its timestamp
@@ -162894,6 +164223,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_combine_then_xml_survives_a_stale_fixture_path
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -162992,6 +164322,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestFailedRunNeverPromotesPartialData::test_successful_run_still_promotes_coverage_xml
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
+designated_repro_test: null
 acceptance:
 - text: given a coverage run that exits nonzero, when it finishes, then the previous
     stamp and coverage.xml are left intact
@@ -163171,6 +164502,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -163302,6 +164634,7 @@ scope_changes:
   at: '2026-08-01'
 evidence:
 - tests/test_todo_fmt_gate.py::TestTodo001BareComment::test_no_todo_token_no_violation
+designated_repro_test: null
 acceptance:
 - text: given main, when frob check --only gates runs, then gate:PII and gate:TICK
     report 0 errors
@@ -163358,6 +164691,7 @@ scope:
 - src/frob/gates/_baseline.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN a CI run WHEN the coverage stamp or delta baseline is absent, stale
     or tampered THEN the build fails rather than silently degrading to a pass
@@ -163397,6 +164731,7 @@ scope_changes:
   at: '2026-08-04'
 evidence:
 - tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_stamp_failure_propagates_instead_of_staging_stale_manifest
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -163551,6 +164886,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesLand::test_land_receives_the_keyword[False]
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketReachesConfig::test_from_external_carries_the_flag
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -163634,6 +164970,7 @@ evidence:
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_ticket_already_done_on_main_does_not_block
+designated_repro_test: null
 acceptance:
 - text: GIVEN two complete tickets on one series branch whose scopes overlap WHEN
     either is landed THEN the guard does not refuse solely because the other sibling
@@ -163733,6 +165070,7 @@ evidence:
 - tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
 - tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
 - tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN frob check --only gates runs THEN gate:EXHAUST reports 0 EXHAUST001
     and 0 EXHAUST002 warnings
@@ -163872,6 +165210,7 @@ scope_changes:
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:uv run frob check --only docanchor --only doclink --only docblocks exit=0 sha256=b059e00a874a
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN frob check --only gates runs THEN gate:DOC reports 0 DOC006
     warnings
@@ -164043,6 +165382,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestCombineRecoversDisjointSessions::test_two_disjoint_sessions_combine_to_full_coverage
 - tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_combine_then_xml_survives_a_stale_fixture_path
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
+designated_repro_test: null
 acceptance:
 - text: GIVEN a full make coverage run WHEN the suite completes THEN tests/unit/test_makefile_coverage.py
     and tests/unit/test_ticket_store.py report no failures
@@ -164126,6 +165466,7 @@ scope_changes:
   at: '2026-08-01'
 evidence:
 - tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN tests/test_registry_exhaustiveness.py runs THEN test_no_reg008_findings_for_check_coverage_yaml
     passes
@@ -164200,6 +165541,7 @@ evidence:
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls
 - tests/test_gates.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty
+designated_repro_test: null
 acceptance:
 - text: GIVEN a session WHEN frob-coverage.lock.json changes THEN the write is attributable
     to an explicit stamp_coverage call that succeeded
@@ -164260,6 +165602,7 @@ evidence:
 - tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_partial_condition_coverage_is_read_verbatim
 - tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_three_way_partial_is_not_snapped_to_an_extreme
 - tests/test_gates.py::TestConditionCoverageIsActuallyParsed::test_zero_and_full_condition_coverage_round_trip
+designated_repro_test: null
 acceptance:
 - text: GIVEN a Cobertura line with condition-coverage='50% (1/2)' WHEN _parse_line_el
     runs THEN branch_pct is 50, not 100
@@ -164352,6 +165695,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_missing_socket_is_nosocket
 - tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_different_version_is_skew_not_live
 - tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_is_live
+designated_repro_test: null
 acceptance:
 - text: GIVEN a socket file whose daemon is gone WHEN the proxy probes THEN it classifies
     Orphaned, unlinks the socket, and spawns -- in well under a second
@@ -164477,6 +165821,7 @@ evidence:
 - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_escalates_to_kill_if_terminate_does_not_stick
 - tests/test_serve_socket.py::TestReapMultiprocessingChildren::test_no_active_children_is_a_no_op
 - tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob_shutdown RPC that returns ok WHEN 5 seconds pass THEN the daemon
     process has actually exited
@@ -164639,6 +165984,7 @@ evidence:
 - tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_unset_env_disables_the_daemon
 - tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_frob_daemon_1_enables_the_daemon
 - tests/test_app_daemon_proxy.py::TestDaemonOptIn::test_no_daemon_still_wins_over_opt_in
+designated_repro_test: null
 acceptance:
 - text: GIVEN no daemon environment variable is set WHEN a proxying frob command runs
     THEN it computes in-process and never spawns a daemon
@@ -164725,6 +166071,7 @@ scope_changes:
   at: '2026-08-01'
 evidence:
 - tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN frob check --only gates runs THEN gate:ARCH, gate:COV, gate:PRE
     and gate:SCOPE report 0 errors
@@ -164838,6 +166185,7 @@ evidence:
 - tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_allows_when_version_is_bumped
 - tests/unit/test_release_stamp_guard.py::TestGuardIsOnByDefault::test_appconfig_default_does_not_allow_unbumped
 - tests/unit/test_release_stamp_guard.py::TestGuardIsOnByDefault::test_cli_without_the_flag_does_not_allow_unbumped
+designated_repro_test: null
 acceptance:
 - text: GIVEN the public API changed since the last stamp AND the version has not
     been bumped WHEN frob release stamp runs THEN it refuses, names the required version,
@@ -164932,6 +166280,7 @@ scope_changes:
   at: '2026-08-01'
 evidence:
 - tests/unit/test_release_stamp_guard.py::TestStampRefusesUnbumped::test_refuses_when_api_changed_and_version_not_bumped
+designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN frob check --only gates runs THEN gate:COV and the SYS104
     self-audit report 0 errors
@@ -165041,6 +166390,7 @@ evidence:
 - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_rejects_when_own_obligations_clean_false
 - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_allows_when_own_obligations_clean_true
 - tests/test_tickets_own_obligations.py::TestT1384OwnObligationsOnClose::test_transition_permissive_when_own_obligations_clean_none
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket whose change adds a public symbol with no frob:doc edge WHEN
     frob ticket close runs THEN it refuses and names the missing edge
@@ -165153,6 +166503,7 @@ evidence:
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_stderr_handler_never_emits_against_a_closed_captured_stream
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stderr]
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stdout]
+designated_repro_test: null
 acceptance:
 - text: GIVEN the full suite under coverage WHEN test_unhandled_exception_prints_clean_message_and_exits_1
     runs THEN captured stderr contains no 'Logging error' traceback
@@ -165261,6 +166612,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_dup_cache.py::TestWriteLockGranularity::test_shared_reader_not_blocked_during_standalone_compute_phase
+designated_repro_test: null
 acceptance:
 - text: GIVEN a heavily loaded machine WHEN the shared-reader test runs THEN it still
     passes, because it asserts ordering rather than a duration
@@ -165342,6 +166694,7 @@ evidence:
 - tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseRefusesOwnObligationsEndToEnd::test_close_refuses_when_own_diff_leaves_cov001_outstanding
 - tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseRefusesOwnObligationsEndToEnd::test_close_succeeds_once_the_diff_is_actually_clean
 - tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseOwnObligationsForTicket::test_dirty_selfaudit001_under_touched_file_returns_false
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a ticket whose change adds a public symbol with no frob:doc edge
 
@@ -165511,6 +166864,7 @@ scope_changes:
   at: '2026-08-04'
 evidence:
 - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -165679,6 +167033,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_declaring_broad_scope_but_untouched_does_not_block
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
+designated_repro_test: null
 acceptance:
 - text: GIVEN a branch whose committed changeset touches a file that a sibling open
     ticket merely DECLARES in scope, but to which that sibling has contributed no
@@ -165818,6 +167173,7 @@ evidence:
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_skips_nonexistent_path_without_error
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a land whose ticket scope excludes a file elsewhere in the tree carrying
     a non-canonical frob: directive, WHEN land runs its Tier-A pre-fix pass, THEN
@@ -165957,6 +167313,7 @@ evidence:
 - tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order
 - tests/unit/test_app_runners_batch5.py::TestStatsRunner::test_json_mode_prints_json
 - tests/unit/test_app_runners_batch5.py::TestReleaseRunner::test_stamp_err_result_exits_1
+designated_repro_test: null
 acceptance:
 - text: GIVEN a clean checkout of main WHEN the full pytest suite runs unscoped THEN
     it exits 0 with no failures
@@ -166104,6 +167461,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -166213,6 +167571,7 @@ evidence:
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stderr]
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_handler_follows_stream_swap_not_bind_time_capture[stdout]
 - tests/unit/test_main_entry.py::TestLazyLogHandlers::test_stderr_handler_never_emits_against_a_closed_captured_stream
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -166290,6 +167649,7 @@ scope_changes:
 evidence:
 - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
 - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
+designated_repro_test: null
 acceptance:
 - text: GIVEN a successful unscoped make coverage run WHEN the TEST005 report is read
     THEN src/frob/serve/** symbols exercised by the daemon tests report non-zero branch
@@ -166485,6 +167845,7 @@ evidence:
 - tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_dotted_symref_file_in_scope
 - tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_dotted_symref_file_out_of_scope
 - tests/gates/test_scope_symref_helpers.py::TestFileOfSymrefInScope::test_bare_path_symref_in_scope
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -166664,6 +168025,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_never_points_at_pyproject_toml
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_rc_file_target_is_shared_not_duplicated
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -166779,6 +168141,7 @@ scope:
 - src/frob/gates/_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob-coverage.lock.json records src/frob/__main__.py at 81.2 percent
     line coverage WHEN TEST005 evaluates __main__.py::main THEN it reports that symbol's
@@ -166856,6 +168219,7 @@ evidence:
 - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_t1276_shaped_criterion_matches
 - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_ordinary_criterion_does_not_match
 - tests/test_tickets_gate_claim_evidence.py::TestCriterionGateClaimDetection::test_gate_claim_criteria_filters_ticket_acceptance
+designated_repro_test: null
 acceptance:
 - text: GIVEN an acceptance criterion asserting a package-wide gate outcome (0 TEST005
     findings under src/frob/app/**) WHEN evidence is bound that does not establish
@@ -167005,6 +168369,7 @@ evidence:
 - tests/unit/test_perf_runner_t1400.py::TestPersistRunUnresolvedSection::test_hit_with_unknown_section_id_is_skipped_without_error
 - tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_without_json_renders_a_table_with_header_and_row
 - tests/unit/test_perf_runner_t1400.py::TestHotDefaultTableRendering::test_hot_top_truncates_the_table_rows
+designated_repro_test: null
 acceptance:
 - text: GIVEN the TEST005 join is fixed per T-1398 WHEN the app package is re-measured
     THEN every remaining finding is triaged as either a genuine gap (closed with a
@@ -167172,6 +168537,7 @@ evidence:
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop
 - tests/test_gates.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted
+designated_repro_test: null
 acceptance:
 - text: GIVEN a make coverage run WHEN the lock is stamped THEN every module_line
     value equals the coverage computed from that run coverage.xml for the same module
@@ -168875,6 +170241,7 @@ evidence:
 - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_include_history_env_opt_in_restores_the_historical_finding
 - tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
 - tests/test_gates.py::TestExhaustiveHandlingGate::test_catch_all_of_unknown_does_not_fire_exhaust001
+designated_repro_test: null
 acceptance:
 - text: GIVEN an EXHAUST001 finding whose only escape is an unresolvable (Unknown)
     callee WHEN the gate runs THEN it does not demand a catch-all handler under EXHAUST001,
@@ -169052,6 +170419,7 @@ evidence:
 - cmd:bash -c "grep -q '^## 1b2' docs/guides/agent-playbook.md && grep -q 'T-1432'
   docs/guides/agent-playbook.md && git show c2fd45da --stat | grep -q _land.py" exit=0
   sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -169146,6 +170514,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_out_of_scope_file_with_noncanonical_directive_is_left_untouched
 - tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes::test_in_scope_file_with_noncanonical_directive_is_still_fixed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -169279,6 +170648,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:bash -c "grep -q 'zero-hit ratchet' docs/modules/gates.md && grep -q 'unjoined-module'
   docs/modules/gates.md" exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 acceptance:
 - text: GIVEN a reader of docs/modules/gates.md#public-api WHEN they read the write_coverage_lock
     entry THEN it documents that a genuine zero-hit module value is never clamped
@@ -169366,6 +170736,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root
 - tests/test_gates.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a clean make coverage run over --cov=src/frob WHEN load_coverage computes
     module_join_fraction THEN the denominator only counts modules that could ever
@@ -169491,6 +170862,7 @@ evidence:
 - cmd:bash -c "grep -q '^## 6e' docs/guides/agent-playbook.md && grep -q 'T-1435'
   tickets.md && grep -q '_scope_known_paths_to_coverage_roots' src/frob/gates/_coverage.py"
   exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -169592,6 +170964,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
 - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped
+designated_repro_test: null
 acceptance:
 - text: GIVEN a committed lock with a non-zero value for a module WHEN write_coverage_lock
     is called with module_line[module] == 0.0 for that module THEN the written lock
@@ -169699,6 +171072,7 @@ scope:
 - tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -169755,6 +171129,7 @@ evidence:
 - tests/unit/test_ticket_close_gate_claims_t1410.py::TestCloseGateClaimsForTicket::test_refused_spawn_fails_closed
 - tests/unit/test_ticket_close_gate_claims_t1410.py::TestCloseRefusesT1276ShapeEndToEnd::test_close_refuses_when_live_findings_remain_under_the_glob
 - tests/unit/test_ticket_close_gate_claims_t1410.py::TestCloseRefusesT1276ShapeEndToEnd::test_close_succeeds_once_the_glob_is_actually_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -169880,6 +171255,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_standalone_comment_in_reference_form_naming_real_field_fires
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_standalone_comment_matching_in_scope_identifier_fires
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_hash_inside_string_literal_is_not_treated_as_comment
+designated_repro_test: null
 acceptance:
 - text: GIVEN a comment using a FIELD_SIGNATURES word as ordinary prose with no correspondingly-named
     identifier in scope WHEN the PII gate runs THEN PII012 does not fire
@@ -170035,6 +171411,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - cmd:uv run frob check --only docanchor --only doclink --only docblocks exit=0 sha256=5303ea7cf4a3
+designated_repro_test: null
 acceptance:
 - text: frob check --only docanchor --only doclink --only docblocks reports 0 unwaived
     DOC006 findings in CHANGELOG.md and tickets.md
@@ -170151,6 +171528,7 @@ evidence:
 - tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_doc_still_flagged_after_changelog_exclusion
 - cmd:bash -c "grep -q _ARCHIVAL_LEDGER_FILES src/frob/gates/_doclink_docanchor.py
   || grep -rq _ARCHIVAL_LEDGER_FILES src/frob/gates/" exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 acceptance:
 - text: A genuine historical-record DOC006 finding in CHANGELOG.md can be dispositioned
     (waived or excluded) without a worktree agent hand-editing a land-owned file
@@ -170221,6 +171599,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_atomic.py::TestEvaluateSagaContractsNoSaga::test_empty_diagnostics_when_no_coordinator_declared
 - tests/unit/strata/test_atomic.py::TestEvaluateSagaContractsJoin::test_flow_into_coordinator_marked_at_least_once_and_joined
+designated_repro_test: null
 acceptance:
 - text: GIVEN the twelve named strata modules WHEN each is measured standalone with
     pytest --cov --cov-branch THEN each reports 100 percent branch coverage
@@ -170323,6 +171702,7 @@ evidence:
 - tests/unit/strata/test_compliance.py::TestCoppa::test_flow_dst_not_a_declared_node_is_silently_out_of_reach
 - tests/unit/strata/test_compliance.py::TestGdprRetention::test_non_time_retention_unit_is_a_violation
 - tests/unit/strata/test_compliance.py::TestEvaluateCompliance::test_discharge_error_propagates
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -170514,6 +171894,7 @@ evidence:
 - tests/test_graph.py::TestSchemaLockContentionRecovery::test_concurrent_meta_key_integrity_error_retries_instead_of_recreating
 - tests/test_graph.py::TestSchemaLockContentionRecovery::test_non_meta_key_integrity_error_still_recreates
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
+designated_repro_test: null
 acceptance:
 - text: GIVEN two processes applying the cache schema concurrently WHEN one hits UNIQUE
     constraint failed on meta.key THEN it re-reads the schema version and proceeds,
@@ -170617,6 +171998,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseOwnObligationsForTicket::test_clean_diff_and_no_bump_returns_true
 - tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseRefusesOwnObligationsEndToEnd::test_close_succeeds_once_the_diff_is_actually_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -170708,6 +172090,7 @@ evidence:
 - tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv::test_every_row_has_a_named_covering_test
 - tests/unit/test_docs_test005_classification_t1418.py::TestClassificationCsv::test_classification_totals_match_the_audit_doc
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 acceptance:
 - text: GIVEN the 306 symbols reporting exactly 0.0 percent branch coverage WHEN each
     is re-measured with its own test file running standalone under --cov THEN every
@@ -170860,6 +172243,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_mismatch_exits_1
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_lock_source_sha_match_succeeds
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_no_snapshot_skips_durability_check
+designated_repro_test: null
 acceptance:
 - text: GIVEN a successful coverage stamp WHEN the resulting frob-coverage.lock.json
     is committed THEN its source_sha matches that run, not an earlier one
@@ -171362,6 +172746,7 @@ evidence:
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_dry_run_mutates_nothing
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_target_id_already_exists_is_duplicate_id
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_unknown_old_id_is_not_found
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -171555,6 +172940,7 @@ evidence:
 - tests/test_gates_mutation_evidence.py::TestBugReproViolations::test_passed_at_parent_is_error_violation
 - tests/test_gates_mutation_evidence.py::TestBugReproViolations::test_failed_at_parent_no_violation
 - tests/test_gates_mutation_evidence.py::TestBugReproViolations::test_no_verdict_no_violation
+designated_repro_test: null
 acceptance:
 - text: GIVEN a kind=bug ticket whose bound evidence passes at BOTH its parent commit
     and the fix commit WHEN it is closed or landed THEN it is refused, because that
@@ -171975,6 +173361,7 @@ evidence:
 - tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_remove_drops_criterion
 - tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_without_reason_exits_nonzero
 - tests/test_tickets_acceptance.py::TestAcceptCliAmendRemove::test_cli_amend_and_remove_together_is_rejected
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket with a mis-specified acceptance criterion WHEN it is amended
     via the CLI with a reason THEN the new text replaces the old and the reason is
@@ -172144,6 +173531,7 @@ evidence:
 - tests/test_graph_lock.py::TestCacheLockRetry::test_non_locked_operational_error_is_not_retried
 - tests/test_graph_lock.py::TestCacheLockRetry::test_store_file_data_retries_past_a_held_exclusive_lock
 - tests/test_graph_lock.py::TestCacheLockRetry::test_build_graph_reports_err_instead_of_crashing_on_cache_locked
+designated_repro_test: null
 acceptance:
 - text: GIVEN the graph cache lock is held by another connection WHEN frob check runs
     THEN it completes and reports rather than crashing with an unhandled exception
@@ -172312,6 +173700,7 @@ evidence:
 - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
 - tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
+designated_repro_test: null
 acceptance:
 - text: GIVEN main after T-1270 WHEN an UNSCOPED frob check runs THEN it reports zero
     errors
@@ -172577,6 +173966,7 @@ scope_changes:
   at: '2026-08-02'
 evidence:
 - tests/unit/strata/test_sync_interface.py::TestSyncInterfaceReport::test_store_block_missing_interface_attr_is_written
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -172689,6 +174079,7 @@ scope_changes:
 evidence:
 - tests/unit/test_makefile_coverage.py::TestCombineAppendPreservesBaseData::test_combine_without_append_erases_base_data
 - tests/unit/test_makefile_coverage.py::TestCombineAppendPreservesBaseData::test_combine_with_append_preserves_base_data
+designated_repro_test: null
 acceptance:
 - text: GIVEN a base .coverage file already holding pytest-cov own in-process xdist
     merge WHEN the recipe runs coverage combine without --append THEN the base data
@@ -172830,6 +174221,7 @@ scope_changes:
 evidence:
 - tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_refuses_when_evidence_passes_at_parent
 - tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_succeeds_when_evidence_fails_at_parent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -173050,6 +174442,7 @@ evidence:
 - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
 - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
 - tests/test_gates.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket diff adding a function, parameter, or registry entry that no
     non-test code reaches WHEN the gate runs THEN it is refused, reconstructed as
@@ -173265,6 +174658,7 @@ scope:
 - src/frob/tickets/_accept.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -173293,6 +174687,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
 - tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -173402,6 +174797,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
 - tests/test_gates.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged
+designated_repro_test: null
 acceptance:
 - text: GIVEN a diff that relocates a symbol into a new file without changing its
     reachability WHEN the wire gate runs THEN WIRE001 does not fire for that symbol
@@ -173532,6 +174928,7 @@ scope_changes:
   at: '2026-08-02'
 evidence:
 - tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_pre_staged_unrelated_file_never_rides_along_into_the_commit
+designated_repro_test: null
 acceptance:
 - text: GIVEN a checkout with an unrelated file staged WHEN commit_ticket_ledger_change
     commits a dirty tickets.md THEN the resulting commit touches only tickets.md and
@@ -173719,6 +175116,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
 - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
 - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
+designated_repro_test: null
 attachments:
 - path: attachments/T-1433/01-untitled.txt
   caption: ''
@@ -173903,6 +175301,7 @@ scope_changes:
   at: '2026-08-02'
 evidence:
 - tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -174044,6 +175443,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop
 - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_provenance_check_skipped_without_committed_lock
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -174225,6 +175625,7 @@ scope_changes:
 evidence:
 - tests/test_serve.py::TestRunTouchedTests::test_no_diff_selects_nothing
 - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -174377,6 +175778,7 @@ evidence:
 - tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk
 - tests/test_tickets.py::TestArchive::test_id_present_in_both_active_and_archive_collapses_not_refuses
 - tests/test_ticket_merge_driver.py::TestArchivedIdsForMergeDriver::test_not_mid_merge_falls_back_to_disk_based_archived_ids
+designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree cut before an archive on main WHEN its ticket lands THEN
     the splice drops main-archived blocks from the active ledger and the land completes
@@ -174502,6 +175904,7 @@ evidence:
 - tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef::test_still_skips_when_merge_base_unresolvable
 - tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_refuses_when_evidence_passes_at_parent
 - tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_succeeds_when_evidence_fails_at_parent
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -174659,6 +176062,7 @@ evidence:
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_excuse_kind_and_language_registered
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
 - tests/test_capability_registry.py::TestNegativeFixtures::test_signal_signal_is_process_control_not_bare_env
+designated_repro_test: null
 acceptance:
 - text: GIVEN a file calling signal.signal WHEN the capability scanner runs THEN the
     observation is a declarable kind, not bare env
@@ -174794,6 +176198,7 @@ evidence:
 - tests/unit/strata/test_effects.py::TestScopedMayViaConformance::test_via_less_grant_still_covers_the_whole_node
 - tests/unit/strata/test_effects.py::TestScopedMayViaConformance::test_legacy_node_with_no_may_grants_falls_back_to_whole_node
 - tests/unit/strata/test_effects.py::TestScopedMayViaConformance::test_scoped_and_via_less_grants_of_different_kinds_compose
+designated_repro_test: null
 acceptance:
 - text: GIVEN a node with may X via glob WHEN a file outside the glob observes X THEN
     SYS100 fires for that file even though the node declares X
@@ -175024,6 +176429,7 @@ evidence:
 - tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
 - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+designated_repro_test: null
 acceptance:
 - text: GIVEN the two split commits WHEN frob check --only archgate --only wire --only
     dead_symbols --only drift runs THEN 0 errors and LARGE001 no longer lists _sys.py
@@ -175214,6 +176620,7 @@ evidence:
 - tests/unit/strata/test_managed.py::TestManagedDischargeFromParsedSurfaceSource::test_managed_node_with_same_shape_discharges
 - tests/unit/strata/test_store_code_may.py::TestStoreMayFeedsThreat003::test_store_with_exec_may_fires_undischarged_cwe_94
 - tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -175382,6 +176789,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:git config --get merge.frob-ledger.driver exit=0 sha256=5e41d4885016
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -175563,6 +176971,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandEnqueue::test_enqueue_failure_exits_nonzero
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_empty_queue_drains_zero_and_returns
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestLandDrain::test_two_entries_call_land_core_per_entry_with_its_own_ticket_id
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a merge-queue drain of N tickets WHEN it runs THEN exactly one pre-drain
     baseline capture and one post-drain full sweep execute, each queued ticket is
@@ -175896,6 +177305,7 @@ evidence:
 - tests/test_gate_cache.py::TestRunGatesUseCacheProcessGates::test_tracked_file_edit_forces_process_gate_recompute
 - tests/test_gate_cache.py::TestColdDiffOracleProcessGates::test_cache_agrees_with_cold_across_random_edits
 - tests/test_gate_cache.py::TestCacheTransparencyProcessGates::test_root_gate_cache_observationally_transparent
+designated_repro_test: null
 acceptance:
 - text: GIVEN a frob check invocation after M of K analyzed files changed since the
     cached run WHEN root-scanning process-pool gates execute THEN per-file gate findings
@@ -176145,6 +177555,7 @@ evidence:
 - tests/test_vet.py::TestQuarantine::test_network_failure_degrades_to_unverified
 - tests/test_vet.py::TestQuarantine::test_typosquat_name_blocked_before_any_registry_lookup
 - tests/test_vet.py::TestAllowConfig::test_vet_section_present
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -176292,6 +177703,7 @@ scope:
 - tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -176396,6 +177808,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -176589,6 +178002,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -176714,6 +178128,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_scoped_grant_stale_while_other_surface_uses_same_kind
 - tests/unit/strata/test_selfconform.py::TestStaleDesign::test_via_less_grant_alongside_via_grant_still_discharges_whole_node
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -176841,6 +178256,7 @@ evidence:
 - tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_sys107_escalates_to_error_under_require_may_scope
 - tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_other_sub_rules_stay_error_regardless_of_config
 - tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_selfaudit_violation_carries_sys107_warn_severity
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -177021,6 +178437,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -177193,6 +178610,7 @@ evidence:
 - tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_changes_on_field_edit
 - tests/test_gate_cache.py::TestSideChannelKey::test_model_side_channel_key_stable_for_equal_content
 - tests/test_gate_cache.py::TestRunGatesUseCache::test_ack_invalidates_cached_drift001
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -177333,6 +178751,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov004_matching_sha_is_clean
 - tests/test_gates.py::TestCoverageGate::test_cov004_missing_attachment
+designated_repro_test: null
 acceptance:
 - text: GIVEN an attachment whose file exists with a byte-exact sha256 WHEN the COV
     gate runs THEN COV004 does not fire
@@ -177410,6 +178829,7 @@ evidence:
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land whose applied diff introduces an unscoped gate ERROR absent before
     the land WHEN land finishes THEN it either auto-fixed the residue or refused with
@@ -177588,6 +179008,7 @@ evidence:
 - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_call_oserror_closes_connection_and_returns_unreachable
 - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths::test_remote_error_response_closes_connection
 - tests/unit/test_daemon_proxy_error_paths_t1457.py::TestReleaseDaemonLease::test_call_oserror_is_swallowed_and_connection_still_closed
+designated_repro_test: null
 acceptance:
 - text: GIVEN the named error-path branches WHEN their tests run THEN each asserts
     real behavior (fallback value, exit code, log line), never mere execution
@@ -177743,6 +179164,7 @@ evidence:
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_git_mv_renames_directory_and_rewrites_id_field
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_sibling_ticket_prose_citation_rewritten
 - tests/test_tickets_collision.py::TestRenumberOneV2::test_locks_acquired_in_sorted_id_order_no_deadlock
+designated_repro_test: null
 acceptance:
 - text: GIVEN the split WHEN frob check --only archgate --only drift runs THEN 0 errors
     and _new_renumber.py is off the LARGE001 list
@@ -177807,6 +179229,7 @@ scope_breadth_ack_reason: null
 evidence:
 - cmd:grep -c TICK009 /tmp/claude-1000/-home-logan-projects-frob/c7b9d8f4-5267-4857-94a4-8cf17aa2f513/scratchpad/tick009-mid2.txt
   exit=0 sha256=6169555d9248
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -177930,6 +179353,7 @@ evidence:
 - tests/test_gate_cache.py::TestRunGatesUseCache::test_use_cache_true_produces_identical_report_to_cold
 - tests/test_gate_cache.py::TestRunGatesUseCache::test_ack_invalidates_cached_drift001
 - tests/test_gate_cache.py::TestColdDiffOracle::test_cache_agrees_with_cold_across_random_edits
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -178040,6 +179464,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
 - tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
 - tests/test_vet_capability.py::TestDocstringProseNotObservedSetLevel::test_real_exec_call_still_observed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -178154,6 +179579,7 @@ evidence:
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_absent_before_land_refuses_and_reverts
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_unmeasurable_baseline_or_fresh_skips_the_sweep
+designated_repro_test: null
 acceptance:
 - text: GIVEN a typical single-ticket land WHEN run foreground THEN it completes inside
     the documented budget with the post-land sweep actually executed
@@ -178344,6 +179770,7 @@ evidence:
 - tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_hit_skips_extract
 - tests/unit/test_lang_artifact_cache.py::TestArtifactCacheLockDegradesGracefully::test_load_locked_is_treated_as_a_miss
 - tests/unit/test_lang_artifact_cache.py::TestArtifactCacheLockDegradesGracefully::test_store_locked_does_not_raise
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -178598,6 +180025,7 @@ evidence:
 - tests/test_telemetry.py::test_usage_report_empty_corpus_is_all_zero
 - tests/test_capability_registry.py::test_fire_fixture_names_a_registry_entry
 - tests/test_vet.py::TestOperationEntryMatchesFallthrough::test_no_needles_and_not_bare_compile_returns_false
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -178690,6 +180118,7 @@ scope:
 - src/frob/app/telemetry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -178734,6 +180163,7 @@ evidence:
 - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
 - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+designated_repro_test: null
 acceptance:
 - text: GIVEN a diff that only re-flows a frob:waive comment's line wrapping WHEN
     the land deletion filter runs THEN it is not treated as a deletion
@@ -178870,6 +180300,7 @@ scope_changes:
 evidence:
 - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor
 - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor
+designated_repro_test: null
 acceptance:
 - text: GIVEN a stale in-progress hold with no live lease WHEN make coverage runs
     THEN the hold is auto-requeued with a logged line and the suite proceeds
@@ -179022,6 +180453,7 @@ evidence:
 - tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_exhaustiveness_error_propagates
 - tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_selfconform_error_propagates
 - tests/unit/strata/test_native_test.py::TestRunNativeSysAuditErrorBranches::test_both_reports_clean_is_proved
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179137,6 +180569,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179190,6 +180623,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179276,6 +180710,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:uv run frob check --only docblocks exit=0 sha256=95fffea9f064
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179371,6 +180806,7 @@ evidence:
 - tests/test_telemetry.py::test_detect_footguns_flags_fast_exit1
 - tests/system/test_cli_parse.py::test_pytest_json_exit_zero
 - tests/test_telemetry.py::test_timed_call_does_not_leak_gitio_logs_onto_stdout
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179494,6 +180930,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 - tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179603,6 +181040,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179670,6 +181108,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -179976,6 +181415,7 @@ evidence:
 - tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_cli_scope_ack_sets_flag
 - tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck::test_cli_scope_ack_requires_reason
 - tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_scope_breadth_ack_exempts_ticket
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -180128,6 +181568,7 @@ evidence:
 - tests/unit/test_arch.py::TestPatternRecommender::test_state_field_chain_recommends_state_machine
 - tests/unit/test_arch.py::TestPatternRecommender::test_stringly_typed_recommends_newtype
 - tests/unit/test_arch_ocp.py::TestTypeDispatchSmell::test_isinstance_chain_flags_ocp_violation
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -180306,6 +181747,7 @@ evidence:
 - tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_inline_code_span_is_not_flagged
 - tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_no_ledger_at_all_still_flags_prose_mentions
 - tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_duplicate_mention_on_one_line_reported_once
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -180429,6 +181871,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -180506,6 +181949,7 @@ evidence:
 - tests/test_gates.py::TestTestGate::test_test017_fires_on_low_join_fraction
 - tests/test_gates.py::TestTestGate::test_test011_fires_on_stale_mtime
 - tests/test_gates.py::TestTestGate::test_test011_silent_when_fresh_and_fully_joined
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -180607,6 +182051,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
 - tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -180691,6 +182136,7 @@ scope_changes:
   at: '2026-08-05'
 evidence:
 - tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN this repo''s own ledger has been migrated to v2 in a quiet window (no
     in-flight worktrees) THEN the fresh-repo default in _store_mode is flipped to
@@ -180878,6 +182324,7 @@ scope_changes:
 evidence:
 - tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_to_v2_flag_calls_migrate_v1_to_v2
 - tests/test_tickets_migration.py::TestMigrateCliToV2Flag::test_migrate_without_to_keeps_dir_collapse_behavior
+designated_repro_test: null
 acceptance:
 - text: GIVEN a monofile-mode repo WHEN frob ticket migrate --to v2 runs THEN it calls
     migrate_v1_to_v2 (T-1259) and reports the migrated count, leaving --to omitted
@@ -180934,6 +182381,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding
 - tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -181087,6 +182535,7 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency
 - tests/test_capability_registry.py::TestIsSelfPatternPath::test_frob_repo_root_with_matching_suffix_returns_true
 - tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_resolve_expr_peels_through_chained_assignment
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -181273,6 +182722,7 @@ evidence:
 - tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor
 - tests/test_natives.py::TestNativeAutorebuild::test_disabled_via_env_var_skips_autorebuild
 - tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -181383,6 +182833,7 @@ evidence:
 - tests/test_gates.py::TestWireGate::test_new_function_named_like_a_wrapper_argument_but_never_passed_is_flagged
 - tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_hit_skips_extract
 - tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_miss_populates_cache
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -181720,6 +183171,7 @@ evidence:
 - tests/test_refactor.py::TestFindPythonFiles::test_finds_py_files_and_skips_venv
 - tests/unit/test_land_release_coherence.py::TestReadWorkingVersions::test_reads_pyproject_version_from_disk
 - tests/unit/test_land_release_coherence.py::TestEnsureReleaseQuartetCoherent::test_already_coherent_is_noop
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -182171,6 +183623,7 @@ evidence:
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_valgrind_success_parses_output
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_missing_valgrind_binary_is_typed_result
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoValgrindRealPaths::test_run_kill_switch_disabled
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -182444,6 +183897,7 @@ evidence:
 - tests/unit/test_dup_legacy_cpp.py::test_collect_locals_cpp_param_folds_to_positional_token
 - tests/unit/test_dup_legacy_cpp.py::test_serialize_cpp_body_normalizes_locals_strings_and_numbers
 - tests/unit/test_dup_legacy_cpp.py::test_iter_functions_cpp_yields_qualified_names
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -182586,6 +184040,7 @@ evidence:
 - tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_new_plain_test_helper_with_no_caller_is_still_flagged
 - tests/unit/test_wire_autouse_fixture.py::TestWireGateAutouseFixtureExemption::test_non_autouse_fixture_with_no_caller_is_still_flagged
 - tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -182677,6 +184132,7 @@ scope_changes:
 evidence:
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_success_parses_cargo_json
 - tests/unit/test_check_ts_runners.py::TestRunTscRealPaths::test_success_parses_clean_output
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -182847,6 +184303,7 @@ evidence:
 - tests/unit/test_check.py::TestExportsRealPaths::test_unexported_symbols_result_builds_note_diagnostics
 - tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_scans_every_init_file
 - tests/unit/test_check.py::TestExportsRealPaths::test_run_exports_no_init_files_is_empty
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -183011,6 +184468,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_fix_commit_stages_only_touched_paths_not_git_add_dash_a
 - tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -183087,6 +184545,7 @@ evidence:
 - tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_no_callback_is_noop
 - tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_fixed_by_tier_a_stages_and_returns_true
 - tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_unresolved_by_tier_a_returns_false
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -183193,6 +184652,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_malformed_lock_content_reports_nothing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -183378,6 +184838,7 @@ evidence:
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
 - tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -183591,6 +185052,7 @@ evidence:
 - tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_never_overwrites_fresh_data
 - tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_persists_measured_files
 - tests/test_coverage.py::TestCoverageFileCache::test_update_file_cache_roundtrips_through_fill_from_cache
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -183779,6 +185241,7 @@ evidence:
 - tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_bug_kind_confirmatory_finding_files_ticket
 - tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep::test_non_bug_confirmatory_finding_only_warns
 - tests/unit/test_mutation_sweep_queue.py::TestPendingSweepCount::test_counts_only_pending_entries
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -183922,6 +185385,7 @@ scope_changes:
 evidence:
 - tests/test_cache_transparency.py::TestGraphCacheTransparency::test_cold_warm_agree_across_random_edits
 - tests/test_cache_transparency.py::TestPytestCollectCacheTransparency::test_cold_warm_agree_across_random_edits
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -184078,6 +185542,7 @@ evidence:
 - tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires
 - tests/test_cache_gate.py::TestMemoizedReadCoverage::test_silent_shapes[param-derived-read]
 - tests/test_cache_gate.py::TestMemoizedReadCoverage::test_silent_shapes[non-memoized-function]
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -184206,6 +185671,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding
 - tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
 - tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -184319,6 +185785,7 @@ evidence:
 - tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result
 - tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor
 - tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -184445,6 +185912,7 @@ evidence:
 - tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_land_owned_only_findings_are_exempt_and_pass
 - tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_nested_land_owned_name_is_not_exempt
 - tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_checkpoint_artifact_rules_are_exempt
+designated_repro_test: null
 acceptance:
 - text: GIVEN a land whose staged squash contains only land-machinery changes to land-owned
     files (.frob-release.json/CHANGELOG.md/pyproject.toml/uv.lock REL001 bump) beyond
@@ -184589,6 +186057,7 @@ evidence:
 - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
 - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_full_calls_native_refresh_directly
 - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_run_failure_exits_nonzero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -184722,6 +186191,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_still_rebuilds_natives_first
 - tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_coverage_xml_invocations_pass_ignore_errors
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -184843,6 +186313,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestWireGate::test_new_errorset_class_referenced_by_bare_member_access_is_not_flagged
 - tests/test_gates.py::TestWireGate::test_new_class_never_referenced_by_member_access_is_still_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -184982,6 +186453,7 @@ evidence:
 - tests/unit/test_ticket_list_summary.py::TestStatsLine::test_labels_unshrinking_and_missing_cycle
 - tests/unit/test_ticket_list_summary.py::TestListFooterEndToEnd::test_list_always_prints_summary
 - tests/test_tickets_velocity.py::TestTicketFlow::test_median_cycle_days_from_created_to_first_done
+designated_repro_test: null
 acceptance:
 - text: GIVEN frob ticket list runs (any filter, empty or not) THEN a single summary
     footer line reports the total active count and per-state counts with zero extra
@@ -185055,6 +186527,7 @@ evidence:
 - tests/test_cache_transparency.py::TestCoverageLockCacheTransparency::test_cold_warm_agree_across_random_edits
 - tests/test_cache_transparency.py::TestHotgraphSketchCacheTransparency::test_cold_warm_agree_across_random_edits
 - tests/test_cache_transparency.py::TestBudgetTimingCacheTransparency::test_cold_warm_agree_across_random_edits
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -185155,6 +186628,7 @@ evidence:
 - tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_leased_queued_ticket_counts_as_in_progress
 - tests/unit/test_ticket_list_summary.py::TestSummaryFooter::test_counts_per_state
 - tests/unit/test_ticket_list_summary.py::TestListFooterEndToEnd::test_list_always_prints_summary
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ledger-queued ticket with a live worktree lease WHEN frob ticket list
     renders THEN the summary footer counts it in-progress (matching the [in-progress@worktree]
@@ -185241,6 +186715,7 @@ evidence:
 - tests/test_gates.py::TestFixEngineTierA::test_sys104_no_design_dir_is_a_no_op
 - tests/test_gates.py::TestFixEngineTierA::test_sys100_may_via_union_applies_via_apply_tier_a_fixes
 - tests/test_gates.py::TestFixEngineTierA::test_sys100_no_design_dir_is_a_no_op
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -185381,6 +186856,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_gates.py::TestWireGate::test_new_function_passed_bare_to_process_job_constructor_is_not_flagged
 - tests/test_gates.py::TestWireGate::test_new_function_never_passed_to_a_job_constructor_is_still_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -185526,6 +187002,7 @@ evidence:
 - tests/test_ticket_work_and_land_finish.py::TestLandParityFindings::test_none_when_unmeasurable
 - tests/test_ticket_work_and_land_finish.py::TestLandParityFindings::test_forces_no_gate_cache_env_on_the_spawn
 - tests/test_ticket_work_and_land_finish.py::TestLandParityFindings::test_parity_with_the_land_sweeps_own_exemption_function
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -185648,6 +187125,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestWriteTicket::test_marker_lookalike_body_line_refuses_write
 - tests/unit/test_ticket_store.py::TestWriteTicket::test_ordinary_body_still_writes_clean
 - tests/unit/test_ticket_store.py::TestComposeDoneReport::test_marker_lookalike_line_in_why_is_defused
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -185797,6 +187275,7 @@ evidence:
 - tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replaces_and_commits
 - tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_requires_at_least_one_of_the_three_modes
 - tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_not_found_exits_nonzero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -185899,6 +187378,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -185950,6 +187430,7 @@ evidence:
 - tests/test_tickets.py::TestNewTicket::test_marker_lookalike_body_line_is_defused
 - tests/test_tickets.py::TestFailureLog::test_marker_lookalike_summary_line_is_defused
 - tests/test_tickets.py::TestDropTicket::test_marker_lookalike_reason_line_is_defused
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -186052,6 +187533,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets.py::TestV2StateTransitions::test_byte_similar_sibling_ticket_does_not_drop_transitions
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -186167,6 +187649,7 @@ scope_changes:
 evidence:
 - tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_merge_introduced_targeted_format_applies
 - tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_no_merge_shape_is_a_no_op
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -186284,6 +187767,7 @@ scope_changes:
 evidence:
 - tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean
 - tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion::test_no_ticket_id_is_a_no_op
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -186410,6 +187894,7 @@ evidence:
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -186498,6 +187983,7 @@ evidence:
 - tests/test_tickets.py::TestSingleFileLedger::test_new_tickets_land_in_single_tickets_md
 - tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes
 - tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v1_v2_parity_for_equivalent_history
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -186661,6 +188147,7 @@ evidence:
 - tests/test_refactor.py::TestDirectiveCarrier::test_attached_waiver_moves_with_symbol
 - tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_backfills_unchanged_file
 - tests/unit/test_check_native_cargo_runners.py::TestRunCargoRealPaths::test_kill_switch_disabled
+designated_repro_test: null
 acceptance:
 - text: GIVEN uv run ty check src tests THEN 0 diagnostics, and GIVEN uv run ruff
     format --check and ruff check over src+tests THEN both clean, with all touched
@@ -186783,6 +188270,7 @@ scope_changes:
   at: '2026-08-05'
 evidence:
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_comment_waiver_follow_up_attribute
+designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket close/land WHEN any frob:waive directive in the repo names
     the closing ticket id THEN the close refuses with the waiver list and the exact
@@ -186900,6 +188388,7 @@ evidence:
 - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
 - tests/test_tickets.py::TestV2StateTransitions::test_byte_similar_sibling_ticket_does_not_drop_transitions
 - tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
+designated_repro_test: null
 acceptance:
 - text: 'GIVEN a full unscoped frob check on main THEN gate errors are 0: the 16 WIRE002
     stale waivers rebind to the open successor ticket, T-1269/T-1495 evidence ids
@@ -187121,6 +188610,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_single_mode_preserves_sibling_archived_ticket
 - tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_archived_reaches_the_archive
 - tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli::test_cli_replace_without_archived_flag_cannot_reach_an_archived_ticket
+designated_repro_test: null
 acceptance:
 - text: GIVEN an archived ticket whose bound evidence id goes stale (test renamed)
     THEN a frob CLI path exists to rebind it (evidence --replace --archived, or ticket
@@ -187230,6 +188720,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187252,6 +188743,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187274,6 +188766,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187297,6 +188790,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187319,6 +188813,7 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187344,6 +188839,7 @@ scope:
 - tests/test_tickets_evidence_cli.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187379,6 +188875,7 @@ scope:
 - tests/unit/test_ticket_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187477,6 +188974,7 @@ evidence:
 - tests/unit/test_profile.py::TestEffectiveProfile::test_persisted_ratchet_wins_even_if_thresholds_no_longer_trip
 - tests/unit/test_profile.py::TestDowngrade::test_downgrade_clears_persisted_ratchet
 - tests/unit/test_profile.py::TestDowngrade::test_downgrade_is_noop_when_nothing_ratcheted
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187621,6 +189119,7 @@ scope_changes:
   at: '2026-08-05'
 evidence:
 - tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_profile
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187729,6 +189228,7 @@ scope_changes:
 evidence:
 - tests/test_gates.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[wire001]
 - tests/test_gates.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[scope001]
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187842,6 +189342,7 @@ evidence:
 - tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_healthy_natives_return_true
 - tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_stale_after_autorebuild_attempt_returns_false
 - tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_unimportable_native_returns_false
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -187967,6 +189468,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:bash -c "test ! -f docs/modules/gates_e501_autofix.md && grep -q E501 docs/modules/gates.md"
   exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -188104,6 +189606,7 @@ evidence:
 - tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_rust_file_gets_slash_slash_leader
 - tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_python_file_gets_hash_leader
 - tests/test_gates_fix_engine.py::TestInsertTicketDirectiveAboveCommentLeader::test_unknown_extension_refuses_insertion
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -188206,6 +189709,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_v2_marker_touch_without_state_transition_still_fires
 - tests/test_gates.py::TestCoverageGate::test_cov002_v2_done_ticket_without_grace_still_fires
 - tests/test_gates.py::TestCoverageGate::test_cov002_v2_stale_done_ticket_unrelated_touch_still_fires
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -188336,6 +189840,7 @@ evidence:
 - tests/test_ticket_store_stale_snapshot.py::TestWriteArchiveRefusesAStaleSnapshotV2::test_external_replacement_between_load_and_write_archive_is_refused
 - tests/test_ticket_store_stale_snapshot.py::TestLedgerDigestMapV2::test_map_keys_are_ticket_ids_values_match_ledger_digest
 - tests/test_ticket_store_stale_snapshot.py::TestWriteAllRefusesAStaleSnapshotV2::test_v1_style_string_digest_in_v2_mode_is_treated_as_no_check
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -188460,6 +189965,7 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_has_a_substantive_caught_by
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -188583,6 +190089,7 @@ evidence:
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree
 - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -188687,6 +190194,7 @@ evidence:
 - tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_outline_file_returns_err_not_crash
 - tests/test_serve.py::TestCheckScope::test_in_scope_diff_passes
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -188878,6 +190386,7 @@ evidence:
 - tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
 - tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
 - tests/test_ticket_land.py::TestLand::test_real_land_lands
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -189024,6 +190533,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_ticket_evidence.py::TestKindCliInvalidKind::test_invalid_kind_refused
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -189131,6 +190641,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
 - tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -189242,6 +190753,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_prints_greppable_line_at_any_verbosity
 - tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_skips_on_xdist_worker
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -189418,6 +190930,7 @@ scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -189511,6 +191024,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy
 - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure::test_healthy_report_with_confirmed_dead_holder_prints_self_healing_line
 - tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerOrphanedLandLockDisclosure::test_healthy_report_with_no_land_lock_prints_nothing_extra
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -189660,6 +191174,7 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestSystemDesignReg008BurnDown::test_no_reg008_findings_for_system_design_yaml
 - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
 - tests/test_serve_socket.py::TestShutdownReapsChildren::test_frob_shutdown_exits_and_reaps_within_budget
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -189824,6 +191339,7 @@ evidence:
 - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
 - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
 - tests/test_vet.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -190121,6 +191637,7 @@ evidence:
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal
 - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -190353,6 +191870,7 @@ evidence:
 - tests/test_gates.py::TestDocstatusGate::test_ticket_mention_inside_line_wrapped_inline_code_does_not_fire_doc011
 - tests/test_gates.py::TestDocstatusGate::test_ticket_mention_across_blank_line_still_fires_doc011
 - tests/test_docptr_gate.py::TestDoc006Config::test_profile_section_not_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -190564,6 +192082,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - cmd:bash -c "grep -q T-1544 tickets-archive.md && grep -q T-1549 tickets-archive.md"
   exit=0 sha256=e3b0c44298fc
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -190791,6 +192310,7 @@ evidence:
 - tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_multiple_stale_leases_collapse_to_one_summary_line
 - tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_warns_on_over_broad_scope
 - tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_precise_scope_warns_nothing
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -190952,6 +192472,7 @@ evidence:
 - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression
 - tests/test_gates.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
 - tests/test_gates.py::TestAutofixManifest::test_write_then_clear_roundtrip
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -191090,6 +192611,7 @@ evidence:
 - tests/test_cache_gate.py::TestMemoizedReadCoverage::test_uncovered_read_fires
 - tests/test_cache_gate.py::TestT1454RegressionShape::test_env_read_fires
 - tests/test_serve_watch.py::TestWatchTick::test_watch_tick_never_disagrees_with_pull_signal
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -191202,6 +192724,7 @@ evidence:
 - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_release_lease_degrades_on_unlink_failure
 - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_rename_lease_degrades_on_malformed_old_record
 - tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches::test_rename_lease_degrades_on_write_failure
+designated_repro_test: null
 acceptance:
 - text: GIVEN src/frob/tickets/_leases.py's record_lease/release_lease/rename_lease/warn_if_worktree_stale/lease_age_seconds
     WHEN their OS-failure and malformed-input branches are exercised THEN each degrades
@@ -191378,6 +192901,7 @@ evidence:
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_test_file_exempt_from_large001
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_single_file_mode_matches_directory_walk
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -191588,6 +193112,7 @@ evidence:
 - tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged
 - tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
 - tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -191778,6 +193303,7 @@ evidence:
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_path_mention_counts_as_reference
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_bare_identifier_not_treated_as_reference
+designated_repro_test: null
 threat: null
 component: null
 ```
@@ -191953,6 +193479,7 @@ evidence:
 - tests/test_refactor.py::TestGitOps::test_working_tree_clean_not_a_git_repo
 - tests/test_refactor.py::TestGitOps::test_working_tree_clean_spawn_failure_is_git_error
 - tests/test_refactor.py::TestGitOps::test_current_sha_not_a_git_repo
+designated_repro_test: null
 threat: null
 component: null
 ```

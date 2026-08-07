@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.359.0] - unreleased
+
+- T-1670: frob ticket evidence: designate repro test explicitly + validate node-id shape at bind time
+
 ## [0.358.0] - unreleased
 
 - T-1675: already-landed detection is opt-in because it cannot tell 'no diff' from 'docs-only ticket'

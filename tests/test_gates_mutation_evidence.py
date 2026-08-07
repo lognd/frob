@@ -108,6 +108,7 @@ def _bug_ticket(
     evidence: tuple[str, ...] = ("tests/test_x.py::test_x",),
     kind: TicketKind = TicketKind.BUG,
     body: str = "## Description\nsomething\n",
+    designated_repro_test: str | None = None,
 ) -> Ticket:
     return Ticket(
         id="T-0900",
@@ -122,6 +123,7 @@ def _bug_ticket(
         evidence=evidence,
         attachments=(),
         body=body,
+        designated_repro_test=designated_repro_test,
     )
 
 
@@ -230,6 +232,34 @@ class TestDesignatedReproTest:
         # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_no_pytest_evidence_is_none  # noqa: E501
         ticket = _bug_ticket(evidence=("cmd:make lint exit=0 sha256=0123456789ab",))
         assert _designated_repro_test(ticket) is None
+
+    def test_explicit_designation_wins_over_bind_order(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_explicit_designation_wins_over_bind_order  # noqa: E501
+        """T-1670: a pre-existing test bound FIRST, the real new repro
+        test bound SECOND -- the exact T-1652/T-1653/T-1635 shape. Without
+        an explicit designation, `test_a` (positional-first) would win;
+        with one, `test_b` (the real repro) wins instead."""
+        ticket = _bug_ticket(
+            evidence=(
+                "tests/test_a.py::test_a",
+                "tests/test_b.py::test_b",
+            ),
+            designated_repro_test="tests/test_b.py::test_b",
+        )
+        assert _designated_repro_test(ticket) == "tests/test_b.py::test_b"
+
+    def test_explicit_designation_not_in_evidence_falls_back_to_positional(
+        self,
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_explicit_designation_not_in_evidence_falls_back_to_positional  # noqa: E501
+        """A designation whose id was since dropped from `evidence` (e.g.
+        via `--replace`) must not silently check a test no longer bound at
+        all -- falls back to the ordinary positional-first rule instead."""
+        ticket = _bug_ticket(
+            evidence=("tests/test_a.py::test_a",),
+            designated_repro_test="tests/test_stale.py::test_gone",
+        )
+        assert _designated_repro_test(ticket) == "tests/test_a.py::test_a"
 
 
 class TestBugReproAtRef:

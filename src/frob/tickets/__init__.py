@@ -180,6 +180,7 @@ from frob.tickets._reporting import (
 from frob.tickets._scope import mutate_scope
 from frob.tickets._setters import (
     set_component,
+    set_designated_repro_test,
     set_kind,
     set_priority,
     set_scope_breadth_ack,
@@ -616,6 +617,7 @@ __all__ = [
     "queue_status",
     "remove_acceptance",
     "set_component",
+    "set_designated_repro_test",
     "set_kind",
     "set_priority",
     "set_scope_breadth_ack",

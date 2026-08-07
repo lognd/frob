@@ -286,6 +286,20 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         help="skip T-1178's auto-commit of the evidence ledger change "
         "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
     )
+    # frob:ticket T-1670
+    ticket_evidence_p.add_argument(
+        "--designate-repro",
+        dest="ticket_designate_repro",
+        metavar="NODE-ID",
+        help="T-1670: mark NODE-ID as the explicit test BUG002 re-runs at "
+        "the parent commit, regardless of bind order -- without this, "
+        "BUG002 always takes the FIRST pytest-node-id in the ticket's "
+        "evidence list, an invisible bind-order dependency that silently "
+        "checks the wrong test when a pre-existing test is bound before "
+        "the real new repro test. NODE-ID must already be bound as "
+        "evidence on this ticket (bind it first in the same or an "
+        "earlier `frob ticket evidence` call)",
+    )
 
     ticket_drop_p = ticket_sub.add_parser(
         "drop",

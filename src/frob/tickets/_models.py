@@ -1335,6 +1335,18 @@ class Ticket(BaseModel):
     # append here -- only a change that could plausibly be relaxing an
     # already-earned evidence obligation.
     kind_history: tuple[str, ...] = ()
+    # frob:ticket T-1670
+    # the pytest-node-id evidence entry BUG002 re-runs at the parent commit,
+    # set explicitly via `frob ticket evidence <id> --designate-repro` (or
+    # `None` to fall back to `_designated_repro_test`'s positional-first-
+    # match default). Before this field existed, BUG002 always took the
+    # FIRST pytest-node-id in `evidence` regardless of which one an agent
+    # actually intended as the repro -- an invisible bind-ORDER dependency
+    # (T-1652/T-1653/T-1635 all hit it: a pre-existing test bound first,
+    # the real new repro test bound second, so BUG002 checked the WRONG
+    # test and refused land). Explicit designation makes the choice a
+    # value, not an inferred position.
+    designated_repro_test: str | None = None
     # frob:ticket T-0571
     # append-only structured adversarial-review records (`frob ticket
     # review`), each naming the commit reviewed -- `close --strict` (T-0571)
@@ -1577,6 +1589,10 @@ class TicketError(ErrorSet):
         "requested --add glob overlaps a path leased by another in-progress ticket"
     )
     ScopeRemoveNotDeclared = "requested --remove glob is not in the ticket's scope"
+    # frob:ticket T-1670
+    DesignatedReproNotInEvidence = (
+        "--designate-repro id is not one of this ticket's bound evidence ids"
+    )
     ScopeRemoveOrphansEvidence = (
         "cannot remove a scope glob that already covers recorded evidence"
     )

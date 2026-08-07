@@ -456,6 +456,11 @@ class AppConfig(BaseModel):
     ticket_tier_value: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
+    # frob:ticket T-1670
+    # `frob ticket evidence <id> --designate-repro NODE-ID`: mark NODE-ID
+    # as the explicit BUG002 repro test, overriding the positional-first
+    # default `_designated_repro_test` otherwise falls back to.
+    ticket_designate_repro: str | None = None
     # frob:ticket T-1537
     #: `frob ticket evidence <id> --replace OLD-NODE-ID NEW-NODE-ID`: rebind
     #: one evidence id everywhere it appears (flat list + every acceptance
