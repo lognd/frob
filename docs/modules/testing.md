@@ -482,6 +482,82 @@ low-coverage finding sourced from a degraded run as suspect until the
 suite is green -- a test that failed early stops contributing coverage
 for the symbols it was exercising.
 
+### A wall-clock deadline and no-progress watchdog bound the pytest subprocess (T-1677)
+
+Field incident, 2026-08-06: `frob coverage --full` reached 99% of test
+execution and then hung. The controller `pytest` process stayed alive
+and idle for 5h04m; its last log write was at the 5-minute mark. One
+child was a defunct zombie; a surviving xdist worker was blocked in
+`futex_wait_queue`. Nothing anywhere in the process tree ever timed out
+-- `pytest --timeout=120` applies to an individual TEST, not to a
+controller blocked in the xdist scheduler, and `native_coverage_refresh`
+called `guarded_subprocess_run` (a blocking `subprocess.run`) with no
+timeout at all. The symptom is indistinguishable from slow progress: the
+process is alive, the log's last line is a normal progress line, exit
+code is pending -- an operator polling for completion waits forever.
+
+`_spawn` (`frob.testing._coverage_refresh`) now routes every subprocess
+through `_spawn_with_watchdog`, which enforces two INDEPENDENT deadlines
+on a `Popen`-based spawn (never a blocking `subprocess.run`, which gives
+no way to observe or interrupt a hung child):
+
+- **Wall-clock deadline** (`FROB_COVERAGE_WALLCLOCK_DEADLINE_S`, default
+  1 hour): the whole pass, however it is spending its time.
+- **No-progress deadline** (`FROB_COVERAGE_NO_PROGRESS_DEADLINE_S`,
+  default 15 minutes): the subprocess's own stdout+stderr (redirected to
+  a temp file this function polls) has not grown at all. This is the
+  signal that actually distinguishes "hung" from "slow but still
+  working" -- the field incident's exact shape, where the wall-clock
+  deadline alone (set generously to tolerate a genuinely long full run)
+  would not have tripped for hours.
+
+Either deadline tripping kills the whole process GROUP, not just the
+`pytest` controller (`_kill_process_group`, POSIX `os.killpg` after the
+child was spawned with `start_new_session=True`; Windows `taskkill /T
+/F` after `CREATE_NEW_PROCESS_GROUP`) -- a plain `proc.kill()` only
+reaches the controller and leaves every xdist worker running as an
+orphan, exactly what a plain `kill` left behind in the field incident.
+SIGTERM first with a grace period, SIGKILL if still alive; always reaped
+via `proc.wait()` so the child never becomes a zombie under this process.
+
+A watchdog abort (`CoverageRefreshError.PytestWallClockExceeded`/
+`...NoProgress`) is reported as UNMEASURED, never as a partial or zero
+coverage number: `native_coverage_refresh` returns `Err` BEFORE `coverage
+xml`/`stamp_coverage` ever run, so an existing `coverage.xml` is left
+completely untouched -- and `_write_abort_provenance` still records the
+abort explicitly in `.frob/coverage-run.json` (`aborted: true,
+abort_reason: ...`) so a consumer reading that file knows the last
+attempt failed to measure, even though the artifact on disk (if any) now
+predates it and must be treated as stale.
+
+### xdist worker-crash detection and one-shot serial retry (T-1677/T-1672)
+
+Related field incident, 2026-08-06: under concurrent memory pressure the
+kernel OOM-killed one xdist worker (`gw15`); xdist raised `INTERNALERROR>
+... KeyError: <WorkerController gw15>` and the run ended `exitstatus=3`
+after 8622 of 8654 tests had already passed. `_pytest_outcome` matches
+this shape (`_WORKER_CRASH_SIGNATURE_RE`, an `INTERNALERROR>` /
+`WorkerController` / `worker gwNN crashed` pattern) against the captured
+output and, on a match, retries ONCE serially (`-p no:xdist`, disabling
+parallelism entirely so the same crash class structurally cannot recur)
+before classifying the pass -- the Makefile recipe's xdist-crash
+serial-rerun recovery this module's docstring originally disclosed as
+deferred (T-1672).
+
+The resulting `_PytestPass.worker_crash` flag is recorded in
+`.frob/coverage-run.json` alongside `degraded`, so a reader can tell an
+ENVIRONMENT abort (a worker got killed, most often OOM) from an ordinary
+red suite -- treating the former as a real test regression sends the
+reader hunting for a bug that does not exist. An ordinary red suite
+(a genuine test failure, no crash signature) is never retried and never
+marked `worker_crash`.
+
+`_spawn` now bounds `coverage xml` under the same watchdog too (T-1677:
+a hang in either subprocess is the same "verification never returns an
+answer" defect class), and every caller mocking `_spawn` wholesale in a
+test is unaffected -- the watchdog/crash-retry machinery lives entirely
+inside the real implementation, invisible to a full replacement.
+
 ### Coverage as managed derived state (T-1516/T-1517)
 
 Coverage data (`coverage.xml`, `.frob/coverage-stamp`,

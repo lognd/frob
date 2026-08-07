@@ -5,8 +5,10 @@ natives-clobber guard on the `make coverage`/`make coverage-fast` targets."""
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import textwrap
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -543,7 +545,15 @@ class TestNativeCoverageRefresh:
         """The one case that still aborts: pytest never ran at all
         (`FROB_DISABLE_EXEC=1`), so there is genuinely no measurement to
         keep and nothing to stamp."""
-        monkeypatch.setattr(_refresh_mod, "_spawn", lambda *a, **k: Err(Unit()))  # noqa: ARG005
+        # frob:ticket T-1677
+        # `_spawn` now returns `_SpawnError` (not a bare `Unit`) so
+        # `_pytest_outcome`'s caller can distinguish a refused spawn from
+        # either watchdog deadline.
+        monkeypatch.setattr(
+            _refresh_mod,
+            "_spawn",
+            lambda *a, **k: Err(_refresh_mod._SpawnError.Refused),  # noqa: ARG005
+        )
         stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
 
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
@@ -560,7 +570,9 @@ class TestNativeCoverageRefresh:
         property of the current artifact."""
         stale = tmp_path / _refresh_mod._RUN_PROVENANCE_REL
         stale.parent.mkdir(parents=True, exist_ok=True)
-        stale.write_text('{"degraded": true, "pytest_exit_code": 1}\n', encoding="utf-8")
+        stale.write_text(
+            '{"degraded": true, "pytest_exit_code": 1}\n', encoding="utf-8"
+        )
 
         monkeypatch.setattr(
             _refresh_mod,
@@ -574,6 +586,279 @@ class TestNativeCoverageRefresh:
         record = json.loads(stale.read_text(encoding="utf-8"))
         assert record["degraded"] is False
         assert record["pytest_exit_code"] == 0
+
+
+# frob:ticket T-1677
+class TestSpawnWithWatchdog:
+    """T-1677: `_spawn_with_watchdog`'s wall-clock deadline, no-progress
+    deadline, and process-group teardown, exercised against REAL spawned
+    subprocesses (small shell one-liners) -- this is the layer that
+    replaces a blocking, un-timed-out `subprocess.run`/
+    `guarded_subprocess_run` call, so a mock would not actually prove the
+    kill/no-hang behavior the ticket is about."""
+
+    def test_normal_completion_returns_exit_code_and_output(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestSpawnWithWatchdog.test_normal_completion_returns_exit_code_and_output  # noqa: E501
+        config = _refresh_mod._WatchdogConfig(wall_clock_s=10.0, no_progress_s=10.0)
+        result = _refresh_mod._spawn_with_watchdog(
+            ["python3", "-c", "print('hello')"], cwd=tmp_path, config=config
+        )
+        assert result.is_ok
+        proc = result.danger_ok
+        assert proc.returncode == 0
+        assert "hello" in proc.stdout
+
+    def test_nonzero_exit_still_returns_ok_with_output(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_coverage.py::TestSpawnWithWatchdog.test_nonzero_exit_still_returns_ok_with_output  # noqa: E501
+        """A subprocess that RUNS to completion and exits non-zero is not
+        a watchdog concern at all -- classifying that exit is the
+        caller's job (`_pytest_outcome`), same as before this ticket."""
+        config = _refresh_mod._WatchdogConfig(wall_clock_s=10.0, no_progress_s=10.0)
+        result = _refresh_mod._spawn_with_watchdog(
+            ["python3", "-c", "import sys; sys.exit(7)"], cwd=tmp_path, config=config
+        )
+        assert result.is_ok
+        assert result.danger_ok.returncode == 7
+
+    def test_wall_clock_deadline_kills_and_reports(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_coverage.py::TestSpawnWithWatchdog.test_wall_clock_deadline_kills_and_reports  # noqa: E501
+        """A process that keeps producing output (so no-progress never
+        trips) but never finishes must still be killed once the
+        wall-clock deadline elapses -- this is the 2026-08-06 field
+        incident's exact shape (alive, "progressing", never ending)."""
+        config = _refresh_mod._WatchdogConfig(
+            wall_clock_s=0.5, no_progress_s=60.0, poll_interval_s=0.1
+        )
+        script = (
+            "import sys, time\n"
+            "for _ in range(1000):\n"
+            "    print('tick', flush=True)\n"
+            "    time.sleep(0.05)\n"
+        )
+        start = time.monotonic()
+        result = _refresh_mod._spawn_with_watchdog(
+            ["python3", "-c", script], cwd=tmp_path, config=config
+        )
+        elapsed = time.monotonic() - start
+        assert result.is_err
+        assert result.danger_err == _refresh_mod._WatchdogAbortReason.WallClockExceeded
+        # Killed close to the deadline, not left running (generous bound
+        # for CI/WSL scheduling jitter -- the field incident was off by
+        # HOURS, not fractions of a second).
+        assert elapsed < 5.0
+
+    def test_no_progress_deadline_kills_a_silent_hang(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_coverage.py::TestSpawnWithWatchdog.test_no_progress_deadline_kills_a_silent_hang  # noqa: E501
+        """A process that prints once and then goes silent (the exact
+        futex_wait_queue shape from the field incident) trips the
+        no-progress deadline long before any generous wall-clock deadline
+        would."""
+        config = _refresh_mod._WatchdogConfig(
+            wall_clock_s=60.0, no_progress_s=0.5, poll_interval_s=0.1
+        )
+        script = "print('starting', flush=True)\nimport time\ntime.sleep(30)\n"
+        start = time.monotonic()
+        result = _refresh_mod._spawn_with_watchdog(
+            ["python3", "-c", script], cwd=tmp_path, config=config
+        )
+        elapsed = time.monotonic() - start
+        assert result.is_err
+        assert result.danger_err == _refresh_mod._WatchdogAbortReason.NoProgress
+        assert elapsed < 5.0
+
+    def test_killed_process_group_leaves_no_surviving_children(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestSpawnWithWatchdog.test_killed_process_group_leaves_no_surviving_children  # noqa: E501
+        """T-1677 item 4 ("never leave zombies"): killing the CONTROLLER
+        alone (a plain `proc.kill()`) leaves a forked child running as an
+        orphan -- the process-GROUP kill must reach it too. Spawns a
+        parent that forks a long-lived child and writes the child's pid
+        to a file, then asserts the child pid is gone shortly after the
+        watchdog trips."""
+        marker = tmp_path / "child.pid"
+        script = (
+            "import os, sys, time\n"
+            f"pid = os.fork()\n"
+            "if pid == 0:\n"
+            "    time.sleep(30)\n"
+            "    sys.exit(0)\n"
+            f"open({str(marker)!r}, 'w').write(str(pid))\n"
+            "time.sleep(30)\n"
+        )
+        config = _refresh_mod._WatchdogConfig(
+            wall_clock_s=0.5, no_progress_s=60.0, poll_interval_s=0.1
+        )
+        result = _refresh_mod._spawn_with_watchdog(
+            ["python3", "-c", script], cwd=tmp_path, config=config
+        )
+        assert result.is_err
+        # Give the killed child a brief moment to actually be reaped by
+        # the kernel/init before checking -- `_kill_process_group` itself
+        # already waited out its own grace period.
+        deadline = time.monotonic() + 2.0
+        child_pid = int(marker.read_text().strip()) if marker.exists() else None
+        if child_pid is not None:
+            while time.monotonic() < deadline:
+                try:
+                    os.kill(child_pid, 0)
+                except ProcessLookupError:
+                    break
+                time.sleep(0.1)
+            else:
+                pytest.fail(f"forked child pid {child_pid} survived the group kill")
+
+
+# frob:ticket T-1677
+class TestPytestOutcomeWorkerCrashRecovery:
+    """T-1677/T-1672: `_pytest_outcome`'s xdist worker-crash detection and
+    one-shot serial retry, `_spawn` mocked (the crash signature is a pure
+    string match, no real subprocess needed to exercise the branching)."""
+
+    _CRASH_OUTPUT = (
+        "INTERNALERROR> Traceback (most recent call last):\n"
+        "INTERNALERROR> KeyError: <WorkerController gw15>\n"
+    )
+
+    def test_crash_signature_triggers_one_serial_retry(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery.test_crash_signature_triggers_one_serial_retry  # noqa: E501
+        calls: list[list[str]] = []
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            calls.append(list(argv))
+            if len(calls) == 1:
+                return Ok(
+                    subprocess.CompletedProcess(argv, 3, stdout=self._CRASH_OUTPUT)
+                )
+            return Ok(subprocess.CompletedProcess(argv, 0, stdout="8654 passed\n"))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+
+        result = _refresh_mod._pytest_outcome(["pytest", "-n", "auto"], cwd=tmp_path)
+        assert result.is_ok
+        outcome = result.danger_ok
+        assert outcome.worker_crash is True
+        assert outcome.degraded is False  # the retry succeeded
+        assert outcome.exit_code == 0
+        assert len(calls) == 2
+        assert calls[1][-2:] == ["-p", "no:xdist"]
+
+    def test_crash_signature_with_failing_retry_stays_degraded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery.test_crash_signature_with_failing_retry_stays_degraded  # noqa: E501
+        """The retry itself finding a REAL failure (not another crash) is
+        reported as an honest red suite, not silently swallowed."""
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            if "-p" in argv:
+                return Ok(subprocess.CompletedProcess(argv, 1, stdout="1 failed\n"))
+            return Ok(subprocess.CompletedProcess(argv, 3, stdout=self._CRASH_OUTPUT))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+
+        result = _refresh_mod._pytest_outcome(["pytest", "-n", "auto"], cwd=tmp_path)
+        assert result.is_ok
+        outcome = result.danger_ok
+        assert outcome.worker_crash is True
+        assert outcome.degraded is True
+        assert outcome.exit_code == 1
+
+    def test_ordinary_red_suite_is_not_classified_as_worker_crash(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery.test_ordinary_red_suite_is_not_classified_as_worker_crash  # noqa: E501
+        """T-1672 item 3 -- an ordinary test failure must NOT be
+        misclassified as an environment abort (that would send a reader
+        hunting for a nonexistent resource-kill instead of the real
+        regression)."""
+        calls: list[list[str]] = []
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            calls.append(list(argv))
+            return Ok(
+                subprocess.CompletedProcess(argv, 1, stdout="1 failed, 99 passed\n")
+            )
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+
+        result = _refresh_mod._pytest_outcome(["pytest"], cwd=tmp_path)
+        assert result.is_ok
+        outcome = result.danger_ok
+        assert outcome.worker_crash is False
+        assert outcome.degraded is True
+        assert len(calls) == 1  # no retry for an ordinary red suite
+
+
+# frob:ticket T-1677
+class TestNativeCoverageRefreshAbort:
+    """T-1677: a watchdog abort (either deadline) must never touch
+    `coverage.xml`/`stamp_coverage`, and must record itself explicitly so
+    a stale-but-present `coverage.xml` (T-1672's memory-level precedent
+    for this exact trap) is never silently read as fresh."""
+
+    @pytest.mark.parametrize(
+        ("spawn_error", "expected_refresh_error"),
+        [
+            (
+                _refresh_mod._SpawnError.WallClockExceeded,
+                _refresh_mod.CoverageRefreshError.PytestWallClockExceeded,
+            ),
+            (
+                _refresh_mod._SpawnError.NoProgress,
+                _refresh_mod.CoverageRefreshError.PytestNoProgress,
+            ),
+        ],
+    )
+    def test_watchdog_abort_skips_xml_and_stamp_and_records_provenance(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        spawn_error,
+        expected_refresh_error,
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestNativeCoverageRefreshAbort.test_watchdog_abort_skips_xml_and_stamp_and_records_provenance  # noqa: E501
+        # A pre-existing coverage.xml must survive UNTOUCHED -- this is
+        # the "stale artifact silently read as current" trap the ticket
+        # names directly.
+        existing_xml = tmp_path / "coverage.xml"
+        existing_xml.write_text("<coverage>old</coverage>", encoding="utf-8")
+
+        xml_calls: list[list[str]] = []
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            if argv[0] == "pytest":
+                return Err(spawn_error)
+            xml_calls.append(list(argv))
+            return Ok(subprocess.CompletedProcess(argv, 0))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+        import frob.gates._coverage as coverage_mod
+
+        stamp_calls: list[object] = []
+        monkeypatch.setattr(coverage_mod, "load_stamp", lambda _root: None)
+        monkeypatch.setattr(
+            coverage_mod,
+            "stamp_coverage",
+            lambda root, snapshot: stamp_calls.append((root, snapshot)) or Ok(Unit()),  # noqa: ARG005, E501
+        )
+
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
+        assert result.is_err
+        assert result.danger_err == expected_refresh_error
+        assert xml_calls == []
+        assert stamp_calls == []
+        assert existing_xml.read_text(encoding="utf-8") == "<coverage>old</coverage>"
+
+        record = json.loads(
+            (tmp_path / _refresh_mod._RUN_PROVENANCE_REL).read_text(encoding="utf-8")
+        )
+        assert record["aborted"] is True
+        assert record["abort_reason"] == expected_refresh_error.value
 
 
 # frob:ticket T-1516
