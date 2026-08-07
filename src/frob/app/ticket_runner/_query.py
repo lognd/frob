@@ -556,6 +556,7 @@ def _render_scope_breadth_summary(
 
 
 # frob:ticket T-0453
+# frob:ticket T-1743
 def _render_doable_show_blocked(
     root: Path,
     queue: "TicketQueue",
@@ -565,8 +566,26 @@ def _render_doable_show_blocked(
 ) -> None:
     """Render `frob ticket doable --show-blocked`: every doable-candidate
     currently hidden by an in-progress scope-lease, with the holding
-    ticket id and the overlapping glob named (T-0453)."""
+    ticket id, the overlapping glob, and (T-1743) the holder's WORKTREE
+    provenance named -- `doable_blocked`'s own `(holder_id, glob)` pairs
+    are the exact data `doable` used to decide the block (never
+    re-derived here), enriched only with a lookup of WHERE that holder id
+    actually comes from.
+
+    T-1743's incident: an id was named as the holder whose OWN declared
+    scope (`frob ticket show <id>`) could not have produced the
+    collision -- two people spent real time chasing it before finding the
+    true holder by hand. `lease_holder_worktree` names the cross-worktree
+    lease file's own `worktree` field when one exists for `holder_id`; a
+    `None` return means the entry came from the LOCAL ledger's own
+    `IN_PROGRESS` row instead (`frob.tickets._doable._in_progress_leases`)
+    -- called out explicitly as `(local ledger row, no lease file)` since
+    that source can be stale relative to `main` in a way an actively
+    written/pruned lease file is not (`frob.tickets._leases`'s own
+    module docstring), and is exactly the shape a stale/orphaned
+    attribution takes."""
     from frob.tickets import doable_blocked
+    from frob.tickets._leases import lease_holder_worktree
 
     blocked = doable_blocked(queue, root, breadth=breadth)
 
@@ -577,7 +596,14 @@ def _render_doable_show_blocked(
             {
                 "ticket": t.model_dump(mode="json"),
                 "held_by": [
-                    {"ticket_id": holder_id, "glob": glob} for holder_id, glob in hits
+                    {
+                        "ticket_id": holder_id,
+                        "glob": glob,
+                        "worktree": lease_holder_worktree(root, holder_id)
+                        if root is not None
+                        else None,
+                    }
+                    for holder_id, glob in hits
                 ],
             }
             for t, hits in blocked
@@ -592,10 +618,18 @@ def _render_doable_show_blocked(
 
     color = _stdout_color()
     for t, hits in blocked:
-        reasons = "; ".join(
-            f"scope {glob!r} leased by in-progress {holder_id}"
-            for holder_id, glob in hits
-        )
+        parts = []
+        for holder_id, glob in hits:
+            worktree = (
+                lease_holder_worktree(root, holder_id) if root is not None else None
+            )
+            provenance = (
+                worktree if worktree is not None else "local ledger row, no lease file"
+            )
+            parts.append(
+                f"scope {glob!r} leased by in-progress {holder_id} ({provenance})"
+            )
+        reasons = "; ".join(parts)
         _log.info("%s  %s  held: %s", style_ticket_id(t.id, color), t.title, reasons)
 
 

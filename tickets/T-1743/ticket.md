@@ -2,7 +2,7 @@
 id: T-1743
 title: doable --show-blocked names the wrong ticket as lease holder, and an orphaned
   lease has no supported release path
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -17,6 +17,11 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance::test_cross_worktree_holder_names_its_worktree
+- tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance::test_local_only_holder_has_no_worktree
+- tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease::test_removes_an_existing_lease_file
+- tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease::test_no_op_when_no_lease_file_exists
 designated_repro_test: null
 threat: null
 component: null

@@ -1838,8 +1838,10 @@
     "src/frob/tickets/_leases.py::commit_full_ledger_change": "62bd3e9690f9a1e6ef0ee36247e1f08da8395ff38ee06bb0f8f1bc688bc4b523",
     "src/frob/tickets/_leases.py::commit_start_transition": "83e5fb84b2503da6ea560f64fdb89fed5dca305a77e721a43918a132cbb38ec3",
     "src/frob/tickets/_leases.py::commit_ticket_ledger_change": "bc90fb756e1350ef2f155e596b767641cefde5d539857b750dfa06ca12f8c499",
+    "src/frob/tickets/_leases.py::force_release_lease": "b79d852bc4e995679adafbbe1924dad6aad6d4685287f00016fe6b7e10bc0883",
     "src/frob/tickets/_leases.py::is_lease_ttl_expired": "1b9f81c0b64bacc8a963fcb9483a912a457b9f617de6997d9be863aad140f668",
     "src/frob/tickets/_leases.py::lease_age_seconds": "19b8a74d675eda0555ce3f5e7b8e11e696667099b7c81a3fbc113931527aee16",
+    "src/frob/tickets/_leases.py::lease_holder_worktree": "0b64827b2901a6d5cc7fea162f9d7e549a22ef0d73bc431e851e45b6e029c740",
     "src/frob/tickets/_leases.py::leases_dir": "112f399e603eeace7d9a023028111e26776fcc901fb4579016acfbcfb67c2ddf",
     "src/frob/tickets/_leases.py::load_positive_int_config": "8806ebdc06658be05a6642c72d159821dd1c48cf0fcf3ee913b96ac45104b688",
     "src/frob/tickets/_leases.py::read_all_leases": "7d42f71cb790f455badef955102ba29e05e1fdac78ee9cb29dd988d6fc11c313",
@@ -2114,5 +2116,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.370.0"
+  "version": "0.371.0"
 }

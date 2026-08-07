@@ -544,6 +544,102 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     return Ok(None)
 
 
+# frob:ticket T-1743
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_cross_worktree_holder_names_its_worktree kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_local_only_holder_has_no_worktree kind="unit"  # noqa: E501
+def lease_holder_worktree(root: Path, ticket_id: str) -> str | None:
+    """The worktree path recorded in `ticket_id`'s CURRENT cross-worktree
+    lease file, or `None` if no such file exists (T-1743).
+
+    Exists so a caller attributing a `doable --show-blocked` collision to
+    `ticket_id` can name WHERE the block actually comes from, rather than a
+    bare id with no provenance -- the exact gap the T-1743 incident hit: an
+    id named as the holder that, on inspection (`frob ticket show`), had a
+    declared scope that could never have produced the collision. A `None`
+    return means the attribution's `all_leases` entry for `ticket_id` came
+    from the LOCAL ledger's own `IN_PROGRESS` row (`frob.tickets._doable.
+    _in_progress_leases`), not a cross-worktree lease file -- worth
+    surfacing explicitly, since a local ledger view can be stale relative
+    to `main` (this module's own top-of-file docstring) in a way a live
+    lease file, actively written/pruned by every worktree, is not."""
+    leases = read_all_leases(root)
+    for record in leases:
+        if record.ticket_id == ticket_id:
+            return record.worktree
+    return None
+
+
+# frob:ticket T-1743
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_existing_lease_file kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_lease_file_exists kind="unit"  # noqa: E501
+# frob:waive WIRE001 reason="the supported release path for an orphaned lease (T-1743) \
+# is a deliberate Python-API-level primitive, meant to be called by an operator or a \
+# future CLI verb -- wiring an actual 'frob ticket lease release <id>' command needs \
+# src/frob/_cli_parsers/_ticket/** and src/frob/app/config.py, neither of which \
+# T-1743's declared scope covers" follow_up="T-1777"
+def force_release_lease(root: Path, ticket_id: str) -> Result[bool, LeaseError]:
+    """The supported release path for an ORPHANED lease (T-1743): removes
+    `ticket_id`'s cross-worktree lease file unconditionally, independent of
+    that ticket's own declared `scope` -- `frob ticket scope <id> --remove
+    <glob>` refuses (`ScopeRemoveNotDeclared`) the moment the glob is not
+    literally in the ticket's own scope list, which makes it structurally
+    unable to reach a lease whose holder's scope does not match what a
+    caller expected (the T-1743 incident: the real holder, T-1629, had to
+    be cleared by deleting its git worktree by hand, an operation no
+    worktree-isolated agent can perform). This function operates on the
+    lease side-channel file directly, the same primitive `release_lease`
+    already uses for a ticket's own clean exit from `IN_PROGRESS` --
+    unlike `release_lease`, this is meant to be called by an OPERATOR
+    (or a future CLI verb, T-1743's own residue) clearing SOMEONE ELSE's
+    lease, so every call is logged at WARNING, naming exactly which
+    ticket's lease was released and from where.
+
+    Deliberately does NOT transition `ticket_id`'s own ledger state --
+    releasing the lease only stops it from blocking `doable`'s collision
+    filter; if the underlying work is genuinely abandoned, the caller
+    still owns requeuing the ticket itself (`frob ticket reconcile` or
+    `frob ticket requeue <id>`) as a separate, deliberate step.
+
+    Returns `Ok(True)` if a lease file actually existed and was removed,
+    `Ok(False)` if there was nothing to release (idempotent -- releasing an
+    already-clear lease is not an error, matching `release_lease`'s own
+    convention)."""
+    resolved = leases_dir(root)
+    if resolved.is_err:
+        return Err(resolved.danger_err)
+    leases_root = resolved.danger_ok
+    path = _lease_path(leases_root, ticket_id)
+    existed = path.exists()
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "tickets: could not force-release lease for %s: %s", ticket_id, exc
+        )
+        return Err(LeaseError.WriteFailed)
+    if existed:
+        with _cache_lock:
+            file_cache = _lease_file_cache.get(leases_root)
+            if file_cache is not None:
+                file_cache.pop(path, None)
+        _log.warning(
+            "tickets: %s lease FORCE-RELEASED (%s removed) -- this does not "
+            "change the ticket's own ledger state; requeue it separately "
+            "(frob ticket reconcile / frob ticket requeue) if the "
+            "underlying work is abandoned",
+            ticket_id,
+            path,
+        )
+    else:
+        _log.info(
+            "tickets: %s had no lease file to force-release (already clear)",
+            ticket_id,
+        )
+    return Ok(existed)
+
+
 # frob:ticket T-1173
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases.py::TestRenameLease.test_rename_migrates_the_lease_file_and_updates_its_ticket_id_field kind="unit"  # noqa: E501

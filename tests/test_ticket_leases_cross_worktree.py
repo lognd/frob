@@ -28,7 +28,12 @@ from frob.tickets import (
     new_ticket,
     transition,
 )
-from frob.tickets._leases import _git_common_dir, read_all_leases
+from frob.tickets._leases import (
+    _git_common_dir,
+    force_release_lease,
+    lease_holder_worktree,
+    read_all_leases,
+)
 from frob.tickets._store import atomic_write, ledger_path
 
 
@@ -217,3 +222,65 @@ class TestCrossWorktreeLeaseVisibility:
         held = next(lease for lease in leases if lease.ticket_id == tid)
         assert "src/other.py" in held.scope
         assert "src/feature.py" in held.scope
+
+
+class TestLeaseAttributionProvenance:
+    """T-1743: `lease_holder_worktree` names WHERE a `doable --show-blocked`
+    attribution actually comes from, so a holder id with no real
+    cross-worktree lease file (the incident's stale/wrong-attribution
+    shape) is distinguishable from a genuine one."""
+
+    def test_cross_worktree_holder_names_its_worktree(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.te\
+        # st_cross_worktree_holder_names_its_worktree
+        created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+
+        worktree = lease_holder_worktree(second_worktree, tid)
+        assert worktree == str(repo.resolve())
+
+    def test_local_only_holder_has_no_worktree(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.te\
+        # st_local_only_holder_has_no_worktree
+        assert lease_holder_worktree(repo, "T-9999") is None
+
+
+class TestForceReleaseLease:
+    """T-1743: the supported release path for an orphaned lease -- reaches
+    a lease file directly, independent of any ticket's own declared
+    scope, so it can clear a holder `frob ticket scope --remove` cannot."""
+
+    def test_removes_an_existing_lease_file(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_remove\
+        # s_an_existing_lease_file
+        created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+        assert any(lease.ticket_id == tid for lease in read_all_leases(second_worktree))
+
+        released = force_release_lease(second_worktree, tid)
+        assert released.is_ok
+        assert released.danger_ok is True
+        assert not any(
+            lease.ticket_id == tid for lease in read_all_leases(second_worktree)
+        )
+
+    def test_no_op_when_no_lease_file_exists(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_\
+        # when_no_lease_file_exists
+        released = force_release_lease(repo, "T-9999")
+        assert released.is_ok
+        assert released.danger_ok is False

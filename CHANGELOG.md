@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.371.0] - unreleased
+
+- T-1743: doable --show-blocked names the wrong ticket as lease holder, and an orphaned lease has no supported release path
+
 ## [0.370.0] - unreleased
 
 - T-1220: rust: tree-extraction kernel -- source bytes to symbols/spans/tokens/identifiers/comment+docstring spans/import specs

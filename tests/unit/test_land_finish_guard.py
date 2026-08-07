@@ -67,7 +67,7 @@ def _init_repo(root: Path) -> None:
 # this module (TestScanForLiveWorktreeProcess/TestLiveLeaseForWorktree/ \
 # TestRefuseIfWorktreeInUse/TestFinishWorktree) -- test-only by design, same posture \
 # as tests/test_ticket_leases.py::_add_agent_worktree, not a genuinely unwired \
-# production symbol" follow_up="T-1743"
+# production symbol" follow_up="T-1778"
 def _add_worktree(repo: Path, name: str) -> Path:
     wt = repo.parent / f"{repo.name}-{name}"
     _git("worktree", "add", "-b", f"agent-{name}", str(wt), cwd=repo)

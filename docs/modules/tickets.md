@@ -724,6 +724,45 @@ existence) that keeps a dead worktree's forgotten lease from wedging
 (dead in-progress ticket -> requeue, live worktree with no in-progress
 ticket -> flag/clean) is T-0476's job, not this one's.
 
+**Attribution provenance, and a supported release path for an orphaned
+lease (T-1743).** `frob ticket doable --show-blocked`'s per-ticket
+explanation used to name only a bare holder id (`leased by in-progress
+T-####`), with no way to tell whether that id came from a cross-worktree
+lease file (`read_all_leases`) or from the LOCAL ledger's own
+`IN_PROGRESS` row -- and a local row can be stale relative to `main` for
+as long as this worktree has not merged. A real incident: `--show-blocked`
+consistently named a ticket whose OWN declared scope (`frob ticket show`)
+could not have produced the collision at all, while the actual holder was
+a mega-glob (`docs/**`) lease belonging to a worktree from an earlier
+session -- two agents spent real time chasing the wrongly-implicated id.
+`lease_holder_worktree(root, ticket_id)` names the cross-worktree lease
+file's own `worktree` field for a holder id, or returns `None` if no such
+file exists (meaning the attribution's source was the local ledger row,
+not a lease file) -- `--show-blocked`'s rendering now appends this
+provenance to every reason it prints, e.g. `... leased by in-progress
+T-1629 (/path/to/worktree)` vs. `... (local ledger row, no lease file)`,
+using the exact same `(holder_id, glob)` pairs `doable_blocked` already
+computed, never re-derived.
+
+Before T-1743 there was also no supported way to clear an orphaned
+lease: `frob ticket scope <id> --remove <glob>` refuses
+(`ScopeRemoveNotDeclared`) unless the glob is literally in THAT ticket's
+own declared scope, so it structurally cannot reach a lease whose real
+scope does not match what a caller expected -- the only prior recourse
+was deleting the holding git worktree by hand, an operation no
+worktree-isolated agent can perform. `force_release_lease(root,
+ticket_id)` (`frob.tickets._leases`) removes a ticket's lease FILE
+directly, independent of any ticket's declared scope, logs a WARNING
+naming exactly what was released, and is idempotent (`Ok(False)` if there
+was nothing to release). It deliberately does not transition the
+ticket's own ledger state -- requeuing an abandoned ticket is a separate,
+deliberate step (`frob ticket reconcile` / `frob ticket requeue <id>`).
+As of T-1743 this is a Python-API-level release path only; wiring it into
+a first-class `frob ticket lease release <id>` CLI verb is out of this
+ticket's scope (it needs `src/frob/_cli_parsers/**` and
+`src/frob/app/config.py`, neither of which T-1743 declared) and is
+tracked as a follow-up.
+
 **Lease migration on renumber (T-1173).** The lease file is keyed by
 ticket id, but a `T-draft-XXXXXXXX` provisional id (T-0162) is exactly the
 kind of ticket most likely to hold a live lease at rename time -- a draft
