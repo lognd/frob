@@ -180,7 +180,7 @@ class TestTouchedPythonFiles:
 # SAME file) -- WIRE001's same-file exclusion (T-1592's precedent) exists for \
 # genuinely-unwired code, not for a fixture DUP001 already required be extracted out \
 # of two near-identical per-class copies; every call site is a real test method, \
-# verifiable by reading this file directly" follow_up="T-1741"
+# verifiable by reading this file directly" follow_up="T-1746"
 def _repo_with_add_change(tmp_path: Path) -> Path:
     """A minimal repo whose `m.py::add` has one uncommitted changed line
     (`+ 0`) against `main` -- the shared fixture `TestCheckTicketMutation
@@ -197,7 +197,9 @@ def _repo_with_add_change(tmp_path: Path) -> Path:
     return repo
 
 
+# frob:ticket T-1741
 class TestCheckTicketMutationEvidence:
+    # frob:ticket T-1741
     def test_confirmatory_test_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
         repo = _repo_with_add_change(tmp_path)
@@ -214,6 +216,7 @@ class TestCheckTicketMutationEvidence:
         assert findings[0].file == "m.py"
         assert findings[0].tests == ("test_m.py::test_add",)
 
+    # frob:ticket T-1741
     def test_adversarial_test_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
         repo = _repo_with_add_change(tmp_path)
@@ -228,6 +231,7 @@ class TestCheckTicketMutationEvidence:
         assert result.is_ok, result.err
         assert result.danger_ok == ()
 
+    # frob:ticket T-1741
     def test_no_test_evidence_is_ok_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
         repo = _repo_with_add_change(tmp_path)
@@ -236,6 +240,7 @@ class TestCheckTicketMutationEvidence:
         assert result.is_ok
         assert result.danger_ok == ()
 
+    # frob:ticket T-1741
     def test_exec_disabled_is_err(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -334,6 +339,7 @@ class TestCheckTicketMutationEvidence:
         errors = [v for v in violations if v.severity == "error"]
         assert errors == [], [v.message for v in errors]
 
+    # frob:ticket T-1741
     def test_zero_budget_reports_unmeasured_not_confirmatory(
         self, tmp_path: Path
     ) -> None:
@@ -371,6 +377,7 @@ class TestCheckTicketMutationEvidence:
         assert findings[0].mutants_total == 0
         assert findings[0].survivors == ()
 
+    # frob:ticket T-1741
     def test_mid_sweep_deadline_truncates_and_reports_unmeasured(
         self, tmp_path: Path
     ) -> None:
@@ -409,6 +416,7 @@ class TestCheckTicketMutationEvidence:
         assert finding.unmeasured is True
         assert finding.file == "m.py"
 
+    # frob:ticket T-1741
     def test_real_subprocess_spawning_evidence_stays_bounded_not_hung(
         self, tmp_path: Path
     ) -> None:
@@ -465,13 +473,14 @@ class TestCheckTicketMutationEvidence:
         assert findings[0].unmeasured is True
 
 
-# frob:ticket T-1727
+# frob:ticket T-1741
 class TestWarnBindTimeMutationSweepCost:
     """T-1727 requirement 2: `frob.tickets._evidence._warn_bind_time_
     mutation_sweep_cost` -- warn the moment evidence is BOUND, naming the
     projected close-time cost, rather than only at close/land an hour
     later when unbinding the slow-but-honest test is the easy way out."""
 
+    # frob:ticket T-1741
     def test_warns_when_projected_cost_exceeds_budget(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch
     ) -> None:
@@ -498,6 +507,7 @@ class TestWarnBindTimeMutationSweepCost:
         )
         assert any("test_add" in r.message for r in caplog.records)
 
+    # frob:ticket T-1741
     def test_no_warning_when_no_touched_python_files(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
