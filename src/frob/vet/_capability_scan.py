@@ -12,7 +12,6 @@ per-file/per-directory fingerprint and capability aggregation
 here is re-exported (or imported back) by `_capability` so the module's
 public surface (including its `__all__` list) is unchanged."""
 
-# frob:waive INV006 preset="split-carried-prose"
 # frob:ticket T-1420
 from __future__ import annotations
 

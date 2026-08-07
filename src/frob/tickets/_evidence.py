@@ -39,13 +39,6 @@ module scope.
 # this family exists to enforce, not by call-graph adjacency alone; same T-1103/T-1108 \
 # precedent as frob.tickets.__init__'s own ARCH102 waiver for the identical reason \
 # (one deliberately centralized concern, not several bolted together)"
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/tickets/_evidence.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings describing already-implemented internal behavior, \
-# verifiable by reading the code they annotate) rather than a separate cross-module \
-# contract needing its own tracked invariant; disposed as a calibration batch, not \
-# claim-by-claim -- module prose carried verbatim from frob.tickets.__init__ (T-1152 \
-# split, same INV006-on-split-modules precedent as 0abc4e3a/T-1151)"
 
 from __future__ import annotations
 

@@ -12,7 +12,6 @@ the one grammar, `load_registry_dir` is the one loader. `frob.gates.
 _registry_exhaustiveness.registry_gate` now calls into this module rather
 than parsing YAML/disposition strings itself.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

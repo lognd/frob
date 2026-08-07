@@ -43,7 +43,6 @@ the base `KernelModel`'s own declared flows) -- charter law 1 still
 holds (reuses the existing `Flow` fact shape, no new closure primitive
 in `strata_core`), it is the Rewrite vocabulary, not the kernel, that
 grew by one variant."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

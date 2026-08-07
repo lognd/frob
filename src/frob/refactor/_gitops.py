@@ -6,7 +6,6 @@ pre-transaction sha on any verify failure. Split out of `_transaction.py`
 git primitives instead of a second copy (CLAUDE.md's no-duplication rule)
 -- never `git stash` (agent-playbook.md sec 1b).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

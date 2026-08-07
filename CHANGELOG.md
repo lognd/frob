@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.369.0] - unreleased
+
+- T-1763: INV006/AFFECT001/DUP001 have a 100% waive rate: 406 waivers, zero findings -- make them symbolic or delete them
+
 ## [0.368.0] - unreleased
 
 - T-1762: Every --force override discharges a safety obligation with no reason and no audit trail; audit the whole flag family

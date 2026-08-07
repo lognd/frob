@@ -5,7 +5,6 @@ raises and never panics -- every malformed input comes back as `err`
 JSON with a line/col/message. This module's only job is turning that JSON
 into either a validated `Module` or a logged `StrataError.ParseFailed`.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

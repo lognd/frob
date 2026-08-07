@@ -14,7 +14,6 @@ absent from that baseline set. This is an agent-facing filter only: the
 human-facing warn dial (every violation, always) is unchanged -- `--delta`
 is opt-in.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

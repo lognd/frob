@@ -15,7 +15,6 @@ from its pre-split behavior; `frob.gates.__init__` imports `wire_gate`
 from here now instead of `_dead_symbols`.
 """
 # frob:ticket T-1420
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -1,9 +1,4 @@
 # frob:ticket T-1684
-# frob:waive INV006 reason="this module docstring's exclusivity wording (the sweep is \
-# the only thing between a durable commit and the prompt; an already-filed error must \
-# not be re-filed) describes this module's OWN implemented branching, verifiable by \
-# reading the code it annotates -- not a cross-module contract needing a tracked \
-# invariant, same disposition as _profile.py's identical waiver"
 """T-1684: the `rapid`-profile replacement for `_land_cmd`'s synchronous
 post-land unscoped error sweep -- a DETACHED sweep that files a ticket
 instead of blocking the land.

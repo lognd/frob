@@ -22,13 +22,6 @@ daemon notices the connection is gone, satisfying T-0321 requirement 3
 ("killing a client loses nothing, nothing to clean up") without a daemon
 restart.
 """
-# frob:waive INV006 reason="T-1097 INV006 calibration-batch disposition: this file's \
-# exclusivity-vocabulary hits ('only', 'no-op') are source-level design-rationale \
-# prose describing already-implemented internal behavior (verifiable by reading \
-# ResourceLeaseManager.acquire/release/release_holder themselves), not a separate \
-# cross-module contract needing its own tracked invariant -- same disposition this \
-# repo already applies to src/frob/serve/_socketd.py and src/frob/app/_daemon_proxy.py \
-# (T-0585/T-1023/T-1093/T-1095)"
 
 from __future__ import annotations
 

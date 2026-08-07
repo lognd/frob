@@ -36,7 +36,6 @@ only, exercised directly against a hand-built `KernelModel`/`DeployContract`
 exactly as `_crash.py` and `_atomic.py` were before their surface syntax
 landed. Filed as T-0134.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

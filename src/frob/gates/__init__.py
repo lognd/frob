@@ -125,13 +125,9 @@ from frob.gates._gate_cache import (
     store_root_gate_cache,
 )
 from frob.gates._gate_cache import invalidate as invalidate_gate_cache
-from frob.gates._inv import (  # noqa: F401 -- INV006_SRC_DIRS/INV006_SRC_SUFFIXES
-    # re-exported as _fix_engine.py's direct `from frob.gates import ...` surface
-    INV006_SRC_DIRS,
-    INV006_SRC_SUFFIXES,
+from frob.gates._inv import (
     inv003_gate,
     inv004_gate,
-    inv006_gate,
     invariant_gate,
 )
 from frob.gates._lang_conformance import (
@@ -6193,7 +6189,6 @@ def _build_thread_jobs(
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
             *inv003_gate(st.repo_root, st.invariants),
             *inv004_gate(st.repo_root),
-            *inv006_gate(st.repo_root, st.snapshot),
             # T-0757: import-forbidding (INV007) and establish-property
             # (INV008) obligations declared via `frob:invariant`'s
             # `no_import=`/`establishes=` attrs -- see
@@ -7558,7 +7553,6 @@ __all__ = [
     "format_paths",
     "inv003_gate",
     "inv004_gate",
-    "inv006_gate",
     "invalidate_gate_cache",
     "inv007_violations",
     "inv008_violations",

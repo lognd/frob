@@ -8,7 +8,6 @@ kernel model (`_models.py`) is what the elaborator (T-0060) will turn it
 into. Keeping them separate means the parser never has to know a kernel
 invariant, and the kernel never has to know source syntax.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

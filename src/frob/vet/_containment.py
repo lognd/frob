@@ -33,7 +33,6 @@ module docstring discloses for osv-scanner absence; it is not silently
 treated as "no CVE", it simply never enters `build_containment_report`'s
 input in the first place (the caller filters via `cve_ids` before calling).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

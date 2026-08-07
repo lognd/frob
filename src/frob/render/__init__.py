@@ -21,7 +21,6 @@ enforcement gate that fails `frob check` on a bare print/echo outside this
 package, mirroring the module-logger discipline `frob.logging` already
 enforces.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

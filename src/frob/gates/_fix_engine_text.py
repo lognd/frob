@@ -19,12 +19,6 @@ dispatches through the same uniform `(root, snapshot, queue, ticket_id)
 -> list[FixApplied]` call shape every handler uses -- this split changes
 no behavior, only which file a given handler's body lives in.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool carried forward at the \
-# T-1646 LARGE001 split: this module's exclusivity-vocabulary hits are the same \
-# source-level design-rationale prose (docstrings/comments describing already- \
-# implemented internal behavior, verifiable by reading the code they annotate) that \
-# src/frob/gates/_fix_engine.py's own module-level INV006 waiver already covers -- \
-# moved verbatim with the code, not a new claim"
 
 from __future__ import annotations
 

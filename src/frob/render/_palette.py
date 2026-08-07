@@ -16,7 +16,6 @@ confusion axis entirely. `accent` uses cyan, also outside that axis, so it
 is never mistaken for a severity color. `muted` carries no hue at all
 (`DIM`), so it never competes with the severity palette.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

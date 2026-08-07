@@ -51,11 +51,6 @@ mutation as clean.
 """
 # frob:doc docs/strata/selfconform.md#the-three-rules
 # frob:ticket T-1203
-# frob:waive INV006 reason="the 'only'/'never' occurrences below are plain prose \
-# describing this module's own already-implemented logic (e.g. 'export diff only when \
-# export_diff_expected'), not a cross-module contract needing its own tracked \
-# invariant -- same first-turn-on-pool disposition T-0585/ T-1023 already apply \
-# elsewhere in this package"
 
 from __future__ import annotations
 

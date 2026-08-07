@@ -18,7 +18,6 @@ at WARNING by the caller rather than folded into the kernel model, since
 falls back to the documented `"trusted"` default below -- a declared
 deviation, not a silent one (docs/strata/surface.md#stdinfra).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

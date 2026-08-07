@@ -37,7 +37,6 @@ enclosing FUNCTION section instead -- coarser, but never wrong. See
 documented tradeoff.
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 from __future__ import annotations
 
 import hashlib

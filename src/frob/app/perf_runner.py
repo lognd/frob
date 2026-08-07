@@ -4,7 +4,6 @@
 # frob:ticket T-0765
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 from __future__ import annotations
 
 import sys

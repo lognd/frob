@@ -40,13 +40,6 @@ Two pieces:
    single blocking foreground call, in-band on one connection, with a
    real completion signal instead of a re-poll loop.
 """
-# frob:waive INV006 reason="T-1023 INV006 burn-down disposition: this file's \
-# exclusivity-vocabulary hits ('never a data channel', 'only replaces') are \
-# source-level design-rationale/scope-cut prose describing already-implemented \
-# internal behavior, verifiable by reading the code it annotates, rather than a \
-# separate cross-module contract needing its own tracked invariant -- same \
-# calibration-batch disposition already applied to src/frob/serve/_socketd.py and \
-# src/frob/serve/_warm.py (T-0585)"
 
 from __future__ import annotations
 

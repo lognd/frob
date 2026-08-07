@@ -48,12 +48,6 @@ self-consistent by construction) or was re-pointed to name something else
 never even reaches this comparison). A citation that is byte-identical at
 both `base_ref` and the current tree is untouched by this diff and is
 never exempt, regardless of which files the ticket's `scope` declares."""
-# frob:waive INV006 reason="module-docstring exclusivity-vocabulary hit is \
-# source-level design-rationale prose describing already-implemented entry-point \
-# behavior, verifiable by reading the code it annotates and the T-0854 land/close \
-# wiring in frob.tickets._land/__init__ -- not a separate cross-module contract \
-# needing its own tracked invariant, same calibration posture as \
-# frob.gates._mutation_evidence's own T-0755 INV006 waiver"
 
 from __future__ import annotations
 

@@ -13,7 +13,6 @@ if the cwd's actual git top-level is not that worktree. A coordinator
 process (no `FROB_WORKTREE` set) is unaffected -- landing worktree changes
 onto main, or any other coordinator-run mutation, has no lease to violate.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

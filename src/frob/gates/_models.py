@@ -4,7 +4,6 @@ Every model is a frozen pydantic ``BaseModel`` so a `GateReport` can be
 compared, cached, and serialized by identity-of-value -- the same posture
 `frob.graph._models` and `frob.tickets._models` take.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

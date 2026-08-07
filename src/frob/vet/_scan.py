@@ -4,11 +4,6 @@ Runs VET001 (allow conformance), VET011 (cooldown quarantine), VET-JS
 (lifecycle scripts), typosquat distance, and VET005 (osv-scanner, opt-in)
 over every dependency in the project's lockfile.
 """
-# frob:waive INV006 reason="the two only hits below are source-level design prose (a \
-# waiver-reason string describing fut.result()s single special-cased outcome, and a \
-# log message naming advisory-only mode) rather than a cross-module exclusivity \
-# contract needing its own tracked invariant; both predate the T-1420 LARGE001 split \
-# of this file and were never INV006-anchored on main either"
 
 from __future__ import annotations
 

@@ -5,7 +5,6 @@
 the `[fuzz]` policy, never the filesystem or the interpreter, so a caller
 can compute obligations without importing a single project module.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

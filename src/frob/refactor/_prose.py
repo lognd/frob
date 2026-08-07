@@ -27,7 +27,6 @@ Each function mirrors `_directives.scan_directive_carriers`'s own shape
 literal-substring rewrite) so `_transaction.build_plan` folds their output
 into `RefactorPlan.reference_ops` exactly like every other carrier's ops.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

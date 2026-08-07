@@ -24,7 +24,6 @@ against a freshly-loaded `CoverageData` and flag drift beyond tolerance --
 e.g. a lock committed from a locally-inflated coverage.xml that a genuine
 CI run cannot reproduce.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

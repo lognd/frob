@@ -9,13 +9,6 @@ on any git failure rather than raising. One shared implementation here,
 parametrized only by the caller's own log-message prefix (preserved so
 each gate's log output is unchanged), replaces all five.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_tracked_files.py's exclusivity-vocabulary hit is source-level \
-# design-rationale prose (a docstring or comment describing already-implemented \
-# internal behavior, verifiable by reading the code it annotates) rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose consolidated from the five \
-# pre-T-1082 per-gate helper copies"
 
 from __future__ import annotations
 

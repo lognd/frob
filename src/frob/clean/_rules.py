@@ -6,7 +6,6 @@ artifacts, not a blanket "everything gitignored" or "everything untracked"
 sweep -- `frob.clean._core.scan` never enumerates untracked files and then
 filters, it only ever walks these patterns.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

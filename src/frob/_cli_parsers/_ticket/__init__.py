@@ -1,8 +1,3 @@
-# frob:waive INV006 reason="T-1270 split of _cli_parsers/_ticket.py's original T-1076 \
-# waiver: this module's help/docstring text carries incidental exclusivity-flavored \
-# wording (argparse help strings, scope-cut prose) inherited verbatim from the \
-# pre-split file, not a new normative contract -- disposed as the same calibration \
-# batch, not claim-by-claim"
 """CLI parser builders: the full `frob ticket` subcommand tree.
 
 Split out of `frob.__main__` (T-1076), then split again into per-concern

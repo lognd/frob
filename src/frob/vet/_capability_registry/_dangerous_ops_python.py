@@ -1,7 +1,6 @@
 """`_PYTHON_OPERATIONS`: the python-language slice of `DANGEROUS_OPERATIONS`
 (T-1420 split -- the single-language table earns its own file since python
 is this registry's largest single-language slice by a wide margin)."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -18,7 +18,6 @@ side-channel under the shared git common dir) -- an in-flight `land` only
 ever mutates the ONE worktree/root pair it was invoked against, so there is
 nothing cross-worktree to reconcile here.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

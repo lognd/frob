@@ -27,7 +27,6 @@ module owns three joined checks:
    evaluator `_claims.py::_eval_independent` uses for hand-written
    claims, never a parallel independence check.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -1,4 +1,3 @@
-// frob:waive INV006 preset="split-carried-prose"
 //! Python-only tree-extraction kernel (T-1220, EPIC B candidate #1's first
 //! landed portion): source bytes in, spans/tokens/identifiers out, computed
 //! natively via `tree-sitter`/`tree-sitter-python` instead of `frob.lang`'s

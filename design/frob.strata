@@ -307,6 +307,7 @@ node verify : trusted {
 // behavioral/architectural change -- the cited affects()-closure doc does not \
 // describe this node's public surface and has nothing to update here."
 // frob:ticket T-1548
+// frob:ticket T-1763
 node gates : trusted {
 
     attr interface=[
@@ -324,20 +325,20 @@ node gates : trusted {
         doc004_gate, doc005_gate, doc006_gate, docanchor_gate, docenum001_gate, doclink_gate,
         docmake_gate, docstatus_gate, drift_gate, dup_gate, evaluate_cacheable_gate, evidence_covers_scope,
         exclude_hazard_gate, exhaustive_handling_gate, extra_key, fake_marker_staleness_gate, ffi_boundary_gate, file_reference_counts,
-        find_exclusivity_claim_sentences, fix_cov002_ticket_directive_insertion, fix_e501_merge_introduced, fix_fmt001_directive_wrap, fix_reg010_registry_sync, fix_rel002_release_sync,
-        fix_suppress001_paired_suppression, fix_tick002_renumber, fix_waive004_stale_waiver, fmt_gate, format_paths, fuzz_gate,
-        generated_gate_rule_ids, inv003_gate, inv004_gate, inv006_gate, inv007_violations, inv008_violations,
-        invalidate, invariant_gate, is_baseline_stale, known_gate_rule_ids, lang_conformance_gate, list_debt,
-        list_deprecated, load_baseline, load_coverage, load_coverage_lock, load_decisions, load_deprecated_baseline,
-        load_invariants, load_lock_audit_log, load_prework, load_ratchet_lock, load_root_gate_cache, load_stamp,
-        marker_for, model_side_channel_key, mutation_evidence_violations, negexist001_gate, opaque_gate, parse_failure_gate,
-        path_ever_tracked, perf_gate, pii_structural_gate, prework_gate, project_lang_conformance_gate, protocol_summary_gate,
-        ratchet_enabled_rules, read_line_length, record_prework, ref_gate, registry_gate, release_gate,
-        render_lint_gate, resolve_ratchet_severity, root_content_key, run_gates, save_deprecated_baseline, scan_emitted_rule_ids,
-        scope_digest, scope_gate, secrets_gate, snapshot_ratchet, stamp_baseline, stamp_coverage,
-        store_root_gate_cache, strip_code_spans, suppress001_gate, suppression_dialects, sweep_ticket, sys_gate,
-        taint_gate, test_gate, ticket_lease_pin, tickets_gate, tighten_deprecated_baseline, violation_fingerprint,
-        waive006_gate, waive007_gate, walk_lint_gate, wire_gate, write_autofix_manifest, write_coverage_lock,
+        fix_cov002_ticket_directive_insertion, fix_e501_merge_introduced, fix_fmt001_directive_wrap, fix_reg010_registry_sync, fix_rel002_release_sync, fix_suppress001_paired_suppression,
+        fix_tick002_renumber, fix_waive004_stale_waiver, fmt_gate, format_paths, fuzz_gate, generated_gate_rule_ids,
+        inv003_gate, inv004_gate, inv007_violations, inv008_violations, invalidate, invariant_gate,
+        is_baseline_stale, known_gate_rule_ids, lang_conformance_gate, list_debt, list_deprecated, load_baseline,
+        load_coverage, load_coverage_lock, load_decisions, load_deprecated_baseline, load_invariants, load_lock_audit_log,
+        load_prework, load_ratchet_lock, load_root_gate_cache, load_stamp, marker_for, model_side_channel_key,
+        mutation_evidence_violations, negexist001_gate, opaque_gate, parse_failure_gate, path_ever_tracked, perf_gate,
+        pii_structural_gate, prework_gate, project_lang_conformance_gate, protocol_summary_gate, ratchet_enabled_rules, read_line_length,
+        record_prework, ref_gate, registry_gate, release_gate, render_lint_gate, resolve_ratchet_severity,
+        root_content_key, run_gates, save_deprecated_baseline, scan_emitted_rule_ids, scope_digest, scope_gate,
+        secrets_gate, snapshot_ratchet, stamp_baseline, stamp_coverage, store_root_gate_cache, strip_code_spans,
+        suppress001_gate, suppression_dialects, sweep_ticket, sys_gate, taint_gate, test_gate,
+        ticket_lease_pin, tickets_gate, tighten_deprecated_baseline, violation_fingerprint, waive006_gate, waive007_gate,
+        walk_lint_gate, wire_gate, write_autofix_manifest, write_coverage_lock,
     ];
     clearance Internal;
     code "src/frob/gates/**";

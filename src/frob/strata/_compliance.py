@@ -46,7 +46,6 @@ explicit `assume`, which (per the charter's closing compliance paragraph)
 MUST carry `owner` + `review`, since "regulations change, so the staleness
 bound matters more here than anywhere."
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

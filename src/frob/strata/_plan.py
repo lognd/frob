@@ -29,7 +29,6 @@ lives entirely in that marker being a pure function of the model, never
 of wall-clock time or ticket-store state (this module never reads the
 ticket store itself; that join is the runner's job, T-0084 scope note).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

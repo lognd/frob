@@ -11,7 +11,6 @@ cycle-avoidance: `frob.gates` may *read* tickets, but must not grow
 `.frob/coverage-stamp` posture used by TEST006. `prework_gate` reads it
 back with `load_prework`.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -57,12 +57,6 @@ ticket's scope (`src/frob/gates/**`, `tests/test_gates.py`) does not cover
 and is left for a follow-up ticket rather than attempted half-heartedly
 here.
 """
-# frob:waive INV006 reason="module-docstring exclusivity-vocabulary hits are \
-# source-level design-rationale prose describing this file's own already-implemented \
-# scan-shape scope and startup-cost trade-off, verifiable by reading the code it \
-# annotates -- not a separate cross-module contract needing its own tracked invariant, \
-# same calibration posture as frob.tickets._new_gate_rule_acceptance's own T-0756 \
-# INV006 waiver"
 
 from __future__ import annotations
 

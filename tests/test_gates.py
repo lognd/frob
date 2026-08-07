@@ -38,7 +38,6 @@ from frob.gates import (
     fmt_gate,
     inv003_gate,
     inv004_gate,
-    inv006_gate,
     invariant_gate,
     is_baseline_stale,
     known_gate_rule_ids,
@@ -66,12 +65,6 @@ from frob.gates._deprecated_baseline import (
 )
 from frob.gates._docblocks import doc004_gate
 from frob.gates._pii_structural import pii_structural_gate
-from frob.gates._ratchet import (
-    load_ratchet_lock,
-    ratchet_enabled_rules,
-    resolve_ratchet_severity,
-    snapshot_ratchet,
-)
 from frob.gates._rule_id_scan import (
     generated_gate_rule_ids,
     scan_emitted_rule_ids,
@@ -2218,6 +2211,7 @@ class TestCoverageGate:
 
 
 # frob:ticket T-0851
+# frob:ticket T-1763
 class TestFmt001Gate:
     """T-0851: FMT001, the T-0441 follow-up -- a diff-touched `frob:`
     directive comment line over the configured line length gets a `frob
@@ -2225,13 +2219,14 @@ class TestFmt001Gate:
     line (neither is a `frob:` directive run) does not."""
 
     # frob:ticket T-0851
+    # frob:ticket T-1763
     def test_directive_run_over_limit_flagged(self, tmp_path: Path) -> None:
         """A single-physical-line `frob:waive` directive over the default
         88-col limit is FMT001, naming `frob fmt <path>` as the fix."""
         long_reason = "x" * 70
         source = (
             "def helper(x):\n"
-            f'    # frob:waive INV006 reason="{long_reason}"\n'
+            f'    # frob:waive SCOPE001 reason="{long_reason}"\n'
             "    return x\n"
         )
         _write(tmp_path, "src/a.py", source)
@@ -2266,13 +2261,14 @@ class TestFmt001Gate:
         assert not any(v.rule == "FMT001" for v in violations)
 
     # frob:ticket T-0851
+    # frob:ticket T-1763
     def test_untouched_line_not_flagged(self, tmp_path: Path) -> None:
         """An over-limit directive line the diff does NOT touch is not
         flagged -- FMT001 is diff-scoped, same posture as TODO001."""
         long_reason = "x" * 70
         source = (
             "def helper(x):\n"
-            f'    # frob:waive INV006 reason="{long_reason}"\n'
+            f'    # frob:waive SCOPE001 reason="{long_reason}"\n'
             "    return x\n"
         )
         _write(tmp_path, "src/a.py", source)
@@ -6077,320 +6073,6 @@ class TestInv004Gate:
         assert inv004_gate(tmp_path) == ()
 
 
-# frob:ticket T-0408
-# frob:ticket T-1107
-class TestInv006Gate:
-    """T-0408: INV006 extends the same claim-vocabulary scan INV003 runs
-    over docs (`INV003_SPEC_DIRS`) to SOURCE trees (`INV006_SRC_DIRS`) --
-    the coverage-completeness gap the ticket named (a huge system's own
-    docstring/comment guarantee claims were entirely outside either
-    doc-only gate's reach)."""
-
-    # frob:tests src/frob/gates/_inv.py::inv006_gate
-    # frob:ticket T-0408
-    def test_exclusivity_claim_in_source_without_anchor_warns(
-        self, tmp_path: Path
-    ) -> None:
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert len(violations) == 1
-        assert violations[0].rule == "INV006"
-        assert violations[0].severity == Severity.WARN
-        assert violations[0].file == "src/pkg.py"
-
-    # frob:ticket T-0408
-    def test_exclusivity_claim_with_bound_invariant_anchor_is_silent(
-        self, tmp_path: Path
-    ) -> None:
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            "# frob:invariant INV-001\n"
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert violations == ()
-
-    # frob:ticket T-0408
-    def test_waived_with_reason_is_silent(self, tmp_path: Path) -> None:
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            '# frob:waive INV006 reason="genuine design intent, not enforced"\n'
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert violations == ()
-
-    # frob:ticket T-1640
-    def test_exclusivity_claim_inside_a_waiver_reason_is_not_flagged(
-        self, tmp_path: Path
-    ) -> None:
-        """T-1640's live incident: a `frob:waive ... reason="..."` sentence
-        that itself contains exclusivity vocabulary ("can only ever raise
-        ValueError, never TypeError") is an ARGUMENT for why a DIFFERENT
-        finding does not apply, not a normative claim about this file --
-        it must not need its own `frob:invariant` binding, and must not
-        require ANOTHER `frob:waive INV006` on top of the waiver it is
-        already inside of."""
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            '# frob:waive EXHAUST002 reason="int(str) can only ever raise \\\n'
-            '# ValueError, never TypeError"\n'
-            "def parse(s: str) -> int:\n"
-            "    return int(s)\n",
-        )
-        snapshot = _snapshot(tmp_path)
-        assert inv006_gate(tmp_path, snapshot) == ()
-
-    # frob:ticket T-1640
-    def test_exclusivity_claim_outside_a_reason_attribute_still_warns(
-        self, tmp_path: Path
-    ) -> None:
-        """The reason-prose strip must not swallow a genuine claim living
-        OUTSIDE any `reason="..."` span -- a docstring claim right next to
-        an unrelated waiver still trips INV006."""
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            '# frob:waive EXHAUST002 reason="unrelated, no exclusivity language here"\n'
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert len(violations) == 1
-        assert violations[0].rule == "INV006"
-
-    # frob:ticket T-0408
-    def test_no_exclusivity_language_is_silent(self, tmp_path: Path) -> None:
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\ndef writer() -> None:\n'
-            '    """The daemon writes this file."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        assert inv006_gate(tmp_path, snapshot) == ()
-
-    # frob:ticket T-0408
-    def test_outside_src_dirs_is_silent(self, tmp_path: Path) -> None:
-        """T-0408: INV006 is scoped to `INV006_SRC_DIRS`
-        (src, strata-core/src, frob-core/src) -- a claim in tests/ or
-        docs/ is out of scope for this source-side gate."""
-        _write(
-            tmp_path,
-            "tests/test_x.py",
-            '"""Module docstring."""\n\ndef only_writer() -> None:\n'
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        assert inv006_gate(tmp_path, snapshot) == ()
-
-    # frob:ticket T-0408
-    def test_missing_src_dir_is_silent(self, tmp_path: Path) -> None:
-        snapshot = _snapshot(tmp_path)
-        assert inv006_gate(tmp_path, snapshot) == ()
-
-    # frob:ticket T-0594
-    def test_ratchet_fresh_finding_errors_when_rule_enabled(
-        self, tmp_path: Path
-    ) -> None:
-        """T-0594: `[gates.ratchet] rules = ["INV006"]` with no baseline
-        entry for this file -- `resolve_ratchet_severity` resolves a NEW
-        finding to error, not the gate's static WARN."""
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        _write(tmp_path, "frob.toml", '[gates.ratchet]\nrules = ["INV006"]\n')
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert len(violations) == 1
-        assert violations[0].severity == Severity.ERROR
-
-    # frob:ticket T-0594
-    def test_ratchet_baselined_finding_stays_warn(self, tmp_path: Path) -> None:
-        """T-0594: the same finding, but its key (`src/pkg.py`) is already
-        baselined in `frob-ratchet.lock.json` -- `resolve_ratchet_severity`
-        resolves it to warn, matching the pre-ratchet gate posture."""
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        _write(tmp_path, "frob.toml", '[gates.ratchet]\nrules = ["INV006"]\n')
-        snapshot_ratchet(tmp_path, "INV006", ["src/pkg.py"])
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert len(violations) == 1
-        assert violations[0].severity == Severity.WARN
-
-    # frob:ticket T-1107
-    def test_new_renumber_file_has_no_unanchored_exclusivity_claim(
-        self, tmp_path: Path
-    ) -> None:
-        """T-1107: `_new_renumber.py`'s exclusivity claims (`only`, lines
-        ~68/140/148/150/152) are covered by the `frob:waive INV006` at the
-        top of the file (carried in from T-0585/T-1103) -- copying the real
-        source into an isolated snapshot proves the live file itself
-        produces zero INV006 findings, not just that a waiver line exists
-        somewhere in it."""
-        real = (
-            Path(__file__).resolve().parents[1]
-            / "src"
-            / "frob"
-            / "tickets"
-            / "_new_renumber.py"
-        )
-        _write(tmp_path, "src/frob/tickets/_new_renumber.py", real.read_text())
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert violations == ()
-
-    # frob:ticket T-0594
-    def test_ratchet_rule_not_enabled_stays_static_warn(self, tmp_path: Path) -> None:
-        """T-0594: no `[gates.ratchet]` opt-in at all -- INV006 keeps
-        reporting its unconditional static WARN, unaffected by ratchet
-        wiring existing in the codebase (opt-in, not opt-out)."""
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert len(violations) == 1
-        assert violations[0].severity == Severity.WARN
-
-    # frob:ticket T-0594
-    def test_this_repos_frob_toml_and_ratchet_lock_calibrate(self) -> None:
-        """T-0594 calibration: this repo's OWN committed `frob.toml`
-        (`[gates.ratchet] rules = ["INV006"]`) and `frob-ratchet.lock.json`
-        (the 29 findings baselined when ratcheting was enabled) resolve
-        every currently-baselined INV006 finding to WARN when run against
-        the real tree -- i.e. wiring this in did not turn `frob check`
-        red on its own pre-existing findings."""
-        root = Path(__file__).resolve().parent.parent
-        assert "INV006" in ratchet_enabled_rules(root)
-        lock = load_ratchet_lock(root)
-        pool = lock.pool_for("INV006")
-        assert pool is not None
-        assert len(pool.entries) > 0
-        for entry in pool.entries:
-            assert resolve_ratchet_severity("INV006", entry.key, lock) == "warn"
-        assert resolve_ratchet_severity("INV006", "src/pkg/not_baselined.py", lock) == (
-            "error"
-        )
-
-
-# frob:ticket T-1134
-class TestInv006SplitAssist:
-    """T-1134: when an exclusivity claim's exact prose is moved out of a
-    file that already carries a covering INV006 waiver/invariant, the
-    destination's INV006 finding must name that source and offer the
-    carried disposition as a fix-it."""
-
-    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_find_exclusivity_claim_sentences_returns_actual_prose  # noqa: E501
-    def test_find_exclusivity_claim_sentences_returns_actual_prose(self) -> None:
-        """`find_exclusivity_claim_sentences` returns the real matched
-        sentence text, not `find_exclusivity_claims`'s regex-source
-        pattern name -- the verbatim-comparable form T-1134 needs."""
-        from frob.gates.invariants import find_exclusivity_claim_sentences
-
-        text = '"""The only writer of this file is the daemon process."""\n'
-        sentences = find_exclusivity_claim_sentences(text)
-        assert len(sentences) == 1
-        assert "only writer" in sentences[0]
-
-    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_finds_carried_waiver_for_verbatim_moved_claim  # noqa: E501
-    def test_finds_carried_waiver_for_verbatim_moved_claim(
-        self, tmp_path: Path
-    ) -> None:
-        """A claim sentence moved VERBATIM from `src/old.py` (which
-        carries a covering `frob:waive INV006`) into `src/new.py` (no
-        waiver of its own) -- the destination's INV006 finding must name
-        `src/old.py` and offer its waiver text as a fix-it."""
-        sentence = "The only writer of this file is the daemon process."
-        _write(
-            tmp_path,
-            "src/old.py",
-            f'# frob:waive INV006 reason="genuine design intent, not enforced"\n'
-            f'"""{sentence}"""\n',
-        )
-        _write(tmp_path, "src/new.py", f'"""{sentence}"""\n')
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        new_violations = [v for v in violations if v.file == "src/new.py"]
-        assert len(new_violations) == 1
-        assert "src/old.py" in new_violations[0].message
-        assert "carry it here" in new_violations[0].message
-        assert "genuine design intent, not enforced" in new_violations[0].message
-
-    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_no_match_when_no_other_file_shares_the_claim  # noqa: E501
-    def test_no_match_when_no_other_file_shares_the_claim(self, tmp_path: Path) -> None:
-        """An ordinary, never-moved INV006 finding (no other file shares
-        the claim text at all) must not gain a bogus carried-waiver
-        suggestion."""
-        _write(
-            tmp_path,
-            "src/pkg.py",
-            '"""Module docstring."""\n\n'
-            "def only_writer() -> None:\n"
-            '    """The only writer of this file is the daemon."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        assert len(violations) == 1
-        assert "carry it here" not in violations[0].message
-
-    # frob:tests tests/test_gates.py::TestInv006SplitAssist.test_reworded_claim_is_not_detected_v1_disclosed  # noqa: E501
-    def test_reworded_claim_is_not_detected_v1_disclosed(self, tmp_path: Path) -> None:
-        """T-1134 v1 (disclosed narrow scope): detection is exact-sentence
-        verbatim match only -- a paraphrase of a waived claim in another
-        file must NOT be reported as carried, since it genuinely is not
-        the same text."""
-        _write(
-            tmp_path,
-            "src/old.py",
-            '# frob:waive INV006 reason="x"\n'
-            '"""The only writer of this file is the daemon process."""\n',
-        )
-        _write(
-            tmp_path,
-            "src/new.py",
-            '"""This file is written to solely by the daemon process."""\n',
-        )
-        snapshot = _snapshot(tmp_path)
-        violations = inv006_gate(tmp_path, snapshot)
-        new_violations = [v for v in violations if v.file == "src/new.py"]
-        assert len(new_violations) == 1
-        assert "carry it here" not in new_violations[0].message
-
-
 class TestPlace001Gate:
     """T-0504: PLACE001 replaces the dropped T-0470 "distance from the
     class's own span start" prototype (proven noisy against this repo's
@@ -6650,6 +6332,7 @@ class TestInvariantLoad:
 
 
 # frob:ticket T-0549
+# frob:ticket T-1763
 class TestTestGate:
     def test_test001_public_symbol_no_unit_edge(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::test_gate
@@ -7438,12 +7121,19 @@ class TestTestGate:
         assert found == ()
 
     # frob:ticket T-1064
-    def test_waive004_exempts_a_structurally_unverifiable_rule(self) -> None:
-        """T-1064: INV006 self-suppresses (`_inv006_waived` short-circuits
-        `_inv006_src_violations` before a `Violation` is ever built) so a
-        genuinely-live INV006 waiver's finding can never reach
-        `all_violations` -- WAIVE004 must not misreport it as stale just
-        because it structurally never sees the finding it covers."""
+    # frob:ticket T-1763
+    def test_waive004_exempts_a_diff_scoped_rule(self) -> None:
+        """T-1064/T-1763: `AFFECT001` only ever emits a finding for a
+        symbol in the diff's OWN touched-ref set -- a full, unscoped run's
+        diff is essentially never the exact diff that originally
+        triggered the waived finding, so WAIVE004 must not misreport it as
+        stale just because this run's diff never reaches it. (T-1064's
+        original example here was INV006, a SELF-SUPPRESSING rule that
+        never let a covered finding reach `all_violations` at all --
+        deleted by T-1763 for producing zero live findings across its
+        whole lifetime; `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES` no
+        longer needs a self-suppressing example to stay covered, so this
+        test now exercises the still-live diff-scoped class instead.)"""
         # frob:tests src/frob/gates/_waive.py::_waive004_violations
         from frob.gates import _waive004_violations
         from frob.graph import Edge, EdgeKind, GraphSnapshot
@@ -7451,14 +7141,15 @@ class TestTestGate:
         waiver = Edge(
             kind=EdgeKind.WAIVE,
             src="src/a.py",
-            target="INV006",
+            target="AFFECT001",
             origin="src/a.py:1",
             attrs={"reason": "x"},
         )
         snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
-        # No INV006 violation in `all_violations` -- by construction, since
-        # the gate suppresses it before this point -- yet WAIVE004 must
-        # stay silent rather than call the waiver stale.
+        # No AFFECT001 violation in `all_violations` -- by construction,
+        # since this run's diff never touches the symbol the waiver was
+        # written against -- yet WAIVE004 must stay silent rather than
+        # call the waiver stale.
         found = _waive004_violations((), snap, frozenset())
         assert found == ()
 
@@ -10228,6 +9919,7 @@ class TestDocanchorGate:
 
 # frob:ticket T-1138
 # frob:ticket T-1531
+# frob:ticket T-1763
 class TestFixEngineTierA:
     """`frob.gates._fix_engine`'s Tier-A deterministic --fix handlers
     (T-1138): DOC007 dotted-form rewrite, DOC002 unique-anchor-slug
@@ -10398,96 +10090,10 @@ class TestFixEngineTierA:
         after = docanchor_gate(root, self._snap(root))
         assert any(v.rule == "DOC002" for v in after)
 
-    # -- T-1177 acceptance [0]/[1]: INV006 split-carried-waiver auto-carry --
-
-    def test_inv006_carries_waiver_verbatim_moved_from_waived_source(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver \
-        # kind="unit"
-        from frob.gates import apply_tier_a_fixes, inv006_gate
-        from frob.tickets import TicketQueue
-
-        root = tmp_path / "repo"
-        (root / "src").mkdir(parents=True)
-        sentence = "The only writer of this file is the daemon process."
-        (root / "src" / "old.py").write_text(
-            f'# frob:waive INV006 reason="genuine design intent, not enforced"\n'
-            f'"""{sentence}"""\n',
-            encoding="utf-8",
-        )
-        (root / "src" / "new.py").write_text(f'"""{sentence}"""\n', encoding="utf-8")
-        snapshot = self._snap(root)
-        before = inv006_gate(root, snapshot)
-        assert any(v.file == "src/new.py" for v in before)
-
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        inv006_applied = [a for a in applied if a.rule == "INV006"]
-        assert len(inv006_applied) == 1
-        assert inv006_applied[0].file == "src/new.py"
-        assert "src/old.py" in inv006_applied[0].detail
-
-        rewritten = (root / "src" / "new.py").read_text(encoding="utf-8")
-        assert rewritten.splitlines()[0] == (
-            '# frob:waive INV006 reason="genuine design intent, not enforced"'
-        )
-
-        after = inv006_gate(root, self._snap(root))
-        assert not [v for v in after if v.file == "src/new.py"]
-
-    def test_inv006_carries_a_preset_reference_not_a_reason_copy(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver \
-        # kind="unit"
-        # T-1176/T-1177: when the source waiver was itself written with
-        # preset=, the carried directive at the new site must reference
-        # the SAME preset -- never a copy of its resolved reason text --
-        # or every carry would silently recreate the duplication presets
-        # exist to remove.
-        from frob.gates import apply_tier_a_fixes
-        from frob.tickets import TicketQueue
-
-        root = tmp_path / "repo"
-        (root / "src").mkdir(parents=True)
-        sentence = "The only writer of this file is the daemon process."
-        (root / "src" / "old.py").write_text(
-            f'# frob:waive INV006 preset="split-carried-prose"\n"""{sentence}"""\n',
-            encoding="utf-8",
-        )
-        (root / "src" / "new.py").write_text(f'"""{sentence}"""\n', encoding="utf-8")
-        snapshot = self._snap(root)
-
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        inv006_applied = [a for a in applied if a.rule == "INV006"]
-        assert len(inv006_applied) == 1
-
-        rewritten = (root / "src" / "new.py").read_text(encoding="utf-8")
-        assert rewritten.splitlines()[0] == (
-            '# frob:waive INV006 preset="split-carried-prose"'
-        )
-
-    def test_inv006_never_auto_waives_a_non_carried_finding(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver \
-        # kind="unit"
-        # T-1137 anti-goal: an INV006 finding with no verbatim-matched,
-        # already-waived source must never gain an inserted waiver.
-        from frob.gates import apply_tier_a_fixes, inv006_gate
-        from frob.tickets import TicketQueue
-
-        root = tmp_path / "repo"
-        (root / "src").mkdir(parents=True)
-        content = '"""The only writer of this file is the daemon."""\n'
-        (root / "src" / "pkg.py").write_text(content, encoding="utf-8")
-        snapshot = self._snap(root)
-        before = inv006_gate(root, snapshot)
-        assert any(v.file == "src/pkg.py" for v in before)
-
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        assert not [a for a in applied if a.rule == "INV006"]
-        assert (root / "src" / "pkg.py").read_text(encoding="utf-8") == content
+    # T-1763: the T-1177 INV006 split-carried-waiver auto-carry tests that
+    # used to live here (fix_inv006_carried_waiver) were removed along with
+    # the rest of the INV006 gate -- 338 waivers, zero unwaived findings
+    # across its whole lifetime; see docs/modules/gates.md's T-1763 note.
 
     # -- acceptance: SYS104 interface= union (T-1531) -----------------------
 
@@ -10861,6 +10467,7 @@ class TestTierAAutofixCrashSafety:
 # frob:ticket T-1548
 # frob:ticket T-1261
 # frob:ticket T-1341
+# frob:ticket T-1763
 class TestFixEngineTierABatch2:
     """`frob.gates._fix_engine`'s Tier-A batch-2 `--fix` handlers
     (T-1261): fmt/registry-regen/release-sync/WAIVE004. Each is a
@@ -10868,6 +10475,7 @@ class TestFixEngineTierABatch2:
 
     # -- acceptance [0]: fmt invocation for a FMT001 finding -----------------
 
+    # frob:ticket T-1763
     def test_fmt001_wraps_overlong_directive_line_and_reverifies_clean(
         self, tmp_path: Path
     ) -> None:
@@ -10879,7 +10487,7 @@ class TestFixEngineTierABatch2:
         root = tmp_path / "repo"
         (root / "src").mkdir(parents=True)
         long_reason = "x" * 100
-        original = f'# frob:waive INV006 reason="{long_reason}"\ndef f():\n    pass\n'
+        original = f'# frob:waive SCOPE001 reason="{long_reason}"\ndef f():\n    pass\n'
         (root / "src" / "m.py").write_text(original, encoding="utf-8")
         limit = read_line_length(root)
         assert any(len(line) > limit for line in original.splitlines())
@@ -11124,7 +10732,6 @@ class TestFixEngineTierABatch2:
         assert set(TIER_A_HANDLERS) == {
             "DOC007",
             "DOC002",
-            "INV006",
             "FMT001",
             "SUPPRESS001",  # T-1341
             "REG010",

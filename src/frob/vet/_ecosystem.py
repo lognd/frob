@@ -9,7 +9,6 @@ VET-PY001's "when a wheel exists" clause and VET-JS002's full dependency-
 confusion resolution, are noted inline and left for a follow-up ticket
 rather than half-implemented against data this scan doesn't have).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

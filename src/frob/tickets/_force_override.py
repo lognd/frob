@@ -1,9 +1,3 @@
-# frob:waive INV006 reason="T-1762: this module's 'append-only'/'only makes it \
-# accountable' docstring wording is source-level design-rationale prose describing the \
-# already-implemented ForceOverrideEntry/force-overrides.jsonl contract -- verifiable \
-# by reading the code it annotates -- rather than a separate cross-module contract \
-# needing its own tracked invariant; same T-0585 INV006 first-turn-on-pool disposition \
-# every other module-docstring hit in this repo already carries"
 """frob.tickets._force_override -- the shared `--force` audit-trail
 primitive (T-1762): `ScopeChangeEntry`/`AcceptanceAmendmentEntry`/
 `EvidenceChangeEntry`/`AckAuditEntry`'s append-only-audit-record

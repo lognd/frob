@@ -13,7 +13,6 @@ namespace so this split is invisible to any external caller -- moved
 verbatim, no behavior change.
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 # frob:ticket T-1420
 # frob:ticket T-1210
 # frob:ticket T-1223

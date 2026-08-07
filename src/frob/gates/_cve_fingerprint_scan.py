@@ -27,7 +27,6 @@ rather than imported, the same small-helper-not-worth-the-coupling call
 and scanned via `frob.strata._cve_fingerprint.scan_text_for_fingerprints`,
 which returns a `FingerprintHit` per needle occurrence WITH a line number.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 # frob:ticket T-0439
 from __future__ import annotations

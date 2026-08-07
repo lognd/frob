@@ -20,7 +20,6 @@ _hotgraph.resolve_stream` consumes regardless of which collector produced
 them (T-0748 wires native/V8/JVM collectors into the identical contract).
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 from __future__ import annotations
 
 import sys

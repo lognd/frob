@@ -35,12 +35,6 @@ Both categories stay on the same unwaivable advisory channel every other
 `frob.arch` category is on; no real ARCH1xx gate is wired in this
 ticket's scope (`_layering.py`, `frob.toml`, docs, tests only).
 """
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale/scope-cut prose describing already-implemented resolvability rules \
-# (same-file-only class resolution, this ticket's own declared scope cut) verifiable \
-# by reading the functions/docstrings they annotate, not a separate cross-module \
-# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
-# disposition frob.arch._solid's own module docstring already carries"
 
 from __future__ import annotations
 

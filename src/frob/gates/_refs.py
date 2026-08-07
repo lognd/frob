@@ -85,7 +85,6 @@ directly the same way `_docblocks.py` honors `frob:waive DOC004` on a doc
 to on a bare tracked `.md` file, so without this a REF001/REF002 finding on
 a doc was structurally unwaivable. See `_md_waived_rules`.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

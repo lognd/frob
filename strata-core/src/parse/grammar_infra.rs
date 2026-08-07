@@ -1,13 +1,5 @@
 // Infra-primitive grammar productions: `store`, `cache`, `resource`,
 // `queue`, `cdn`, `balancer`, and metric names (docs/strata/surface.md#parser).
-// frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: T-1099 split \
-// strata-core/src/parse.rs (whose single INV006 calibration-batch waiver, T-0585, is \
-// preserved verbatim in parse/mod.rs) into grammar-family fragments; this file \
-// inherits some of that same source-level design-rationale/scope-cut prose (a \
-// docstring or comment describing already-implemented internal behavior, verifiable \
-// by reading the code it annotates) rather than a separate cross-module contract \
-// needing its own tracked invariant; disposed as the same calibration batch, not \
-// claim-by-claim"
 
 impl Parser {
     /// PERCENT := NUMBER '%'; used by `hit` on cache/cdn (std.infra).

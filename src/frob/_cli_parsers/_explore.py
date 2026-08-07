@@ -1,7 +1,3 @@
-# frob:waive INV006 reason="argparse --help text copied verbatim from _core.py's own \
-# xref parser (which already carries the same T-1076/T-0585 INV006 file-level waiver) \
-# -- incidental exclusivity-flavored wording in a --help string, not a new normative \
-# contract"
 # frob:ticket T-1238
 """CLI parser builder for the `frob explore` verb group (T-1238): regroups
 the navigation porcelain (`map`/`outline`/`xref`/`docs --search`) under one

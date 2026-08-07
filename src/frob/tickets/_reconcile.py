@@ -19,7 +19,6 @@ guessing: a stale hold is a local `IN_PROGRESS` ticket with no
 corresponding lease; an orphan worktree is a `git worktree list` entry
 with no lease naming it.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

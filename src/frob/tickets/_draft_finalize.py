@@ -20,7 +20,6 @@ it was already routed through the package, not the old module-local
 name, so moving the caller to a different module changes nothing about
 that indirection.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

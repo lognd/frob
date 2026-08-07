@@ -36,7 +36,6 @@ declaration).
 | INV003 | invariant | (warn) a doc file under `INV003_SPEC_DIRS` (`docs/modules`, `docs/strata`) makes a claim-shaped exclusivity/normative assertion (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`, verb required in the same sentence) with no `<!-- frob:invariant INV-### -->` marker naming a real (loaded) invariant, and no reasoned `<!-- frob:waive INV003 reason="..." -->` marker -- see "INV003 (T-0462)" below |
 | INV004 | invariant | (warn, advisory) a `docs/**.md` section uses claim-shaped normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers and carries no reasoned `<!-- frob:waive INV004 reason="..." -->` marker -- see "INV004 (T-0452)" below |
 | INV005 | invariant | (warn, T-0543/B12) an invariant's evidence collects (satisfies INV001) but is never shown, via a `frob:tests` edge or same-file trust to the anchor, to actually reach its `frob:invariant`-anchored symbol -- a name-match-only existence check proves nothing about which invariant a test covers; see "INV005 (T-0543)" below |
-| INV006 | invariant | (warn, T-0408) a SOURCE file under `INV006_SRC_DIRS` (`src`, `strata-core/src`, `frob-core/src`) makes a claim-shaped exclusivity assertion (same vocabulary as INV003) with no `frob:invariant` edge anchored anywhere in the file, and no `frob:waive INV006 reason="..."` edge -- see "INV006 (T-0408)" below |
 | INV007 | invariant | (T-0757) a `frob:invariant ... no_import="pkg[,pkg2,...]"` anchor whose own file actually imports the forbidden module or one of its submodules -- see "INV007 and INV008 (T-0757)" below |
 | INV008 | invariant | (T-0757) a `frob:invariant ... establishes="..."` anchor with no `frob:tests ... kind="property"` edge bound to it -- see "INV007 and INV008 (T-0757)" below |
 | TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
@@ -1269,16 +1268,21 @@ confirmed cases and is skipped entirely by `_waive004_violations`
 (`_match_waiver`'s own rule-id-exact matching is untouched -- a waiver
 still cannot swallow a different rule's finding):
 
-- **`INV006`** self-suppresses: `_inv006_waived` checks for a covering
-  `frob:waive INV006` edge INSIDE `_inv006_src_violations`, before a
-  `Violation` is ever built, so a genuinely-live INV006 waiver's finding
-  never exists for WAIVE004 to see matched or not. Confirmed empirically
-  (T-0874/T-1064): deleting one of these waivers resurfaces the exact
-  INV006 error it was suppressing; restoring it verbatim makes the error
-  disappear again, while WAIVE004 reported "matches 0" both before and
-  after. This was ~209 of ~216 WAIVE004 findings in this repo's own full
-  run before the fix -- effectively every per-file INV006 "first-turn-on
-  pool" waiver (T-0585-style), permanently misreported.
+- **`INV006` (DELETED, T-1763)** used to self-suppress: `_inv006_waived`
+  checked for a covering `frob:waive INV006` edge INSIDE `_inv006_src_
+  violations`, before a `Violation` was ever built, so a genuinely-live
+  INV006 waiver's finding never existed for WAIVE004 to see matched or
+  not. Confirmed empirically (T-0874/T-1064): deleting one of these
+  waivers resurfaced the exact INV006 error it was suppressing; restoring
+  it verbatim made the error disappear again, while WAIVE004 reported
+  "matches 0" both before and after -- this was ~209 of ~216 WAIVE004
+  findings in this repo's own full run before the T-1064 fix, effectively
+  every per-file INV006 "first-turn-on pool" waiver (T-0585-style),
+  permanently misreported. T-1763 deleted the rule itself (338 waivers,
+  zero ever judged worth a bound `frob:invariant` across its whole
+  lifetime) rather than continuing to carry this exemption for a
+  detector that never earned an actionable finding; the rule id no
+  longer appears in `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES`.
 - **`DUP001`/`DUP002`/`AFFECT001`/`AFFECT002`** only ever emit a finding
   for a symbol in the current diff's own touched-ref set (see each gate's
   own "diff-scoped like coverage/fmt" comment in `frob.gates.__init__`).
@@ -3903,97 +3907,39 @@ follow-up" shape as the parallel B1 (TEST001 real-coverage) and B2
 prior ERROR semantics unchanged; INV005 is the loud-but-non-blocking nudge
 toward a real binding for anything NEW.
 
-### INV006 (T-0408)
+### INV006 -- DELETED (T-0408 -> T-1763)
 
-INV003/INV004 (above) are DOC-only: they scope to `INV003_SPEC_DIRS`
-(`docs/modules`, `docs/strata`) and never look at source code. The user
-named a two-part gap this left open: only a handful of formal invariants
-exist for a large system, while a repo-wide grep finds well over a
-hundred SOURCE files (Python, Rust) asserting a property in
-docstrings/comments -- "always", "never", "only", "exactly once", and
-so on -- with nothing checking whether enough of THOSE claims are
-formalized. INV001/INV002 only ever validated invariants that already
-existed; nothing checked whether enough invariants existed at all.
+INV006 (source-side exclusivity-claim scan, `src`/`strata-core/src`/
+`frob-core/src`, the sibling of the INV003/INV004 doc-side scans above)
+was DELETED by T-1763. Measured against frob's own corpus at deletion
+time: 349 files carrying a `frob:waive INV006 reason="..."` directive,
+and ZERO unwaived findings across the rule's entire lifetime (T-0408
+onward) -- it never once produced a finding a human judged worth binding
+a real `frob:invariant` to.
 
-INV006 closes the source-code half of that gap: it reuses INV003's exact
-claim vocabulary and claim-shape scan (`find_exclusivity_claims`, already
-noise-filtered by T-0509's verb-in-same-sentence requirement) over every
-`.py`/`.rs` file under `INV006_SRC_DIRS`, and treats a file as covered if
-ANY `frob:invariant` edge (the real comment-DSL directive, not an
-HTML-comment marker regex that would never match Python/Rust comment
-syntax) anchors anywhere in that file. A `frob:waive INV006 reason="..."`
-edge on the file (or a symbol in it) dispositions a claim that is
-genuine design intent rather than an enforced behavior, mirroring
-INV003's markdown-side waiver.
+Root cause: INV006 was a purely LEXICAL scan (the same claim vocabulary
+INV003 uses -- "never"/"only"/"always" in a claim-shaped sentence) with
+no notion of symbol or cross-module scope, applied unconditionally to
+every source file's own docstrings and comments. Ordinary, correct
+documentation of a module's OWN internal behavior triggers the identical
+vocabulary a genuine undeclared cross-module contract would -- INV006
+could not tell the two apart, and 338 of its 349 waivers said so, in
+near-identical words, one file at a time. It had already fired on a
+`frob:waive` directive's own `reason="..."` prose EXPLAINING a previous
+INV006 misfire (T-1640's fix narrowed the scan to exclude directive
+attribute text, but did not change the underlying lexical-vs-semantic
+defect). `frob:invariant`/INV001/INV002 already bind real invariants to
+real evidence; INV006 added hundreds of hand-written waiver
+justifications on top of a detector that never earned them.
 
-WARN severity, same posture as INV003 -- this repo's own first-turn-on
-measurement (`frob check --only invariant`) found ~167 INV006 findings
-across `src/`, `strata-core/src/`, and `frob-core/src/`; driving that
-down to 0 (bind each to a real invariant, waive with a specific reason,
-or reword) is tracked as a follow-up burndown, same as INV003/INV004's
-own residual, not hand-closed in this pass.
-
-**Split-assist (T-1134)**: every module split this drive
-(T-1103/T-1107/T-1072/T-1077/T-1081/T-1082, plus 3 more the coordinator
-hand-carried on 2026-07-28) had to remember to re-carry an already-
-existing INV006 waiver/invariant into the new file its claim prose moved
-into -- a human step nothing caught if skipped. `frob.gates.
-_inv006_split_assist.find_carried_waiver` closes this: when
-`_inv006_src_violations` is about to report an unwaived finding, it first
-checks whether the offending claim SENTENCE (`frob.gates.invariants.
-find_exclusivity_claim_sentences`, the real matched prose, not the
-pattern name `find_exclusivity_claims` returns) appears VERBATIM
-(whitespace-normalized) in some OTHER file under `INV006_SRC_DIRS` that
-already carries a covering `frob:waive INV006` or `frob:invariant` edge.
-If so, the finding's message names that source and offers its exact
-disposition as a copy-pastable fix-it (`frob:waive INV006 reason="..."`
-or the source's `frob:invariant INV-###` id) instead of leaving "remember
-the carried waiver" a silent human step.
-
-Deliberately narrow, disclosed (v1): detection is an EXACT sentence match
-only -- a reworded paraphrase of a waived claim is not recognized as
-"moved" and still fires a plain, un-augmented INV006 finding. This is a
-lighter-weight sibling of `frob.dup`'s full clone pipeline (function/
-symbol-scoped, not applicable to bare docstring/comment prose), same
-"exact match first" posture as `frob.dup`'s own Type-1 rung.
-
-**T-1649 (PERF011 fix):** `inv006_gate` used to call `iter_files` once
-per `(src_dir, suffix)` pair (3 dirs x 2 suffixes = 6 full-repo scans);
-`find_carried_waiver`'s own search over `candidate_dirs`/
-`candidate_suffixes` had the identical shape. Both now run ONE
-`iter_files(root)` scan and filter the result by prefix/suffix in memory
-(`_inv006_src_files` for `inv006_gate`, inlined for `find_carried_waiver`
-since its dirs/suffixes are caller-supplied, not the fixed module
-constants `_inv006_src_files` closes over) -- same findings, a fraction
-of the repo scans.
-
-`find_carried_waiver` is written to be reusable outside INV006
-specifically so T-1135's refactor epic (this ticket is expected to become
-a child of it at design time) can wire the same detector into PII012's
-(file, token)-keyed allowlist, which has the identical code-moves-need-a-
-new-entry failure mode (T-1076 precedent).
-
-**T-1640: a `reason="..."` directive-attribute value is not itself a
-claim.** INV006's claim scan used to run over a source file's WHOLE raw
-text, including every directive's `reason="..."` attribute string --
-so a `frob:waive EXHAUST002 reason="int(str) can only ever raise
-ValueError, never TypeError"` justification (the live incident: this
-sentence genuinely uses "only"/"never") tripped INV006 on its own,
-demanding an unrelated `frob:invariant` binding for a sentence that is an
-ARGUMENT for why a DIFFERENT finding does not apply, not a specification
-of this file's behavior. Read the wrong way, the rule rewards a vaguer
-waiver reason (the cheapest way to dodge the gate) over a precise one --
-backwards from what the waiver audit (T-1614) wants. `_inv006_src_
-violations` now scans `_strip_directive_reason_prose(text)` instead of
-raw `text`: every `reason="..."` span (any directive verb, not just
-`frob:waive`, spanning embedded newlines/backslash-continuations so a
-folded multi-line reason is stripped as one span) is removed before the
-claim-shape scan runs. A genuine claim living OUTSIDE a `reason=` span,
-even in a file that also carries an unrelated waiver, still fires
-normally. Scoped to INV006's SOURCE-file scan only (`frob.gates._inv`) --
-INV003/INV004's doc-side scans (`frob.gates.invariants.find_exclusivity_
-claims`/`find_normative_claims`) are unchanged, since a doc file's own
-directive-attribute prose was not this ticket's observed incident.
+T-1763 swept all 349 `frob:waive INV006 reason="..."`/`preset="..."`
+directives before deleting the gate -- a dead directive naming a deleted
+rule reads as a live suppression to the next reader, which is worse than
+no directive at all. `frob.gates._inv006_split_assist` (the T-1134
+split-carry helper, INV006-only) and its `fix_inv006_carried_waiver`
+Tier-A auto-fix handler (`frob.gates._fix_engine`) were deleted along
+with it. See `frob.gates._inv`'s own module docstring for the same note
+at the code level.
 
 ### INV007 and INV008 (T-0757)
 
@@ -4048,8 +3994,9 @@ over the small state space `_newer_winner` discriminates on, rather than
 the hand-picked field-incident cases `TestSpliceLedgerRicherStatePreference`
 already covers.
 
-Both rules ship at `Severity.ERROR` directly, unlike INV003/INV004/
-INV006's advisory WARN posture: an obligation only exists once someone
+Both rules ship at `Severity.ERROR` directly, unlike INV003/INV004's
+advisory WARN posture (INV006, the third rule in that advisory-WARN
+class, was deleted by T-1763): an obligation only exists once someone
 EXPLICITLY writes `no_import=`/`establishes=` on a `frob:invariant`
 directive (never a bare-vocabulary heuristic scanning every file), so
 there is no first-turn-on debt corpus to phase in against -- the first
@@ -4173,19 +4120,15 @@ mechanism as a self-contained, additive module:
   rule is ratcheted, matching every other per-section `frob.toml` reader's
   missing-is-default posture, e.g. `load_arch_config`).
 
-**Wired into a live gate (T-0594)**: `INV006` (`inv006_gate`,
-`src/frob/gates/__init__.py`) is the first rule opted into
-`[gates.ratchet] rules = ["INV006"]` in this repo's own `frob.toml`.
-`inv006_gate` loads `ratchet_enabled_rules(root)` and (only when INV006 is
-enabled) `load_ratchet_lock(root)` once per run, then
-`_inv006_src_violations` calls `resolve_ratchet_severity("INV006", rel,
-lock)` per file to pick the reported `Severity` (`rel`, the finding's
-repo-relative path, is INV006's stable key -- findings are file-level,
-`line=0`). This repo's own 29 pre-existing INV006 findings at the point
-ratcheting was enabled were baselined with `frob pool snapshot INV006
---key <path> ...` so they keep reporting WARN; any file with a NEW,
-unbound exclusivity claim now reports INV006 at ERROR instead of quietly
-joining the warn pile. The storage format, CLI, and severity-resolution
+**Wired into a live gate (T-0594, DELETED T-1763)**: `INV006`
+(`inv006_gate`) used to be the first rule opted into `[gates.ratchet]
+rules = ["INV006"]` in this repo's own `frob.toml`. T-1763 deleted the
+rule entirely (338 waivers, zero unwaived findings across its whole
+lifetime -- see the INV006 section above) -- `[gates.ratchet] rules` is
+now empty; no rule is currently ratcheted. The mechanism itself
+(`resolve_ratchet_severity`/`ratchet_enabled_rules`/
+`frob-ratchet.lock.json`) is unchanged and available for a future rule
+to opt into. The storage format, CLI, and severity-resolution
 contract are tested against synthetic rule ids in
 `tests/test_gates_ratchet.py`/`tests/test_pool_runner.py`; the live-gate
 integration itself (opt-in config read, baseline hit stays warn, fresh
@@ -4201,7 +4144,6 @@ site -- no new mechanism needed.
 <!-- frob:describes src/frob/gates/_fix_engine.py::apply_tier_a_fixes -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc007_dotted_form -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_doc002_unique_slug -->
-<!-- frob:describes src/frob/gates/_fix_engine.py::fix_inv006_carried_waiver -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::fix_tick002_renumber -->
 <!-- frob:describes src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap -->
 <!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_reg010_registry_sync -->
@@ -4237,21 +4179,6 @@ guess, never a waiver insertion):
   an ambiguous or absent match has no single correct rewrite to make
   automatically, so it stays a normal DOC002 finding (the assisted
   fix-it path, not this ticket's own scope).
-- **`fix_inv006_carried_waiver`** (T-1177, T-1134's `find_carried_waiver`
-  detector applied): an INV006 finding whose exclusivity-claim prose was
-  moved VERBATIM out of a file that already carries a covering
-  `frob:waive INV006` gets that EXACT directive inserted as its own
-  first line -- a preset REFERENCE (`preset="..."`, T-1176) when the
-  source itself used one, never a copy of its resolved reason text, so
-  a chain of carries never re-duplicates the prose a preset exists to
-  deduplicate. Coordinator decision (2026-07-29, under user-delegated
-  authority): this is the one narrow exception to T-1137's
-  never-auto-waive anti-goal -- carrying an EXISTING, already-made human
-  disposition forward through a verbatim text move is not a NEW waiver
-  judgment, so it does not violate the anti-goal, which still binds for
-  every other case (a match that only carries a bound `frob:invariant`,
-  or no verbatim match at all, is left completely untouched -- no guess,
-  no waiver inserted).
 - **`fix_tick002_renumber`**: TICK002 (a `T-draft-*` id that survived
   onto the default branch) already prescribes its own remedy in its
   message; this performs exactly that renumber via `frob.tickets.
@@ -4447,7 +4374,7 @@ left on that line at all -- no separate "already fixed" tracking needed.
 `TIER_A_HANDLERS`, a `dict[str, Callable]` keyed by rule id (T-1261
 promotes the prior positional-call list to this explicit table so a
 fixability-registry-field ticket has something real to scan) -- run in
-the dict's declared order (DOC007/DOC002/INV006-carry/FMT001/
+the dict's declared order (DOC007/DOC002/FMT001/
 SUPPRESS001/REG010/REL002 first, since they are pure source-text/artifact
 rewrites with no ledger interaction; TICK002 next, since it touches the
 ticket ledger; WAIVE004 last, since it re-invokes the whole gates suite

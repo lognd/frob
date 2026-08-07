@@ -17,7 +17,6 @@ verbatim; `frob.tickets._land_squash` (the squash-apply/close family,
 T-1334's other split-out module) imports what it still needs back from
 here.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

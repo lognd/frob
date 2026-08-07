@@ -29,7 +29,6 @@ here.
 (`_commit_message`), plus its re-export of `splice_ledger` for
 `frob.tickets.__init__`'s stable public import path.
 """
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive LARGE001 reason="T-1251 verbatim extraction seam: 1063 lines is the moved git-plumbing family intact, one seam per land; the follow-on split of this family (and _land_finalize.py's) is the T-1251-residue draft ticket filed at close -- waived rather than force-split in the same diff to preserve the byte-identical-move review guarantee"  # noqa: E501
 
 from __future__ import annotations

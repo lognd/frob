@@ -2,7 +2,6 @@
 `DANGEROUS_OPERATIONS` (T-1420 split, python's own slice sibling lives in
 `_dangerous_ops_python.py`) -- these four languages share one file since
 none is individually close to the 800-line threshold on its own."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

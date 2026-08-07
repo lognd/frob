@@ -26,7 +26,6 @@ wall-clock parallelism for complete CPU-time attribution, which is exactly
 what a profiling pass wants.
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 from __future__ import annotations
 
 import concurrent.futures

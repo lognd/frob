@@ -19,13 +19,6 @@ is externally imported by (verified by a repo-wide grep before the move);
 every `_tickN_*` helper stays private to this module.
 """
 
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_tickets_gate.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings and comments describing already-implemented \
-# internal behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose split verbatim from the \
-# pre-T-1140 gates/__init__.py monolith"
 from __future__ import annotations
 
 import difflib

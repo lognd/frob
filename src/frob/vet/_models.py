@@ -8,7 +8,6 @@ rules in `_ecosystem.py`. See "Implementation notes" in docs/modules/vet.md for 
 of the full design (VET007-VET010, most of VET-C, dynamic detonation) is
 still out of scope.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

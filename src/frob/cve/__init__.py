@@ -7,7 +7,6 @@ for reading a local mirror clone. Parser+models only -- matching parsed
 records against a project's dependencies and linking CWEs to the strata
 threat catalog is `frob vet`'s job (T-0147).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -39,7 +39,6 @@ read as a plain `HostManifest` field like any other, never model-checked
 by this module. `HostManifest`/`host_manifest_for` (T-0255) and
 HOST001/HOST002 (T-0256) are consumed, never redefined, here.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

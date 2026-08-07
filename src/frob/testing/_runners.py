@@ -6,7 +6,6 @@ the package (documented in docs/modules/testing.md's Design decisions: `frob.git
 not depend on `frob.testing`, so the shared primitive lives in `gitio` and this
 module imports it, rather than a second timeout-handling copy living here).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

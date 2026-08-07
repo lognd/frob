@@ -9,7 +9,6 @@ registry lookups, not source download). A dependency whose source is not
 found locally scans with an empty capability set and a "source-unavailable"
 signal, never a crash (docs/modules/vet.md "Honest limits").
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

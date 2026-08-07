@@ -27,7 +27,6 @@ over `handled_by`/`deferred`), it escalates to ERROR: a claimed gap that
 does not actually check out is exactly the fake-coverage silence this
 ticket exists to close.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

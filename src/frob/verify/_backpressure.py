@@ -46,7 +46,6 @@ T-1686's existing "files, never blocks, never reverts" rapid posture).
 without a code change, the same `[profile]` table
 `frob.tickets._profile.ratchet_override_enabled` already reads.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -25,7 +25,6 @@ path) -- unlike an arbitrary research finding, "this rule is live in
 performs, so the disposition is knowable with certainty at write time,
 not a claim requiring later human/code-aware review.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -3,7 +3,6 @@
 the former monolithic module (T-1420) so the vocabulary constants have a
 home independent of the (much larger) dangerous-operation tables that
 consume them."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

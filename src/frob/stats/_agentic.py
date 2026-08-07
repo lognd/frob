@@ -5,7 +5,6 @@ and the Claude Code PostToolUse hook script (`scripts/frob-telemetry-hook`)
 have appended to the shared stream and turns it into a breakdown a human can
 use to decide what to speed up next.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

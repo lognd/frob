@@ -23,7 +23,6 @@ unless the caller explicitly opts into the auto-rename):
   report names it in its own labeled section, same as an import-site
   alias (epic acceptance [2]).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

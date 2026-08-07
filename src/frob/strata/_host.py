@@ -73,7 +73,6 @@ model-checking flows BETWEEN service users (mapping `runs_as` identities
 onto trust-lattice participants with their own crossing obligations) is
 T-0257's job, not this manifest's.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

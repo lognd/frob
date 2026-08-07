@@ -19,11 +19,6 @@ itself re-running a live profiling collection -- gates stay pure static
 analysis over already-recorded artifacts, matching every other PERF rule's
 posture.
 """
-# frob:waive INV006 reason="T-0712: this module's 'only' usage ('today's only \
-# producer') is source-level design-rationale prose describing already-implemented \
-# internal behavior (verifiable by reading frob.app.perf_runner's _persist_run, the \
-# sole current caller), not a separate cross-module contract needing its own tracked \
-# invariant; same calibration-batch disposition as the T-0585/T-0711 INV006 pool"
 
 from __future__ import annotations
 

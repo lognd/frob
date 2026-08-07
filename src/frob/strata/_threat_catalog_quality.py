@@ -5,7 +5,6 @@ split from `_threat.py`, verbatim relocation -- WHY: pure catalog data,
 no runtime check, previously sitting inside the same file as the CWE
 catalog and every checker function that reads them both). See
 docs/strata/threat.md#beyond-security-the-anti-pattern-families."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

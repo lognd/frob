@@ -30,7 +30,6 @@ Python-specific APIs (`yaml`, `ast`, `re.finditer`, this repo's own
 `frob.xref`/`frob.exports`/`frob.testing._collect` surface), so there is
 no cross-language best-effort tier here the way PERF001/002 have one.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

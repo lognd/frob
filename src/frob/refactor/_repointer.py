@@ -21,7 +21,6 @@ literal-substring rewrite) so `_transaction.build_plan` can fold their
 output into `RefactorPlan.reference_ops` exactly like the directive
 carrier's own ops, rather than needing a second code path.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

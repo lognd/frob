@@ -13,7 +13,6 @@ original body, docstring, and `frob:ticket`/`frob:tests` directives
 verbatim; `frob.tickets._land` re-exports the public surface via
 explicit import.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

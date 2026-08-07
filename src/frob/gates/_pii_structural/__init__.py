@@ -86,7 +86,6 @@ and test-consumed private symbol so `from frob.gates._pii_structural
 import ...` is unchanged for every existing caller (zero caller edits, per
 the T-1072/T-0989 split discipline).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 # frob:ticket T-0207
 # frob:ticket T-1076

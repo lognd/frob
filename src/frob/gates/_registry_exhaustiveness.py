@@ -93,7 +93,6 @@ which predates and does not yet match this module's `handled_by`/
 state. It is driven green only by the per-registry reconciliation tickets
 (T-0384..T-0392), never by suppressing or bulk-waiving this gate.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

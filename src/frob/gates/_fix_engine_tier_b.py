@@ -36,12 +36,6 @@ fast, without spawning a real `run_gates()`/pytest subprocess per test
 fragile) while the default arguments are exactly what a real `--fix`
 caller gets.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool, same disposition as \
-# _fix_engine.py's own top-of-module waiver: this module's exclusivity-vocabulary hits \
-# are source-level design-rationale prose (docstrings/comments describing \
-# already-implemented internal behavior, verifiable by reading the code they annotate) \
-# rather than a separate cross-module contract needing its own tracked invariant -- \
-# new T-1262 module documenting its own tier contract"
 
 from __future__ import annotations
 

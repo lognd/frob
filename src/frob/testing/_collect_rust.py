@@ -4,12 +4,6 @@ self-contained per-language collector; `_collect.py` re-imports every name
 here so `from frob.testing._collect import ...` call sites (tests,
 `frob.testing.__init__`) keep resolving unchanged."""
 # frob:ticket T-1074
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's exclusivity- \
-# vocabulary hit is source-level design-rationale/scope-cut prose (a docstring \
-# describing already-implemented internal behavior, verifiable by reading the code it \
-# annotates) rather than a separate cross-module contract needing its own tracked \
-# invariant; carried verbatim from the pre-split src/frob/testing/_collect.py waiver \
-# (T-1074) rather than re-derived"
 
 from __future__ import annotations
 

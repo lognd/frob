@@ -89,12 +89,6 @@ the handler-table plumbing; this module's `sync_interface_report`/
 shaped so that a future Tier-A handler can call the same two functions
 this CLI verb calls, with zero rework, once that surface exists.
 """
-# frob:waive INV006 reason="this module's exclusivity-vocabulary hits ('only ever', \
-# 'never writes') are source-level design-rationale prose describing \
-# already-implemented internal behavior, verifiable by reading the code they annotate, \
-# same T-0585/T-1053 first-turn-on calibration posture src/frob/app/sys_runner.py's \
-# own INV006 waiver documents -- not a separate cross-module contract needing its own \
-# tracked invariant"
 
 from __future__ import annotations
 

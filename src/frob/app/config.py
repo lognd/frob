@@ -1,4 +1,3 @@
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive LARGE001 reason="T-1651: this module is one pydantic model (AppConfig) \
 # plus its Subcommand enum and one validator helper -- the whole file IS the app's \
 # single config surface (docs/guides/python-app.md's App/AppConfig pattern), not a \

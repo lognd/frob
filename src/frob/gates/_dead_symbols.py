@@ -59,7 +59,6 @@ now holds DEAD001 only. `_CALLABLE_KINDS`/`_is_dunder`/`_is_test_symbol`
 stay here and are imported back by `_wire.py` (both gates need the same
 dunder/test-symbol exemption logic).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

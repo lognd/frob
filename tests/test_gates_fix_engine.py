@@ -274,7 +274,7 @@ class TestFmt001OnlyPathsLandScoping:
         left untouched -- while the in-scope file still gets fixed."""
         long_reason = "x" * 100
         non_canonical = (
-            f'# frob:waive INV006 reason="{long_reason}"\ndef f():\n    pass\n'  # noqa: E501
+            f'# frob:waive SCOPE001 reason="{long_reason}"\ndef f():\n    pass\n'  # noqa: E501
         )
         _write(tmp_path, "src/in_scope.py", non_canonical)
         _write(tmp_path, "src/out_of_scope.py", non_canonical)
@@ -303,7 +303,7 @@ class TestFmt001OnlyPathsLandScoping:
         files get fixed."""
         long_reason = "x" * 100
         non_canonical = (
-            f'# frob:waive INV006 reason="{long_reason}"\ndef f():\n    pass\n'  # noqa: E501
+            f'# frob:waive SCOPE001 reason="{long_reason}"\ndef f():\n    pass\n'  # noqa: E501
         )
         _write(tmp_path, "src/a.py", non_canonical)
         _write(tmp_path, "src/b.py", non_canonical)

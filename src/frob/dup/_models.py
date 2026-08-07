@@ -5,7 +5,6 @@ posture: a `CloneReport` must compare and cache by identity-of-value, not
 identity-of-object, so the DUP001/DUP002 gate rules can be pure functions
 over it.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

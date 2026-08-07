@@ -31,7 +31,6 @@ of a silently wrong section -- the same DEGRADE-TO-CORRECT discipline
 `frob.perf._hotgraph._block_sections` documents.
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 from __future__ import annotations
 
 import json

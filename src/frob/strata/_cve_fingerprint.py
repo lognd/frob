@@ -43,7 +43,6 @@ T-0188), XML external entities (CWE-611, T-0189), prototype pollution
 five follow-ups this docstring named. Eighteen fingerprints ship now,
 each with a needle in a language the vet scanner actually covers.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

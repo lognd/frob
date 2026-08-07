@@ -4,7 +4,6 @@ Frozen pydantic models so a `ParsedFile` can be cached, hashed, and diffed
 by identity-of-value rather than identity-of-object -- `frob.graph`'s
 incremental rebuild depends on comparing two `ParsedFile`s for equality.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

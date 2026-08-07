@@ -8,7 +8,6 @@ operations` are moved here from their original out-of-order position
 cohesive in one file. Every name here is re-exported (or imported back)
 by `_capability` so the module's public surface is unchanged."""
 
-# frob:waive INV006 preset="split-carried-prose"
 # frob:ticket T-1420
 from __future__ import annotations
 

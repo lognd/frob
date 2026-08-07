@@ -9,7 +9,6 @@ to prevent, so it lives here as a near-leaf module -- its only frob
 dependency is `frob.gitio.run_argv` (T-0471's `iter_files` git-ls-files
 fast path), itself a leaf with no further frob imports.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

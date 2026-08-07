@@ -26,7 +26,6 @@ never needed and this module deliberately has no dependency on.
 `StrEnum` accepts its own value string) at its own `Violation`-construction
 call site, the one place that actually needs the enum type.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

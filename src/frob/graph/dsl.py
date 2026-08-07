@@ -6,7 +6,6 @@ a `RawComment` reaches this module, so parsing here is language-agnostic.
 A malformed directive is data (`MalformedDirective`), never a crash and
 never silently dropped -- `frob.gates` reports it.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

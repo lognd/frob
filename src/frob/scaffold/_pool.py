@@ -33,13 +33,6 @@ scaffold pool` CLI subcommand wiring `warm_pool`/`lease_worktree` through
 `src/frob/app/**`) -- see the ticket filed alongside this module's Done
 report.
 """
-# frob:waive INV006 reason="T-0738 first-turn-on pool: this module's few 'only' hits \
-# (the scope-cut prose above, 'informational only' on PoolEntry.created_at, \
-# 'ready=True only if both...' on warm_worktree, 'read-only wrapper' on pool_status) \
-# are source-level design-rationale comments/docstrings describing already-implemented \
-# internal behavior, verifiable by reading the code they annotate, rather than a \
-# separate cross-module contract needing its own tracked invariant -- same disposition \
-# as frob.tickets._leases's own INV006 waiver."
 
 from __future__ import annotations
 

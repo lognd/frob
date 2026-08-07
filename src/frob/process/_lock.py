@@ -38,13 +38,6 @@ from types import ModuleType
 
 from frob.logging import get_logger
 
-# frob:waive INV006 reason="T-0859: this module's several \\bonly\\b/\\bthe\\b \
-# exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings/comments describing already-implemented internal behavior, verifiable by \
-# reading the code they annotate -- e.g. which platform fcntl requires, which \
-# re-entrant mode a thread already holds) rather than a separate cross-module contract \
-# needing its own tracked invariant, mirroring frob.check's INV006 T-0585 \
-# calibration-batch waiver in src/frob/check/__init__.py"
 # T-0859: `fcntl` is posix-only; `derived_state_lock` degrades to a
 # documented no-op (see its docstring) on a platform without it, mirroring
 # `frob.tickets._store.ledger_lock`'s T-0458 precedent.

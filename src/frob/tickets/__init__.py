@@ -16,14 +16,6 @@ frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 # rather than by direct calls into the state-machine functions -- this is the single \
 # ticket-queue module the docstring deliberately centralizes (no frob.graph/frob.lang \
 # dependency by design), not several concerns bolted together"
-# frob:waive INV006 reason="the T-1152 evidence-family split moved this file's only \
-# frob:invariant INV-002 anchor (transition's docstring) out to \
-# src/frob/tickets/_evidence.py, leaving the remaining 'only' claims here \
-# (docstrings/comments describing already-implemented internal behavior, e.g. \
-# _load_ticket_and_queue's archive-lookup fallback, add_acceptance's append-only \
-# semantics) unanchored -- same T-0585 INV006 first-turn-on calibration-batch \
-# disposition already applied to every sibling split module (_setters.py, _doable.py, \
-# _evidence.py itself), not a newly-introduced normative claim"
 
 from __future__ import annotations
 

@@ -27,12 +27,6 @@ by dropping the least-recently-used section's row first, so the store
 structurally cannot grow to megabytes regardless of how many distinct
 sections get sampled over the repo's lifetime.
 """
-# frob:waive INV006 reason="T-0711: this module's 'only' usages are source-level \
-# design-rationale prose (describing already-implemented internal behavior -- what \
-# wiring a real symbol digest changes, and that _close_all is test-teardown-only) \
-# verifiable by reading the code they annotate, not a separate cross-module contract \
-# needing its own tracked invariant; same calibration-batch disposition as the T-0585 \
-# INV006 pool"
 # frob:waive ARCH102 reason="11 of 13 exports form one connected sqlite decayed-merge \
 # store cluster (connect/put_sketch/get_sketch/ list_sketches/_evict_coldest all \
 # sharing the one on-disk store this module's docstring describes); the 2 outliers \

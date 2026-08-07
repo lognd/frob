@@ -9,13 +9,6 @@ hand-maintained table. Per-entry drift-lock:
 `FIELD_SIGNATURES` and asserts each entry's keyword fires PII010 against a
 synthetic fixture class -- a registry entry with no firing fixture fails
 the test (T-0182 style)."""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_pii_structural/_signatures.py's exclusivity-vocabulary hit is \
-# source-level design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim -- carried from the \
-# pre-T-1076-split monolith's identical file-level waiver"
 
 from __future__ import annotations
 

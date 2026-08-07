@@ -10,7 +10,6 @@ re-deriving it in each of the five per-language walkers in ``_extract.py``,
 is what keeps this package free of the five-way duplication the task spec
 explicitly forbids.
 """
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive ARCH102 reason="T-0871 demoted child_text/iter_cpp_functions to \
 # _child_text/_iter_cpp_functions (frob-exports: genuinely private, used only within \
 # frob.lang's own walkers, never a cross-package import) -- the reduced public surface \

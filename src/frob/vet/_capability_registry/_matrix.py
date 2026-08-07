@@ -3,7 +3,6 @@ EXCUSES`, `NO_CAPABILITY_MODULES`, and the `capability_matrix`/
 `_unexcused_empty_cells`/`_validate_registry_kinds` computation over the
 `DANGEROUS_OPERATIONS` table -- split out (T-1420) as its own concern,
 distinct from the tables it reasons over."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

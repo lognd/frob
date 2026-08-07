@@ -28,7 +28,6 @@ entry list's own boundary inside the file via a plain top-level-key scan
 (no full YAML round-trip, which would risk reformatting/losing the
 hand-authored comments every registry file carries), and insert it there.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

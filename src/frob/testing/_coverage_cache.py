@@ -30,7 +30,6 @@ previously-measured percentage instead of silently omitting it.
 the cache always reflects the most recent measurement for every file
 `coverage.xml` actually covered.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

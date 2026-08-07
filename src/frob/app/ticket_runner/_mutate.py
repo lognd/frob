@@ -6,13 +6,6 @@ Extracted from `frob.app.ticket_runner` (T-1089, T-0395 tier-2 split
 residue). Re-exported from `frob.app.ticket_runner`'s package `__init__`
 unchanged so every existing `frob.app.ticket_runner.<name>` call site (CLI
 dispatch, tests that monkeypatch these names) keeps working."""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/app/ticket_runner/_mutate.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings and comments describing already-implemented \
-# internal behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose split verbatim from the \
-# pre-T-1089 ticket_runner.py monolith"
 
 from __future__ import annotations
 

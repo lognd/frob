@@ -14,7 +14,6 @@ Public surface: `run_refactor` for the one-call pipeline, `build_plan` for
 a caller that wants to extend the plan before applying it, and the
 pydantic models describing every intermediate shape.
 """
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive TEST003 reason="unit-tested exhaustively via tests/test_refactor.py's fixture-repo tests; no CLI/subprocess integration entrypoint exists yet -- frob refactor is not wired into frob.__main__'s subcommand tree (T-1197's declared scope excludes src/frob/_cli_parsers/** and src/frob/__main__.py, see docs/commands/refactor.md's CLI wiring status section); a real integration test belongs to the follow-up wiring ticket"  # noqa: E501
 
 from __future__ import annotations

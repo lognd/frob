@@ -1,7 +1,6 @@
 """osv-scanner adapter (docs/modules/vet.md "External tool adapters" -- VET005).
 
 Honest absence: no binary on PATH -> skipped-with-note, never silent."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

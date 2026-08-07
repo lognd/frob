@@ -15,13 +15,6 @@ here -- `finalize_draft`/`finalize_draft_for_land` still re-import
 name), preserving the same package-level-monkeypatch indirection T-1103
 established, now just from a different caller module.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/tickets/_new_renumber.py's exclusivity-vocabulary hit is source-level \
-# design-rationale prose (a docstring or comment describing already-implemented \
-# internal behavior, verifiable by reading the code it annotates) rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose split from the pre-T-1103 \
-# tickets/__init__.py monolith"
 
 from __future__ import annotations
 

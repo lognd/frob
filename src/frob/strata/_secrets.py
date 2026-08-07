@@ -44,7 +44,6 @@ is out of scope for this ticket (scope is `src/frob/strata/**`, not the
 Rust crate) and is filed as T-0134.
 # frob:todo T-0134
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -5,7 +5,6 @@ Refuses with no writes if the target does not resolve or resolves more
 than once -- the Plan/Apply/Verify phases below never re-check this, they
 trust the `ResolvedSymbol` this phase hands them.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

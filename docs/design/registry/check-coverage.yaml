@@ -373,10 +373,6 @@ gate_rule_entries:
     name: "REG010 is a live, enforced gate rule"
     disposition: "handled_by:REG010"
     cross_refs: []
-  - id: "CHK-GATE-INV006"
-    name: "INV006 is a live, enforced gate rule"
-    disposition: "handled_by:INV006"
-    cross_refs: []
   - id: "CHK-GATE-DOC004"
     name: "DOC004 is a live, enforced gate rule"
     disposition: "handled_by:DOC004"
@@ -1177,6 +1173,10 @@ gate_rule_entries:
   - id: "CHK-GATE-TEST018"
     name: "TEST018 is a live, enforced gate rule"
     disposition: "handled_by:TEST018"
+    cross_refs: []
+  - id: "CHK-GATE-INV006"
+    name: "INV006 is a live, enforced gate rule"
+    disposition: "handled_by:INV006"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:

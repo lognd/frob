@@ -52,11 +52,6 @@ approximation the parent ticket explicitly asked for instead ("the
 tree-sitter approximation with fail-closed unknowns is the
 deliverable"), not a placeholder for something more precise landing
 later in THIS ticket."""
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's scope/severity/soundness disclosures, \
-# mirroring frob.arch._ffi and frob.gates._exhaustive_handling's own module \
-# docstrings), verifiable by reading the function it annotates, not a separate \
-# cross-module contract needing its own tracked invariant"
 
 from __future__ import annotations
 

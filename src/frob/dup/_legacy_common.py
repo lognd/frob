@@ -5,7 +5,6 @@ Raw node traversal (`child_by_field`/`node_text`) now lives in `frob.lang`
 `frob.arch` instead of duplicated here; only the dup-specific body digest
 stays local.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

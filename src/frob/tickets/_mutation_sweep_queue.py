@@ -1,9 +1,4 @@
 # frob:ticket T-1518
-# frob:waive INV006 reason="module docstring's 'only' claims (e.g. security-kind still \
-# runs synchronously) describe this module's own implemented \
-# SYNC_BLOCKING_KINDS/enqueue-vs-run-inline branching, verifiable by reading the code \
-# they annotate -- not a separate cross-module contract needing a tracked invariant, \
-# same disposition as _land_queue.py's identical T-0602-era waiver"
 """T-1518: TEST016 mutation-evidence off the per-land critical path.
 
 `frob.tickets._land._check_mutation_evidence` used to run the real

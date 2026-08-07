@@ -11,13 +11,6 @@ id -- never a silent skip-list -- so a quarantined test still runs (and
 still reports) but does not fail the gate, and an alarm fires if its ticket
 closes while the test is still flaky.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/testing/_stability.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring describing already-implemented \
-# internal behavior, verifiable by reading the code it annotates -- 'never a silent \
-# skip-list' describes quarantine's ticket-required design, already enforced by \
-# quarantine()'s own TicketUnresolvable/auto-file logic) rather than a separate \
-# cross-module contract needing its own tracked invariant"
 
 from __future__ import annotations
 

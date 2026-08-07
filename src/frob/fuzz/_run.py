@@ -20,7 +20,6 @@ called out as missing -- it drives hypothesis in small batches and checks
 as the wall-clock budget is exhausted (or a hard total-examples safety cap
 is hit, so a pathological `budget_s` cannot spin forever).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

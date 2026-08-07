@@ -66,7 +66,6 @@ verified" claim just as dangerous as a stale watermark; `record_intent`/
 risk silently discarding or duplicating intent records on top of an
 unreadable file.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -60,10 +60,6 @@ saga/compensation") that builds on this module's multi-write detection --
 REL300/REL301 stay scoped to the single-op-writing-multiple-stores case
 this ticket's acceptance criterion names.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only' hits \
-# are source-level design-rationale/scope-cut prose mirroring _ssot.py's own identical \
-# waiver for the identical reason (module docstring precedent, T-0650), not a separate \
-# cross-module contract"
 
 from __future__ import annotations
 

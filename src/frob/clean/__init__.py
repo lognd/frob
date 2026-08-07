@@ -24,7 +24,6 @@ untracked but matches no allowlist pattern is never a candidate in the
 first place -- `scan` only ever walks the allowlist, it never enumerates
 "everything untracked" and then filters.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

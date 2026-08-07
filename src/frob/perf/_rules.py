@@ -21,7 +21,6 @@ best-effort coverage of PERF001/PERF002 only, using token literals
 container-kind inference (list vs set/Map) is Python-only since sig/body
 tokens carry no type information to lean on for the other two languages.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

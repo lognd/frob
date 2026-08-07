@@ -6,7 +6,6 @@ ts/c-cpp reference-resolution checkers `doc004_gate` dispatches to per
 block language (docs/modules/gates.md#doc004).
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

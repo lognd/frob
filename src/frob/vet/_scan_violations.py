@@ -9,7 +9,6 @@ behavior change). Kept together because every one of these is a pure
 `_scan.py`'s orchestration (locating source, running the scan, threading
 results through the parallel/sequential dependency loop) that stays behind.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

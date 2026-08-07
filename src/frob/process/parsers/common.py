@@ -5,7 +5,6 @@ Each parser consumes the raw stdout/stderr of a tool and returns a
 ToolResult that can be rendered as compact text (for agentic consumption)
 or JSON (for programmatic use).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

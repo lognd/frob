@@ -20,7 +20,6 @@ line-for-line; it lives here once, and each caller renders its own output
 shape from the same `(EdgeKind, construct_id)` pairs (T-0084 review
 finding 1).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -1,4 +1,3 @@
-# frob:waive INV006 preset="split-carried-prose"
 """frob.gates._fuzz -- FUZZ001/FUZZ002/FUZZ003 fuzz-obligation gate (T-1183).
 
 Split out of `frob.gates.__init__` (T-1072/T-1140/T-1159/T-1170/T-1174/

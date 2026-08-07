@@ -21,7 +21,6 @@ one process (or a test that must not leak registrations across cases) can
 construct its own `FuzzRegistry()` and pass it explicitly, keeping
 registrations scoped instead of bleeding across projects sharing a process.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

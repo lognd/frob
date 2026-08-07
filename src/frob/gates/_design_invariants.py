@@ -36,12 +36,6 @@ Both obligation forms parse through the SAME `frob:invariant` directive
 verbs -- an invariant can still be a bare `frob:invariant INV-###` anchor
 with neither attribute, unaffected by this module.
 """
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's incident-by-incident mandate \
-# summary), verifiable by reading the functions it annotates, not a separate \
-# cross-module contract needing its own tracked invariant -- the same INV006 \
-# first-turn-on-pool disposition frob.gates._ffi_boundary's own module docstring \
-# already carries"
 
 from __future__ import annotations
 

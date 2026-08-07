@@ -8,7 +8,6 @@ command reports `frob.registry.audit_registry_file`'s per-kind counts
 straight, so "X handled / Y deferred / Z out-of-scope / W UNACCOUNTED" is a
 one-line answer, matching the ticket's own acceptance criterion.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

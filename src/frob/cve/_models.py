@@ -13,7 +13,6 @@ REQUIRED field -- `cveMetadata.cveId`/`state`, `containers.cna`, an
 real pydantic ValidationError, which `parse_record` (`_parser.py`) turns
 into a typed `CveError.MalformedRecord` -- never a silent partial parse.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 # frob:ticket T-0146
 from __future__ import annotations

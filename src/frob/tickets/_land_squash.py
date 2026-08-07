@@ -30,7 +30,6 @@ helpers this family calls (`_apply_release_bump`/`_apply_gate_rule_sync`/
 `_maybe_rebuild_natives`/`_warn_if_native_stale`) live in the sibling
 `frob.tickets._land_release` module and are imported back from there.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -6,7 +6,6 @@ caches by value -- the same identity-of-value contract as `frob.lang`.
 The prover (`_facts.py`, `_claims.py`) consumes these and nothing else:
 no vocabulary word (cache, secret, deploy) may appear in this module.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

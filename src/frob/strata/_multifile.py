@@ -27,7 +27,6 @@ boundary flow_id), by checking them per-file BEFORE the merge, while ids
 are still file-tagged.
 """
 # frob:ticket T-1196
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

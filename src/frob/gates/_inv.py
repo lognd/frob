@@ -1,22 +1,36 @@
-# frob:waive INV006 preset="split-carried-prose"
 """frob.gates._inv -- INV00x invariant-coverage gate family (T-1188).
 
 Split out of `frob.gates.__init__` (T-1072/T-1140/T-1159/T-1170/T-1174/
 T-1183/T-1187/T-1188 one-family-per-land discipline, `_sys.py`'s T-1187
 precedent) so the parent module can keep dropping toward the large-file
 threshold without changing any public behavior. `invariant_gate`,
-`inv003_gate`, `inv004_gate`, and `inv006_gate` are re-exported from
-`frob.gates` unchanged -- the names this family is externally imported by
+`inv003_gate`, and `inv004_gate` are re-exported from `frob.gates`
+unchanged -- the names this family is externally imported by
 (`run_gates`'s job table, `tests/test_gates.py`); every other symbol here
 stays private to this module.
 
 One cohesive family: INV001/INV002/INV005 (`invariant_gate`, declared-
-invariant evidence/anchor/reachability checks), INV003/INV004
+invariant evidence/anchor/reachability checks) and INV003/INV004
 (`inv003_gate`/`inv004_gate`, doc-side exclusivity/normative-claim
-coverage), and INV006 (`inv006_gate`, the source-side completeness half of
-T-0408) -- all four gates share the same "does a `frob:invariant` claim
-have standing evidence/anchor" shape, just applied to different claim
-sources (declared invariants, spec docs, source files).
+coverage) -- both share the same "does a `frob:invariant` claim have
+standing evidence/anchor" shape, just applied to different claim sources
+(declared invariants, spec docs).
+
+T-1763: INV006 (the source-side sibling of INV003/INV004, `inv006_gate`)
+was DELETED, not recalibrated -- measured against frob's own 349-file
+corpus, it had produced 338 waiver directives and ZERO unwaived findings
+across its entire lifetime (T-0408 onward). It was a purely LEXICAL
+keyword scan (`find_exclusivity_claims` against "never"/"only"/"always"
+prose) with no notion of symbol/cross-module scope, unlike INV003/INV004
+(which stay doc-scoped and unaffected) -- it fired on ordinary descriptive
+docstring prose about a module's OWN internals as readily as on a real
+undeclared cross-module contract, and could not tell the two apart. It
+had already fired on a waiver reason EXPLAINING a previous INV006 misfire
+(T-1640) -- the rule consuming its own output as input. `frob:invariant`/
+INV001/INV002 already bind real invariants to real evidence; INV006 added
+338 hand-written waiver justifications on top for a detector that never
+once produced a genuine unwaived finding. See docs/modules/gates.md's
+T-1763 note for the full before/after measurement.
 
 `_evidence_collected`/`_node_id_matches_symref` are generic evidence-
 matching helpers that predate this split and stay defined in
@@ -33,14 +47,7 @@ import re
 from pathlib import Path
 
 from frob.excludes import iter_files
-from frob.gates._inv006_split_assist import find_carried_waiver
 from frob.gates._models import Severity, Violation
-from frob.gates._ratchet import (
-    RatchetLock,
-    load_ratchet_lock,
-    ratchet_enabled_rules,
-    resolve_ratchet_severity,
-)
 from frob.gates.invariants import (
     Invariant,
     find_exclusivity_claims,
@@ -526,213 +533,3 @@ def inv004_gate(root: Path) -> tuple[Violation, ...]:
         violations.extend(file_violations)
     return tuple(violations)
 
-
-# frob:doc docs/modules/gates.md#invariants
-# frob:ticket T-0408
-# T-0408: INV003/INV004 (T-0509/T-0515) deliberately scope to
-# `INV003_SPEC_DIRS` (docs/modules, docs/strata) -- prose/comment claims
-# living in SOURCE code (docstrings, `//`/`#` comments describing a
-# guarantee) were entirely outside either gate's reach, which is exactly
-# the "128 files asserting a guarantee in prose, only 4 formal
-# invariants" gap the user named: the coverage gate only ever checked
-# DECLARED invariants, never whether enough of the repo's own guarantee
-# claims were declared at all. INV006 closes that blind spot for source
-# trees without re-deriving INV003's noise-prone doc-only heuristics from
-# scratch: same claim vocabulary (`find_exclusivity_claims`, already
-# noise-filtered by T-0509's claim-shape scan), applied per-file to
-# `INV006_SRC_DIRS`, bound-check against the SAME `GraphSnapshot` every
-# other code-anchor gate already loads (a real `frob:invariant` edge
-# anywhere in the file, not an HTML-comment marker regex that would never
-# match non-markdown comment syntax).
-INV006_SRC_DIRS: tuple[str, ...] = (
-    "src",
-    "strata-core/src",
-    "frob-core/src",
-)
-# frob:doc docs/modules/gates.md#inv006-t-0408
-# frob:ticket T-0408
-INV006_SRC_SUFFIXES: tuple[str, ...] = (".py", ".rs")
-
-
-# frob:ticket T-1649
-def _inv006_src_files(root: Path) -> tuple[Path, ...]:
-    """Every file under any `INV006_SRC_DIRS` entry with any `INV006_SRC_
-    SUFFIXES` extension, one `iter_files` scan of `root` total (T-1649) --
-    the pre-fix shape called `iter_files` once per `(src_dir, suffix)`
-    pair (3 dirs x 2 suffixes = 6 full-repo scans for a fixed, small
-    cross product both loop variables' own callers already hold; PERF011).
-    """
-    prefixes = tuple(f"{src_dir}/" for src_dir in INV006_SRC_DIRS)
-    lowered_suffixes = {s.lower() for s in INV006_SRC_SUFFIXES}
-    return tuple(
-        path
-        for path in iter_files(root)
-        if path.suffix.lower() in lowered_suffixes
-        and path.relative_to(root).as_posix().startswith(prefixes)
-    )
-
-
-# frob:ticket T-1640
-# T-1640: a directive's `reason="..."` attribute value is an ARGUMENT for
-# why a finding does not apply, not a specification of system behavior --
-# reading it as a normative claim penalises PRECISE justification, since
-# the cheapest way to satisfy the gate becomes writing a vaguer reason
-# (the exact opposite of what the waiver audit, T-1614, wants). Spans
-# `reason="..."` across embedded newlines/backslash-continuations (T-0286's
-# `# ...\` comment-continuation style is exactly where a multi-sentence
-# reason lives) so a folded, multi-line waiver reason is stripped as one
-# span, not left partially matched.
-_REASON_ATTR_RE = re.compile(r'reason\s*=\s*"(?:[^"\\]|\\.)*"', re.DOTALL)
-
-
-def _strip_directive_reason_prose(text: str) -> str:
-    """`text` with every `reason="..."` directive-attribute value removed
-    -- INV006's claim scan runs over what is LEFT, so a waiver's own
-    justification prose (`frob:waive ... reason="int() can only ever
-    raise ValueError, never TypeError"`) can no longer trip the gate it
-    is explaining away (T-1640's live incident)."""
-    return _REASON_ATTR_RE.sub("", text)
-
-
-# frob:doc docs/modules/gates.md#invariants
-# frob:ticket T-0408
-def _inv006_waived(rel: str, snapshot: GraphSnapshot) -> bool:
-    """True if some `frob:waive INV006 reason="..."` edge binds to `rel`
-    (dsl.py already refuses a reason-less waive as a MalformedDirective,
-    so every surviving WAIVE edge here carries a reason -- same contract
-    `_waive_edges` documents)."""
-    return any(
-        edge.kind == EdgeKind.WAIVE
-        and edge.target == "INV006"
-        and (
-            edge.origin.rpartition(":")[0] == rel
-            or edge.src == rel
-            or edge.src.startswith(f"{rel}::")
-        )
-        for edge in snapshot.edges
-    )
-
-
-# frob:doc docs/modules/gates.md#invariants
-# frob:ticket T-0408
-# frob:ticket T-0594
-def _inv006_src_violations(
-    root: Path,
-    path: Path,
-    snapshot: GraphSnapshot,
-    ratchet_rules: frozenset[str],
-    ratchet_lock: RatchetLock,
-) -> tuple[Violation, ...]:
-    """INV006 findings for one source file: an exclusivity claim
-    (`frob.gates.invariants.find_exclusivity_claims`) with no
-    `frob:invariant` edge anchored anywhere in the file.
-
-    T-0594: when INV006 is opted into `[gates.ratchet] rules` in
-    `frob.toml`, the finding's severity is resolved against the committed
-    `frob-ratchet.lock.json` baseline (`resolve_ratchet_severity`,
-    T-0569) instead of always reporting the gate's static WARN -- a
-    baselined file (an existing claim, already triaged) stays WARN, a
-    NEW one errors for real. `ratchet_rules`/`ratchet_lock` are loaded
-    once by the caller (`inv006_gate`), not per file."""
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        _log.warning("INV006: could not read %s: %s", path, exc)
-        return ()
-    claims = find_exclusivity_claims(_strip_directive_reason_prose(text))
-    if not claims:
-        return ()
-    rel = path.relative_to(root).as_posix()
-    if any(
-        edge.kind == EdgeKind.INVARIANT and edge.origin.rpartition(":")[0] == rel
-        for edge in snapshot.edges
-    ):
-        return ()
-    if _inv006_waived(rel, snapshot):
-        _log.debug("INV006: %s waived by frob:waive INV006", rel)
-        return ()
-    severity = Severity.WARN
-    if "INV006" in ratchet_rules:
-        resolved = resolve_ratchet_severity("INV006", rel, ratchet_lock)
-        severity = Severity.ERROR if resolved == "error" else Severity.WARN
-        _log.debug(
-            "INV006: %s ratchet-resolved to %s (rules=%s)", rel, resolved, ratchet_rules
-        )
-    message = (
-        f"INV006: {rel} makes an exclusivity/normative claim "
-        f"({', '.join(sorted(claims))}) with no `frob:invariant "
-        f"INV-###` edge anchored anywhere in the file -- bind an "
-        f"invariant that covers the claim, waive with a reason, "
-        f"or reword to drop the exclusivity language if it isn't "
-        f"actually enforced"
-    ) + _inv006_split_assist_suffix(root, text, rel, snapshot)
-    return (
-        Violation(
-            rule="INV006",
-            severity=severity,
-            file=rel,
-            line=0,
-            message=message,
-        ),
-    )
-
-
-# frob:ticket T-1134
-def _inv006_split_assist_suffix(
-    root: Path, text: str, rel: str, snapshot: GraphSnapshot
-) -> str:
-    """T-1134: `""` unless this claim sentence in `text` was moved VERBATIM
-    out of a file that already carries a covering INV006 waiver/invariant
-    (a module split, the recurring T-1103/T-1107/T-1072/T-1077/T-1081/
-    T-1082 cost this drive) -- otherwise the message suffix naming that
-    source and offering its disposition as a copy-pastable fix-it, instead
-    of leaving "remember the carried waiver" a silent human step."""
-    carried = find_carried_waiver(
-        root,
-        text,
-        exclude_rel=rel,
-        candidate_dirs=INV006_SRC_DIRS,
-        candidate_suffixes=INV006_SRC_SUFFIXES,
-        snapshot=snapshot,
-    )
-    if carried is None:
-        return ""
-    source_rel, kind, fixit = carried
-    return (
-        f" -- T-1134: this claim was moved verbatim from {source_rel}, "
-        f"which already carries a covering {kind}; carry it here: {fixit}"
-    )
-
-
-# frob:doc docs/modules/gates.md#public-api
-# frob:ticket T-0408
-# frob:enforces CHK-GATE-INV006
-def inv006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """INV006 (advisory): every exclusivity claim in a source file under
-    `INV006_SRC_DIRS` needs a `frob:invariant` edge bound somewhere in
-    that file.
-
-    WARN severity, matching INV003's posture: a source-level claim can
-    still be genuine design intent rather than an enforced behavior, so
-    this surfaces the signal for triage rather than forcing a bind on
-    every hit. This is the coverage-COMPLETENESS half of T-0408 (INV001/
-    INV002 only ever validated invariants that already existed to be
-    validated; nothing previously checked whether ENOUGH of the repo's
-    own prose guarantee claims outside docs/ had one declared at all).
-
-    T-0594: if `INV006` is opted into `[gates.ratchet] rules` in
-    `root/frob.toml`, per-file severity is resolved against the committed
-    `frob-ratchet.lock.json` baseline (`resolve_ratchet_severity`) instead
-    of the static WARN -- a baselined file stays WARN, a fresh one errors.
-    Ratchet state is loaded once here, not per file.
-    """
-    ratchet_rules = ratchet_enabled_rules(root)
-    ratchet_lock = (
-        load_ratchet_lock(root) if "INV006" in ratchet_rules else RatchetLock()
-    )
-    violations: list[Violation] = []
-    for path in _inv006_src_files(root):
-        violations.extend(
-            _inv006_src_violations(root, path, snapshot, ratchet_rules, ratchet_lock)
-        )
-    return tuple(violations)

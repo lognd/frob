@@ -3,7 +3,6 @@ RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS: the "runtime-opaque" evasion-
 taxonomy tables (T-0665/T-1051) -- split out (T-1420) since these reason
 about a distinct concern (source-invisible dynamic dispatch) from the
 ordinary per-language dangerous-operation needle tables."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -16,7 +16,6 @@ registry, `obligations` computes fuzz debt purely from a `GraphSnapshot`,
 parsing, and the `frob test --fuzz` CLI surface is coordinator work on
 this ticket (T-0002), not this module's.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

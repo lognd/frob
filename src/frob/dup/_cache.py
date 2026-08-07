@@ -10,7 +10,6 @@ Two tables, one rule each:
   `[dup].cache_entries` -- pairwise verdicts grow quadratically in the
   worst case, fingerprints do not.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

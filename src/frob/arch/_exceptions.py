@@ -53,12 +53,6 @@ category) into that dispatch loop is a distinct, larger-surface follow-up
 Done report disclosed and T-0728 later closed for the SRP family); this
 ticket files that follow-up rather than silently widening its own scope
 to also touch `frob.arch.__init__`'s dispatch loop."""
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's model-limit disclosure and \
-# per-function docstrings describing already-implemented resolution/matching logic), \
-# verifiable by reading the function it annotates, not a separate cross-module \
-# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
-# disposition frob.arch._fallibility/_mayraise's own module docstrings already carry"
 
 from __future__ import annotations
 

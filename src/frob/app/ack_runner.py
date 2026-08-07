@@ -1,9 +1,3 @@
-# frob:waive INV006 reason="T-1317: this module's 'append-only audit trail' docstring \
-# wording is source-level design-rationale prose describing the already-implemented \
-# AckAuditEntry/ack_log contract (frob.graph._models, frob.graph.lock) -- verifiable \
-# by reading the code it annotates -- rather than a separate cross-module contract \
-# needing its own tracked invariant; same T-0585 INV006 first-turn-on-pool disposition \
-# every other module-docstring hit in this repo already carries"
 """CLI wiring for `frob ack <ref...> [--facet]` (docs/modules/graph.md)."""
 
 from __future__ import annotations

@@ -22,7 +22,6 @@ plain-text gitignore-format file) rather than going through
 tracked, `frob.toml`-declared config -- the thing THIS gate exists to
 say is the honest alternative to hiding work in `.git/info/exclude`).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

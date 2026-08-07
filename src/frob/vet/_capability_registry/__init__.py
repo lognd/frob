@@ -34,7 +34,6 @@ as either new `_DangerousOperation` entries below or is a pure library with
 no dangerous surface (documented in docs/modules/vet.md "Third-party
 library survey (T-0181)", not silently dropped).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

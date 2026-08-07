@@ -4,7 +4,6 @@ One closed ErrorSet so the fault space of every kernel operation is
 enumerable -- the property `docs/strata/evidence.md` relies on for
 exhaustive fault injection.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -6,7 +6,6 @@ never hides behind an unrelated body edit. Joining is `"\\x00".join` over
 the token tuple: tree-sitter leaf tokens never contain NUL, so this is an
 unambiguous, deterministic serialization with no escaping needed.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -9,7 +9,6 @@ submodules (`_python`, `_cpp`, `_patterns`, `_ocp`); this package module
 owns file collection, the language-agnostic large-file check, and the
 orchestration that fans each parsed file out to its language's checks.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

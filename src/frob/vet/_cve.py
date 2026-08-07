@@ -11,7 +11,6 @@ uncomparable `versionType`, or no explicit range plus an unknown
 silently folded into `UNAFFECTED`. A CWE id with no catalog or
 out-of-scope entry is reported `UNMAPPED`, never dropped.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 # frob:ticket T-0147
 from __future__ import annotations

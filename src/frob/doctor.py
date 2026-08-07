@@ -1,4 +1,3 @@
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive TEST003 reason="pre-existing T-0319 debt, system kind only"
 """`frob doctor`: verify the native extensions (`frob_core`, `strata_core`)
 are importable in the current environment and print exact remediation when

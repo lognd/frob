@@ -56,7 +56,6 @@ and this ticket's Refile note in `tickets.md` for the disclosed count),
 same debt-corpus posture as ARCH101-103 and EXHAUST001/002 above, not the
 CPPTHROW001 zero-findings case just above it.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

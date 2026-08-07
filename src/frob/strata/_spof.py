@@ -60,10 +60,6 @@ proxy for it -- REL250 is the one REL2xx rule in this ticket cluster that
 does not need a proof-against-code companion, because there is nothing to
 prove beyond the declared capacity itself.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only' hits \
-# are source-level design-rationale/scope-cut prose mirroring _reliability.py's own \
-# identical waiver for the identical reason (module docstring precedent, T-0645), not \
-# a separate cross-module contract"
 
 from __future__ import annotations
 

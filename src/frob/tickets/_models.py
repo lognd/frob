@@ -1,6 +1,5 @@
 """Data models and error types for frob.tickets
 (docs/modules/tickets.md is authoritative)."""
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive ARCH102 reason="19 of 23 exports (after T-0977's data-only- class \
 # exclusion) form one connected cluster around scope-glob matching and done-report \
 # parsing over the same Ticket/Evidence models this module's docstring names; the 4 \

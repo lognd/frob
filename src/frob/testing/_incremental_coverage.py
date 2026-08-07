@@ -33,7 +33,6 @@ for `frob test`. See T-0484's Done report for what is explicitly deferred
 (a real daemon, and non-python touched-set coverage) as follow-up-worthy
 rather than silently dropped.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

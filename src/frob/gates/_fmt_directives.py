@@ -17,13 +17,6 @@ physical-line-count) rather than re-deriving what counts as a continuation
 line -- this module's only new logic is CHOOSING the physical-line layout
 (`_canonical_lines`), not deciding what a continuation is.
 """
-# frob:waive INV006 reason="T-0441: the module docstring's/comments' 'only' uses are \
-# source-level design-rationale prose describing already-implemented scope limits \
-# (block comments unsupported, per-language config unsupported, marker_for's only job) \
-# verifiable by reading the code they annotate, not a separate cross-module contract \
-# needing its own tracked invariant -- same T-0585 INV006 first-turn-on \
-# calibration-batch disposition as the existing waivers in src/frob/graph/dsl.py and \
-# src/frob/app/config.py"
 
 from __future__ import annotations
 

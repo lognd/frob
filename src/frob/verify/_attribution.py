@@ -50,7 +50,6 @@ that cannot be built/loaded at all makes EVERY finding's attribution
 impossible, and this module returns `Err(AttributionError.
 GraphUnavailable)` for the whole batch rather than quietly attributing
 some findings and silently skipping others."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

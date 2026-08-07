@@ -51,12 +51,6 @@ scope per the ticket's own mandate ("declaration optional; Unknown
 otherwise") -- `frob.arch._mayraise`'s existing fail-closed `UNKNOWN`
 default for any unresolved callee already covers it; nothing here changes
 that behavior."""
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's tier-by-tier mandate summary and \
-# per-function docstrings describing already-implemented scan logic), verifiable by \
-# reading the function it annotates, not a separate cross-module contract needing its \
-# own tracked invariant -- the same INV006 first-turn-on-pool disposition \
-# frob.arch._mayraise/_fallibility's own module docstrings already carry"
 
 from __future__ import annotations
 

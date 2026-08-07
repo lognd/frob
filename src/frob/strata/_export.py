@@ -31,7 +31,6 @@ keys, stable ordering) is the whole point: two exports of the same model
 byte-for-byte identical is what makes the output diffable and therefore
 reviewable.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -29,13 +29,6 @@ silently degrading to never-adopted" shape (DEC003/COMPLIANCE006, both
 T-0894), both are opt-in-by-directory-presence, and both dispatch to a
 lazily-imported sibling module (`frob.gates.decisions`/
 `frob.strata._compliance`) for their real load/check work."""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_decisions_compliance.py's exclusivity-vocabulary hits are \
-# source-level design-rationale prose (docstrings and comments describing \
-# already-implemented internal behavior, verifiable by reading the code they annotate) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim -- module prose split verbatim \
-# from the pre-T-1159 gates/__init__.py monolith"
 
 from __future__ import annotations
 

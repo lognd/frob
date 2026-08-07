@@ -60,12 +60,6 @@ edges, not doc prose, so it goes through the normal edge-waiver path
 gate, not DOC006's own `.md`-only nearby-line scan).
 """
 # frob:ticket T-0437
-# frob:waive INV006 reason="T-0437 INV006 first-turn-on pool: this module's 'only' \
-# usages are source-level design-rationale prose (a docstring/comment describing \
-# already-implemented scan-scope behavior, verifiable by reading the code it annotates \
-# -- e.g. 'only fires when...', 'checked ... only the top-level one') rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, same posture as frob.gates._docblocks's own T-0585 INV006 waiver"
 
 from __future__ import annotations
 

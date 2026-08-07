@@ -23,7 +23,6 @@ extends that catalog concurrently. `_may_kind` is imported from
 cross-module precedent, not a new one) -- there is no public capability-
 kind-extraction helper anywhere in `frob.strata` today.
 """
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive ARCH102 reason="11 of 13 exports form one connected matrix- rendering \
 # cluster around render_audit_matrix (the module's first documented responsibility); \
 # the 2 outliers (merge_models, audit_claim) are the module's own documented SECOND \

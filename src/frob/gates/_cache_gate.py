@@ -1,9 +1,3 @@
-# frob:waive INV006 reason="module/design docstring prose: the 'only' claims describe \
-# this module's own implemented detection-scope rules (which decorator name it \
-# matches, which read call shapes it recognizes), verifiable by reading the code they \
-# annotate -- not a separate cross-module contract needing a tracked invariant; same \
-# disposition as the T-0585 first-turn-on calibration batch other gate modules in this \
-# package carry (e.g. src/frob/gates/_gate_cache.py's identical waiver)"
 """CACHE001: a `@memoize_per_run`-decorated computation's OBSERVED read-set
 must be covered by its declared cache-key inputs (T-1520).
 

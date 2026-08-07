@@ -48,7 +48,6 @@ comparison a second time -- the only genuinely NEW decision this leaf
 adds on top is "and if it's green, advance the watermark and compact the
 queue", which `_rapid_sweep` has no reason to know about.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

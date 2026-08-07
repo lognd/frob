@@ -1,4 +1,3 @@
-# frob:waive INV006 preset="split-carried-prose"
 """frob.gates._sys_selfaudit -- SELFAUDIT001 self-audit-at-land family (T-1420).
 
 Split out of `frob.gates._sys` (T-1420's LARGE001 residue-burndown, same

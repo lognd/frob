@@ -3074,6 +3074,7 @@ threat: null
 component: null
 ```
 Refiled from T-1567 (T-1238 taxonomy slice; the draft died in the land-splice draft-loss class before T-1271's land). Group the quality-facing verbs under one frob quality namespace following the frob explore precedent (T-1271/T-1238, src/frob/_cli_parsers/_explore.py + explore_runner.py).
+
 <!-- ticket:T-1568 -->
 ```yaml
 id: T-1568
@@ -3098,6 +3099,7 @@ threat: null
 component: null
 ```
 Refiled from T-1568 (T-1238 taxonomy slice, draft-loss class). Group design/model verbs under frob design following the frob explore precedent.
+
 <!-- ticket:T-1569 -->
 ```yaml
 id: T-1569
@@ -3122,6 +3124,7 @@ threat: null
 component: null
 ```
 Refiled from T-1569 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
+
 <!-- ticket:T-1570 -->
 ```yaml
 id: T-1570
@@ -3147,6 +3150,7 @@ threat: null
 component: null
 ```
 Refiled from T-1570 (T-1238 naming-decision slice, draft-loss class). Decide and implement the singular/plural verb naming for ticket/debt/deprecated surfaces as part of the T-1238 regroup.
+
 <!-- ticket:T-1571 -->
 ```yaml
 id: T-1571
@@ -3171,6 +3175,7 @@ threat: null
 component: null
 ```
 Refiled from T-1571 (T-1238 slice, draft-loss class; also cited by T-1238's Done report). Rework the top-level frob --help output to present the T-1238 verb groups instead of the flat 30+ subcommand list.
+
 <!-- ticket:T-1572 -->
 ```yaml
 id: T-1572
@@ -10834,7 +10839,7 @@ at two only after a systematic search turned up no third.
 id: T-1763
 title: 'INV006/AFFECT001/DUP001 have a 100% waive rate: 406 waivers, zero findings
   -- make them symbolic or delete them'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -10847,8 +10852,102 @@ scope:
 - src/frob/gates/_waive.py
 - docs/modules/gates.md
 - tests/test_waive_gate.py
+- src/frob/gates/_inv006_split_assist.py
+- src/frob/gates/invariants.py
+- src/frob/gates/_fix_engine_tier_c.py
+- tests/test_gates_fix_engine.py
+- src/**
+- strata-core/src/**
+- frob-core/src/**
+- tests/**
+- docs/**
+- design/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_inv006_split_assist.py
+  reason: corpus-wide INV006/AFFECT001/DUP001 measurement + INV006 deletion requires
+    touching the gate's split-assist helper, its Tier-A auto-fix handler, and their
+    tests -- the ticket's own 4-file scope did not name any of these
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/gates/invariants.py
+  reason: corpus-wide INV006/AFFECT001/DUP001 measurement + INV006 deletion requires
+    touching the gate's split-assist helper, its Tier-A auto-fix handler, and their
+    tests -- the ticket's own 4-file scope did not name any of these
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/gates/_fix_engine_tier_c.py
+  reason: corpus-wide INV006/AFFECT001/DUP001 measurement + INV006 deletion requires
+    touching the gate's split-assist helper, its Tier-A auto-fix handler, and their
+    tests -- the ticket's own 4-file scope did not name any of these
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: corpus-wide INV006/AFFECT001/DUP001 measurement + INV006 deletion requires
+    touching the gate's split-assist helper, its Tier-A auto-fix handler, and their
+    tests -- the ticket's own 4-file scope did not name any of these
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: corpus-wide INV006/AFFECT001/DUP001 measurement + INV006 deletion requires
+    touching the gate's split-assist helper, its Tier-A auto-fix handler, and their
+    tests -- the ticket's own 4-file scope did not name any of these
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/**
+  reason: INV006 deletion requires sweeping ~349 frob:waive INV006 directives spread
+    across nearly every module in src/strata-core/frob-core/tests, plus the doc/registry
+    updates -- a corpus-wide mechanical removal genuinely needs this breadth; not
+    a scope-creep, the task IS this broad by construction
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: strata-core/src/**
+  reason: INV006 deletion requires sweeping ~349 frob:waive INV006 directives spread
+    across nearly every module in src/strata-core/frob-core/tests, plus the doc/registry
+    updates -- a corpus-wide mechanical removal genuinely needs this breadth; not
+    a scope-creep, the task IS this broad by construction
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: frob-core/src/**
+  reason: INV006 deletion requires sweeping ~349 frob:waive INV006 directives spread
+    across nearly every module in src/strata-core/frob-core/tests, plus the doc/registry
+    updates -- a corpus-wide mechanical removal genuinely needs this breadth; not
+    a scope-creep, the task IS this broad by construction
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/**
+  reason: INV006 deletion requires sweeping ~349 frob:waive INV006 directives spread
+    across nearly every module in src/strata-core/frob-core/tests, plus the doc/registry
+    updates -- a corpus-wide mechanical removal genuinely needs this breadth; not
+    a scope-creep, the task IS this broad by construction
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/**
+  reason: INV006 deletion requires sweeping ~349 frob:waive INV006 directives spread
+    across nearly every module in src/strata-core/frob-core/tests, plus the doc/registry
+    updates -- a corpus-wide mechanical removal genuinely needs this breadth; not
+    a scope-creep, the task IS this broad by construction
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/**
+  reason: INV006 deletion requires sweeping ~349 frob:waive INV006 directives spread
+    across nearly every module in src/strata-core/frob-core/tests, plus the doc/registry
+    updates -- a corpus-wide mechanical removal genuinely needs this breadth; not
+    a scope-creep, the task IS this broad by construction
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null
@@ -11025,6 +11124,7 @@ the standing capability so it can be re-run.
 Related: T-1567..T-1571 (CLI regrouping) should be sequenced AFTER this.
 Regrouping cruft yields organised cruft; the census tells us how much of
 the surface is load-bearing before anyone rearranges it.
+
 <!-- ticket:T-1765 -->
 ```yaml
 id: T-1765

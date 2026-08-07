@@ -100,7 +100,6 @@ count. See `doc005_gate` for the full mechanism -- it reuses
 `_console_command_sources`/`_console_trees` rather than a second
 registry-reading mechanism.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

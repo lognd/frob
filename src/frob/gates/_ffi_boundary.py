@@ -42,11 +42,6 @@ Error`/panics inside a `#[pyfunction]` body today, and this repo has no
 ctypes/cffi usage anywhere) -- there is no debt corpus an ERROR severity
 would instantly red, so this ships at the target severity directly rather
 than deferring promotion to a follow-up ticket."""
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's rule-by-rule mandate summary), \
-# verifiable by reading the function it annotates, not a separate cross-module \
-# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
-# disposition frob.gates._exhaustive_handling's own module docstring already carries"
 
 from __future__ import annotations
 

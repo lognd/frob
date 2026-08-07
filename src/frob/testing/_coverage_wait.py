@@ -39,13 +39,6 @@ ANY worktree with this exact content already settled this?" before the
 per-worktree layer's finer-grained "is MY OWN local stamp already
 fresh?" check.
 """
-# frob:waive INV006 reason="T-1095 INV006 calibration-batch disposition: this file's \
-# exclusivity-vocabulary hits ('only', 'never re-run') are source-level design- \
-# rationale prose describing already-implemented internal behavior (verifiable by \
-# reading tree_digest/_shared_coverage_lock/run_coverage_wait themselves), not a \
-# separate cross-module contract needing its own tracked invariant -- same disposition \
-# this repo already applies to src/frob/serve/_socketd.py and \
-# src/frob/app/_daemon_proxy.py (T-0585/T-1023/T-1093)"
 
 from __future__ import annotations
 

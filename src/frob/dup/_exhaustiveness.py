@@ -12,7 +12,6 @@ capability matrix. `tests/test_dup_exhaustiveness.py` is the drift-lock:
 adding a rung or a clone-type claim without a firing fixture, or letting a
 claim and an excuse coexist on one cell, fails the suite.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

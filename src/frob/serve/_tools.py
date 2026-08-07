@@ -7,7 +7,6 @@ write that `frob graph build`/`frob check` also perform. Kept separate from
 `frob.serve.server` so the tool layer is testable without an `mcp` SDK
 transport (T-0010).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

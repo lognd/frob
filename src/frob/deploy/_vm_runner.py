@@ -16,7 +16,6 @@ this proves the SEQUENCE and each helper's own control flow, never
 real `VBoxManage`/ssh/guest behavior, which stays exercised only by an
 actual `frob deploy audit --vm` run against a live guest.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

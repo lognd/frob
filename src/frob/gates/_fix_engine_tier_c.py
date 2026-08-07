@@ -21,12 +21,6 @@ comment with no ticket to bind it to -- `_fix_engine.py`'s module
 docstring already names this as the canonical Tier-C example). No
 function in this module ever calls a filesystem write.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool, same disposition as \
-# _fix_engine.py's own top-of-module waiver: this module's exclusivity-vocabulary hits \
-# are source-level design-rationale prose (docstrings/comments describing \
-# already-implemented internal behavior, verifiable by reading the code they annotate) \
-# rather than a separate cross-module contract needing its own tracked invariant -- \
-# new T-1263 module documenting its own tier contract"
 
 from __future__ import annotations
 

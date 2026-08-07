@@ -1,9 +1,4 @@
 # frob:ticket T-1575
-# frob:waive INV006 reason="module docstring's 'never'/'only' claims (e.g. ledger \
-# integrity/LAND-PROOF verification never relaxed, downgrade is the only way back) \
-# describe this module's own implemented branching, verifiable by reading the code \
-# they annotate -- not a separate cross-module contract needing a tracked invariant, \
-# same disposition as _mutation_sweep_queue.py's identical T-0602-era-style waiver"
 """T-1575: development profiles (`frob.toml [profile]`) -- `rapid` /
 `standard` (default) / `fortress` (placeholder) -- and the one-way
 auto-ratchet from `rapid` to `standard`.

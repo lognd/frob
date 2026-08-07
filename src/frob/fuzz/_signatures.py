@@ -8,7 +8,6 @@ here as a clearly separate, best-effort step: any failure returns `None`
 rather than raising, and FUZZ002 treats `None` as "could not introspect"
 (skipped, not a violation) rather than a false positive.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

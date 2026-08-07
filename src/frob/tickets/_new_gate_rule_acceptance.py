@@ -41,12 +41,6 @@ silently disabling itself. Resolution is now dynamic across every direct
 `*.py` child of `src/frob/gates/` (`_locate_known_rules_in_tree`), and a
 registry that cannot be found in exactly one candidate raises
 `GateRuleRegistryUnresolvable` rather than degrading to a silent skip."""
-# frob:waive INV006 reason="module-docstring exclusivity-vocabulary hit is \
-# source-level design-rationale prose describing already-implemented entry-point \
-# behavior, verifiable by reading the code it annotates and the T-0756 close/land \
-# wiring in frob.tickets.__init__'s _done_transition_guard -- not a separate \
-# cross-module contract needing its own tracked invariant, same calibration posture as \
-# frob.tickets._live_tracker's own T-0854 INV006 waiver"
 
 from __future__ import annotations
 

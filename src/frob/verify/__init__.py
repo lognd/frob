@@ -20,7 +20,6 @@ profile-to-queue-depth dial (collapsing `fortress`/`standard`/`rapid`
 into one mechanism, T-1686's own "payoff" framing) is still a later leaf
 this package does not yet contain.
 """
-# frob:waive INV006 preset="split-carried-prose"
 # frob:waive TEST003 reason="unit-tested exhaustively via tests/unit/verify/test_watermark.py, tests/unit/verify/test_worker.py, tests/unit/verify/test_attribution.py, and tests/unit/verify/test_backpressure.py; no CLI/subprocess integration entrypoint exists yet -- T-1687/T-1688/T-1690/T-1692 are data-model/worker/attribution/backpressure-only tickets, not wired into frob.__main__ (that wiring is a later leaf in the T-1686 epic)"  # noqa: E501
 
 from __future__ import annotations

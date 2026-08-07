@@ -5,7 +5,6 @@ cadence so a team can see delivery trends without frob passing judgment on
 them (a thermometer, not a thermostat). Reads the ticket queue and git
 history; adds no obligation.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

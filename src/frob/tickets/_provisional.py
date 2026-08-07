@@ -9,7 +9,6 @@ the same final id -- the id space each worktree/branch draws sequential ids
 from is disjoint by construction until finalize time, and finalize itself
 only ever runs against one ledger view at a time.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -13,7 +13,6 @@ as a single transaction -- never a partial chunk. A later chunk's failure
 never touches an earlier chunk's already-committed symbols (the epic's
 acceptance [1]).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

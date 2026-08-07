@@ -26,7 +26,6 @@ tracking ticket lands). A cell entirely ABSENT from a
 the unaccounted-for hole this whole module exists to make loud -- see its
 docstring.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

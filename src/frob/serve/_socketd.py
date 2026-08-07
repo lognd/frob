@@ -39,13 +39,6 @@ Three pieces:
    last request, so a daemon nobody is using does not linger as an orphaned
    process forever.
 """
-# frob:waive INV006 reason="T-1023 INV006 burn-down disposition: this file's \
-# exclusivity-vocabulary hits ('only', 'no parallel implementation') are source-level \
-# design-rationale/scope-cut prose (describing already-implemented internal behavior, \
-# verifiable by reading the code it annotates -- e.g. 'a second transport, not a \
-# second query implementation') rather than a separate cross-module contract needing \
-# its own tracked invariant; same calibration-batch disposition this repo already \
-# applies to src/frob/serve/_daemon.py and src/frob/serve/_warm.py (T-0585)"
 
 from __future__ import annotations
 

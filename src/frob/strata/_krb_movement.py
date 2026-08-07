@@ -65,7 +65,6 @@ node outside that reach set is refuted the moment the closure actually
 gets there -- not vacuously proved over an unrelated declared-flow
 graph, the exact review-round failure T-0256's Done report records.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

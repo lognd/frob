@@ -1,8 +1,3 @@
-# frob:waive INV006 reason="design-rationale/docstring prose describing \
-# already-implemented internal behavior of this module ('only' used informally in \
-# comments/docstrings, not a cross-module contract needing its own tracked invariant), \
-# matching the T-0585 disposition already applied to src/frob/doctor.py's identical \
-# INV006 hit"
 """frob.mutate._journal -- crash-safe backup journal for run_mutations
 (T-0857).
 

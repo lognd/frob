@@ -69,7 +69,6 @@ convention `code=`/`pii=` established (T-0132/T-0154), not a new keyword.
   versa (no cache, but replicas_max headroom absorbs the fan-in) -- the
   exact PII003/GDPR-RETENTION precedent (`_pii.py` module docstring).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

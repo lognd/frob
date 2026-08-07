@@ -12,7 +12,6 @@ cohesive `_legacy_py`/`_legacy_cpp` submodules (with shared node/hash
 helpers in `_legacy_common`); this module owns the models, the file
 scanners, and the clone-grouping entry point.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

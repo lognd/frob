@@ -7,7 +7,6 @@ invocations, and the two top-level entry points
 to (docs/commands/check.md's delta/baseline agent workflow).
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 from __future__ import annotations
 
 import sys

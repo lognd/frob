@@ -19,7 +19,6 @@ Three carried reference kinds, matching the epic's acceptance:
    re-keyed to the new symref, carried forward rather than reported stale
    by DRIFT001 (`carry_lock_acks`).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

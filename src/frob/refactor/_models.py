@@ -7,7 +7,6 @@ compare and cache by identity-of-value, not identity-of-object, and must be
 computed once (the Plan phase) and never silently re-derived mid-apply --
 see the design doc's Transaction model section.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

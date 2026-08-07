@@ -1,9 +1,3 @@
-# frob:waive INV006 reason="module/design docstring prose: the 'only' claims describe \
-# this module's own implemented locking/dequeue behavior (verifiable by reading the \
-# code they annotate, e.g. the queue lock's held-window, the failed-entry dequeue \
-# rule), not a separate cross-module contract needing a tracked invariant -- same \
-# disposition as _gate_cache.py's identical T-0602-era waiver (T-0585 calibration \
-# batch precedent)"
 """T-1345: a merge queue -- agents enqueue verified branches, one serial
 drainer merges them onto main -- formalizing the coordinator-lands-
 serially discipline `docs/guides/agent-playbook.md` already documents as

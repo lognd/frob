@@ -40,12 +40,6 @@ ever touching the socket, lock, or meta file -- the differential test uses
 this to produce the reference in-process answer to diff the daemon-served
 one against.
 """
-# frob:waive INV006 reason="T-1093: this file's exclusivity-vocabulary hit \
-# ('best-effort only' in query()'s docstring) is source-level design-rationale prose \
-# describing already-implemented internal behavior (verifiable by reading \
-# ensure_daemon/query themselves), not a separate cross-module contract needing its \
-# own tracked invariant -- same calibration-batch disposition this repo already \
-# applies to src/frob/serve/_socketd.py and src/frob/serve/__init__.py (T-0585/T-1023)"
 
 from __future__ import annotations
 

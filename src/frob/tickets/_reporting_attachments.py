@@ -12,7 +12,6 @@ building attachment paths) rather than mutating ticket body/metadata prose
 in place -- a distinct I/O boundary from the done-report/review/drop family
 that stays behind in `_reporting.py`.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

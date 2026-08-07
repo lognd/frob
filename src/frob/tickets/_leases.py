@@ -21,7 +21,6 @@ writes/removes it exactly when a ticket enters/leaves `IN_PROGRESS`, and
 `leased_by` (T-0453) reads every worktree's files, not just the local
 ledger's own `IN_PROGRESS` rows, to compute collisions.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

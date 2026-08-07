@@ -1,9 +1,3 @@
-# frob:waive INV006 reason="T-1762: this module's 'only requires'/'append-only' \
-# docstring wording is source-level design-rationale prose describing the \
-# already-implemented force-reason-gate/force-overrides.jsonl contract -- verifiable \
-# by reading the code it annotates -- rather than a separate cross-module contract \
-# needing its own tracked invariant; same T-0585 INV006 first-turn-on-pool disposition \
-# every other module-docstring hit in this repo already carries"
 """frob.app.ticket_runner._archive -- the `archive` command.
 
 Extracted from `frob.app.ticket_runner` (T-1089, T-0395 tier-2 split

@@ -31,12 +31,6 @@ every file, so `check_capability_conformance` cannot have fired for it in
 the first place) and never removes anything (that is SYS101's own,
 separate, deliberately-not-auto-fixed direction -- module docstring's
 "never guess" posture applies doubly to narrowing an existing grant)."""
-# frob:waive INV006 reason="this module's exclusivity-vocabulary hits ('only ever', \
-# 'never touches') are source-level design-rationale prose describing already- \
-# implemented internal behavior, verifiable by reading the code they annotate -- same \
-# T-0585/T-1053 first-turn-on calibration posture _sync_interface.py's own INV006 \
-# waiver documents, not a separate cross-module contract needing its own tracked \
-# invariant"
 # frob:ticket T-1531
 
 from __future__ import annotations

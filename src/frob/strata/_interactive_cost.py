@@ -50,10 +50,6 @@ specific wall-clock budget. No `strata-core` change needed (this ticket's
 scope is `src/frob/strata/**`/`docs/strata/**`/`tests/unit/strata/**`
 only, same as T-0646/T-0640/T-0641/T-0642's).
 """
-# frob:waive INV006 reason="T-0919 first-turn-on: this module's 'only'/ 'deliberately \
-# narrow' hits are source-level design-rationale/scope-cut prose mirroring \
-# _backpressure.py's own identical waiver for the identical reason (module docstring \
-# precedent), not a separate cross-module contract"
 
 from __future__ import annotations
 

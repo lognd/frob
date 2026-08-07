@@ -27,7 +27,6 @@ splice_ledger` public import path stays stable. Zero caller-visible
 behavior change from any of these splits -- every moved function kept its
 original body, docstring, and `frob:ticket`/`frob:tests` directives
 verbatim throughout."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

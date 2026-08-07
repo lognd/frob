@@ -26,11 +26,6 @@ PERF001-004's own posture) so it renders through the same gate-finding
 machinery as every other PERF rule without inventing a parallel reporting
 path.
 """
-# frob:waive INV006 reason="T-0712: this module's 'only' usage ('WARN-only') is \
-# source-level design-rationale prose describing already-implemented internal behavior \
-# (verifiable by reading the Violation(severity=Severity.WARN, ...) calls below), not \
-# a separate cross-module contract needing its own tracked invariant; same \
-# calibration-batch disposition as the T-0585/T-0711 INV006 pool"
 
 from __future__ import annotations
 

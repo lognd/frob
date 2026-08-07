@@ -7,7 +7,6 @@ other gate rule in `frob.gates` (`drift_gate`, `fuzz_gate`, ...). The caller
 (`frob.gates.__init__`) owns loading `DupConfig`, calling `find_clones`, and
 composing these into the gate's `Violation` tuple.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -6,7 +6,6 @@ Never `git stash` (agent-playbook.md sec 1b) -- rollback is a scoped `git
 reset --hard` to this transaction's own pre-commit sha, exactly as the
 design doc specifies.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

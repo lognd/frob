@@ -45,7 +45,6 @@ across N call sites with nothing memoizing it". A `frob.toml` with no
 `[[perf.heavy]]` entries means zero PERF007 checking -- fail-open, same
 posture as every DOC004 namespace/command source.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

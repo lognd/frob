@@ -3,7 +3,6 @@
 Private helpers of `frob.check`; `run_check_cpp` and `run_check_rust`
 compose them. Each shells out to one tool and normalises to a `ToolResult`.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

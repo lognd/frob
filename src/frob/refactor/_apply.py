@@ -5,7 +5,6 @@ Every rewrite in the plan was already computed in the Plan phase; this
 module only splices exact spans, never re-derives what to rewrite --
 matching the design doc's "the plan is computed once, applied once" rule.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

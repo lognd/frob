@@ -52,7 +52,6 @@ Two call sites (T-0248's plan):
   stale native fails the read-only gate loudly instead of silently checking
   against old parser/grammar logic.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

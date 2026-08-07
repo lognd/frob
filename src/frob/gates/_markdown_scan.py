@@ -37,7 +37,6 @@ backtick-RUN span (opens with N backticks, closes with the next run of
 exactly N backticks, via a `\1` backreference) instead of assuming N is
 always 1.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -28,7 +28,6 @@ holds the release-bump/uv.lock/native-rebuild family -- this module now
 imports `_land_finalize_and_close` from `_land_finalize` and
 `_land_squash_apply`/`_v2_effective_scope` from `_land_squash` directly.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

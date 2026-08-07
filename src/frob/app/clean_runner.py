@@ -1,5 +1,4 @@
 """CLI wiring for `frob clean [--all|--deep] [-y]` (T-0457, docs/modules/clean.md)."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

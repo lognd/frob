@@ -14,7 +14,6 @@ regex-driven line scan that locates each id's header line and, for
 brace-delimited constructs, its matching close -- giving every construct a
 concrete `RawSymbol` span without hand-rolling a second strata parser.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

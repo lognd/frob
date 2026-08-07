@@ -1,9 +1,3 @@
-# frob:waive INV006 reason="T-1176: this module's docstring describes its own \
-# already-implemented preset-table behavior in design-rationale prose (verifiable by \
-# reading the code it annotates), not a separate cross-module contract needing its own \
-# tracked invariant -- same disposition as the calibration-batch class this file's own \
-# WAIVE_PRESETS['split-carried-prose'] documents, written inline rather than through \
-# that preset to avoid a confusing self-reference"
 """Named `frob:waive` reason presets (T-1176).
 
 A `frob:waive RULE preset="<name>"` directive still names the rule and

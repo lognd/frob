@@ -7,13 +7,6 @@ API surface itself (DEPR001-004 mirror DEBT001-003's shape one-for-one;
 DEPR005 is deprecated-specific, T-0639) and both feed the same REL001
 release-blocking check in `run_gates`'s spine.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_debt_deprecated.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings and comments describing already-implemented \
-# internal behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by- claim -- module prose split verbatim from the \
-# pre-T-1115 gates/__init__.py monolith, mirroring the T-1077/_todo_fmt.py precedent"
 
 from __future__ import annotations
 

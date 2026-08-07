@@ -2,7 +2,6 @@
 `Dependency` tuples
 (docs/modules/vet.md "Input"; 0.2.x adds poetry.lock/yarn.lock/bun.lockb).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

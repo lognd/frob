@@ -5,7 +5,6 @@ never cross the boundary as exceptions the rest of `frob.dup` has to know
 about -- `core_available()` gates every call site, and a missing extension
 becomes `Err(DupError.CoreUnavailable)`, never a silent downgrade.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -22,13 +22,6 @@ time, the same load-order-safe indirection `_doable.py` uses for
 `_doable_sort_key`/`_OPEN_STATES`, since `__init__` imports THIS module
 before either name exists yet at its own module scope.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/tickets/_setters.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings describing already-implemented internal behavior, \
-# verifiable by reading the code they annotate) rather than a separate cross-module \
-# contract needing its own tracked invariant; disposed as a calibration batch, not \
-# claim-by-claim -- module prose carried verbatim from frob.tickets.__init__ (T-1151 \
-# split, same INV006-on-split-modules precedent as 0abc4e3a)"
 
 from __future__ import annotations
 

@@ -1,10 +1,4 @@
 """CLI wiring for `frob stats` -- delivery measurement (T-0009)."""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/app/stats_runner.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (a header string and docstring describing already-implemented \
-# proxy behavior added by T-1127, verifiable by reading the code they annotate) rather \
-# than a separate cross-module contract needing its own tracked invariant; disposed as \
-# a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

@@ -28,7 +28,6 @@ moved function keeps its original body, docstring, and `frob:ticket`/
 `_v2_effective_scope`/`_land_squash_apply` from `frob.tickets._land_squash`
 directly instead of from here (this module no longer defines them).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

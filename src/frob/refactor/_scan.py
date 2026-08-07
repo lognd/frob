@@ -9,7 +9,6 @@ DSL/registry/prose carriers (T-1199/T-1200/T-1267) extend the same
 rather than reimplementing this walk (docs/design/refactor-verb.md's
 "Children filed" section).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

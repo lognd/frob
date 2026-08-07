@@ -1,9 +1,3 @@
-# frob:waive INV006 reason="this module's 'only'/'exactly one' occurrences are \
-# source-level design-rationale prose (the module docstring's model description and \
-# per-function docstrings describing already-implemented resolution/matching logic), \
-# verifiable by reading the function it annotates, not a separate cross-module \
-# contract needing its own tracked invariant -- the same INV006 first-turn-on pool \
-# disposition frob.arch._lock_ordering's own module docstring already carries"
 """Concurrency model-mismatch advisory (T-0698, child 5 of the T-0693
 concurrency-hazard umbrella, the user's seem-IO-bound/seem-CPU-bound
 mandate): classify each function as IO-BOUND, CPU-BOUND, or MIXED/UNKNOWN

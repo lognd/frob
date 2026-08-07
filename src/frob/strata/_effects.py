@@ -42,7 +42,6 @@ module-docstring entry in `frob.vet._capability`). Reworded to describe
 the shape without spelling a matching needle, same mitigation precedent as
 T-0695's `_concurrency.py` docstring reword.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -31,14 +31,6 @@
 //! symbol this module actually exports to `lib.rs` is `parse_source_impl`
 //! -- the public JSON surface is unchanged, byte-identical to the
 //! pre-split behavior.
-// frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-// strata-core/src/parse.rs's exclusivity-vocabulary hit is source-level \
-// design-rationale/scope-cut prose (a docstring or comment describing \
-// already-implemented internal behavior, verifiable by reading the code it annotates) \
-// rather than a separate cross-module contract needing its own tracked invariant; \
-// disposed as a calibration batch, not claim-by-claim. Preserved verbatim across the \
-// T-1099 module split so the waived line's rationale still applies to the \
-// (now-relocated) parser spine."
 
 use serde::Serialize;
 use serde_json::json;

@@ -61,11 +61,6 @@ under `root` (always a fresh, test-owned `tmp_path` in tests; the same
 default location as before in real `frob check` runs, where `cwd ==
 root` already) removes the shared resource entirely.
 """
-# frob:waive INV006 reason="this module's 'only'/'never' occurrences are source-level \
-# design-rationale prose (the module docstring's rule-by-rule mandate summary), \
-# verifiable by reading the function it annotates, not a separate cross-module \
-# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
-# disposition frob.gates._ffi_boundary's own module docstring already carries"
 
 from __future__ import annotations
 

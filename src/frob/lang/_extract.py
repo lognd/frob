@@ -10,7 +10,6 @@ This module owns only what is genuinely language-agnostic: the symbol-walker
 dispatch table, comment extraction and its enclosing/following binding, and
 the narrower import/identifier walks `frob.cycle` and `frob.xref` consume.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

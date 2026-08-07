@@ -29,7 +29,6 @@ SAME zero-new-detection way -- `_host_isolation_gap`/`_blast_radius_gaps`
 are pure adapters, mirroring `_lint_gaps`/`_pii_gaps`. Before this, neither
 function had a caller reaching them from `frob sys audit`, so a real repo
 had no way to run the proof without a hand-written harness."""
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -7,10 +7,6 @@ opportunities` entry point `frob.arch` calls (docs/modules/arch.md's
 Python abstraction-opportunity rule).
 """
 
-# frob:waive INV006 reason="split-carried-prose (T-0585 lineage): every 'only' claim \
-# in this file's docstrings/comments is design-rationale prose describing \
-# already-implemented internal behavior moved verbatim from frob.arch._python by \
-# T-1195, not a new cross-module contract needing its own tracked invariant"
 
 from __future__ import annotations
 

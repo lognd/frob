@@ -13,7 +13,6 @@ The manifest is tracked text (source of truth); the graph is derived. The
 gate is opt-in: it runs only once a manifest exists, so a repo adopts it by
 running `frob release stamp` once.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

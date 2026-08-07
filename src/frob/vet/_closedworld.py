@@ -18,7 +18,6 @@ limits"), the same posture as `NO_CAPABILITY_MODULES` being a curated
 subset of the stdlib rather than an exhaustive one: extending either is
 always safe, never silently claimed done ahead of being built.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -29,7 +29,6 @@ this module):
    declared" is a coverage gap to surface elsewhere, not a structural
    fault in this model.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

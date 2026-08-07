@@ -18,12 +18,6 @@ ticket already in a terminal (DONE/DROPPED) state -- amending after close
 is exactly the "quietly move the goalposts after the fact" case this
 ticket exists to make impossible."""
 
-# frob:waive INV006 reason="T-1427: the two remaining exclusivity-vocabulary hits in \
-# this module are incidental English, not architectural claims needing their own \
-# tracked invariant -- one sits inside another waiver's own reason text, and one is a \
-# user-facing error message reporting how many criteria a ticket declares. Rewording \
-# the message to dodge a vocabulary scan would make it worse for the reader it exists \
-# to serve"
 
 from __future__ import annotations
 

@@ -14,7 +14,6 @@ non-code files. These need a cost/benefit case tree-sitter queries alone
 don't cheaply buy; VET008 (artifact/source divergence) that would corroborate
 the minified-vs-obfuscated call is also out of scope here (0.2.x proper).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

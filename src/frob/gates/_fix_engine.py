@@ -20,18 +20,16 @@ E501, COV002, WAIVE004) out to `frob.gates._fix_engine_text`, and the
 common infra both families need (`FixApplied`, the manifest helpers) out
 to `frob.gates._fix_engine_shared` (breaking what would otherwise be a
 circular import between the two handler-family modules). This module
-keeps the GRAPH-driven handlers (DOC007, DOC002, INV006-carry, TICK002)
-plus `TIER_A_HANDLERS`/`apply_tier_a_fixes`, the dispatch table binding
-every handler across all three files together; see the other two
-modules' own docstrings for the seam this drew.
-"""
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_fix_engine.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings and comments describing already-implemented \
-# internal behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- new T-1138 module documenting its own tier \
-# contract"
+keeps the GRAPH-driven handlers (DOC007, DOC002, TICK002) plus
+`TIER_A_HANDLERS`/`apply_tier_a_fixes`, the dispatch table binding every
+handler across all three files together; see the other two modules' own
+docstrings for the seam this drew.
+
+T-1763: the INV006 (split-carried-waiver) Tier-A handler that used to
+live here was removed along with the rest of the INV006 gate -- see
+`docs/modules/gates.md`'s T-1763 note for why (338 waivers, zero live
+findings across the gate's whole lifetime, a purely lexical corpus-wide
+keyword scan `frob:invariant`/INV001/INV002 already makes redundant)."""
 
 from __future__ import annotations
 
@@ -250,143 +248,6 @@ def fix_doc002_unique_slug(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
     return applied
 
 
-# ---------------------------------------------------------------------------
-# INV006 (T-1177): auto-carry a split-carried waiver, Tier-A restricted to
-# a VERBATIM-moved claim whose source already carries a covering
-# `frob:waive INV006` (never an invariant bind -- that is a different
-# obligation, out of this handler's "carry an EXISTING waiver" contract).
-# ---------------------------------------------------------------------------
-
-
-#: Per-suffix line-comment marker for the carried directive's inserted
-#: line -- `find_carried_waiver`'s `fixit` text is the bare `frob:waive
-#: ...` directive with no comment delimiter of its own (T-1134's message
-#: suffix leaves that to the human reading the fix-it hint); this handler
-#: writes an actually-parseable comment line, so it must supply one.
-#: `INV006_SRC_SUFFIXES` is currently `(".py", ".rs")` -- both covered.
-_INV006_LINE_COMMENT: dict[str, str] = {".py": "#", ".rs": "//"}
-
-
-# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-def fix_inv006_carried_waiver(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
-    """Tier-A fix (T-1177, T-1137 child): for every INV006 finding whose
-    exclusivity-claim prose was moved VERBATIM out of a file that already
-    carries a covering `frob:waive INV006`
-    (`frob.gates._inv006_split_assist.find_carried_waiver`), insert that
-    EXACT carried directive (a preset reference when the source itself
-    used `preset=`, T-1176) as the new file's first line.
-
-    This is not a new waiver in T-1137's never-auto-waive sense: the
-    disposition was already made, explicitly, by a human, at the source
-    site -- a module split moving the prose verbatim does not create a
-    fresh judgment call, it just needs the SAME disposition to follow the
-    text it was written for. Every other INV006 finding (no verbatim
-    source match, or a match that only carries a bound `frob:invariant`
-    rather than a waiver) is left untouched -- no guess, no waiver
-    inserted, per this ticket's own acceptance criterion. Skips a file
-    already carrying its own frob:waive/frob:invariant line 1 collision:
-    `_rewrite_line_substring`'s sibling `_prepend_line` below simply never
-    overwrites, it only ever inserts a new line 0, so this cannot corrupt
-    an existing directive."""
-    from frob.gates import INV006_SRC_DIRS, INV006_SRC_SUFFIXES
-
-    applied: list[FixApplied] = []
-    for src_dir in INV006_SRC_DIRS:
-        src_root = root / src_dir
-        if not src_root.is_dir():
-            continue
-        for suffix in INV006_SRC_SUFFIXES:
-            for path in _iter_inv006_candidates(src_root, suffix):
-                fix = _fix_inv006_carried_waiver_for_file(root, path, suffix, snapshot)
-                if fix is not None:
-                    applied.append(fix)
-    return applied
-
-
-def _fix_inv006_carried_waiver_for_file(
-    root: Path, path: Path, suffix: str, snapshot: GraphSnapshot
-) -> FixApplied | None:
-    """`fix_inv006_carried_waiver`'s per-file body, split out to keep the
-    caller's loop nest under ARCH001's function-length ceiling: the one
-    INV006 carry (or `None`) for `path`, applying the rewrite in place
-    when a covering waiver was found."""
-    from frob.gates._inv006_split_assist import find_carried_waiver
-    from frob.gates.invariants import find_exclusivity_claims
-
-    rel = path.relative_to(root).as_posix()
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return None
-    try:
-        if not find_exclusivity_claims(text):
-            return None
-        if _inv006_already_discharged(rel, snapshot):
-            return None
-        from frob.gates import INV006_SRC_DIRS, INV006_SRC_SUFFIXES
-
-        carried = find_carried_waiver(
-            root,
-            text,
-            exclude_rel=rel,
-            candidate_dirs=INV006_SRC_DIRS,
-            candidate_suffixes=INV006_SRC_SUFFIXES,
-            snapshot=snapshot,
-        )
-        if carried is None:
-            return None
-        source_rel, kind, fixit = carried
-        if kind != "waiver":
-            return None  # an invariant bind is not a waiver to carry
-        comment_line = _INV006_LINE_COMMENT.get(suffix, "#") + " " + fixit
-    except Exception:
-        # This handler's own contract (T-1323, `_waive004_verified_
-        # candidates`'s sibling docstring) is "prove-fresh-or-do-nothing":
-        # any surprise scanning/matching this one file means carry
-        # nothing for it, never crash the whole Tier-A auto-fix pass over
-        # every OTHER file (EXHAUST001/EXHAUST002, T-1371).
-        return None
-    if not _write_text(path, comment_line + "\n" + text):
-        return None
-    return FixApplied(
-        rule="INV006",
-        file=rel,
-        line=1,
-        detail=f"carried {comment_line!r} from {source_rel}",
-    )
-
-
-def _iter_inv006_candidates(src_root: Path, suffix: str) -> list[Path]:
-    """`frob.excludes.iter_files(src_root, suffix=suffix)`, materialized --
-    a thin wrapper so `fix_inv006_carried_waiver` reads like the other
-    Tier-A handlers' plain `for path in ...` loops."""
-    from frob.excludes import iter_files
-
-    return list(iter_files(src_root, suffix=suffix))
-
-
-def _inv006_already_discharged(rel: str, snapshot: GraphSnapshot) -> bool:
-    """True if `rel` already has a bound `frob:invariant` edge or a
-    covering `frob:waive INV006` -- the same two ways
-    `frob.gates._inv006_src_violations` treats INV006 as already
-    discharged, duplicated narrowly here (rather than imported) since
-    `frob.gates.__init__` imports this module, not the reverse."""
-    for edge in snapshot.edges:
-        if edge.kind == EdgeKind.INVARIANT and edge.origin.rpartition(":")[0] == rel:
-            return True
-    for edge in snapshot.edges:
-        if (
-            edge.kind == EdgeKind.WAIVE
-            and edge.target == "INV006"
-            and (
-                edge.origin.rpartition(":")[0] == rel
-                or edge.src == rel
-                or edge.src.startswith(f"{rel}::")
-            )
-        ):
-            return True
-    return False
-
 
 # ---------------------------------------------------------------------------
 # TICK002: a T-draft-* provisional id that survived onto the default branch.
@@ -477,9 +338,6 @@ TIER_A_HANDLERS: dict[
         root, snapshot
     ),
     "DOC002": lambda root, snapshot, queue, ticket_id: fix_doc002_unique_slug(
-        root, snapshot
-    ),
-    "INV006": lambda root, snapshot, queue, ticket_id: fix_inv006_carried_waiver(
         root, snapshot
     ),
     "FMT001": lambda root, snapshot, queue, ticket_id: fix_fmt001_directive_wrap(

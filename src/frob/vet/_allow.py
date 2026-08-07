@@ -5,7 +5,6 @@ MVP note: allow entries are coarse -- `name = true` or `name = ["reason", ...]`;
 full per-capability declarations (`name = ["net", "env"]` meaning literal
 capability tokens) are 0.2.x, once real capability scanning exists.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

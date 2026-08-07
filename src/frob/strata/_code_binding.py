@@ -23,7 +23,6 @@ Neither function mutates a `KernelModel`; both are pure joins between the
 model and the real file tree, exactly like `_facts.py`'s tier-1 closure is
 a pure join between declared facts.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

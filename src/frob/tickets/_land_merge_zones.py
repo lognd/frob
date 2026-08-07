@@ -15,7 +15,6 @@ here (`_UnionZone`, `_zone_for_path`, `_union_keyed_chunks`, and friends)
 is reached directly off this module by `tests/test_ticket_land.py`, same
 module-attribute access pattern those tests already used before the move.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

@@ -131,7 +131,6 @@ specific. Python host files only for this pass; the ticket's own reported
 shape.
 """
 
-# frob:waive INV006 preset="split-carried-prose"
 # frob:ticket T-0151
 # frob:ticket T-0158
 # frob:ticket T-0244

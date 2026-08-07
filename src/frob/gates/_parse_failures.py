@@ -33,7 +33,6 @@ already the purpose-built, process-lifetime-scoped accessor for exactly
 this signal (its own docstring: "Callers wanting to turn this into a
 blocking `frob check` violation can wire a gate against this list").
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

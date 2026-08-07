@@ -6,13 +6,6 @@ finding -- these three rules share one cohesive concern: is a directive
 COMMENT sitting somewhere sound, as opposed to `_waive.py`'s own
 directive-VALIDATION and match/apply-spine clusters).
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/gates/_waive_comments.py's exclusivity-vocabulary hits are source-level \
-# design-rationale prose (docstrings and comments describing already-implemented \
-# internal behavior, verifiable by reading the code they annotate) rather than a \
-# separate cross-module contract needing its own tracked invariant; disposed as a \
-# calibration batch, not claim-by-claim -- module prose split verbatim from the \
-# pre-T-1081 gates/_waive.py monolith"
 
 from __future__ import annotations
 

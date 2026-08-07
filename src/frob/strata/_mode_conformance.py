@@ -140,11 +140,6 @@ heavier, differently-scoped mechanism this ticket does not adopt):
    f-string) is the same class of "needs real static analysis" cut this
    module's other two v1 joins above accept.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only'/ \
-# 'never' hits are source-level design-rationale/scope-cut prose (the module \
-# docstring's mode-semantics description and disclosed cuts) rather than a separate \
-# cross-module contract needing its own tracked invariant, the same disposition \
-# _access.py/_effects.py's own module docstrings already carry for this file family"
 
 from __future__ import annotations
 

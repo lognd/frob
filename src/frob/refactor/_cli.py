@@ -11,7 +11,6 @@ outside T-1197's declared scope (`src/frob/_cli_parsers/**` and
 module is the ready-to-wire surface, not yet connected to the live CLI.
 See the Done report for the filed follow-up ticket that does the wiring.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

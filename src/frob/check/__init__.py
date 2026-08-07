@@ -10,7 +10,6 @@ their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
 (`frob.dup._legacy`, `frob.graph`, `frob.arch`, `frob.lang`) and are
 re-exported here for the same reason (T-0599).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

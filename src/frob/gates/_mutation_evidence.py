@@ -27,12 +27,6 @@ check runs ONLY at THIS ticket's own close/land time -- an already-closed
 ticket's evidence is never re-scanned, so landing this rule cannot
 retroactively turn a past close red (T-0755's own landing-safety
 requirement, satisfied structurally rather than via a ratchet pool)."""
-# frob:waive INV006 reason="module-docstring exclusivity-vocabulary hit is \
-# source-level design-rationale prose describing already-implemented \
-# entry-point/severity behavior, verifiable by reading the code it annotates and the \
-# T-0755 land wiring in frob.tickets._land -- not a separate cross-module contract \
-# needing its own tracked invariant, same calibration posture as frob.check's T-0585 \
-# INV006 waiver"
 
 from __future__ import annotations
 

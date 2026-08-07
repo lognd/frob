@@ -6,7 +6,6 @@ Every check here returns a `VerifyOutcome`, never raises -- a failing
 check is exactly as expected an outcome as a passing one; the transaction
 orchestrator (`_transaction.py`) decides whether to roll back.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

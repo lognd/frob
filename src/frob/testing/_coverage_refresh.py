@@ -50,7 +50,6 @@ because `stamp_coverage`'s independent `module_join_fraction` deflation
 floor still refuses a coverage.xml that was genuinely truncated, and
 `write_coverage_lock`'s ratchet still refuses to lower a committed floor.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

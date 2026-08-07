@@ -20,11 +20,6 @@ the same load-order-safe indirection T-1103 used for `renumber_one`/
 exists yet at its own module scope.
 """
 
-# frob:waive INV006 reason="T-1108: exclusivity-vocabulary hits below (only/never) are \
-# source-level design-rationale prose describing already-implemented internal behavior \
-# (verifiable by reading the code each comment annotates), carried verbatim from \
-# tickets/__init__.py's own T-0585 INV006 first-turn-on disposition -- not a separate \
-# cross-module contract needing its own tracked invariant"
 
 from __future__ import annotations
 

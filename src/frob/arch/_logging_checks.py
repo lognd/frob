@@ -27,12 +27,6 @@ extend the SHARED `frob.arch._models.ArchCategory`/`ArchSuggestion`
 directly rather than introducing a local pair -- no fold-in follow-up
 needed for this ticket.
 """
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's strata-boundary note and the \
-# per-heuristic helper docstrings describing what already-implemented text matching \
-# does), verifiable by reading the function it annotates, not a separate cross-module \
-# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
-# disposition frob.arch._solid/_typedesign's own module docstrings already carry"
 
 from __future__ import annotations
 

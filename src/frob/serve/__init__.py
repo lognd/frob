@@ -6,7 +6,6 @@ and has no dependency on the `mcp` SDK, so it stays importable and testable
 even when `mcp` is absent; only `frob.serve.server` (the FastMCP transport)
 requires it, imported lazily at call time.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

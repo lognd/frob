@@ -1,4 +1,3 @@
-# frob:waive INV006 preset="split-carried-prose"
 from __future__ import annotations
 
 from pathlib import Path

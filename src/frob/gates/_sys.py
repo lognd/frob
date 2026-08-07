@@ -9,7 +9,6 @@
 # sweep: left in place -- SCOPE001 is a scope/lease-dependent rule \
 # (frob.gates._waive.SCOPED_RUN_FLAKY_RULE_IDS), not a stale finding a full unscoped \
 # run can prove dead the way WIRE001/REF002/etc can"
-# frob:waive INV006 preset="split-carried-prose"
 """frob.gates._sys -- SYS00x/DOC003/SELFAUDIT001 strata design-conformance
 gate family (T-1187).
 

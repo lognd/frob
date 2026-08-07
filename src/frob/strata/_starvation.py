@@ -95,10 +95,6 @@ assuming infinite throughput (charter law 2, deny-by-default). This
 default is documented, not tunable per-model (no grammar clause reads it
 back) -- a real capacity declaration always overrides it.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only' hits \
-# are source-level design-rationale/scope-cut prose mirroring _spof.py/_ssot.py's own \
-# identical waiver for the identical reason (module docstring precedent, T-0703), not \
-# a separate cross-module contract"
 
 from __future__ import annotations
 

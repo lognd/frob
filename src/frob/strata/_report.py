@@ -6,7 +6,6 @@ machine-facing count summary. Pure and total: no I/O, no `Result` wrapping
 -- there is no fallible step here (charter law 4, "never a vibe" applies to
 what the checker asserts, not to formatting it).
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

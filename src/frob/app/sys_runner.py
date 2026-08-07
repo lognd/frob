@@ -38,7 +38,6 @@ runtime-enforcement config skeletons from its `KernelModel`
 (`frob.strata._export`) -- see that module's docstring for the k8s/
 seccomp/IAM mapping semantics.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

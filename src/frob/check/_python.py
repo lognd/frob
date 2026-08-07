@@ -5,7 +5,6 @@ analyses, the gates stage) and normalises its output into a `ToolResult`.
 They are private helpers of `frob.check`; `run_check` composes them in
 parallel.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

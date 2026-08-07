@@ -169,6 +169,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1225
 # frob:ticket T-1486
 # frob:ticket T-1733
+# frob:ticket T-1763
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -208,7 +209,9 @@ _KNOWN_GATE_RULES = frozenset(
         "INV003",
         "INV004",
         "INV005",
-        "INV006",
+        # T-1763: INV006 (source-side exclusivity-claim lexical scan) was
+        # DELETED -- 338 waivers, zero unwaived findings across its whole
+        # lifetime; see frob.gates._inv's module docstring.
         # T-0757: `frob:invariant no_import=`/`establishes=` obligation
         # forms -- see `frob.gates._design_invariants`.
         "INV007",
@@ -1144,19 +1147,27 @@ def _waive003_violations(
 #
 # - SELF-SUPPRESSING rules: the rule's own gate function checks for a
 #   covering `frob:waive` edge INTERNALLY, before ever constructing the
-#   `Violation` (INV006's `_inv006_waived` in `frob.gates.__init__` is
-#   the confirmed case -- `_inv006_src_violations` returns `()` the
-#   moment a covering waiver exists, so the finding never reaches
-#   `all_violations` for `_apply_waivers`/WAIVE004 to see, waived or
-#   not). Empirically this was ~209 of ~216 WAIVE004 findings in this
-#   repo's own full run (T-1064): every one of INV006's per-file
+#   `Violation`, so the finding never reaches `all_violations` for
+#   `_apply_waivers`/WAIVE004 to see, waived or not -- WAIVE004 cannot
+#   see through this from `all_violations` alone -- the finding was
+#   never generated, not merely filtered downstream -- so a rule of
+#   this shape would need exempting here rather than being mis-flagged
+#   every run. T-1763 UPDATE: INV006 (`frob.gates._inv`'s deleted
+#   `_inv006_waived`/`_inv006_src_violations`) was this class's
+#   confirmed case and empirically ~209 of ~216 WAIVE004 findings in
+#   this repo's own T-1064 full run -- every one of its per-file
 #   "first-turn-on pool" waivers (T-0585-style) read as permanently
-#   zero-match, even though deleting them resurfaces the exact INV006
+#   zero-match, even though deleting them resurfaced the exact INV006
 #   errors they were suppressing (confirmed by direct before/after
-#   deletion in T-0874's investigation). WAIVE004 cannot see through
-#   this from `all_violations` alone -- the finding was never generated,
-#   not merely filtered downstream -- so these rules are exempted here
-#   rather than mis-flagged every run.
+#   deletion in T-0874's investigation, and again by T-1763's own
+#   corpus-wide waiver sweep: stripping all 349 waiver directives before
+#   deleting the gate resurfaced the same lexical matches, none of which
+#   had ever been judged worth a bound `frob:invariant` in the rule's
+#   whole lifetime -- the honest conclusion T-1763 drew was that a
+#   never-actionable self-suppressing rule is dead weight, not a rule
+#   this exemption needed to keep tolerating). No member of this set is
+#   currently self-suppressing in this sense; the class stays documented
+#   here for the next rule that turns out to share the shape.
 # - TOUCHED/DIFF-SCOPED rules: the underlying gate only ever emits a
 #   finding for symbols in the diff's OWN touched-ref set (DUP001/DUP002
 #   via `frob.dup.touched_refs`, AFFECT001/AFFECT002 via the same
@@ -1207,8 +1218,9 @@ def _waive003_violations(
 # rule NOT in this set still needs a real, live, rule-id-exact match in
 # `all_violations` or it is reported exactly as before.
 # frob:ticket T-1577
+# frob:ticket T-1763
 _WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES = frozenset(
-    {"INV006", "DUP001", "DUP002", "AFFECT001", "AFFECT002", "WIRE001", "SCOPE001"}
+    {"DUP001", "DUP002", "AFFECT001", "AFFECT002", "WIRE001", "SCOPE001"}
 )
 
 

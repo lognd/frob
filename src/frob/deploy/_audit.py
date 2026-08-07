@@ -43,7 +43,6 @@ below, each entry justified in `docs/commands/deploy.md#allowlist`):
   docstring) are checked by `assert_not_installed`/`assert_healthy`
   below, called at each checkpoint.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

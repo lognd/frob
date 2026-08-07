@@ -5,7 +5,6 @@ Hook-mode exit-code contract: 0 = fine (or non-install command, exits fast
 with no network), 2 = BLOCK (quarantine/typosquat hit), reason on stderr for
 a Claude Code PreToolUse hook to surface to the agent.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 

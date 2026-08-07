@@ -16,7 +16,6 @@ its own `_splice_and_stage`/`_splice_and_stage_archive` use, and
 `frob.tickets._land` continues to re-export `splice_ledger` unchanged via
 `frob.tickets._land_merge`.
 """
-# frob:waive INV006 preset="split-carried-prose"
 
 from __future__ import annotations
 
