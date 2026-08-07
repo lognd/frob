@@ -460,6 +460,25 @@ def _leaf_tree_node(n: Node, field: str | None = None) -> TreeNode:
     return TreeNode(label=n.type, span=span, field=field)
 
 
+# frob:ticket T-1667
+def _narrowest_symbol_containing(
+    span: tuple[int, int], symbols: tuple[RawSymbol, ...]
+) -> RawSymbol | None:
+    """Deepest (narrowest-span) symbol whose span fully contains `span` --
+    the shared search `_find_enclosing_symbol` (qualname) and
+    `_find_following_symbol`'s T-1667 escape-scope guard (span) both need;
+    split out so the guard does not have to re-derive a symbol OBJECT from
+    the qualname string `_find_enclosing_symbol` used to be the only way
+    to get."""
+    best: RawSymbol | None = None
+    for sym in symbols:
+        if sym.span[0] <= span[0] and sym.span[1] >= span[1]:
+            width = sym.span[1] - sym.span[0]
+            if best is None or width < (best.span[1] - best.span[0]):
+                best = sym
+    return best
+
+
 # frob:doc docs/modules/lang.md#primitives
 # frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
 # per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
@@ -476,12 +495,7 @@ def _find_enclosing_symbol(
     symbol by comparing `RawSymbol.span` tuples, so this lives here once
     instead of twice.
     """
-    best: RawSymbol | None = None
-    for sym in symbols:
-        if sym.span[0] <= span[0] and sym.span[1] >= span[1]:
-            width = sym.span[1] - sym.span[0]
-            if best is None or width < (best.span[1] - best.span[0]):
-                best = sym
+    best = _narrowest_symbol_containing(span, symbols)
     return best.qualname if best is not None else None
 
 
@@ -523,11 +537,31 @@ def _find_following_symbol(
     contiguous block or up to `_FOLLOWING_SYMBOL_WINDOW` blank lines. This
     function only ever compares the span tuple it is given; the
     block-vs-own-line distinction is entirely the caller's concern.
+
+    T-1667: a candidate whose start lies PAST the end of the symbol that
+    encloses the comment itself (`_narrowest_symbol_containing((span[0],
+    span[0]), symbols)`) is rejected -- it is a SIBLING the comment is
+    escaping out to, not a symbol nested inside the same scope the
+    comment sits in. Without this, a `frob:` comment placed as the LAST
+    statement-preceding comment inside a method's body (e.g. directly
+    above that method's final line) mis-binds to the class's NEXT sibling
+    method whenever that sibling starts within `_FOLLOWING_SYMBOL_WINDOW`
+    lines of the comment -- the live incident: `frob:waive OPAQUE001`
+    inside `_BelowLevelFilter.__init__`'s body resolved to
+    `_BelowLevelFilter.filter` instead. T-0044's original intent (a
+    directive directly above a NESTED method/property, e.g. between two
+    methods in a class body) is unaffected: there, the enclosing symbol is
+    the wider CLASS, and the nested method's start is still within the
+    class's own span, so the guard never rejects it.
     """
     end = span[1]
+    enclosing = _narrowest_symbol_containing((span[0], span[0]), symbols)
+    enclosing_end = enclosing.span[1] if enclosing is not None else None
     best: RawSymbol | None = None
     for sym in symbols:
         if end < sym.span[0] <= end + _FOLLOWING_SYMBOL_WINDOW:
+            if enclosing_end is not None and sym.span[0] > enclosing_end:
+                continue
             if best is None or sym.span[0] < best.span[0]:
                 best = sym
     return best.qualname if best is not None else None

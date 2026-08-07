@@ -291,6 +291,61 @@ class TestParsePython:
         directive = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive.following == "target"
 
+    # frob:tests src/frob/lang/_common.py::_find_following_symbol
+    def test_comment_before_a_methods_last_statement_binds_to_that_method(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1667: a comment sitting directly above the LAST statement of a
+        method's body, with a sibling method starting within
+        `_FOLLOWING_SYMBOL_WINDOW` lines afterward, used to mis-bind to
+        that NEXT sibling method (`_find_following_symbol` only checked
+        the window, not whether the candidate was still inside the same
+        enclosing scope as the comment). The live incident:
+        `src/frob/logging/filter.py`'s `frob:waive OPAQUE001` comment,
+        placed directly above the `getattr(...)` call closing
+        `_BelowLevelFilter.__init__`'s body, resolved to
+        `_BelowLevelFilter.filter` instead of `.__init__`."""
+        src = _write(
+            tmp_path,
+            "trailing_comment.py",
+            "class C:\n"
+            "    def a(self) -> None:\n"
+            "        x = 1\n"
+            "        # frob:doc docs/x.md#anchor\n"
+            "        return x\n"
+            "\n"
+            "    def b(self) -> None:\n"
+            "        pass\n",
+        )
+        pf = parse_file(src).danger_ok
+        directive = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive.enclosing == "C.a"
+        assert directive.following is None
+
+    # frob:tests src/frob/lang/_common.py::_find_following_symbol
+    def test_comment_directly_above_a_nested_method_still_binds_to_it(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1667's escape-scope guard must not break the ORIGINAL T-0044
+        case it sits next to: a directive directly above a nested method,
+        with nothing between the two, still binds to that method (the
+        candidate is nested WITHIN the same class the comment already
+        sits in, not escaping past it)."""
+        src = _write(
+            tmp_path,
+            "nested_target.py",
+            "class C:\n"
+            "    def a(self) -> None:\n"
+            "        pass\n"
+            "\n"
+            "    # frob:doc docs/x.md#anchor\n"
+            "    def b(self) -> None:\n"
+            "        pass\n",
+        )
+        pf = parse_file(src).danger_ok
+        directive = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive.following == "C.b"
+
     def test_content_hash_changes_on_any_byte_change(self, tmp_path: Path) -> None:
         base = (_FIXTURES / "sample.py").read_text()
         p1 = _write(tmp_path, "a.py", base)
