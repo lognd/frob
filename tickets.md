@@ -12229,7 +12229,7 @@ What's still plausibly a real, addressable gap:
 id: T-1707
 title: 'frob ticket land cannot land a dropped ticket: forces illegal dropped->done
   transition'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -12286,6 +12286,8 @@ the existing terminal state's ledger entry (with its evidence/Done
 report/drop-reason intact) to main instead of trying to re-close it as
 done.
 
+## Drop reason
+- 2026-08-06: duplicate: an agent hit the dropped->done wall independently and filed this draft; T-1701 was filed first for the same defect and has been corrected with this draft's more precise root cause (_finalize_and_close_ticket forcing the illegal transition, not _validate_closeable) (absorbed by T-1701)
 <!-- ticket:T-1708 -->
 ```yaml
 id: T-1708
@@ -12421,7 +12423,7 @@ frob:no-behavior-change reason="waiver-comment-only fix (frob:waive INV006/PII01
 id: T-1710
 title: close's own-obligations REL001 check is not rapid-aware, deadlocks a worktree
   that legitimately needs a version bump
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -12491,6 +12493,8 @@ landing, so `frob ticket land`'s own bump computation was untouched and
 wrote the real bump itself. This is not a fix, just what let T-1675 land
 without violating the land-owned-files rule or waiving a real gate.
 
+## Drop reason
+- 2026-08-06: duplicate: two agents hit the close-time REL001 wall independently; T-1705 covers the same defect plus the second half -- the error names a remedy (bump pyproject.toml) that the T-0731 hook forbids the agent from committing (absorbed by T-1705)
 <!-- ticket:T-1711 -->
 ```yaml
 id: T-1711
@@ -12531,7 +12535,7 @@ legitimate close for this ticket).
 id: T-1712
 title: 'frob ticket evidence node-id shape validation: investigate the malformed-id
   gap without breaking pytest-form binding'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -12618,11 +12622,13 @@ What's still plausibly a real, addressable gap:
   worded in T-1670's original text -- see the investigation above for why
   that breaks the primary, correct way to bind evidence.
 
+## Drop reason
+- 2026-08-06: exact duplicate title and scope, filed by two different agents from the same T-1670 split (absorbed by T-1706)
 <!-- ticket:T-1713 -->
 ```yaml
 id: T-1713
 title: 'post-land sweep regression from T-1679: 1 new error(s) (COV003)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-06'
@@ -12646,6 +12652,8 @@ New (rule, file) pairs:
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
 
+## Drop reason
+- 2026-08-06: auto-filed by the T-1684 deferred sweep for the same COV003 (T-1637's evidence broken by T-1679's test rename); T-1714 is a superset -- it covers that COV003 plus the 2 ty invalid-parameter-default errors from the same land series, and carries the analysis of why both safety nets missed them (absorbed by T-1714)
 <!-- ticket:T-1714 -->
 ```yaml
 id: T-1714
