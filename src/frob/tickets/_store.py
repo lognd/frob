@@ -1680,11 +1680,12 @@ def _write_archive_v2(
 # frob:ticket T-1254
 # frob:ticket T-1536
 # frob:ticket T-1637
+# frob:ticket T-1679
 # frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_warns_loudly_by_default  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_refuses_by_default  # noqa: E501
 def write_ticket(
-    root: Path, ticket: Ticket, *, strict_no_content_loss: bool = False
+    root: Path, ticket: Ticket, *, strict_no_content_loss: bool = True
 ) -> Result[None, TicketError]:
     """Upsert one ticket into whichever backend the repo uses (atomic).
 
@@ -1727,23 +1728,42 @@ def write_ticket(
     outright (`Err(LedgerIntegrityViolation)`) instead of persisting a
     ledger the very next read could fail to load.
 
-    T-1637: BEFORE any of the above, if `ticket.id` already exists on disk,
-    its current content is compared against `ticket` via `_check_no_
+    T-1637/T-1679: BEFORE any of the above, if `ticket.id` already exists on
+    disk, its current content is compared against `ticket` via `_check_no_
     content_loss` -- a write that would replace an existing evidence list
-    and/or Done report with an empty one is logged as a LOUD warning by
-    default, or refused outright (`Err(DoneReportOrEvidenceDiscarded)`) if
-    `strict_no_content_loss=True`. Deliberately mode-agnostic (reads via
-    `load_all`, which already dispatches across single/dir/v2) rather than
-    three separate per-mode implementations of the same comparison.
+    and/or Done report with an empty one refuses outright
+    (`Err(DoneReportOrEvidenceDiscarded)`) by default now
+    (`strict_no_content_loss=True`, T-1679 flipped the T-1637 default: a
+    guard whose default is to ALLOW the exact loss shape it detects is a
+    detector, not a guard -- the T-1636 field incident this exists to
+    prevent, discarding 12 evidence ids and a 12KB Done report, would still
+    happen today under the old warn-only default, just with a log line
+    attached). `strict_no_content_loss=False` degrades to the old warn-and-
+    proceed behavior for a caller that has a specific, disclosed reason to
+    want it; `_write_ticket_unchecked` below is the explicit escape hatch
+    for a caller that wants to skip the check ENTIRELY (never even a
+    warning) -- test fixtures constructing a deliberately "poorer" ticket
+    snapshot on purpose (T-1679's audit moved every one of those onto it,
+    see that function's own docstring), never a production write path.
+    Deliberately mode-agnostic (reads via `load_all`, which already
+    dispatches across single/dir/v2) rather than three separate per-mode
+    implementations of the same comparison.
     """
     existing = load_all(root)
     if existing.is_ok:
         old = existing.danger_ok.get(ticket.id)
-        guarded = _check_no_content_loss(
-            old, ticket, strict=strict_no_content_loss
-        )
+        guarded = _check_no_content_loss(old, ticket, strict=strict_no_content_loss)
         if guarded.is_err:
             return Err(guarded.danger_err)
+    return _write_ticket_impl(root, ticket)
+
+
+# frob:ticket T-1679
+def _write_ticket_impl(root: Path, ticket: Ticket) -> Result[None, TicketError]:
+    """The actual mode-dispatched write `write_ticket` performs AFTER its
+    own content-loss guard has already passed (T-1679 split, so `_write_
+    ticket_unchecked` can share this exact write path without re-running,
+    or bypassing via a flag, the guard `write_ticket` itself owns)."""
     mode = _store_mode(root)
     if mode == "v2":
         return _write_ticket_v2_mode(root, ticket)
@@ -1751,6 +1771,29 @@ def write_ticket(
         if mode == "single":
             return _write_ticket_single_mode(root, ticket)
         return atomic_write(_dir_path_for(root, ticket), _serialize_ticket(ticket))
+
+
+# frob:ticket T-1679
+# frob:tests tests/unit/test_ticket_store.py::TestWriteTicketUnchecked.test_skips_the_content_loss_guard_entirely  # noqa: E501
+# frob:waive WIRE001 reason="deliberately test-fixture-only primitive (see its own \
+# docstring): every caller is a test constructing a poorer ticket snapshot on purpose \
+# (tests/test_ticket_land.py's splice_ledger/TICK005 fixtures, \
+# tests/unit/test_ticket_store.py's own TestWriteTicketUnchecked) -- no production \
+# caller is meant to exist" follow_up="T-1711"
+def _write_ticket_unchecked(root: Path, ticket: Ticket) -> Result[None, TicketError]:
+    """`write_ticket` with the T-1637/T-1679 content-loss guard skipped
+    ENTIRELY -- not even the warn-only degrade, no log line at all. The
+    explicit, self-documenting escape hatch T-1679 introduced so a genuine
+    "construct a deliberately poorer ticket snapshot" caller (test fixtures
+    simulating a stale/regressed ledger side for `splice_ledger`'s own
+    merge-preference tests -- the concrete case that made a hard-refuse-by-
+    default break real, correct code before this primitive existed) says so
+    plainly at the call site, instead of `write_ticket` itself needing a
+    weaker default to accommodate it. NEVER call this from a production
+    write path -- every real caller wants `write_ticket`'s guard, strict or
+    not; this is a test-fixture-only primitive, leading underscore and
+    all."""
+    return _write_ticket_impl(root, ticket)
 
 
 # frob:ticket T-1637

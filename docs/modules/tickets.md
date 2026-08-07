@@ -1446,22 +1446,41 @@ exists for the case a real id is needed OUTSIDE of a land: a coordinator
 recovering residue from an abandoned worktree, or promoting several
 drafts on main directly without a land transaction to piggyback on.
 
-### Content-loss guard on `write_ticket` (T-1637)
+### Content-loss guard on `write_ticket` (T-1637, defaults flipped T-1679)
 
-`write_ticket` (`frob.tickets._store`) now compares an incoming write
-against whatever is currently on disk for that id, via `_check_no_
-content_loss`: if the existing ticket carries non-empty evidence or a
-`## Done report` section and the incoming write has NEITHER, the write is
-flagged. Default behavior (`strict_no_content_loss=False`, every existing
-call site unchanged) is a LOUD warning, not a refusal -- `write_ticket` is
-also the low-level primitive several legitimate internal callers use to
-construct a deliberately "poorer" snapshot on purpose (test fixtures
-simulating a stale/regressed ledger side for `splice_ledger`'s own
-merge-preference tests being the concrete case that made a hard-refuse-
-by-default break real, correct code). Pass `strict_no_content_loss=True`
-for a caller that wants the harder guarantee -- an interactive command a
-human is driving directly, where a logged-but-silent warning is not
-enough.
+`write_ticket` (`frob.tickets._store`) compares an incoming write against
+whatever is currently on disk for that id, via `_check_no_content_loss`:
+if the existing ticket carries non-empty evidence or a `## Done report`
+section and the incoming write has NEITHER, the write is flagged.
+`strict_no_content_loss=True` is now the DEFAULT (T-1679): the write
+REFUSES (`Err(DoneReportOrEvidenceDiscarded)`) rather than merely warning.
+T-1637 shipped this warn-only, since `write_ticket` was also the low-level
+primitive several test fixtures used directly to construct a deliberately
+"poorer" snapshot on purpose (test fixtures simulating a stale/regressed
+ledger side for `splice_ledger`'s own merge-preference tests being the
+concrete case that made a hard-refuse-by-default break real, correct code
+at the time) -- but a guard whose default is to ALLOW the exact loss shape
+it detects is a detector, not a guard: the T-1636 incident it exists to
+prevent would still happen today under a warn-only default, just with a
+log line attached.
+
+T-1679 flipped the default and gave the genuine "poorer snapshot on
+purpose" callers their own explicit primitive instead:
+`_write_ticket_unchecked` (`frob.tickets._store`, private -- test-fixture-
+only, never a production write path) skips the content-loss check
+ENTIRELY, no warning at all, and says so plainly at the call site instead
+of `write_ticket` itself needing a weaker default to accommodate it. Every
+fixture that previously relied on the old warn-and-proceed default (the
+`splice_ledger` merge-preference tests in `tests/test_ticket_land.py`, the
+`TICK005` land-regression simulation tests) now calls `_write_ticket_
+unchecked` explicitly. `strict_no_content_loss=False` still exists as an
+explicit, disclosed opt-out (same warn-and-proceed behavior as before) for
+a caller with a specific reason to want it, but no production call site in
+this repo passes it -- every real writer (the setters, `add_evidence`,
+`transition`, `set_done_report`, etc.) gets the strict-by-default
+refusal, confirmed by the full `write_ticket`-touching test surface
+passing unmodified after the flip (no production caller legitimately
+needs to empty both fields at once).
 
 This is the sibling of `_post_splice_integrity_check` (T-0764/T-1536,
 "Storage internals" below) one level down: that guard refuses a write

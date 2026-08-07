@@ -1702,9 +1702,10 @@ class TicketError(ErrorSet):
     # archaeology.
     DoneReportOrEvidenceDiscarded = (
         "this write would replace an existing ticket's evidence/Done "
-        "report with an empty one -- refusing (strict mode; the default, "
-        "non-strict write_ticket() call logs the same finding as a "
-        "warning instead of refusing)"
+        "report with an empty one -- refusing (T-1679: this is now "
+        "write_ticket()'s DEFAULT; strict_no_content_loss=False is the "
+        "explicit opt-out that logs the same finding as a warning "
+        "instead of refusing)"
     )
     # T-0889: a wholesale `write_all`/`write_archive` caller that captured
     # a digest of the ledger at load time and passed it back as

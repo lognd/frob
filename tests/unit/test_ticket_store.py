@@ -80,6 +80,7 @@ def _ticket(ticket_id: str = "T-0001", title: str = "Sample ticket") -> Ticket:
 _V1_PINNED_CLASSES = frozenset(
     {
         "TestWriteTicket",
+        "TestWriteTicketUnchecked",
         "TestArchiveLedger",
         "TestLoadArchiveCache",
         "TestSetDoneReport",
@@ -359,10 +360,15 @@ class TestWriteTicket:
         assert loaded.danger_ok.keys() == {"T-0001"}
 
     # frob:ticket T-1637
-    def test_content_loss_warns_loudly_by_default(
-        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_warns_loudly_by_default  # noqa: E501
+    # frob:ticket T-1679
+    def test_content_loss_refuses_by_default(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_refuses_by_default  # noqa: E501
+        """T-1679 flipped the T-1637 guard's default: a write that would
+        replace an existing evidence list AND Done report with nothing now
+        REFUSES by default, not just warns -- the whole point of a guard
+        is to prevent the thing it detects, and the old warn-only default
+        would still have let the T-1636 field incident (12 evidence ids +
+        a 12KB Done report discarded) happen today, just with a log line."""
         done = _ticket().model_copy(
             update={
                 "evidence": ("tests/test_x.py::test_ok",),
@@ -373,39 +379,9 @@ class TestWriteTicket:
 
         # The T-1636 shape: a fresh Ticket for the SAME id, evidence and
         # Done report both gone (e.g. a hand-rolled refile that rebuilt
-        # the ticket from scratch instead of renumbering it). Default
-        # (non-strict) is a LOUD warning, not a refusal -- `write_ticket`
-        # is also the primitive legitimate internal callers (e.g.
-        # `splice_ledger` merge-preference test fixtures) use to construct
-        # a deliberately poorer snapshot on purpose.
-        with caplog.at_level("WARNING"):
-            stripped = _ticket().model_copy(
-                update={"body": "## Description\nsomething\n"}
-            )
-            result = write_ticket(tmp_path, stripped)
-        assert result.is_ok
-        assert any(
-            "content-loss guard" in record.message for record in caplog.records
-        )
-
-        loaded = load_all(tmp_path)
-        assert loaded.is_ok
-        assert loaded.danger_ok["T-0001"].evidence == ()
-        assert "## Done report" not in loaded.danger_ok["T-0001"].body
-
-    # frob:ticket T-1637
-    def test_strict_no_content_loss_refuses(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_strict_no_content_loss_refuses  # noqa: E501
-        done = _ticket().model_copy(
-            update={
-                "evidence": ("tests/test_x.py::test_ok",),
-                "body": "## Description\nsomething\n\n## Done report\n\nshipped\n",
-            }
-        )
-        assert write_ticket(tmp_path, done).is_ok
-
+        # the ticket from scratch instead of renumbering it).
         stripped = _ticket().model_copy(update={"body": "## Description\nsomething\n"})
-        result = write_ticket(tmp_path, stripped, strict_no_content_loss=True)
+        result = write_ticket(tmp_path, stripped)
         assert result.is_err
         assert result.danger_err == TicketError.DoneReportOrEvidenceDiscarded
 
@@ -415,6 +391,37 @@ class TestWriteTicket:
         assert loaded.is_ok
         assert loaded.danger_ok["T-0001"].evidence == ("tests/test_x.py::test_ok",)
         assert "## Done report" in loaded.danger_ok["T-0001"].body
+
+    # frob:ticket T-1679
+    def test_non_strict_opt_out_warns_loudly_instead_of_refusing(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_non_strict_opt_out_warns_loudly_instead_of_refusing  # noqa: E501
+        """`strict_no_content_loss=False` is the explicit, disclosed opt-
+        out (T-1679) for a caller with a specific reason to want the OLD
+        T-1637 warn-and-proceed behavior instead of the new strict
+        default -- still logs the same loud warning, just does not
+        refuse."""
+        done = _ticket().model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": "## Description\nsomething\n\n## Done report\n\nshipped\n",
+            }
+        )
+        assert write_ticket(tmp_path, done).is_ok
+
+        with caplog.at_level("WARNING"):
+            stripped = _ticket().model_copy(
+                update={"body": "## Description\nsomething\n"}
+            )
+            result = write_ticket(tmp_path, stripped, strict_no_content_loss=False)
+        assert result.is_ok
+        assert any("content-loss guard" in record.message for record in caplog.records)
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].evidence == ()
+        assert "## Done report" not in loaded.danger_ok["T-0001"].body
 
     # frob:ticket T-1637
     def test_keeping_evidence_or_done_report_is_never_refused(
@@ -451,6 +458,39 @@ class TestWriteTicket:
         assert fresh.evidence == ()
         result = write_ticket(tmp_path, fresh)
         assert result.is_ok
+
+
+# frob:ticket T-1679
+class TestWriteTicketUnchecked:
+    """`_write_ticket_unchecked` -- the explicit, self-documenting escape
+    hatch for a genuine "construct a deliberately poorer ticket snapshot
+    on purpose" caller (T-1679), replacing the pre-T-1679 pattern of
+    calling plain `write_ticket` and relying on its default being lax."""
+
+    def test_skips_the_content_loss_guard_entirely(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestWriteTicketUnchecked.test_skips_the_content_loss_guard_entirely  # noqa: E501
+        from frob.tickets._store import _write_ticket_unchecked
+
+        done = _ticket().model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": "## Description\nsomething\n\n## Done report\n\nshipped\n",
+            }
+        )
+        assert write_ticket(tmp_path, done).is_ok
+
+        # The exact T-1636 content-loss shape -- plain write_ticket would
+        # now refuse this (strict-by-default, T-1679); the unchecked
+        # primitive proceeds without even a warning, as test fixtures
+        # simulating a stale/regressed ledger side legitimately need.
+        stripped = _ticket().model_copy(update={"body": "## Description\nsomething\n"})
+        result = _write_ticket_unchecked(tmp_path, stripped)
+        assert result.is_ok
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].evidence == ()
+        assert "## Done report" not in loaded.danger_ok["T-0001"].body
 
 
 # frob:ticket T-1254

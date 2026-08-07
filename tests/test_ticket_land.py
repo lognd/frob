@@ -8,7 +8,6 @@ tests/test_tickets_collision.py's style) -- not mocks -- because the whole
 point of `land` is real merge/conflict/deletion behavior.
 """
 
-
 from __future__ import annotations
 
 import json
@@ -59,6 +58,7 @@ from frob.tickets._models import (
 from frob.tickets._new_renumber import _ticket_from_spec
 from frob.tickets._store import (
     _serialize_ticket,
+    _write_ticket_unchecked,
     archive_path,
     atomic_write,
     ledger_path,
@@ -714,7 +714,7 @@ class TestSpliceLedgerRicherStatePreference:
                 "body": with_report.body.split("## Done report")[0],
             }
         )
-        assert write_ticket(tmp_path, theirs).is_ok
+        assert _write_ticket_unchecked(tmp_path, theirs).is_ok
         theirs_text = ledger_path(tmp_path).read_text()
 
         spliced = splice_ledger(ours_text, theirs_text)
@@ -756,7 +756,7 @@ class TestSpliceLedgerRicherStatePreference:
                 "body": stale_with_report.body.split("## Done report")[0],
             }
         )
-        assert write_ticket(tmp_path, theirs).is_ok
+        assert _write_ticket_unchecked(tmp_path, theirs).is_ok
         theirs_text = ledger_path(tmp_path).read_text()
 
         spliced = splice_ledger(ours_text, theirs_text)
@@ -793,7 +793,7 @@ class TestSpliceLedgerRicherStatePreference:
                 "body": stale_with_report.body.split("## Done report")[0],
             }
         )
-        assert write_ticket(tmp_path, ours).is_ok
+        assert _write_ticket_unchecked(tmp_path, ours).is_ok
         ours_text = ledger_path(tmp_path).read_text()
 
         spliced = splice_ledger(ours_text, theirs_text)
@@ -880,7 +880,7 @@ class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
         # bare -- no evidence, no bound acceptance -- exactly the
         # archive/concurrent-rewrite reset shape from the T-0753 incident.
         bare = loaded.model_copy(update={"evidence": (), "acceptance": ()})
-        assert write_ticket(tmp_path, bare).is_ok
+        assert _write_ticket_unchecked(tmp_path, bare).is_ok
         theirs_text = ledger_path(tmp_path).read_text()
 
         spliced = splice_ledger(ours_text, theirs_text)
@@ -6668,7 +6668,7 @@ class TestTick005LandRegressions:
         # Simulate the hand-resolved-conflict incident class: the "post"
         # ledger keeps the same id but reverts it to a non-terminal state.
         regressed = new_ticket(tmp_path, _spec("Widget2")).danger_ok
-        assert write_ticket(
+        assert _write_ticket_unchecked(
             tmp_path,
             regressed.model_copy(update={"id": tid, "state": TicketState.IN_PROGRESS}),
         ).is_ok
@@ -6689,7 +6689,7 @@ class TestTick005LandRegressions:
         pre_text = ledger_path(tmp_path).read_text()
 
         regressed = new_ticket(tmp_path, _spec("Widget2")).danger_ok
-        assert write_ticket(
+        assert _write_ticket_unchecked(
             tmp_path,
             regressed.model_copy(update={"id": tid, "state": TicketState.IN_PROGRESS}),
         ).is_ok
