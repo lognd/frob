@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.373.0] - unreleased
+
+- T-1768: frob release stamp --allow-unbumped silently rebaselines the REL001 manifest with no reason and no audit record
+
 ## [0.372.0] - unreleased
 
 - T-1613: frob cannot express runs-last: add a marker that stays undoable while any other ticket is open

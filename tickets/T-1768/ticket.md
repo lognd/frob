@@ -2,7 +2,7 @@
 id: T-1768
 title: frob release stamp --allow-unbumped silently rebaselines the REL001 manifest
   with no reason and no audit record
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -12,14 +12,102 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/release/__init__.py
-- src/frob/_cli_parsers/_reporting.py
 - tests/test_release.py
 - docs/modules/gates.md
+- src/frob/app/release_runner.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- src/frob/tickets/_force_override.py
+- docs/modules/release.md
+- tests/unit/test_release_stamp_guard.py
+- tickets/T-1768/ticket.md
+- tickets/T-1768/done-report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/_reporting.py
+  reason: flag actually lives in _cli_parsers/_misc.py, not _reporting.py -- narrowing
+    to real files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/app/release_runner.py
+  reason: the --allow-unbumped flag and its CLI wiring live in app/release_runner.py
+    + _cli_parsers/_misc.py + config, not _reporting.py; reusing the T-1762 record_force_override
+    primitive needs _force_override.py in scope; docs/release.md and the existing
+    stamp-guard test file are the real doc/test homes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: the --allow-unbumped flag and its CLI wiring live in app/release_runner.py
+    + _cli_parsers/_misc.py + config, not _reporting.py; reusing the T-1762 record_force_override
+    primitive needs _force_override.py in scope; docs/release.md and the existing
+    stamp-guard test file are the real doc/test homes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/app/config.py
+  reason: the --allow-unbumped flag and its CLI wiring live in app/release_runner.py
+    + _cli_parsers/_misc.py + config, not _reporting.py; reusing the T-1762 record_force_override
+    primitive needs _force_override.py in scope; docs/release.md and the existing
+    stamp-guard test file are the real doc/test homes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: the --allow-unbumped flag and its CLI wiring live in app/release_runner.py
+    + _cli_parsers/_misc.py + config, not _reporting.py; reusing the T-1762 record_force_override
+    primitive needs _force_override.py in scope; docs/release.md and the existing
+    stamp-guard test file are the real doc/test homes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/tickets/_force_override.py
+  reason: the --allow-unbumped flag and its CLI wiring live in app/release_runner.py
+    + _cli_parsers/_misc.py + config, not _reporting.py; reusing the T-1762 record_force_override
+    primitive needs _force_override.py in scope; docs/release.md and the existing
+    stamp-guard test file are the real doc/test homes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/release.md
+  reason: the --allow-unbumped flag and its CLI wiring live in app/release_runner.py
+    + _cli_parsers/_misc.py + config, not _reporting.py; reusing the T-1762 record_force_override
+    primitive needs _force_override.py in scope; docs/release.md and the existing
+    stamp-guard test file are the real doc/test homes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/unit/test_release_stamp_guard.py
+  reason: the --allow-unbumped flag and its CLI wiring live in app/release_runner.py
+    + _cli_parsers/_misc.py + config, not _reporting.py; reusing the T-1762 record_force_override
+    primitive needs _force_override.py in scope; docs/release.md and the existing
+    stamp-guard test file are the real doc/test homes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1768/ticket.md
+  reason: 'v2 ledger layout: the ticket''s own per-ticket files are implicitly in
+    scope, same as tickets.md was under v1 (T-1678 precedent)'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1768/done-report.md
+  reason: 'v2 ledger layout: the ticket''s own per-ticket files are implicitly in
+    scope, same as tickets.md was under v1 (T-1678 precedent)'
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason::test_refuses_with_no_reason_when_shortfall_is_real
+- tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason::test_succeeds_with_reason_and_writes_audit_record
+- tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason::test_no_reason_required_when_no_real_shortfall
 designated_repro_test: null
 threat: null
 component: null
+runs_last: false
 ---
 `frob release stamp --allow-unbumped` is the third instance of the
 silent-override family T-1762 fixed, and arguably the worst of the three.

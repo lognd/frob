@@ -163,6 +163,51 @@ short of) and an already-adequate version. `--allow-unbumped`
 (`stamp(..., allow_unbumped=True)`) is the explicit, justification-required
 override, matching `--skip-mutation-evidence` and `--allow-cross-ticket`.
 
+### `--allow-unbumped` requires a reason and is audited (T-1768)
+
+`--allow-unbumped` used to bypass the refusal above silently: no
+`--reason` flag existed, nothing was logged beyond the flag's own help
+text, and nothing was recorded. That made it the worst of the
+`--force`-shaped bypass family T-1762 closed for `ticket archive --force`
+and `ticket land --finish --force` -- those two skip a guard for ONE
+invocation; `--allow-unbumped` PERMANENTLY rebaselines `.frob-release.json`,
+silently redefining what counts as an API change from that moment
+forward, and a manifest rewrite looks like any other manifest rewrite in
+the diff.
+
+`stamp(..., allow_unbumped=True, reason=...)` now mirrors T-1762's landed
+remedy exactly:
+
+- When `allow_unbumped=True` actually bypasses a real shortfall (the same
+  `_bump_shortfall` computation above found one), a non-blank `reason` is
+  REQUIRED -- `Err(ReleaseError.UnbumpedReasonMissing)` otherwise, nothing
+  written. `allow_unbumped=True` with NO real shortfall (the version
+  already covers the change) is still a no-op guard-wise and demands no
+  reason -- nothing was actually bypassed, the same posture `frob ticket
+  archive --force` with no live lease already established.
+- The bypass appends one `ForceOverrideEntry` line to the repo-root
+  `force-overrides.jsonl` (`frob.tickets._force_override.
+  record_force_override`, the SAME audit-record shape `ScopeChangeEntry`/
+  `AckAuditEntry`/`EvidenceChangeEntry` already use elsewhere, not a fifth
+  one) naming the version move, the bump class that was skipped, and the
+  count of symbol digests that changed (`_changed_symbol_count`) -- so the
+  record says not just THAT the baseline moved but roughly how much
+  surface it silently accepted.
+- It logs at WARNING naming the old version, the new version, the skipped
+  bump class, and the reason -- a bypass nobody can see is
+  indistinguishable from the guard not existing.
+
+`frob release stamp --allow-unbumped` takes the matching `--reason TEXT` /
+`--reason-file PATH` CLI flags (`--reason-file` wins if both are given,
+read verbatim -- T-0737's shell-injection-avoidance precedent).
+
+Deliberately NOT done: a name-pattern gate for override-shaped flags in
+general. T-1762 examined that and rejected it -- `--skip-gates` appears in
+both the needs-a-reason and correctly-free camps, so the distinction is
+semantic, not lexical, and a name-based rule would false-positive on
+every `frob check --skip-*` flag while still requiring a human to read
+each new one.
+
 The write itself (once the un-bumped check clears) goes through the same
 crash-safe `_atomic_write_release` primitive as every other write in this
 module (T-1359, see Public API above) -- `Err(ReleaseError.WriteFailed)`

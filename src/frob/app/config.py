@@ -548,6 +548,14 @@ class AppConfig(BaseModel):
     # whatever version is current, so stamping an API change WITHOUT the
     # bump silences REL001 and the release never happens.
     release_allow_unbumped: bool = False
+    # frob:ticket T-1768
+    # `--allow-unbumped` now requires --reason/--reason-file whenever it
+    # actually bypasses a real shortfall (mirrors T-1762's `ticket_force_
+    # reason`/`ticket_force_reason_file` pattern exactly): the manifest
+    # rewrite it triggers permanently redefines the REL001 baseline going
+    # forward, unlike a one-invocation `--force` bypass.
+    release_allow_unbumped_reason: str | None = None
+    release_allow_unbumped_reason_file: Path | None = None
     ticket_skip_mutation_evidence: bool = False
     # frob:ticket T-1369
     # `frob ticket land <id> --allow-cross-ticket` -- documented escape

@@ -83,14 +83,22 @@ class TestStampRefusesUnbumped:
 
     # frob:tests src/frob/release/__init__.py::stamp kind="unit"
     # frob:ticket T-1381
+    # frob:ticket T-1768
     def test_allow_unbumped_is_an_explicit_override(
         self, tmp_path: Path, _snapshot
     ) -> None:
         """The escape hatch must actually escape -- a refusal with no way
-        past it would just move the footgun somewhere worse."""
+        past it would just move the footgun somewhere worse. T-1768: it
+        now also requires a reason, so this passes one."""
         _write_manifest(tmp_path, "0.1.0", {"gone::symbol": "deadbeef"})
 
-        result = stamp(tmp_path, _snapshot, "0.1.0", allow_unbumped=True)
+        result = stamp(
+            tmp_path,
+            _snapshot,
+            "0.1.0",
+            allow_unbumped=True,
+            reason="deliberate test override",
+        )
 
         assert result.is_ok, result.danger_err
 
@@ -104,6 +112,93 @@ class TestStampRefusesUnbumped:
         result = stamp(tmp_path, _snapshot, "0.1.0")
 
         assert result.is_ok, result.danger_err
+
+
+class TestAllowUnbumpedRequiresReason:
+    """T-1768: `--allow-unbumped` silently rebaselined `.frob-release.json`
+    with no reason and no audit record -- the third instance of the
+    silent-override family T-1762 fixed for `ticket archive --force`/
+    `ticket land --finish --force`, and the worst of the three since it
+    permanently redefines the REL001 baseline rather than bypassing a
+    guard for one invocation."""
+
+    # frob:tests src/frob/release/__init__.py::stamp kind="unit"
+    # frob:ticket T-1768
+    def test_refuses_with_no_reason_when_shortfall_is_real(
+        self, tmp_path: Path, _snapshot
+    ) -> None:
+        """A genuine shortfall bypassed with no reason at all must be
+        refused -- the exact gap this ticket closes."""
+        _write_manifest(tmp_path, "0.1.0", {"gone::symbol": "deadbeef"})
+        before = manifest_path(tmp_path).read_text(encoding="utf-8")
+
+        result = stamp(tmp_path, _snapshot, "0.1.0", allow_unbumped=True)
+
+        assert result.is_err
+        assert result.danger_err is ReleaseError.UnbumpedReasonMissing
+        assert manifest_path(tmp_path).read_text(encoding="utf-8") == before, (
+            "a refused --allow-unbumped bypass must write NOTHING, same "
+            "posture as the ordinary UnbumpedApiChange refusal"
+        )
+
+    # frob:tests src/frob/release/__init__.py::stamp kind="unit"
+    # frob:ticket T-1768
+    def test_refuses_with_blank_reason(self, tmp_path: Path, _snapshot) -> None:
+        """A whitespace-only reason must be treated as no reason at all --
+        matching `record_force_override`'s own blank-reason refusal."""
+        _write_manifest(tmp_path, "0.1.0", {"gone::symbol": "deadbeef"})
+
+        result = stamp(tmp_path, _snapshot, "0.1.0", allow_unbumped=True, reason="   ")
+
+        assert result.is_err
+        assert result.danger_err is ReleaseError.UnbumpedReasonMissing
+
+    # frob:tests src/frob/release/__init__.py::stamp kind="unit"
+    # frob:ticket T-1768
+    def test_succeeds_with_reason_and_writes_audit_record(
+        self, tmp_path: Path, _snapshot
+    ) -> None:
+        """A real reason both lets the bypass through AND leaves a durable
+        record naming the version move, the skipped bump, and how many
+        symbol digests changed -- never a silent rebaseline."""
+        _write_manifest(tmp_path, "0.1.0", {"gone::symbol": "deadbeef"})
+        overrides_path = tmp_path / "force-overrides.jsonl"
+        assert not overrides_path.exists()
+
+        result = stamp(
+            tmp_path,
+            _snapshot,
+            "0.1.0",
+            allow_unbumped=True,
+            reason="genuinely cannot bump right now, tracked in T-9999",
+        )
+
+        assert result.is_ok, result.danger_err
+        assert overrides_path.exists()
+        import json
+
+        entry = json.loads(overrides_path.read_text(encoding="utf-8").splitlines()[-1])
+        assert entry["command"] == "release stamp --allow-unbumped"
+        assert entry["reason"] == "genuinely cannot bump right now, tracked in T-9999"
+        assert "0.1.0" in entry["target"]
+
+    # frob:tests src/frob/release/__init__.py::stamp kind="unit"
+    # frob:ticket T-1768
+    def test_no_reason_required_when_no_real_shortfall(
+        self, tmp_path: Path, _snapshot
+    ) -> None:
+        """`--allow-unbumped` with the version already adequate bypasses
+        NOTHING -- demanding a reason for a no-op guard would just be
+        friction with no accountability behind it, the same posture
+        `ticket archive --force` already established for a no-live-lease
+        archive."""
+        _write_manifest(tmp_path, "0.1.0", {"gone::symbol": "deadbeef"})
+        overrides_path = tmp_path / "force-overrides.jsonl"
+
+        result = stamp(tmp_path, _snapshot, "99.0.0", allow_unbumped=True)
+
+        assert result.is_ok, result.danger_err
+        assert not overrides_path.exists()
 
 
 class TestGuardIsOnByDefault:

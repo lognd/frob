@@ -72,6 +72,16 @@ class ReleaseError(ErrorSet):
         "would rebaseline the API at the OLD version and silence REL001 without "
         "the release ever happening"
     )
+    # frob:ticket T-1768
+    UnbumpedReasonMissing = (
+        "--allow-unbumped bypasses a real shortfall and requires --reason/"
+        "--reason-file (T-1768) -- this permanently redefines the REL001 "
+        "baseline, unlike a one-invocation --force bypass"
+    )
+    UnbumpedReasonRecordFailed = (
+        "--allow-unbumped's reason could not be recorded to "
+        "force-overrides.jsonl; the manifest was NOT rewritten"
+    )
     # frob:ticket T-1359
     WriteFailed = (
         "the crash-safe write of a release-owned file failed (see logs for the "
@@ -174,26 +184,112 @@ def _bump_shortfall(
     return (bump.name.lower(), manifest.version, need.danger_ok, version)
 
 
+def _changed_symbol_count(old_api: dict[str, str], new_api: dict[str, str]) -> int:
+    """The count of symrefs added, removed, or digest-changed between two
+    `ReleaseManifest.api` maps (T-1768) -- part of the audit record an
+    `--allow-unbumped` bypass now writes, so the entry names not just THAT
+    the baseline moved but roughly how much surface it silently accepted."""
+    all_refs = old_api.keys() | new_api.keys()
+    return sum(1 for ref in all_refs if old_api.get(ref) != new_api.get(ref))
+
+
+# frob:ticket T-1768
+def _record_unbumped_stamp_override(
+    root: Path,
+    shortfall: tuple[str, str, str, str],
+    new_api: dict[str, str],
+    reason: str,
+) -> Result[None, ReleaseError]:
+    """`--allow-unbumped`'s require-reason/record-audit half (T-1768),
+    mirroring T-1762's `record_force_override` shape exactly rather than
+    inventing a second one: refuses `Err(UnbumpedReasonMissing)` on a
+    blank reason, else appends one `ForceOverrideEntry` to
+    `force-overrides.jsonl` naming the version move, the bump class that
+    was skipped, and the count of symbols whose digest changed -- so the
+    audit trail says not just THAT the baseline moved but by how much.
+    Split out of `stamp` to keep that function's body under ARCH103's
+    decision-point budget."""
+    if not reason or not reason.strip():
+        _log.error(
+            "release stamp: --allow-unbumped requires --reason/--reason-file "
+            "(T-1768) -- refusing to rebaseline REL001 at %s (a required %s "
+            "bump to >= %s was skipped) with no recorded justification",
+            shortfall[1],
+            shortfall[0],
+            shortfall[2],
+        )
+        return Err(ReleaseError.UnbumpedReasonMissing)
+    from frob.tickets._force_override import record_force_override
+
+    bump_class, previous_version, required_version_str, current_version = shortfall
+    previous = load_manifest(root)
+    old_api = previous.danger_ok.api if previous.is_ok else {}
+    changed = _changed_symbol_count(old_api, new_api)
+    recorded = record_force_override(
+        root,
+        command="release stamp --allow-unbumped",
+        guard="T-1381 unbumped-api-change refusal",
+        target=(
+            f"version {previous_version}->{current_version} (required "
+            f">={required_version_str}, bump={bump_class}, "
+            f"{changed} symbol digest(s) changed)"
+        ),
+        reason=reason,
+    )
+    if recorded.is_err:
+        _log.error("release stamp: %s", recorded.danger_err)
+        return Err(ReleaseError.UnbumpedReasonRecordFailed)
+    _log.warning(
+        "release stamp: rebaselining REL001 manifest %s -> %s, skipping a "
+        "required %s bump to >= %s (%d symbol digest(s) changed), reason=%r",
+        previous_version,
+        current_version,
+        bump_class,
+        required_version_str,
+        changed,
+        reason,
+    )
+    return Ok(None)
+
+
 # frob:doc docs/modules/release.md#stamp-refuses-an-un-bumped-api-change-t-1381
+# frob:ticket T-1768
+# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_refuses_with_no_reason_when_shortfall_is_real  # noqa: E501
+# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_refuses_with_blank_reason  # noqa: E501
+# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_succeeds_with_reason_and_writes_audit_record  # noqa: E501
+# frob:tests tests/unit/test_release_stamp_guard.py::TestAllowUnbumpedRequiresReason.test_no_reason_required_when_no_real_shortfall  # noqa: E501
 def stamp(
     root: Path,
     snapshot: GraphSnapshot,
     version: str,
     *,
     allow_unbumped: bool = False,
+    reason: str | None = None,
 ) -> Result[str, ReleaseError]:
     """Write the current public API + `version` to the tracked manifest
     (T-0507: refuses with `Err(WorktreeLeaseViolation)` if `FROB_WORKTREE`
     names a different worktree than `root`, same guard as `frob check
     --stamp-baseline`/`--stamp-coverage` (T-0431)). Writes via
     `atomic_write` (T-1359): `Err(WriteFailed)` on the (should-never-
-    happen) I/O failure path, original file left intact."""
+    happen) I/O failure path, original file left intact.
+
+    T-1768: `allow_unbumped=True` no longer silently bypasses a real
+    shortfall. When one exists, `reason` is now REQUIRED
+    (`Err(UnbumpedReasonMissing)` on a blank/missing one) and the bypass
+    is appended to `force-overrides.jsonl` (`_record_unbumped_stamp_
+    override`, reusing T-1762's `ForceOverrideEntry` shape) before the
+    manifest is rewritten -- mirroring `ticket archive --force`/`ticket
+    land --finish --force`'s landed remedy exactly. `allow_unbumped=True`
+    with NO real shortfall (the version already covers the change) is
+    still a no-op guard-wise and demands no reason, same posture
+    `_require_reason_for_archive_force` already established: nothing was
+    actually bypassed."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(ReleaseError.WorktreeLeaseViolation)
-    if not allow_unbumped:
-        shortfall = _bump_shortfall(root, snapshot, version)
-        if shortfall is not None:
+    shortfall = _bump_shortfall(root, snapshot, version)
+    if shortfall is not None:
+        if not allow_unbumped:
             _log.error(
                 "release: refusing to stamp -- public API changed (%s) since %s, "
                 "so the version must be >= %s (currently %s). Bump it first, then "
@@ -203,6 +299,11 @@ def stamp(
                 *shortfall,
             )
             return Err(ReleaseError.UnbumpedApiChange)
+        recorded = _record_unbumped_stamp_override(
+            root, shortfall, _public_api(snapshot), reason or ""
+        )
+        if recorded.is_err:
+            return Err(recorded.danger_err)
     manifest = ReleaseManifest(version=version, api=_public_api(snapshot))
     path = manifest_path(root)
     written = _atomic_write_release(

@@ -48,23 +48,41 @@ def _version(root: Path) -> str:
     return version
 
 
+# frob:ticket T-1768
+def _resolve_release_allow_unbumped_reason(cfg: AppConfig) -> str | None:
+    """`frob release stamp --allow-unbumped`'s `--reason`/`--reason-file`
+    resolution (T-1768), mirroring `frob.app.ticket_runner._archive.
+    _resolve_force_reason`'s exact precedence: `--reason-file` wins if
+    given (read verbatim via the shared `read_reason_file_verbatim`
+    helper, T-0737's shell-injection-avoidance precedent), else the
+    inline `--reason` string, else `None` if neither was passed --
+    `frob.release.stamp` itself decides whether a reason was actually
+    REQUIRED (only when `--allow-unbumped` bypasses a real shortfall)."""
+    from frob.app.ticket_runner._mutate import read_reason_file_verbatim
+
+    if cfg.release_allow_unbumped_reason_file is not None:
+        return read_reason_file_verbatim(
+            cfg.release_allow_unbumped_reason_file, cli_label="release stamp"
+        )
+    return cfg.release_allow_unbumped_reason
+
+
 # frob:ticket T-0562
 # frob:ticket T-1381
+# frob:ticket T-1768
 def _stamp(root: Path, cfg: AppConfig) -> None:
     from frob.release import stamp
 
     version = _version(root)
+    reason = None
     if cfg.release_allow_unbumped:
-        _log.warning(
-            "release stamp: --allow-unbumped set -- stamping an API change at an "
-            "un-bumped version rebaselines REL001 against the OLD version "
-            "(justification required)"
-        )
+        reason = _resolve_release_allow_unbumped_reason(cfg)
     result = stamp(
         root,
         load_or_build_snapshot(root, log_context="release"),
         version,
         allow_unbumped=cfg.release_allow_unbumped,
+        reason=reason,
     )
     if result.is_err:
         _log.error("release stamp failed: %s", result.danger_err)
