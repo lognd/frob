@@ -10,6 +10,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/vet/**
 - tests/test_vet.py

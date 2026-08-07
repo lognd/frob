@@ -13,6 +13,7 @@ blocked_by:
 parent: T-1609
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/**
 - tests/**

@@ -9,6 +9,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - tests/conftest.py
 - src/frob/testing/**

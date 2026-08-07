@@ -11,6 +11,7 @@ blocked_by:
 parent: T-1686
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/verify/_bisect.py
 - docs/modules/tickets.md

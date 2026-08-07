@@ -10,6 +10,7 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/_cli_parsers/**
 - src/frob/app/__init__.py

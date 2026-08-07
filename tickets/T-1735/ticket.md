@@ -9,6 +9,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/gates/_rule_id_scan.py
 - tests/test_gates.py

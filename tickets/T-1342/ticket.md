@@ -9,6 +9,7 @@ priority: medium
 parent: T-1339
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/gates/_waive.py
 - tests/test_gates_waive.py

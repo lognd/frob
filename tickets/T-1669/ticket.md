@@ -12,6 +12,7 @@ blocked_by:
 parent: T-1136
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/tickets/**
 - src/frob/app/ticket_runner/**

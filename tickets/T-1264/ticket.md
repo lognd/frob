@@ -14,6 +14,7 @@ blocked_by:
 parent: T-1137
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/gates/_fixability_scan.py
 - src/frob/gates/__init__.py

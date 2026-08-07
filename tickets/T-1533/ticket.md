@@ -9,6 +9,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/registry/_corpus.py
 - src/frob/app/registry_runner.py

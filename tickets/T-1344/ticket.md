@@ -9,6 +9,7 @@ priority: high
 parent: null
 tier: epic
 sprint: null
+runs_last: false
 scope:
 - docs/guides/agent-playbook.md
 - src/frob/tickets/_land_git_ops.py

@@ -11,6 +11,7 @@ blocked_by:
 parent: T-1623
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - design/frob.strata
 - src/frob/strata/**

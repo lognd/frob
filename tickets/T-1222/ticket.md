@@ -10,6 +10,7 @@ priority: medium
 parent: T-1219
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/arch/_python.py
 - frob-core/**

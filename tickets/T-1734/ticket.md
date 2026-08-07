@@ -10,6 +10,7 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - .claude/hooks/diagnosis-nudge.py
 - .claude/hooks/sync-claude-config.py

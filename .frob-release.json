@@ -176,6 +176,7 @@
     "src/frob/app/telemetry.py::is_disabled": "9d06c96b5b7a899865e0fe4e0afbd7690395c92761c2b6e003fd67edc9bd35da",
     "src/frob/app/telemetry.py::iso_now": "36ed4ad41a0e13d0e609d1fc28960c1b304d7b6f554d5b894778665029aa544e",
     "src/frob/app/telemetry.py::record_cli_event": "fba2698030baa5fa00c209e9098658e81f8466e88679257c3496c2c9621a832e",
+    "src/frob/app/telemetry.py::record_dispatch_event": "9f852b5e1f8bfe303da646d1af50603f6e997276744c3a88004e7fa0bdc40b92",
     "src/frob/app/telemetry.py::record_ticket_event": "8c3efcb380dc4c40e02f7151478a4912871a04ef76cd6b11d48d95ad31750b69",
     "src/frob/app/telemetry.py::redact_command": "2d942d728c5cbf3e91275771ff12c3941553dd2423c811247433c6e1f4797a14",
     "src/frob/app/telemetry.py::render_tips": "a00835f93a0f3ce0bfb91edeacc48fe2e81c1beaaf67d0763a24a8ae670fd66f",
@@ -1234,12 +1235,16 @@
     "src/frob/stats/__init__.py::ticket_stats": "d330d244155f9b80e626b35b03e7970231b3b70a28a3b74fbcbf46180bc724e4",
     "src/frob/stats/_agentic.py::AgenticReport": "63bf50289b6eaf4d1fd3c2a9d09a1636f4f9f48b8d69470d3412a6b4bb4d1630",
     "src/frob/stats/_agentic.py::CategoryTime": "7d8b9e7d584a63e9dc33acf074bc44ffde96b60a3b8d381af20e24c1b064efeb",
+    "src/frob/stats/_agentic.py::DispatchCostReport": "ef078a963d88c20db472b4a0ffb43bc72fcf2eda850547f6b899958569aa05c7",
+    "src/frob/stats/_agentic.py::DispatchRecord": "f5e99ace98ff6d32cd70ce322f0e7d4b8ad254adb1a951b90d7021ad495d6277",
+    "src/frob/stats/_agentic.py::MarginalRunDelta": "2e921bb39e7db5b97fcea7a90968d4a3af0b6a1b512b296d04c972e9d63965a0",
     "src/frob/stats/_agentic.py::RetreadCandidate": "b97bc38f6ba8efefc3dc2247b1d127f95f9e272cc775d0ca0dc154fdfc7bd87c",
     "src/frob/stats/_agentic.py::TELEMETRY_REL": "69585fea98b2f90f7815658ac06790488e39e006efd7510a6db439eebdbbd7f2",
     "src/frob/stats/_agentic.py::TicketCycleTime": "a6c8a524d37c39d65e1e1fc7bf2cc28fa860c2b254ff0e4fb6e5e8a2a789615e",
     "src/frob/stats/_agentic.py::TimeSink": "b0d3ddfad113064ad19afd5e19ee740e0d6c1ff822b91476fc084ebb16a11ab6",
     "src/frob/stats/_agentic.py::ToolTokens": "f24d226ac4a20938458e467fdba0eee4403397d4966a6cff37bf1b548872d8b1",
     "src/frob/stats/_agentic.py::agentic_report": "36249f88659e3d0628a563262230b537b358ddf6a3cba5b9190f759e7449e8cc",
+    "src/frob/stats/_agentic.py::dispatch_cost_report": "1b19c4fcec92215b9b495af7c4ee84752f814ee61e40950a5ec466329d396b50",
     "src/frob/stats/_sketch.py::DEFAULT_ALPHA": "a9924b59d262b66e8134ca0387db773b8917f703e708e6aee8f6a07c841c3a56",
     "src/frob/stats/_sketch.py::QuantileSketch": "37a12676dab5a7eae8e01575bca88a668e54ba69a7b7d665d563d4aa2a470071",
     "src/frob/stats/_sketch.py::add_value": "b2577cdbcfef0a4e0cae0be429abb6d69a93e81c5d7f32749b958089b9b79ab9",
@@ -2120,5 +2125,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.375.0"
+  "version": "0.376.0"
 }

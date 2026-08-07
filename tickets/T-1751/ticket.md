@@ -9,6 +9,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - tests/test_tickets_lease.py
 scope_breadth_ack: false

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.376.0] - unreleased
+
+- T-1724: Measure dispatch cost against tickets landed: join agent telemetry to a dispatch record in frob stats --agentic
+
 ## [0.375.0] - unreleased
 
 - T-1779: Nothing guards the root checkout against a coordinator writing during a land: five stalls and one corrupted ticket state

@@ -11,6 +11,7 @@ blocked_by:
 parent: T-1686
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/verify/_worker.py
 - src/frob/tickets/_land.py

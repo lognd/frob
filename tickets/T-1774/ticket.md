@@ -10,6 +10,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/gates/_fix_engine_sync.py
 - src/frob/strata/_sync_interface.py

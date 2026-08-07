@@ -9,6 +9,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/_cli_parsers/_check.py
 - src/frob/app/check_runner.py

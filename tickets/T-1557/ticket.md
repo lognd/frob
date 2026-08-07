@@ -10,6 +10,7 @@ priority: medium
 parent: T-1238
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/_cli_parsers/**
 - src/frob/tickets/**

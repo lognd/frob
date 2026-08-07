@@ -20,11 +20,15 @@ from frob.logging import get_logger
 from frob.stats._agentic import (
     AgenticReport,
     CategoryTime,
+    DispatchCostReport,
+    DispatchRecord,
+    MarginalRunDelta,
     RetreadCandidate,
     TicketCycleTime,
     TimeSink,
     ToolTokens,
     agentic_report,
+    dispatch_cost_report,
 )
 from frob.stats._sketch import (
     QuantileSketch,
@@ -195,6 +199,9 @@ __all__ = [
     "AgenticReport",
     "CategoryTime",
     "CommitStats",
+    "DispatchCostReport",
+    "DispatchRecord",
+    "MarginalRunDelta",
     "QuantileSketch",
     "RetreadCandidate",
     "StatsReport",
@@ -207,6 +214,7 @@ __all__ = [
     "collect",
     "commit_stats",
     "decay_sketch",
+    "dispatch_cost_report",
     "merge_sketches",
     "new_sketch",
     "quantile",

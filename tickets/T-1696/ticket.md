@@ -13,6 +13,7 @@ blocked_by:
 parent: T-1686
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/tickets/_profile.py
 - src/frob/app/ticket_runner/_land_cmd.py

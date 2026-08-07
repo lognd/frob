@@ -10,6 +10,7 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/tickets/_live_tracker.py
 - tests/test_tickets_live_tracker.py

@@ -9,6 +9,7 @@ priority: high
 parent: null
 tier: epic
 sprint: null
+runs_last: false
 scope:
 - design/frob.strata
 - src/frob/strata/**

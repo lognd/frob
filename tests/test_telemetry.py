@@ -15,6 +15,7 @@ from frob.app.telemetry import (
     is_disabled,
     iso_now,
     record_cli_event,
+    record_dispatch_event,
     record_ticket_event,
     redact_command,
     render_tips,
@@ -79,6 +80,45 @@ def test_record_ticket_event_shape(tmp_path: Path):
         "event": "started",
         "iso_ts": record["iso_ts"],
     }
+
+
+class TestRecordDispatchEvent:
+    """T-1724: the dispatch-boundary recording API `dispatch_cost_report`
+    joins against `kind="tool"`/`kind="ticket"` events by timestamp
+    window."""
+
+    def test_start_and_end_events_shaped_correctly(self, tmp_path: Path):
+        # frob:tests src/frob/app/telemetry.py::record_dispatch_event
+        record_dispatch_event(
+            tmp_path,
+            dispatch_id="d1",
+            event="start",
+            worktree="/repo/.claude/worktrees/x",
+            branch="worktree-x",
+            cold_start=True,
+        )
+        record_dispatch_event(tmp_path, dispatch_id="d1", event="end")
+        lines = (tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").splitlines()
+        start, end = (json.loads(line) for line in lines)
+        assert start["kind"] == "dispatch"
+        assert start["dispatch_id"] == "d1"
+        assert start["event"] == "start"
+        assert start["worktree"] == "/repo/.claude/worktrees/x"
+        assert start["branch"] == "worktree-x"
+        assert start["cold_start"] is True
+        assert "iso_ts" in start
+        assert end["kind"] == "dispatch"
+        assert end["event"] == "end"
+
+    def test_optional_fields_omitted_when_none(self, tmp_path: Path):
+        # frob:tests src/frob/app/telemetry.py::record_dispatch_event
+        record_dispatch_event(tmp_path, dispatch_id="d1", event="start")
+        record = json.loads(
+            (tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip()
+        )
+        assert "worktree" not in record
+        assert "branch" not in record
+        assert "cold_start" not in record
 
 
 # invariant spec: [INV-022](invariants/INV-022.md)

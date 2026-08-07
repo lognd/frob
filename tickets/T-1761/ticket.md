@@ -9,6 +9,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/strata/_audit.py
 - src/frob/gates/_sys_selfaudit.py

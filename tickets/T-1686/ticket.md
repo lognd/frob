@@ -9,6 +9,7 @@ priority: critical
 parent: null
 tier: epic
 sprint: null
+runs_last: false
 scope:
 - src/frob/tickets/_land_queue.py
 - src/frob/serve/_daemon.py

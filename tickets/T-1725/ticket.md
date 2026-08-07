@@ -10,6 +10,7 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - .claude/hooks/frob-timeout-guard.py
 - .claude/hooks/frob-suggest.py

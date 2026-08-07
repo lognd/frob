@@ -12,6 +12,7 @@ blocked_by:
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/gates/_waive.py
 - src/frob/app/check_runner.py

@@ -9,6 +9,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - tests/test_tickets_mutation_evidence.py
 - src/frob/gates/_wire.py

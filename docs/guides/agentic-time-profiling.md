@@ -162,6 +162,7 @@ own corpus mining answered by hand, now a command.
 <!-- frob:describes src/frob/app/telemetry.py::estimate_tokens -->
 <!-- frob:describes src/frob/app/telemetry.py::record_cli_event -->
 <!-- frob:describes src/frob/app/telemetry.py::record_ticket_event -->
+<!-- frob:describes src/frob/app/telemetry.py::record_dispatch_event -->
 <!-- frob:describes src/frob/app/telemetry.py::timed_call -->
 <!-- frob:describes src/frob/app/telemetry.py::Tip -->
 <!-- frob:describes src/frob/app/telemetry.py::tips_disabled -->
@@ -181,6 +182,7 @@ def tree_hash(root) -> str
 def estimate_tokens(text) -> int
 def record_cli_event(root, *, subcommand, args_head, duration_ms, exit_code) -> None
 def record_ticket_event(root, *, ticket_id, event, extra=None) -> None
+def record_dispatch_event(root, *, dispatch_id, event, worktree=None, branch=None, cold_start=None) -> None
 def timed_call(root, *, subcommand, args_head, fn) -> T
 class Tip(BaseModel): rule_id, message, suggested_command
 def tips_disabled() -> bool

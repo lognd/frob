@@ -9,6 +9,7 @@ priority: medium
 parent: T-1420
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/vet/_capability.py
 - tests/test_vet.py

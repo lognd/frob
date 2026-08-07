@@ -10,6 +10,7 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_git_ops.py

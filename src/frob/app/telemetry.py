@@ -213,6 +213,58 @@ def record_ticket_event(
     append_event(root, record)
 
 
+# frob:ticket T-1724
+# frob:doc docs/guides/agentic-time-profiling.md#public-api
+# frob:tests tests/test_telemetry.py::TestRecordDispatchEvent.test_start_and_end_events_shaped_correctly  # noqa: E501
+# frob:tests tests/test_telemetry.py::TestRecordDispatchEvent.test_optional_fields_omitted_when_none  # noqa: E501
+# frob:waive WIRE001 reason="no caller yet -- the real call site is a Claude Code \
+# SessionStart/Stop hook (.claude/hooks/**), deliberately outside T-1724's own scope \
+# (schema + join, not the hook wiring)" follow_up="T-1787"
+def record_dispatch_event(
+    root: Path,
+    *,
+    dispatch_id: str,
+    event: str,
+    worktree: str | None = None,
+    branch: str | None = None,
+    cold_start: bool | None = None,
+) -> None:
+    """Append one `kind=\"dispatch\"` boundary event -- `event="start"` when
+    an agent begins work in a worktree, `event="end"` when it stops (T-1724).
+    `frob.stats._agentic.dispatch_cost_report` joins the pair on
+    `dispatch_id` and attributes `kind="tool"`/`kind="ticket"` events whose
+    `iso_ts` falls between them to that dispatch, so cost (tokens, tool
+    calls, wall clock) can finally be measured against delivery (tickets
+    landed) per dispatch instead of hand-tallied from notification text.
+
+    `cold_start` is the field this ticket exists for: PASS IT EXPLICITLY at
+    `event="start"` time (`True` for a fresh agent, `False` for a resumed
+    one) rather than leaving the reader to infer it from whether some other
+    counter went up -- that ambiguity is exactly what produced the
+    2026-08-07 published-then-withdrawn retirement threshold. `None` means
+    "not recorded" (an older caller, or a caller that genuinely could not
+    tell) and must never be silently treated as either `True` or `False`
+    downstream.
+
+    No caller wires this yet (T-1724's own scope is the schema and the
+    join, not the Claude Code hook that would call it at session
+    start/stop) -- that wiring is a `.claude/hooks/**` change, deliberately
+    out of this ticket's declared scope; see its Done report."""
+    record: dict[str, Any] = {
+        "iso_ts": iso_now(),
+        "kind": "dispatch",
+        "dispatch_id": dispatch_id,
+        "event": event,
+    }
+    if worktree is not None:
+        record["worktree"] = worktree
+    if branch is not None:
+        record["branch"] = branch
+    if cold_start is not None:
+        record["cold_start"] = cold_start
+    append_event(root, record)
+
+
 def _exit_code_from_system_exit(exc: SystemExit) -> int:
     """Map a caught `SystemExit` to a telemetry exit code: `sys.exit()`/
     `sys.exit(None)` is conventionally SUCCESS (0); an int code is used
@@ -287,12 +339,11 @@ def _finish_timed_call(
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 # frob:raises Exception
-# frob:waive AFFECT001 reason="T-1465 is a pure ARCH001 line-count \
-# split (extracted _exit_code_from_system_exit/_finish_timed_call helpers, \
-# preserving behavior verbatim, 26 tests in tests/test_telemetry.py still \
-# green); the documented public contract is unchanged, so \
-# docs/guides/agentic-time-profiling.md#public-api and docs/modules/stats.md \
-# need no update"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1465 is a pure ARCH001 line-count split (extracted \
+# _exit_code_from_system_exit/_finish_timed_call helpers, preserving behavior \
+# verbatim, 26 tests in tests/test_telemetry.py still green); the documented public \
+# contract is unchanged, so docs/guides/agentic-time-profiling.md#public-api and \
+# docs/modules/stats.md need no update"
 def timed_call(
     root: Path, *, subcommand: str, args_head: str, fn: Callable[[], T]
 ) -> T:
@@ -718,12 +769,11 @@ def _repeated_failure_streak_count(events: list[dict[str, Any]]) -> int:
 
 # frob:ticket T-1360
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
-# frob:waive AFFECT001 reason="T-1465 is a pure ARCH001 line-count \
-# split (extracted _top_time_sinks/_redundant_rerun_totals/ \
-# _repeated_failure_streak_count helpers, preserving behavior verbatim, 26 \
-# tests in tests/test_telemetry.py still green); the documented public \
-# contract is unchanged, so docs/guides/agentic-time-profiling.md#public-api \
-# needs no update"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1465 is a pure ARCH001 line-count split (extracted \
+# _top_time_sinks/_redundant_rerun_totals/ _repeated_failure_streak_count helpers, \
+# preserving behavior verbatim, 26 tests in tests/test_telemetry.py still green); the \
+# documented public contract is unchanged, so \
+# docs/guides/agentic-time-profiling.md#public-api needs no update"
 def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
     """Aggregate `root`'s whole telemetry corpus into a `UsageReport`
     (T-1360): per-subcommand time sinks, provably-redundant re-run cost

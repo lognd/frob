@@ -10,6 +10,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - tests/unit/test_coverage_attribution_lock_t1395.py
 - tests/unit/test_makefile_coverage.py

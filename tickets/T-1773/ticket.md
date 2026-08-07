@@ -10,6 +10,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/gates/_waive.py
 scope_breadth_ack: false

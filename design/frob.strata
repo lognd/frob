@@ -686,7 +686,7 @@ node core : trusted {
         check, check_ratchet, clean, collect, collect_cpp_tests, collect_python_tests,
         collect_rust_tests, collect_ts_tests, commit_stats, common_dir_and_branch, core_available, count_deltas,
         count_summary, coverage_lock_path, critical, current_branch, decay_sketch, default_pool_dir,
-        derived_state_lock, derived_state_write_lock, detect_collector_format, diff_class, drop_collection_cache, dup_matrix,
+        derived_state_lock, derived_state_write_lock, detect_collector_format, diff_class, dispatch_cost_report, drop_collection_cache, dup_matrix,
         duplicate_spawn_violations, evaluate_gate, excerpt, exec_enabled, exports_consumers, exports_package,
         extension_language, external_call_advisories, extra_patterns_from_config, extract_docstrings, fill_from_cache, find_clones,
         find_cycles, find_docs_dir, find_duplicates, find_helper_clones, flaky_node_ids, get_logger,

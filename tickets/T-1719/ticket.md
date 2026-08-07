@@ -10,6 +10,7 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/doctor.py

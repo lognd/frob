@@ -10,6 +10,7 @@ priority: low
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - tests/test_ticket_runner_archive_force.py
 - src/frob/app/ticket_runner/_archive.py

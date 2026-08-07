@@ -10,6 +10,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/strata/_mutation_audit.py
 - src/frob/strata/_native_staleness.py

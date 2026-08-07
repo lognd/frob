@@ -10,6 +10,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_verify.py

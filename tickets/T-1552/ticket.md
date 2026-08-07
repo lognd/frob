@@ -11,6 +11,7 @@ blocked_by:
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/tickets/_land_ledger_merge.py
 - src/frob/tickets/_land_merge.py

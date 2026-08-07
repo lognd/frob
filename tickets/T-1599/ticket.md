@@ -12,6 +12,7 @@ blocked_by:
 parent: T-1597
 tier: story
 sprint: null
+runs_last: false
 scope:
 - src/frob/lang/**
 - src/frob/gates/_lang_conformance.py

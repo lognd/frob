@@ -10,6 +10,7 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - design/frob.strata
 - src/frob/vet/_capability_typescript_bindtable.py

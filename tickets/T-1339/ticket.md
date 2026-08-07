@@ -9,6 +9,7 @@ priority: high
 parent: null
 tier: epic
 sprint: null
+runs_last: false
 scope:
 - docs/modules/gates.md
 - src/frob/gates/_waive.py

@@ -55,6 +55,72 @@ written, never through a second hand-rolled scanner.
 
 <!-- frob:invariant INV-022 -->
 
+## Dispatch cost vs delivery (T-1724)
+
+`frob.stats.dispatch_cost_report` answers the question the 2026-08-07
+hand-tally incident got wrong twice over: what does a dispatched agent
+cost, and what did it deliver. It joins a NEW `kind="dispatch"` telemetry
+event (`frob.app.telemetry.record_dispatch_event`, one at
+`event="start"` and one at `event="end"` per dispatch, opened when an
+agent begins work in a worktree and closed when it stops) against the
+existing `kind="tool"` (cost) and `kind="ticket"` (delivery) events in the
+SAME `.frob/telemetry.jsonl` stream `agentic_report` reads -- every event
+whose `iso_ts` falls inside a dispatch's `[start, end]` window is
+attributed to it, by timestamp, since neither existing event kind carries
+a dispatch id of its own.
+
+No caller wires `record_dispatch_event` or renders `dispatch_cost_report`
+yet -- that is a `.claude/hooks/**` (SessionStart/Stop) and
+`src/frob/app/stats_runner.py` change respectively, filed as a follow-up
+(see T-1724's Done report for the id) and deliberately out of this
+ticket's own scope, which is the schema and the join, not the wiring.
+`dispatch_cost_report(root)` is reachable today via
+`frob stats --agentic --json` (the pydantic model dumps automatically
+through the existing `--json` path) even with no dispatch events recorded
+yet -- an empty/absent stream produces an all-empty report, same posture
+as `agentic_report`.
+
+Schema decisions this ticket exists to enforce, each one a direct fix for
+how the 2026-08-07 incident went wrong:
+
+- **`output_tokens_delta` is explicitly a per-run figure**, named `_delta`
+  rather than a bare `tokens`, so nothing downstream has to infer whether
+  a number is a running total or one run's own cost by watching whether
+  it goes up. `cold_start` is likewise recorded explicitly at
+  `event="start"` time (`True`/`False`/`None` for "not recorded") rather
+  than inferred from any other field.
+- **Ordering is explicit.** Every event already carries an `iso_ts`;
+  `DispatchRecord`s are returned sorted by it (`_dispatch_sort_key`,
+  unparseable/missing timestamps sort last, deterministically by
+  `dispatch_id`) so a reader never has to reconstruct sequence itself --
+  the exact class of error (runs reconstructed in the wrong order) that
+  inverted the incident's headline figure.
+- **"Could not measure" is representable and never renders as `0`.**
+  `output_tokens_delta`, `tokens_per_landed_ticket`, and
+  `cold_start_floor_tokens` are all `None` (not `0`/`0.0`) whenever their
+  inputs contain no measured data -- a dispatch with zero attributed tool
+  events is unmeasured, not free (mirroring T-1703's sweep-reads-zero
+  fix, applied here to cost instead of coverage).
+- **Non-gated.** Like the rest of `frob.stats`, nothing here fails a gate
+  and malformed telemetry lines are skipped, never raised.
+
+The derived numbers `agentic_report` alone could not produce:
+
+- `tokens_per_landed_ticket`: total measured tokens across every dispatch
+  divided by the total count of tickets delivered.
+- `cold_start_floor_tokens`: mean measured token cost among dispatches
+  that delivered zero tickets -- "the cost of a dispatch that landed
+  nothing."
+- `zero_delivery_dispatch_ids`: dispatches that measurably spent tokens
+  (a real, positive `output_tokens_delta`) but delivered nothing -- the
+  retirement signal the ticket asks for; a dispatch whose cost could not
+  be measured is excluded rather than assumed wasteful.
+- `marginal_run_deltas`: the token-cost delta between one dispatch and the
+  previous one against the SAME worktree (the stable identity a resumed
+  agent keeps across runs, unlike `dispatch_id`, which is fresh every
+  time), ordered 1-based per worktree -- the exact cold-start-vs-resume
+  comparison the incident could not settle.
+
 ## Public API
 
 <!-- frob:describes src/frob/stats/__init__.py::TicketStats -->
@@ -70,8 +136,13 @@ written, never through a second hand-rolled scanner.
 <!-- frob:describes src/frob/stats/_agentic.py::TicketCycleTime -->
 <!-- frob:describes src/frob/stats/_agentic.py::ToolTokens -->
 <!-- frob:describes src/frob/stats/_agentic.py::agentic_report -->
+<!-- frob:describes src/frob/stats/_agentic.py::DispatchRecord -->
+<!-- frob:describes src/frob/stats/_agentic.py::MarginalRunDelta -->
+<!-- frob:describes src/frob/stats/_agentic.py::DispatchCostReport -->
+<!-- frob:describes src/frob/stats/_agentic.py::dispatch_cost_report -->
 <!-- frob:describes src/frob/app/telemetry.py::record_cli_event -->
 <!-- frob:describes src/frob/app/telemetry.py::record_ticket_event -->
+<!-- frob:describes src/frob/app/telemetry.py::record_dispatch_event -->
 <!-- frob:describes src/frob/app/telemetry.py::timed_call -->
 
 ```python
@@ -84,4 +155,10 @@ def collect(root, window_days=30) -> Result[StatsReport, GitError]
 
 class AgenticReport(BaseModel)    # non-gated time/token snapshot over .frob/telemetry.jsonl
 def agentic_report(root, top_n=10) -> AgenticReport
+
+class DispatchRecord(BaseModel)   # one dispatch's cost joined against delivery, by iso_ts window
+class MarginalRunDelta(BaseModel) # token-cost delta between one dispatch and the previous one in the same worktree
+class DispatchCostReport(BaseModel)  # dispatches + tokens_per_landed_ticket/cold_start_floor_tokens/zero_delivery_dispatch_ids/marginal_run_deltas
+def dispatch_cost_report(root) -> DispatchCostReport
+def record_dispatch_event(root, *, dispatch_id, event, worktree=None, branch=None, cold_start=None) -> None
 ```
