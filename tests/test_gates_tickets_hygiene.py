@@ -44,18 +44,26 @@ class TestTick003StaleArchive:
 
     def test_above_default_warn_threshold_warns(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive.test_above_default_warn_threshold_warns  # noqa: E501
-        _seed_closed(tmp_path, 21, dropped=3)
+        # T-1750: default warn moved 20 -> 10 (fire earlier, so archive
+        # housekeeping is schedulable well before it becomes urgent).
+        _seed_closed(tmp_path, 11, dropped=3)
         violations = [
             v for v in tickets_gate(tmp_path, _empty_queue()) if v.rule == "TICK003"
         ]
         assert len(violations) == 1
         assert violations[0].severity == Severity.WARN
-        assert "21 closed ticket" in violations[0].message
+        assert "11 closed ticket" in violations[0].message
         assert "frob ticket archive" in violations[0].message
 
     def test_above_default_error_threshold_errors(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive.test_above_default_error_threshold_errors  # noqa: E501
-        _seed_closed(tmp_path, 61)
+        # T-1750: default error moved 60 -> 400 -- far above anything a
+        # real drive organically reaches, so TICK003 can no longer force
+        # `frob ticket archive` to run at an unsafe, non-quiet moment
+        # (docs/modules/tickets.md#archive-the-live-worktree-guard-t-1750).
+        # The hard ERROR tier still exists as a backstop for a genuinely
+        # neglected ledger.
+        _seed_closed(tmp_path, 401)
         violations = [
             v for v in tickets_gate(tmp_path, _empty_queue()) if v.rule == "TICK003"
         ]
@@ -92,7 +100,8 @@ class TestTick003StaleArchive:
         # frob:tests tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive.test_malformed_frob_toml_degrades_to_defaults  # noqa: E501
         (tmp_path / "frob.toml").write_text("not valid toml [[[")
         _seed_closed(tmp_path, 5)
-        # Must not raise; default warn=20 means 5 closed tickets is clean.
+        # Must not raise; default warn=10 (T-1750) means 5 closed tickets
+        # is clean.
         violations = tickets_gate(tmp_path, _empty_queue())
         assert not any(v.rule == "TICK003" for v in violations)
 

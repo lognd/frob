@@ -189,11 +189,67 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
             return Ok(0)
 
         if not force:
+            worktree_guard = _refuse_archive_if_other_worktrees_live(root)
+            if worktree_guard.is_err:
+                return Err(worktree_guard.danger_err)
             guard = _refuse_archive_if_leased(root, to_archive)
             if guard.is_err:
                 return Err(guard.danger_err)
 
         return _write_archived_and_active(root, active, to_archive, active_digest)
+
+
+# frob:ticket T-1750
+# frob:doc docs/modules/tickets.md#archive-the-live-worktree-guard-t-1750
+# frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refuses_when_another_worktree_exists kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_force_overrides_the_live_worktree_refusal kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_other_worktree_archives_normally kind="unit"  # noqa: E501
+def _refuse_archive_if_other_worktrees_live(root: Path) -> Result[None, TicketError]:
+    """`archive`'s T-1750 in-flight-worktree guard: `Err
+    (ArchiveLiveLeaseExists)` if ANY OTHER linked git worktree of `root`'s
+    repository currently exists, else `Ok(None)`.
+
+    This is a DIFFERENT, broader precondition than `_refuse_archive_if_
+    leased` (T-0843/T-0976): that check only refuses when a ticket THIS
+    call would move holds a live lease, on the theory that archiving
+    unrelated closed work is safe even mid-drive. The 2026-08-07 incident
+    this ticket fixes showed that theory is not enough on its own -- a
+    live worktree with an UNRELATED in-progress ticket still has its OWN
+    checkout of the active ledger, and archiving on `main` while it is
+    live invites the exact ledger-drift-on-merge risk `docs/modules/
+    tickets.md`'s own "archive in a quiet window" guidance has always
+    named in prose but never enforced. This function is that
+    enforcement: a live worktree existing AT ALL (not just one holding a
+    lease archive would touch) refuses the call, naming every worktree
+    path found, with `force=True` (`--force`) as the documented override
+    for an operator who has confirmed it is safe (e.g. every live
+    worktree's ticket work is already landed and only the worktree
+    directory itself has not been cleaned up yet).
+
+    Reuses `frob.tickets._reconcile._live_worktrees` (the same `git
+    worktree list --porcelain` primitive `frob ticket reconcile` already
+    uses to find orphan worktrees) rather than re-deriving a second git-
+    worktree-listing implementation -- late-imported to avoid a module-
+    level import cycle (`_reconcile` imports from `_archive`'s sibling
+    modules, not this one directly, but keeping the cross-family import
+    local matches this package's existing late-import convention for
+    cross-family calls, e.g. `frob.tickets._doable`'s own late imports)."""
+    from frob.tickets._reconcile import _live_worktrees
+
+    live = _live_worktrees(root)
+    if not live:
+        return Ok(None)
+    _log.error(
+        "tickets: archive refused -- %d live git worktree(s) exist "
+        "besides the primary checkout (%s); archiving now risks the "
+        "T-1750 ledger-drift-on-merge incident (a worktree's own "
+        "pre-archive ledger view diverging from main's post-archive "
+        "state) -- run in a quiet window (no live worktrees) or pass "
+        "--force",
+        len(live),
+        ", ".join(str(p) for p in live),
+    )
+    return Err(TicketError.ArchiveLiveLeaseExists)
 
 
 # frob:ticket T-0976
@@ -224,10 +280,15 @@ def _refuse_archive_if_leased(
 
 
 # frob:ticket T-1256
+# frob:ticket T-1750
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
 # frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_v2_regression_two_sided_divergence_no_clobber  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archived_v2_ticket_still_resolves_as_blocker  # noqa: E501
+# frob:waive AFFECT001 reason="T-1750 only extracts the existing git-mv-per-ticket \
+# loop into a private helper (_archive_v2_move_tickets, ARCH001 line-budget fix) -- \
+# design/ledger-v2.md#43-archive-as-git-mv describes the git-mv-per-ticket design \
+# decision, which is unchanged; nothing new to document at that anchor"
 def archive_v2(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     """v2-mode `archive` (design section 4.3): `git mv tickets/T-####
     tickets/archive/T-####` per done/dropped ticket, zero content rewrite --
@@ -240,7 +301,18 @@ def archive_v2(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     Each move is taken under that ticket's own `ticket_lock` (design
     section 3), not a single whole-tree lock -- concurrent archives of
     DIFFERENT tickets never contend, and a `git mv` of one ticket's
-    directory can never race a write to another ticket's directory."""
+    directory can never race a write to another ticket's directory.
+
+    T-1750: deliberately does NOT get the broader `_refuse_archive_if_
+    other_worktrees_live` guard `archive` (the v1 monofile path) gets --
+    a `git mv` per ticket directory is a real rename between two disjoint
+    git paths, which a concurrent worktree's `git merge` resolves
+    correctly with no custom splice code (`TestArchiveV2.test_archive_v2_
+    regression_two_sided_divergence_no_clobber` reproduces the exact
+    two-sided-divergence shape unforced, with a live sibling worktree
+    throughout, and passes) -- the T-1750 incident's actual failure mode
+    (two divergent rewrites of the SAME `tickets.md`/`tickets-archive.md`
+    monofile pair) cannot occur on this path."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -263,6 +335,17 @@ def archive_v2(root: Path, *, force: bool = False) -> Result[int, TicketError]:
         if guard.is_err:
             return Err(guard.danger_err)
 
+    return _archive_v2_move_tickets(root, to_archive)
+
+
+# frob:ticket T-1750
+def _archive_v2_move_tickets(
+    root: Path, to_archive: dict[str, Ticket]
+) -> Result[int, TicketError]:
+    """`archive_v2`'s per-ticket `git mv` loop, split out to stay under
+    ARCH001's per-body budget (T-1750): each ticket id's directory move
+    runs under its own `ticket_lock`, so concurrent archives of DIFFERENT
+    tickets never contend."""
     moved = 0
     for ticket_id in sorted(to_archive):
         with ticket_lock(root, ticket_id):

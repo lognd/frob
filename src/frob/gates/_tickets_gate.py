@@ -135,8 +135,22 @@ def _tick002_draft_on_default(root: Path, queue: TicketQueue) -> tuple[Violation
 
 
 # frob:ticket T-0409
-_TICK003_DEFAULT_WARN = 20
-_TICK003_DEFAULT_ERROR = 60
+# frob:ticket T-1750
+# T-1750: moved from (20, 60) -- the 2026-08-07 incident (docs/modules/
+# tickets.md#archive-the-live-worktree-guard-t-1750)
+# was TICK003 itself forcing `frob ticket archive` to run at an arbitrary,
+# non-quiet moment mid-drive the instant the count crossed 60 -- ERROR
+# fully BLOCKS every land repo-wide, and the only remedy (`frob ticket
+# archive`) is exactly the operation that is unsafe to run mid-drive. WARN
+# drops to 10 (fires earlier, so housekeeping is visible and schedulable
+# well before it is urgent) and ERROR rises to 400 (far above anything a
+# real drive organically reaches, so the gate can no longer itself create
+# the "forced to archive right now, unsafely" deadlock) -- the hard ERROR
+# tier still exists as an absolute backstop for a genuinely neglected
+# ledger, just pushed far enough out that reaching it means real neglect,
+# not a busy drive.
+_TICK003_DEFAULT_WARN = 10
+_TICK003_DEFAULT_ERROR = 400
 
 
 def _tick003_thresholds(root: Path) -> tuple[int, int]:
@@ -505,7 +519,8 @@ def _code_span_mask(text: str) -> list[bool]:
 
 
 # frob:ticket T-0929
-# frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires
 # frob:enforces CHK-GATE-TICK006
 def _tick006_phantom_filing(
     queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
@@ -820,10 +835,13 @@ def _tick011_first_uncited_disclosure(
 
 # frob:ticket T-0820
 # frob:enforces CHK-GATE-TICK007
-# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires
+# frob:tests \
+# tests/test_gates.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent
+# frob:tests \
+# tests/test_gates.py::TestTick007UndispatchedStale.test_medium_priority_never_fires
+# frob:tests \
+# tests/test_gates.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent
 # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
 def _tick007_undispatched_stale(
     root: Path, queue: TicketQueue
@@ -864,11 +882,14 @@ def _tick007_undispatched_stale(
 
 # frob:ticket T-0842
 # frob:enforces CHK-GATE-TICK008
-# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field
+# frob:tests \
+# tests/test_gates.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo
+# frob:tests \
+# tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger
 # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable
 def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK008 (T-0842): WARN on every ticket in the CHECKED ledger that
     carries unknown/extra frontmatter field(s) -- the mechanical follow-up
@@ -1096,7 +1117,8 @@ def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
 _LEDGERV1_SUNSET = "2027-02-02"
 
 
-# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+# frob:doc \
+# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \

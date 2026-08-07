@@ -1758,7 +1758,8 @@ class TestWaiveRewrapNotDeletion:
     # frob:ticket T-1468
     # frob:ticket T-1636
     def test_rewrap_only_diff_is_not_flagged_as_a_deletion(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="integration"  # noqa: E501
+        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions \
+        # kind="integration"
         # T-1636: exercised only through the full `land(..., dry_run=True)`
         # pipeline several call-hops deep, not a direct call a static call-graph can
         # see -- COV006's own kind="integration" trust-at-face-value convention.
@@ -1795,7 +1796,8 @@ class TestWaiveRewrapNotDeletion:
     # frob:ticket T-1468
     # frob:ticket T-1636
     def test_rewrap_that_also_changes_content_still_refuses(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions kind="integration"  # noqa: E501
+        # frob:tests src/frob/tickets/_land_git_ops.py::_uncommitted_waive_deletions \
+        # kind="integration"
         # T-1636: exercised only through the full `land(..., dry_run=True)`
         # pipeline several call-hops deep, not a direct call a static call-graph can
         # see -- COV006's own kind="integration" trust-at-face-value convention.
@@ -2394,6 +2396,7 @@ class TestDraftFinalizeRewritesRegistryYamlRefs:
 
 
 # frob:ticket T-1194
+# frob:ticket T-1750
 class TestArchiveResurrection:
     """Reviewer bug 2: `splice_ledger` only read active tickets.md, never
     tickets-archive.md -- an id archived on main after the branch point
@@ -2403,6 +2406,7 @@ class TestArchiveResurrection:
     reintroduce an already-archived id."""
 
     # frob:ticket T-1194
+    # frob:ticket T-1750
     def test_archived_id_never_resurrected(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land_ledger_merge.py::splice_ledger kind="unit"
         # Seed a ticket that exists (stale, still active) in the worktree's
@@ -2432,7 +2436,11 @@ class TestArchiveResurrection:
         assert transition(repo, stale_id, TicketState.DONE).is_ok
         from frob.tickets import archive
 
-        archived_count = archive(repo)
+        # T-1750: `wt` is live at this point (deliberately, the scenario
+        # this test proves splice safety for) -- force past the new
+        # in-flight-worktree refusal to keep exercising splice
+        # correctness, the property this test actually checks.
+        archived_count = archive(repo, force=True)
         assert archived_count.is_ok and archived_count.danger_ok == 1
         _commit_all(repo, "archive the stale ticket")
 
@@ -2464,6 +2472,7 @@ class TestArchiveResurrection:
 # frob:ticket T-0959
 # frob:ticket T-1194
 # frob:ticket T-1636
+# frob:ticket T-1750
 class TestArchiveSpliceDiscipline:
     """T-0959: `tickets-archive.md` used to ride along on whatever git's raw
     merge/checkout produced at land time, with no per-id splice discipline
@@ -2542,6 +2551,7 @@ class TestArchiveSpliceDiscipline:
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
 
+    # frob:ticket T-1750
     def test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive(
         self, repo: Path
     ) -> None:
@@ -2573,7 +2583,11 @@ class TestArchiveSpliceDiscipline:
         sibling_id = sibling.danger_ok.id
         _make_closeable(wt, sibling_id)
         assert transition(wt, sibling_id, TicketState.DONE).is_ok
-        wt_archived_count = archive(wt)
+        # T-1750: `repo` is live from `wt`'s point of view -- force past
+        # the new in-flight-worktree refusal (the scenario below is
+        # exactly what that guard exists to flag in real operation; this
+        # test forces past it deliberately to prove splice correctness).
+        wt_archived_count = archive(wt, force=True)
         assert wt_archived_count.is_ok and wt_archived_count.danger_ok == 1
         _commit_all(wt, "worktree archives its own sibling ticket")
 
@@ -2582,7 +2596,7 @@ class TestArchiveSpliceDiscipline:
         for ticket_id in (first_id, second_id):
             _make_closeable(repo, ticket_id)
             assert transition(repo, ticket_id, TicketState.DONE).is_ok
-        archived_count = archive(repo)
+        archived_count = archive(repo, force=True)
         assert archived_count.is_ok and archived_count.danger_ok == 2
         _commit_all(repo, "archive two tickets (sweep happens after worktree branch)")
 
@@ -4082,7 +4096,8 @@ class TestReleaseBump:
     version-bump/stamp coordinator step folded into `land` itself."""
 
     def test_bump_applied_and_reported(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_bump_applied_and_reported  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestReleaseBump.test_bump_applied_and_reported
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-bump", str(wt)], repo)
         created = new_ticket(wt, _spec("Bump me", scope=("src/bumped.py",)))
@@ -4107,7 +4122,8 @@ class TestReleaseBump:
         assert _status_ignoring_frob(repo) == ""
 
     def test_no_bump_needed_reports_none(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_no_bump_needed_reports_none  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestReleaseBump.test_no_bump_needed_reports_none
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-nobump", str(wt)], repo)
         created = new_ticket(wt, _spec("No bump needed", scope=("src/quiet.py",)))
@@ -4128,7 +4144,8 @@ class TestReleaseBump:
         assert result.danger_ok.release_bumped_to is None
 
     def test_bump_failure_unwinds_squash(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_bump_failure_unwinds_squash  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestReleaseBump.test_bump_failure_unwinds_squash
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-badbump", str(wt)], repo)
         created = new_ticket(wt, _spec("Bad bump", scope=("src/badbump.py",)))
@@ -4155,7 +4172,7 @@ class TestReleaseBump:
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
 
     def test_no_callback_is_noop(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_no_callback_is_noop  # noqa: E501
+        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_no_callback_is_noop
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-nocallback", str(wt)], repo)
         created = new_ticket(wt, _spec("No callback", scope=("src/nc.py",)))
@@ -4221,7 +4238,8 @@ class TestReleaseBump:
 
     # frob:ticket T-0992
     def test_downgrade_bump_is_refused(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_downgrade_bump_is_refused  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestReleaseBump.test_downgrade_bump_is_refused
         """T-0992 hard monotonicity refusal: a `bump_version` callback that
         computes a version no greater than main's CURRENT pre-land version
         (the T-0976/T-0989 failure mode -- a stale worktree-carried input
@@ -4522,7 +4540,8 @@ class TestUvLockSync:
     def test_bump_then_lock_synced_in_commit(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_bump_then_lock_synced_in_commit  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUvLockSync.test_bump_then_lock_synced_in_commit
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "frob"\nversion = "0.1.0"\n'
         )
@@ -6191,7 +6210,8 @@ class TestMutationEvidencePrecheck:
     def test_no_findings_is_ok(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_no_findings_is_ok  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_no_findings_is_ok
         ticket = self._ticket(TicketKind.SECURITY)
         import frob.gates as _gates_mod
 
@@ -7201,7 +7221,8 @@ class TestLandPushCliWiring:
     the sibling `--skip-mutation-evidence` flag."""
 
     def test_flag_parses_to_true(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandPushCliWiring.test_flag_parses_to_true  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestLandPushCliWiring.test_flag_parses_to_true
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -7333,7 +7354,8 @@ class TestPushAfterLand:
     def test_dry_run_never_pushes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_dry_run_never_pushes  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPushAfterLand.test_dry_run_never_pushes
         from frob.app import ticket_runner
 
         def _fail_if_called(*a: Any, **k: Any) -> Any:
@@ -7364,7 +7386,8 @@ class TestPushAfterLand:
     def test_push_failure_exits_nonzero(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_push_failure_exits_nonzero  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPushAfterLand.test_push_failure_exits_nonzero
         from frob.app import ticket_runner
 
         def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
@@ -7382,7 +7405,8 @@ class TestPushAfterLand:
     def test_exec_disabled_exits_nonzero(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_exec_disabled_exits_nonzero  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPushAfterLand.test_exec_disabled_exits_nonzero
         from frob.app import ticket_runner
         from frob.process._guard import ProcessGuardError
 
@@ -7403,7 +7427,8 @@ class TestUnionZoneMerge:
     manual resolution; a true same-key contradiction still refuses."""
 
     def test_keyed_lines_union_composes(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_composes  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_composes
         ours = '# comment for A\nRULEA = "error"\n'
         theirs = '# comment for B\nRULEB = "warn"\n'
         merged = _land_merge_zones_mod._union_keyed_chunks(
@@ -7414,7 +7439,8 @@ class TestUnionZoneMerge:
         assert 'RULEB = "warn"' in merged
 
     def test_keyed_lines_union_refuses(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_refuses
         ours = 'RULEA = "error"\n'
         theirs = 'RULEA = "warn"\n'
         merged = _land_merge_zones_mod._union_keyed_chunks(
@@ -7423,7 +7449,7 @@ class TestUnionZoneMerge:
         assert merged is None
 
     def test_resolve_stages(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_resolve_stages  # noqa: E501
+        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_resolve_stages
         target = repo / "frob.toml"
         target.write_text(
             "[gates.severity]\n"
@@ -8413,7 +8439,7 @@ class TestLandPlan:
         assert _status_ignoring_frob(repo) == ""
 
     # frob:ticket T-1269
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge  # noqa: E501
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge
     def test_dry_run_unwinds_the_merge(self, repo: Path, tmp_path: Path) -> None:
         from frob.tickets._land import land_plan
 
@@ -8432,7 +8458,8 @@ class TestLandPlan:
         assert not (repo / "docs" / "new.md").exists()
 
     # frob:ticket T-1269
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses
     def test_merge_conflict_aborts_and_refuses(
         self, repo: Path, tmp_path: Path
     ) -> None:

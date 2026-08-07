@@ -4181,6 +4181,63 @@ append-only, the same "root-level JSONL audit log" shape this repo's own
 `rapid-debt.jsonl` already established) via `frob.tickets._force_
 override.record_force_override`.
 
+### Archive: the live-worktree guard (T-1750)
+
+`frob ticket archive` (v1 monofile mode -- `tickets.md`/
+`tickets-archive.md`) moves every done/dropped ticket from the active
+ledger into the archive file with a whole-file `write_all`/`write_archive`
+rewrite of BOTH files (`_write_archived_and_active`). That rewrite is a
+DELETE from one tracked file plus an ADD to another, from git's
+perspective -- not a rename it can reconcile on its own -- so a worktree
+whose OWN checkout of `tickets.md` still shows a ticket ACTIVE, merging
+`main` AFTER that ticket has been archived there, can produce a ledger
+with the ticket's id present in BOTH `tickets.md` and
+`tickets-archive.md` (T-1437's `DuplicateId`-collapse recovery path exists
+because of exactly this). The 2026-08-07 incident this section documents
+was the worse version: 62 tickets moved in one `archive` call while an
+agent's worktree was live, and that worktree's next `git merge main`
+reproduced the duplicate-id class at scale, forcing a full playbook
+section-10b recovery pass.
+
+`archive` already refused (`Err(ArchiveLiveLeaseExists)`) when a ticket
+the call would itself move still held a live cross-worktree lease
+(T-0843/`_refuse_archive_if_leased`) -- but that check is scoped to
+tickets THIS call touches, not to whether any OTHER worktree exists at
+all, and the incident's agent held a lease for a completely different,
+unrelated ticket. T-1750 adds a second, broader guard ahead of it,
+`_refuse_archive_if_other_worktrees_live`: `archive` now refuses
+outright whenever `git worktree list` (via `frob.tickets._reconcile.
+_live_worktrees`, the same primitive `frob ticket reconcile` already
+uses) shows ANY linked worktree besides the primary checkout, naming
+every one found, with `--force` as the documented override for an
+operator who has confirmed it is safe. This is deliberately the v1
+MONOFILE path only -- `archive_v2` (design section 4.3, `git mv
+tickets/T-#### tickets/archive/T-####` per ticket) does NOT get this
+guard, because its per-ticket-directory move is a real git rename
+between two disjoint paths, which a concurrent worktree's `git merge`
+resolves correctly with no custom splice code at all (`TestArchiveV2.
+test_archive_v2_regression_two_sided_divergence_no_clobber` reproduces
+the exact two-sided-divergence shape against `archive_v2` and passes
+unforced, with a second worktree live throughout) -- the DuplicateId
+failure mode this guard exists to prevent cannot occur on that path, so
+gating it the same way would only cost every v2-mode drive real
+throughput for no safety gained.
+
+TICK003 (`docs/modules/gates.md#tick003`) is the OTHER half of this
+incident: it forced `archive` to run at an arbitrary, non-quiet moment
+mid-drive by escalating to a hard ERROR once too many closed tickets sat
+un-archived. `_tick003_stale_archive`'s warn/error thresholds moved from
+`(20, 60)` to `(10, 400)` (T-1750) -- warn much earlier, so ledger
+housekeeping is visible and schedulable well before it becomes urgent,
+and error only far above any threshold a real drive would organically
+reach, so the gate can no longer itself create the exact "forced to
+archive right now, unsafely" deadlock the incident hit. The hard ERROR
+tier still exists as an absolute backstop (an ever-growing, truly
+unbounded active ledger is a real hygiene problem, not just an
+aesthetic one) -- it is pushed far enough out that reaching it means the
+housekeeping was neglected for a long time, not that a drive was simply
+busy.
+
 ### Tiers: epic -> story -> ticket (T-0715)
 
 `Ticket.tier` (`TicketTier`: `epic`/`story`/`ticket`, default `ticket`)

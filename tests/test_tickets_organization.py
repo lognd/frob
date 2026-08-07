@@ -92,7 +92,11 @@ class TestFieldRoundTrip:
 
     def test_comma_joined_label_splits(self) -> None:
         # frob:tests src/frob/tickets/_models.py::_split_scope_entries kind="unit"
-        # frob:waive COV006 reason="T-1024: genuinely reachable -- constructing a Ticket runs the labels field's @field_validator (_normalize_labels), which calls _split_scope_entries (T-0454's reuse of the scope-splitting helper for labels too); frob.graph.callgraph's best-effort BFS cannot trace through pydantic's validator-decorator dispatch"  # noqa: E501
+        # frob:waive COV006 reason="T-1024: genuinely reachable -- constructing a \
+        # Ticket runs the labels field's @field_validator (_normalize_labels), which \
+        # calls _split_scope_entries (T-0454's reuse of the scope-splitting helper for \
+        # labels too); frob.graph.callgraph's best-effort BFS cannot trace through \
+        # pydantic's validator-decorator dispatch"
         ticket = _ticket(ticket_id="T-0001", labels=("a,b",))
         assert ticket.labels == ("a", "b")
 
@@ -274,7 +278,8 @@ class TestEpicRollup:
         assert result.danger_ok.blocked_leaves == ("T-0002",)
 
     def test_childless_epic_is_zero_percent_not_a_crash(self) -> None:
-        # frob:tests src/frob/tickets/_models.py::EpicRollup.percent_complete kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_models.py::EpicRollup.percent_complete \
+        # kind="unit"
         epic = _ticket(ticket_id="T-0001")
         queue = TicketQueue(tickets={epic.id: epic})
         result = epic_rollup(queue, "T-0001")
@@ -390,6 +395,99 @@ class TestForceOverrideAudit:
         with pytest.raises(SystemExit):
             _archive(tmp_path, force=True, no_commit=True)
         assert not (tmp_path / "force-overrides.jsonl").exists()
+
+
+# frob:ticket T-1750
+class TestArchiveRefusesLiveWorktrees:
+    """T-1750: `archive` (v1 monofile path) refuses when another linked
+    git worktree exists, naming it -- the belt-and-braces guard the
+    2026-08-07 duplicate-id incident showed prose alone never enforced."""
+
+    # frob:ticket T-1750
+    def _repo(self, tmp_path: Path) -> Path:
+        root = tmp_path / "repo"
+        root.mkdir()
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=str(root), check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=str(root),
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test"], cwd=str(root), check=True
+        )
+        (root / "README.md").write_text("x\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)
+        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=str(root), check=True)
+        return root
+
+    # frob:ticket T-1750
+    def _write_done(self, root: Path, ticket_id: str) -> None:
+        from frob.tickets._store import write_all
+
+        (root / "tickets.md").write_text(
+            "# Tickets\n\nCentral ledger managed by `frob ticket` -- one section per ticket.\n",
+            encoding="utf-8",
+        )
+        write_all(root, {ticket_id: _ticket(ticket_id=ticket_id, state=TicketState.DONE)})
+
+    # frob:ticket T-1750
+    def test_refuses_when_another_worktree_exists(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refu\
+        # ses_when_another_worktree_exists
+        from frob.tickets import archive
+
+        root = self._repo(tmp_path)
+        self._write_done(root, "T-0001")
+        wt = tmp_path / "wt"
+        subprocess.run(
+            ["git", "worktree", "add", "-b", "agent-wt", str(wt)],
+            cwd=str(root),
+            check=True,
+        )
+
+        result = archive(root)
+        assert result.is_err
+        assert result.danger_err == TicketError.ArchiveLiveLeaseExists
+
+        active = load_all(root)
+        assert active.is_ok
+        assert "T-0001" in active.danger_ok
+
+    # frob:ticket T-1750
+    def test_force_overrides_the_live_worktree_refusal(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_forc\
+        # e_overrides_the_live_worktree_refusal
+        from frob.tickets import archive
+
+        root = self._repo(tmp_path)
+        self._write_done(root, "T-0001")
+        wt = tmp_path / "wt"
+        subprocess.run(
+            ["git", "worktree", "add", "-b", "agent-wt", str(wt)],
+            cwd=str(root),
+            check=True,
+        )
+
+        result = archive(root, force=True)
+        assert result.is_ok
+        assert result.danger_ok == 1
+
+    # frob:ticket T-1750
+    def test_no_other_worktree_archives_normally(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_o\
+        # ther_worktree_archives_normally
+        from frob.tickets import archive
+
+        root = self._repo(tmp_path)
+        self._write_done(root, "T-0001")
+
+        result = archive(root)
+        assert result.is_ok
+        assert result.danger_ok == 1
 
 
 # frob:ticket T-1613
