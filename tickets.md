@@ -1934,7 +1934,7 @@ no frob:until binding.
 id: T-1487
 title: 'rust: python tree-extraction kernel in frob-core (T-1220 delivered portion
   1)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-03'
@@ -1947,8 +1947,16 @@ scope:
 - tests/unit/test_extract_native.py
 - docs/modules/lang.md
 - docs/modules/dup.md
+- tests/test_tickets_lease.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_lease.py
+  reason: landing requires re-pointing a WIRE001 waiver follow_up= citation that named
+    T-1487, since T-1487 is closing without touching that file's fixture
+  actor: logan
+  at: '2026-08-07'
 evidence:
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_module_class_function_docstrings_and_comments
 - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_errorset_style_assignment_is_not_a_docstring
@@ -1970,24 +1978,60 @@ Leaf carrier for T-1220's first portion: extract_tree_python in frob-core (tree-
 
 ## Done report
 
-Carrier for T-1220 portion 1; see the parent ticket Done report for
-the full delivery narrative (917-file golden parity, FFI compliance,
-grammar-generation delta documentation).
+Verification-only pass, no new kernel code required.
+
+Investigation before writing anything (per dispatch instructions,
+understanding exactly where T-1220's portion-1 boundary sits): T-1220's
+own Done report already records extract_tree_python (the python
+tree-extraction kernel) as fully delivered -- 917-file golden parity,
+FFI-boundary compliance, docs/modules/lang.md and docs/modules/dup.md
+updated in that same change. Confirmed directly against this worktree's
+main tip:
+
+- frob-core/src/extract.rs already defines extract_tree_python (line
+  207) and frob-core/src/lib.rs already registers it in the frob_core
+  pymodule; frob-core/frob_core.pyi already types it.
+- tests/unit/test_extract_native.py already contains
+  TestExtractTreePythonParity with all four tests this ticket's
+  acceptance criterion names.
+- docs/modules/lang.md and docs/modules/dup.md already document the
+  kernel (Extraction API / frob-core kernels sections).
+
+T-1487's own ledger entry already carried a pre-filled Done report
+(evidence, Changed diffstat, Captured claims) despite state=queued --
+apparently drafted as a carrier stub when T-1220 was split, but never
+actually run through start/land. There is no remaining "next portion"
+of python-kernel work inside this ticket's own scope: the whole
+scope (frob-core/**, tests/unit/test_extract_native.py,
+docs/modules/lang.md, docs/modules/dup.md) as it pertains to the
+PYTHON kernel is already satisfied by code on main. Remaining
+tree-extraction work (cpp/typescript kernels, consumer rewiring) lives
+under the parent T-1220 and T-1219 respectively, outside this ticket's
+declared scope -- not something to fold in here.
+
+Re-verified rather than trusted the stale prose:
+- `pytest tests/unit/test_extract_native.py -q`: 7 passed (4 python-
+  parity + 3 rust-parity, both already-landed kernels).
+- `frob check --ticket T-1487 --only ffi_boundary`: 0 errors, 0
+  warnings.
+- `frob check --ticket T-1487 --only scope --only prework --only fmt
+  --only affect_drift`: 0 errors, 154 warnings (SCOPE002 breadth notes
+  from the ticket's own broad frob-core/** and docs-file globs pulling
+  in unrelated anchors/frob:tests edges elsewhere in those same files --
+  same pre-existing debt class T-1220's own Done report already
+  disclosed for this scope, not new).
+- `frob check --ticket T-1487 --only gates-fast --only gates-native
+  --only gates-security`: 0 errors repo-wide across every gate family.
+
+No source change was needed or made; this dispatch's own worktree
+commit is only the `ticket start` transition record. Closing T-1487 as
+delivered-by-T-1220, with T-1487's own evidence re-verified against
+current main rather than merely re-asserted from the stale draft.
 
 ### Changed
 ```
- docs/modules/dup.md               |   7 +
- docs/modules/lang.md              |  23 +++
- frob-core/Cargo.lock              | 196 +++++++++++++++++++++-
- frob-core/Cargo.toml              |   2 +
- frob-core/frob_core.pyi           |  13 ++
- frob-core/src/extract.rs          | 215 ++++++++++++++++++++++++
- frob-core/src/lib.rs              |   6 +
- src/frob/vet/_capability_core.py  | 174 +++++++++++++-------
- tests/test_vet.py                 |  42 +++++
- tests/unit/test_extract_native.py | 123 ++++++++++++++
- tickets.md                        | 336 +++++++++++++++++++++++++++++++++++++-
- 11 files changed, 1068 insertions(+), 69 deletions(-)
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 ```
 
 ### Evidence
@@ -1998,8 +2042,8 @@ grammar-generation delta documentation).
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
-- gates: 5 error(s), 299 warning(s), 745 waived
-- error-findings: DUP001@frob-core/src/extract.rs, F401@/home/logan/projects/frob/.claude/worktrees/w18r-rust/src/frob/vet/_capability_core.py:30, INV006@frob-core/src/extract.rs, SELFAUDIT001@design, WIRE001@tests/unit/test_extract_native.py
+- gates: 0 error(s), 301 warning(s), 724 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1503 -->
 ```yaml
@@ -3863,6 +3907,7 @@ This repo already owns the machinery: frob.graph.callgraph does call-graph resol
 Fail-closed requirement: when resolution cannot determine a call's target (genuinely dynamic dispatch, a computed getattr), that must surface as an explicit UNRESOLVED finding demanding a declaration or a waiver -- never as "no capability found". This drive has repeatedly been burned by analysis that reported nothing when it could not look; the capability layer must not repeat it.
 
 Prerequisite for symbol-level `via`: attributing a capability to a specific declared symbol is only meaningful once the hit itself is symbol-resolved. Sequence this before, or together with, the via-granularity work.
+
 <!-- ticket:T-1627 -->
 ```yaml
 id: T-1627
@@ -8190,3 +8235,37 @@ Regression coverage must include the real shape: a worktree branched
 BEFORE an archive pass, merging main AFTER it, asserting the merged
 ledger has no duplicate ids and no dropped drafts. A test that archives
 with no worktrees present proves nothing about the failure mode.
+
+<!-- ticket:T-1751 -->
+```yaml
+id: T-1751
+title: revisit WIRE001 waiver follow_up citation orphaned by T-1487's close
+state: queued
+kind: docs
+origin: human
+created: '2026-08-07'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_tickets_lease.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+```
+Found while landing T-1487 (rust python tree-extraction kernel carrier):
+tests/test_tickets_lease.py:449 carries a `frob:waive WIRE001 ...
+follow_up="T-1487"` directive on `_write_ticket_file`. T-1487's own
+scope (frob-core/**, tests/unit/test_extract_native.py, docs/modules/
+lang.md, docs/modules/dup.md) never touched this file or fixture, and
+T-1487 is closing as delivered-by-T-1220 with no new code -- so this
+citation cannot legitimately resolve against T-1487 any longer.
+
+Re-verify whether `_write_ticket_file` still needs the WIRE001 waiver
+at all (confirm it is still test-fixture-only, called only by
+TestClusterScopeConflict's own methods in this same file per the
+existing waiver reason), and either drop the waiver if a real caller
+now exists or re-confirm/refresh it with a live follow_up ticket.

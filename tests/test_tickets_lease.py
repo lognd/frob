@@ -446,7 +446,7 @@ class TestBreadthPerf:
 # frob:waive WIRE001 reason="test-only fixture helper used by \
 # TestClusterScopeConflict's own three test methods below, in this same file -- a test \
 # fixture calling itself is not the class of orphaned-production-code WIRE001 exists \
-# to catch" follow_up="T-1487"
+# to catch" follow_up="T-1751"
 def _write_ticket_file(root: Path, ticket: Ticket, slug: str) -> None:
     """Write `ticket` into `root/tickets/<id>-<slug>.md` (T-1243) -- the
     on-disk fixture `_refuse_on_cluster_scope_conflict` needs, since it
