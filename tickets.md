@@ -7727,6 +7727,21 @@ acceptance:
 - text: The nudge names what to file (e.g. 'N findings in X have no owning ticket'),
     not merely that something is unfiled.
   evidence: []
+- text: 'MEASURED 2026-08-07 via the temporary Stop probe (~/.claude/hooks/_stop-probe.py,
+    output at ~/.claude/hooks/state/stop-probe.jsonl): the Stop payload DOES carry
+    the response text. Observed keys: _probe_at, background_tasks, cwd, effort, hook_event_name,
+    last_assistant_message, permission_mode, prompt_id, session_crons, session_id,
+    stop_hook_active, transcript_path. So the state-based fallback described in the
+    body is NOT needed -- read last_assistant_message directly.'
+  evidence: []
+- text: 'Use stop_hook_active to avoid re-entrancy: the payload carries it, and a
+    Stop hook that re-triggers itself is the obvious failure mode.'
+  evidence: []
+- text: 'REMOVE the probe as part of this ticket: delete ~/.claude/hooks/_stop-probe.py,
+    its Stop registration in ~/.claude/settings.json, and ~/.claude/hooks/state/stop-probe.jsonl.
+    A diagnostic left running is the same residue class this drive has spent the day
+    clearing.'
+  evidence: []
 threat: null
 component: null
 ```
@@ -7803,7 +7818,6 @@ Either way:
 
 Sibling: T-1725 already gates verb references in the tracked hooks, so
 whatever this adds must resolve against the live dispatch table too.
-
 <!-- ticket:T-1735 -->
 ```yaml
 id: T-1735
@@ -8650,3 +8664,35 @@ questions to resolve here:
 
 Read src/frob/vet/_capability_python.py (T-1626's Done report) and
 src/frob/graph/callgraph.py before starting.
+
+<!-- ticket:T-1753 -->
+```yaml
+id: T-1753
+title: 'post-land sweep regression from T-1690: 3 new error(s) (ARCH001, E501, invalid-argument-type)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-07'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- /home/logan/projects/frob/src/frob/verify/_attribution.py
+- src/frob/verify/_attribution.py
+- tests/unit/test_rapid_sweep.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+```
+The deferred post-land unscoped sweep (T-1684) for T-1690 at commit 5c17406570de3df7006b5737a6fc1cdc8fdf6b5c found 3 error identit(ies) that were not present in the previous sweep's baseline.
+
+New (rule, file) pairs filed here:
+
+- ARCH001  src/frob/verify/_attribution.py
+- E501  /home/logan/projects/frob/src/frob/verify/_attribution.py
+- invalid-argument-type  tests/unit/test_rapid_sweep.py
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
