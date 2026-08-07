@@ -55,9 +55,10 @@ v2 store has been exercised through real land/archive cycles.
 (no changed files detected)
 
 ### Evidence
-(no evidence recorded)
+- `tests/test_tickets_migration.py::TestMigrateV1ToV2::test_golden_round_trip_semantic_equality` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_write_archive_round_trips_many_tickets_count_and_content` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
-- gates: 0 error(s), 661 warning(s), 724 waived
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 663 warning(s), 724 waived
 - error-findings: none (measured, zero errors)
