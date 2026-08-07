@@ -81,3 +81,30 @@ def extract_tree_rust(
     list[tuple[str, int]],
     list[str],
 ]: ...
+
+# T-1220: cpp-only tree-extraction kernel companion to extract_tree_python/
+# extract_tree_rust -- see docs/modules/lang.md#extraction-api. Returns
+# (comment_spans, identifiers, tokens); a 3-tuple, no docstring facet (cpp
+# has no python-style string-literal docstring convention). Never raises
+# (source that fails to parse yields three empty lists rather than a
+# PyErr).
+def extract_tree_cpp(
+    source: bytes,
+) -> tuple[
+    list[tuple[int, int]],
+    list[tuple[str, int]],
+    list[str],
+]: ...
+
+# T-1220: typescript-only tree-extraction kernel companion to the python/
+# rust/cpp kernels -- see docs/modules/lang.md#extraction-api. Returns
+# (comment_spans, identifiers, tokens); a 3-tuple, no docstring facet.
+# Never raises (source that fails to parse yields three empty lists rather
+# than a PyErr).
+def extract_tree_typescript(
+    source: bytes,
+) -> tuple[
+    list[tuple[int, int]],
+    list[tuple[str, int]],
+    list[str],
+]: ...

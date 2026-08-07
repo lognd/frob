@@ -1,12 +1,14 @@
-//! Python-only tree-extraction kernel (T-1220, EPIC B candidate #1's first
-//! landed portion): source bytes in, spans/tokens/identifiers out, computed
-//! natively via `tree-sitter`/`tree-sitter-python` instead of `frob.lang`'s
-//! per-node Python recursion (`_extract.py`, `_walk_python.py`,
-//! `frob.vet._capability_core`'s pre-T-1223 walk). This module owns ONLY
-//! the python grammar today -- cpp/rust/typescript kernels and the
-//! consumer-side rewiring (perf/clones/deprecated/dead_symbols/opaque/sys)
-//! are follow-up tickets (T-1220's own acceptance criteria; this is the
-//! foundation, not the full migration).
+//! Tree-extraction kernels (T-1220, EPIC B candidate #1): source bytes in,
+//! spans/tokens/identifiers out, computed natively via `tree-sitter`
+//! instead of `frob.lang`'s per-node Python recursion (`_extract.py`,
+//! `_walk_python.py`/`_walk_rust.py`/`_walk_c.py`/`_walk_typescript.py`,
+//! `frob.vet._capability_core`'s pre-T-1223 walk). Python, rust, cpp, and
+//! typescript grammars are covered here; kotlin stays on the existing
+//! Python path (T-1220's own scoping decision -- no first-class Rust
+//! grammar crate targeted for it). The consumer-side rewiring (perf/
+//! clones/deprecated/dead_symbols/opaque/sys switching callers over to
+//! these kernels) is a separate ticket, T-1219 -- this module is the
+//! foundation, not the full migration.
 //!
 //! Mirrors two existing Python-side contracts exactly, verified by a
 //! golden-test comparison script (not committed -- run ad hoc against this
@@ -346,5 +348,186 @@ pub fn extract_tree_rust(
     source: Vec<u8>,
 ) -> (Vec<(usize, usize)>, Vec<(String, usize)>, Vec<String>) {
     let result = extract_rust_source(&source);
+    (result.comment_spans, result.identifiers, result.tokens)
+}
+
+/// One parsed extraction result for a cpp source buffer -- same 3-tuple
+/// shape as `RustExtraction` (no python-style string-literal docstring
+/// facet in cpp either; a `/** ... */`/`///`-style doc comment is a plain
+/// `comment` leaf, same as any other cpp comment, matching how
+/// `frob.lang._walk_c._walk_c_family` reads doc comments from
+/// `COMMENT_TYPES["cpp"]` -- see `frob.lang._extract.COMMENT_TYPES`).
+struct CppExtraction {
+    comment_spans: Vec<(usize, usize)>,
+    identifiers: Vec<(String, usize)>,
+    tokens: Vec<String>,
+}
+
+/// Cpp leaf kinds counted as identifier-like occurrences -- matches
+/// `frob.lang._extract._IDENTIFIER_TYPES["cpp"]` exactly (same pair the
+/// c/cpp bucket already shares on the Python side).
+const CPP_IDENTIFIER_KINDS: [&str; 2] = ["identifier", "type_identifier"];
+
+/// Pure compute: parse `source` as cpp and collect comment spans,
+/// identifier `(name, line)` pairs, and the whole-file leaf-token stream
+/// (comments excluded) -- empty result (never a panic) if `source` fails
+/// to parse at all. Unlike rust's grammar, cpp's `comment` node IS a leaf
+/// (no delimiter child), same as python's -- so this shares `walk_leaves`'s
+/// single leaf-only pass for comments/identifiers/tokens together, rather
+/// than rust's separate type-match `collect_comment_nodes` walk.
+fn extract_cpp_source(source: &[u8]) -> CppExtraction {
+    let empty = CppExtraction {
+        comment_spans: Vec::new(),
+        identifiers: Vec::new(),
+        tokens: Vec::new(),
+    };
+    let mut parser = Parser::new();
+    let language = tree_sitter_cpp::LANGUAGE.into();
+    if parser.set_language(&language).is_err() {
+        return empty;
+    }
+    let Some(tree) = parser.parse(source, None) else {
+        return empty;
+    };
+    let root = tree.root_node();
+
+    let mut leaves: Vec<Node> = Vec::new();
+    walk_leaves(root, &mut leaves);
+
+    let mut comment_spans: Vec<(usize, usize)> = Vec::new();
+    let mut identifiers: Vec<(String, usize)> = Vec::new();
+    let mut tokens: Vec<String> = Vec::new();
+    for leaf in &leaves {
+        let text = match leaf.utf8_text(source) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        if leaf.kind() == "comment" {
+            comment_spans.push(span_of(*leaf));
+            continue;
+        }
+        if CPP_IDENTIFIER_KINDS.contains(&leaf.kind()) {
+            identifiers.push((text.to_string(), leaf.start_position().row + 1));
+        }
+        tokens.push(text.to_string());
+    }
+
+    CppExtraction {
+        comment_spans,
+        identifiers,
+        tokens,
+    }
+}
+
+/// FFI entry point (T-1220): cpp-only tree-extraction kernel companion to
+/// `extract_tree_python`/`extract_tree_rust`. `source` is the raw file
+/// bytes; returns `(comment_spans, identifiers, tokens)` -- a 3-tuple, no
+/// docstring facet (see `CppExtraction`'s doc comment). Same 1-based-
+/// inclusive-span, `(name, line)`, and comment-excluded-token-stream
+/// conventions as the other two kernels.
+///
+/// Never raises (see module docstring): a buffer tree-sitter cannot parse
+/// yields three empty lists rather than a `PyErr`.
+// frob:doc docs/modules/lang.md#extraction-api
+#[pyfunction]
+pub fn extract_tree_cpp(
+    source: Vec<u8>,
+) -> (Vec<(usize, usize)>, Vec<(String, usize)>, Vec<String>) {
+    let result = extract_cpp_source(&source);
+    (result.comment_spans, result.identifiers, result.tokens)
+}
+
+/// One parsed extraction result for a typescript source buffer -- same
+/// 3-tuple shape as cpp/rust (no python-style string-literal docstring
+/// facet; typescript's `/** ... */` doc comments are plain `comment` leaves,
+/// matching `frob.lang._walk_typescript._COMMENT_TYPES = {"comment"}`).
+struct TypescriptExtraction {
+    comment_spans: Vec<(usize, usize)>,
+    identifiers: Vec<(String, usize)>,
+    tokens: Vec<String>,
+}
+
+/// Typescript leaf kinds counted as identifier-like occurrences. The
+/// Python side (`frob.lang._extract._IDENTIFIER_TYPES`) has no
+/// `"typescript"` entry yet -- this kernel is the FIRST identifier-walk
+/// support for typescript in this repo, not a port of an existing Python
+/// contract, so the kind set is chosen fresh: plain `identifier` (names)
+/// and `type_identifier` (type-position names, e.g. an interface/class
+/// name used as a type annotation), mirroring the c/cpp/rust pattern of
+/// splitting value- vs type-position identifier leaves rather than
+/// collapsing them -- typescript's grammar defines both kinds
+/// (`property_identifier` deliberately excluded here: it covers object-
+/// literal/member-access property names, a different occurrence class
+/// than a declared/referenced identifier, matching cpp/rust's own choice
+/// not to fold `field_identifier`-style member access into the same
+/// bucket as rust does only because rust's grammar makes that leaf
+/// genuinely ambiguous with a plain identifier -- typescript's does not).
+const TS_IDENTIFIER_KINDS: [&str; 2] = ["identifier", "type_identifier"];
+
+/// Pure compute: parse `source` as typescript and collect comment spans,
+/// identifier `(name, line)` pairs, and the whole-file leaf-token stream
+/// (comments excluded) -- empty result (never a panic) if `source` fails
+/// to parse at all. Plain typescript grammar (not TSX) -- matches
+/// `frob.lang.__init__`'s `.ts` -> `("typescript", "typescript")` mapping;
+/// `.tsx` is a separate bucket this kernel does not cover (T-1220 follow-up
+/// if TSX-specific JSX node kinds ever need their own handling).
+fn extract_typescript_source(source: &[u8]) -> TypescriptExtraction {
+    let empty = TypescriptExtraction {
+        comment_spans: Vec::new(),
+        identifiers: Vec::new(),
+        tokens: Vec::new(),
+    };
+    let mut parser = Parser::new();
+    let language = tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into();
+    if parser.set_language(&language).is_err() {
+        return empty;
+    }
+    let Some(tree) = parser.parse(source, None) else {
+        return empty;
+    };
+    let root = tree.root_node();
+
+    let mut leaves: Vec<Node> = Vec::new();
+    walk_leaves(root, &mut leaves);
+
+    let mut comment_spans: Vec<(usize, usize)> = Vec::new();
+    let mut identifiers: Vec<(String, usize)> = Vec::new();
+    let mut tokens: Vec<String> = Vec::new();
+    for leaf in &leaves {
+        let text = match leaf.utf8_text(source) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        if leaf.kind() == "comment" {
+            comment_spans.push(span_of(*leaf));
+            continue;
+        }
+        if TS_IDENTIFIER_KINDS.contains(&leaf.kind()) {
+            identifiers.push((text.to_string(), leaf.start_position().row + 1));
+        }
+        tokens.push(text.to_string());
+    }
+
+    TypescriptExtraction {
+        comment_spans,
+        identifiers,
+        tokens,
+    }
+}
+
+/// FFI entry point (T-1220): typescript-only tree-extraction kernel
+/// companion to the python/rust/cpp kernels. `source` is the raw file
+/// bytes; returns `(comment_spans, identifiers, tokens)` -- a 3-tuple, no
+/// docstring facet. Same 1-based-inclusive-span, `(name, line)`, and
+/// comment-excluded-token-stream conventions as the other three kernels.
+///
+/// Never raises (see module docstring): a buffer tree-sitter cannot parse
+/// yields three empty lists rather than a `PyErr`.
+// frob:doc docs/modules/lang.md#extraction-api
+#[pyfunction]
+pub fn extract_tree_typescript(
+    source: Vec<u8>,
+) -> (Vec<(usize, usize)>, Vec<(String, usize)>, Vec<String>) {
+    let result = extract_typescript_source(&source);
     (result.comment_spans, result.identifiers, result.tokens)
 }

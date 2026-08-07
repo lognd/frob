@@ -2,7 +2,7 @@
 id: T-1220
 title: 'rust: tree-extraction kernel -- source bytes to symbols/spans/tokens/identifiers/comment+docstring
   spans/import specs'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -57,6 +57,12 @@ evidence:
 - tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_functions_structs_comments_and_field_access
 - tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_unparseable_source_returns_empty_not_a_crash
 - tests/unit/test_extract_native.py::TestExtractTreeRustParity::test_this_repos_own_extract_rs_matches_byte_for_byte
+- tests/unit/test_extract_native.py::TestExtractTreeCppParity::test_functions_classes_and_comment_styles
+- tests/unit/test_extract_native.py::TestExtractTreeCppParity::test_unparseable_source_returns_empty_not_a_crash
+- tests/unit/test_extract_native.py::TestExtractTreeCppParity::test_this_repos_own_bad_cpp_fixture_matches_byte_for_byte
+- tests/unit/test_extract_native.py::TestExtractTreeTypescriptParity::test_functions_classes_interfaces_and_comment_styles
+- tests/unit/test_extract_native.py::TestExtractTreeTypescriptParity::test_unparseable_source_returns_empty_not_a_crash
+- tests/unit/test_extract_native.py::TestExtractTreeTypescriptParity::test_this_repos_own_arch_fixture_comments_and_tokens_match
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN frob.lang._extract.extract and _walk_python do pure per-node Python
@@ -74,12 +80,20 @@ acceptance:
   - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_errorset_style_assignment_is_not_a_docstring
   - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_unparseable_source_returns_empty_not_a_crash
   - tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_this_repos_own_lang_module_matches_byte_for_byte
+  - tests/unit/test_extract_native.py::TestExtractTreeCppParity::test_functions_classes_and_comment_styles
+  - tests/unit/test_extract_native.py::TestExtractTreeCppParity::test_unparseable_source_returns_empty_not_a_crash
+  - tests/unit/test_extract_native.py::TestExtractTreeCppParity::test_this_repos_own_bad_cpp_fixture_matches_byte_for_byte
+  - tests/unit/test_extract_native.py::TestExtractTreeTypescriptParity::test_functions_classes_interfaces_and_comment_styles
+  - tests/unit/test_extract_native.py::TestExtractTreeTypescriptParity::test_unparseable_source_returns_empty_not_a_crash
+  - tests/unit/test_extract_native.py::TestExtractTreeTypescriptParity::test_this_repos_own_arch_fixture_comments_and_tokens_match
 - text: 'GIVEN the report''s Rust-migration-candidates #1 and #4 overlap (identifier/xref
     index kernel is subsumed by the tree-extraction kernel if it lands first) WHEN
     this ticket lands THEN the identifier/xref index kernel work is satisfied as a
     byproduct (leaf_identifiers output) rather than needing a separate crate export
     -- no duplicate kernel is built for identifier extraction'
-  evidence: []
+  evidence:
+  - tests/unit/test_extract_native.py::TestExtractTreeCppParity::test_functions_classes_and_comment_styles
+  - tests/unit/test_extract_native.py::TestExtractTreeTypescriptParity::test_functions_classes_interfaces_and_comment_styles
 threat: null
 component: null
 ---

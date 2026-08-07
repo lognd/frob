@@ -222,8 +222,56 @@ against this repo's own rust source tree (`frob-core/**/*.rs`,
 `strata-core/**/*.rs`, plus fixture `.rs` files, 12 files, 0 mismatches
 ad hoc; `tests/unit/test_extract_native.py::TestExtractTreeRustParity`
 carries the committed regression lock). No consumer is rewired to this
-kernel yet, same as the python kernel above -- cpp/typescript walkers and
-the consumer rewiring remain future work.
+kernel yet, same as the python kernel above.
+
+<!-- frob:describes frob-core/src/extract.rs::extract_tree_cpp -->
+
+T-1220 (third landed portion): `frob_core.extract_tree_cpp(source: bytes)
+-> (comment_spans, identifiers, tokens)` is the cpp-language companion
+kernel, via `tree-sitter`/`tree-sitter-cpp` (crates.io 0.23.4). A 3-tuple
+like the rust kernel -- cpp has no python-style string-literal docstring
+facet either. Unlike rust, cpp's `comment` node IS a leaf (no delimiter
+child, same shape as python's `comment`), so this kernel shares
+`walk_leaves`'s single leaf-only pass across comments/identifiers/tokens,
+the same structure as `extract_tree_python` rather than
+`extract_tree_rust`'s separate type-match comment walk. Identifier kinds
+(`identifier`, `type_identifier`) match the already-existing `frob.lang.
+_extract._IDENTIFIER_TYPES["cpp"]` entry exactly -- no Python-side
+addition needed here, unlike the rust portion. Golden-tested against this
+repo's own `.cpp`/`.h`/`.hpp` fixture corpus (`tests/fixtures/**/*.cpp`,
+`tests/fixtures/**/*.h`) plus a synthetic multi-comment-style fixture, 0
+mismatches ad hoc; `tests/unit/test_extract_native.py::
+TestExtractTreeCppParity` carries the committed regression lock.
+
+<!-- frob:describes frob-core/src/extract.rs::extract_tree_typescript -->
+
+T-1220 (fourth landed portion, completing the cpp/rust/typescript
+follow-up the first portion's note above named): `frob_core.
+extract_tree_typescript(source: bytes) -> (comment_spans, identifiers,
+tokens)` is the typescript-language companion kernel, via `tree-sitter`/
+`tree-sitter-typescript` (crates.io 0.23.2, `LANGUAGE_TYPESCRIPT` --
+plain `.ts`, not the TSX variant; matches `frob.lang.__init__`'s
+`.ts -> ("typescript", "typescript")` extension mapping, `.tsx` is a
+separate bucket this kernel does not cover). A 3-tuple like cpp/rust --
+no docstring facet; `comment` is a leaf, same leaf-only walk as cpp/
+python. `frob.lang._extract._IDENTIFIER_TYPES` had NO `"typescript"`
+entry before this portion (typescript had no identifier-walk counterpart
+at all, same starting point rust was in) -- this kernel picks
+`identifier`/`type_identifier` fresh (not yet mirrored back into the
+Python side, since there is no existing Python typescript identifier walk
+to keep in parity with; a follow-up ticket would add the matching
+`_IDENTIFIER_TYPES["typescript"]` entry if `frob.xref` needs a
+typescript-side identifier walk of its own). Golden-tested against this
+repo's own `.ts` fixture corpus plus a synthetic fixture covering
+`//`/`/** */` comment styles and function/class/interface declarations, 0
+mismatches ad hoc; `tests/unit/test_extract_native.py::
+TestExtractTreeTypescriptParity` carries the committed regression lock.
+
+No consumer is rewired to any of the four kernels yet -- that is T-1219's
+job (`perf`/`clones`/`deprecated`/`dead_symbols`/`opaque`/`sys`). With
+this portion, T-1220's own acceptance criterion (python/cpp/rust/
+typescript kernels exported, kotlin staying on the Python path) is fully
+delivered; only the consumer rewiring remains, under T-1219.
 
 ## Primitives
 

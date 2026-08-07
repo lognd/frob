@@ -1,9 +1,13 @@
-"""T-1220: golden tests for `frob_core.extract_tree_python`, the native
-python-only tree-extraction kernel -- byte/line-identical parity against
-`frob.lang`'s existing Python extraction path (comment spans via
-`frob.lang._extract`, docstring spans via `frob.vet._capability_core`,
-identifiers via `frob.lang._extract.iter_identifiers`, tokens via
-`frob.lang._common._leaf_tokens`)."""
+"""T-1220: golden tests for the `frob_core.extract_tree_*` native
+tree-extraction kernels (python/rust/cpp/typescript) -- byte/line-
+identical parity against `frob.lang`'s existing Python extraction path
+where one exists (comment spans via `frob.lang._extract`, docstring spans
+via `frob.vet._capability_core` for python only, identifiers via
+`frob.lang._extract.iter_identifiers`, tokens via
+`frob.lang._common._leaf_tokens`). Typescript has no pre-existing Python
+identifier-walk contract (`_IDENTIFIER_TYPES` has no `"typescript"` entry)
+-- its identifier collection gets a standalone sanity check instead of a
+parity one; see `TestExtractTreeTypescriptParity`."""
 
 from __future__ import annotations
 
@@ -217,3 +221,152 @@ class TestExtractTreeRustParity:
         # a synthetic fixture.
         source = Path("frob-core/src/extract.rs").read_bytes()
         assert _rust_kernel_side(source) == _rust_lang_python_side(source)
+
+
+_CPP_LANG = get_language("cpp")
+
+
+# frob:waive WIRE001 reason="a private golden-test helper used only by \
+# TestExtractTreeCppParity's own methods below, in this same file -- there is no \
+# production caller to wire it to by design, mirroring _rust_lang_python_side above \
+# and the tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
+# follow_up="T-1503"
+def _cpp_lang_python_side(
+    source: bytes,
+) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
+    """The existing Python-side computation for cpp's three collections
+    (no docstring facet, same as rust -- see `extract_tree_cpp`'s doc
+    comment in `frob-core/src/extract.rs`)."""
+    parser = Parser(_CPP_LANG)
+    tree = parser.parse(source)
+    root = tree.root_node
+
+    raw_nodes = _extract._collect_comment_nodes(root, _extract.COMMENT_TYPES["cpp"])
+    comment_spans = sorted(_common._span_of(n) for n in raw_nodes)
+    identifiers = sorted(_extract.iter_identifiers(tree, "cpp"))
+    tokens = list(_common._leaf_tokens(root, _extract.COMMENT_TYPES["cpp"]))
+    return comment_spans, identifiers, tokens
+
+
+# frob:waive WIRE001 reason="a private golden-test helper used only by \
+# TestExtractTreeCppParity's own methods below, in this same file -- there is no \
+# production caller to wire it to by design, mirroring _rust_kernel_side above and the \
+# tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
+# follow_up="T-1503"
+def _cpp_kernel_side(
+    source: bytes,
+) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
+    """`frob_core.extract_tree_cpp`'s output, normalized the same way
+    `_cpp_lang_python_side` normalizes its own three collections."""
+    comment_spans, identifiers, tokens = frob_core.extract_tree_cpp(source)
+    return sorted(comment_spans), sorted(identifiers), tokens
+
+
+class TestExtractTreeCppParity:
+    """`frob_core.extract_tree_cpp` (T-1220's cpp kernel slice) vs the
+    existing Python extraction path (`frob.lang._extract`), across this
+    repo's own `tests/fixtures/lang/sample.cpp` fixture."""
+
+    def test_functions_classes_and_comment_styles(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_cpp kind="unit"
+        source = Path("tests/fixtures/lang/sample.cpp").read_bytes()
+        assert _cpp_kernel_side(source) == _cpp_lang_python_side(source)
+
+    def test_unparseable_source_returns_empty_not_a_crash(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_cpp kind="unit"
+        # Never raises across the FFI boundary (module docstring) -- even
+        # nonsense input just parses as best-effort tree-sitter error
+        # recovery, never a PyErr.
+        comment_spans, identifiers, tokens = frob_core.extract_tree_cpp(
+            b"\x00\x01\xff not cpp at all (((("
+        )
+        assert isinstance(comment_spans, list)
+        assert isinstance(identifiers, list)
+        assert isinstance(tokens, list)
+
+    def test_this_repos_own_bad_cpp_fixture_matches_byte_for_byte(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_cpp kind="unit"
+        # A second, independent fixture (already committed for a different
+        # purpose -- tests/fixtures/bad_cpp/) as a real regression lock
+        # beyond the one synthetic sample above.
+        source = Path("tests/fixtures/bad_cpp/main.cpp").read_bytes()
+        assert _cpp_kernel_side(source) == _cpp_lang_python_side(source)
+
+
+_TS_LANG = get_language("typescript")
+
+
+# frob:waive WIRE001 reason="a private golden-test helper used only by \
+# TestExtractTreeTypescriptParity's own methods below, in this same file -- there is \
+# no production caller to wire it to by design, mirroring _rust_lang_python_side above \
+# and the tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
+# follow_up="T-1503"
+def _ts_lang_python_side_comments_and_tokens(
+    source: bytes,
+) -> tuple[list[tuple[int, int]], list[str]]:
+    """The existing Python-side computation for typescript's comment spans
+    and token stream ONLY -- unlike cpp/rust, `frob.lang._extract.
+    _IDENTIFIER_TYPES` has no `"typescript"` entry (no pre-existing Python
+    identifier walk for typescript to compare against; see
+    `extract_tree_typescript`'s doc comment in `frob-core/src/extract.rs`
+    for why this kernel's identifier kinds are chosen fresh rather than
+    mirrored)."""
+    parser = Parser(_TS_LANG)
+    tree = parser.parse(source)
+    root = tree.root_node
+
+    raw_nodes = _extract._collect_comment_nodes(
+        root, _extract.COMMENT_TYPES["typescript"]
+    )
+    comment_spans = sorted(_common._span_of(n) for n in raw_nodes)
+    tokens = list(_common._leaf_tokens(root, _extract.COMMENT_TYPES["typescript"]))
+    return comment_spans, tokens
+
+
+class TestExtractTreeTypescriptParity:
+    """`frob_core.extract_tree_typescript` (T-1220's typescript kernel
+    slice) vs the existing Python extraction path for the two facets it
+    has a pre-existing contract for (comment spans, tokens) -- identifiers
+    have no Python-side counterpart to compare against yet (see the
+    module-level helper's docstring above), so those get a standalone
+    sanity assertion instead of a parity one."""
+
+    def test_functions_classes_interfaces_and_comment_styles(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_typescript kind="unit"
+        source = Path("tests/fixtures/lang/sample.ts").read_bytes()
+        comment_spans, identifiers, tokens = frob_core.extract_tree_typescript(source)
+        py_comment_spans, py_tokens = _ts_lang_python_side_comments_and_tokens(source)
+        assert sorted(comment_spans) == py_comment_spans
+        assert tokens == py_tokens
+        # Identifiers: no Python-side contract to compare against (see
+        # class docstring) -- assert the kernel found the fixture's known
+        # declared names instead, as a standalone sanity check. "render" is
+        # deliberately absent: a method name is a `property_identifier`
+        # leaf in this grammar, not `identifier`/`type_identifier` --
+        # excluded by design (see `TS_IDENTIFIER_KINDS`'s doc comment in
+        # `frob-core/src/extract.rs`).
+        names = {name for name, _line in identifiers}
+        assert {"add", "x", "y", "Widget", "label", "MAX_WIDGETS"} <= names
+
+    def test_unparseable_source_returns_empty_not_a_crash(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_typescript kind="unit"
+        # Never raises across the FFI boundary (module docstring) -- even
+        # nonsense input just parses as best-effort tree-sitter error
+        # recovery, never a PyErr.
+        comment_spans, identifiers, tokens = frob_core.extract_tree_typescript(
+            b"\x00\x01\xff not typescript at all (((("
+        )
+        assert isinstance(comment_spans, list)
+        assert isinstance(identifiers, list)
+        assert isinstance(tokens, list)
+
+    def test_this_repos_own_arch_fixture_comments_and_tokens_match(self) -> None:
+        # frob:tests frob-core/src/extract.rs::extract_tree_typescript kind="unit"
+        # A second, independent fixture as a real regression lock beyond
+        # the one synthetic sample above, for the two facets with a
+        # pre-existing Python-side contract.
+        source = Path("tests/fixtures/arch/typescript/equiv.ts").read_bytes()
+        comment_spans, _identifiers, tokens = frob_core.extract_tree_typescript(source)
+        py_comment_spans, py_tokens = _ts_lang_python_side_comments_and_tokens(source)
+        assert sorted(comment_spans) == py_comment_spans
+        assert tokens == py_tokens

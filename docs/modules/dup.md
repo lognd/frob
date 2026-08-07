@@ -379,6 +379,14 @@ T-1220 added a seventeenth export, `extract_tree_rust` -- the rust-language
 companion to `extract_tree_python` (same registration function, same
 `frob_core` pymodule); see docs/modules/lang.md#extraction-api.
 
+T-1220 added an eighteenth and nineteenth export, `extract_tree_cpp` and
+`extract_tree_typescript` -- the cpp- and typescript-language companions
+completing the kernel set (same registration function, same `frob_core`
+pymodule); see docs/modules/lang.md#extraction-api. With these two, T-1220's
+own python/cpp/rust/typescript acceptance criterion is fully delivered
+(kotlin stays on the existing Python path by design); only the consumer
+rewiring (T-1219) remains.
+
 T-0930 added five more kernels to this SAME crate/pymodule for
 `frob.graph.callgraph` (not `frob.dup`) -- `resolve_call_edges`,
 `called_names`, `ordered_called_names`, `referenced_names`, and

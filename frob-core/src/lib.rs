@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 mod extract;
-use extract::{extract_tree_python, extract_tree_rust};
+use extract::{extract_tree_cpp, extract_tree_python, extract_tree_rust, extract_tree_typescript};
 
 /// Deterministic 64-bit hash of one token (std `DefaultHasher` is
 /// unkeyed/deterministic across runs, unlike `HashMap`'s `RandomState`).
@@ -2276,9 +2276,11 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(referenced_names, m)?)?;
     m.add_function(wrap_pyfunction!(unresolved_exempt_names, m)?)?;
     m.add_function(wrap_pyfunction!(near_duplicate_indices, m)?)?;
-    // T-1220: python-only tree-extraction kernel -- see docs/modules/lang.md#extraction-api.
+    // T-1220: tree-extraction kernels -- see docs/modules/lang.md#extraction-api.
     m.add_function(wrap_pyfunction!(extract_tree_python, m)?)?;
     m.add_function(wrap_pyfunction!(extract_tree_rust, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_tree_cpp, m)?)?;
+    m.add_function(wrap_pyfunction!(extract_tree_typescript, m)?)?;
     Ok(())
 }
 
