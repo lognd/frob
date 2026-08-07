@@ -4399,6 +4399,7 @@ Fix: route block (and any other ledger-writing verb still missing it -- audit th
 Audit list to check while here: block, unblock if it exists, scope, accept, evidence --replace, migrate, renumber, archive. For each, state whether it writes the ledger and whether it commits. A table in the Done report is the deliverable, not just the block fix -- the point is that no ledger-writing verb is left in this state.
 
 Test shape: for every ledger-writing verb, assert the working tree is CLEAN after the command (and dirty under --no-commit). A single parameterized test over the verb list makes a future verb that forgets this fail immediately.
+
 <!-- ticket:T-1616 -->
 ```yaml
 id: T-1616
@@ -12277,6 +12278,7 @@ the prevention half.
 
 ## Drop reason
 - 2026-08-06: duplicate of T-1615, filed 2026-08-05 from the same incident (two frob ticket block edges leaving tickets.md dirty, next land refused with DirtyMain). T-1615 is the stronger spec: it requires an audit table across every ledger-writing verb as the deliverable, not just the block fix, plus a parameterized test over the verb list. Filed T-1704 without grepping the queue first -- the exact check I had just instructed the agents to perform (absorbed by T-1615)
+
 <!-- ticket:T-1705 -->
 ```yaml
 id: T-1705
@@ -12353,7 +12355,7 @@ rather than a bare "bump outstanding".
 id: T-1706
 title: 'frob ticket evidence node-id shape validation: investigate the malformed-id
   gap without breaking pytest-form binding'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -12364,8 +12366,18 @@ sprint: null
 scope:
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_verify.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: unit tests for the new 3+-segment malformed evidence-id rejection
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_tickets.py::TestEvidenceValidation::test_validate_evidence_rejects_three_or_more_double_colon_segments
+- tests/test_tickets.py::TestEvidenceValidation::test_validate_evidence_accepts_ordinary_two_segment_pytest_form
 designated_repro_test: null
 threat: null
 component: null
@@ -12439,6 +12451,84 @@ What's still plausibly a real, addressable gap:
 - Do NOT implement "reject the pytest `::`-separated form" as literally
   worded in T-1670's original text -- see the investigation above for why
   that breaks the primary, correct way to bind evidence.
+
+## Done report
+
+T-1670's part 2 asked `frob ticket evidence` to "validate the node-id
+shape at bind time and reject the pytest ::-separated form" -- but
+investigation (recorded in T-1670's own Done report and this ticket's
+body) found that literal reading would break correct behavior: real
+collected pytest node ids ARE in the `path::Class::method` (2-`::`-
+segment) form, `matches_collected` requires an exact match against that
+form, and `normalize_evidence_separator` (T-0293) already converts a
+dotted 1-`::`-segment id INTO that same 2-segment form for storage.
+Rejecting the 2-segment shape would make it impossible to bind evidence
+using a real id copied verbatim from `pytest --collect-only` output.
+
+Implemented the narrower, safe half instead (item 1 of this ticket's own
+plan): `validate_evidence` now rejects a genuinely malformed 3+-segment
+id (e.g. `path::Class::method::extra`) via the new
+`_has_excess_separator_segments` helper -- a shape no real pytest node id
+or `cmd:` evidence entry ever takes. Checked on the RAW (pre-normalize)
+string specifically, because `normalize_evidence_separator` converts a
+valid dotted id INTO the 2-segment pytest form, so a post-normalize check
+could not tell a legitimate dotted id apart from a genuinely malformed
+one that happened to normalize to the same segment count.
+
+Before this fix, a 3+-segment id passed `normalize_evidence_separator`'s
+early-return unchanged (its own docstring: "the remainder after :: already
+contains its own ::" case), then was only ever caught by
+`_check_evidence_resolution` -- and only when a caller supplied a
+`collected` set. A bare library `add_evidence(root, id, ids)` call with no
+collector (`collected=None`) only WARNS "recorded UNRESOLVED" and proceeds,
+so a malformed 3+-segment id could land in `ticket.evidence` completely
+unchecked through that path. Now it is rejected at the schema layer
+(`MalformedEvidence`) for every caller, collector or not.
+
+Item 2 of the ticket's plan (whether `frob ticket evidence` should hint
+the dotted `frob:tests`-directive form of a newly-bound id, to close a
+directive-authoring UX gap) is investigated but NOT implemented here --
+it is a separate, lower-confidence UX question (does the hint actually
+help, where should it print, does it apply to `cmd:` evidence) that
+deserves its own scoped ticket rather than folding into this one's
+schema-validation fix. Left as a disclosed cut, not silently dropped.
+
+Also re-applied T-1637's evidence rebind (`frob ticket evidence T-1637
+--replace ...`) after discovering during this ticket's own gate check
+that T-1714's land did NOT actually carry it onto main either --
+`frob ticket land`'s squash-apply only splices the LANDING ticket's own
+`tickets.md` section forward via `splice_ledger`'s newest-state-per-
+section merge; a same-state-rank edit to a DIFFERENT ticket's section
+(no state/report-richness change, just an evidence-list value change)
+never wins `_newer`'s tiebreak and is silently dropped regardless of
+which ticket sponsors the edit. This is a real, structural land-plumbing
+gap distinct from T-1714's own fix -- filing a follow-up ticket for it
+separately (see Done report closing note) since fixing `splice_ledger`'s
+per-section merge itself is out of T-1706's own scope.
+
+Filed T-1721 (renumbers at land) with the structural finding
+and a reproduction sketch: `splice_ledger`'s per-section merge compares
+state-rank/report-richness only, never raw content, so a same-state-rank
+edit to a ticket's section always loses the tiebreak regardless of which
+side actually changed. T-1637's evidence rebind is re-applied fresh in
+this ticket's own worktree; whether THIS land finally carries it is
+unverified until after landing -- will confirm via `git show
+main:tickets.md` post-land and report the outcome.
+
+### Changed
+```
+ tickets.md | 105 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 100 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestEvidenceValidation::test_validate_evidence_rejects_three_or_more_double_colon_segments` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestEvidenceValidation::test_validate_evidence_accepts_ordinary_two_segment_pytest_form` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 4 error(s), 267 warning(s), 716 waived
+- error-findings: AFFECT001@src/frob/tickets/__init__.py, ARCH001@src/frob/tickets/_evidence.py, DOC009@docs/audits/docs-completeness-2026-08-06.md, unresolved-attribute@tests/test_ticket_work_and_land_finish.py
 
 <!-- ticket:T-1707 -->
 ```yaml
@@ -13369,3 +13459,201 @@ re-run is allowed. A suggestion that cannot be overridden is a policy, and
 this deliberately is not one -- it blocked its own authoring commit on a
 prose parenthetical within an hour of being written, and the override was
 the only thing that made that recoverable.
+
+<!-- ticket:T-1720 -->
+```yaml
+id: T-1720
+title: frob ticket land should auto-rebase the worktree onto main after a successful
+  land
+state: queued
+kind: feature
+origin: human
+created: '2026-08-07'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- docs/modules/tickets.md
+- docs/guides/agent-playbook.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+```
+## Description
+
+Every single land I performed across two ticket groups in this session
+(T-1673/T-1630/T-1675/T-1670/T-1679, then T-1714/T-1706) hit the same
+sequence: land a ticket successfully (`LAND-PROOF: ... verified=True`),
+then the NEXT `frob check --ticket <next-id>` in the same worktree reports
+spurious SCOPE001/COV002 findings on files the just-landed ticket touched
+-- because the worktree's own commits for that already-landed work are
+still present on its branch, and the branch has not moved to include
+main's new (squashed) tip. `git diff main` for those files then shows
+non-empty content even though the content is byte-identical, because the
+branch and main reached the same state via two DIFFERENT commits (the
+worktree's own step-by-step history vs. land's squash-apply), so `git
+diff main --stat` inherently looks non-empty for anything the worktree
+itself changed, whether or not it matches main.
+
+Observed sequence, every time, this session:
+1. `frob ticket land T-XXXX --worktree <path>` succeeds, `LAND-PROOF ...
+   verified=True`.
+2. Start the next ticket in the same worktree; `frob ticket sweep`/`frob
+   check --ticket <next>` reports SCOPE001 (files outside declared scope)
+   and/or COV002 (changed-with-no-frob:ticket-edge) findings that are
+   NOT caused by the next ticket's own work -- they are the just-landed
+   ticket's files, which the worktree's branch still carries as its own
+   uncommitted-relative-to-main diff.
+3. Resolved every time by `git rebase main` in the worktree (dropping the
+   now-"patch already upstream" commits git detects automatically, and
+   skipping any obsolete `wip: pre-land snapshot for T-XXXX` commits
+   land's own machinery leaves behind) BEFORE doing any more gate
+   verification for the next ticket.
+4. Repeat from step 1 for the next ticket in the series.
+
+This is pure repeated friction -- the exact same manual recipe, by hand,
+after every single successful land in a multi-ticket worktree series.
+Per the standing directive (systematize repeated friction rather than
+re-doing it by hand every time), this should be mechanical.
+
+## Proposal
+
+`frob ticket land --worktree <path>` should, after a successful land
+(`verified=True`), automatically `git rebase main` the worktree's own
+branch onto the new main tip it just produced -- dropping the now-
+redundant commits the same way a manual rebase does (git's own "patch
+contents already upstream" detection), before returning control to the
+caller. This closes the loop the same way a human currently does by hand,
+every time, immediately after every land in this session.
+
+Open questions for whoever picks this up:
+- Should this be unconditional, or opt-in via a flag (e.g. `--rebase-
+  after`) for a caller that does not want its worktree branch rewritten
+  automously? A single-ticket worktree (not a series) may not care either
+  way; a series worktree needs it every time.
+- What happens if the auto-rebase hits a REAL conflict (not just
+  redundant-patch drops) -- should land still report success (the land
+  itself is done) and just warn that the auto-rebase needs manual
+  attention, rather than let a rebase conflict retroactively fail an
+  already-successful land?
+- Should the two housekeeping commit classes land already knows about
+  (`wip: pre-land snapshot for T-XXXX`, ledger auto-commits) be preemptively
+  dropped/skipped rather than relying on git's generic empty-patch
+  detection, since land KNOWS which of the worktree's own commits are its
+  own now-obsolete staging artifacts?
+
+## Evidence (the actual observed sequence this session)
+
+Every occurrence below is `git rebase main` run in
+`.claude/worktrees/agent-ac2dad95d0b2b8809` immediately after a
+`LAND-PROOF ... verified=True` line, always resolving 1-3 conflicts (the
+shared `rapid-debt.jsonl` append-only log, occasionally a `tickets.md`
+splice-driver conflict) and dropping 1-6 "patch contents already
+upstream" commits per rebase:
+
+- After landing T-1673: rebased before starting T-1630 (SCOPE001 on
+  `rapid-debt.jsonl` and other post-land-sweep-touched files).
+- After landing T-1630: rebased before starting T-1675 (same shape).
+- After landing T-1675: rebased before starting T-1670 (plus resolving a
+  CHANGELOG.md/land-owned-file pre-commit-hook collision on the first
+  attempt, which forced an abort-and-rebase-instead-of-merge decision).
+- After landing T-1670: rebased before starting T-1679.
+- After landing T-1679: rebased before starting T-1714 (2 real conflicts
+  in `src/frob/tickets/_store.py`, both trivially resolved by keeping
+  HEAD's already-landed content).
+- After landing T-1714/merging T-1701 (already landed by another agent):
+  rebased before starting T-1706.
+
+Six for six. This ticket exists so the seventh time is automatic.
+
+<!-- ticket:T-1721 -->
+```yaml
+id: T-1721
+title: frob ticket land structurally cannot carry a cross-ticket ledger edit forward
+  (splice_ledger tiebreak drops it)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-07'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land_ledger_merge.py
+- src/frob/tickets/_land_squash.py
+- tests/test_ticket_land.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+```
+## Description
+
+`frob ticket land`'s squash-apply carries `tickets.md` forward via
+`splice_ledger` (`frob.tickets._land_ledger_merge`), which merges "at the
+ticket-id level, keeping the newest state per section" (`_newer`). This
+structurally drops a legitimate edit to a DIFFERENT ticket's own section
+made in the same worktree, whenever that edit does not change state rank
+or Done-report presence -- an evidence-list value change (e.g. `frob
+ticket evidence <other-id> --replace OLD NEW`) is invisible to `_newer`'s
+comparison heuristic, so the tiebreak falls through to whichever side it
+defaults to (observed: main's side wins), silently discarding the edit.
+
+Observed twice in the same session (2026-08-06/07): while working T-1679,
+a coordinator-requested fix rebound T-1637's (a DONE, unrelated ticket)
+evidence citations to match a rename made by T-1679's own diff. That
+rebind was committed in the worktree and verified clean locally, but
+`frob ticket land T-1679`'s squash never carried it -- main kept T-1637's
+stale evidence, later surfacing as T-1714's own regression (2 COV003
+findings). T-1714 was filed and landed specifically to re-fix this, its
+Done report explicitly claiming "This ticket's own land is what actually
+carries it" -- but a `git show main:tickets.md` check immediately after
+T-1714's land showed T-1637's block STILL unchanged: T-1714's land
+carried T-1714's OWN section (state/evidence) but again dropped the T-1637
+section edit, for the identical reason.
+
+This is a real structural gap, not a one-off: `frob ticket land <id>`
+cannot carry a legitimate edit to a ticket OTHER than `<id>` forward, no
+matter which ticket "sponsors" the edit or how many times it is redone,
+because `splice_ledger`'s per-section merge only ever compares state-rank/
+report-richness, never raw content, and always resolves a tie toward one
+side (main) regardless of which side's content is actually newer/correct.
+
+## Impact
+
+Any legitimate cross-ticket ledger correction (evidence rebinds after a
+rename, scope corrections discovered while working a different ticket,
+citation fixes) made from a worktree is currently **unlandable** through
+the normal `frob ticket land` path -- it will always look like it worked
+locally and always silently vanish from main. The workaround used twice
+(re-apply the edit, hope a DIFFERENT ticket's land carries it) does not
+work and should not be relied on again; it burned two ticket-cycles
+(T-1714, this investigation) without actually fixing the regression.
+
+## Plan (sketch)
+
+- Extend `_newer`'s (or `splice_ledger`'s) comparison to detect a genuine
+  CONTENT difference between `ours`/`theirs` for a ticket's section, not
+  only state-rank/report-richness -- when one side differs from `base_text`
+  (the true merge-base, already threaded through per T-1154) and the other
+  does not, the side that changed should win, independent of state rank.
+- Alternatively/additionally: give `frob ticket land` an explicit way to
+  declare "this land also carries a correction to ticket X's own section"
+  (mirroring `--allow-cross-ticket`'s disclosure model for CODE passengers,
+  but for ledger sections specifically) so a deliberate cross-ticket ledger
+  fix has a sanctioned, verified path instead of hoping the heuristic
+  happens to pick the right side.
+- Regression coverage: a worktree edits ticket B's section (evidence only,
+  no state change) while landing ticket A; after `frob ticket land A`,
+  `git show main:tickets.md` must show ticket B's edit present, not
+  reverted to main's stale prior content.
+
+Filed while working T-1706 (the T-1670 part-2 split), after discovering
+T-1714's land had not actually fixed what it claimed to fix.

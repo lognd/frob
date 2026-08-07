@@ -481,10 +481,31 @@ def normalize_evidence_separator(entry: str) -> str:
     return f"{path}::{head}::{tail}"
 
 
+# frob:ticket T-1706
+def _has_excess_separator_segments(entry: str) -> bool:
+    """`True` when `entry` has THREE OR MORE `::`-separated segments (e.g.
+    `path::Class::method::extra`) -- a shape no real pytest node id or
+    `cmd:` evidence entry ever takes (T-1706). Deliberately narrower than
+    "any id with a remainder already containing `::`":
+    `normalize_evidence_separator`'s own early-return already leaves a
+    legitimate 2-segment pytest id (`path::Class::method`) untouched on
+    purpose (that shape resolves fine against `matches_collected`, which
+    needs the exact pytest form) -- this only catches genuinely malformed
+    ids one level past that, never the ordinary pytest shape a caller
+    copy-pastes straight from `pytest --collect-only` output."""
+    if "::" not in entry:
+        return False
+    _, _, remainder = entry.partition("::")
+    return remainder.count("::") >= 2
+
+
 # frob:ticket T-0102
+# frob:ticket T-1706
 # frob:doc docs/modules/tickets.md#public-api
 def validate_evidence(entry: str) -> Result[str, TicketError]:
-    """One evidence string's schema: non-empty, single-line, bounded length.
+    """One evidence string's schema: non-empty, single-line, bounded length,
+    and not a 3+-segment `::`-separated shape no real pytest node id ever
+    takes (T-1706).
 
     Writers (`new_ticket`, `add_evidence`) call this before a Ticket ever
     reaches `write_ticket`, so a malformed entry is rejected in-process
@@ -497,7 +518,23 @@ def validate_evidence(entry: str) -> Result[str, TicketError]:
     `Class::method` form (T-0293) before the schema checks below run, so a
     mis-separated id is fixed at write time instead of landing as evidence
     that can never resolve.
-    """
+
+    T-1706: checked on the RAW (pre-normalize) `entry`, not the normalized
+    `stripped` result -- `normalize_evidence_separator` converts a valid
+    dotted 1-`::`-segment id INTO the pytest 2-segment form, so checking
+    post-normalize could not tell a legitimate dotted id apart from a
+    genuinely malformed one that happened to normalize to the same segment
+    count. A caller's typo'd `path::Class::method::extra` (or deeper) is
+    rejected here with a specific message; a real 1-or-2-segment pytest id
+    -- dotted or already `::`-separated -- is never touched by this check,
+    only by resolution (`_check_evidence_resolution`) downstream."""
+    if _has_excess_separator_segments(entry):
+        _log.warning(
+            "tickets: rejected evidence entry with 3+ '::'-separated "
+            "segments (not a real pytest node id shape): %r",
+            entry,
+        )
+        return Err(TicketError.MalformedEvidence)
     stripped = normalize_evidence_separator(entry.strip())
     if not stripped:
         _log.warning("tickets: rejected empty evidence entry")

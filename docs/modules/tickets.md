@@ -476,6 +476,13 @@ def clipboard_image() -> Result[bytes, ClipboardError]
     # PNG bytes from the platform clipboard, via the first working backend.
 def clipboard_has_image() -> bool
     # Cheap probe used to decide whether to offer the interactive prompt.
+
+# frob/tickets/__init__.py
+def validate_evidence(entry: str) -> Result[str, TicketError]
+    # One evidence string's schema: non-empty, single-line, bounded length,
+    # not a 3+-segment `::`-separated shape no real pytest node id ever
+    # takes (T-1706), normalizing a dotted Class.method suffix to the
+    # pytest Class::method form (T-0293) first.
 ```
 
 ## Structured review channel (T-0571)

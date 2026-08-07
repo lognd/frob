@@ -240,6 +240,7 @@ class TestNewTicket:
         assert set(reloaded.danger_ok.tickets) == {result.danger_ok.id}
 
 
+# frob:ticket T-1706
 class TestEvidenceValidation:
     """T-0102 companion fix: evidence is schema-validated at write time so a
     malformed entry can never land via `frob ticket new`/`close`."""
@@ -346,6 +347,35 @@ class TestEvidenceValidation:
         result = validate_evidence("cmd:sha256=deadbeefcafefeed")
         assert result.is_ok
         assert result.danger_ok == "cmd:sha256=deadbeefcafefeed"
+
+    # frob:ticket T-1706
+    def test_validate_evidence_rejects_three_or_more_double_colon_segments(
+        self,
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_rejects_\
+        # three_or_more_double_colon_segments kind="unit"
+        """T-1706: a genuinely malformed 3+-segment id -- a shape no real
+        pytest node id or `cmd:` entry ever takes -- is rejected at the
+        schema layer instead of silently accepted and only failing
+        resolution later (and only when a caller happens to supply a
+        `collected` set)."""
+        result = validate_evidence("tests/test_foo.py::TestFoo::test_a::extra")
+        assert result.is_err
+        assert result.danger_err is TicketError.MalformedEvidence
+
+    # frob:ticket T-1706
+    def test_validate_evidence_accepts_ordinary_two_segment_pytest_form(self) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_accepts_\
+        # ordinary_two_segment_pytest_form kind="unit"
+        """T-1706: the ordinary 2-`::`-segment pytest node id (the exact
+        shape `pytest --collect-only` prints, and the resolution-critical
+        form `matches_collected` needs) must NEVER be rejected by the new
+        malformed-shape check -- only genuinely deeper (3+) segments are."""
+        result = validate_evidence("tests/test_foo.py::TestFoo::test_a")
+        assert result.is_ok
+        assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a"
 
     def test_add_evidence_normalizes_dot_form_before_resolving_and_storing(
         self, tmp_path: Path
