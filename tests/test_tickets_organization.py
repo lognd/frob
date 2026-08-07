@@ -281,3 +281,112 @@ class TestEpicRollup:
         assert result.is_ok
         assert result.danger_ok.total == 0
         assert result.danger_ok.percent_complete == 0.0
+
+
+class TestForceOverrideAudit:
+    """T-1762: `--force` bypasses of a tracked safety guard now cost a
+    required reason plus an append-only `force-overrides.jsonl` record --
+    the T-1733 escape-hatch-accountability principle applied to `--force`
+    (docs/modules/tickets.md#data-models)."""
+
+    def test_record_force_override_requires_reason(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_force_override.py::record_force_override
+        from frob.tickets._force_override import (
+            ForceOverrideError,
+            record_force_override,
+        )
+
+        result = record_force_override(
+            tmp_path,
+            command="ticket archive",
+            guard="T-0843 live-cross-worktree-lease refusal",
+            target="T-0001",
+            reason="   ",
+        )
+        assert result.is_err
+        assert result.danger_err is ForceOverrideError.ReasonMissing
+        assert not (tmp_path / "force-overrides.jsonl").exists()
+
+    # frob:waive SELFAUDIT001 reason="T-1762: reads back tmp_path's own force- \
+    # overrides.jsonl fixture written earlier in this same test -- the testsuite \
+    # node's ordinary tmp_path round-trip shape, not a new capability class"
+    def test_record_force_override_appends_a_line(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_force_override.py::record_force_override
+        import json
+
+        from frob.tickets._force_override import record_force_override
+
+        result = record_force_override(
+            tmp_path,
+            command="ticket land --finish",
+            guard="T-1715 worktree-in-use refusal",
+            target="T-1762:/tmp/wt",
+            reason="independently confirmed the process holding it is dead",
+            actor="tester",
+        )
+        assert result.is_ok
+        lines = (tmp_path / "force-overrides.jsonl").read_text().splitlines()
+        assert len(lines) == 1
+        row = json.loads(lines[0])
+        assert row["command"] == "ticket land --finish"
+        assert row["guard"] == "T-1715 worktree-in-use refusal"
+        assert row["target"] == "T-1762:/tmp/wt"
+        assert row["actor"] == "tester"
+        assert "independently confirmed" in row["reason"]
+
+        # a second call appends, never rewrites -- the trail is a log, not
+        # a table keyed on the most recent override.
+        record_force_override(
+            tmp_path,
+            command="ticket archive",
+            guard="T-0843 live-cross-worktree-lease refusal",
+            target="T-0002",
+            reason="second override, different guard entirely",
+            actor="tester",
+        )
+        assert len((tmp_path / "force-overrides.jsonl").read_text().splitlines()) == 2
+
+    def test_archive_force_with_no_live_lease_needs_no_reason(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_archive.py::_archive
+        """`--force` with nothing to actually override is a no-op
+        guard-wise -- it must not demand a reason for bypassing a guard
+        that would not have fired anyway."""
+        from typani import Ok
+
+        from frob.app.ticket_runner._archive import _archive
+
+        # `_archive` imports `archive`/`read_all_leases`/
+        # `commit_full_ledger_change` lazily from their own source modules
+        # inside its own body -- patch there, not on the runner module, so
+        # the lazy import picks up the patch.
+        import frob.tickets as tickets_mod
+        import frob.tickets._leases as leases_mod
+
+        monkeypatch.setattr(tickets_mod, "archive", lambda root, *, force: Ok(0))
+        monkeypatch.setattr(leases_mod, "read_all_leases", lambda root: [])
+        monkeypatch.setattr(
+            leases_mod, "commit_full_ledger_change", lambda *a, **k: Ok(None)
+        )
+
+        # should not raise / sys.exit -- no reason was needed or given.
+        _archive(tmp_path, force=True, no_commit=True)
+
+    def test_archive_force_with_live_lease_and_no_reason_refuses(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_archive.py::_archive
+        import pytest
+
+        from frob.app.ticket_runner._archive import _archive
+        import frob.tickets._leases as leases_mod
+
+        class _FakeLease:
+            ticket_id = "T-0001"
+
+        monkeypatch.setattr(leases_mod, "read_all_leases", lambda root: [_FakeLease()])
+
+        with pytest.raises(SystemExit):
+            _archive(tmp_path, force=True, no_commit=True)
+        assert not (tmp_path / "force-overrides.jsonl").exists()

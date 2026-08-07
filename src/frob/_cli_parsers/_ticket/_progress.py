@@ -12,6 +12,8 @@ argparse tree.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 
 def _add_ticket_progress_parsers(ticket_sub) -> list:
     """Register the state-only ticket transitions: plan/requeue/start/sweep/
@@ -378,7 +380,15 @@ def _add_ticket_land_parser(ticket_sub):
             "it -- use only for a worktree you have independently "
             "confirmed is genuinely wedged (the process scan cannot "
             "always prove a pid is dead). Has no effect without "
-            "--finish/--retire-on-proof."
+            "--finish/--retire-on-proof. T-1762: requires --reason/"
+            "--reason-file, recorded in force-overrides.jsonl."
         ),
+    )
+    # frob:ticket T-1762
+    ticket_land_p.add_argument(
+        "--reason", dest="ticket_force_reason", metavar="TEXT", default=None
+    )
+    ticket_land_p.add_argument(
+        "--reason-file", dest="ticket_force_reason_file", metavar="PATH", type=Path
     )
     return ticket_land_p

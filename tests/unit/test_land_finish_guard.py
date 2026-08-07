@@ -175,7 +175,10 @@ class TestRefuseIfWorktreeInUse:
             holder.wait(timeout=5)
 
     def test_refuses_on_a_live_lease(
-        self, repo: Path, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+        self,
+        repo: Path,
+        caplog: pytest.LogCaptureFixture,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_refuses_on_a_live_lease  # noqa: E501
         wt = _add_worktree(repo, "wt1")
@@ -242,11 +245,53 @@ class TestFinishWorktree:
                 if _proc_test_cwd_matches(holder.pid, wt):
                     break
                 time.sleep(0.1)
-            _finish_worktree(repo, wt, "T-1715", force=True)
+            _finish_worktree(
+                repo,
+                wt,
+                "T-1715",
+                force=True,
+                force_reason="T-1762 test: independently confirmed wedged",
+            )
             assert not wt.exists()
         finally:
             holder.kill()
             holder.wait(timeout=5)
+
+    def test_finish_worktree_force_requires_reason_when_guard_would_fire(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_finish_worktree_force_requires_reason_when_guard_would_fire  # noqa: E501
+        """T-1762: `force=True` with no reason, against a worktree the
+        guard WOULD have refused, still refuses -- the bypass itself is
+        no longer free."""
+        wt = _add_worktree(repo, "wt1")
+        holder = subprocess.Popen(
+            ["python3", "-c", "import time; time.sleep(30)"], cwd=str(wt)
+        )
+        try:
+            for _ in range(50):
+                if _proc_test_cwd_matches(holder.pid, wt):
+                    break
+                time.sleep(0.1)
+            with pytest.raises(SystemExit) as excinfo:
+                _finish_worktree(repo, wt, "T-1715", force=True)
+            assert excinfo.value.code == 1
+            assert wt.exists()
+            assert not (repo / "force-overrides.jsonl").exists()
+        finally:
+            holder.kill()
+            holder.wait(timeout=5)
+
+    def test_finish_worktree_force_is_a_no_op_reason_wise_when_worktree_is_free(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_finish_worktree_force_is_a_no_op_reason_wise_when_worktree_is_free  # noqa: E501
+        """T-1762: `force=True` against a worktree the guard would NOT
+        have refused (nothing live) demands no reason -- nothing was
+        actually bypassed."""
+        wt = _add_worktree(repo, "wt1")
+        _finish_worktree(repo, wt, "T-1715", force=True)
+        assert not wt.exists()
 
 
 def _parse(argv: list[str]) -> argparse.Namespace:

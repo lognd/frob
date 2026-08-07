@@ -82,6 +82,8 @@ _STRING_FIELDS = (
     "ticket_by",
     "ticket_summary",
     "ticket_reason",
+    # frob:ticket T-1762
+    "ticket_force_reason",
     "ticket_absorbed_by",
     "ticket_caption",
     "ticket_old_id",
@@ -176,6 +178,8 @@ _PATH_FIELDS = (
     "ticket_body_file",
     "ticket_acceptance_file",
     "ticket_scope_reason_file",
+    # frob:ticket T-1762
+    "ticket_force_reason_file",
     # frob:ticket T-1733
     "ticket_evidence_replace_reason_file",
     # frob:ticket T-1029

@@ -1113,13 +1113,63 @@ def _refuse_finish_if_worktree_in_use(
         sys.exit(1)
 
 
+# frob:ticket T-1762
+def _force_finish_requires_reason(
+    root: Path,
+    worktree: Path,
+    ticket_id: str,
+    force_reason: str | None,
+    force_reason_file: Path | None,
+) -> None:
+    """`_finish_worktree`'s T-1762 reason gate, split out to stay under
+    ARCH103's per-body complexity budget: resolves `--reason`/
+    `--reason-file` (`_archive._resolve_force_reason`'s same shape),
+    `sys.exit(1)`s if neither is given, else records the override via
+    `record_force_override` (`sys.exit(1)` on a record failure too --
+    an unrecorded forced removal is not an acceptable outcome)."""
+    from frob.app.ticket_runner._archive import _resolve_force_reason
+    from frob.tickets._force_override import record_force_override
+
+    reason = _resolve_force_reason(
+        force_reason, force_reason_file, cli_label="ticket land --finish"
+    )
+    if not reason:
+        _log.error(
+            "ticket land --finish --force requires --reason TEXT or "
+            "--reason-file PATH (T-1762): %s's worktree %s is genuinely "
+            "in use and the liveness guard would otherwise refuse",
+            ticket_id,
+            worktree,
+        )
+        sys.exit(1)
+    recorded = record_force_override(
+        root,
+        command="ticket land --finish",
+        guard="T-1715 worktree-in-use refusal",
+        target=f"{ticket_id}:{worktree}",
+        reason=reason,
+    )
+    if recorded.is_err:
+        _log.error("ticket land --finish --force: %s", recorded.danger_err)
+        sys.exit(1)
+
+
 # frob:ticket T-1175
 # frob:ticket T-1715
+# frob:ticket T-1762
 # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_refuses_to_remove_a_worktree_a_live_process_is_cwd_into  # noqa: E501
 # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_removes_a_worktree_with_no_live_process  # noqa: E501
 # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_force_removes_despite_a_live_process  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_finish_worktree_force_requires_reason_when_guard_would_fire  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_finish_worktree_force_is_a_no_op_reason_wise_when_worktree_is_free  # noqa: E501
 def _finish_worktree(
-    root: Path, worktree: Path, ticket_id: str, *, force: bool = False
+    root: Path,
+    worktree: Path,
+    ticket_id: str,
+    *,
+    force: bool = False,
+    force_reason: str | None = None,
+    force_reason_file: Path | None = None,
 ) -> None:
     """`frob ticket land --finish`'s worktree-removal half: `git -C root
     worktree remove <worktree>`, called ONLY after `_print_land_proof` has
@@ -1138,6 +1188,15 @@ def _finish_worktree(
     check entirely, for a worktree independently confirmed genuinely
     wedged -- the process scan cannot always prove a pid is dead.
 
+    T-1762: when the guard would ACTUALLY have refused (the worktree is
+    genuinely in use) and `force=True` skips it, a reason is now REQUIRED
+    -- exits 1, worktree left in place, if neither `force_reason` nor
+    `force_reason_file` is given -- and the override is recorded via
+    `frob.tickets._force_override.record_force_override` (WARNING log +
+    an append-only `force-overrides.jsonl` line) before the worktree is
+    touched. `--force` when the worktree is already free is a no-op
+    guard-wise, so no reason is demanded for it.
+
     Run from `root` (the primary checkout `worktree` belongs to), not
     from an arbitrary cwd -- `git worktree remove` resolves its target
     against the repo the invoking working copy belongs to, so an
@@ -1150,6 +1209,10 @@ def _finish_worktree(
     instead)."""
     if not force:
         _refuse_finish_if_worktree_in_use(root, worktree, ticket_id)
+    elif refuse_if_worktree_in_use(root, worktree).is_err:
+        _force_finish_requires_reason(
+            root, worktree, ticket_id, force_reason, force_reason_file
+        )
     removed = run_argv(["git", "-C", str(root), "worktree", "remove", str(worktree)])
     if removed.is_err or removed.danger_ok.returncode != 0:
         detail = removed.danger_err if removed.is_err else removed.danger_ok.stderr
@@ -1241,7 +1304,14 @@ def _finish_land_after_success(
         if cfg.ticket_land_retire_on_proof
         else None
     )
-    _finish_worktree(root, worktree, cfg.ticket_id, force=cfg.ticket_force)
+    _finish_worktree(
+        root,
+        worktree,
+        cfg.ticket_id,
+        force=cfg.ticket_force,
+        force_reason=cfg.ticket_force_reason,
+        force_reason_file=cfg.ticket_force_reason_file,
+    )
     if cfg.ticket_land_retire_on_proof:
         _delete_worktree_branch(root, branch, cfg.ticket_id)
 

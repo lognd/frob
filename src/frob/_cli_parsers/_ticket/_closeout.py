@@ -12,6 +12,8 @@ argparse tree.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 
 def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
     """Register `attach`/`block`/`close`: the non-evidence closeout subcommands."""
@@ -372,7 +374,16 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         dest="ticket_force",
         action="store_true",
         help="T-0810: override the T-0764 refusal when a live cross-"
-        "worktree lease exists anywhere in the repo -- archive anyway",
+        "worktree lease exists anywhere in the repo -- archive anyway. "
+        "T-1762: requires --reason/--reason-file, recorded in "
+        "force-overrides.jsonl",
+    )
+    # frob:ticket T-1762
+    ticket_archive_p.add_argument(
+        "--reason", dest="ticket_force_reason", metavar="TEXT", default=None
+    )
+    ticket_archive_p.add_argument(
+        "--reason-file", dest="ticket_force_reason_file", metavar="PATH", type=Path
     )
     # frob:ticket T-1615
     ticket_archive_p.add_argument(

@@ -4044,7 +4044,34 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
 
 class TicketQueue(BaseModel):
     tickets: Mapping[str, Ticket]
+
+class ForceOverrideEntry(BaseModel):   # T-1762, frob.tickets._force_override
+    command: str        # e.g. "ticket archive", "ticket land --finish"
+    guard: str           # the safety guard bypassed (e.g. "T-1715 worktree-in-use refusal")
+    target: str          # what --force was applied to (ticket id(s), worktree path)
+    reason: str           # required, never blank -- refused otherwise
+    actor: str
+    at: date
 ```
+
+### `--force` audit trail (T-1762)
+
+`ScopeChangeEntry`/`AcceptanceAmendmentEntry`/`EvidenceChangeEntry`
+(T-0455/T-1422/T-1733) and `AckAuditEntry` (T-1317,
+docs/modules/gates.md#ack-accountability-t-1317) all establish the same
+append-only-audit-record discipline for a mutation that can discharge a
+tracked obligation more cheaply than the honest route; T-1762 applies it
+to `--force`. `frob ticket archive --force` (overriding the T-0843
+live-cross-worktree-lease refusal) and `frob ticket land --finish
+--force` (overriding the T-1715 worktree-in-use refusal) both now
+require `--reason`/`--reason-file` WHEN the guard they bypass would
+actually have fired (a `--force` that overrides nothing is a no-op,
+guard-wise, and demands no reason for it) -- refusing otherwise -- and
+log a WARNING naming the guard skipped before appending one
+`ForceOverrideEntry` to `force-overrides.jsonl` (repo root, git-tracked,
+append-only, the same "root-level JSONL audit log" shape this repo's own
+`rapid-debt.jsonl` already established) via `frob.tickets._force_
+override.record_force_override`.
 
 ### Tiers: epic -> story -> ticket (T-0715)
 

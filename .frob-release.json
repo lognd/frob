@@ -1818,6 +1818,9 @@
     "src/frob/tickets/_evidence.py::reverify_cmd_evidence": "006e65793070dae2f923fd9c6576e81fe0d16bbfa76568d0a094ee2f0c875955",
     "src/frob/tickets/_evidence.py::run_cmd_evidence": "7540fe0d267ed2143caab5f18f360d7a02a07a1a641d9ecca7180d0d46c7efaf",
     "src/frob/tickets/_evidence.py::transition": "4be34329f13f0df3b75eef24b7e7f855fd98d853c169aeb841c4c632712be963",
+    "src/frob/tickets/_force_override.py::ForceOverrideEntry": "49fdf4ccac2e96bc9c6bfdab74ff74a4bef095f85f63514accf771dc899152e1",
+    "src/frob/tickets/_force_override.py::ForceOverrideError": "1fc83940578fc13883e41fc13f806feaed78e921f649a61aaa216dfff73c5e45",
+    "src/frob/tickets/_force_override.py::record_force_override": "ba13b5a5e1b3e1e878476bc2cfe14274818ecdc32b37df14349ffd3d98b02588",
     "src/frob/tickets/_journal.py::JOURNAL_DIRNAME": "baac871bdabdf7bf8c896cdc00f538ab0ce46750cb788f5c75966ce1a7a59c8a",
     "src/frob/tickets/_land.py::LandLockTimeout": "36767c23a1765c7fcf63a04a08341d5189835687573a40d737ee3338c4967534",
     "src/frob/tickets/_land.py::land": "fea0db23bb9c37608e4d92393c788a39311ee5de0704205d5cf56bed1ca29f04",
@@ -2115,5 +2118,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.367.0"
+  "version": "0.368.0"
 }

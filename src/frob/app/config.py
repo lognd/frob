@@ -435,6 +435,13 @@ class AppConfig(BaseModel):
     # `frob ticket archive --force` -- override T-0764's live-cross-worktree-
     # lease refusal in `frob.tickets.archive`.
     ticket_force: bool = False
+    # frob:ticket T-1762
+    # `--force` (archive, land --finish) now requires --reason/--reason-file
+    # -- the T-1733 escape-hatch-accountability principle applied to force
+    # overrides: shared across both --force call sites since a single
+    # invocation only ever exercises one of them.
+    ticket_force_reason: str | None = None
+    ticket_force_reason_file: Path | None = None
     # frob:ticket T-0455
     # `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`
     ticket_scope_add: list[str] = []

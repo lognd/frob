@@ -337,7 +337,11 @@ def _ticket_dispatch_table() -> dict:
         # frob:ticket T-1069
         "tier": _tier,
         "archive": lambda root, cfg: _archive(
-            root, force=cfg.ticket_force, no_commit=cfg.ticket_no_commit
+            root,
+            force=cfg.ticket_force,
+            no_commit=cfg.ticket_no_commit,
+            force_reason=cfg.ticket_force_reason,
+            force_reason_file=cfg.ticket_force_reason_file,
         ),
     }
 
