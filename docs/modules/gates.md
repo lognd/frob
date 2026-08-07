@@ -102,7 +102,7 @@ declaration).
 | PROTO002 | protocol_summary | (error) a `frob:requires` symbol's required state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
 | PROTO003 | protocol_summary | (error) a `frob:transition` symbol's precondition state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
 | WIRE001 | wire | (error) a ticket's own diff adds a function/method/class with no non-test caller, a gate `rule="..."` literal absent from `_KNOWN_GATE_RULES`, or a CLI `dest=` absent from `_config_external.py`'s copy lists -- code that landed, passed every gate, and does nothing; see "WIRE001/WIRE002 (T-1428)" below |
-| WIRE002 | wire | (error, unwaivable) a `frob:waive WIRE001` present without a `follow_up="T-####"` attribute naming a real, still-open ticket -- see "WIRE001/WIRE002 (T-1428)" below |
+| WIRE002 | wire | (error, unwaivable) a `frob:waive WIRE001` present without a `follow_up="T-####"` attribute naming a real, still-open ticket (or, for a private test-tree helper, `permanent="true"`) -- see "WIRE001/WIRE002 (T-1428)" below |
 | CACHE001 | cache | (error) a `@memoize_per_run`-decorated function reads a file (`Path.read_text`/`.read_bytes`/`open()`) or `os.environ`/`os.getenv` whose target expression names none of the function's own parameters -- the read is invisible to `memoize_per_run`'s args-only cache key, the T-1454 incident shape; see "CACHE001 (T-1520)" below |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
@@ -2177,6 +2177,35 @@ prefix matching, same as every other waivable rule) -- WIRE002 is what
 makes the waiver's own content matter, so a two-phase landing is an
 enforced obligation bound to a real open ticket, not a note nobody has to
 act on.
+
+**`permanent="true"` for a test-only helper that is never meant to be
+wired (T-1592)**: `follow_up=` asks "who will wire this, and by when" --
+the right question for a symbol that is temporarily unwired. It is the
+wrong question for a private test-seed helper called only by its own
+file's test methods, where having no production caller is the permanent,
+intended design. Forcing such a waiver to name a follow-up ticket just
+manufactures a placeholder obligation that turns into a fresh WIRE002
+orphan the moment that placeholder ticket closes (the live incident:
+`tests/unit/test_mutation_sweep_queue.py::_make_ticket` named its own
+landed ticket as `follow_up`, and WIRE002 fired again on main the moment
+that ticket closed). A `frob:waive WIRE001` may instead declare
+`permanent="true"`, satisfying WIRE002 with no `follow_up=` at all,
+restricted to a private symbol (leaf name starting with `_`) whose
+enclosing file lives under `tests/` -- so production code cannot use this
+to dodge real wiring:
+
+```python
+# frob:waive WIRE001 reason="a private test-seed helper used only by this \
+file's own test methods -- there is no production caller to wire it to \
+by design" permanent="true"
+def _make_ticket(...):
+    ...
+```
+
+A `permanent="true"` waiver on a non-test-tree file, or on a public
+symbol, does NOT satisfy WIRE002 -- `_wire002_is_permanent_test_helper_
+waiver` (`frob.gates._wire`) checks both conditions, and `follow_up=` is
+still required otherwise.
 
 ## Public API
 

@@ -18,7 +18,7 @@ from frob.tickets._mutation_sweep_queue import (
 # frob:waive WIRE001 reason="a private test-seed helper used only by this file's own \
 # test methods below -- there is no production caller to wire it to by design, \
 # mirroring tests/unit/test_ticket_file_flags.py's identical _make_ticket precedent" \
-# follow_up="T-1592"
+# permanent="true"
 def _make_ticket(tmp_path: Path, *, kind: TicketKind) -> str:
     spec = TicketSpec(title="seed", kind=kind, origin=Origin.HUMAN)
     result = new_ticket(tmp_path, spec)

@@ -33,7 +33,7 @@ from frob.gates._dead_symbols import (
 from frob.gates._models import Severity, Violation
 from frob.gates._waive import known_gate_rule_ids
 from frob.gitio import Diff, run_argv
-from frob.graph import EdgeKind, GraphSnapshot
+from frob.graph import Edge, EdgeKind, GraphSnapshot
 from frob.graph.callgraph import _WRAPPER_MARKER_NAMES
 from frob.graph.digest import compute_digests
 from frob.lang import SymbolKind, parse_file
@@ -668,6 +668,26 @@ def _wire001_new_kwonly_param_violations(
     return violations
 
 
+def _wire002_is_permanent_test_helper_waiver(edge: Edge) -> bool:
+    """True when a `frob:waive WIRE001` legitimately has no follow-up ticket
+    to name: `permanent="true"` on a private symbol (leaf name starting
+    with `_`) whose enclosing file lives under `tests/`. Restricted to the
+    test tree so production code cannot use this to dodge real wiring --
+    a private test-seed helper called only by its own file's test methods
+    has no production caller BY DESIGN, not "not yet" (T-1592's live
+    instance: `tests/unit/test_mutation_sweep_queue.py::_make_ticket`,
+    which kept re-orphaning WIRE002 every time its placeholder follow_up
+    ticket closed, because the condition it waives is permanent, not
+    pending)."""
+    if edge.attrs.get("permanent") != "true":
+        return False
+    file_part = edge.src.partition("::")[0]
+    if not file_part.startswith("tests/"):
+        return False
+    leaf = edge.src.rsplit(".", 1)[-1].rsplit("::", 1)[-1]
+    return leaf.startswith("_")
+
+
 def _wire002_violations(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
     """WIRE002: a `frob:waive WIRE001` present without a `follow_up="T-####"`
     attribute naming a real, still-open ticket -- the escape hatch this
@@ -675,12 +695,19 @@ def _wire002_violations(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Vio
     BY WHEN") turned into a checkable fact rather than free-text prose. A
     missing `follow_up=`, an id that resolves to no ticket, or a ticket
     already `done`/`dropped` all count -- an obligation that names nobody
-    accountable is not an obligation."""
+    accountable is not an obligation. EXCEPT (T-1592) a waiver that instead
+    declares `permanent="true"` on a private test-tree helper: such a
+    waiver has no real follow-up work to point at (the no-caller condition
+    is the intended, permanent design, not a pending TODO), so requiring
+    one just forces a placeholder ticket id that turns into a fresh
+    WIRE002 orphan the moment that placeholder closes."""
     from frob.gates import _OPEN_STATES, _edges_of_kind, _site_from_edge_origin
 
     violations: list[Violation] = []
     for edge in _edges_of_kind(snapshot, EdgeKind.WAIVE):
         if edge.target != "WIRE001":
+            continue
+        if _wire002_is_permanent_test_helper_waiver(edge):
             continue
         follow_up = edge.attrs.get("follow_up")
         ticket = queue.tickets.get(follow_up) if follow_up else None

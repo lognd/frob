@@ -3380,6 +3380,79 @@ class TestWireGate:
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert not any(v.rule == "WIRE002" for v in violations)
 
+    # frob:ticket T-1592
+    def test_wire002_clean_when_permanent_true_on_private_test_helper(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """A `permanent="true"` waiver on a private helper (`_`-prefixed)
+        under `tests/` needs no `follow_up=` -- the T-1592 fix, exercising
+        the live incident's exact shape (`_make_ticket` used only by its
+        own file's test methods)."""
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "tests/unit/test_a.py",
+            '# frob:waive WIRE001 reason="private test-seed helper used only by '
+            "this file's own test methods -- no production caller by design\" "
+            'permanent="true"\n'
+            "def _make_ticket() -> str:\n"
+            "    return 'x'\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=())
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(v.rule == "WIRE002" for v in violations)
+
+    # frob:ticket T-1592
+    def test_wire002_still_fires_when_permanent_true_outside_tests_tree(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """`permanent="true"` does NOT satisfy WIRE002 outside `tests/` --
+        production code cannot use it to dodge naming a real follow-up."""
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:waive WIRE001 reason="internal helper" permanent="true"\n'
+            "def _helper() -> bool:\n"
+            "    return True\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=())
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE002")
+        assert v is not None
+
+    # frob:ticket T-1592
+    def test_wire002_still_fires_when_permanent_true_on_public_test_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """`permanent="true"` does NOT satisfy WIRE002 for a public (non
+        `_`-prefixed) symbol, even under `tests/` -- restricted to private
+        helpers only."""
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "tests/unit/test_a.py",
+            '# frob:waive WIRE001 reason="helper" permanent="true"\n'
+            "def make_ticket() -> str:\n"
+            "    return 'x'\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=())
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE002")
+        assert v is not None
+
 
 # frob:ticket T-0813
 class TestProtocolSummaryGate:

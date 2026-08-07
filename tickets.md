@@ -3025,7 +3025,7 @@ Follow-up worth considering: an integration test that runs the full new -> start
 id: T-1592
 title: WIRE001 waivers on permanently-unwired private test helpers should not require
   an open follow_up
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -3039,6 +3039,11 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestWireGate::test_wire002_clean_when_permanent_true_on_private_test_helper
+- tests/test_gates.py::TestWireGate::test_wire002_still_fires_when_permanent_true_outside_tests_tree
+- tests/test_gates.py::TestWireGate::test_wire002_still_fires_when_permanent_true_on_public_test_symbol
+- tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep::test_enqueue_persists_entry
 threat: null
 component: null
 ```
@@ -3049,6 +3054,48 @@ Live instance: tests/unit/test_mutation_sweep_queue.py::_make_ticket named T-151
 Fix: let a WIRE001 waiver declare permanence instead of a follow-up -- an explicit permanent=true attribute (or a reason-preset the gate recognizes) that satisfies WIRE002 without naming a ticket, restricted to private symbols under the test tree so production code cannot use it to dodge real wiring. Then sweep the existing test-helper waivers onto it.
 
 Related: T-1559 closed the other half of this class (refusing/auto-migrating orphaned follow_up waivers at close/land time). This is the same problem approached from the other side: some waivers should never have needed a follow-up at all.
+
+## Done report
+
+WIRE002 required every `frob:waive WIRE001` to name an open `follow_up`
+ticket, treating "no production caller" as always temporary. For a
+private test-seed helper called only by its own file's test methods
+(`tests/unit/test_mutation_sweep_queue.py::_make_ticket`), having no
+production caller is the permanent, intended design -- there is no real
+follow-up work to bind to. Forcing one manufactured a placeholder
+obligation (`follow_up="T-1518"`) that turned into a fresh WIRE002 orphan
+the instant that placeholder ticket closed, exactly as the ticket
+describes for the live incident.
+
+Fix: `_wire002_is_permanent_test_helper_waiver` (src/frob/gates/_wire.py)
+lets a `frob:waive WIRE001` declare `permanent="true"` instead of naming
+a follow-up, and `_wire002_violations` now skips WIRE002 for any waiver
+this predicate accepts. Restricted to private symbols (`_`-prefixed leaf
+name) whose enclosing file lives under `tests/`, so production code
+cannot use it to dodge real wiring -- a `permanent="true"` waiver on a
+public symbol or a non-test-tree file still requires `follow_up=`
+(verified by two negative regression tests).
+
+`tests/unit/test_mutation_sweep_queue.py::_make_ticket`'s waiver was
+swept from `follow_up="T-1592"` (this ticket, itself a placeholder) onto
+`permanent="true"`, closing the exact live incident named in the ticket.
+docs/modules/gates.md's WIRE001/WIRE002 section documents the new
+attribute and its restriction; the WIRE002 catalog row was updated to
+match.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 6199 warning(s), 717 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1597 -->
 ```yaml
