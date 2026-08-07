@@ -1,7 +1,7 @@
 ---
 id: T-1583
 title: 'write_archive is v1-only: frob ticket archive loses tickets in a v2 repo'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-05'
