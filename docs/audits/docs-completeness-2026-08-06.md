@@ -1,6 +1,6 @@
 # Docs completeness sweep (2026-08-06)
 
-Status: T-1610
+Status: 2026-08-06
 
 Mechanical enumeration of the repo's real surface (CLI verb tree, config
 model, env vars, gate rule registry) diffed against what `docs/` actually

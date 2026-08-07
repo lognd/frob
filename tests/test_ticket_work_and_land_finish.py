@@ -9,7 +9,6 @@ worktree` commands, so the fixture reproduces the real shape rather than
 mocking it away.
 """
 
-
 from __future__ import annotations
 
 import subprocess
@@ -34,6 +33,7 @@ from frob.app.ticket_runner._land_cmd import (
 from frob.app.ticket_runner._lifecycle import _default_work_worktree
 from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket
 from frob.tickets._land import land
+from frob.tickets._models import LandReport
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
 
 
@@ -671,6 +671,7 @@ class TestPreCommitUnscopedSweepFn:
 
 
 # frob:ticket T-1175
+# frob:ticket T-1685
 class TestLandProofAndFinish:
     """T-1175's `_print_land_proof`/`_finish_worktree` -- land's own
     `frob.tickets.land()` (permissive, matching test_ticket_land.py's own
@@ -678,7 +679,11 @@ class TestLandProofAndFinish:
     consume; the CLI wrapper (`_land`) just wires them in after a real
     (non-dry-run) `Ok` result, T-1175's own actual new code lives here."""
 
-    def _land_a_real_ticket(self, repo: Path) -> tuple[str, Path, object]:
+    # frob:ticket T-1685
+    def _land_a_real_ticket(self, repo: Path) -> tuple[str, Path, LandReport]:
+        """Land a freshly created ticket end-to-end and return its id,
+        worktree path, and the resulting LandReport for assertion reuse
+        across this class's tests."""
         created = new_ticket(repo, _spec("Land proof"))
         assert created.is_ok
         tid = created.danger_ok.id

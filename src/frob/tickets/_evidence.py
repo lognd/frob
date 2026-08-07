@@ -303,6 +303,7 @@ def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str,
 # slip a code-kind ticket through close on unverifiable evidence.
 # frob:ticket T-0417
 # frob:ticket T-0976
+# frob:ticket T-1685
 def _done_transition_structural_guard(
     ticket: Ticket,
     queue: dict[str, Ticket],
@@ -340,6 +341,25 @@ def _done_transition_structural_guard(
                 open_descendants,
             )
             return Err(TicketError.OpenDescendant)
+    return _done_transition_evidence_kind_and_scope_guard(
+        ticket, covers_scope=covers_scope, rapid=rapid, debt_sink=debt_sink
+    )
+
+
+# frob:ticket T-1685
+def _done_transition_evidence_kind_and_scope_guard(
+    ticket: Ticket,
+    *,
+    covers_scope: bool | None,
+    rapid: bool = False,
+    debt_sink: Callable[[str, str], None] | None = None,
+) -> Result[None, TicketError]:
+    """`_done_transition_structural_guard`'s tail half -- cmd: evidence
+    kind-allowlisting, injected `covers_scope`, and unbound acceptance
+    criteria -- split out to keep the head half under ARCH001's line
+    threshold (T-1685), the same split-by-guard-boundary shape this
+    module's other siblings (e.g. `_done_transition_gate_claim_guard`)
+    already use."""
     if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
         is_cmd_evidence(e) for e in ticket.evidence
     ):
