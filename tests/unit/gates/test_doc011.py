@@ -13,6 +13,7 @@ from datetime import date
 from pathlib import Path
 
 from frob.gates import docstatus_gate
+from frob.gates._models import Severity
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 from frob.tickets._store import write_ticket
 
@@ -66,6 +67,22 @@ class TestDoc011TicketIdProse:
         )
         violations = docstatus_gate(root)
         assert "DOC011" not in _test_rules(violations)
+
+    def test_unknown_ticket_id_fires_at_error_severity(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_unknown_ticket_id_fires_at_error_severity  # noqa: E501
+        # T-1542: DOC011 promoted WARN -> ERROR once the T-1486 first-turn-on
+        # debt (10 stale citations) was re-verified as provably zero on the
+        # current tree. This test fails at the pre-T-1542 parent commit
+        # (severity was WARN there) and passes at the fix.
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "guide.md").write_text(
+            "# Guide\n\nSee T-9999 for background.\n", encoding="utf-8"
+        )
+        violations = docstatus_gate(root)
+        doc011 = [v for v in violations if v.rule == "DOC011"]
+        assert doc011, "expected at least one DOC011 finding"
+        assert all(v.severity == Severity.ERROR for v in doc011)
 
     def test_id_inside_fenced_code_block_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_id_inside_fenced_code_block_is_not_flagged  # noqa: E501

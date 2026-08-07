@@ -518,18 +518,25 @@ def _doc011_violation(doc_rel: str, line: int, ticket_id: str) -> Violation:
     """Build one DOC011 `Violation` -- a doc prose mention of a ticket id
     that does not resolve to any active or archived ticket.
 
-    T-1486: WARN, not ERROR, deliberately -- the first live run against
-    this repo's own docs tree found 10 genuine pre-existing stale
-    citations (mostly `T-draft-<hex>` ids that finalized to a real T-####
-    long ago, plus one true orphan and one illustrative example),
-    entirely outside this ticket's own declared scope to fix. Shipping
-    this at ERROR would fail every unscoped `frob check` the moment it
-    lands, for drift this ticket only DETECTS, not causes. A follow-up
-    ticket tracks fixing the flagged citations; promote to ERROR once
-    that lands and the count is provably zero."""
+    T-1486 shipped this at WARN, not ERROR, deliberately -- the first live
+    run against this repo's own docs tree found 10 genuine pre-existing
+    stale citations (mostly `T-draft-<hex>` ids that finalized to a real
+    T-#### long ago, plus one true orphan and one illustrative example),
+    entirely outside T-1486's own declared scope to fix. T-1542 closed
+    that follow-up: all 10 were re-verified against the CURRENT tree --
+    seven no longer contained the stale string at all (already fixed by
+    unrelated intervening work), and the remaining three (two in
+    docs/modules/gates.md, one in docs/strata/host.md) turned out to
+    already be inside inline code spans illustrating the id SYNTAX itself
+    (`_doc011_scan_doc`'s own code-span stripping already exempts these,
+    matching DOC008's convention) -- not real dangling citations. With the
+    count provably zero (`frob check --only docanchor`, unscoped, 0 DOC011
+    findings), this promotes to ERROR: the soft landing T-1486 needed is
+    no longer needed, and a real new dangling citation should fail a
+    check, not just warn."""
     return Violation(
         rule="DOC011",
-        severity=Severity.WARN,
+        severity=Severity.ERROR,
         file=doc_rel,
         line=line,
         message=(
