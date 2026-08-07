@@ -78,6 +78,21 @@ _index.json                 # derived, gitignored -- NOT the tracked truth (sect
   and "record evidence" and "change scope" three DIFFERENT files' worth
   of git object, hence three independently mergeable, independently
   lockable writes instead of three regex-scoped edits into one blob.
+
+  **On-disk split, in-memory canonical (T-1587):** the file split above
+  is an ON-DISK storage detail only -- `Ticket.body`, the in-memory field
+  every consumer reads (close's substantive-report check, evidence
+  recovery, TICK006's phantom-filing resolution, the land ledger merge's
+  `has_done_report` comparisons), stays the single source of truth
+  regardless of backend. `load_all`/`load_archive`'s v2 branch splices
+  `done-report.md` back into `body` on every read
+  (`_merge_sibling_done_report`); `write_ticket`'s v2 branch splits it
+  back out on every write, so a load -> modify -> write round trip never
+  duplicates the section into `ticket.md`. Getting this wrong (the
+  original bug, fixed by this same ticket) makes a v2 repo's `frob ticket
+  close` refuse a ticket whose Done report was written seconds earlier --
+  the write and the read were each individually correct on their own
+  terms, and only running the full cycle end to end exposed the gap.
 - `archive/T-####/`: archiving becomes `git mv tickets/T-0001
   tickets/archive/T-0001` (see section 4.3) -- no rewrite of file
   contents at all, so there is nothing left to clobber (T-0959 becomes

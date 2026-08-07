@@ -12,6 +12,7 @@ import pytest
 
 from frob.tickets import (
     TicketSpec,
+    add_evidence,
     attach,
     closed_ticket_ids,
     new_ticket,
@@ -1319,6 +1320,73 @@ class TestSetDoneReport:
         assert "## Done report" in report_text
         assert "v2 done report" in report_text
         assert "### Evidence" in report_text
+
+
+# frob:ticket T-1587
+class TestV2FullLifecycleDoneReport:
+    """T-1587's own suggested follow-up: an integration test that runs the
+    full `new -> start -> evidence -> done-report -> close` cycle against a
+    v2 repo end to end, rather than each half (write/read) checked in
+    isolation. The unit layer alone missed the original bug -- `write_
+    done_report`'s v2 branch and `load_all`'s v2 branch were each
+    individually correct on their own terms, and only their COMBINATION
+    (a load right after a report write) exposed the gap `_merge_sibling_
+    done_report` closes."""
+
+    def test_close_does_not_refuse_recent_report(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestV2FullLifecycleDoneReport.test_close_does_not_refuse_recent_report  # noqa: E501
+        """The exact field incident this ticket names: `frob ticket close`
+        refusing a ticket whose Done report was written seconds earlier,
+        in a v2 repo, because `Ticket.body` (what the DONE-transition
+        guard reads) never carried it."""
+        spec = TicketSpec(
+            title="v2 lifecycle", kind=TicketKind.DOCS, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+        assert _store_mode(tmp_path) == "v2"
+
+        planned = transition(tmp_path, ticket_id, TicketState.PLANNED)
+        assert planned.is_ok
+        started = transition(tmp_path, ticket_id, TicketState.IN_PROGRESS)
+        assert started.is_ok
+
+        evidenced = add_evidence(
+            tmp_path,
+            ticket_id,
+            ["tests/test_x.py::test_y"],
+            collected=frozenset({"tests/test_x.py::test_y"}),
+            passed=frozenset({"tests/test_x.py::test_y"}),
+        )
+        assert evidenced.is_ok
+
+        # `write_done_report`'s v2 branch stores the report ONLY in
+        # tickets/<id>/done-report.md -- ticket.md on disk is untouched.
+        reported = set_done_report(tmp_path, ticket_id, why="did the thing")
+        assert reported.is_ok
+        on_disk_ticket_md = (tmp_path / "tickets" / ticket_id / "ticket.md").read_text(
+            encoding="utf-8"
+        )
+        assert "## Done report" not in on_disk_ticket_md
+        assert (tmp_path / "tickets" / ticket_id / "done-report.md").exists()
+
+        # The bug: a load right here (what `transition(..., DONE)` does
+        # internally) used to see NO Done report at all, so this refused
+        # with MissingEvidence despite the report existing on disk.
+        closed = transition(tmp_path, ticket_id, TicketState.DONE)
+        assert closed.is_ok, f"close refused a report written seconds earlier: {closed}"
+        assert closed.danger_ok.state is TicketState.DONE
+
+        # And the closed ticket, read back fresh (the land ledger merge's
+        # own vantage point), still carries the report -- TICK006/land
+        # never go blind on the very next load either.
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        assert "## Done report" in reloaded.danger_ok[ticket_id].body
+        assert "did the thing" in reloaded.danger_ok[ticket_id].body
 
 
 # frob:ticket T-0357
