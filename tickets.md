@@ -13281,7 +13281,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-08-06'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -13341,7 +13341,6 @@ refused by `--finish`; the same worktree with no live process is removed;
 "could not finish" without naming what is holding it repeats the
 DirtyMain lesson (T-1698/T-1699) where an error that did not name its own
 cause cost three agents their budgets.
-
 <!-- ticket:T-1716 -->
 ```yaml
 id: T-1716
