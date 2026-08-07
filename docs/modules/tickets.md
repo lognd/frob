@@ -3049,6 +3049,100 @@ profile-to-queue-depth dial. This module is purely the data model plus
 its read/write primitives, verified in isolation
 (`tests/unit/verify/test_watermark.py`).
 
+## Coalescing verify worker (T-1688)
+
+<!-- frob:describes src/frob/verify/_worker.py::WorkerError -->
+<!-- frob:describes src/frob/verify/_worker.py::WorkerOutcome -->
+<!-- frob:describes src/frob/verify/_worker.py::run_coalesced_verification -->
+<!-- frob:describes src/frob/verify/_worker.py::CoalescingWorker -->
+<!-- frob:describes src/frob/serve/_daemon.py::_poll_verify_worker -->
+
+The trailing-edge-debounce half of the T-1686 epic, and where the
+wall-clock saving actually comes from: `frob.verify._worker.
+run_coalesced_verification` is the whole job on one wake -- read the
+verify queue, look at ONLY its tip entry, verify ONCE, and on a
+genuinely green result advance the watermark past every entry the queue
+currently holds and compact them away.
+
+**Coalesce, not iterate -- structurally, not by convention.** The
+function never loops over queue entries; it reads `entries[-1]` and calls
+its `verify_fn` exactly once, so five (or five hundred) queued lands
+produce exactly one verification call. This is provable directly:
+`tests/unit/verify/test_worker.py::TestRunCoalescedVerification::
+test_five_queued_entries_call_verify_exactly_once` enqueues five entries,
+injects a call-counting `verify_fn`, and asserts the count is 1 -- an
+invocation count, not a timing measurement (a timing-based test proves
+nothing about whether coalescing actually happened, only about how fast
+it was).
+
+**`None` can never advance the watermark -- structurally.** `verify_fn`
+returning `None` (T-1703's own contract for `_unscoped_error_findings`: a
+budget-truncated or otherwise partial check is unmeasurable, never
+"clean") hits an early `return Err(WorkerError.Unmeasurable)` that sits
+BEFORE every other branch in the function, including the one branch that
+calls `frob.verify.advance_watermark`. There is no flag to remember to
+check -- the only textual path to `advance_watermark` in this file is the
+final branch of a chain no `None` result can fall through to.
+
+**Four possible outcomes**, distinguished by `WorkerOutcome.status`:
+
+- `"empty"` -- nothing queued, `verify_fn` never even called.
+- `"baseline-established"` -- a real, measured result, but with no PRIOR
+  rolling baseline to diff against; "no new findings" cannot be asserted
+  with nothing to compare to, so this is deliberately NOT treated as
+  green (watermark untouched) even though the check itself succeeded.
+- `"red"` -- new findings vs the rolling baseline; files a regression
+  ticket (reusing `frob.app.ticket_runner._rapid_sweep.
+  _file_regression_ticket`, T-1684's own filer) and leaves the watermark
+  untouched -- a red batch quarantines, it does not revert (T-1686's own
+  recorded decision).
+- `"green"` -- no new findings vs a real prior baseline; the watermark
+  advances to the tip commit and `compact_queue` drops every entry the
+  queue held (they are all covered by the same tip verification).
+
+**Reused, not reinvented.** The rolling-baseline read/write/diff
+machinery is `frob.app.ticket_runner._rapid_sweep`'s own
+(`_read_baseline`/`_write_baseline`/`_file_regression_ticket`, built for
+T-1684's per-land spawn) -- this module imports those three functions
+directly rather than re-deriving the same comparison a second time; the
+only genuinely new decision layered on top is "and if it's green, advance
+the watermark and compact the queue", which T-1684 had no reason to know
+about.
+
+**Touched symbols stay symbolic.** This module never reads
+`VerifyQueueEntry.touched_symbols` at all (attribution is deliberately
+out of this leaf's scope -- T-1686's own framing: verifying at the tip
+proves the batch is green as a whole, but does not by itself attribute
+any one finding to any one commit) and never reduces the field to a file
+path for its own convenience; that data stays intact for T-1690's
+attribution leaf to consume later.
+
+**Wake conditions and where they actually live.** `CoalescingWorker`
+holds the debounce/floor DECISION state (`notify()` records a wake,
+`tick()` decides whether to actually run); it never runs on a timer of
+its own -- `frob.serve._daemon._poll_verify_worker` drives it from the
+daemon's existing `DEFAULT_POLL_INTERVAL_S` (20s) cycle, calling
+`notify()` when `main`'s HEAD has moved since this job last looked (the
+"queue append" wake proxy: a land IS a HEAD move) and calling `tick()`
+unconditionally every cycle (cheap -- it is a no-op unless the trailing-
+edge debounce window has gone quiet, or the periodic floor has elapsed).
+**Disclosed scope cut:** the FS-watch push signal `frob.serve._watch.
+WatchThread` already provides is NOT wired to `notify()` yet --
+`WatchThread` is instantiated in `frob.serve._socketd.run_socket_daemon`,
+outside this ticket's own `src/frob/serve/_daemon.py` scope; filed as a
+follow-up rather than silently assumed done (see this ticket's Done
+report for the real id).
+
+**Trailing-edge debounce, concretely.** Each `notify()` call pushes the
+deadline to `now + debounce_window_s` (default 90s) -- a steady trickle
+of lands keeps deferring the run, so a burst of five lands inside the
+window produces exactly one verification once the burst actually goes
+quiet. The periodic floor (default 300s) is measured from when work FIRST
+became pending, independent of how many notifies arrived since -- a
+continuous stream of notifies that never lets the debounce window go
+quiet still forces a run once the floor elapses, so a busy repo cannot
+starve verification indefinitely.
+
 ## Development profiles (`frob.toml [profile]`, T-1575)
 
 <!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->

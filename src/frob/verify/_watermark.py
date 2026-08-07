@@ -222,7 +222,7 @@ def queue_status(root: Path) -> Result[tuple[VerifyQueueEntry, ...], WatermarkEr
 # frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_persists_across_calls_in_order  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_empty_touched_symbols_refused  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_corrupt_queue_refuses_to_append  # noqa: E501
-# frob:waive WIRE001 reason="T-1687 is deliberately foundation-only (see this module's own docstring, 'THE FOUNDATION, NOT THE WORKER') -- the real land()-time caller is T-1688's wiring" follow_up="T-1688"  # noqa: E501
+# frob:waive WIRE001 reason="T-1687 is deliberately foundation-only (see this module's own docstring, 'THE FOUNDATION, NOT THE WORKER'); T-1688 wired the drain/advance/compact side but the enqueue side (calling record_intent from the land-commit path) is still unwired" follow_up="T-1736"  # noqa: E501
 def record_intent(
     root: Path,
     *,
@@ -317,7 +317,6 @@ def load_watermark(root: Path) -> Result[Watermark | None, WatermarkError]:
 # frob:doc docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestAdvanceWatermark.test_advance_then_load_round_trips  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestAdvanceWatermark.test_advance_overwrites_prior_watermark  # noqa: E501
-# frob:waive WIRE001 reason="T-1687 is deliberately foundation-only (see this module's own docstring, 'THE FOUNDATION, NOT THE WORKER') -- the real drainer-worker caller is T-1688's wiring" follow_up="T-1688"  # noqa: E501
 def advance_watermark(
     root: Path,
     *,
@@ -359,7 +358,6 @@ def advance_watermark(
 # frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_keeps_entries_after_watermark  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_watermark_commit_absent_from_queue_is_a_noop  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_no_watermark_yet_is_a_noop  # noqa: E501
-# frob:waive WIRE001 reason="T-1687 is deliberately foundation-only (see this module's own docstring, 'THE FOUNDATION, NOT THE WORKER') -- the real drainer-worker caller is T-1688's wiring" follow_up="T-1688"  # noqa: E501
 def compact_queue(root: Path) -> Result[int, WatermarkError]:
     """Drop every queue entry at-or-before the current watermark's
     `commit_sha` (append order -- the watermark's own commit is always the

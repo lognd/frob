@@ -233,11 +233,13 @@ knob to skip in normal use.
 <!-- frob:describes src/frob/serve/_daemon.py::_run_daemon_cycle -->
 <!-- frob:describes src/frob/serve/_daemon.py::_start_daemon -->
 <!-- frob:describes src/frob/serve/_tools.py::frob_daemon_status -->
+<!-- frob:describes src/frob/serve/_daemon.py::_poll_verify_worker -->
+<!-- frob:describes src/frob/serve/_daemon.py::_get_verify_worker -->
 
 (T-0733) `run_stdio` starts a background daemon thread (`frob.serve.
 _daemon._start_daemon`) alongside the MCP transport, running one cycle
 (`_run_daemon_cycle`) every `DEFAULT_POLL_INTERVAL_S` (20s) for the life of
-the `frob serve` process. Two jobs per cycle:
+the `frob serve` process. Three jobs per cycle:
 
 1. **Post-land re-verify** (`_poll_post_land`) -- watches `main`'s resolved
    HEAD (`git rev-parse main`). If it has not moved since the last cycle,
@@ -262,8 +264,22 @@ the `frob serve` process. Two jobs per cycle:
    full warning set for the repo root each cycle (a branch that
    resolved clean, or that landed and dropped its lease, does not linger
    as a stale warning).
+3. **Coalescing verify worker** (`_poll_verify_worker`, T-1688) -- the
+   T-1686 epic's own trailing-edge-debounce worker
+   (`frob.verify._worker.CoalescingWorker`, `_get_verify_worker` caches
+   one per repo root the same way `_DaemonStatus` is cached). This job
+   does not decide WHAT to verify or WHEN in isolation: it `notify()`s
+   the cached worker when `main`'s HEAD has moved since this job last
+   looked (a land IS a queue-append event) and calls `tick()`
+   unconditionally every cycle -- `tick()` itself is the cheap no-op
+   unless the debounce window has gone quiet or the periodic floor has
+   elapsed, so the real coalescing decision lives inside
+   `frob.verify._worker`, not here. See
+   `docs/modules/tickets.md#coalescing-verify-worker-t-1688` for the full
+   design (why it coalesces rather than iterates, why `None` can never
+   advance the watermark, and the disclosed FS-watch wiring gap).
 
-Both jobs write into one `_DaemonStatus` cache per repo root (mirroring
+All three jobs write into one `_DaemonStatus` cache per repo root (mirroring
 `frob.serve._warm`'s per-root cache shape); `frob_daemon_status()` -- the
 new MCP tool -- reads it back verbatim as JSON (`post_land`,
 `rebase_warnings`, `last_poll_at`), never triggering a poll itself. A

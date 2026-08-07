@@ -56,10 +56,16 @@ def _clean_daemon_status():
     """Every test starts and ends with a clean `_daemon._STATUS`/`_warm`
     cache -- these module-level dicts persist across tests in the same
     process otherwise, and `tmp_path` never repeats so stale entries are
-    harmless but the caches should not leak assumptions between tests."""
+    harmless but the caches should not leak assumptions between tests.
+    T-1688: also clears the per-root `CoalescingWorker` cache and its
+    last-seen-HEAD tracking, the identical leak class for the new job."""
     _daemon._STATUS.clear()
+    _daemon._VERIFY_WORKERS.clear()
+    _daemon._VERIFY_WORKER_LAST_HEAD.clear()
     yield
     _daemon._STATUS.clear()
+    _daemon._VERIFY_WORKERS.clear()
+    _daemon._VERIFY_WORKER_LAST_HEAD.clear()
 
 
 class TestPollPostLand:
@@ -87,6 +93,57 @@ class TestPollPostLand:
         second = _daemon._poll_post_land(repo, run_tests=False)
         assert second is not None
         assert second.head != first.head
+
+
+# frob:ticket T-1688
+class TestPollVerifyWorker:
+    """`_poll_verify_worker` (T-1688): notifies the cached `CoalescingWorker`
+    when `main`'s HEAD has moved since this job last looked, then ticks it
+    unconditionally every cycle."""
+
+    def test_head_moved_notifies_the_worker(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the\
+        # _worker
+        worker = _daemon._get_verify_worker(repo)
+        notified: list[None] = []
+        worker.notify = lambda: notified.append(None)  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+
+        _daemon._poll_verify_worker(repo)
+        assert len(notified) == 1
+
+        # Same HEAD, same cycle again -- must NOT notify a second time.
+        _daemon._poll_verify_worker(repo)
+        assert len(notified) == 1
+
+    def test_head_unchanged_still_ticks(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ti\
+        # cks
+        worker = _daemon._get_verify_worker(repo)
+        tick_calls: list[None] = []
+        worker.tick = lambda: tick_calls.append(None) or None  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+
+        _daemon._poll_verify_worker(repo)
+        _daemon._poll_verify_worker(repo)
+        # tick() runs every cycle regardless of whether HEAD moved -- the
+        # debounce/floor decision lives inside tick() itself, not here.
+        assert len(tick_calls) == 2
+
+    def test_tick_result_is_returned_when_a_run_happens(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned\
+        # _when_a_run_happens
+        from typani.result import Ok
+
+        from frob.verify._worker import WorkerOutcome
+
+        worker = _daemon._get_verify_worker(repo)
+        outcome = Ok(WorkerOutcome(status="empty"))
+        worker.tick = lambda: outcome  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+
+        result = _daemon._poll_verify_worker(repo)
+        assert result is outcome
 
 
 # frob:ticket T-0782

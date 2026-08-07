@@ -3,7 +3,7 @@ docs/modules/serve.md#daemon-jobs).
 
 `frob serve` used to be purely request/response: every MCP tool call did
 its own on-demand work, and nobody re-verified anything until an agent (or
-the coordinator) asked. Two gaps this closes, run as periodic background
+the coordinator) asked. Three gaps this closes, run as periodic background
 jobs alongside the stdio transport:
 
 1. POST-LAND RE-VERIFY (`_poll_post_land`): watches `main`'s HEAD; the
@@ -18,9 +18,19 @@ jobs alongside the stdio transport:
    -- and publishes a warning the moment that simulated merge would
    conflict, well before the agent working that branch writes its Done
    report.
+3. COALESCING VERIFY WORKER (`_poll_verify_worker`, T-1688): the T-1686
+   epic's own trailing-edge-debounce worker (`frob.verify._worker.
+   CoalescingWorker`). This job does not itself decide WHAT changed --
+   `_poll_post_land`'s own HEAD-moved detection is the `notify()` source
+   (a land is exactly a queue-append event), and this cycle's own
+   unconditional call is the periodic-floor source `docs/modules/
+   tickets.md#coalescing-verify-worker-t-1688` documents. `tick()` decides
+   whether enough quiet time (or floor time) has passed to actually run
+   one coalesced `frob.verify._worker.run_coalesced_verification` pass --
+   most cycles it is a no-op.
 
-Both jobs write into `_DaemonStatus`, a single in-process cache keyed by
-repo root (mirroring `frob.serve._warm._STATES`'s shape) that
+All three jobs write into `_DaemonStatus`, a single in-process cache keyed
+by repo root (mirroring `frob.serve._warm._STATES`'s shape) that
 `frob_daemon_status` (`_tools.py`) reads back verbatim -- no disk polling
 required to answer the MCP query, only to refresh it.
 """
@@ -36,12 +46,18 @@ from __future__ import annotations
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
 
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.serve import _warm
+
+if TYPE_CHECKING:
+    from typani.result import Result
+
+    from frob.verify._worker import CoalescingWorker, WorkerError, WorkerOutcome
 
 _log = get_logger(__name__)
 
@@ -209,6 +225,94 @@ def _poll_post_land(root: Path, *, run_tests: bool = True) -> _PostLandVerdict |
     return verdict
 
 
+# frob:ticket T-1688
+#: One `CoalescingWorker` per repo root, keyed the same way `_STATUS` is
+#: (`str(root.resolve())`) -- a worker's own debounce/floor state
+#: (`_pending_since`/`_last_notify_at`/`_last_run_at`) must survive across
+#: poll cycles for the SAME root, exactly like `_DaemonStatus` already
+#: does; a fresh worker per call would reset the debounce window every
+#: 20s and never coalesce anything.
+_VERIFY_WORKERS: dict[str, CoalescingWorker] = {}
+_VERIFY_WORKERS_LOCK = threading.Lock()
+
+#: The last `main` HEAD `_poll_verify_worker` itself observed per root --
+#: separate from `_poll_post_land`'s own head tracking (that one lives
+#: inside `_DaemonStatus`/`_STATUS`, a different cache with a different
+#: job's own concerns) so this job's "did a land happen" detection never
+#: depends on `_poll_post_land` having run first or at all.
+_VERIFY_WORKER_LAST_HEAD: dict[str, str] = {}
+
+
+def _get_verify_worker(root: Path) -> CoalescingWorker:
+    """The cached `CoalescingWorker` for `root`, creating one on first use.
+    Deferred import (`frob.verify` -> `frob.app.ticket_runner._land_cmd`
+    on its own verify path -- keeping `frob.serve` from paying that import
+    cost at module load for every caller that never touches this job,
+    matching this package's existing lazy-import convention for
+    `frob.serve._tools`'s own `frob_check_delta`/`frob_run_touched_tests`
+    calls above)."""
+    from frob.verify._worker import CoalescingWorker
+
+    key = str(root.resolve())
+    with _VERIFY_WORKERS_LOCK:
+        worker = _VERIFY_WORKERS.get(key)
+        if worker is None:
+            worker = CoalescingWorker(root)
+            _VERIFY_WORKERS[key] = worker
+        return worker
+
+
+# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ticks kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned_when_a_run_happens kind="unit"  # noqa: E501
+def _poll_verify_worker(root: Path) -> Result[WorkerOutcome, WorkerError] | None:
+    """One coalescing-verify-worker cycle (T-1688, job 3): `notify()` the
+    cached `CoalescingWorker` for `root` if `main`'s HEAD moved since the
+    last time THIS job looked (a land happened -- the "queue append" wake
+    condition, detected the same way `_poll_post_land` detects it, since
+    this job's scope does not include `frob.tickets._land`'s own land-time
+    call site that would push a real notify), then call `tick()`
+    UNCONDITIONALLY every cycle -- `tick()` itself is a no-op unless the
+    debounce window has gone quiet or the periodic floor has elapsed, so
+    calling it every `DEFAULT_POLL_INTERVAL_S` is cheap and correct; that
+    inner decision is where the real debounce/floor logic lives (`frob.
+    verify._worker.CoalescingWorker.tick`), not here.
+
+    DISCLOSED SCOPE CUT: the FS-watch signal `frob.serve._watch.
+    WatchThread` provides is NOT wired to this worker's `notify()` yet --
+    `WatchThread` is instantiated in `frob.serve._socketd.run_socket_daemon`,
+    outside this ticket's own `src/frob/serve/_daemon.py` scope. The
+    HEAD-moved check above and this job's own `DEFAULT_POLL_INTERVAL_S`
+    polling cadence already give every wake condition T-1686 asks for
+    EXCEPT that specific push signal; wiring `WatchThread(on_change=...)`
+    to also call this worker's `notify()` is a one-line follow-up inside
+    `_socketd.py`, filed rather than silently assumed done."""
+    head = _main_head(root)
+    key = str(root.resolve())
+    worker = _get_verify_worker(root)
+    if head is not None:
+        last_head = _VERIFY_WORKER_LAST_HEAD.get(key)
+        if last_head != head:
+            _VERIFY_WORKER_LAST_HEAD[key] = head
+            worker.notify()
+            _log.debug(
+                "serve: daemon: verify-worker: head moved to %s, notified", head[:12]
+            )
+    result = worker.tick()
+    if result is not None:
+        if result.is_ok:
+            _log.info(
+                "serve: daemon: verify-worker: tick ran, outcome=%s",
+                result.danger_ok.status,
+            )
+        else:
+            _log.warning(
+                "serve: daemon: verify-worker: tick ran, error=%s", result.danger_err
+            )
+    return result
+
+
 def _worktree_branches(root: Path) -> tuple[tuple[str, str, str], ...]:
     """`(ticket_id, worktree, branch)` for every currently-recorded
     cross-worktree lease visible from `root` (`frob.tickets._leases.
@@ -372,13 +476,18 @@ def daemon_status(root: Path) -> _DaemonStatus:
 # frob:tests tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
 def _run_daemon_cycle(root: Path, *, run_tests: bool = True) -> _DaemonStatus:
-    """One full daemon cycle: `_poll_post_land` then `_poll_rebase_bot`,
-    both against `root`. The unit both `_start_daemon`'s background loop
-    and tests call -- tests call it directly (no real sleep, no thread)
-    for a deterministic single-cycle assertion; `_start_daemon` calls it
-    repeatedly on a timer."""
+    """One full daemon cycle: `_poll_post_land`, `_poll_rebase_bot`, then
+    `_poll_verify_worker` (T-1688), all against `root`. The unit both
+    `_start_daemon`'s background loop and tests call -- tests call it
+    directly (no real sleep, no thread) for a deterministic single-cycle
+    assertion; `_start_daemon` calls it repeatedly on a timer.
+    `_poll_verify_worker` runs LAST, after `_poll_post_land` has already
+    updated its own HEAD-moved detection for this cycle, so a land
+    observed this cycle notifies the verify worker in the same pass it
+    was detected in rather than one cycle late."""
     _poll_post_land(root, run_tests=run_tests)
     _poll_rebase_bot(root)
+    _poll_verify_worker(root)
     return daemon_status(root)
 
 
@@ -429,6 +538,7 @@ __all__ = [
     "daemon_status",
     "_poll_post_land",
     "_poll_rebase_bot",
+    "_poll_verify_worker",
     "_run_daemon_cycle",
     "_start_daemon",
 ]
