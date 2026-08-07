@@ -1995,15 +1995,6 @@
     "src/frob/tickets/clipboard.py::clipboard_has_image": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",
     "src/frob/tickets/clipboard.py::clipboard_image": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
     "src/frob/tomlio.py::read_toml_lenient": "3eba702c5fffe52bbf76cf1c7341b5a7433de1bc4b8f7f77cfaee661f1ceeae4",
-    "src/frob/verify/_attribution.py::Attribution": "e9337e1b5517257fc00c8e8e2dc5d02828c73d674c3fc6c62ba6eab8c918a356",
-    "src/frob/verify/_attribution.py::AttributionError": "619e8f04a6f754dd27c4f53756a3bcca914560a8957cb6d2c732a58a67c5ae8d",
-    "src/frob/verify/_attribution.py::attribute_batch": "e5027957f9714379bd38ae6a58014bac13ac2e8718440551351f0e44b016c9da",
-    "src/frob/verify/_backpressure.py::BackpressureCeilings": "d45cfd34627eafb83d231b020a0e9eac09329544555f3bf42c5c0dc98da8d898",
-    "src/frob/verify/_backpressure.py::BackpressureError": "7a8821c23ff47f13a5c5c15217dca685bef8e1ea8d326ff4e77b3178e5000131",
-    "src/frob/verify/_backpressure.py::BackpressureStatus": "b76fb2ef9e69c749c4ce12e9c416a45a561d4d8f48c2a75e5c6a02fad2ea1e71",
-    "src/frob/verify/_backpressure.py::block_until_watermark_advances": "ade7bac9dab69bdb4b0b472025a933d750e71ca6f09c7480669946f3c55778bd",
-    "src/frob/verify/_backpressure.py::ceilings_for_profile": "719f410d654ba71c8e2c1cc98de0fe28e78b7784e1f0c0651871ccd73afe7b36",
-    "src/frob/verify/_backpressure.py::current_status": "a1158cc174ac3c62cdcc650f73bac3ac23c9ba5c34c0c14a5d47253f055134bd",
     "src/frob/verify/_watermark.py::SCHEMA_VERSION": "63a7265e981da6a7ab16e6307dd0842c69622b4949130e7194782785d27b36de",
     "src/frob/verify/_watermark.py::VerifyQueueEntry": "8f2e3c564e0a0a1d5672797d10d45cb2492f04c6559925d457e24a5d32467bd2",
     "src/frob/verify/_watermark.py::Watermark": "7810697da265322eb8226dcaaea505f685e9af06bf928c550053a08ffc557150",
@@ -2111,5 +2102,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.366.0"
+  "version": "0.365.0"
 }

@@ -3559,6 +3559,12 @@ rapid/standard branching `_land_core_prepare` already has, not a
 replacement for it. That collapse is later work this ticket does not
 claim to close.
 
+**T-1756 follow-up (post-land sweep hygiene).** T-1692's own land
+tripped the deferred post-land sweep: 4 E501 lines wrapped under 88
+chars across `_land_cmd.py`'s `_land_core_prepare` and
+`_backpressure.py`'s `BackpressureError`/`current_status`. No behavior
+changed.
+
 ## Development profiles (`frob.toml [profile]`, T-1575)
 
 <!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->

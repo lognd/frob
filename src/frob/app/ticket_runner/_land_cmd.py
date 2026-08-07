@@ -2184,7 +2184,9 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     from frob.tickets._profile import ProfileName, effective_profile
 
     _profile_result = effective_profile(worktree)
-    effective = _profile_result.danger_ok if _profile_result.is_ok else ProfileName.STANDARD
+    effective = (
+        _profile_result.danger_ok if _profile_result.is_ok else ProfileName.STANDARD
+    )
     rapid_land = effective is ProfileName.RAPID
     if rapid_land:
         _log.info(

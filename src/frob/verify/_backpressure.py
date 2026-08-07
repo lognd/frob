@@ -93,10 +93,13 @@ _DEFAULT_BLOCK_TIMEOUT_S = 1800.0
 
 
 # frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:ticket T-1756
 class BackpressureError(ErrorSet):
     """Fallible outcomes of this module's status/block operations."""
 
-    QueueUnreadable = "the verify queue could not be read to compute backpressure status"
+    QueueUnreadable = (
+        "the verify queue could not be read to compute backpressure status"
+    )
     BlockTimedOut = (
         "the ceiling did not clear before block_until_watermark_advances's own timeout"
     )
@@ -205,6 +208,7 @@ def _parse_enqueued_at(raw: str) -> float | None:
 # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_age_ceiling_trips  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_unbounded_ceilings_never_trip  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_queue_unreadable_is_an_error  # noqa: E501
+# frob:ticket T-1756
 def current_status(
     root: Path,
     ceilings: BackpressureCeilings,
@@ -235,12 +239,16 @@ def current_status(
 
     watermark = load_watermark(root)
     watermark_commit = (
-        watermark.danger_ok.commit_sha if watermark.is_ok and watermark.danger_ok else None
+        watermark.danger_ok.commit_sha
+        if watermark.is_ok and watermark.danger_ok
+        else None
     )
 
     depth_tripped = ceilings.max_depth is not None and depth > ceilings.max_depth
     age_tripped = (
-        ceilings.max_age_s is not None and age_s is not None and age_s > ceilings.max_age_s
+        ceilings.max_age_s is not None
+        and age_s is not None
+        and age_s > ceilings.max_age_s
     )
     reasons = []
     if depth_tripped:
