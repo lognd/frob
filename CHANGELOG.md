@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.363.0] - unreleased
+
+- T-1615: frob ticket block leaves the ledger dirty: audit every ledger-writing verb for auto-commit parity
+
 ## [0.362.0] - unreleased
 
 - T-1727: Close-time mutation-evidence sweep has no budget: 10 consecutive 540s timeouts, and its cost structure rewards binding weak evidence

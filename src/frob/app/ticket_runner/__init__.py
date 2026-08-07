@@ -124,13 +124,13 @@ from ._query import (
     _list,
     _migrate,
     _order_dispatchable_with_alarms,
+    _promote,
     _render_acceptance,
     _render_active_leases,
     _render_doable_dispatchable,
     _render_doable_in_flight,
     _render_doable_show_blocked,
     _render_scope_breadth_summary,
-    _promote,
     _renumber,
     _renumber_one,
     _show,
@@ -336,17 +336,106 @@ def _ticket_dispatch_table() -> dict:
         "sprint": _sprint,
         # frob:ticket T-1069
         "tier": _tier,
-        "archive": lambda root, cfg: _archive(root, force=cfg.ticket_force),
+        "archive": lambda root, cfg: _archive(
+            root, force=cfg.ticket_force, no_commit=cfg.ticket_no_commit
+        ),
     }
+
+
+# frob:ticket T-1615
+# Verbs excluded from `_auto_commit_ledger_after_dispatch`'s uniform
+# post-dispatch sweep because they own a commit sequence this generic,
+# `tickets.md`/`tickets/<id>`-pathspec-limited sweep would corrupt rather
+# than help:
+#   - "land"/"merge-driver" own a multi-file transaction end to end
+#     (squash-merging a whole worktree branch onto main) -- a stray
+#     ledger-only commit spliced in from outside would split what must
+#     land as one atomic change into two.
+#   - "promote"/"renumber" rewrite a ticket id across MANY tracked files
+#     (every `frob:ticket`/`frob:tests`/... directive referencing it, not
+#     just the ledger) in one operation -- committing only the ledger
+#     half here would leave the rest of that same rename uncommitted,
+#     which is a worse state than leaving all of it uncommitted together
+#     for the caller to commit as one change.
+#   - "sweep-async" is T-1699's territory: a DETACHED child process
+#     racing the land lock outside the caller's own commit window --
+#     T-1699 owns getting that interaction right, not this sweep.
+# Every OTHER verb in `_ticket_dispatch_table()` -- including any verb
+# added to it later -- is covered automatically with no per-verb code
+# required, because the sweep wraps the single dispatch call site below
+# rather than being copied into each handler; the dirtiness check inside
+# `commit_ticket_ledger_change` also means this never fires for a verb
+# that touched nothing (every read-only verb, or a `--worktree`-scoped
+# verb like `work`/`land` that never dirties `root`'s OWN ledger file).
+_LEDGER_TRANSACTIONAL_VERBS = frozenset(
+    {"land", "merge-driver", "promote", "renumber", "sweep-async"}
+)
+
+
+# frob:ticket T-1615
+def _auto_commit_ledger_after_dispatch(
+    root: Path, cfg: AppConfig, command: str | None
+) -> None:
+    """After `run()`'s dispatch call returns (normally or via a verb's own
+    `sys.exit`), commit whatever ledger residue that verb's write left
+    dirty (T-1615).
+
+    Root cause this closes: `frob ticket new`/`drop`/`fail`/`done-report`/
+    `evidence`/`close`/`start`/`requeue` already call
+    `commit_ticket_ledger_change` themselves (T-1130/T-1178) -- for those,
+    this call is a documented no-op (`_tickets_md_dirty` is already
+    `False` by the time it runs here). `block`/`scope`/`scope-ack`/
+    `priority`/`kind`/`component`/`label`/`accept`/`tier`/`attach` never
+    called it at all, leaving `tickets.md` dirty on every invocation --
+    the exact 2026-08-06 incident (two `frob ticket block` calls left a
+    two-blank-line, zero-semantic-change residue that DirtyMain-refused
+    every concurrent `frob ticket land` in the repo).
+
+    Deliberately a wrapper around the ONE dispatch call site in `run()`,
+    not a commit call added to each individual verb handler: a verb
+    added to `_ticket_dispatch_table()` in the future is covered the
+    instant it is added, with nothing new to remember per verb -- the
+    same class of gap this ticket exists to close cannot reopen here.
+    `_LEDGER_TRANSACTIONAL_VERBS` (`land`/`merge-driver`) is the only
+    exclusion, because both own their own complete multi-file commit
+    sequence and must never have a stray single-file `tickets.md` commit
+    spliced into it from outside.
+
+    Best-effort against `cfg.ticket_id is None`: every read-only verb
+    (`list`/`show`/`doable`/`board`/`epic`/`brief`/`flow`/`sprint show`/
+    ...) either never sets it or never dirties the ledger either way, so
+    there is nothing to resolve a commit pathspec against."""
+    if command in _LEDGER_TRANSACTIONAL_VERBS:
+        return
+    if cfg.ticket_id is None:
+        return
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): {command} {cfg.ticket_id}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        _log.error(
+            "ticket %s: ledger auto-commit failed for %s: %s",
+            command,
+            cfg.ticket_id,
+            committed.danger_err,
+        )
+        sys.exit(1)
 
 
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
+# frob:doc docs/modules/tickets.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615  # noqa: E501
 # frob:ticket T-0588
 # frob:ticket T-1029
 # frob:ticket T-1100
+# frob:ticket T-1615
 # frob:waive AFFECT001 reason="T-1029 added a new SUBCOMMAND (accept) to the dispatch \
 # table -- REG010-gate-rule-staleness-t-0560 is about a live GATE RULE id drifting out \
 # of the registry's own count, an orthogonal concern this change never touches; \
@@ -367,7 +456,10 @@ def run(cfg: AppConfig) -> None:
         )
         sys.exit(1)
     with _diagnostic_log_ctx(cfg):
-        handler(root, cfg)
+        try:
+            handler(root, cfg)
+        finally:
+            _auto_commit_ledger_after_dispatch(root, cfg, cfg.ticket_command)
 
 
 # frob:ticket T-0768

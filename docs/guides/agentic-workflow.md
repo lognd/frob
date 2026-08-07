@@ -20,6 +20,8 @@ frob ticket attach T-0040        # paste a clipboard mockup, if stdin is a TTY
 
 `frob ticket new`/`attach` offer clipboard paste only interactively; agents
 and CI always pass explicit file paths (see `docs/modules/tickets.md`).
+`attach`/`block` (T-1615) both auto-commit their own ledger write like
+every other ledger-mutating verb, `--no-commit` opts out.
 
 Everything downstream -- decomposition, implementation, review, proof -- is
 an agent's job, dispatched through the roles below and defined in

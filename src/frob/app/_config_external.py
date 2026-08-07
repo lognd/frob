@@ -361,6 +361,8 @@ _BOOL_FLAGS = (
     "ticket_reconcile_remove_orphans",
     # frob:ticket T-0715
     "ticket_doable_by_parent",
+    # frob:ticket T-1615
+    "ticket_no_commit",
     "deploy_check",
     "clean_all",
     "clean_deep",

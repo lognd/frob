@@ -870,6 +870,81 @@ No ledger-writing verb dispatched through the CLI is left able to leave
 made directly, bypassing the CLI, are unaffected and still leave the
 caller responsible for committing, exactly as before).
 
+## Every ledger-writing verb auto-commits uniformly (T-1615)
+
+T-1178's list above was still incomplete: `block`/`scope`/`scope-ack`/
+`priority`/`kind`/`component`/`label`/`accept`/`tier`/`attach` each wrote
+the ledger directly (`write_ticket`/`_set_ticket_field`/`mutate_scope`/
+`mutate_labels`) and left it dirty. Two `frob ticket block` calls back to
+back on 2026-08-05 left `tickets.md` uncommitted on `main`; the next
+`frob ticket land` from every worktree in the repo correctly refused with
+DirtyMain, but the dirt was frob's own doing, silently, on a verb nobody
+had reason to think left work behind -- the same incident class T-1130
+and T-1178 each closed for a different subset of verbs.
+
+**The fix, deliberately NOT one more per-verb copy-paste.**
+`frob.app.ticket_runner._auto_commit_ledger_after_dispatch` wraps the
+SINGLE dispatch call site in `run()` (the one place every CLI invocation
+already passes through `_ticket_dispatch_table()`), rather than adding a
+`commit_ticket_ledger_change` call inside each individual verb handler:
+after the dispatched handler returns (success or a verb's own
+`sys.exit`), it commits whatever `tickets.md`/`tickets/<id>` residue that
+verb's write left dirty for `cfg.ticket_id`, honoring the same
+`--no-commit` opt-out. A verb added to the dispatch table LATER is
+covered automatically, with nothing new to remember per verb -- the
+"verb number twelve" gap this ticket exists to structurally close.
+`commit_ticket_ledger_change` itself now WARNS (naming the ticket, root,
+and the exact recovery command) whenever `--no-commit` leaves the ledger
+dirty, for every verb that reaches it -- a silent opt-out reproduces the
+incident with an extra step.
+
+**`archive` is NOT covered by that wrapper** (it operates on no single
+`cfg.ticket_id` -- it moves potentially MANY done/dropped tickets from
+active into `tickets-archive.md`/`tickets/archive/` in one call) and gets
+its own explicit call site instead: `commit_full_ledger_change`
+(`frob.tickets._leases`), `commit_ticket_ledger_change`'s twin keyed on
+the WHOLE ledger surface (`_full_ledger_pathspecs`) rather than one
+ticket's pathspecs, same no-op/warn/commit contract.
+
+**The audit table** (every ledger-writing verb in the real dispatch
+table, enumerated programmatically by
+`tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable`,
+never hand-listed -- a verb the table omits fails
+`test_dispatch_table_verbs_are_all_accounted_for` immediately):
+
+| verb | writes the ledger? | commits? | how |
+| --- | --- | --- | --- |
+| `new` | yes | yes | T-1130, own call site |
+| `drop` | yes | yes | T-1130, own call site |
+| `fail` | yes | yes | T-1130, own call site |
+| `start` | yes | yes | T-1054, own call site |
+| `close` | yes | yes | T-1178, own call site |
+| `evidence` (plain and `--replace`) | yes | yes | T-1178, own call site (both modes funnel through the same handler) |
+| `done-report` | yes | yes | T-1178, own call site |
+| `requeue` | yes | yes | T-1178, own call site |
+| `block` | yes | **yes (T-1615)** | uniform wrapper |
+| `scope` | yes | **yes (T-1615)** | uniform wrapper |
+| `scope-ack` | yes | **yes (T-1615)** | uniform wrapper |
+| `priority` | yes | **yes (T-1615)** | uniform wrapper |
+| `kind` | yes | **yes (T-1615)** | uniform wrapper |
+| `component` | yes | **yes (T-1615)** | uniform wrapper |
+| `label` | yes | **yes (T-1615)** | uniform wrapper |
+| `accept` (append/`--amend`/`--remove`) | yes | **yes (T-1615)** | uniform wrapper |
+| `tier` | yes | **yes (T-1615)** | uniform wrapper |
+| `attach` | yes | **yes (T-1615)** | uniform wrapper |
+| `sprint assign` | yes | **yes (T-1615)** | uniform wrapper |
+| `review` | yes | **yes (T-1615)** | uniform wrapper |
+| `reverify` | no (re-runs close's guards against an already-done ticket, never calls `transition`) | n/a | n/a |
+| `archive` | yes, whole ledger | **yes (T-1615)** | `commit_full_ledger_change`, own call site |
+| `migrate` | yes, whole ledger | **deliberately no** | rewrites the storage backend itself (v1->v2); the caller finishes the migration by committing everything as one change |
+| `renumber` (both forms) | yes, whole tree | **deliberately no** | rewrites `frob:ticket`/`frob:tests`/... directive references across every tracked file, not just the ledger -- a ledger-only commit here would split one atomic rename into two |
+| `promote` | yes, whole tree | **deliberately no** | same reasoning as `renumber` (it IS `renumber_one` under the hood) |
+| `land` / `merge-driver` | yes, whole tree | yes, but via its OWN multi-file commit sequence | never through this mechanism -- see `_LEDGER_TRANSACTIONAL_VERBS`'s own docstring |
+| `sweep-async` | no (files a NEW bug ticket via `new`, which already commits) | n/a | T-1699 territory (DirtyMain vs. the land lock), not this ticket's |
+| `list`/`show`/`doable`/`board`/`epic`/`brief`/`flow`/`sprint show`/`plan`/`work`/`sweep`/`reconcile` | no | n/a | read-only or state-transition-only, no ledger write |
+
+There is no `unblock` verb in the dispatch table to audit.
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched

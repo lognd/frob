@@ -13,6 +13,23 @@ argparse tree.
 from __future__ import annotations
 
 
+# frob:ticket T-1615
+def _add_no_commit_flag(parser) -> None:  # noqa: ANN001
+    """Register the shared `--no-commit` opt-out (T-1615) on `parser` --
+    every ledger-mutating metadata verb in this module gets the SAME flag
+    through this one helper rather than a copy-pasted `add_argument` block
+    per verb, so its wording can never drift between them."""
+    parser.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1615's uniform auto-commit of this ledger change "
+        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit); WARNS "
+        "that the ledger is left dirty and will DirtyMain-block a "
+        "concurrent `frob ticket land`",
+    )
+
+
 # frob:ticket T-0455
 def _add_ticket_scope_parser(ticket_sub):
     """Register `frob ticket scope <id> --add GLOB... --remove GLOB...
@@ -60,6 +77,7 @@ def _add_ticket_scope_parser(ticket_sub):
         help="read the scope-change reason verbatim from PATH instead of "
         "the shell (T-0737); mutually exclusive with --reason",
     )
+    _add_no_commit_flag(ticket_scope_p)  # frob:ticket T-1615
     return ticket_scope_p
 
 
@@ -93,6 +111,7 @@ def _add_ticket_scope_ack_parser(ticket_sub):
         help="read the ack reason verbatim from PATH instead of the shell "
         "(T-0737); mutually exclusive with --reason",
     )
+    _add_no_commit_flag(ticket_scope_ack_p)  # frob:ticket T-1615
     return ticket_scope_ack_p
 
 
@@ -111,6 +130,7 @@ def _add_ticket_priority_parser(ticket_sub):
         metavar="level",
         choices=["low", "medium", "high", "critical"],
     )
+    _add_no_commit_flag(ticket_priority_p)  # frob:ticket T-1615
     return ticket_priority_p
 
 
@@ -126,6 +146,7 @@ def _add_ticket_kind_parser(ticket_sub):
         metavar="kind",
         choices=["feature", "bug", "security", "ux", "docs", "invariant", "incident"],
     )
+    _add_no_commit_flag(ticket_kind_p)  # frob:ticket T-1615
     return ticket_kind_p
 
 
@@ -140,6 +161,7 @@ def _add_ticket_component_parser(ticket_sub):
     )
     ticket_component_p.add_argument("ticket_id", metavar="id")
     ticket_component_p.add_argument("ticket_component", metavar="name")
+    _add_no_commit_flag(ticket_component_p)  # frob:ticket T-1615
     return ticket_component_p
 
 
@@ -169,6 +191,7 @@ def _add_ticket_label_parser(ticket_sub):
         metavar="TAG",
         help="remove TAG (repeatable)",
     )
+    _add_no_commit_flag(ticket_label_p)  # frob:ticket T-1615
     return ticket_label_p
 
 
@@ -256,6 +279,7 @@ def _add_ticket_accept_parser(ticket_sub):
         "of the shell (T-1422, T-0737 precedent); mutually exclusive with "
         "--reason",
     )
+    _add_no_commit_flag(ticket_accept_p)  # frob:ticket T-1615
     return ticket_accept_p
 
 
@@ -276,6 +300,7 @@ def _add_ticket_tier_parser(ticket_sub):
         metavar="tier",
         choices=["epic", "story", "ticket"],
     )
+    _add_no_commit_flag(ticket_tier_p)  # frob:ticket T-1615
     return ticket_tier_p
 
 

@@ -1142,7 +1142,7 @@ store tickets_ledger : trusted {
         add_acceptance, add_cmd_evidence, add_evidence, agent_env_exports, allocator_lock, amend_acceptance,
         archive, archive_digest_map, archive_path, atomic_write, attach, attachments_dir,
         base_ref_resolvable, board_view, brief_cluster, brief_ticket, check_ticket_mutation_evidence, clipboard_has_image,
-        clipboard_image, cluster_descendants, cluster_union_scope, commit_start_transition, commit_ticket_ledger_change, compose_done_report,
+        clipboard_image, cluster_descendants, cluster_union_scope, commit_full_ledger_change, commit_start_transition, commit_ticket_ledger_change, compose_done_report,
         compute_changed_lines, configured_profile, describe_root_dirt, dispatch_stale_hours, display_state, doable,
         doable_blocked, downgrade_profile_ratchet, drain_next, drop_ticket, effective_profile, enforce_worktree_lease,
         enqueue, enqueue_pending_sweep, epic_rollup, file_lock, finalize_draft, finalize_draft_for_land,

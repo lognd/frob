@@ -721,6 +721,48 @@ class TestCommitTicketLedgerChange:
         status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() != ""
 
+    # frob:ticket T-1615
+    def test_no_commit_flag_warns_when_dirty(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_warns_when_dirty  # noqa: E501
+        """A silent `--no-commit` reproduces the 2026-08-06 DirtyMain
+        incident with an extra step -- it must warn, naming the fix."""
+        import logging
+
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            result = commit_ticket_ledger_change(
+                repo, "T-0001", "chore(tickets): drop T-0001", no_commit=True
+            )
+        assert result.is_ok
+        warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+        assert any("DirtyMain-block" in w and "T-0001" in w for w in warnings)
+
+    # frob:ticket T-1615
+    def test_no_commit_flag_does_not_warn_when_clean(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_does_not_warn_when_clean  # noqa: E501
+        """`--no-commit` against an already-clean ledger has nothing to
+        warn about -- an unconditional warning would be noise, not
+        signal, on every no-op call."""
+        import logging
+
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            result = commit_ticket_ledger_change(
+                repo, "T-0001", "chore(tickets): drop T-0001", no_commit=True
+            )
+        assert result.is_ok
+        warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+        assert not any("DirtyMain-block" in w for w in warnings)
+
     # frob:ticket T-1432
     def test_pre_staged_unrelated_file_never_rides_along_into_the_commit(
         self, repo: Path
@@ -821,6 +863,100 @@ class TestCommitTicketLedgerChange:
 
         log = _run(["git", "log", "-1", "--pretty=%an <%ae>"], repo)
         assert log.stdout.strip() == "frob-bot <frob-bot@example.invalid>"
+
+
+# frob:ticket T-1615
+class TestCommitFullLedgerChange:
+    """T-1615: `commit_full_ledger_change` -- `commit_ticket_ledger_
+    change`'s twin for a write not scoped to one ticket id (`frob ticket
+    archive`, which can move MANY tickets in one call)."""
+
+    def test_commits_dirty_whole_ledger(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_commits_dirty_whole_ledger  # noqa: E501
+        from frob.tickets._leases import commit_full_ledger_change
+
+        (repo / "tickets" / "T-0001" / "ticket.md").write_text(
+            (repo / "tickets" / "T-0001" / "ticket.md").read_text(encoding="utf-8")
+            + "\n<!-- dirtied for the test -->\n",
+            encoding="utf-8",
+        )
+
+        result = commit_full_ledger_change(repo, "chore(tickets): archive 1 ticket(s)")
+        assert result.is_ok, result.err
+
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == "chore(tickets): archive 1 ticket(s)"
+
+    def test_no_op_when_clean(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean  # noqa: E501
+        from frob.tickets._leases import commit_full_ledger_change
+
+        result = commit_full_ledger_change(repo, "chore(tickets): archive 0 ticket(s)")
+        assert result.is_ok
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() == ""
+
+    def test_no_commit_flag_warns_when_dirty(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_commit_flag_warns_when_dirty  # noqa: E501
+        import logging
+
+        from frob.tickets._leases import commit_full_ledger_change
+
+        (repo / "tickets" / "T-0001" / "ticket.md").write_text(
+            (repo / "tickets" / "T-0001" / "ticket.md").read_text(encoding="utf-8")
+            + "\n<!-- dirtied for the test -->\n",
+            encoding="utf-8",
+        )
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            result = commit_full_ledger_change(
+                repo, "chore(tickets): archive 1 ticket(s)", no_commit=True
+            )
+        assert result.is_ok
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() != ""
+        warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+        assert any("DirtyMain-block" in w for w in warnings)
+
+    def test_archive_cli_leaves_repo_clean(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_archive_cli_leaves_repo_clean  # noqa: E501
+        """The real incident shape end to end: `frob ticket archive`
+        moves a done ticket out of active and into archive, and the
+        working tree must be clean afterward -- not just the ticket's own
+        write, but the auto-commit T-1615 adds for it."""
+        ticket_run(
+            AppConfig(
+                ticket_command="new",
+                ticket_path=repo,
+                ticket_title="archive me",
+                ticket_kind="docs",
+                ticket_body="## Done report\n\nDone.\n",
+            )
+        )
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0002")
+        )
+        ticket_run(
+            AppConfig(
+                ticket_command="close",
+                ticket_path=repo,
+                ticket_id="T-0002",
+                ticket_evidence_cmd="true",
+            )
+        )
+        _commit_all(repo, "pre-archive: T-0002 closed")
+
+        ticket_run(AppConfig(ticket_command="archive", ticket_path=repo))
+
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() == "", (
+            "frob ticket archive left the ledger dirty -- the T-1615 "
+            "DirtyMain incident, for the archive verb"
+        )
 
 
 # frob:ticket T-1619
@@ -1710,3 +1846,130 @@ class TestRecordReleaseRenameLeaseErrorBranches:
         # The old lease survives untouched since the rename's write step
         # (which precedes the unlink) never succeeded.
         assert old_path.exists()
+
+
+# frob:ticket T-1615
+class TestLedgerAutoCommitEnumeratedOverDispatchTable:
+    """T-1615: `_auto_commit_ledger_after_dispatch` (`frob.app.ticket_
+    runner`) wraps the ONE dispatch call site in `run()`, so every
+    ledger-mutating verb -- not a hand-picked sample of them -- must leave
+    the repo clean after running. `test_dispatch_table_verbs_are_all_
+    accounted_for` below walks the REAL `_ticket_dispatch_table()` and
+    fails the instant a verb is added there without a maintainer having
+    explicitly filed it into one of this class's buckets (mutating-and-
+    tested-here / read-only / needing its own dedicated fixture / owning
+    its own multi-file commit transaction) -- this is the "verb number
+    twelve" guard the ticket asked for."""
+
+    # Verbs whose only job is reading the ledger: they never call
+    # `write_ticket`/`_set_ticket_field` at all, so "leaves the repo
+    # clean" holds trivially for them and they need no invocation here.
+    # `reverify` re-runs close's own verification guards against an
+    # ALREADY-done ticket but never calls `transition` -- its own
+    # docstring is explicit: "no write, no state change, either way."
+    _READ_ONLY_VERBS = frozenset(
+        {"list", "show", "doable", "board", "epic", "brief", "flow", "reverify"}
+    )
+
+    # Verbs that DO mutate the ledger but need a fixture/setup shape this
+    # class's plain single-ticket `repo` fixture does not provide (a
+    # worktree, a second ticket, evidence, a Done report, ...) -- each has
+    # its OWN dedicated coverage elsewhere (`TestTicketNew`/`TestTicketDrop`
+    # /`TestTicketFail`/`TestTicketClose`/`TestTicketEvidence`/
+    # `TestTicketStart`/`TestTicketSweep`/`TestTicketReconcileCli`/
+    # `TestTicketMigrate`/`TestTicketArchive` in
+    # `tests/unit/test_app_runners_batch7.py`, or the review/scope-ack/
+    # sprint/plan/work call sites, or `TestCloseEvidenceDoneReportRequeueAutoCommit`
+    # above), so re-deriving their setup here would duplicate fixtures
+    # rather than add real coverage. Every one of `new`/`drop`/`fail`/
+    # `done-report`/`evidence`/`close`/`start` already calls
+    # `commit_ticket_ledger_change` directly (T-1130/T-1178) and was
+    # never part of the T-1615 incident in the first place.
+    _NEEDS_DEDICATED_FIXTURE = frozenset(
+        {
+            "new",
+            "drop",
+            "fail",
+            "done-report",
+            "evidence",
+            "close",
+            "start",
+            "sweep",
+            "scope-ack",
+            "sprint",
+            "migrate",
+            "reconcile",
+            "archive",
+            "plan",
+            "work",
+            "review",
+        }
+    )
+
+    # verb -> the AppConfig kwargs (plus `ticket_command`/`ticket_path`)
+    # that exercise it against the shared `repo` fixture's T-0001.
+    _MUTATING_VERB_INVOCATIONS: dict[str, dict] = {
+        "block": {"ticket_id": "T-0001", "ticket_by": "T-0002"},
+        "scope": {
+            "ticket_id": "T-0001",
+            "ticket_scope_add": ["src/other.py"],
+            "ticket_scope_reason": "widen for T-1615 coverage",
+        },
+        "priority": {"ticket_id": "T-0001", "ticket_priority_level": "high"},
+        "kind": {"ticket_id": "T-0001", "ticket_kind_value": "feature"},
+        "component": {"ticket_id": "T-0001", "ticket_component": "mycomp"},
+        "label": {"ticket_id": "T-0001", "ticket_label_add": ["urgent"]},
+        "accept": {
+            "ticket_id": "T-0001",
+            "ticket_accept_criterion": ["a real criterion"],
+        },
+        "tier": {"ticket_id": "T-0001", "ticket_tier_value": "story"},
+        "attach": {"ticket_id": "T-0001"},  # path filled in per-test
+        "requeue": {"ticket_id": "T-0001"},  # ticket started first, per-test
+    }
+
+    def test_dispatch_table_verbs_are_all_accounted_for(self) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable.test_dispatch_table_verbs_are_all_accounted_for  # noqa: E501
+        from frob.app.ticket_runner import (
+            _LEDGER_TRANSACTIONAL_VERBS,
+            _ticket_dispatch_table,
+        )
+
+        table_verbs = frozenset(_ticket_dispatch_table().keys())
+        accounted = (
+            frozenset(self._MUTATING_VERB_INVOCATIONS)
+            | self._READ_ONLY_VERBS
+            | self._NEEDS_DEDICATED_FIXTURE
+            | _LEDGER_TRANSACTIONAL_VERBS
+        )
+        missing = table_verbs - accounted
+        assert not missing, (
+            f"verb(s) {sorted(missing)} exist in the real "
+            "_ticket_dispatch_table() but are not accounted for by "
+            "TestLedgerAutoCommitEnumeratedOverDispatchTable -- file them "
+            "into _MUTATING_VERB_INVOCATIONS (if they write the ledger), "
+            "_READ_ONLY_VERBS, _NEEDS_DEDICATED_FIXTURE, or "
+            "frob.app.ticket_runner._LEDGER_TRANSACTIONAL_VERBS before "
+            "this test can pass again"
+        )
+
+    @pytest.mark.parametrize("verb", sorted(_MUTATING_VERB_INVOCATIONS))
+    def test_verb_leaves_repo_clean(self, repo: Path, verb: str) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable.test_verb_leaves_repo_clean  # noqa: E501
+        kwargs = dict(self._MUTATING_VERB_INVOCATIONS[verb])
+        if verb == "attach":
+            attachment = repo / "attachment.txt"
+            attachment.write_text("evidence\n", encoding="utf-8")
+            kwargs["ticket_attach_path"] = attachment
+        if verb == "requeue":
+            ticket_run(
+                AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+            )
+
+        ticket_run(AppConfig(ticket_command=verb, ticket_path=repo, **kwargs))
+
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() == "", (
+            f"frob ticket {verb} left the ledger dirty -- this is exactly "
+            "the T-1615 DirtyMain incident"
+        )

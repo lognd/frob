@@ -61,6 +61,7 @@ _log = get_logger(__name__)
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 LEASES_DIRNAME = "frob-leases"
 
+
 # frob:ticket T-1680
 def _refuse_for_held_land_lock(root: Path, path: Path) -> Result[None, LeaseError]:
     """The refusal `_land_flock_probe` returns when the land lock is held
@@ -806,6 +807,32 @@ def _ledger_pathspecs(root: Path, ticket_id: str) -> tuple[str, ...]:
     return tuple(rel for rel in candidates if (root / rel).exists())
 
 
+# frob:ticket T-1615
+def _full_ledger_pathspecs(root: Path) -> tuple[str, ...]:
+    """The git pathspec(s) covering the WHOLE ledger surface, active AND
+    archive, in `root` -- for a verb whose write is not scoped to one
+    ticket id (`archive`, which MOVES potentially many done/dropped
+    tickets from active into archive in one operation; `migrate`/
+    `renumber`'s whole-ledger forms are deliberately excluded from
+    auto-commit entirely, see `frob.app.ticket_runner._LEDGER_
+    TRANSACTIONAL_VERBS`'s own docstring for why).
+
+    v1/'single': `tickets.md` + `tickets-archive.md`. v2: the whole
+    `tickets/` directory as one pathspec -- `archive` renames
+    `tickets/T-####/` to `tickets/archive/T-####/`, and `git add
+    tickets/` stages both the removal and the addition of a rename in one
+    call, simpler and safer than tracking the exact before/after path set
+    for a move. Only paths that EXIST on disk are returned, same
+    reasoning as `_ledger_pathspecs`."""
+    from frob.tickets._store import _store_mode
+
+    if _store_mode(root) != "v2":
+        candidates = ("tickets.md", "tickets-archive.md")
+    else:
+        candidates = ("tickets",)
+    return tuple(rel for rel in candidates if (root / rel).exists())
+
+
 def _tickets_md_dirty(root: Path, ticket_id: str) -> bool:
     """Whether `root`'s ledger storage for `ticket_id` has an uncommitted
     change (T-1054, now shared by `commit_start_transition` AND
@@ -1031,9 +1058,7 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
             continue
         if _proc_cwd(pid) != resolved_root:
             continue
-        ticket_id = next(
-            (arg for arg in argv if _TICKET_ID_ARGV_RE.match(arg)), None
-        )
+        ticket_id = next((arg for arg in argv if _TICKET_ID_ARGV_RE.match(arg)), None)
         return (pid, ticket_id)
     return None
 
@@ -1111,10 +1136,38 @@ def refuse_if_land_in_progress(root: Path) -> Result[None, LeaseError]:
 # frob:ticket T-1054
 # frob:ticket T-1432
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_pre_staged_unrelated_file_never_rides_along_into_the_commit  # noqa: E501
+# T-1432 fix: the commit step is pathspec-limited (`git commit -m message
+# -- <pathspecs>`, git's documented `--only`-equivalent form for a bare
+# `-- <pathspec>` after the message) rather than a bare `git commit -m
+# message`, which commits the ENTIRE index regardless of what was
+# actually staged for THIS change. The T-1403 c2fd45da incident: anything
+# ALREADY staged in the checkout for an unrelated reason (a conflicted
+# `git stash pop` auto-stages every file that merged cleanly, section 1b2
+# of `docs/guides/agent-playbook.md`) rode along into the ledger commit
+# under a `chore(tickets): ...` message that had nothing to do with it,
+# poisoning `git blame`/bisect archaeology for whatever it swept in.
+# Pathspec-limiting means this commit can now NEVER contain anything but
+# its own declared pathspecs' change -- any other staged content stays
+# staged, untouched, exactly as `git commit -- <pathspec>`'s own
+# documented contract guarantees.
+#
+# T-1619: refuses BEFORE touching git at all (`Err(LandInProgress)`,
+# never `CommitFailed`) whenever `root` currently has a live `frob ticket
+# land` holding its exclusive `LAND_LOCK_REL` flock
+# (`refuse_if_land_in_progress`) -- this is the single choke point every
+# ledger-committing verb funnels through (`commit_ticket_ledger_change`/
+# `commit_start_transition`/T-1615's `commit_full_ledger_change`), so
+# this one check closes the concurrent-write hazard for every one of them
+# at once, without each verb's own call site needing to remember to
+# check separately.
 def _add_and_commit_tickets_md(
-    root: Path, ticket_id: str, message: str
+    root: Path,
+    ticket_id: str,
+    message: str,
+    *,
+    pathspecs: tuple[str, ...] | None = None,
 ) -> Result[None, LeaseError]:
-    """`git add tickets.md && git commit -m message -- tickets.md` in
+    """`git add <pathspecs> && git commit -m message -- <pathspecs>` in
     `root` (T-1054, generalized T-1130 to take an explicit `message`
     rather than always hardcoding "start transition" -- `commit_start_
     transition` and `commit_ticket_ledger_change` both funnel through this
@@ -1122,34 +1175,16 @@ def _add_and_commit_tickets_md(
     CommitFailed)`, loudly logged with the exact recovery command, if
     either step fails.
 
-    T-1432 fix: the commit step is now pathspec-limited (`git commit -m
-    message -- tickets.md`, git's documented `--only`-equivalent form for
-    a bare `-- <pathspec>` after the message) rather than a bare `git
-    commit -m message`, which commits the ENTIRE index regardless of what
-    was actually staged for THIS change. The T-1403 c2fd45da incident:
-    anything ALREADY staged in the checkout for an unrelated reason (a
-    conflicted `git stash pop` auto-stages every file that merged cleanly,
-    section 1b2 of `docs/guides/agent-playbook.md`) rode along into the
-    ledger commit under a `chore(tickets): ...` message that had nothing
-    to do with it, poisoning `git blame`/bisect archaeology for whatever
-    it swept in. Pathspec-limiting means this commit can now NEVER contain
-    anything but `tickets.md`'s own change -- any other staged content
-    stays staged, untouched, exactly as `git commit -- <pathspec>`'s own
-    documented contract guarantees.
-
-    T-1619: refuses BEFORE touching git at all (`Err(LandInProgress)`,
-    never `CommitFailed`) whenever `root` currently has a live `frob
-    ticket land` holding its exclusive `LAND_LOCK_REL` flock
-    (`refuse_if_land_in_progress`) -- this is the single choke point
-    every ledger-committing verb funnels through (`commit_ticket_ledger_
-    change`/`commit_start_transition`), so this one check closes the
-    concurrent-write hazard for `new`/`close`/`drop`/`fail`/`requeue`/
-    `block`/`start`/`evidence`/`done-report` at once, without each verb's
-    own call site needing to remember to check separately."""
+    `pathspecs=None` computes `_ledger_pathspecs(root, ticket_id)`;
+    `commit_full_ledger_change` (T-1615, a whole-ledger write not scoped
+    to one ticket, e.g. `archive`) passes `_full_ledger_pathspecs(root)`
+    explicitly instead, reusing this same core. See the module comment
+    directly above this function for the T-1432/T-1619 rationale."""
     land_check = refuse_if_land_in_progress(root)
     if land_check.is_err:
         return Err(land_check.danger_err)
-    pathspecs = _ledger_pathspecs(root, ticket_id)
+    if pathspecs is None:
+        pathspecs = _ledger_pathspecs(root, ticket_id)
     added = gitio.run_argv(["git", "-C", str(root), "add", *pathspecs])
     if added.is_ok and added.danger_ok.returncode == 0:
         with _without_agent_commit_guard():
@@ -1167,18 +1202,7 @@ def _add_and_commit_tickets_md(
         or committed.is_err
         or committed.danger_ok.returncode != 0
     ):
-        _log.error(
-            "tickets: %s ledger change left %s DIRTY -- the commit step "
-            "failed. Run this by hand before anything else lands: "
-            'git -C %s add %s && git -C %s commit -m "%s" -- %s',
-            ticket_id,
-            root,
-            root,
-            " ".join(pathspecs),
-            root,
-            message,
-            " ".join(pathspecs),
-        )
+        _log_ledger_commit_failure(ticket_id, root, message, pathspecs)
         return Err(LeaseError.CommitFailed)
 
     _log.info(
@@ -1190,11 +1214,35 @@ def _add_and_commit_tickets_md(
     return Ok(None)
 
 
+def _log_ledger_commit_failure(
+    ticket_id: str, root: Path, message: str, pathspecs: tuple[str, ...]
+) -> None:
+    """The DirtyMain-causing failure log `_add_and_commit_tickets_md`
+    emits when its own `git add`/`git commit` step fails -- split out
+    only to keep that function under the ARCH001 line threshold, names
+    the exact recovery command every time."""
+    _log.error(
+        "tickets: %s ledger change left %s DIRTY -- the commit step "
+        "failed. Run this by hand before anything else lands: "
+        'git -C %s add %s && git -C %s commit -m "%s" -- %s',
+        ticket_id,
+        root,
+        root,
+        " ".join(pathspecs),
+        root,
+        message,
+        " ".join(pathspecs),
+    )
+
+
 # frob:ticket T-1130
+# frob:ticket T-1615
 # frob:doc docs/modules/tickets.md#newdropfail-auto-commit-t-1130
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commits_dirty_ledger_with_given_message kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_skips_entirely_even_when_dirty kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_warns_when_dirty kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_does_not_warn_when_clean kind="unit"  # noqa: E501
 def commit_ticket_ledger_change(
     root: Path, ticket_id: str, message: str, *, no_commit: bool = False
 ) -> Result[None, LeaseError]:
@@ -1204,24 +1252,109 @@ def commit_ticket_ledger_change(
     used to leave `tickets.md` dirty the same way `start` did before
     T-1054, and "commit before dispatching" was coordinator memory rather
     than something the tool itself guaranteed; T-1018 is the incident this
-    closes for the remaining verbs).
+    closes for the remaining verbs). T-1615 made this THE single choke
+    point every ledger-mutating verb in the dispatch table funnels
+    through (`_auto_commit_ledger_after_dispatch` in
+    `frob.app.ticket_runner`), so this docstring's warning behavior below
+    now applies uniformly to every one of them, not just the original
+    new/drop/fail/close/start/requeue/evidence/done-report set.
 
     `no_commit=True` (the opt-out flag, `frob ticket new/drop/fail
-    --no-commit`) skips entirely without even checking dirtiness -- for a
-    caller that wants to batch several ledger writes into one commit of
-    its own. Otherwise a no-op (`Ok(None)`) whenever `tickets.md` is not
-    actually dirty (same reasoning as `commit_start_transition`: a `root`
-    that is not a git work tree, or a write that happened to be a no-op,
-    must never manufacture an empty commit). `Err(LeaseError.CommitFailed)`
-    only when `tickets.md` IS dirty and either `git add`/`git commit`
-    itself fails -- callers are expected to surface this as a hard
-    `sys.exit(1)`, the same posture `commit_start_transition`'s own
-    callers already have."""
+    --no-commit`) skips the commit itself without even checking
+    dirtiness for THAT purpose -- for a caller that wants to batch
+    several ledger writes into one commit of its own. T-1615: it still
+    checks dirtiness ONCE, purely to decide whether to WARN -- a silent
+    opt-out reproduces the exact 2026-08-06 incident this ticket exists
+    to close (an uncommitted `tickets.md` DirtyMain-blocking every
+    concurrent `frob ticket land`) with an extra step, so leaving the
+    ledger dirty on purpose must never be quiet. Otherwise a no-op (`Ok
+    (None)`) whenever `tickets.md` is not actually dirty (same reasoning
+    as `commit_start_transition`: a `root` that is not a git work tree,
+    or a write that happened to be a no-op, must never manufacture an
+    empty commit). `Err(LeaseError.CommitFailed)` only when `tickets.md`
+    IS dirty and either `git add`/`git commit` itself fails -- callers
+    are expected to surface this as a hard `sys.exit(1)`, the same
+    posture `commit_start_transition`'s own callers already have."""
     if no_commit:
+        if _tickets_md_dirty(root, ticket_id):
+            pathspecs = _ledger_pathspecs(root, ticket_id)
+            _log.warning(
+                "tickets: %s ledger change left DIRTY by --no-commit -- "
+                "this WILL DirtyMain-block every concurrent `frob ticket "
+                "land` in %s until it is committed. Fix: git -C %s add %s "
+                '&& git -C %s commit -m "%s" -- %s',
+                ticket_id,
+                root,
+                root,
+                " ".join(pathspecs),
+                root,
+                message,
+                " ".join(pathspecs),
+            )
         return Ok(None)
     if not _tickets_md_dirty(root, ticket_id):
         return Ok(None)
     return _add_and_commit_tickets_md(root, ticket_id, message)
+
+
+# frob:ticket T-1615
+# frob:doc docs/modules/tickets.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_commits_dirty_whole_ledger kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_commit_flag_warns_when_dirty kind="unit"  # noqa: E501
+def commit_full_ledger_change(
+    root: Path, message: str, *, no_commit: bool = False
+) -> Result[None, LeaseError]:
+    """`commit_ticket_ledger_change`'s twin for a write that is NOT scoped
+    to one ticket id (T-1615) -- `frob ticket archive`, which moves every
+    done/dropped ticket from active into archive in one operation, so
+    `_ledger_pathspecs(root, one_ticket_id)` would only ever catch ONE of
+    potentially many moved tickets. Uses `_full_ledger_pathspecs` (the
+    whole active+archive ledger surface) instead, otherwise identical
+    shape: `no_commit=True` still warns (never silently) when it leaves
+    the ledger dirty, a no-op when nothing changed, `Err(CommitFailed)`
+    only on a real git failure.
+
+    `migrate`/`renumber`'s whole-ledger forms deliberately do NOT call
+    this (or `commit_ticket_ledger_change`) -- see `frob.app.ticket_
+    runner._LEDGER_TRANSACTIONAL_VERBS`'s own docstring: both rewrite
+    potentially many files' `frob:ticket`/`frob:tests`/... directive
+    references across the WHOLE tracked tree, not just the ledger, so a
+    ledger-only commit here would split one atomic rename into two,
+    landing half of it uncommitted -- worse than leaving all of it
+    uncommitted together for the caller to commit as one change."""
+    pathspecs = _full_ledger_pathspecs(root)
+    if no_commit:
+        if pathspecs and _full_ledger_dirty(pathspecs, root=root):
+            _log.warning(
+                "tickets: whole-ledger change left DIRTY by --no-commit -- "
+                "this WILL DirtyMain-block every concurrent `frob ticket "
+                "land` in %s until it is committed. Fix: git -C %s add %s "
+                '&& git -C %s commit -m "%s" -- %s',
+                root,
+                root,
+                " ".join(pathspecs),
+                root,
+                message,
+                " ".join(pathspecs),
+            )
+        return Ok(None)
+    if not pathspecs or not _full_ledger_dirty(pathspecs, root=root):
+        return Ok(None)
+    return _add_and_commit_tickets_md(
+        root, "<whole-ledger>", message, pathspecs=pathspecs
+    )
+
+
+def _full_ledger_dirty(pathspecs: tuple[str, ...], *, root: Path) -> bool:
+    """`True` iff any of `pathspecs` (`_full_ledger_pathspecs`'s output)
+    has an uncommitted change in `root` -- `commit_full_ledger_change`'s
+    own dirty check, split out only because it is needed at two call
+    sites (the `no_commit=True` warn path and the real commit path)."""
+    status = gitio.run_argv(
+        ["git", "-C", str(root), "status", "--porcelain", "--", *pathspecs]
+    )
+    return status.is_ok and bool(status.danger_ok.stdout.strip())
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473

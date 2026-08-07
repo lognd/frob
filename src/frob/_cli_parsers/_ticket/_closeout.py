@@ -23,10 +23,28 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         "ticket_attach_path", metavar="path", nargs="?", default=None
     )
     ticket_attach_p.add_argument("--caption", dest="ticket_caption", default="")
+    # frob:ticket T-1615
+    ticket_attach_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1615's uniform auto-commit of this ledger change; "
+        "WARNS that the ledger is left dirty and will DirtyMain-block a "
+        "concurrent `frob ticket land`",
+    )
 
     ticket_block_p = ticket_sub.add_parser("block", help="record a blocker")
     ticket_block_p.add_argument("ticket_id", metavar="id")
     ticket_block_p.add_argument("--by", dest="ticket_by", required=True)
+    # frob:ticket T-1615
+    ticket_block_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1615's uniform auto-commit of this ledger change; "
+        "WARNS that the ledger is left dirty and will DirtyMain-block a "
+        "concurrent `frob ticket land`",
+    )
 
     ticket_close_p = _add_ticket_close_parser(ticket_sub)
     return [ticket_attach_p, ticket_block_p, ticket_close_p]
@@ -335,6 +353,15 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         action="store_true",
         help="T-0810: override the T-0764 refusal when a live cross-"
         "worktree lease exists anywhere in the repo -- archive anyway",
+    )
+    # frob:ticket T-1615
+    ticket_archive_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1615's auto-commit of the whole-ledger archive "
+        "change; WARNS that the ledger is left dirty and will "
+        "DirtyMain-block a concurrent `frob ticket land`",
     )
     return [ticket_fail_p, ticket_evidence_p, ticket_drop_p, ticket_archive_p]
 
