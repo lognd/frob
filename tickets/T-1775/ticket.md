@@ -15,6 +15,8 @@ scope:
 - src/frob/gates/_fix_engine_sync.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep::test_new_error_fixed_by_tier_a_lands_with_a_followup_commit
 designated_repro_test: null
 threat: null
 component: null
