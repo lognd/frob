@@ -103,12 +103,22 @@ def mutation_evidence_violations(
     return tuple(violations)
 
 
+# frob:ticket T-1727
 def _test016_message(ticket_id: str, finding: ConfirmatoryFinding) -> str:
     """The TEST016 finding message (T-0755 reviewer round 2, finding 4):
     names every surviving mutant's file:line + description, then BOTH
     documented remedies (strengthen the tests, or the `--skip-mutation-
     evidence` escape hatch) -- never just a bare "confirmatory-only"
-    count with no actionable next step."""
+    count with no actionable next step.
+
+    T-1727: `finding.unmeasured` gets a DIFFERENT message, never the
+    "confirmatory-only" wording -- an unmeasured file was never actually
+    run to completion, so nothing was proven weak, only unknown. Reusing
+    the confirmatory wording here would misreport "could not measure" as
+    "measured and failing" (T-1703's exact lesson, same shape as a
+    budget-truncated `frob check` parsed as a clean run)."""
+    if finding.unmeasured:
+        return _test016_unmeasured_message(ticket_id, finding)
     named = "; ".join(f"{m.file}:{m.line} ({m.description})" for m in finding.survivors)
     return (
         f"TEST016: {ticket_id}'s bound evidence {list(finding.tests)} killed "
@@ -119,6 +129,27 @@ def _test016_message(ticket_id: str, finding: ConfirmatoryFinding) -> str:
         f"on a mutant above, or (2) if this is a genuine false positive, "
         f"`frob ticket land --skip-mutation-evidence` (logs a loud, "
         f"justification-required override)."
+    )
+
+
+# frob:ticket T-1727
+def _test016_unmeasured_message(ticket_id: str, finding: ConfirmatoryFinding) -> str:
+    """T-1727: the TEST016 message for a file the sweep's shared wall-
+    clock budget cut off before it could be (fully) measured -- distinct
+    wording from `_test016_message`'s confirmatory-only case so
+    UNMEASURED never reads as "measured and found weak"."""
+    return (
+        f"TEST016: {ticket_id}'s bound evidence {list(finding.tests)} could "
+        f"NOT be measured against {finding.file} -- the mutation sweep's "
+        f"wall-clock budget ran out before this file's mutants could be "
+        f"(fully) run. This is UNMEASURED, not confirmatory-only: nothing "
+        f"was proven weak, nothing was proven adversarial either. Remedy: "
+        f"(1) split the bound evidence across faster tests so the sweep "
+        f"fits its budget, or (2) if the evidence is known-good and the "
+        f"budget is the real constraint, `frob ticket land "
+        f"--skip-mutation-evidence` (logs a loud, justification-required "
+        f"override) -- the same escape hatch a genuine confirmatory-only "
+        f"finding uses."
     )
 
 

@@ -391,12 +391,12 @@
       "ref": "src/frob/mutate/__init__.py::_Mutator.visit_BoolOp"
     },
     {
-      "digest": "7e3b0f8b40eeef7d827dec7813e9ae6589728a619e99dcbc65fc27c351c0c488",
+      "digest": "f171e536ce2d82f795eff2d2aa2eca29b58c8ce028f9b6e122a884249fb4d39d",
       "facet": "body",
       "ref": "src/frob/mutate/__init__.py::run_mutations"
     },
     {
-      "digest": "1028e3affa1c53b846f49445463d02d2fcab87756ae79eae9344b12b7098a2f6",
+      "digest": "0541800c6cfd32143bce30a9b0d590ef5888c7b7e8a6fc2c5b4230af777e0a86",
       "facet": "sig",
       "ref": "src/frob/mutate/__init__.py::run_mutations"
     },
@@ -656,12 +656,12 @@
       "ref": "src/frob/tickets/_models.py::parse_claims_from_done_report"
     },
     {
-      "digest": "4cdf8a446a4592c3fd89bbf898ceacf1153b3d4b51a41dc395213492884ac010",
+      "digest": "f477b5e313f343ac872debe4916a415d9d8fb09a602a4cf3ec41763cb2f8f197",
       "facet": "body",
       "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
     },
     {
-      "digest": "4eb7d825600c3b257f34abf39502e99f15049e9190adb04f9b9fa2c08bad0304",
+      "digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
       "facet": "sig",
       "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
     },

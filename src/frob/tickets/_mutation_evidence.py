@@ -27,6 +27,8 @@ just as much as to `frob check`)."""
 
 from __future__ import annotations
 
+import os
+import time
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -61,6 +63,44 @@ _MAX_MUTANTS_PER_FILE = 8
 #: behavior" semantics).
 _TIMEOUT_S = 30.0
 
+#: T-1727: total wall-clock budget for the WHOLE sweep (every file, every
+#: mutant, combined) -- the cap `_MAX_FILES * _MAX_MUTANTS_PER_FILE *
+#: _TIMEOUT_S` (up to 720s) does NOT actually bound, because it is a
+#: worst-case ceiling per mutant, not a real deadline anyone enforces: the
+#: incident this ticket exists for was 10 consecutive 540s `frob ticket
+#: close` timeouts (~90 minutes total) with no partial result at all,
+#: because nothing inside the sweep itself ever stopped early. This is
+#: checked against a SHARED deadline across every file in one sweep (not
+#: reset per file), so the total is what it says regardless of how many
+#: files/mutants are in play. Override via FROB_MUTATION_SWEEP_BUDGET_S
+#: for a repo/CI environment with different headroom; deliberately NOT
+#: raised as the fix for the timeout incident -- see module docstring's
+#: "do not simply raise the timeout" note, this constant bounds the
+#: SWEEP's own internal deadline, not the caller's external wrapper.
+_SWEEP_BUDGET_ENV = "FROB_MUTATION_SWEEP_BUDGET_S"
+_DEFAULT_SWEEP_BUDGET_S = 90.0
+
+
+def _sweep_budget_s() -> float:
+    """The active total-sweep wall-clock budget (T-1727): `_DEFAULT_SWEEP_
+    BUDGET_S` unless overridden via `FROB_MUTATION_SWEEP_BUDGET_S`, mirroring
+    `_watchdog_config_from_env`'s own "disclosed, configurable knob, ignore
+    a malformed override" posture in `frob.testing._coverage_refresh`."""
+    # frob:waive SEC110 reason="numeric sweep budget override, not a secret"
+    raw = os.environ.get(_SWEEP_BUDGET_ENV)
+    if raw is None:
+        return _DEFAULT_SWEEP_BUDGET_S
+    try:
+        return float(raw)
+    except ValueError:
+        _log.warning(
+            "mutation-evidence: %s=%r is not a number, using default %.0fs",
+            _SWEEP_BUDGET_ENV,
+            raw,
+            _DEFAULT_SWEEP_BUDGET_S,
+        )
+        return _DEFAULT_SWEEP_BUDGET_S
+
 
 # frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
 class MutationEvidenceError(ErrorSet):
@@ -77,7 +117,18 @@ class ConfirmatoryFinding(BaseModel):
 
     `survivors` (T-0755 reviewer round 2) names every surviving mutant
     (file:line + description) so the eventual refusal message can point at
-    exactly what the evidence failed to catch, not just a bare count."""
+    exactly what the evidence failed to catch, not just a bare count.
+
+    `unmeasured` (T-1727, default `False`): `True` means the sweep's
+    total wall-clock budget ran out before this file's mutants (or all of
+    them) could actually be run -- this is NOT a confirmatory-only
+    verdict. Nothing was proven and nothing was disproven; "0 killed"
+    here means "0 attempted", not "0 succeeded". Kept as a separate flag
+    on the SAME model (not a new error type) because the caller
+    (`frob.gates._mutation_evidence`) already routes every finding
+    through one TEST016 Violation + `--skip-mutation-evidence` escape
+    hatch, and an unmeasured file needs that exact same escape hatch --
+    only the MESSAGE (never confused with "proven weak") differs."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -86,6 +137,7 @@ class ConfirmatoryFinding(BaseModel):
     tests: tuple[str, ...]
     mutants_total: int
     survivors: tuple[Mutant, ...] = ()
+    unmeasured: bool = False
 
 
 # frob:tests tests/test_tickets_mutation_evidence.py::TestEvidenceTestIds.test_filters_non_node_id_entries  # noqa: E501
@@ -248,6 +300,7 @@ def check_ticket_mutation_evidence(
     max_files: int = _MAX_FILES,
     max_mutants_per_file: int = _MAX_MUTANTS_PER_FILE,
     timeout_s: float = _TIMEOUT_S,
+    sweep_budget_s: float | None = None,
 ) -> Result[tuple[ConfirmatoryFinding, ...], MutationEvidenceError]:
     """The T-0755 obligation itself: for each of `ticket`'s diff-touched,
     in-scope Python files (bounded to `max_files`), mutate up to
@@ -273,7 +326,19 @@ def check_ticket_mutation_evidence(
     switch (`FROB_DISABLE_EXEC=1`) -- mirrors `run_mutations`' own T-0803
     refusal-is-not-a-verdict posture: reporting "no findings" under a
     disabled exec capability would be a false-clean rubber stamp, not an
-    honest empty result."""
+    honest empty result.
+
+    `sweep_budget_s` (T-1727, default `None` reads `_sweep_budget_s()`'s
+    env-overridable default): a SHARED wall-clock deadline computed ONCE
+    here and threaded through every file's `run_mutations` call, so the
+    whole multi-file sweep -- not each file independently -- is bounded.
+    A file whose mutants could not all be attempted before the deadline
+    is reported as `ConfirmatoryFinding(unmeasured=True, ...)`, never as
+    a genuine confirmatory-only verdict; a file not even STARTED because
+    the budget was already gone when its turn came gets the same
+    treatment with `mutants_total=0`. Logs one WARNING per file this
+    happens to, naming it, so the sweep's own log makes clear which
+    files were skipped and why (T-1727 requirement 1/3)."""
     test_ids = _evidence_test_ids(ticket)
     if not test_ids:
         _log.debug(
@@ -290,11 +355,49 @@ def check_ticket_mutation_evidence(
         return Ok(())
     ranges_by_file = _changed_line_ranges(root, base_ref)
     argv = ("uv", "run", "pytest", *test_ids, "-q")
+    budget = _sweep_budget_s() if sweep_budget_s is None else sweep_budget_s
+    deadline = time.monotonic() + budget
     findings: list[ConfirmatoryFinding] = []
-    for file in files[:max_files]:
+    selected = files[:max_files]
+    _log.info(
+        "mutation-evidence: %s starting sweep over %d file(s), budget=%.0fs",
+        ticket.id,
+        len(selected),
+        budget,
+    )
+    for position, file in enumerate(selected, start=1):
+        if time.monotonic() >= deadline:
+            _log.warning(
+                "mutation-evidence: %s sweep budget (%.0fs) exceeded before "
+                "file %d/%d (%s) could be started -- UNMEASURED, not "
+                "confirmatory-only",
+                ticket.id,
+                budget,
+                position,
+                len(selected),
+                file,
+            )
+            findings.append(
+                ConfirmatoryFinding(
+                    ticket_id=ticket.id,
+                    file=str(file),
+                    tests=test_ids,
+                    mutants_total=0,
+                    unmeasured=True,
+                )
+            )
+            continue
         ranges = ranges_by_file.get(str(file))
         checked = _mutation_evidence_for_file(
-            root, ticket, file, ranges, argv, test_ids, max_mutants_per_file, timeout_s
+            root,
+            ticket,
+            file,
+            ranges,
+            argv,
+            test_ids,
+            max_mutants_per_file,
+            timeout_s,
+            deadline_monotonic=deadline,
         )
         if checked.is_err:
             return Err(checked.danger_err)
@@ -304,6 +407,7 @@ def check_ticket_mutation_evidence(
 
 
 # frob:ticket T-0976
+# frob:ticket T-1727
 def _mutation_evidence_for_file(
     root: Path,
     ticket: Ticket,
@@ -313,6 +417,8 @@ def _mutation_evidence_for_file(
     test_ids: tuple[str, ...],
     max_mutants_per_file: int,
     timeout_s: float,
+    *,
+    deadline_monotonic: float | None = None,
 ) -> Result[ConfirmatoryFinding | None, MutationEvidenceError]:
     """One touched file's mutation-evidence check:
     `check_ticket_mutation_evidence`'s per-file half, split from its
@@ -320,8 +426,11 @@ def _mutation_evidence_for_file(
     report" case for this one file (no changed-line spans, a run_
     mutations skip, zero mutable points, or every mutant killed);
     `Ok(ConfirmatoryFinding)` when every mutant in this file's changed
-    lines survived; `Err(ExecDisabled)` propagates the kill-switch
-    refusal unchanged."""
+    lines survived, OR (T-1727) when the shared sweep deadline cut this
+    file's mutants short before a single one killed -- distinguished by
+    the returned finding's own `unmeasured` flag, never conflated with a
+    genuine confirmatory-only verdict; `Err(ExecDisabled)` propagates the
+    kill-switch refusal unchanged."""
     if not ranges:
         # No changed-line spans recorded for this file (diff vanished
         # between the two working_diff calls, or a rename/mode-only
@@ -339,6 +448,7 @@ def _mutation_evidence_for_file(
         timeout_s=timeout_s,
         max_mutants=max_mutants_per_file,
         line_ranges=ranges,
+        deadline_monotonic=deadline_monotonic,
     )
     if result.is_err:
         err = result.danger_err
@@ -356,7 +466,38 @@ def _mutation_evidence_for_file(
             ranges,
         )
         return Ok(None)
+    attempted = report.killed + len(report.survivors)
+    # T-1727: `attempted < report.total` means the shared sweep deadline
+    # cut this file's mutant loop short (`_run_mutants` stops issuing new
+    # mutants once time.monotonic() passes the deadline) -- a mutant
+    # nobody ran proves nothing, so `killed == 0` here means "0 attempted
+    # succeeded in killing", not "every mutant survived". Any real kill
+    # (killed > 0) is proof regardless of truncation and falls through to
+    # the adversarial-proven path below unchanged.
+    truncated = attempted < report.total
     if report.killed == 0:
+        if truncated:
+            _log.warning(
+                "mutation-evidence: %s %s -- sweep deadline exceeded after "
+                "%d/%d mutant(s), 0 killed of those attempted -- UNMEASURED, "
+                "not confirmatory-only (the remaining %d mutant(s) were "
+                "never run)",
+                ticket.id,
+                file,
+                attempted,
+                report.total,
+                report.total - attempted,
+            )
+            return Ok(
+                ConfirmatoryFinding(
+                    ticket_id=ticket.id,
+                    file=str(file),
+                    tests=test_ids,
+                    mutants_total=report.total,
+                    survivors=report.survivors,
+                    unmeasured=True,
+                )
+            )
         _log.warning(
             "mutation-evidence: %s %s -- %d mutant(s) in changed lines %s, "
             "0 killed by %s, confirmatory-only: %s",

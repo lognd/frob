@@ -2076,7 +2076,7 @@ mutation engine -- there is no second one:
 3. For up to 3 touched files (`_MAX_FILES`), mutate up to 8 points each
    (`_MAX_MUTANTS_PER_FILE`, `run_mutations`' new `max_mutants` cap, taken
    in source order so the run is deterministic) and re-run the ticket's
-   own evidence test ids as the kill command, each mutant capped at 90s
+   own evidence test ids as the kill command, each mutant capped at 30s
    (`_TIMEOUT_S`). Mutation points are restricted to the file's OWN
    CHANGED LINES (`run_mutations`' `line_ranges`, fed from the diff's
    per-file hunk spans) -- a file-wide selection previously let an
@@ -2093,6 +2093,58 @@ check," not a finding. A refused mutant spawn
 under the exec kill switch (`FROB_DISABLE_EXEC=1`, T-0803's own posture)
 is `Err(MutationEvidenceError.ExecDisabled)`, never silently reported as a
 clean pass.
+
+**The sweep has a real wall-clock budget (T-1727).** Before this,
+`_MAX_FILES * _MAX_MUTANTS_PER_FILE * _TIMEOUT_S` (up to 720s) was a
+worst-case ceiling nobody actually enforced as a deadline -- a bound
+evidence test that itself spawns real subprocesses (a watchdog test,
+say) could push the true wall-clock well past a caller's own foreground
+timeout, and the sweep had no way to stop early or say so: the
+documented incident is ten consecutive 540s `frob ticket close` timeouts
+(~90 minutes) that produced no result at all, with the agent's only
+visible escape being to unbind its own slowest (and most adversarial)
+tests. `check_ticket_mutation_evidence`'s `sweep_budget_s` (default:
+`_sweep_budget_s()`, itself `FROB_MUTATION_SWEEP_BUDGET_S`-overridable,
+90s out of the box) is a SINGLE deadline shared across the whole
+sweep -- every file, every mutant -- computed once at the top of the
+call and threaded down through `run_mutations`'
+`deadline_monotonic`/`_run_mutants`'s per-mutant check. A file whose
+mutants could not all be attempted before the deadline, or one never
+even started because an earlier file already spent the whole budget, is
+reported as `ConfirmatoryFinding(unmeasured=True, ...)` -- a DIFFERENT
+outcome from a genuine confirmatory-only finding (`unmeasured=False`,
+the pre-existing shape): nothing was proven weak, nothing was run long
+enough to prove anything at all. `frob.gates._mutation_evidence
+._test016_unmeasured_message` gives this its own wording so a human or
+agent reading the finding never mistakes "could not measure" for
+"measured and failing" (T-1703's exact lesson, same shape as a budget-
+truncated `frob check` misread as clean). `_run_mutants` also logs one
+INFO line per mutant attempted (`mutant N/M of <file>`), so a long sweep
+is visibly progressing rather than indistinguishable from a hang --
+requirement 3 of T-1727, directly answering "is this still working or
+did it wedge?" the ten-timeout incident could never answer.
+Deliberately NOT fixed by raising the timeout: the cost is
+multiplicative in mutants x test time, so a bigger constant only
+postpones the same wall -- the fix is an internal deadline that reports
+an honest partial result, not a bigger one that still eventually runs
+out with nothing to show.
+
+**Bind-time cost projection (T-1727 requirement 2).**
+`frob.tickets._evidence._warn_bind_time_mutation_sweep_cost`, called
+from `add_evidence` right after a successful write, projects the SAME
+close-time sweep cost the deadline above enforces -- one bounded timing
+run of the ticket's full bound evidence-id set (capped at `_TIMEOUT_S`,
+the same per-mutant budget the real sweep uses) times the planned mutant
+count for the ticket's diff-touched files (a cheap, subprocess-free
+`generate_mutants` count) -- and logs a WARNING naming the bound test
+ids and the projected seconds when that projection exceeds the sweep
+budget. This moves the discovery point from close time (an hour of work
+later, when unbinding the slow-but-honest test is the only escape an
+agent can see, T-1733's own incentive problem) to bind time (seconds
+after `frob ticket evidence`, while rebinding/splitting/speeding up the
+test is still cheap). Best-effort and advisory only: any failure (no
+touched files yet, exec disabled, an unresolvable diff) degrades to a
+silent no-warn, and it never affects the evidence write it runs after.
 
 `frob.gates.mutation_evidence_violations(root, ticket, base_ref)` turns
 any `ConfirmatoryFinding`s into `TEST016` `Violation`s: WARN severity by

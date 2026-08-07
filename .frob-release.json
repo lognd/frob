@@ -891,7 +891,7 @@
     "src/frob/mutate/__init__.py::_PointCollector.visit_Compare": "2ae124e147aa38da7757184918097aae4e2b031894ad4bd84b5922d998fcf7c8",
     "src/frob/mutate/__init__.py::_PointCollector.visit_Constant": "38dc26f5bc7ed104ccc0693892d3c092a2c5003ed0e546695c56cf6c502f5cf7",
     "src/frob/mutate/__init__.py::generate_mutants": "1484994449add9c8462b9e977beaf8c5d421658732004c98b9b491587d52a247",
-    "src/frob/mutate/__init__.py::run_mutations": "1028e3affa1c53b846f49445463d02d2fcab87756ae79eae9344b12b7098a2f6",
+    "src/frob/mutate/__init__.py::run_mutations": "0541800c6cfd32143bce30a9b0d590ef5888c7b7e8a6fc2c5b4230af777e0a86",
     "src/frob/mutate/_journal.py::JOURNAL_DIR": "6691efef2e47c88b55ad236282de047b7864e2271a401dbadf416b4cf1e9b412",
     "src/frob/mutate/_journal.py::JournalError": "fea8c9c33a88ab7fae7d0ff7806fd31b29e79dbf57b45a0c71d5685768ccd209",
     "src/frob/mutate/_journal.py::StaleJournal": "5524a3cb00e2be5acdf2e2da713adbfb902a9b606f76c80e85853dcfc0fd68c0",
@@ -1904,7 +1904,7 @@
     "src/frob/tickets/_models.py::unbound_acceptance": "81f31f5b670cd19c3db8c0c56a470599f438c08173dac2939cfed214a5514353",
     "src/frob/tickets/_mutation_evidence.py::ConfirmatoryFinding": "0f64c6bade28b890f53af1313630fd0699d22f43d27b257b4b9487fa7f5d8010",
     "src/frob/tickets/_mutation_evidence.py::MutationEvidenceError": "4a83146dd58fbec5716d49ec92a9b52e4cb098768765a9e0bd475dad508cde81",
-    "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence": "4eb7d825600c3b257f34abf39502e99f15049e9190adb04f9b9fa2c08bad0304",
+    "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
     "src/frob/tickets/_mutation_sweep_queue.py::SYNC_BLOCKING_KINDS": "0c18fd7f230d4d8793072e16cf8c48add60c0927b5188a1f67653324d28094b2",
     "src/frob/tickets/_mutation_sweep_queue.py::SweepEntry": "c8dba970d1bb0578d1a037dac77ae24c322b72fce8b9af50fc61d1aa21f8ac1a",
     "src/frob/tickets/_mutation_sweep_queue.py::SweepQueueError": "14e10954d266a2f81a42fbf354bdf024c05f07800c2242f2428a394e4a5f0bc5",
@@ -2097,5 +2097,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.361.0"
+  "version": "0.362.0"
 }

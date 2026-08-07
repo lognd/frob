@@ -173,22 +173,34 @@ class TestTouchedPythonFiles:
         assert _matches_base_ref_tip(repo, "m.py", "main") is False
 
 
-class TestCheckTicketMutationEvidence:
-    def _repo_with_change(self, tmp_path: Path) -> Path:
-        repo = tmp_path / "repo"
-        _init_repo(repo)
-        (repo / "m.py").write_text(
-            "def add(a, b):\n    return a + b\n", encoding="utf-8"
-        )
-        _commit(repo, "init")
-        (repo / "m.py").write_text(
-            "def add(a, b):\n    return a + b + 0\n", encoding="utf-8"
-        )
-        return repo
+# frob:ticket T-1727
+# frob:waive WIRE001 reason="a shared test-fixture helper used only within this one \
+# test file (both TestCheckTicketMutationEvidence and \
+# TestWarnBindTimeMutationSweepCost call it directly from real test_* methods, in the \
+# SAME file) -- WIRE001's same-file exclusion (T-1592's precedent) exists for \
+# genuinely-unwired code, not for a fixture DUP001 already required be extracted out \
+# of two near-identical per-class copies; every call site is a real test method, \
+# verifiable by reading this file directly" follow_up="T-1741"
+def _repo_with_add_change(tmp_path: Path) -> Path:
+    """A minimal repo whose `m.py::add` has one uncommitted changed line
+    (`+ 0`) against `main` -- the shared fixture `TestCheckTicketMutation
+    Evidence` and `TestWarnBindTimeMutationSweepCost` both need (T-1727:
+    extracted to module scope, DUP001, when the same body existed once
+    per class)."""
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    (repo / "m.py").write_text("def add(a, b):\n    return a + b\n", encoding="utf-8")
+    _commit(repo, "init")
+    (repo / "m.py").write_text(
+        "def add(a, b):\n    return a + b + 0\n", encoding="utf-8"
+    )
+    return repo
 
+
+class TestCheckTicketMutationEvidence:
     def test_confirmatory_test_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
-        repo = self._repo_with_change(tmp_path)
+        repo = _repo_with_add_change(tmp_path)
         (repo / "test_m.py").write_text(
             "import m\ndef test_add():\n    m.add(2, 3)\n", encoding="utf-8"
         )
@@ -204,7 +216,7 @@ class TestCheckTicketMutationEvidence:
 
     def test_adversarial_test_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
-        repo = self._repo_with_change(tmp_path)
+        repo = _repo_with_add_change(tmp_path)
         (repo / "test_m.py").write_text(
             "import m\ndef test_add():\n    assert m.add(2, 3) == 5\n",
             encoding="utf-8",
@@ -218,7 +230,7 @@ class TestCheckTicketMutationEvidence:
 
     def test_no_test_evidence_is_ok_empty(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
-        repo = self._repo_with_change(tmp_path)
+        repo = _repo_with_add_change(tmp_path)
         ticket = _ticket(evidence=(), scope=("m.py",))
         result = check_ticket_mutation_evidence(repo, ticket, "main")
         assert result.is_ok
@@ -236,7 +248,7 @@ class TestCheckTicketMutationEvidence:
         import frob.tickets._mutation_evidence as mod
         from frob.mutate import MutateError
 
-        repo = self._repo_with_change(tmp_path)
+        repo = _repo_with_add_change(tmp_path)
         (repo / "test_m.py").write_text(
             "import m\ndef test_add():\n    assert m.add(2, 3) == 5\n",
             encoding="utf-8",
@@ -321,3 +333,185 @@ class TestCheckTicketMutationEvidence:
         violations = mutation_evidence_violations(repo_root, ticket, "main")
         errors = [v for v in violations if v.severity == "error"]
         assert errors == [], [v.message for v in errors]
+
+    def test_zero_budget_reports_unmeasured_not_confirmatory(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_zero_budget_reports_unmeasured_not_confirmatory  # noqa: E501
+        # T-1727's own required evidence shape: a bound test that would
+        # otherwise get a real mutation sweep, but the sweep's wall-clock
+        # budget is exhausted (here: zero, the pathological extreme) BEFORE
+        # a single mutant of the touched file can be attempted. The result
+        # must be `unmeasured=True`, NOT a confirmatory-only finding --
+        # nothing was proven weak, nothing was ever run. This is the exact
+        # distinction the T-1672 incident's escape hatch (unbind the slow
+        # test, close silently) depended on nobody making: a genuine
+        # budget cutoff must be visibly different from "measured and
+        # failed", both in the returned model and in the eventual TEST016
+        # message a human/agent reads.
+        repo = _repo_with_add_change(tmp_path)
+        (repo / "test_m.py").write_text(
+            "import m\ndef test_add():\n    assert m.add(2, 3) == 5\n",
+            encoding="utf-8",
+        )
+        ticket = _ticket(evidence=("test_m.py::test_add",), scope=("m.py", "test_m.py"))
+        result = check_ticket_mutation_evidence(
+            repo,
+            ticket,
+            "main",
+            max_mutants_per_file=4,
+            timeout_s=30.0,
+            sweep_budget_s=0.0,
+        )
+        assert result.is_ok, result.err
+        findings = result.danger_ok
+        assert len(findings) == 1
+        assert findings[0].unmeasured is True
+        assert findings[0].file == "m.py"
+        assert findings[0].mutants_total == 0
+        assert findings[0].survivors == ()
+
+    def test_mid_sweep_deadline_truncates_and_reports_unmeasured(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_mid_sweep_deadline_truncates_and_reports_unmeasured  # noqa: E501
+        # A deadline that is ALREADY past before `_mutation_evidence_for_
+        # file` even starts its mutant loop (the shared-deadline path a
+        # multi-file sweep hits once an earlier file has consumed the
+        # whole budget) must produce `unmeasured=True`, never a
+        # confirmatory-only finding built from "0 attempted, 0 killed" --
+        # `_run_mutants` stopping before mutant 1 must not be read as
+        # "every mutant survived" just because the killed count is zero.
+        import frob.tickets._mutation_evidence as mod
+
+        repo = _repo_with_add_change(tmp_path)
+        (repo / "test_m.py").write_text(
+            "import m\ndef test_add():\n    m.add(2, 3)\n", encoding="utf-8"
+        )
+        ticket = _ticket(evidence=("test_m.py::test_add",), scope=("m.py", "test_m.py"))
+        ranges = mod._changed_line_ranges(repo, "main")
+        argv = ("uv", "run", "pytest", "test_m.py::test_add", "-q")
+        already_past = 0.0  # any monotonic() reading is >= this
+        checked = mod._mutation_evidence_for_file(
+            repo,
+            ticket,
+            Path("m.py"),
+            ranges.get("m.py"),
+            argv,
+            ("test_m.py::test_add",),
+            4,
+            30.0,
+            deadline_monotonic=already_past,
+        )
+        assert checked.is_ok, checked.err
+        finding = checked.danger_ok
+        assert finding is not None
+        assert finding.unmeasured is True
+        assert finding.file == "m.py"
+
+    def test_real_subprocess_spawning_evidence_stays_bounded_not_hung(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_real_subprocess_spawning_evidence_stays_bounded_not_hung  # noqa: E501
+        # T-1727's own required evidence shape, reproduced end to end: a
+        # bound evidence test that ITSELF spawns a real subprocess (the
+        # T-1672 incident's exact pathology -- a watchdog test is
+        # inherently slow because honest evidence for it has to spawn
+        # real processes), run through the REAL `check_ticket_mutation_
+        # evidence` sweep with a small (but nonzero) budget. At least one
+        # mutant's `uv run pytest` subprocess genuinely runs (this is not
+        # a mocked timing), and the budget is small enough that later
+        # mutants cannot all complete -- the sweep must come back
+        # BOUNDED (this test itself has a wall-clock assertion, not just
+        # trusting pytest's own timeout) and EXPLICITLY unmeasured, never
+        # hung and never silently reported as a clean/confirmatory pass.
+        import time
+
+        repo = _repo_with_add_change(tmp_path)
+        (repo / "test_m.py").write_text(
+            "import subprocess\nimport sys\nimport m\n"
+            "def test_add():\n"
+            "    subprocess.run([sys.executable, '-c', 'pass'], check=True)\n"
+            "    m.add(2, 3)\n",
+            encoding="utf-8",
+        )
+        ticket = _ticket(evidence=("test_m.py::test_add",), scope=("m.py", "test_m.py"))
+        started = time.monotonic()
+        result = check_ticket_mutation_evidence(
+            repo,
+            ticket,
+            "main",
+            max_mutants_per_file=4,
+            timeout_s=30.0,
+            # Small enough that a real `uv run pytest` subprocess spawn
+            # (unavoidably at least tens to hundreds of ms) cannot
+            # complete every planned mutant, without being so close to
+            # zero the FIRST mutant never even gets a chance to run --
+            # this test wants to observe a genuine mid-sweep truncation,
+            # not the zero-budget "nothing started" case already covered
+            # above.
+            sweep_budget_s=0.2,
+        )
+        elapsed = time.monotonic() - started
+        # Bounded: nowhere near the pre-T-1727 worst case
+        # (max_files * max_mutants_per_file * timeout_s, up to 720s) --
+        # this is the actual behavioral proof "does not hang", not a
+        # trust-the-mock assertion.
+        assert elapsed < 60.0, f"sweep took {elapsed:.1f}s, expected a bounded exit"
+        assert result.is_ok, result.err
+        findings = result.danger_ok
+        assert len(findings) == 1
+        assert findings[0].file == "m.py"
+        assert findings[0].unmeasured is True
+
+
+# frob:ticket T-1727
+class TestWarnBindTimeMutationSweepCost:
+    """T-1727 requirement 2: `frob.tickets._evidence._warn_bind_time_
+    mutation_sweep_cost` -- warn the moment evidence is BOUND, naming the
+    projected close-time cost, rather than only at close/land an hour
+    later when unbinding the slow-but-honest test is the easy way out."""
+
+    def test_warns_when_projected_cost_exceeds_budget(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestWarnBindTimeMutationSweepCost.test_warns_when_projected_cost_exceeds_budget  # noqa: E501
+        import frob.tickets._mutation_evidence as mutation_mod
+        from frob.tickets._evidence import _warn_bind_time_mutation_sweep_cost
+
+        repo = _repo_with_add_change(tmp_path)
+        (repo / "test_m.py").write_text(
+            "import time\nimport m\n"
+            "def test_add():\n    time.sleep(0.05)\n    m.add(2, 3)\n",
+            encoding="utf-8",
+        )
+        # A near-zero budget means ANY measured wall-clock x >=1 planned
+        # mutant projects over budget -- deterministic without depending
+        # on how slow the real test happens to be on a given machine.
+        monkeypatch.setattr(mutation_mod, "_sweep_budget_s", lambda: 0.0001)
+        ticket = _ticket(evidence=("test_m.py::test_add",), scope=("m.py", "test_m.py"))
+        with caplog.at_level("WARNING"):
+            _warn_bind_time_mutation_sweep_cost(repo, ticket)
+        assert any(
+            "projected close-time mutation-sweep cost" in r.message
+            for r in caplog.records
+        )
+        assert any("test_add" in r.message for r in caplog.records)
+
+    def test_no_warning_when_no_touched_python_files(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestWarnBindTimeMutationSweepCost.test_no_warning_when_no_touched_python_files  # noqa: E501
+        # Best-effort/advisory posture: a ticket with no diff-touched
+        # Python files (a docs-kind ticket, or one not yet at work) must
+        # never warn -- there is nothing to project a cost against.
+        from frob.tickets._evidence import _warn_bind_time_mutation_sweep_cost
+
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "README.md").write_text("hello\n", encoding="utf-8")
+        _commit(repo, "init")
+        ticket = _ticket(evidence=("test_m.py::test_add",), scope=("README.md",))
+        with caplog.at_level("WARNING"):
+            _warn_bind_time_mutation_sweep_cost(repo, ticket)
+        assert not any("mutation-sweep cost" in r.message for r in caplog.records)

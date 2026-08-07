@@ -348,6 +348,7 @@ def run_mutations(
     timeout_s: float = 300.0,
     max_mutants: int | None = None,
     line_ranges: tuple[tuple[int, int], ...] | None = None,
+    deadline_monotonic: float | None = None,
 ) -> Result[MutationResult, MutateError]:
     """Mutate `file` one point at a time; a mutant is KILLED if `test_argv`
     fails against it, SURVIVED if the tests still pass.
@@ -386,6 +387,21 @@ def run_mutations(
     EXCLUSIVE lock here cannot self-deadlock against a SHARED holder in
     the same process. See `derived_state_lock`'s docstring for the
     shared/exclusive contract.
+
+    `deadline_monotonic` (T-1727, default `None`, unbounded, preserving
+    every caller before this ticket): an absolute `time.monotonic()`
+    deadline shared across a WHOLE multi-file sweep (the caller computes
+    it once, not per-file), checked by `_run_mutants` before starting
+    each mutant. When the deadline is already past, remaining mutants in
+    THIS file are skipped -- `MutationResult.killed + len(survivors) <
+    MutationResult.total` is how a caller detects this happened (no
+    separate flag: the arithmetic already says "fewer were attempted than
+    were planned"). This is a genuinely UNMEASURED remainder, never
+    silently folded into "survived": a mutant nobody ran proves nothing
+    either way, so the caller must not read a truncated run's low kill
+    count as if it were a real confirmatory-only verdict (T-1727,
+    mirroring T-1703's "could not measure must never render as
+    verified").
     """
     target = root / file if not file.is_absolute() else file
     if not target.exists():
@@ -406,7 +422,14 @@ def run_mutations(
             )
             return Err(MutateError.JournalCollision)
         try:
-            run_result = _run_mutants(target, mutants, test_argv, root, timeout_s)
+            run_result = _run_mutants(
+                target,
+                mutants,
+                test_argv,
+                root,
+                timeout_s,
+                deadline_monotonic=deadline_monotonic,
+            )
         finally:
             # Only drop the journal once the restore write has actually
             # succeeded (T-0857) -- if `write_bytes` itself raises (a disk
@@ -490,6 +513,8 @@ def _run_mutants(
     test_argv: tuple[str, ...],
     root: Path,
     timeout_s: float,
+    *,
+    deadline_monotonic: float | None = None,
 ) -> Result[tuple[int, list[Mutant]], MutateError]:
     """Write and test each mutant in turn: `(killed_count, surviving_mutants)`.
 
@@ -504,16 +529,45 @@ def _run_mutants(
     whole run with `Err(MutateError.ExecDisabled)` on the FIRST refusal --
     mirroring the honest `Err`/`raise` semantics `_coverage_wait.py`/
     `_vm_runner.py` already chose for the same kill-switch case.
+
+    T-1727: `deadline_monotonic`, checked before EACH mutant (not just at
+    entry), stops the loop early once `time.monotonic()` passes it --
+    `killed + len(survivors)` then comes back short of `len(mutants)`,
+    the caller's signal that the remainder is UNMEASURED, not survived.
+    Logs one INFO line per mutant attempted (`mutant N/M`) so a long
+    sweep is visibly progressing rather than indistinguishable from a
+    hang (T-1727 requirement 3) -- the whole reason this ticket exists is
+    ten consecutive silent 540s timeouts that gave no signal either way.
     """
     import os
     import subprocess
+    import time
 
     from frob.process._guard import guarded_subprocess_run
 
     child_env = {**os.environ, MUTATION_RUN_ENV: "1"}
     killed = 0
     survivors: list[Mutant] = []
-    for mutation in mutants:
+    total = len(mutants)
+    for index, mutation in enumerate(mutants, start=1):
+        if deadline_monotonic is not None and time.monotonic() >= deadline_monotonic:
+            _log.warning(
+                "mutate: sweep budget exceeded before mutant %d/%d of %s -- "
+                "stopping early, %d mutant(s) UNMEASURED (not killed, not survived)",
+                index,
+                total,
+                target,
+                total - (index - 1),
+            )
+            break
+        _log.info(
+            "mutate: mutant %d/%d of %s (line %d, %s)",
+            index,
+            total,
+            target,
+            mutation.mutant.line,
+            mutation.mutant.description,
+        )
         target.write_text(mutation.source, encoding="utf-8")
         # T-1327: keep the journal's "last known on-disk content" hash in
         # step with what was actually just written, so a crash mid-mutant

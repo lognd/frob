@@ -1126,6 +1126,7 @@ node vet : trusted {
 // describe this node's public surface and has nothing to update here."
 // frob:ticket T-1518
 // frob:ticket T-1687
+// frob:ticket T-1727
 store tickets_ledger : trusted {
     may "env.read" via "src/frob/tickets/_land.py";
 
@@ -1167,7 +1168,7 @@ store tickets_ledger : trusted {
     engine git_tracked;
     append_only;
     code "src/frob/tickets/**";
-    may "env" via "src/frob/tickets/_land_git_ops.py", "src/frob/tickets/_leases.py", "src/frob/tickets/_worktree_guard.py", "src/frob/tickets/clipboard.py";
+    may "env" via "src/frob/tickets/_land_git_ops.py", "src/frob/tickets/_leases.py", "src/frob/tickets/_mutation_evidence.py", "src/frob/tickets/_worktree_guard.py", "src/frob/tickets/clipboard.py";
     // `may "eval"`: `_store.py`'s posix-only `fcntl` import goes through
     // `importlib.import_module("fcntl")` (T-0458 ledger_lock) rather than a
     // plain `import fcntl`, so `try`/`except ImportError` can degrade to a
@@ -1179,7 +1180,7 @@ store tickets_ledger : trusted {
     may "exec" via "src/frob/tickets/_evidence.py", "src/frob/tickets/clipboard.py";
     attr flag=frob_check_exec_kill_switch;
     may "fs.write" via "src/frob/tickets/__init__.py", "src/frob/tickets/_brief.py", "src/frob/tickets/_doable.py", "src/frob/tickets/_evidence.py", "src/frob/tickets/_journal.py", "src/frob/tickets/_land.py", "src/frob/tickets/_land_finalize.py", "src/frob/tickets/_land_git_ops.py", "src/frob/tickets/_land_merge_zones.py", "src/frob/tickets/_land_queue.py", "src/frob/tickets/_leases.py", "src/frob/tickets/_mutation_sweep_queue.py", "src/frob/tickets/_profile.py", "src/frob/tickets/_store.py";
-    may "fs.read" via "src/frob/tickets/_brief.py", "src/frob/tickets/_journal.py", "src/frob/tickets/_land.py", "src/frob/tickets/_land_finalize.py", "src/frob/tickets/_land_git_ops.py", "src/frob/tickets/_land_merge_zones.py", "src/frob/tickets/_land_queue.py", "src/frob/tickets/_land_release.py", "src/frob/tickets/_land_squash.py", "src/frob/tickets/_leases.py", "src/frob/tickets/_mutation_evidence.py", "src/frob/tickets/_mutation_sweep_queue.py", "src/frob/tickets/_new_gate_rule_acceptance.py", "src/frob/tickets/_new_renumber.py", "src/frob/tickets/_profile.py", "src/frob/tickets/_renumber_v2.py", "src/frob/tickets/_reporting_attachments.py", "src/frob/tickets/_store.py", "src/frob/tickets/clipboard.py";
+    may "fs.read" via "src/frob/tickets/_brief.py", "src/frob/tickets/_evidence.py", "src/frob/tickets/_journal.py", "src/frob/tickets/_land.py", "src/frob/tickets/_land_finalize.py", "src/frob/tickets/_land_git_ops.py", "src/frob/tickets/_land_merge_zones.py", "src/frob/tickets/_land_queue.py", "src/frob/tickets/_land_release.py", "src/frob/tickets/_land_squash.py", "src/frob/tickets/_leases.py", "src/frob/tickets/_mutation_evidence.py", "src/frob/tickets/_mutation_sweep_queue.py", "src/frob/tickets/_new_gate_rule_acceptance.py", "src/frob/tickets/_new_renumber.py", "src/frob/tickets/_profile.py", "src/frob/tickets/_renumber_v2.py", "src/frob/tickets/_reporting_attachments.py", "src/frob/tickets/_store.py", "src/frob/tickets/clipboard.py";
     // T-0166 LINT004: `may "exec"` is a risky capability. T-0200 built a
     // real kill switch and T-0778 wired the git seam (`frob.gitio.
     // run_argv`, which the serve daemon and gitio-based lease reads reuse

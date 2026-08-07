@@ -54,6 +54,7 @@ import json
 import re
 import shlex
 import subprocess
+import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -861,6 +862,7 @@ def _sync_cross_worktree_lease(
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:waive ARCH001 reason="a typani Result guard chain (lease, schema, resolution, pass-check, then acceptance-range) where each stage is already its own dedicated helper (_check_evidence_resolution, _check_evidence_passing, ...); the length is the sequence of early-return guard calls itself, matching this module's own idiomatic and_then style -- splitting further would just rename the same guard clauses behind a second layer of indirection"  # noqa: E501
+# frob:ticket T-1727
 def add_evidence(
     root: Path,
     ticket_id: str,
@@ -941,7 +943,143 @@ def add_evidence(
             )
             return Err(TicketError.AcceptanceIndexOutOfRange)
 
-    return _append_evidence_and_write(root, ticket, ticket_id, normalized_ids, accepts)
+    written = _append_evidence_and_write(
+        root, ticket, ticket_id, normalized_ids, accepts
+    )
+    if written.is_ok:
+        _warn_bind_time_mutation_sweep_cost(root, written.danger_ok)
+    return written
+
+
+# frob:ticket T-1727
+def _planned_mutation_sweep_mutants(root: Path, files: tuple[Path, ...]) -> int:
+    """T-1727: the total planned mutant count `check_ticket_mutation_
+    evidence`'s real sweep would attempt for `files` -- pure AST work via
+    `generate_mutants` (no subprocess), capped per file the SAME way the
+    real sweep caps it (`_MAX_MUTANTS_PER_FILE`, first `_MAX_FILES`
+    files). Split out of `_warn_bind_time_mutation_sweep_cost` so that
+    function's own length stays under ARCH001's threshold; the ONLY
+    caller is that function, kept private rather than exported."""
+    from frob.mutate import generate_mutants
+    from frob.tickets._mutation_evidence import (
+        _MAX_FILES,
+        _MAX_MUTANTS_PER_FILE,
+        _changed_line_ranges,
+    )
+
+    ranges_by_file = _changed_line_ranges(root, "main")
+    planned = 0
+    for file in files[:_MAX_FILES]:
+        ranges = ranges_by_file.get(str(file))
+        if not ranges:
+            continue
+        try:
+            source = (root / file).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        generated = generate_mutants(source, str(file), ranges)
+        if generated.is_err:
+            continue
+        planned += min(len(generated.danger_ok), _MAX_MUTANTS_PER_FILE)
+    return planned
+
+
+# frob:ticket T-1727
+def _measured_bind_time_evidence_wall_clock_s(
+    root: Path, test_ids: tuple[str, ...]
+) -> float | None:
+    """T-1727: one real, bounded timing run of `test_ids` as a batch (the
+    SAME command the real sweep would re-run per mutant), returning the
+    measured wall-clock seconds -- or `None` when no honest measurement
+    is possible (exec disabled, a spawn-level `OSError`), which the
+    caller treats as "cannot project, stay silent" rather than a
+    warning-worthy zero. Split out of `_warn_bind_time_mutation_sweep_
+    cost` so that function's own length stays under ARCH001's threshold;
+    the ONLY caller is that function, kept private rather than
+    exported."""
+    from frob.process._guard import exec_enabled
+    from frob.tickets._mutation_evidence import _TIMEOUT_S
+
+    if not exec_enabled():
+        _log.debug(
+            "tickets: skipping bind-time mutation-sweep cost probe (exec disabled)"
+        )
+        return None
+    argv = ("uv", "run", "pytest", *test_ids, "-q")
+    started = time.monotonic()
+    try:
+        guarded = guarded_subprocess_run(
+            list(argv), cwd=root, capture_output=True, timeout=_TIMEOUT_S
+        )
+    except subprocess.TimeoutExpired:
+        # The evidence itself does not finish inside one mutant's own
+        # timeout budget -- worth reporting on its own terms, using the
+        # timeout as the measured floor (the real cost is >= this).
+        return _TIMEOUT_S
+    except OSError:
+        # frob:waive EXHAUST001 reason="best-effort advisory timing probe: a \
+        # spawn-level OSError (missing interpreter, permission) means 'cannot project \
+        # right now', never a reason to fail the evidence bind this runs strictly after"
+        return None
+    if guarded.is_err:
+        return None
+    return time.monotonic() - started
+
+
+# frob:ticket T-1727
+def _warn_bind_time_mutation_sweep_cost(root: Path, ticket: Ticket) -> None:
+    """T-1727 requirement 2: project the close-time mutation-sweep cost
+    RIGHT NOW, at bind time, rather than letting an agent discover it an
+    hour later at close time when unbinding the slow-but-honest test is
+    the only escape the agent can see. Best-effort and ADVISORY ONLY --
+    never raises, never affects the write `add_evidence` already
+    committed (this runs strictly after that succeeds); any failure
+    (no touched files yet, exec disabled, an unresolvable base ref)
+    degrades to a silent no-warn, matching every other best-effort
+    projection in this module's call chain.
+
+    Split into `_planned_mutation_sweep_mutants` (the cheap, subprocess-
+    free half: count planned mutant points) and
+    `_measured_bind_time_evidence_wall_clock_s` (the one real timing
+    subprocess) so each half stays independently readable; this function
+    is just their composition plus the threshold check and the log
+    line."""
+    from frob.tickets._mutation_evidence import (
+        _evidence_test_ids,
+        _sweep_budget_s,
+        _touched_python_files,
+    )
+
+    test_ids = _evidence_test_ids(ticket)
+    if not test_ids:
+        return
+    files = _touched_python_files(root, ticket, "main")
+    if not files:
+        return
+    planned_mutants = _planned_mutation_sweep_mutants(root, files)
+    if planned_mutants == 0:
+        return
+    wall_clock_s = _measured_bind_time_evidence_wall_clock_s(root, test_ids)
+    if wall_clock_s is None:
+        return
+    projected_s = wall_clock_s * planned_mutants
+    budget = _sweep_budget_s()
+    if projected_s <= budget:
+        return
+    _log.warning(
+        "tickets: %s bound evidence %s projected close-time mutation-sweep "
+        "cost is ~%.0fs (%.1fs measured wall-clock x %d planned mutant(s)) "
+        "-- exceeds the %.0fs sweep budget. This evidence will likely be "
+        "reported UNMEASURED (not confirmatory, not proven) at close/land "
+        "time unless it is rebound to a faster test, split across files, "
+        "or `--skip-mutation-evidence` is used deliberately",
+        ticket.id,
+        list(test_ids),
+        projected_s,
+        wall_clock_s,
+        planned_mutants,
+        budget,
+    )
 
 
 def _check_evidence_resolution(
