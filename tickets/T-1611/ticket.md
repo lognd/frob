@@ -13,9 +13,22 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/**
-- docs/**
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'TICK009 pre-dispatch narrowing: docs/** leases every doc and serialises
+    the queue'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'TICK009 pre-dispatch narrowing: docs/** leases every doc and serialises
+    the queue'
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null
