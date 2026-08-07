@@ -13,10 +13,23 @@ sprint: null
 scope:
 - src/frob/gates/_fmt_directives.py
 - src/frob/gates/_fix_engine.py
-- tests/**
 - docs/modules/gates.md
+- tests/test_gates_fmt_directives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'TICK009 pre-dispatch narrowing: tests/** leases every test in the repo
+    and blocks every other agent'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates_fmt_directives.py
+  reason: 'TICK009 pre-dispatch narrowing: tests/** leases every test in the repo
+    and blocks every other agent'
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null
