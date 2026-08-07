@@ -46535,6 +46535,7 @@ render/ is properly tracked (fixed this session) so it is no longer a stray
 file, and T-0449's own diff (gates/_refs.py, the two .pyi, tests) is clean.
 Landed via 3-way + explicit copy of the new frob_core.pyi (the new-file case
 T-0463's completeness assertion now guards).
+<!-- ticket:T-0450 -->
 ```yaml
 id: T-0450
 title: 'REF002 systematic categories: doc-1:1-frob:doc-bound and private-single-import

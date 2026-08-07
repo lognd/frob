@@ -1,0 +1,71 @@
+---
+id: T-0398
+title: 'AUDIT: evidence integrity -- close/land must mean tested+covering+passed (docs/audits/tickets-testing.md)'
+state: done
+kind: security
+origin: human
+created: '2026-07-20'
+priority: medium
+parent: T-0397
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/
+- src/frob/testing/
+- src/frob/gates/
+- src/frob/app/ticket_runner.py
+- tests/test_evidence_integrity.py
+- tests/system/test_cli_evidence_enforcement.py
+- tests/test_tickets_evidence_cli.py
+- tests/unit/test_app_runners_batch7.py
+- tests/system/test_cli_ticket_land.py
+- pyproject.toml
+- uv.lock
+- frob.lock
+- .frob-release.json
+- CHANGELOG.md
+- docs/modules/tickets.md
+- docs/modules/testing.md
+- docs/modules/gates.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+evidence:
+- tests/test_evidence_integrity.py::TestD01PassVerification::test_red_evidence_rejected_when_passed_supplied
+- tests/test_evidence_integrity.py::TestD01PassVerification::test_green_evidence_recorded_when_passed_supplied
+- tests/test_evidence_integrity.py::TestD01PassVerification::test_passed_none_preserves_old_permissive_behavior
+- tests/test_evidence_integrity.py::TestD02ScopeBinding::test_transition_rejects_when_covers_scope_false
+- tests/test_evidence_integrity.py::TestD02ScopeBinding::test_transition_allows_when_covers_scope_true
+- tests/test_evidence_integrity.py::TestD02ScopeBinding::test_evidence_covers_scope_true_for_bound_test
+- tests/test_evidence_integrity.py::TestD02ScopeBinding::test_evidence_covers_scope_false_for_unrelated_test
+- tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport::test_empty_section_rejected
+- tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport::test_blank_lines_only_rejected
+- tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport::test_real_content_accepted
+- tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport::test_close_rejects_empty_done_report
+- tests/test_evidence_integrity.py::TestD04UnknownLanguageFallback::test_config_file_change_selects_something
+- tests/test_evidence_integrity.py::TestD06ModuleLevelEdits::test_module_level_edit_forces_selection_under_warn
+- tests/test_evidence_integrity.py::TestD06ModuleLevelEdits::test_symbol_touched_still_respects_warn
+- tests/test_evidence_integrity.py::TestD07RippleHorizon::test_two_hop_dependent_is_selected
+- tests/test_evidence_integrity.py::TestD08UnresolvedMarking::test_new_ticket_resolves_when_collected_supplied
+- tests/test_evidence_integrity.py::TestD08UnresolvedMarking::test_new_ticket_accepts_resolving_evidence
+- tests/test_evidence_integrity.py::TestD08UnresolvedMarking::test_new_ticket_collected_none_still_stores_schema_valid_evidence
+- tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice::test_newer_unions_disjoint_evidence_on_tie
+- tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice::test_splice_ledger_preserves_both_sides_evidence
+- tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify::test_reverify_true_when_command_still_reproduces
+- tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify::test_reverify_false_when_output_changed
+- tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify::test_reverify_false_when_command_now_fails
+- tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify::test_reverify_rejects_malformed_entry
+- tests/test_evidence_integrity.py::TestD11DedupedMatchRule::test_tickets_and_gates_share_matches_collected
+- tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_deletion_owned_rejects_bare_top_level_scope
+- tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_deletion_owned_accepts_narrow_scope
+- tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope::test_deletion_owned_rejects_whole_tree_scope
+- tests/test_evidence_integrity.py::TestD05LandReverification::test_land_rejects_evidence_that_no_longer_resolves_post_merge
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_red_evidence
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_unrelated_evidence
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_empty_done_report
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_succeeds_with_covering_passing_evidence_and_substantive_report
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_docs_kind_cmd_evidence_path_still_works
+designated_repro_test: null
+threat: null
+component: null
+---
+See docs/audits/tickets-testing.md. THE central North-Star hole. HIGH: D-01 close/land never verify evidence tests PASS (only collected); D-02 evidence has no binding to ticket scope/touched symbols (any test closes any ticket); D-03 Done-report heading-only check (empty passes); D-04 config/data-file changes select ZERO tests silently; D-05 land trusts worktree report, re-runs nothing. RIGHT-WAY fix: wire frob test pass/fail into evidence; require >=1 evidence id to cover a touched/scope symbol via the graph the selector already builds; require Done-report substance; fallback for unknown-language file changes; land re-verifies against merged tree. Then re-audit until a pessimistic pass finds 0. MED/LOW D-06..D-12 in the doc.

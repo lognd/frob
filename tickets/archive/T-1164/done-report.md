@@ -1,0 +1,31 @@
+## Done report
+
+Filtered `runs_as is None` out of `_blast_radius_gaps_per_user`'s per-user
+scenario set in `src/frob/strata/_audit.py`. A node declaring `owns`/`acl`
+with no `runs_as` service-account claim has a manifest (`host_manifest_for`
+is non-None once ANY std.host construct is present) but no real identity
+for a compromised-user blast-radius scenario -- the old comprehension let
+the bare `None` through, synthesizing a spurious "compromised-user:None"
+scenario and firing HOST-BLAST for every node reachable from a plain
+owns/acl declaration. This unblocks T-1158 (design/frob.strata's
+tickets_ledger owns= declarations).
+
+Added a regression test (`TestHostWiring::
+test_owns_without_runs_as_no_blast_radius_scenario`) with an
+owns-without-runs_as fixture proving no blast-radius view/gap fires.
+
+### Changed
+```
+ src/frob/strata/_audit.py       |  9 ++++++++-
+ tests/unit/strata/test_audit.py | 18 ++++++++++++++++++
+ tickets.md                      | 12 ++++++++++--
+ 3 files changed, 36 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_audit.py::TestHostWiring::test_owns_without_runs_as_no_blast_radius_scenario` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 52 error(s), 458 warning(s), 497 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:116, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:194, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:208, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:249, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:276, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:374, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:399, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:423, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:67, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_core.py:78, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:17, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:221, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:236, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:271, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:290, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:317, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:351, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:371, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:394, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:409, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:523, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_misc.py:63, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:110, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:125, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:136, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:152, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:195, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:236, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:39, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_reporting.py:71, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/_cli_parsers/_ticket.py:999, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/doctor.py:243, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/dup/_core.py:173, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:375, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:397, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:409, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:428, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/serve/_socketd.py:457, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:1968, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_capability.py:5338, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:154, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:168, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:209, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:267, E501@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/vet/_supplychain.py:295, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:111, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:22, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:23, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:35, F401@/home/logan/projects/frob/.claude/worktrees/w19-strata4/src/frob/tickets/__init__.py:46, INV006@strata-core/src/parse/grammar_flow.rs, INV006@strata-core/src/parse/lexer.rs

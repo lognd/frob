@@ -675,6 +675,54 @@ class TestWriteArchivedTicket:
         assert archived.danger_ok["T-0001"].title == "T-0001 rebound"
 
 
+    # frob:ticket T-1583
+    def test_v2_write_archive_round_trips_many_tickets_count_and_content(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
+        # e_round_trips_many_tickets_count_and_content kind="unit"
+        """T-1583's acceptance bar is higher than "the command exits 0":
+        a real archive of many tickets must round-trip both its COUNT and
+        each ticket's CONTENT byte-for-byte-meaningful (title/body/state),
+        not just its id set -- a wholesale-replace primitive that silently
+        truncated or corrupted a body while preserving the id count would
+        pass every other test in this class undetected."""
+        from frob.tickets._store import write_archive
+
+        v2_ticket_dir(tmp_path, "T-0900").mkdir(parents=True)
+        (v2_ticket_dir(tmp_path, "T-0900") / "ticket.md").write_text(
+            _serialize_ticket(_ticket("T-0900"))
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        many = {
+            f"T-{1000 + i}": _ticket(
+                f"T-{1000 + i}", title=f"Archived ticket number {i}"
+            ).model_copy(
+                update={
+                    "state": TicketState.DONE if i % 2 == 0 else TicketState.DROPPED,
+                    "body": f"## Description\nbody content unique to ticket {i}\n",
+                }
+            )
+            for i in range(40)
+        }
+
+        assert write_archive(tmp_path, many).is_ok
+
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        result = archived.danger_ok
+        assert len(result) == len(many)
+        assert result.keys() == many.keys()
+        for ticket_id, expected in many.items():
+            actual = result[ticket_id]
+            assert actual.title == expected.title
+            assert actual.body == expected.body
+            assert actual.state == expected.state
+
+    # frob:ticket T-1583
+
 class TestMigrateToLedger:
     def test_moves_legacy_files_into_ledger(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_store.py::migrate_to_ledger kind="unit"

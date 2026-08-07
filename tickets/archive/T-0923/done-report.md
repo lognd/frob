@@ -1,0 +1,8 @@
+## Done report
+
+Changed: src/frob/gates/__init__.py::_KNOWN_GATE_RULES (added PROTO004)
+Evidence: uv run pytest tests/test_gates.py -q (all pass); uv run frob
+check --ticket T-0923 --only scope --only coverage --only drift --only
+gates (0 errors, 884 warnings, 94 waived)
+Filed: none
+Gates: frob check --ticket T-0923 clean (0 errors)
