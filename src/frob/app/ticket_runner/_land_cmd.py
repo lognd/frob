@@ -2234,6 +2234,14 @@ def _apply_backpressure(root: Path, cfg: AppConfig, profile) -> None:  # noqa: A
     from frob.verify import ceilings_for_profile, block_until_watermark_advances
 
     ceilings = ceilings_for_profile(profile, root)
+    # T-1760: `cfg.ticket_id` is `str | None` on AppConfig, but backpressure
+    # keys its own logging and watermark bookkeeping on a real ticket id.
+    # A land without one has nothing to attribute the block to, so there is
+    # nothing meaningful to bound -- skip rather than pass a placeholder,
+    # which would make an unattributable block look like a real one.
+    if cfg.ticket_id is None:
+        _log.debug("ticket land: no ticket id, skipping the backpressure check")
+        return
     blocked = block_until_watermark_advances(root, ceilings, cfg.ticket_id)
     if blocked.is_err:
         _log.error(
