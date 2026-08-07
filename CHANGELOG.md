@@ -17,10 +17,6 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.366.0] - unreleased
-
-- T-1692: Backpressure: bound the unverified window by depth and age, and block the land at the ceiling
-
 ## [0.365.0] - unreleased
 
 - T-1733: Weakening a ticket's evidence is silent and free, while the honest escape hatch is logged and justified

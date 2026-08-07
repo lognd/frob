@@ -3473,6 +3473,20 @@ narrower than what `attribute_batch` itself already accepted, and a real
 (line-bearing) shape caught it. No behavior changed; the split is a pure
 extraction and the widened type is a correction, not a new capability.
 
+**T-1754 follow-up (the SAME ty finding, moved not fixed).** T-1753's
+own `list[...]` widening on `_attribute_new_findings`'s `pairs`
+parameter only moved the invalid-argument-type mismatch to the CALL
+SITE: `list` is INVARIANT in Python's type system, so
+`_partition_findings_by_attribution`'s own `pairs: list[tuple[str,
+str]]` was never actually assignable to `_attribute_new_findings`'s
+`list[tuple[str, str] | tuple[str, str, int]]` parameter, no matter how
+that parameter's own element-type union was phrased. The real defect was
+the CONTAINER type, not the element type: `pairs` is only ever iterated
+in `_attribute_new_findings` (never mutated), so the correct, sound type
+is a covariant `collections.abc.Sequence[tuple[str, str] | tuple[str,
+str, int]]` -- callers passing a `list[tuple[str, str]]` (every
+real caller in this module; no caller has ever produced a line-bearing
+3-tuple) are naturally accepted, exactly as they should be.
 ## Backpressure (T-1692)
 
 <!-- frob:describes src/frob/verify/_backpressure.py::BackpressureError -->

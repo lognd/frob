@@ -49,6 +49,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 from typani.error_set import ErrorSet
@@ -284,7 +285,7 @@ def spawn_deferred_post_land_sweep(
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_attributed_and_unattributed_round_trip  # noqa: E501
 def _attribute_new_findings(
-    root: Path, pairs: list[tuple[str, str] | tuple[str, str, int]]
+    root: Path, pairs: Sequence[tuple[str, str] | tuple[str, str, int]]
 ):  # noqa: ANN201 -- dict[tuple[str, str], Attribution], deferred-import type
     """T-1690 tier-2: attribute each `(rule, file)` (or, when a caller has
     a line number, `(rule, file, line)`) pair in `pairs` to the single
