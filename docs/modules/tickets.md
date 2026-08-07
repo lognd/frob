@@ -137,6 +137,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_component -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_tier -->
+<!-- frob:describes src/frob/tickets/_setters.py::set_runs_last -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_scope_breadth_ack -->
 <!-- frob:describes src/frob/tickets/_reporting.py::mutate_labels -->
 <!-- frob:describes src/frob/tickets/__init__.py::board_view -->
@@ -429,6 +430,14 @@ def set_tier(root: Path, ticket_id: str, tier: TicketTier) -> Result[Ticket, Tic
     # but no mutator for an existing ticket). Same single-writer,
     # ledger-locked pattern as set_priority/set_kind/set_component/
     # set_sprint. Does not re-validate or move `parent` links.
+def set_runs_last(root: Path, ticket_id: str, runs_last: bool) -> Result[Ticket, TicketError]
+    # T-1613: `frob ticket runs-last <id> <on|off>` -- flip the runs-last
+    # marker: while True, `doable`/`start` structurally refuse to surface
+    # or start this ticket while ANY OTHER non-runs-last ticket in the
+    # ledger is non-terminal (queued/planned/in-progress/blocked). Two or
+    # more runs-last tickets coexist and order among themselves via
+    # ordinary blocked_by. Same single-writer, ledger-locked pattern as
+    # set_priority/set_tier.
 def mutate_labels(root: Path, ticket_id: str, *, add: Sequence[str] = (),
                    remove: Sequence[str] = ()) -> Result[Ticket, TicketError]
     # T-0454: `frob ticket label <id> --add TAG... --remove TAG...` --
@@ -1266,6 +1275,66 @@ one area still uses `board` for that, not `doable`); and bulk
 component/label reassignment (each mutation is one ticket at a time via
 `set_component`/`mutate_labels`, matching every other single-ticket
 mutation command's granularity).
+
+## Runs-last marker (T-1613)
+
+frob could express "this ticket is blocked by that ticket" (a fixed,
+enumerable `blocked_by` edge set) but not "this ticket must be the last
+thing done in the repository" -- a dynamic constraint that has to hold
+against whatever tickets exist NOW, including ones filed after the
+runs-last ticket itself. The motivating case: an audit whose correctness
+depends on nothing else changing underneath it. Its `blocked_by` edges
+can only name tickets that existed when it was filed; anything filed
+afterward must ALSO precede it, and nothing enforced that -- the
+constraint survived only as prose in the ticket body, exactly the kind of
+tribal knowledge frob exists to replace with enforcement.
+
+**`Ticket.runs_last: bool`** (default `False`) is the marker.
+`frob ticket runs-last <id> <on|off>` (`set_runs_last`) flips it on an
+existing ticket; both directions are ordinary single-writer,
+ledger-locked mutations, same shape as `set_tier`.
+
+**Definition of "any other ticket open"**: every ticket in the ledger
+OTHER than the runs-last ticket itself, and OTHER than any fellow
+runs-last ticket, whose state is non-terminal (`queued`/`planned`/
+`in-progress`/`blocked` -- `_OPEN_STATES`, the same set `_open_blockers`/
+`_start_blockers` already use for `blocked_by`). This was a deliberate
+choice over "only in-progress with a live lease": a QUEUED ticket someone
+starts a minute later is the identical hazard, just deferred -- gating on
+in-progress alone would let a coordinator dispatch straight into the
+window the marker exists to close. Fellow runs-last tickets are excluded
+from the count so two or more can coexist and order among THEMSELVES via
+ordinary `blocked_by` edges, rather than deadlocking each other (each one
+would otherwise count the other as permanently "open").
+
+**Structural, not advisory** -- the failure mode a bare warning cannot
+close: nothing stops an agent from popping a runs-last ticket early if
+the constraint is only a nudge (the same failure `scope-ack`/TICK009
+already lives with, T-1484 -- reported repeatedly, acted on by hand).
+Two enforcement points close it instead:
+
+- **`doable`** (`frob.tickets._doable._doable_candidates`,
+  `_other_open_tickets`): a `runs_last=True` candidate never surfaces
+  while any other ticket is open, full stop -- not filtered by
+  `--show-blocked`-style demotion, simply absent from the list.
+- **`start`** (`frob.tickets._evidence._transition_guard`'s
+  `IN_PROGRESS` branch, `_runs_last_start_blockers`): the `queued/
+  planned -> in-progress` transition refuses with `TicketError.
+  RunsLastBlocked`, and the accompanying log line names every remaining
+  open ticket id, so the refusal is actionable rather than a bare error
+  code.
+
+**Filing while a runs-last ticket is running invalidates its
+precondition** -- this is the requirement that makes the marker real
+rather than cosmetic. The failure mode is not starting the runs-last
+ticket too early (the two enforcement points above already close that);
+it is FINISHING it and then having new work land that silently
+invalidates its conclusions. `frob.tickets._new_renumber.new_ticket`
+(`_warn_if_runs_last_ticket_in_progress`) logs a loud WARNING -- naming
+every runs-last ticket currently `IN_PROGRESS` -- whenever a fresh
+ORDINARY (non-runs-last) ticket is filed; this does not block filing
+(new work is still legitimate), it makes the invalidation visible instead
+of silent.
 
 ## `frob ticket brief` (T-0568)
 

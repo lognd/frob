@@ -93,6 +93,7 @@ from ._mutate import (
     _label,
     _priority,
     _resolve_scope_reason,
+    _runs_last,
     _scope,
     _scope_ack,
     _sprint,
@@ -249,6 +250,7 @@ __all__ = [
     "_run_pytest_directly",
     "_run_sweep",
     "_run_tests_count_fn",
+    "_runs_last",
     "_scope",
     "_scope_ack",
     "_scope_closure_warnings",
@@ -329,6 +331,8 @@ def _ticket_dispatch_table() -> dict:
         "sprint": _sprint,
         # frob:ticket T-1069
         "tier": _tier,
+        # frob:ticket T-1613
+        "runs-last": _runs_last,
         "archive": lambda root, cfg: _archive(
             root,
             force=cfg.ticket_force,

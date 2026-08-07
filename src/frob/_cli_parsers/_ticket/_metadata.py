@@ -299,6 +299,27 @@ def _add_ticket_tier_parser(ticket_sub):
     return ticket_tier_p
 
 
+# frob:ticket T-1613
+def _add_ticket_runs_last_parser(ticket_sub):
+    """Register `frob ticket runs-last <id> <on|off>` -- flip an
+    already-created ticket's runs-last marker (T-1613): while `on`, the
+    ticket stays structurally undoable (`doable` never surfaces it,
+    `start` refuses it) until every OTHER non-runs-last ticket in the
+    ledger has reached a terminal state. Same mutate-in-place shape as
+    `_add_ticket_tier_parser`'s T-1069 precedent."""
+    ticket_runs_last_p = ticket_sub.add_parser(
+        "runs-last", help="set an existing ticket's runs-last marker (T-1613)"
+    )
+    ticket_runs_last_p.add_argument("ticket_id", metavar="id")
+    ticket_runs_last_p.add_argument(
+        "ticket_runs_last_value",
+        metavar="on|off",
+        choices=["on", "off"],
+    )
+    _add_no_commit_flag(ticket_runs_last_p)
+    return ticket_runs_last_p
+
+
 # frob:ticket T-0715
 def _add_ticket_sprint_parser(ticket_sub):
     """Register `frob ticket sprint assign|show` (T-0715): `assign <id>

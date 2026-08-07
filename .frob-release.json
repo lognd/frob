@@ -1955,6 +1955,7 @@
     "src/frob/tickets/_setters.py::set_designated_repro_test": "0c575d312bcd58b5b817f75aa410a6430bb53eb690a81292751bb57bf7b9753b",
     "src/frob/tickets/_setters.py::set_kind": "8a4080d822675b2aba306037e1a3af1d01669fe4772c4ecb0077d7427781ebd0",
     "src/frob/tickets/_setters.py::set_priority": "c4c5efc225ac364f5c558302f3dffcb2ca395e77f1c280b69ebcee7bec1c73d5",
+    "src/frob/tickets/_setters.py::set_runs_last": "d1bdb57b49a3066e1d90eb544ddd217c202a7a60f5ca3b01a736f3643d5cea93",
     "src/frob/tickets/_setters.py::set_scope_breadth_ack": "588c7734e3a27dfe4ef19966c6b6cb630cb05ff1349b85ff8f758b19e0e52b50",
     "src/frob/tickets/_setters.py::set_sprint": "41fda4febf6418788633d360bbd4c790e140816430cdba242c6a290aba3e51cc",
     "src/frob/tickets/_setters.py::set_tier": "3010c3e63c31daa6be93c70198e92a8c4e52b42723e8ffe9e57530d94cbdef91",
@@ -2116,5 +2117,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.371.0"
+  "version": "0.372.0"
 }

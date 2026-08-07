@@ -1337,6 +1337,23 @@ class Ticket(BaseModel):
     # committed to; `None` means uncommitted/backlog. Settable at
     # creation or via `frob ticket sprint assign`.
     sprint: str | None = None
+    # frob:ticket T-1613
+    # runs-last marker (T-1613): when True, this ticket stays structurally
+    # UNDOABLE (`doable` never returns it, `start` refuses it) while ANY
+    # OTHER ticket in the ledger is non-terminal (state not in
+    # {done, dropped} -- `_OPEN_STATES`'s own definition, chosen over
+    # "only in-progress" because a queued ticket someone starts a minute
+    # later is the identical hazard, just deferred). Two or more runs-last
+    # tickets are allowed simultaneously and order among THEMSELVES via
+    # ordinary `blocked_by` edges -- the runs-last check only counts
+    # OTHER, non-runs-last tickets, so it never becomes a mutual deadlock
+    # between runs-last siblings. Distinct from `blocked_by` (a fixed,
+    # enumerable edge set fixed at filing time): runs-last is dynamic --
+    # it re-evaluates against whatever tickets exist NOW, including ones
+    # filed after this ticket was. `frob ticket new --runs-last` warns
+    # loudly if a runs-last ticket is currently IN_PROGRESS, since filing
+    # new ordinary work invalidates the precondition it started under.
+    runs_last: bool = False
     scope: tuple[str, ...] = ()
     # frob:ticket T-1484
     # honest acknowledged-broad escape hatch for TICK009 (WAVE14-B): when
@@ -1522,6 +1539,10 @@ class TicketSpec(BaseModel):
     tier: TicketTier = TicketTier.TICKET
     # frob:ticket T-0715
     sprint: str | None = None
+    # frob:ticket T-1613
+    # see `Ticket.runs_last` -- settable at filing time via
+    # `frob ticket new --runs-last`.
+    runs_last: bool = False
     # given/when/then acceptance criteria, each bound to evidence id(s)
     # (T-0572); see `Ticket.acceptance`
     acceptance: tuple[AcceptanceCriterion, ...] = ()
@@ -1627,6 +1648,8 @@ class TicketError(ErrorSet):
     MissingEvidence = "done requires evidence and a Done report"
     MalformedEvidence = "evidence entry failed schema validation"
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
+    # frob:ticket T-1613
+    RunsLastBlocked = "Cannot start: runs-last ticket while other tickets are open"
     WriteFailed = "Atomic ticket write failed"
     UnknownEvidence = "Evidence id does not resolve to a collected test"
     # T-0215: non-pytest evidence channel for docs-kind tickets

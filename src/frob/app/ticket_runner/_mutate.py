@@ -573,6 +573,28 @@ def _tier(root: Path, cfg: AppConfig) -> None:
     _log.info("%s: tier now %s", cfg.ticket_id, ticket.tier.value)
 
 
+# frob:ticket T-1613
+def _runs_last(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket runs-last <id> <on|off>`: the ONLY thing this command
+    does is forward to `frob.tickets.set_runs_last` -- no validation is
+    re-derived here (same pattern as `_tier`/T-1069). `on|off` is already
+    restricted by argparse `choices` (`_add_ticket_runs_last_parser`), so
+    the only local step is the literal `on` -> `True` mapping."""
+    from frob.tickets import set_runs_last
+
+    if cfg.ticket_id is None or cfg.ticket_runs_last_value is None:
+        _log.error("frob ticket runs-last requires <id> <on|off>")
+        sys.exit(1)
+
+    runs_last = cfg.ticket_runs_last_value == "on"
+    result = set_runs_last(root, cfg.ticket_id, runs_last)
+    if result.is_err:
+        _log.error("runs-last change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: runs-last now %s", cfg.ticket_id, ticket.runs_last)
+
+
 # frob:ticket T-0715
 def _sprint(root: Path, cfg: AppConfig) -> None:
     """Dispatch `frob ticket sprint assign|show` (T-0715) to its handler."""

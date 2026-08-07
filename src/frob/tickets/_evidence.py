@@ -148,6 +148,26 @@ def _start_blockers(ticket: Ticket, queue: dict[str, Ticket]) -> list[str]:
     ]
 
 
+# frob:ticket T-1613
+def _runs_last_start_blockers(
+    ticket: Ticket, queue: dict[str, Ticket]
+) -> tuple[str, ...]:
+    """`start`-time twin of `frob.tickets._doable._other_open_tickets`
+    (T-1613): ids of every OTHER, non-runs-last ticket in `queue` that is
+    still non-terminal -- what a `runs_last` ticket's `IN_PROGRESS`
+    transition refuses on, naming exactly what remains so the refusal
+    message is actionable rather than a bare error code."""
+    from frob.tickets import _OPEN_STATES
+
+    return tuple(
+        sorted(
+            t.id
+            for t in queue.values()
+            if t.id != ticket.id and not t.runs_last and t.state in _OPEN_STATES
+        )
+    )
+
+
 # frob:ticket T-0417
 # frob:ticket T-1384
 def _transition_guard(
@@ -171,6 +191,17 @@ def _transition_guard(
                 "tickets: %s cannot start, open blockers %s", ticket.id, open_ids
             )
             return Err(TicketError.BlockerOpen)
+        # frob:ticket T-1613
+        if ticket.runs_last:
+            remaining = _runs_last_start_blockers(ticket, queue)
+            if remaining:
+                _log.warning(
+                    "tickets: %s cannot start, runs-last while other "
+                    "ticket(s) still open: %s",
+                    ticket.id,
+                    remaining,
+                )
+                return Err(TicketError.RunsLastBlocked)
     if to == TicketState.DONE:
         return _done_transition_guard(
             root,

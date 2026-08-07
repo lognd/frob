@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.372.0] - unreleased
+
+- T-1613: frob cannot express runs-last: add a marker that stays undoable while any other ticket is open
+
 ## [0.371.0] - unreleased
 
 - T-1743: doable --show-blocked names the wrong ticket as lease holder, and an orphaned lease has no supported release path

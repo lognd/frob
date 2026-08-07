@@ -186,6 +186,27 @@ def set_tier(
     return _set_ticket_field(root, ticket_id, "tier", tier, log_value=tier.value)
 
 
+# frob:ticket T-1613
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_tickets_organization.py::TestRunsLast.test_set_runs_last_updates_field
+def set_runs_last(
+    root: Path, ticket_id: str, runs_last: bool
+) -> Result[Ticket, TicketError]:
+    """`frob ticket runs-last <id> <on|off>`: set `ticket_id`'s `runs_last`
+    marker (T-1613) -- the accountable, single-writer way to flag/unflag a
+    ticket that must stay structurally undoable while any other
+    non-runs-last ticket is open, same ledger-locked `_set_ticket_field`
+    pattern `set_priority`/`set_kind`/`set_tier` all share. The structural
+    enforcement itself (`doable` never surfacing it, `start` refusing it)
+    lives in `frob.tickets._doable`/`frob.tickets._evidence` and keys off
+    whatever `runs_last` a ticket currently carries -- this function only
+    flips the label."""
+    return _set_ticket_field(
+        root, ticket_id, "runs_last", runs_last, log_value=runs_last
+    )
+
+
 # frob:ticket T-1484
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields  # noqa: E501

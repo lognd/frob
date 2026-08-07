@@ -113,6 +113,8 @@ _STRING_FIELDS = (
     "ticket_tier",
     # frob:ticket T-1069
     "ticket_tier_value",
+    # frob:ticket T-1613
+    "ticket_runs_last_value",
     "ticket_sprint",
     "ticket_doable_sprint",
     "ticket_sprint_command",

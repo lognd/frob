@@ -111,6 +111,7 @@ def _next_ticket_id(existing: dict[str, Ticket]) -> str:
     return f"T-{max_num + 1:04d}"
 
 
+# frob:ticket T-1613
 def _ticket_from_spec(
     ticket_id: str, spec: TicketSpec, evidence: tuple[str, ...]
 ) -> Ticket:
@@ -136,6 +137,7 @@ def _ticket_from_spec(
         parent=spec.parent,
         tier=spec.tier,
         sprint=spec.sprint,
+        runs_last=spec.runs_last,
         scope=spec.scope,
         evidence=evidence,
         attachments=(),
@@ -147,9 +149,47 @@ def _ticket_from_spec(
     )
 
 
+# frob:ticket T-1613
+def _warn_if_runs_last_ticket_in_progress(root: Path) -> None:
+    """Log a WARNING naming every IN_PROGRESS `runs_last` ticket, if any,
+    when filing a fresh ordinary ticket (T-1613): the precondition a
+    runs-last ticket started under -- "nothing else is open" -- was true
+    the moment it started, but filing new work right now invalidates it
+    again, and nothing else in the queue graph would ever say so. Reads
+    the queue via `load_queue` (the active-ledger view `doable` itself
+    reads from); a load failure degrades to no warning rather than
+    blocking `frob ticket new` on a read-side problem unrelated to the
+    ticket being filed."""
+    from frob.tickets import TicketState
+    from frob.tickets._archive import load_queue
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.warning(
+            "tickets: could not check for an in-progress runs-last ticket "
+            "before filing (%s) -- proceeding without the T-1613 warning",
+            queue_result.danger_err,
+        )
+        return
+    running = sorted(
+        t.id
+        for t in queue_result.danger_ok.tickets.values()
+        if t.runs_last and t.state is TicketState.IN_PROGRESS
+    )
+    if running:
+        _log.warning(
+            "tickets: filing a new ticket while runs-last ticket(s) %s "
+            "are IN_PROGRESS -- the precondition they started under "
+            "(nothing else open) is now invalidated; review whether "
+            "their conclusions still hold",
+            running,
+        )
+
+
 # frob:ticket T-0102
 # frob:ticket T-0140
 # frob:ticket T-0398
+# frob:ticket T-1613
 # frob:doc docs/modules/tickets.md#public-api
 def new_ticket(
     root: Path,
@@ -182,8 +222,20 @@ def new_ticket(
     defined in `frob.tickets` proper (the evidence family) -- imported here
     from the PACKAGE rather than a submodule to avoid a load-time circular
     import (this module is imported BY `frob.tickets.__init__` itself).
+
+    T-1613: filing a fresh ordinary (non-runs-last) ticket while a
+    runs-last ticket is IN_PROGRESS logs a loud WARNING before the write
+    -- this is the requirement that makes runs-last real rather than
+    cosmetic: the failure mode is not starting the runs-last ticket too
+    early, it is finishing it and then having new work land that silently
+    invalidates its conclusions. Best-effort: a load failure here degrades
+    to no warning (never blocks filing), matching this module's existing
+    fail-open-on-read posture elsewhere.
     """
     from frob.tickets import _check_evidence_resolution, _validate_evidence_list
+
+    if not spec.runs_last:
+        _warn_if_runs_last_ticket_in_progress(root)
 
     leased = enforce_worktree_lease(root)
     if leased.is_err:

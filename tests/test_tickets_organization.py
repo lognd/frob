@@ -390,3 +390,187 @@ class TestForceOverrideAudit:
         with pytest.raises(SystemExit):
             _archive(tmp_path, force=True, no_commit=True)
         assert not (tmp_path / "force-overrides.jsonl").exists()
+
+
+# frob:ticket T-1613
+class TestRunsLast:
+    """`runs_last` (T-1613): a ticket marked runs-last stays structurally
+    undoable -- excluded from `doable`, refused by `start` -- while ANY
+    OTHER non-runs-last ticket in the ledger is non-terminal (queued/
+    planned/in-progress/blocked). Filing a fresh ordinary ticket while a
+    runs-last ticket is IN_PROGRESS warns loudly (does not block)."""
+
+    # frob:ticket T-1613
+    @staticmethod
+    def _init_repo(tmp_path: Path) -> None:
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True
+        )
+        subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
+
+    # frob:ticket T-1613
+    def test_set_runs_last_updates_field(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::set_runs_last kind="unit"
+        from frob.tickets import set_runs_last
+
+        self._init_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_runs_last(tmp_path, ticket_id, True)
+        assert result.is_ok
+        assert result.danger_ok.runs_last is True
+
+    # frob:ticket T-1613
+    def test_doable_excludes_runs_last_while_other_ticket_open(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_doable.py::_doable_candidates kind="unit"
+        from frob.tickets import doable, load_queue, set_runs_last
+
+        self._init_repo(tmp_path)
+        runs_last_spec = TicketSpec(
+            title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, runs_last_spec)
+        assert created.is_ok
+        runs_last_id = created.danger_ok.id
+        set_result = set_runs_last(tmp_path, runs_last_id, True)
+        assert set_result.is_ok
+
+        other_spec = TicketSpec(
+            title="ordinary work", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        other_created = new_ticket(tmp_path, other_spec)
+        assert other_created.is_ok
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        candidates = doable(queue.danger_ok, tmp_path, ignore_lease=True)
+        assert runs_last_id not in {t.id for t in candidates}
+
+    # frob:ticket T-1613
+    def test_doable_includes_runs_last_once_all_other_tickets_terminal(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_doable.py::_doable_candidates kind="unit"
+        from frob.tickets import doable, drop_ticket, load_queue, set_runs_last
+
+        self._init_repo(tmp_path)
+        runs_last_spec = TicketSpec(
+            title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, runs_last_spec)
+        assert created.is_ok
+        runs_last_id = created.danger_ok.id
+        set_result = set_runs_last(tmp_path, runs_last_id, True)
+        assert set_result.is_ok
+
+        other_spec = TicketSpec(
+            title="ordinary work", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        other_created = new_ticket(tmp_path, other_spec)
+        assert other_created.is_ok
+        other_id = other_created.danger_ok.id
+
+        dropped = drop_ticket(tmp_path, other_id, reason="test")
+        assert dropped.is_ok
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        candidates = doable(queue.danger_ok, tmp_path, ignore_lease=True)
+        assert runs_last_id in {t.id for t in candidates}
+
+    # frob:ticket T-1613
+    def test_start_refuses_runs_last_while_other_ticket_open(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_evidence.py::_transition_guard kind="unit"
+        from frob.tickets import TicketError, TicketState, set_runs_last, transition
+
+        self._init_repo(tmp_path)
+        runs_last_spec = TicketSpec(
+            title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, runs_last_spec)
+        assert created.is_ok
+        runs_last_id = created.danger_ok.id
+        set_result = set_runs_last(tmp_path, runs_last_id, True)
+        assert set_result.is_ok
+
+        other_spec = TicketSpec(
+            title="ordinary work", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        other_created = new_ticket(tmp_path, other_spec)
+        assert other_created.is_ok
+
+        planned = transition(tmp_path, runs_last_id, TicketState.PLANNED)
+        assert planned.is_ok
+        result = transition(tmp_path, runs_last_id, TicketState.IN_PROGRESS)
+        assert result.is_err
+        assert result.danger_err is TicketError.RunsLastBlocked
+
+    # frob:ticket T-1613
+    def test_multiple_runs_last_tickets_do_not_block_each_other(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_doable.py::_doable_candidates kind="unit"
+        from frob.tickets import doable, load_queue, set_runs_last
+
+        self._init_repo(tmp_path)
+        spec_a = TicketSpec(title="audit a", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created_a = new_ticket(tmp_path, spec_a)
+        assert created_a.is_ok
+        id_a = created_a.danger_ok.id
+        assert set_runs_last(tmp_path, id_a, True).is_ok
+
+        spec_b = TicketSpec(title="audit b", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created_b = new_ticket(tmp_path, spec_b)
+        assert created_b.is_ok
+        id_b = created_b.danger_ok.id
+        assert set_runs_last(tmp_path, id_b, True).is_ok
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        candidates = {t.id for t in doable(queue.danger_ok, tmp_path, ignore_lease=True)}
+        assert id_a in candidates
+        assert id_b in candidates
+
+    # frob:ticket T-1613
+    def test_filing_new_ticket_while_runs_last_in_progress_warns(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::new_ticket kind="unit"
+        import logging
+
+        from frob.tickets import TicketState, set_runs_last, transition
+
+        self._init_repo(tmp_path)
+        runs_last_spec = TicketSpec(
+            title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, runs_last_spec)
+        assert created.is_ok
+        runs_last_id = created.danger_ok.id
+        assert set_runs_last(tmp_path, runs_last_id, True).is_ok
+        planned = transition(tmp_path, runs_last_id, TicketState.PLANNED)
+        assert planned.is_ok
+        started = transition(tmp_path, runs_last_id, TicketState.IN_PROGRESS)
+        assert started.is_ok
+
+        caplog.set_level(logging.WARNING)
+        other_spec = TicketSpec(
+            title="new work", kind=TicketKind.BUG, origin=Origin.HUMAN
+        )
+        other_created = new_ticket(tmp_path, other_spec)
+        assert other_created.is_ok
+        assert any(
+            runs_last_id in record.getMessage() and "IN_PROGRESS" in record.getMessage()
+            for record in caplog.records
+        )

@@ -464,6 +464,14 @@ class AppConfig(BaseModel):
     # shape as `ticket_priority_level`'s T-0411 precedent (`ticket_tier`
     # above is already taken by `frob ticket new --tier`).
     ticket_tier_value: str | None = None
+    # frob:ticket T-1613
+    # `frob ticket runs-last <id> <on|off>` -- the new runs-last marker
+    # value, same shape as `ticket_tier_value`'s T-1069 precedent.
+    # argparse's own `choices=["on", "off"]` (see `_add_ticket_runs_last_
+    # parser`) already restricts this at parse time, so no separate
+    # enum-choice field validator is needed here the way `ticket_tier_value`
+    # has one.
+    ticket_runs_last_value: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
     # frob:ticket T-1670

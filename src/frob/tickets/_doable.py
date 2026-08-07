@@ -45,22 +45,55 @@ from frob.tickets._models import (
 _log = get_logger(__name__)
 
 
+# frob:ticket T-1613
+def _other_open_tickets(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
+    """Ids of every ticket in `queue` OTHER than `ticket` itself, and OTHER
+    than any fellow runs-last ticket, whose state is non-terminal (T-1613,
+    same `_OPEN_STATES` set `_open_blockers`/`_start_blockers` already use).
+
+    This is the "any other ticket open" test a runs-last marker gates on --
+    fellow runs-last tickets are excluded from the count so two or more
+    runs-last tickets can coexist and order among THEMSELVES via ordinary
+    `blocked_by` edges instead of deadlocking each other (a runs-last
+    ticket counting another runs-last ticket as "open" would mean neither
+    could ever start while the other existed, unrelated to `blocked_by`
+    entirely)."""
+    from frob.tickets import _OPEN_STATES
+
+    return tuple(
+        sorted(
+            t.id
+            for t in queue.tickets.values()
+            if t.id != ticket.id
+            and not t.runs_last
+            and t.state in _OPEN_STATES
+        )
+    )
+
+
 # frob:invariant INV-032
 # frob:tests tests/test_tickets.py::TestDoable.test_blocked_excluded
 # frob:ticket T-0715
+# frob:ticket T-1613
 # invariant spec: [INV-032](invariants/INV-032.md)
 def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
     """Queued/planned LEAF tickets (tier=TICKET) that currently have no open
     blockers, unordered. T-0715: an EPIC/STORY never surfaces here even if
     it has no `blocked_by` of its own -- only a leaf ticket is ever
     dispatchable work; an epic/story is pure organization, not a unit an
-    agent starts directly."""
+    agent starts directly.
+
+    T-1613: a `runs_last` ticket additionally never surfaces here while
+    `_other_open_tickets` is non-empty -- it stays structurally undoable,
+    not merely warned-about, until every OTHER non-runs-last ticket in the
+    ledger has reached a terminal state (done/dropped)."""
     return [
         t
         for t in queue.tickets.values()
         if t.state in (TicketState.QUEUED, TicketState.PLANNED)
         and t.tier is TicketTier.TICKET
         and not _open_blockers(queue, t)
+        and (not t.runs_last or not _other_open_tickets(queue, t))
     ]
 
 
