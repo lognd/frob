@@ -740,6 +740,51 @@ uses table `nvd_cache` and a 7d TTL; `_registry.py` still uses table
 <!-- frob:describes src/frob/vet/_capability_scan.py::_scan_directory_capabilities -->
 <!-- frob:describes src/frob/vet/_capability_scan.py::_scan_directory_fingerprints -->
 <!-- frob:describes src/frob/vet/_capability.py::non_executable_line_numbers -->
+<!-- frob:describes frob-core/src/capability_python.rs::scan_python_capabilities -->
+
+T-1221 (rust capability-scan resolver, extraction only -- rule evaluation
+against `_capability_registry.DANGEROUS_OPERATIONS` stays entirely in
+Python, same design line as T-1222's arch walk): `frob_core.
+scan_python_capabilities(source: bytes) -> (candidates, unresolved,
+spans)` computes the same import-table / position-aware scope-shadowing /
+scope-local alias-copy-propagation resolution `_capability_python.
+_python_resolved_candidates` performs today, natively via `tree-sitter`,
+covering the `functools.partial(dangerous, ...)` (T-1626) and literal-
+keyed dict/list container-alias (T-1626) evasions explicitly. No consumer
+is rewired to this kernel yet (T-1219's job) -- needle matching against
+the registry stays a Python-side concern regardless of which resolver
+produced the candidate.
+
+`candidates` is `(resolved_dotted_target, start_byte, end_byte)`, golden-
+tested byte-identical against `_python_resolved_candidates` across this
+repo's own `_capability_python.py` plus synthetic fixtures (0 mismatches,
+`tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity`).
+`spans` is comment+docstring byte spans, matching `_non_executable_byte_
+spans`'s bisect-over-byte-offsets contract exactly (a BYTE-span sibling of
+`extract_tree_python`'s LINE-span `comment_spans`/`docstring_spans`,
+computed by a new `frob-core/src/extract.rs::python_non_executable_byte_
+spans` helper that shares the T-1220 kernel's own parse/leaf-walk/
+docstring-query rather than duplicating it).
+
+`unresolved` has no Python-side counterpart: `(start_byte, end_byte)` for
+every call site this resolver can SEE is a dynamic-dispatch shape (a
+subscript keyed by a non-literal expression, `handlers[computed](x)`) but
+cannot identify the callee for -- an explicit, loud "cannot resolve"
+outcome per this ticket's own stated priority (a missed capability is a
+security claim the design makes and the code silently violates; treating
+"cannot resolve" as "no capability" would be exactly that violation). This
+widens the ticket's own `(candidates, spans)` acceptance-criterion floor
+to a third collection, disclosed and intentional, not a scope departure.
+
+Three disclosed, narrow deviations from `_python_resolved_candidates`
+(all reduce recall in a specific, named, non-silent way -- see
+`frob-core/src/capability_python.rs`'s module docstring for the full
+reasoning): no dangerous-priority import tie-break (T-0659, needs the
+needle registry, which this extraction-only kernel deliberately does not
+consume), no `from X import *` wildcard registry fallback (T-0659, same
+reason), and no tuple/list destructuring alias (T-0659, implementable
+without the registry but lower-value than the two evasions this ticket's
+own dispatch named explicitly -- left as documented future work).
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
 <!-- frob:describes src/frob/vet/_lifecycle.py::_scan_lifecycle_scripts -->
 <!-- frob:describes src/frob/vet/_obfuscation.py::_high_entropy_strings -->

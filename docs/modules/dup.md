@@ -387,6 +387,11 @@ own python/cpp/rust/typescript acceptance criterion is fully delivered
 (kotlin stays on the existing Python path by design); only the consumer
 rewiring (T-1219) remains.
 
+T-1221 added a twentieth export, `scan_python_capabilities` -- the rust
+capability-scan resolver, unrelated to clone detection or the call graph
+(same registration function, same `frob_core` pymodule); see
+docs/modules/vet.md#public-api.
+
 T-0930 added five more kernels to this SAME crate/pymodule for
 `frob.graph.callgraph` (not `frob.dup`) -- `resolve_call_edges`,
 `called_names`, `ordered_called_names`, `referenced_names`, and

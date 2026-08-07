@@ -192,6 +192,65 @@ fn extract_python_source(source: &[u8]) -> PythonExtraction {
     }
 }
 
+/// Byte-range `(start, end)` spans for python comment + docstring nodes
+/// (T-1221): the BYTE-offset sibling of `extract_python_source`'s
+/// LINE-based `comment_spans`/`docstring_spans` above -- matches
+/// `frob.vet._capability_core._non_executable_byte_spans`'s contract
+/// exactly (it bisects over byte offsets, never line numbers). Shares the
+/// same parse, leaf walk, and docstring query `extract_python_source`
+/// already performs rather than duplicating that machinery a second time
+/// (charter: no duplication) -- only the span SHAPE differs (raw byte
+/// offsets, not `span_of`'s 1-based inclusive line fold). `pub(crate)`:
+/// consumed by `capability_python.rs`'s `scan_python_capabilities`
+/// (T-1221), not part of this crate's PyO3-exported surface itself.
+// frob:doc docs/modules/vet.md#public-api
+// frob:tests \
+// tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity.test_import_a\
+// lias_and_scope_shadowing kind="unit"
+// frob:tests \
+// tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity.test_this_rep\
+// os_own_capability_python_module_matches kind="unit"
+// frob:ticket T-1221
+pub(crate) fn python_non_executable_byte_spans(source: &[u8]) -> Vec<(usize, usize)> {
+    let mut parser = Parser::new();
+    let language = tree_sitter_python::LANGUAGE.into();
+    if parser.set_language(&language).is_err() {
+        return Vec::new();
+    }
+    let Some(tree) = parser.parse(source, None) else {
+        return Vec::new();
+    };
+    let root = tree.root_node();
+
+    let mut leaves: Vec<Node> = Vec::new();
+    walk_leaves(root, &mut leaves);
+    let mut spans: Vec<(usize, usize)> = leaves
+        .iter()
+        .filter(|leaf| leaf.kind() == "comment")
+        .map(|leaf| (leaf.start_byte(), leaf.end_byte()))
+        .collect();
+
+    if let Ok(query) = Query::new(&language, PY_DOCSTRING_QUERY_SRC) {
+        let mut cursor = QueryCursor::new();
+        let mut matches = cursor.matches(&query, root, source);
+        while let Some(m) = matches.next() {
+            for cap in m.captures {
+                let parent_kind = cap.node.parent().map(|p| p.kind());
+                let is_real = match parent_kind {
+                    None => true,
+                    Some(k) => is_real_docstring_parent(k),
+                };
+                if is_real {
+                    spans.push((cap.node.start_byte(), cap.node.end_byte()));
+                }
+            }
+        }
+    }
+    spans.sort_unstable();
+    spans.dedup();
+    spans
+}
+
 /// FFI entry point (T-1220): python-only tree-extraction kernel. `source`
 /// is the raw file bytes; returns `(comment_spans, docstring_spans,
 /// identifiers, tokens)` where spans are 1-based inclusive

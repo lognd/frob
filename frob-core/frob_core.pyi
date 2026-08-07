@@ -108,3 +108,26 @@ def extract_tree_typescript(
     list[tuple[str, int]],
     list[str],
 ]: ...
+
+# T-1221: rust capability-scan resolver for python source -- see
+# docs/modules/vet.md#public-api. Returns (candidates, unresolved, spans):
+# candidates is (resolved_dotted_target, start_byte, end_byte) for every
+# call/attribute/subscript site this resolver could identify (mirrors
+# frob.vet._capability_python._python_resolved_candidates, minus three
+# disclosed registry-dependent deviations -- see
+# frob-core/src/capability_python.rs's module docstring); unresolved is
+# (start_byte, end_byte) for every call site that is a dynamic-dispatch
+# shape (a subscript keyed by a non-literal expression) this resolver can
+# SEE but cannot identify the callee for -- a loud, explicit "cannot
+# resolve" outcome, never silently folded into "no capability"; spans is
+# comment+docstring byte spans, matching
+# frob.vet._capability_core._non_executable_byte_spans's contract. Never
+# raises (a buffer tree-sitter cannot parse, or one that is not python,
+# yields three empty lists rather than a PyErr).
+def scan_python_capabilities(
+    source: bytes,
+) -> tuple[
+    list[tuple[str, int, int]],
+    list[tuple[int, int]],
+    list[tuple[int, int]],
+]: ...

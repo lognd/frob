@@ -11,7 +11,9 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
+mod capability_python;
 mod extract;
+use capability_python::scan_python_capabilities;
 use extract::{extract_tree_cpp, extract_tree_python, extract_tree_rust, extract_tree_typescript};
 
 /// Deterministic 64-bit hash of one token (std `DefaultHasher` is
@@ -2259,6 +2261,7 @@ mod tests {
     }
 }
 
+// frob:ticket T-1221
 #[pymodule]
 fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
@@ -2281,6 +2284,8 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(extract_tree_rust, m)?)?;
     m.add_function(wrap_pyfunction!(extract_tree_cpp, m)?)?;
     m.add_function(wrap_pyfunction!(extract_tree_typescript, m)?)?;
+    // T-1221: capability-scan resolver -- see docs/modules/vet.md#public-api.
+    m.add_function(wrap_pyfunction!(scan_python_capabilities, m)?)?;
     Ok(())
 }
 

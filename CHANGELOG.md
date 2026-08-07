@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.374.0] - unreleased
+
+- T-1221: rust: capability-scan resolver in frob_core -- import table + alias propagation + candidate resolution
+
 ## [0.373.0] - unreleased
 
 - T-1768: frob release stamp --allow-unbumped silently rebaselines the REL001 manifest with no reason and no audit record
