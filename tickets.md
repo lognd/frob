@@ -12151,7 +12151,7 @@ REGRESSION COVERAGE (shape, not count, per the ticket's own instruction):
 id: T-1704
 title: 'Ledger-mutating ticket verbs auto-commit inconsistently: block/scope/priority
   leave root dirty and DirtyMain-block every agent'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-06'
@@ -12220,6 +12220,8 @@ Related: T-1699 (DirtyMain misreads coordinator-owned dirt as a crashed
 land) is the diagnosis half of the same incident class; this ticket is
 the prevention half.
 
+## Drop reason
+- 2026-08-06: duplicate of T-1615, filed 2026-08-05 from the same incident (two frob ticket block edges leaving tickets.md dirty, next land refused with DirtyMain). T-1615 is the stronger spec: it requires an audit table across every ledger-writing verb as the deliverable, not just the block fix, plus a parameterized test over the verb list. Filed T-1704 without grepping the queue first -- the exact check I had just instructed the agents to perform (absorbed by T-1615)
 <!-- ticket:T-1705 -->
 ```yaml
 id: T-1705
