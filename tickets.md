@@ -7837,6 +7837,24 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'SECOND CONFIRMED INSTANCE (T-1487, 2026-08-07): the ticket sat queued and
+    72h past its dispatch threshold while its work was ALREADY DELIVERED on main under
+    T-1220. Worse, its ledger entry carried a PRE-FILLED Done report (evidence, diffstat,
+    captured claims) despite state=queued -- drafted as a template when T-1220 was
+    split, never run through start/land. Given: a ticket whose state is queued; when
+    it carries a Done report; then that incoherence is itself detectable and must
+    be reported, independently of whether the code landed.'
+  evidence: []
+- text: 'FIRST CONFIRMED INSTANCE (T-1587, 2026-08-07): production fix committed directly
+    to main on 2026-08-05 OUTSIDE the ticket workflow, so the ledger claimed critical
+    work was pending for two days. Both instances cost an agent real budget verifying
+    already-finished work.'
+  evidence: []
+- text: T-1675 already landed already-landed detection but it is OPT-IN, so nobody
+    runs it. The check must run at DISPATCH time by default -- catching this after
+    an agent has spent its budget verifying is too late to be worth much.
+  evidence: []
 threat: null
 component: null
 ```
@@ -7873,7 +7891,6 @@ pass -- the false-positive shape here (a ticket's scope legitimately
 overlaps a LATER ticket's `frob:ticket` directive, or a draft residue
 citation) needs the same "positive signal, not absence" discipline
 T-1675 established, not a second inference-from-emptiness check.
-
 <!-- ticket:T-1745 -->
 ```yaml
 id: T-1745
