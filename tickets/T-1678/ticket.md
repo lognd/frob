@@ -1,7 +1,7 @@
 ---
 id: T-1678
 title: 'BUG002 compares a main-landed fix against itself: base_ref defaults to main'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -9,8 +9,42 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/gates/_mutation_evidence.py
+- tests/test_gates_mutation_evidence.py
+- tickets/T-1678/ticket.md
+- tickets/T-1678/done-report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: BUG002 vacuous-comparison fix lives entirely in _mutation_evidence.py; regression
+    coverage in its paired test file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: BUG002 vacuous-comparison fix lives entirely in _mutation_evidence.py; regression
+    coverage in its paired test file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1678/ticket.md
+  reason: SCOPE001 flags the ticket's own v2 per-ticket ledger file as out of scope;
+    tickets.md is implicitly in-scope for every ticket per playbook sec 4, this is
+    its v2-layout equivalent
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1678/done-report.md
+  reason: v2 ledger layout splits the Done report into its own per-ticket file; implicitly
+    in-scope like tickets/T-1678/ticket.md
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_gates_mutation_evidence.py::TestBugReproAtRef::test_same_as_head_is_vacuous
+- tests/test_gates_mutation_evidence.py::TestBugRepro::test_fix_committed_direct_to_main_is_unresolved_not_refused
 designated_repro_test: null
 threat: null
 component: null
