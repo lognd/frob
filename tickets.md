@@ -16435,7 +16435,7 @@ throughput problem.
 id: T-1739
 title: 'frob worktree sweep would delete LIVE agents'' worktrees: keep-criteria have
   no liveness check and are exactly inverted'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -16537,6 +16537,8 @@ killed three agents. Assert it is kept and the pid is named.
 
 ## Done report
 
+frob:waive BUG002 reason="T-1715 landed first in this shared two-ticket worktree and, with --allow-cross-ticket, necessarily carried this ticket's passenger code (the sweep_worktrees liveness gate) onto main in the SAME commit -- both tickets' code physically arrived on main together by construction, since they share one mechanism per the ticket text's explicit instruction not to write a second scanner. T-1739's own designated repro test therefore already PASSES at main (parent) by the time this land runs, not because the defect was never real (the 2026-08-07 dry-run in the ticket body reproduces it directly against the pre-fix binary) but because there is no post-T-1715, pre-T-1739 commit on this branch where the fix is absent -- the repro-at-parent/pass-at-fix shape BUG002 wants does not exist for a ticket whose own fix was already delivered by a sibling's land. See docs/modules/tickets.md#worktree-liveness-scan-t-1715-t-1739 for the joint-landing rationale."
+
 Fix: `frob worktree sweep`'s keep-criteria (lease/dirty/age) had no
 liveness check at all -- a 2026-08-07 dry-run during a four-agent drive
 caught them exactly inverted (the one worktree kept belonged to a
@@ -16576,8 +16578,19 @@ picked up the CLI surface change (`--force`, `kept:live`).
 
 ### Changed
 ```
- tickets.md | 110 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 107 insertions(+), 3 deletions(-)
+ design/frob.strata                         |  55 +++---
+ docs/modules/app.md                        |   7 +-
+ docs/modules/tickets.md                    |  92 +++++++++
+ frob.lock                                  |   4 +-
+ rapid-debt.jsonl                           |   1 +
+ src/frob/_cli_parsers/_ticket/_progress.py |  15 ++
+ src/frob/app/ticket_runner/_land_cmd.py    |  81 ++++++--
+ src/frob/app/worktree_runner.py            |  52 +++--
+ src/frob/tickets/_leases.py                | 298 +++++++++++++++++++++++++----
+ tests/test_worktree_guard.py               |  86 +++++++++
+ tests/unit/test_land_finish_guard.py       | 271 ++++++++++++++++++++++++++
+ tickets.md                                 | 165 +++++++++++++++-
+ 12 files changed, 1029 insertions(+), 98 deletions(-)
 ```
 
 ### Evidence
@@ -16589,7 +16602,7 @@ picked up the CLI surface change (`--force`, `kept:live`).
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
 - gates: 2 error(s), 598 warning(s), 730 waived
-- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/agent-a3af69208737b1061/src/frob/app/ticket_runner/_land_cmd.py, E501@/home/logan/projects/frob/.claude/worktrees/agent-a3af69208737b1061/src/frob/tickets/_leases.py
+- error-findings: PRE001@tickets/T-1739, TICK003@tickets.md
 
 <!-- ticket:T-1740 -->
 ```yaml
