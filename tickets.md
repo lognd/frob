@@ -12887,3 +12887,73 @@ and confirm the count returns to the 3 known pre-existing errors (the
 `ty` unresolved-attribute in test_ticket_work_and_land_finish.py, ARCH001
 in _evidence.py, DOC009 on the 2026-08-06 audit file -- all tracked by
 T-1685). A `--ticket`-scoped zero does not close this ticket.
+
+<!-- ticket:T-1715 -->
+```yaml
+id: T-1715
+title: frob ticket land --finish deletes the calling agent's own worktree cwd, stranding
+  it with no recovery
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-06'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/tickets/_leases.py
+- tests/unit/test_land_finish_guard.py
+- docs/modules/tickets.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+```
+`frob ticket land --finish` removed the worktree that the calling agent
+was still using as its process working directory, stranding it: every
+subsequent tool call failed with "the isolation worktree appears to have
+been removed", and the agent could not create a replacement (worktree
+creation is reserved to whatever spawned it). It had to be abandoned and
+re-dispatched, losing its accumulated context.
+
+Observed 2026-08-06 landing T-1683. The land itself was correct and
+`LAND-PROOF` verified; `--finish` then did exactly what its contract says
+and removed the finished worktree. Nothing malfunctioned. The hazard is
+that the command has no idea the directory it is deleting is a live
+process's cwd.
+
+This is a footgun specifically because the agent was following
+instructions: dispatch briefs tell agents to run `frob ticket land` FROM
+THE ROOT CHECKOUT targeting `--worktree <their own>`. So the natural,
+documented invocation is the one that deletes the caller's own sandbox
+out from under it.
+
+Fix: refuse `--finish` when the target worktree is in use, and say why.
+
+The detection machinery already exists -- do not write a second copy.
+`frob.tickets._leases` has `_proc_cwd` and `_scan_for_live_land_process`
+from T-1619's belt-and-braces process scan, which already answers "is
+some live process sitting in this directory". Reuse it:
+
+- If any live process has the target worktree as its cwd, refuse with a
+  message naming the pid and the fact that removal would strand it, and
+  point at landing WITHOUT `--finish` plus a later `frob worktree sweep`.
+- If the worktree holds an active lease, same refusal.
+- `--force` may override, since a genuinely orphaned worktree whose
+  holder died still needs removing, and the process scan cannot always
+  prove a pid is dead.
+
+Related but separate, and worth doing in the same pass because it is the
+same "the tool assumed something about who is calling it" family: the
+refusal message should also work when the caller IS the stranded process
+-- i.e. deleting your own cwd -- since that is the common case here.
+
+Regression coverage: a worktree with a live process cwd'd into it is
+refused by `--finish`; the same worktree with no live process is removed;
+`--force` removes it either way. Assert the refusal names the pid --
+"could not finish" without naming what is holding it repeats the
+DirtyMain lesson (T-1698/T-1699) where an error that did not name its own
+cause cost three agents their budgets.
