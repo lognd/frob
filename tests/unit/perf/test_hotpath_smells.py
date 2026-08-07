@@ -16,9 +16,8 @@ from frob.lang import parse_file
 from frob.perf import hotpath_smell_violations, perf_rules
 
 
-# frob:waive WIRE001 reason="test-fixture builder for this module's own tests -- \
-# WIRE001's reachability scan skips test paths by design, same precedent as \
-# tests/test_tickets_migration.py's _git_init (T-1490)" follow_up="T-1558"
+# frob:waive WIRE001 reason="test-fixture builder for this module's own tests -- no \
+# production caller to wire it to by design" permanent="true"
 def _parsed(root: Path, name: str, src: str):
     path = root / name
     path.write_text(src, encoding="utf-8")

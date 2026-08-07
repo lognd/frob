@@ -21,12 +21,9 @@ from frob.perf import _serial_pools
 from frob.perf._serial_pools import SerialExecutor, install_serial_pools
 
 
-# frob:waive WIRE001 reason="autouse pytest fixture for this module's own tests -- \
-# WIRE001's reachability scan skips test paths by design \
-# (conftest.py::_install_stackdump_handler's WIRE001/T-1466 precedent, \
-# tests/test_tickets_migration.py's _git_init/_done_ticket T-1490 precedent), so any \
-# helper reached only from within its own test file (autouse fixtures doubly so, since \
-# nothing calls them by name at all) always reads as unwired" follow_up="T-1558"
+# frob:waive WIRE001 reason="autouse pytest fixture for this module's own tests -- no \
+# production caller to wire it to by design (autouse fixtures doubly so, since nothing \
+# ever calls them by name at all)" permanent="true"
 @pytest.fixture(autouse=True)
 def _restore_pool_executors():
     """`install_serial_pools()` mutates `concurrent.futures` globally and
@@ -44,9 +41,8 @@ def _restore_pool_executors():
 
 # frob:waive WIRE001 reason="test-fixture builder for this module's own tests (called \
 # by both TestInstallSerialPoolsGatesImportError and \
-# TestInstallSerialPoolsGatesUnexpectedException below, same file) -- WIRE001's \
-# reachability scan skips test paths by design, same precedent as \
-# tests/test_tickets_migration.py's _git_init" follow_up="T-1558"
+# TestInstallSerialPoolsGatesUnexpectedException below, same file) -- no production \
+# caller to wire it to by design" permanent="true"
 def _blocking_import(name: str, raise_exc: type[BaseException]):
     """A `builtins.__import__` stand-in that raises `raise_exc` only for
     `frob.gates` (and its submodules), delegating every other import to the

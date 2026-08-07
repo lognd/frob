@@ -40,9 +40,7 @@ _T1395_NAMED_MODULES = (
 # file's own two test methods below (test_t1395_named_modules_are_ \
 # nonzero_in_committed_lock, test_no_module_reads_exactly_zero_in_committed_lock) -- \
 # there is no production caller to wire it to by design, it exists solely to read the \
-# committed frob-coverage.lock.json for a regression lock, mirroring the \
-# tests/unit/test_conftest_stackdump.py::_load_conftest precedent (T-1466)" \
-# follow_up="T-1558"
+# committed frob-coverage.lock.json for a regression lock" permanent="true"
 def _load_committed_lock() -> dict[str, float]:
     """`module_line` mapping from the committed `frob-coverage.lock.json`.
 

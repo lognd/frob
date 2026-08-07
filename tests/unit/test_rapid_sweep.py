@@ -165,13 +165,17 @@ def _git(repo: Path, *args: str) -> str:
     ).stdout
 
 
-# frob:waive WIRE001 reason="a module-local test helper called only by this file's own tests is what a test helper IS -- WIRE001 asks for a non-test caller, which by construction cannot exist; this is the exact false-positive class T-1558 is open to fix at the gate, and widening the gate from inside an unrelated ticket would land that fix without its own regression coverage" follow_up="T-1558"
+# frob:waive WIRE001 reason="a module-local test helper called only by this file's own \
+# tests -- no production caller to wire it to by design" permanent="true"
 def _seed_repo(tmp_path: Path) -> Path:
     """A real one-commit git repo -- `_commit_rapid_debt`'s whole contract
     is about git state, so a fake would prove nothing. A plain helper
     called explicitly, not a pytest fixture: fixture wiring is by NAME
-    INJECTION, which WIRE001's reachability scan cannot see (T-1558's
-    class), and this ticket is not the place to widen that gate."""
+    INJECTION, which WIRE001's reachability scan cannot see. Only called
+    from within this same file (T-1558's gate fix recognizes cross-test-
+    file calls as wired now, but same-file usage stays genuinely unwired
+    by design, matching T-1592's precedent) -- `permanent="true"`, not a
+    follow_up, since there is no accountable future work left to bind."""
     _git(tmp_path, "init", "-q")
     _git(tmp_path, "config", "user.email", "test@example.com")
     _git(tmp_path, "config", "user.name", "test")

@@ -2792,6 +2792,69 @@ class TestWireGate:
         assert "own_obligations_clean" in v.message
         assert v.severity == Severity.ERROR
 
+    # frob:ticket T-1558
+    def test_shared_test_fixture_called_from_a_sibling_test_file_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """A helper DEFINED under `tests/` that is only ever called from a
+        DIFFERENT test file (never from production code) is genuinely
+        wired -- WIRE001's reachability scan must count a cross-test-file
+        caller, not just skip every test path the way it treats production
+        symbols (the live T-1558 class:
+        `tests/_cache_transparency.py::git_init`, called only from
+        `tests/test_cache_transparency.py`)."""
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "tests/_shared_helper.py",
+            "def git_init(root) -> None:\n    return None\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_uses_helper.py",
+            "from tests._shared_helper import git_init\n\n"
+            "def test_it(tmp_path) -> None:\n    git_init(tmp_path)\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "git_init" in r.symref)
+        diff = Diff(
+            base="x", hunks=(Hunk(file="tests/_shared_helper.py", span=record.span),)
+        )
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(v.rule == "WIRE001" for v in violations)
+
+    # frob:ticket T-1558
+    def test_test_helper_called_only_from_its_own_defining_file_is_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """T-1558's cross-test-file recognition must NOT swallow the
+        genuinely-unwired case: a helper only ever called from its OWN
+        defining file (no other test file, no production code) still
+        trips WIRE001 -- same-file usage never counts as "reached",
+        matching T-1592's permanent-waiver precedent for exactly this
+        shape."""
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "tests/test_only_self.py",
+            "def _make_thing() -> bool:\n    return True\n\n"
+            "def test_it() -> None:\n    assert _make_thing()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "_make_thing" in r.symref)
+        diff = Diff(
+            base="x", hunks=(Hunk(file="tests/test_only_self.py", span=record.span),)
+        )
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE001")
+        assert v is not None
+
     # frob:ticket T-1428
     def test_new_function_called_from_non_test_code_is_not_flagged(
         self, tmp_path: Path

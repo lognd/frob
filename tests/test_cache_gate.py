@@ -32,10 +32,7 @@ def _write(root: Path, rel: str, text: str) -> Path:
 
 # frob:ticket T-1520
 # frob:waive WIRE001 reason="private test-fixture helper used only by this file's own \
-# tests -- WIRE001's reachability scan skips test paths by design \
-# (conftest.py::_install_stackdump_handler's WIRE001/T-1466 precedent, \
-# tests/test_tickets_migration.py's _git_init precedent), so any helper reached only \
-# from within its own test file always reads as unwired" follow_up="T-1558"
+# tests -- no production caller to wire it to by design" permanent="true"
 # frob:waive DUP001 reason="the git-init/commit/write trio is the established \
 # real-git-fixture idiom this test module family repeats (tests/test_gates.py, \
 # tests/test_ticket_land.py, tests/test_ticket_work_and_land_finish.py and siblings \

@@ -2647,7 +2647,7 @@ Filed by T-1271's Done report (2026-08-04) per the epic-closure
 id: T-1558
 title: 'WIRE001 module-local test-helper false-positive class: teach the gate or wire
   the helpers (T-1490/T-1488 successor, waiver home)'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-05'
@@ -2655,18 +2655,162 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- src/frob/gates/_wire.py
+- tests/test_cache_transparency.py
+- tests/test_cache_gate.py
+- tests/test_ticket_land.py
+- tests/unit/test_coverage_attribution_lock_t1395.py
+- tests/test_tickets_migration.py
+- tests/_cache_transparency.py
+- tests/unit/perf/test_hotpath_smells.py
+- tests/unit/perf/test_serial_pools_import_failure.py
+- tests/test_gates.py
+- docs/modules/gates.md
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_cache_transparency.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_cache_gate.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/test_coverage_attribution_lock_t1395.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_tickets_migration.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/_cache_transparency.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/perf/test_hotpath_smells.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/perf/test_serial_pools_import_failure.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-1558 acceptance: teach WIRE001''s reachability scan for cross-test-file
+    usage, and rebind/delete the 16 named waivers'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'coordinator directive: T-1698''s rapid-debt fix left a WIRE001 waiver on
+    _seed_repo bound to T-1558 as follow_up; rebind onto T-1592''s permanent=true
+    mechanism as part of landing this fix, same as the other 13 same-file-only waivers
+    this ticket already swept'
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/test_gates.py::TestWireGate::test_shared_test_fixture_called_from_a_sibling_test_file_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_its_own_defining_file_is_still_flagged
 acceptance:
 - text: GIVEN a module-local pytest helper (fixture factory, git-init scaffold, parametrized-data
     builder) with no direct call-site the callgraph can see THEN WIRE001 either recognizes
     the pytest usage pattern natively or the helper is wired/bound explicitly -- and
     the 16 waivers currently binding here are deleted
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestWireGate::test_shared_test_fixture_called_from_a_sibling_test_file_is_not_flagged
+  - tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_its_own_defining_file_is_still_flagged
 threat: null
 component: null
 ```
 Successor to T-1490 and T-1488, which closed while 16 frob:waive WIRE001 directives still named them, orphaning the waivers into WIRE002 errors (2026-08-05 incident). This ticket is the OPEN waiver home those 16 directives rebind to; it stays open until the class is actually resolved. Siblings: T-1503 (extract_native golden helpers), T-1534 (autouse fixtures).
+
+## Done report
+
+WIRE001's reachability scan (`_is_reached_outside_diff_tests`) skipped
+EVERY test path unconditionally, on the correct theory that a production
+symbol with only test callers is still dead in shipped code. That same
+rule wrongly treated a symbol DEFINED under `tests/` the same way: a
+shared test-fixture helper called from a DIFFERENT test file
+(`tests/_cache_transparency.py::git_init`, called from
+`tests/test_cache_transparency.py`) is genuinely wired -- just entirely
+within the test tree -- but read as permanently unreachable, forcing a
+waiver with nowhere real to point (16 instances accumulated against this
+ticket as their open "waiver home" before this landed).
+
+Fix: `_wire_test_path_excluded` (src/frob/gates/_wire.py) makes the
+exclusion rule symbol-aware -- a production symbol still excludes every
+test path (unchanged behavior); a test-tree-defined symbol excludes only
+its OWN defining file, so a call from any OTHER test file now counts as
+"reached". Extracted into its own function (rather than inlined into
+`_is_reached_outside_diff_tests`) to keep that function under ARCH001's
+line threshold and to give the rule its own documented, testable home.
+
+Swept the 16 waivers this ticket was the open follow-up for:
+- 3 genuinely cross-test-file cases (`tests/_cache_transparency.py::
+  git_init`/`git_commit_all`/`run_cold_warm_sweep`) had their WIRE001
+  waiver DELETED outright -- the gate no longer fires on them at all.
+- 13 same-file-only private helpers (test_tickets_migration.py x6,
+  test_cache_gate.py, test_cache_transparency.py, test_hotpath_smells.py,
+  test_coverage_attribution_lock_t1395.py, test_serial_pools_import_
+  failure.py x2, test_ticket_land.py) are genuinely unwired by design
+  (same-file test-fixture builders, matching T-1592's precedent exactly)
+  -- rebound from `follow_up="T-1558"` onto `permanent="true"` (T-1592's
+  mechanism), landed on this ticket rather than staying an open waiver
+  home with nothing left bound to it.
+
+docs/modules/gates.md's WIRE001/WIRE002 section documents the new
+cross-test-file rule and its same-file exception.
+
+### Changed
+```
+ tickets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 1183 warning(s), 715 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1567 -->
 ```yaml

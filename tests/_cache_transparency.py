@@ -32,12 +32,6 @@ EDIT_KINDS = ("edit", "add", "remove", "rename", "revert")
 
 
 # frob:ticket T-1519
-# frob:waive WIRE001 reason="shared test-fixture helper called from \
-# tests/test_cache_transparency.py -- WIRE001's reachability scan skips test paths by \
-# design (conftest.py::_install_stackdump_handler's WIRE001/T-1466 precedent, \
-# tests/test_tickets_migration.py's _git_init precedent), so a helper reached only \
-# from other test files always reads as unwired; same disposition-tracking follow-up \
-# as those precedents" follow_up="T-1558"
 # frob:waive DUP001 reason="the git-init/commit/write trio is the established \
 # real-git-fixture idiom this test module family repeats (tests/test_gates.py, \
 # tests/test_ticket_land.py, tests/test_ticket_work_and_land_finish.py and siblings \
@@ -62,9 +56,6 @@ def git_init(root: Path) -> None:
 
 
 # frob:ticket T-1519
-# frob:waive WIRE001 reason="shared test-fixture helper called from \
-# tests/test_cache_transparency.py -- WIRE001's reachability scan skips test paths by \
-# design, same precedent as git_init above" follow_up="T-1558"
 # frob:waive DUP001 reason="the git-init/commit/write trio is the established \
 # real-git-fixture idiom this test module family repeats (tests/test_gates.py, \
 # tests/test_ticket_land.py, tests/test_ticket_work_and_land_finish.py and siblings \
@@ -82,9 +73,6 @@ def git_commit_all(root: Path, message: str = "edit") -> None:
 
 
 # frob:ticket T-1519
-# frob:waive WIRE001 reason="shared test-fixture driver called from \
-# tests/test_cache_transparency.py -- WIRE001's reachability scan skips test paths by \
-# design, same precedent as git_init above" follow_up="T-1558"
 def run_cold_warm_sweep(
     rng: random.Random,
     rounds: int,

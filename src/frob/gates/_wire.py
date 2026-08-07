@@ -218,6 +218,25 @@ def _wire_reach_patterns(
 # snapshot.file_hashes iteration and enumerate(lines, 1) are plain iteration, not \
 # dict/list subscripting that can raise KeyError; a false positive from the gate's \
 # syntactic scan"
+# frob:ticket T-1558
+def _wire_test_path_excluded(candidate_path: str, record_path: str) -> bool:
+    """True if `candidate_path` must NOT count as a "reached" caller for a
+    symbol defined at `record_path` -- a production symbol (`record_path`
+    outside `tests/`) excludes every test path (a test-only caller does
+    not wire code that ships); a test-tree symbol excludes only its OWN
+    defining file (same-file usage stays genuinely unwired, T-1592's
+    precedent), so a call from a DIFFERENT test file now counts as
+    reached (T-1558: the module-local test-fixture false-positive class,
+    16 waivers accumulated against this exact gap before this landed)."""
+    from frob.gates import _is_test_path
+
+    if not _is_test_path(candidate_path):
+        return False
+    if not _is_test_path(record_path):
+        return True
+    return candidate_path == record_path
+
+
 # frob:ticket T-1502
 def _is_reached_outside_diff_tests(
     root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int]
@@ -247,7 +266,13 @@ def _is_reached_outside_diff_tests(
     `ClassName.Member` attribute-access pattern (the shape a typani
     `ErrorSet` subclass is actually referenced by -- never `ClassName(`,
     since an ErrorSet is never instantiated by calling the class). See
-    that helper's own docstring for the full rationale of each shape."""
+    that helper's own docstring for the full rationale of each shape.
+
+    T-1558: a symbol DEFINED under `tests/` is reachable from ANOTHER test
+    file, not just from non-test code -- a shared test-fixture helper
+    (`tests/_cache_transparency.py::git_init`) is genuinely wired, just
+    entirely within the test tree (see `_wire_test_path_excluded` below
+    for the exact rule)."""
     short = _short_name(record.id.qualname)
     call_pattern, wrapper_pattern, member_access_pattern = _wire_reach_patterns(
         short, record.kind
@@ -256,9 +281,7 @@ def _is_reached_outside_diff_tests(
     for path in snapshot.file_hashes:
         if not path.endswith(".py"):
             continue
-        from frob.gates import _is_test_path
-
-        if _is_test_path(path):
+        if _wire_test_path_excluded(path, record.id.path):
             continue
         try:
             lines = (root / path).read_text(encoding="utf-8").splitlines()

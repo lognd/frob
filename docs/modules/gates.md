@@ -2283,6 +2283,24 @@ edges`'s "never a public symbol" rule) -- exactly backwards here. Instead:
 diff this ticket does not build; disclosed and filed as a follow-up
 (see this ticket's Done report for the id).
 
+**Cross-test-file reachability for a helper DEFINED under `tests/`
+(T-1558)**: `_is_reached_outside_diff_tests`'s text scan used to skip
+EVERY test path unconditionally, on the theory that a production symbol
+with only test callers is still dead in the code that ships. That is
+right for production code, but wrong for a helper this diff adds INSIDE
+`tests/` -- a shared test-fixture helper (`tests/_cache_transparency.py::
+git_init`, called from `tests/test_cache_transparency.py`/
+`tests/test_gate_cache.py`) is genuinely wired, just entirely within the
+test tree, and skipping every test path made it an unfixable false
+positive whose only remedy was a waiver (16 accumulated instances, all
+bound to T-1558 as their open "waiver home" ticket before this landed).
+For a symbol whose own defining file is under `tests/`, a call from any
+OTHER test file now counts as reached; a call from its own defining file
+still does not -- same-file-only usage stays genuinely unwired (T-1592's
+precedent), and gets a `permanent="true"` waiver (see WIRE002's own
+section above), not a gate teach, because there is no other file to teach
+the gate to look at.
+
 **The escape hatch is a checkable obligation, not free-text prose**: a
 bare `frob:waive WIRE001 reason="..."` would suppress the finding through
 the same generic waiver machinery every other gate uses, with no

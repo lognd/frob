@@ -51,8 +51,7 @@ def _write(root: Path, rel: str, text: str) -> Path:
 
 # frob:ticket T-1520
 # frob:waive WIRE001 reason="private test-fixture helper used only by this file's own \
-# tests -- WIRE001's reachability scan skips test paths by design, same precedent as \
-# tests/test_cache_gate.py::_git_init_tracked" follow_up="T-1558"
+# tests -- no production caller to wire it to by design" permanent="true"
 def _graph_fingerprint(root: Path, cache: Path) -> frozenset[tuple[str, str]]:
     """`(ref, sig-digest)` pairs for every symbol -- the observable surface a
     cache-consuming caller (a gate, `frob ticket evidence`, ...) actually
