@@ -17,6 +17,7 @@ from ._capability_core import (
     _compiled_capability_patterns,
     _fully_in_any_span,
     _needle_matches_resolved,
+    _string_content_bytes,
 )
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
 
@@ -60,6 +61,33 @@ from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
 # this pass -- C/C++'s `#include` is coarse-only by design (module
 # docstring), and TS's binding table is noted as follow-up work, not
 # attempted here. Rust gets its own binding-aware pass, T-0378 below.
+#
+# T-1626: two evasions the T-0328 resolver used to miss silently (the
+# ticket's own worked examples) are now resolved rather than dropped:
+# `functools.partial(dangerous, ...)` (`_resolve_py_expr`'s `call` branch
+# recognizes a resolved-`functools.partial` callee and resolves through to
+# its first positional argument -- `p = functools.partial(os.system, cmd);
+# p()` now resolves `p()` to `os.system`), and a literal-keyed dict/list
+# dispatch (`_record_py_dict_container_alias`/`_record_py_list_container_
+# alias` record one alias entry per literal key/index at assignment time,
+# `_resolve_py_subscript` looks it up at the call site -- `funcs = {"run":
+# subprocess.run}; funcs["run"](cmd)` now resolves). Both stayed
+# genuinely silent before: a NON-literal key/index or a dynamically
+# computed `getattr` name is a SEPARATE, already-covered case --
+# `frob.gates._opaque`'s OPAQUE001 (`RUNTIME_OPAQUE_CONSTRUCTS`/
+# `RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS`, `_capability_scan.py`) already
+# fires fail-closed on those (non-literal subscript-then-call, bare
+# `getattr(`/`setattr(`/`eval(`/`exec(`/`__import__(`) -- this module
+# only had to close the LITERAL-key gap OPAQUE001 explicitly defers to
+# "the ordinary resolver's job" (`_subscript_key_looks_literal`'s
+# docstring) but the ordinary resolver never actually implemented until
+# now, which meant a literal-keyed dict/list dispatch fell through BOTH
+# mechanisms: too resolvable to trip OPAQUE001, never actually resolved
+# by this module. Cross-file wrapper attribution (a helper in another
+# module forwarding to a dangerous callable) is NOT attempted here -- it
+# needs `frob.graph.callgraph`-backed cross-file call resolution, a
+# larger, separate unit of work; see T-1626's Done report / follow-up
+# ticket for the split.
 _PY_SCOPE_TYPES = ("function_definition", "class_definition", "module")
 
 
@@ -414,6 +442,12 @@ def _resolve_py_expr(
     if node.type == "attribute":
         # frob:invariant terminates reason="mutually recurses with _resolve_py_attribute, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
         return _resolve_py_attribute(node, import_table, scope_cache, alias_table)
+    if node.type == "subscript":
+        # frob:invariant terminates reason="_resolve_py_subscript performs one alias_table dict lookup and does not call back into _resolve_py_expr -- no recursion" measure="not applicable, non-recursive"  # noqa: E501
+        return _resolve_py_subscript(node, alias_table)
+    if node.type == "call":
+        # frob:invariant terminates reason="mutually recurses with _resolve_py_partial_call, which only calls back here with node's own 'function' field child or a child of node's own 'arguments' field, both proper descendants of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
+        return _resolve_py_partial_call(node, import_table, scope_cache, alias_table)
     if node.type == "assignment":
         # T-0659: a CHAINED assignment's right-hand side (`a = b = target`)
         # parses as a nested `assignment` node (`b = target`), not an
@@ -499,21 +533,53 @@ def _resolve_py_attribute(
     return None
 
 
-def _attr_rebind_lookup(
-    obj_name: str,
-    attr_name: str,
+def _resolve_py_partial_call(
+    node,  # noqa: ANN001
+    import_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]] | None,
+) -> str | None:
+    """Resolve a `call` node through the `functools.partial(dangerous, ...)`
+    evasion (T-1626, split out of `_resolve_py_expr`'s `call` branch to keep
+    that function under ARCH001's line threshold): resolve the CALLEE
+    first, and if it is (an alias of) `functools.partial` itself, the
+    call's own resolved identity is whatever its first positional argument
+    resolves to (`p = functools.partial(os.system, cmd)` makes `p` an
+    alias for `os.system`, handled by the ordinary assignment/alias-table
+    path once THIS resolves; `functools.partial(os.system, cmd)()` called
+    directly also resolves here). Any other callee -- an ordinary function
+    call like `Job()` -- returns `None`, matching `_resolve_py_expr`'s
+    pre-existing "a `call` node is not a resolvable object" posture for
+    everything except this one recognized wrapper shape."""
+    func = node.child_by_field_name("function")
+    if func is None:
+        return None
+    # frob:invariant terminates reason="func is node's own 'function' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_py_expr, which only descends into the 'call' branch by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
+    resolved_func = _resolve_py_expr(func, import_table, scope_cache, alias_table)
+    if resolved_func != "functools.partial":
+        return None
+    arguments = node.child_by_field_name("arguments")
+    if arguments is None:
+        return None
+    target = _first_py_positional_arg(arguments)
+    if target is None:
+        return None
+    # frob:invariant terminates reason="target is a child of node's own 'arguments' field, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_py_expr, which only descends into the 'call' branch by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
+    return _resolve_py_expr(target, import_table, scope_cache, alias_table)
+
+
+def _py_scope_alias_lookup(
+    key: str,
     site,  # noqa: ANN001
     alias_table: dict[int, dict[str, str]],
 ) -> str | None:
-    """Best-effort lookup for an attribute-target REBIND (T-0659,
-    `_record_py_alias`'s attribute branch): walks `site`'s enclosing scope
-    chain (mirrors `_shadowing_scope`'s walk, but keys directly on the
-    synthesized `"{obj_name}.{attr_name}"` string -- never a legal python
-    identifier by itself, so it cannot collide with a real identifier alias
-    key in the same `alias_table`) looking for a scope that recorded
-    `obj.attr = <dangerous target>`. Returns `None` if no enclosing scope
-    ever recorded such a rebind."""
-    key = f"{obj_name}.{attr_name}"
+    """Walk `site`'s enclosing python scope chain (function -> class -> ...
+    -> module, stopping at module) looking up `key` in each scope's
+    `alias_table` entry (T-1626: shared scope-walk primitive -- was
+    `_attr_rebind_lookup`'s own body verbatim; also used by the T-1626
+    container (dict/list literal, subscript-by-literal-key) alias lookup so
+    both routes share ONE scope walk instead of two copies of the same
+    loop). Returns `None` if no enclosing scope ever recorded `key`."""
     cur = site.parent
     while cur is not None:
         if cur.type in _PY_SCOPE_TYPES:
@@ -524,6 +590,154 @@ def _attr_rebind_lookup(
                 break
         cur = cur.parent
     return None
+
+
+def _attr_rebind_lookup(
+    obj_name: str,
+    attr_name: str,
+    site,  # noqa: ANN001
+    alias_table: dict[int, dict[str, str]],
+) -> str | None:
+    """Best-effort lookup for an attribute-target REBIND (T-0659,
+    `_record_py_alias`'s attribute branch): synthesizes the
+    `"{obj_name}.{attr_name}"` key (never a legal python identifier by
+    itself, so it cannot collide with a real identifier alias key in the
+    same `alias_table`) and looks it up via `_py_scope_alias_lookup` for a
+    scope that recorded `obj.attr = <dangerous target>`."""
+    return _py_scope_alias_lookup(f"{obj_name}.{attr_name}", site, alias_table)
+
+
+#: sentinel python `subscript` KEY-NODE types `_py_literal_key_text`
+#: extracts a stable, literal string form from (T-1626) -- a string
+#: literal's own content text, or an integer literal's digit text. Any
+#: other key-expression shape (a name, a call, a slice, an f-string with
+#: interpolation) is NOT literal and gets no container-alias entry at all,
+#: matching `_capability_scan._subscript_key_looks_literal`'s own
+#: literal/non-literal split (OPAQUE001 fires fail-closed on the
+#: non-literal case; this module only ever handles the literal one).
+_PY_LITERAL_KEY_NODE_TYPES = frozenset({"string", "integer"})
+
+
+def _py_literal_key_text(node) -> str | None:  # noqa: ANN001
+    """The literal text a `dictionary` `pair`'s `key` (or a `list` element's
+    own position) can be looked up by (T-1626): a `string` node's decoded
+    content bytes, or an `integer` node's digit text verbatim. `None` for
+    any other node shape -- computed keys are not tracked here (that is
+    OPAQUE001's `_subscript_key_looks_literal`/structural-construct job,
+    not this resolver's)."""
+    if node.type == "string":
+        return _string_content_bytes(node).decode("utf-8", errors="replace")
+    if node.type == "integer":
+        return node_text(node)
+    return None
+
+
+def _record_py_dict_container_alias(
+    left,  # noqa: ANN001
+    right,  # noqa: ANN001
+    import_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+    scope_aliases: dict[str, str],
+) -> None:
+    """Record one container-alias entry per STRING/INTEGER-literal-keyed
+    `pair` of a `dictionary` literal RHS (T-1626, the ticket's own "indirect
+    binding ... through a dict" worked example): `d = {"run": subprocess.
+    run}` binds the synthesized key `d["run"]` (mirrors `_attr_rebind_
+    lookup`'s `obj.attr` synthesis, but for subscript access) to
+    `subprocess.run` in `left`'s enclosing scope, so `d["run"](cmd)`
+    resolves via `_resolve_py_subscript`. A non-literal key (an
+    identifier, an expression) gets no entry -- OPAQUE001's structural
+    subscript-call construct already covers a non-literal-KEYED subscript
+    call fail-closed; this only closes the literal-key gap that construct
+    explicitly defers to "the ordinary resolver"."""
+    name = node_text(left)
+    for pair in right.children:
+        if pair.type != "pair":
+            continue
+        key_node = pair.child_by_field_name("key")
+        value_node = pair.child_by_field_name("value")
+        if key_node is None or value_node is None:
+            continue
+        key_text = _py_literal_key_text(key_node)
+        if key_text is None:
+            continue
+        # frob:invariant terminates reason="value_node is one pair's own 'value' field child, a proper descendant of right which is a proper descendant of the assignment node -- no recursion back into this function" measure="not applicable, not recursive"  # noqa: E501
+        resolved = _resolve_py_expr(value_node, import_table, scope_cache, alias_table)
+        if resolved is not None:
+            scope_aliases.setdefault(f"{name}[{key_text}]", resolved)
+
+
+def _record_py_list_container_alias(
+    left,  # noqa: ANN001
+    right,  # noqa: ANN001
+    import_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+    scope_aliases: dict[str, str],
+) -> None:
+    """Record one container-alias entry per positional element of a `list`
+    literal RHS (T-1626, the ticket's "... or a list" sibling of
+    `_record_py_dict_container_alias`): `lst = [subprocess.run]` binds the
+    synthesized key `lst[0]` to `subprocess.run`, so `lst[0](cmd)` resolves
+    via `_resolve_py_subscript`. Index is the element's POSITION among
+    named children only (matches real python indexing -- the `[`/`]`/`,`
+    tokens are unnamed and never counted)."""
+    name = node_text(left)
+    index = 0
+    for element in right.children:
+        if not element.is_named:
+            continue
+        # frob:invariant terminates reason="element is one of right's own children, a proper descendant of right which is a proper descendant of the assignment node -- no recursion back into this function" measure="not applicable, not recursive"  # noqa: E501
+        resolved = _resolve_py_expr(element, import_table, scope_cache, alias_table)
+        if resolved is not None:
+            scope_aliases.setdefault(f"{name}[{index}]", resolved)
+        index += 1
+
+
+def _first_py_positional_arg(arguments_node):  # noqa: ANN001, ANN201
+    """The first POSITIONAL argument node of a `call`'s `arguments` field
+    (T-1626, for `functools.partial(dangerous, ...)` resolution): the first
+    named child that is not a `keyword_argument`/`dictionary_splat`/
+    `list_splat` -- `functools.partial(target, key=val)` and `functools.
+    partial(target, *args)` both still resolve through `target`, since
+    only the FIRST positional slot ever holds `partial`'s own wrapped
+    callable. `None` for a call with no positional argument at all
+    (`functools.partial()`, a runtime `TypeError` this resolver does not
+    need to simulate)."""
+    for child in arguments_node.children:
+        if not child.is_named:
+            continue
+        if child.type in ("keyword_argument", "dictionary_splat", "list_splat"):
+            continue
+        return child
+    return None
+
+
+def _resolve_py_subscript(
+    node,  # noqa: ANN001
+    alias_table: dict[int, dict[str, str]] | None,
+) -> str | None:
+    """Resolve a `subscript` node (`d["run"]`/`lst[0]`) through the
+    container-alias entries `_record_py_dict_container_alias`/`_record_py_
+    list_container_alias` recorded (T-1626) -- `None` when the subscripted
+    object is not a bare identifier, the key is not a literal
+    (`_py_literal_key_text`), or no enclosing scope ever recorded a
+    matching container-alias entry. Best-effort, by-NAME container
+    identity only (same posture as `_attr_rebind_lookup` -- not a real
+    points-to alias)."""
+    if alias_table is None:
+        return None
+    value = node.child_by_field_name("value")
+    key_node = node.child_by_field_name("subscript")
+    if value is None or key_node is None or value.type != "identifier":
+        return None
+    key_text = _py_literal_key_text(key_node)
+    if key_text is None:
+        return None
+    return _py_scope_alias_lookup(
+        f"{node_text(value)}[{key_text}]", node, alias_table
+    )
 
 
 def _enclosing_py_scope(node):  # noqa: ANN001, ANN201
@@ -727,6 +941,19 @@ def _record_py_alias(
         if resolved is not None:
             scope_aliases.setdefault(f"{node_text(obj)}.{node_text(attr)}", resolved)
         return
+    if left.type == "identifier" and right.type == "dictionary":
+        # T-1626: `d = {"run": subprocess.run}` -- container alias, not a
+        # single scalar binding; see _record_py_dict_container_alias.
+        _record_py_dict_container_alias(
+            left, right, import_table, scope_cache, alias_table, scope_aliases
+        )
+        return
+    if left.type == "identifier" and right.type == "list":
+        # T-1626: `lst = [subprocess.run]` sibling of the dict case above.
+        _record_py_list_container_alias(
+            left, right, import_table, scope_cache, alias_table, scope_aliases
+        )
+        return
     if left.type != "identifier":
         return
     resolved = _resolve_py_expr(right, import_table, scope_cache, alias_table)
@@ -743,16 +970,20 @@ def _collect_py_candidates(
     alias_table: dict[int, dict[str, str]] | None = None,
 ) -> None:  # noqa: ANN001
     """Recursively walk `node`, appending `(resolved, start_byte, end_byte)`
-    to `candidates` for every call/attribute site that resolves through
-    `import_table` (T-0328) or, when locally shadowed, through
-    `alias_table`'s scope-local copy-propagation (T-0337)."""
+    to `candidates` for every call/attribute/subscript site that resolves
+    through `import_table` (T-0328), `alias_table`'s scope-local copy-
+    propagation for a locally-shadowed name (T-0337), a resolved
+    `functools.partial` first argument (T-1626), or a literal-keyed dict/
+    list container alias (T-1626, `_resolve_py_subscript`)."""
     if node.type == "call":
         func = node.child_by_field_name("function")
-        if func is not None and func.type in ("identifier", "attribute"):
+        # T-1626: `subscript` added -- `d["run"](cmd)`'s callee is a
+        # `subscript` node, not a bare identifier/attribute.
+        if func is not None and func.type in ("identifier", "attribute", "subscript"):
             resolved = _resolve_py_expr(func, import_table, scope_cache, alias_table)
             if resolved is not None:
                 candidates.append((resolved, node.start_byte, node.end_byte))
-    elif node.type == "attribute":
+    elif node.type in ("attribute", "subscript"):
         resolved = _resolve_py_expr(node, import_table, scope_cache, alias_table)
         if resolved is not None:
             candidates.append((resolved, node.start_byte, node.end_byte))

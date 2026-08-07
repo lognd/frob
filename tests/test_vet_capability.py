@@ -192,3 +192,95 @@ class TestDocstringProseNotObservedLineLevel:
             lambda path: ((None, 3),),
         )
         assert non_executable_line_numbers(pkg) == frozenset()
+
+
+# T-1626: capability detection must be symbol-resolved with full alias
+# support, not lexical needles -- these are the ticket's own worked
+# evasion examples (indirect binding through a dict/list literal,
+# `functools.partial(dangerous, ...)`), each as a set-level
+# `scan_file_capabilities` regression. A plain substring needle scan finds
+# NONE of these (no literal "subprocess.run(" text anywhere in the
+# fixtures below); the T-0328/T-1626 import-and-container-alias-aware
+# resolver must.
+class TestSymbolResolvedContainerAndPartialEvasions:
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_dict_literal_dispatch_resolves(self, tmp_path: Path) -> None:
+        pkg = tmp_path / "dict_dispatch.py"
+        pkg.write_text(
+            "import subprocess\n\n\n"
+            "def run(cmd):\n"
+            '    handlers = {"run": subprocess.run}\n'
+            '    handlers["run"](cmd)\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_list_literal_dispatch_resolves(self, tmp_path: Path) -> None:
+        pkg = tmp_path / "list_dispatch.py"
+        pkg.write_text(
+            "import subprocess\n\n\n"
+            "def run(cmd):\n"
+            "    handlers = [subprocess.run]\n"
+            "    handlers[0](cmd)\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_dict_literal_dispatch_with_non_dangerous_value_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # Negative control: a literal-keyed dict dispatch to a BENIGN
+        # callable must not spuriously flag "exec" -- the container-alias
+        # resolver must resolve to the real target, not just to "any
+        # subscript dispatch".
+        pkg = tmp_path / "dict_dispatch_benign.py"
+        pkg.write_text(
+            "def helper(x):\n"
+            "    return x\n\n\n"
+            "def run(cmd):\n"
+            '    handlers = {"run": helper}\n'
+            '    handlers["run"](cmd)\n'
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_functools_partial_wrapping_dangerous_op_resolves(
+        self, tmp_path: Path
+    ) -> None:
+        pkg = tmp_path / "partial_dispatch.py"
+        pkg.write_text(
+            "import functools\n"
+            "import subprocess\n\n\n"
+            "def run(cmd):\n"
+            "    p = functools.partial(subprocess.run, cmd)\n"
+            "    p()\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_functools_partial_called_directly_resolves(
+        self, tmp_path: Path
+    ) -> None:
+        pkg = tmp_path / "partial_direct.py"
+        pkg.write_text(
+            "import functools\n"
+            "import subprocess\n\n\n"
+            "def run(cmd):\n"
+            "    functools.partial(subprocess.run, cmd)()\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_partial_from_import_alias_resolves(self, tmp_path: Path) -> None:
+        # `from functools import partial as p` -- the alias itself must
+        # resolve through the ordinary import table before the
+        # functools.partial special-case in `_resolve_py_expr` can fire.
+        pkg = tmp_path / "partial_alias.py"
+        pkg.write_text(
+            "from functools import partial as p\n"
+            "import subprocess\n\n\n"
+            "def run(cmd):\n"
+            "    wrapped = p(subprocess.run, cmd)\n"
+            "    wrapped()\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)

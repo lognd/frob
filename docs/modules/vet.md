@@ -826,7 +826,28 @@ uses table `nvd_cache` and a 7d TTL; `_registry.py` still uses table
   file's raw text, via the per-language substring table, plus (for python,
   typescript, rust, C/C++, and kotlin) import/alias-aware binding
   resolution that catches evasions the raw-text needle scan alone misses
-  (T-0328/T-0377/T-0378/T-0379/T-0662/T-0663/T-0664).
+  (T-0328/T-0377/T-0378/T-0379/T-0662/T-0663/T-0664). T-1626 (python only,
+  the priority language) additionally resolves `functools.partial
+  (dangerous, ...)` -- the call's own resolved identity is whatever its
+  FIRST positional argument resolves to, so a partial object built from a
+  dangerous callable and invoked later still resolves through it -- and a
+  literal-string/integer-KEYED dict/list literal dispatch (`handlers =
+  {"run": subprocess.run}; handlers["run"](cmd)`,
+  `_capability_python._record_py_dict_container_alias`/`_record_py_list_
+  container_alias`/`_resolve_py_subscript`): the needle scan and the
+  pre-T-1626 resolver both silently missed these two evasions (neither
+  produces the literal substring text a needle table looks for, and
+  neither shape was resolved through the import/alias table); a
+  NON-literal key/index or a computed `getattr`/`setattr` name was
+  already, separately, covered fail-closed by `OPAQUE001`
+  (`RUNTIME_OPAQUE_CONSTRUCTS`/`RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS`
+  below) -- T-1626 closes the LITERAL-key gap that gate's own
+  `_subscript_key_looks_literal` explicitly defers to "the ordinary
+  resolver's job", which had never actually implemented it. Cross-file
+  wrapper attribution (a helper defined in a DIFFERENT file forwarding to
+  a dangerous callable) is a documented, NOT-yet-attempted follow-up --
+  it needs `frob.graph.callgraph`-backed cross-file resolution, a larger
+  unit of work than this pass; see T-1626's Done report.
 - `non_executable_line_numbers` -- T-0769: 1-indexed line numbers in a
   file that a comment or python docstring span touches -- the shared
   primitive `frob.strata._effects`'s line-level THREAT004 observation
