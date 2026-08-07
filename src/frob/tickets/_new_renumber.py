@@ -48,6 +48,7 @@ from frob.tickets._store import (
     archive_path,
     atomic_write,
     ledger_digest,
+    ledger_digest_map,
     ledger_lock,
     ledger_path,
     load_all,
@@ -329,7 +330,9 @@ def _apply_renumber(
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0633
 # frob:ticket T-0889
+# frob:ticket T-1630
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations.test_concurrent_ledger_lock_acquisition_serializes  # noqa: E501
+# frob:tests tests/test_ticket_store_stale_snapshot.py::TestRenumberV2StaleSnapshotGuard.test_renumber_root_refuses_when_a_ticket_changes_under_it  # noqa: E501
 def renumber(root: Path) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
     current id), rewriting blocked_by/parent references so the queue stays
@@ -341,12 +344,29 @@ def renumber(root: Path) -> Result[int, TicketError]:
     previously the load ran unlocked, so a concurrent single-ticket write
     landing before this function's own locked `write_all` was silently
     reverted by the stale wholesale rewrite.
-    """
+
+    T-1630: the stale-snapshot digest passed to `write_all` is now mode-
+    aware, mirroring `renumber_one`'s own v1/v2 split (though this function,
+    unlike `renumber_one`, still does the wholesale read-modify-write
+    itself in both modes -- only the SNAPSHOT shape changes). Previously
+    this always captured `ledger_digest(ledger_path(root))`, a v1 monofile
+    digest of a path that does not exist in v2 mode -- `write_all` treats a
+    bare `str` digest given in v2 mode as "no check requested" (T-1588), so
+    a v2-mode `renumber(root)` had NO stale-snapshot protection at all: a
+    sibling process's write between this function's `load_all` and its
+    `write_all` was silently clobbered by the wholesale rewrite, the same
+    T-0680 shape T-1588 closed for `write_all`/`write_archive`'s own
+    primitive. `ledger_digest_map(root)` is the v2-shaped per-ticket digest
+    snapshot `write_all` actually compares against in that mode."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
     with ledger_lock(root):
-        digest = ledger_digest(ledger_path(root))
+        digest: str | dict[str, str]
+        if _store_mode(root) == "v2":
+            digest = ledger_digest_map(root)
+        else:
+            digest = ledger_digest(ledger_path(root))
         loaded = load_all(root)
         if loaded.is_err:
             return Err(loaded.danger_err)

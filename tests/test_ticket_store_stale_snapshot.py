@@ -370,6 +370,78 @@ class TestWriteAllRefusesAStaleSnapshotV2:
         assert result.is_ok, result.err
 
 
+class TestRenumberV2StaleSnapshotGuard:
+    """T-1630: `renumber(root)` (the plain contiguous-renumber path in
+    `frob.tickets._new_renumber`, distinct from `renumber_one`) previously
+    always captured a v1 monofile `ledger_digest(ledger_path(root))`
+    snapshot before its `write_all` call, even in v2 mode -- where
+    `ledger_path(root)` does not exist and `write_all` (T-1588) treats a
+    bare `str` digest in v2 mode as "no check requested". That left
+    `renumber(root)` with NO stale-snapshot protection in v2 mode: a
+    sibling process's write between this function's `load_all` and its
+    `write_all` was silently clobbered by the wholesale rewrite, the same
+    T-0680 shape T-1588 already closed for `write_all`'s own primitive.
+    `renumber` now snapshots via `ledger_digest_map(root)` in v2 mode
+    instead, mirroring how `renumber_one` already dispatches on
+    `_store_mode`."""
+
+    def test_renumber_root_refuses_when_a_ticket_changes_under_it(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Reproduces the race directly: `renumber(root)` captures its
+        stale-snapshot digest BEFORE calling `load_all`, so simulate a
+        sibling writer's change landing in exactly that gap by
+        monkeypatching `load_all` (as `_new_renumber` imports it) to
+        perform the concurrent write itself, then return the ORIGINAL
+        (now-stale, pre-race) map -- as `renumber`'s own `load_all` call
+        would if it had already been in flight when the race landed.
+        `renumber`'s digest snapshot was taken before this race, so it
+        still reflects the PRE-race disk state; its `write_all` call at
+        the end must detect the mismatch against the POST-race disk state
+        and refuse.
+
+        Before the T-1630 fix, `renumber(root)` always captured a v1
+        monofile `ledger_digest(ledger_path(root))` snapshot -- meaningless
+        in v2 mode, where `write_all` (T-1588) treats a bare `str` digest
+        as "no check requested" -- so this exact race silently succeeded
+        and reverted the concurrent write. After the fix, `renumber` must
+        refuse with `Err(TicketError.LedgerChangedSinceLoad)` and leave
+        the concurrent write intact."""
+        from frob.tickets._new_renumber import renumber
+
+        _seed_ticket_v2(tmp_path, ticket_id="T-0001", state=TicketState.DONE)
+        _seed_ticket_v2(tmp_path, ticket_id="T-0003", state=TicketState.QUEUED)
+
+        pristine = load_all(tmp_path)
+        assert pristine.is_ok, pristine.err
+        stale_snapshot = pristine.danger_ok
+
+        def _load_all_then_race(root: Path):
+            reverted = stale_snapshot["T-0001"].model_copy(
+                update={"state": TicketState.QUEUED, "evidence": ()}
+            )
+            racing_write = write_ticket(root, reverted)
+            assert racing_write.is_ok, racing_write.err
+            return pristine
+
+        import frob.tickets._new_renumber as new_renumber_module
+
+        monkeypatch.setattr(new_renumber_module, "load_all", _load_all_then_race)
+
+        result = renumber(tmp_path)
+        assert result.is_err, (
+            "renumber(root) in v2 mode must refuse when a ticket it "
+            "snapshotted changed on disk before its own write_all -- it "
+            f"instead returned Ok({result.ok if result.is_ok else None})"
+        )
+        assert result.danger_err is TicketError.LedgerChangedSinceLoad
+
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok, reloaded.err
+        assert reloaded.danger_ok["T-0001"].state is TicketState.QUEUED
+        assert reloaded.danger_ok["T-0001"].evidence == ()
+
+
 class TestWriteArchiveRefusesAStaleSnapshotV2:
     """Same v2 per-id guard, mirrored for `write_archive`."""
 
