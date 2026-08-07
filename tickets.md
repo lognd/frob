@@ -10942,6 +10942,23 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'METHODOLOGICAL CORRECTION (2026-08-07): the coordinator''s original waive-rate
+    census was INVALID for diff-scoped rules. It compared waiver counts against live
+    findings from a full unscoped ''frob check'' on a clean tree -- but a diff-scoped
+    gate (AFFECT001, DUP001, and others) only ever fires on a diff, so 0 findings
+    on a clean tree is its EXPECTED signature when the backlog is clean, not evidence
+    it is broken. Acting on the raw number would have deleted two working detectors.'
+  evidence: []
+- text: 'Therefore: the census MUST classify each rule as corpus-wide or diff-scoped
+    BEFORE computing a waive-rate, and must compute the diff-scoped rules'' rate over
+    diffs where they actually ran -- never over a clean-tree snapshot. A single undifferentiated
+    waive-rate column is a metric that produces confidently wrong deletions.'
+  evidence: []
+- text: _WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES already documents which rules are
+    diff-scoped; read that classification rather than re-deriving it, and report any
+    rule it does not cover.
+  evidence: []
 threat: null
 component: null
 ```
@@ -11008,7 +11025,6 @@ the standing capability so it can be re-run.
 Related: T-1567..T-1571 (CLI regrouping) should be sequenced AFTER this.
 Regrouping cruft yields organised cruft; the census tells us how much of
 the surface is load-bearing before anyone rearranges it.
-
 <!-- ticket:T-1765 -->
 ```yaml
 id: T-1765
