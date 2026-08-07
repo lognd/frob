@@ -4204,6 +4204,8 @@ kind: feature
 origin: human
 created: '2026-08-05'
 priority: high
+blocked_by:
+- T-1583
 parent: null
 tier: ticket
 sprint: null
@@ -4236,7 +4238,6 @@ Plan (from T-1552's own Description):
    quiet window (zero in-flight worktrees).
 2. Observe the LEDGERV1001 deprecation window for the recorded interval.
 3. Once stable, T-1552 unblocks and can delete the v1 splice machinery.
-
 <!-- ticket:T-1633 -->
 ```yaml
 id: T-1633
