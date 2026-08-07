@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.377.0] - unreleased
+
+- T-1222: rust: arch python metrics single-pass walk export (extraction only, rules stay Python)
+
 ## [0.376.0] - unreleased
 
 - T-1724: Measure dispatch cost against tickets landed: join agent telemetry to a dispatch record in frob stats --agentic

@@ -70,6 +70,7 @@
     "design/frob.strata::frob.tickets_ledger": "f2dc39549ec5c2c88afb3478af4236e290c909afde5658eb143d6353590c3b3e",
     "design/frob.strata::frob.verify": "52c15cb7bc8f0122aa231c366debf4677dd3588faffac03d07111b50a651591c",
     "design/frob.strata::frob.vet": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
+    "frob-core/src/arch_python.rs::py_function_metrics": "24cad3306fe36b65d71d760cdaa3c375ae5bbc148d1e03c96c3c55ca56fa4b1c",
     "frob-core/src/capability_python.rs::scan_python_capabilities": "c88f73fc01ee24e96dc6dc6a6dc5b152de62a9c30bea1382ce8ccacf0d582725",
     "frob-core/src/extract.rs::extract_tree_cpp": "3e494209fdb6e0313d2aa689efdfed85609cba791bc6b8983f9d65ab0b1fc24a",
     "frob-core/src/extract.rs::extract_tree_python": "6e54b0d6b028df4bb9c10ed91a08a54625fe8f47ecb65d736323dc5706ad6be2",
@@ -2125,5 +2126,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.376.0"
+  "version": "0.377.0"
 }

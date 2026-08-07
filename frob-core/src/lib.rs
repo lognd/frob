@@ -11,8 +11,10 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
+mod arch_python;
 mod capability_python;
 mod extract;
+use arch_python::py_function_metrics;
 use capability_python::scan_python_capabilities;
 use extract::{extract_tree_cpp, extract_tree_python, extract_tree_rust, extract_tree_typescript};
 
@@ -2262,6 +2264,7 @@ mod tests {
 }
 
 // frob:ticket T-1221
+// frob:ticket T-1222
 #[pymodule]
 fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
@@ -2286,6 +2289,9 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(extract_tree_typescript, m)?)?;
     // T-1221: capability-scan resolver -- see docs/modules/vet.md#public-api.
     m.add_function(wrap_pyfunction!(scan_python_capabilities, m)?)?;
+    // T-1222: arch python metrics single-pass walk -- see
+    // docs/modules/arch.md#normalized-code-model.
+    m.add_function(wrap_pyfunction!(py_function_metrics, m)?)?;
     Ok(())
 }
 

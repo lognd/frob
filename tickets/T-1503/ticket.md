@@ -12,8 +12,27 @@ sprint: null
 runs_last: false
 scope:
 - tests/unit/test_extract_native.py
+- tests/unit/test_capability_native.py
+- tests/unit/test_arch_python_native.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_capability_native.py
+  reason: same WIRE001 golden-test-helper pattern (a module-level comparison helper
+    called only from its own file's test methods) now exists in these two files too
+    (T-1221/T-1222); consolidating under this one existing ticket rather than filing
+    near-duplicates
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/unit/test_arch_python_native.py
+  reason: same WIRE001 golden-test-helper pattern (a module-level comparison helper
+    called only from its own file's test methods) now exists in these two files too
+    (T-1221/T-1222); consolidating under this one existing ticket rather than filing
+    near-duplicates
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null

@@ -392,6 +392,11 @@ capability-scan resolver, unrelated to clone detection or the call graph
 (same registration function, same `frob_core` pymodule); see
 docs/modules/vet.md#public-api.
 
+T-1222 added a twenty-first export, `py_function_metrics` -- the rust arch
+python metrics single-pass walk, unrelated to clone detection or the call
+graph (same registration function, same `frob_core` pymodule); see
+docs/modules/arch.md#normalized-code-model.
+
 T-0930 added five more kernels to this SAME crate/pymodule for
 `frob.graph.callgraph` (not `frob.dup`) -- `resolve_call_edges`,
 `called_names`, `ordered_called_names`, `referenced_names`, and

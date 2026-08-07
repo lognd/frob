@@ -131,3 +131,39 @@ def scan_python_capabilities(
     list[tuple[int, int]],
     list[tuple[int, int]],
 ]: ...
+
+# T-1222: rust arch python metrics single-pass walk -- extraction only, see
+# docs/modules/arch.md#normalized-code-model. Returns one entry per python
+# function (module-level, method, or nested, flattened) in source order:
+# ((start_line, end_line), max_nesting_depth, cyclomatic, (branches, loops,
+# calls, field_accesses, returns, raises, catches, subscripts)), matching
+# frob.arch._python's _py_max_nesting/_py_cyclomatic/_py_collect_body_events
+# output exactly EXCEPT NormalizedCall.declared_raises (never populated
+# here -- a raw-text `# frob:callee-raises` comment convention layered on
+# top of the tree walk, disclosed deviation, see
+# frob-core/src/arch_python.rs's module docstring). Each event tuple:
+# branches: (line, condition_text); loops: (line, kind); calls: (callee,
+# line, args) where args is (index, keyword, ident) with exactly one of
+# index/keyword set; field_accesses: (name, line, is_write); returns:
+# (line, value_text); raises: (line, exception_type); catches: (line,
+# exception_type); subscripts: line. Never raises (source that fails to
+# parse, or is not python, yields an empty list rather than a PyErr).
+def py_function_metrics(
+    source: bytes,
+) -> list[
+    tuple[
+        tuple[int, int],
+        int,
+        int,
+        tuple[
+            list[tuple[int, str]],
+            list[tuple[int, str]],
+            list[tuple[str, int, list[tuple[int | None, str | None, str | None]]]],
+            list[tuple[str, int, bool]],
+            list[tuple[int, str | None]],
+            list[tuple[int, str | None]],
+            list[tuple[int, str | None]],
+            list[int],
+        ],
+    ]
+]: ...

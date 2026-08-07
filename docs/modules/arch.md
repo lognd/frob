@@ -1737,6 +1737,45 @@ needs fields + method-body call targets; scattered-construction needs
 cross-file call sites) so that migration has no missing entity to
 retrofit.
 
+<!-- frob:describes frob-core/src/arch_python.rs::py_function_metrics -->
+
+T-1222 (rust arch python metrics single-pass walk, extraction only --
+rule evaluation stays entirely in Python, same design line T-1221's
+capability resolver states explicitly): `frob_core.py_function_metrics
+(source: bytes) -> [(span, nesting, cyclomatic, events)]` computes the
+same per-function body walk `_py_max_nesting`/`_py_cyclomatic`/`_py_
+collect_body_events` perform today (`_run_python_checks` measured at 97
+pct of archgate's own cost, `_py_build_module` alone 31 pct) natively via
+`tree-sitter`, one entry per python function (module-level, method, or
+nested -- FLATTENED into one output list rather than `NormalizedFunction.
+nested_functions`'s own tree shape) in source order. `events` is an
+8-tuple of `branches`/`loops`/`calls`/`field_accesses`/`returns`/
+`raises`/`catches`/`subscripts` lists, matching `NormalizedBranch`/
+`NormalizedLoop`/`NormalizedCall`/`NormalizedFieldAccess`/
+`NormalizedReturn`/`NormalizedRaise`/`NormalizedCatch`/
+`NormalizedSubscript`'s own field shapes exactly, MINUS `NormalizedCall.
+declared_raises` (see below). Deliberately narrower than
+`NormalizedFunction` itself -- no `name`/`params`/`return_type`/
+`is_method`/`overrides`, each O(1) to read directly off the
+`function_definition` node and left Python-side; this kernel replaces
+only the expensive body-walk portion `_py_build_function`/`_py_build_
+module` currently perform as three separate Python recursions per
+function.
+
+Golden-tested byte-identical against `_py_max_nesting`/`_py_cyclomatic`/
+`_py_collect_body_events`'s combined output across this repo's own
+`_python.py` plus synthetic fixtures (0 mismatches,
+`tests/unit/test_arch_python_native.py::TestPyFunctionMetricsParity`).
+
+One disclosed deviation: `NormalizedCall.declared_raises` (T-0689's
+`# frob:callee-raises A, B` same-line comment convention) is never
+populated by this kernel -- a raw-text pattern layered on top of the tree
+walk, not a tree-sitter extraction concern; `_frob_raises_declaration` is
+a five-line pure function over already-available `(call_line,
+source_lines)` a consumer can still run Python-side post-hoc, cheaply,
+without threading it through the FFI boundary as a second kernel input.
+No consumer is rewired to this kernel yet (T-1219's job).
+
 ## Public API
 
 <a id="public-api"></a>
