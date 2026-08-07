@@ -12,12 +12,27 @@ build/
 coverage.xml
 htmlcov/
 uv.lock
-.claude/
-# but keep versioned skills + agent definitions (T-0185)
+# `.claude/*` (glob), NOT `.claude/` (directory): git cannot re-include a
+# file whose PARENT DIRECTORY is excluded, so the directory form silently
+# defeats every negation below it.
+.claude/*
+# Versioned skills + agent definitions (T-0185)
 !.claude/skills/
 !.claude/skills/**
 !.claude/agents/
 !.claude/agents/**
+# Shared Claude config is REVIEWED CONFIG, not local state: hooks change
+# agent behaviour repo-wide, and one that exists only in someone's home
+# directory is an undocumented behaviour change no review ever saw.
+!.claude/hooks/
+!.claude/hooks/**
+!.claude/settings.json
+# ...but genuinely local/volatile state stays out.
+.claude/hooks/state/
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scratch/
+.claude/scheduled_tasks.lock
 .frob/
 .serena/
 

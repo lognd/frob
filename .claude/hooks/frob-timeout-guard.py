@@ -1,0 +1,58 @@
+"""PreToolUse Bash hook: refuse long-running frob verbs without a large tool timeout.
+
+Long frob commands (land / done-report / check / test) that run without an
+explicit large Bash TOOL-level timeout get auto-backgrounded at the 120s
+default cap, and agents then stall waiting for a notification -- the
+recurring stall pattern this drive has nudged 6+ times. A shell-level
+`timeout N` wrapper does NOT extend the tool cap, so this guard keys on the
+tool parameter itself and tells the caller exactly how to re-run.
+"""
+import json
+import re
+import sys
+
+MIN_TIMEOUT_MS = 300000
+# Command-position only: start-of-line, after a shell connector, or after
+# `uv run` (optionally timeout-wrapped) -- so prose mentions of frob verbs
+# inside heredocs/echo strings do not false-positive (first FP was a
+# coordinator memory-checkpoint heredoc).
+PATTERN = re.compile(
+    r"(?:^|[;&|(]\s*|\buv +run +)(?:timeout +\d+ +)?"
+    r"frob +(ticket +(land|done-report)|check|test)\b",
+    re.M,
+)
+
+REASON = (
+    "BLOCKED by project hook (frob-timeout-guard): this frob command can "
+    "exceed the 120s foreground cap and get auto-backgrounded -- the known "
+    "stall pattern. Re-run the SAME command in one Bash call with the "
+    "tool-level parameter timeout: 600000 plus a shell-level `timeout 540 "
+    "...` wrapper. Never background it, never poll, never end your turn "
+    "waiting for it."
+)
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:
+        return
+    tool_input = payload.get("tool_input") or {}
+    command = tool_input.get("command") or ""
+    timeout_ms = tool_input.get("timeout") or 0
+    if PATTERN.search(command) and timeout_ms < MIN_TIMEOUT_MS:
+        print(
+            json.dumps(
+                {
+                    "hookSpecificOutput": {
+                        "hookEventName": "PreToolUse",
+                        "permissionDecision": "deny",
+                        "permissionDecisionReason": REASON,
+                    }
+                }
+            )
+        )
+
+
+if __name__ == "__main__":
+    main()

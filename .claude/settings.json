@@ -1,0 +1,43 @@
+{
+  "worktree": {
+    "baseRef": "head"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/frob-timeout-guard.py",
+            "timeout": 10,
+            "statusMessage": "frob-timeout-guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/frob-suggest.py",
+            "timeout": 120,
+            "statusMessage": "frob-suggest"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/sync-claude-config.py --check >/dev/null 2>&1 || echo '{\"systemMessage\":\"Claude config DRIFT: the ~/.claude copies differ from this repo'\"'\"'s tracked originals. Reconcile with: python3 .claude/hooks/sync-claude-config.py\"}'",
+            "timeout": 30,
+            "statusMessage": "Checking Claude config drift"
+          }
+        ]
+      }
+    ]
+  }
+}

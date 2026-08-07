@@ -1,0 +1,137 @@
+"""Sync git-tracked Claude config from this repo out to `~/.claude/`.
+
+THE REPO IS CANONICAL. Hooks and the agent playbook are versioned, reviewed,
+and diffable here; `~/.claude/` holds materialized COPIES. That direction is
+the whole point: a hook that only exists in one developer's home directory
+is an undocumented behaviour change that no review ever saw, and an agent
+playbook that drifts between the repo and the global refs means two agents
+read different rules and neither is wrong.
+
+    python3 .claude/hooks/sync-claude-config.py           # write the copies
+    python3 .claude/hooks/sync-claude-config.py --check   # report drift, exit 1
+
+`--check` is the gate-shaped form: it never writes, and exits non-zero when
+any managed file differs. Wire it into CI or a SessionStart hook so drift is
+LOUD rather than discovered the next time a hook mysteriously does not fire.
+
+Only files listed in `_MANAGED` are touched. A destination outside that list
+is never read, written, or deleted -- `~/.claude/` holds plenty that this
+repo has no business owning, and a sync that cleaned "unmanaged" files would
+be a foot-gun aimed at the user's own configuration.
+
+NOTE ON DIRECTION: this never syncs global -> repo. If you edited the copy in
+`~/.claude/` by hand, `--check` will report it and a sync will overwrite it.
+That is intended. Edit the tracked file.
+"""
+
+import argparse
+import shutil
+import sys
+from pathlib import Path
+
+_REPO = Path(__file__).resolve().parents[2]
+_HOME_CLAUDE = Path.home() / ".claude"
+
+#: (repo-relative source, home-relative destination). Every managed file,
+#: enumerated explicitly -- a glob here would silently start managing a file
+#: nobody decided to manage.
+_MANAGED: list[tuple[str, str]] = [
+    (".claude/hooks/frob-suggest.py", "hooks/frob-suggest.py"),
+    (".claude/hooks/frob-timeout-guard.py", "hooks/frob-timeout-guard.py"),
+    ("docs/guides/agent-playbook.md", "refs/agent-playbook.md"),
+]
+
+_BANNER = (
+    "# GENERATED COPY -- DO NOT EDIT.\n"
+    "# Canonical source: {source} in the frob repo.\n"
+    "# Edit there, then: python3 .claude/hooks/sync-claude-config.py\n"
+)
+
+
+def _banner_for(source: str, dest: Path) -> str:
+    """The do-not-edit banner, commented for the destination's file type.
+
+    A generated file that does not SAY it is generated is how a careful
+    person ends up making a careful edit that is silently discarded on the
+    next sync."""
+    if dest.suffix == ".md":
+        return (
+            f"<!-- GENERATED COPY -- DO NOT EDIT. Canonical source: {source} "
+            "in the frob repo. Edit there, then run "
+            "`python3 .claude/hooks/sync-claude-config.py`. -->\n\n"
+        )
+    return _BANNER.format(source=source)
+
+
+def _rendered(source_rel: str, dest: Path) -> str | None:
+    """The exact content the destination should hold, or `None` if the
+    source is missing (reported, never silently skipped)."""
+    source = _REPO / source_rel
+    if not source.exists():
+        return None
+    return _banner_for(source_rel, dest) + source.read_text(encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="report drift without writing; exit 1 if any managed file differs",
+    )
+    args = parser.parse_args()
+
+    drifted: list[str] = []
+    missing: list[str] = []
+    wrote: list[str] = []
+
+    for source_rel, dest_rel in _MANAGED:
+        dest = _HOME_CLAUDE / dest_rel
+        want = _rendered(source_rel, dest)
+        if want is None:
+            missing.append(source_rel)
+            continue
+        have = dest.read_text(encoding="utf-8") if dest.exists() else None
+        if have == want:
+            continue
+        if args.check:
+            state = "absent" if have is None else "differs"
+            drifted.append(f"{dest_rel} ({state} vs {source_rel})")
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        # Write-temp-then-replace: a half-written hook is a hook that fails
+        # to parse on every subsequent tool call.
+        tmp = dest.with_suffix(dest.suffix + ".tmp")
+        tmp.write_text(want, encoding="utf-8")
+        shutil.move(str(tmp), str(dest))
+        wrote.append(dest_rel)
+
+    for source_rel in missing:
+        print(f"MISSING canonical source: {source_rel}", file=sys.stderr)
+
+    if args.check:
+        for entry in drifted:
+            print(f"DRIFT: {entry}", file=sys.stderr)
+        if drifted or missing:
+            print(
+                f"sync-claude-config --check: {len(drifted)} drifted, "
+                f"{len(missing)} missing -- run "
+                "`python3 .claude/hooks/sync-claude-config.py` to reconcile",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"sync-claude-config --check: {len(_MANAGED)} file(s) in sync")
+        return 0
+
+    if missing:
+        return 1
+    if wrote:
+        for entry in wrote:
+            print(f"synced ~/.claude/{entry}")
+    else:
+        print(f"sync-claude-config: {len(_MANAGED)} file(s) already in sync")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

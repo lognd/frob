@@ -4309,10 +4309,12 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/app/ticket_runner/**
-- tests/**
 - docs/modules/tickets.md
 - src/frob/tickets/_leases.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -4326,6 +4328,60 @@ scope_changes:
   glob: src/frob/tickets/_leases.py
   reason: narrowed from a package glob to the specific modules named in the ticket
     body
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: tests/**
+  reason: 'TICK009 scope-breadth: tests/** and src/frob/app/ticket_runner/** are mega-globs
+    that collide with nearly every other ticket, starving this one behind unrelated
+    work (it was held by T-1687''s three-file scope purely through tests/** vs tests/unit/verify/test_watermark.py).
+    Narrowed to the files an implementation pass actually touches, established empirically
+    by an agent that had already written the change'
+  actor: logan
+  at: '2026-08-06'
+- op: remove
+  glob: src/frob/app/ticket_runner/**
+  reason: 'TICK009 scope-breadth: tests/** and src/frob/app/ticket_runner/** are mega-globs
+    that collide with nearly every other ticket, starving this one behind unrelated
+    work (it was held by T-1687''s three-file scope purely through tests/** vs tests/unit/verify/test_watermark.py).
+    Narrowed to the files an implementation pass actually touches, established empirically
+    by an agent that had already written the change'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: 'TICK009 scope-breadth: tests/** and src/frob/app/ticket_runner/** are mega-globs
+    that collide with nearly every other ticket, starving this one behind unrelated
+    work (it was held by T-1687''s three-file scope purely through tests/** vs tests/unit/verify/test_watermark.py).
+    Narrowed to the files an implementation pass actually touches, established empirically
+    by an agent that had already written the change'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'TICK009 scope-breadth: tests/** and src/frob/app/ticket_runner/** are mega-globs
+    that collide with nearly every other ticket, starving this one behind unrelated
+    work (it was held by T-1687''s three-file scope purely through tests/** vs tests/unit/verify/test_watermark.py).
+    Narrowed to the files an implementation pass actually touches, established empirically
+    by an agent that had already written the change'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: 'TICK009 scope-breadth: tests/** and src/frob/app/ticket_runner/** are mega-globs
+    that collide with nearly every other ticket, starving this one behind unrelated
+    work (it was held by T-1687''s three-file scope purely through tests/** vs tests/unit/verify/test_watermark.py).
+    Narrowed to the files an implementation pass actually touches, established empirically
+    by an agent that had already written the change'
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: 'TICK009 scope-breadth: tests/** and src/frob/app/ticket_runner/** are mega-globs
+    that collide with nearly every other ticket, starving this one behind unrelated
+    work (it was held by T-1687''s three-file scope purely through tests/** vs tests/unit/verify/test_watermark.py).
+    Narrowed to the files an implementation pass actually touches, established empirically
+    by an agent that had already written the change'
   actor: logan
   at: '2026-08-06'
 designated_repro_test: null
@@ -4343,7 +4399,6 @@ Fix: route block (and any other ledger-writing verb still missing it -- audit th
 Audit list to check while here: block, unblock if it exists, scope, accept, evidence --replace, migrate, renumber, archive. For each, state whether it writes the ledger and whether it commits. A table in the Done report is the deliverable, not just the block fix -- the point is that no ledger-writing verb is left in this state.
 
 Test shape: for every ledger-writing verb, assert the working tree is CLEAN after the command (and dirty under --no-commit). A single parameterized test over the verb list makes a future verb that forgets this fail immediately.
-
 <!-- ticket:T-1616 -->
 ```yaml
 id: T-1616
