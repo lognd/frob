@@ -53,6 +53,7 @@ from pathlib import Path, PurePosixPath
 
 from typani.option import Nothing, Option, Some
 
+from frob.gates._markdown_scan import strip_code_spans as _strip_code_spans
 from frob.gates._models import Severity, Violation
 from frob.graph import Edge, EdgeKind, GraphSnapshot, dedupe_slug, slugify
 from frob.logging import get_logger
@@ -71,34 +72,15 @@ _MD_LINK_TARGET_RE = re.compile(r"\]\(([^)\s]+)\)")
 _URL_SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://|^mailto:")
 # DOC008 must not treat prose code spans as markdown links: `handlers[key](x)`
 # (an array-subscript-then-call example) matches `\]\(...\)` lexically but is
-# never a real link. Blank out fenced blocks and inline `code` spans first
-# (preserving newlines, so line numbers stay correct) before scanning.
-_FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
-# T-draft-8c110736 (DOC006/DOC011 line-wrap false positive, mirroring _docptr.py's
-# T-1228 precedent): commonmark treats a SINGLE embedded newline inside an
-# inline code span as ordinary whitespace, so an editor-wrapped span like
-# `` `frob quality \n bind` `` is still one token, not two. The previous
-# `[^`\n]+` shape rejected any embedded newline outright, which left a
-# line-wrapped span's SECOND line un-blanked and exposed to DOC008's link
-# scan / DOC011's ticket-id scan as ordinary prose -- a real false positive
-# (docs/modules/strata.md's `` `... "T-9999";` `` wrapped mid-span was
-# flagged as an unresolvable ticket id). A blank line (`\n\n`, a genuine
-# paragraph break) is still rejected, matching T-1228's own rule: that is
-# two unrelated stray backticks, never a genuine wrapped span.
-_INLINE_CODE_RE = re.compile(r"`(?:[^`\n]|\n(?!\n))+`")
-
-
-def _blank_non_newlines(match: re.Match[str]) -> str:
-    """Replace `match` with spaces, keeping any embedded newlines intact."""
-    return "".join(c if c == "\n" else " " for c in match.group(0))
-
-
-def _strip_code_spans(text: str) -> str:
-    """Blank out fenced code blocks and inline `code` spans so DOC008's link
-    scan never mistakes prose code (e.g. `handlers[key](x)`) for a real
-    markdown link -- newline count (and therefore line numbers) is preserved."""
-    text = _FENCED_CODE_RE.sub(_blank_non_newlines, text)
-    return _INLINE_CODE_RE.sub(_blank_non_newlines, text)
+# never a real link. `_strip_code_spans` (T-1700: `frob.gates._markdown_scan.
+# strip_code_spans`, imported above under its pre-extraction private name so
+# every call site in this file stays unchanged) blanks fenced blocks and
+# inline `code` spans first (preserving newlines, so line numbers stay
+# correct) before either DOC008's link scan or DOC011's ticket-id scan below
+# runs -- shared with TICK006 (`frob.gates._tickets_gate`) rather than a
+# second, independently-drifting copy; see that module's own docstring for
+# the T-1700 incident (`` `Filed: T-0104` `` inside a Done report) this
+# extraction fixed.
 
 
 def _doclink_config(root: Path) -> tuple[list[str], list[str], list[str]]:

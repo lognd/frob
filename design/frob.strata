@@ -319,9 +319,9 @@ node gates : trusted {
         ratchet_enabled_rules, read_line_length, record_prework, ref_gate, registry_gate, release_gate,
         render_lint_gate, resolve_ratchet_severity, root_content_key, run_gates, save_deprecated_baseline, scan_emitted_rule_ids,
         scope_digest, scope_gate, secrets_gate, snapshot_ratchet, stamp_baseline, stamp_coverage,
-        store_root_gate_cache, suppress001_gate, suppression_dialects, sweep_ticket, sys_gate, taint_gate,
-        test_gate, ticket_lease_pin, tickets_gate, tighten_deprecated_baseline, violation_fingerprint, waive006_gate,
-        waive007_gate, walk_lint_gate, wire_gate, write_autofix_manifest, write_coverage_lock,
+        store_root_gate_cache, strip_code_spans, suppress001_gate, suppression_dialects, sweep_ticket, sys_gate,
+        taint_gate, test_gate, ticket_lease_pin, tickets_gate, tighten_deprecated_baseline, violation_fingerprint,
+        waive006_gate, waive007_gate, walk_lint_gate, wire_gate, write_autofix_manifest, write_coverage_lock,
     ];
     clearance Internal;
     code "src/frob/gates/**";

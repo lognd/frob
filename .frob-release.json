@@ -629,6 +629,7 @@
     "src/frob/gates/_inv006_split_assist.py::find_carried_waiver": "5f615291efb57b07845d0c401b2a7d87871f123018a73c58245405d6f6911f52",
     "src/frob/gates/_lang_conformance.py::lang_conformance_gate": "39dbe48b9e5dd8c93a6abfa14d9100ad749dbfe3c734a915bb503a4a185fe417",
     "src/frob/gates/_lang_conformance.py::project_lang_conformance_gate": "f5e3b17778206d1ee73cde5d6f955bae9cae450f28b7c929347b943b0401d305",
+    "src/frob/gates/_markdown_scan.py::strip_code_spans": "a36395c4cd5137ab87c44b8ff23973dd4442966636e746807b1d7fa1793f4a0f",
     "src/frob/gates/_models.py::CoverageData": "001138b91932cc4d61786cd5c81887b9816e4afa8e020c55b42a31532c511915",
     "src/frob/gates/_models.py::CoverageError": "fc2537c0a4f1aa14112c26bf6107b886f2c2a6d3076f4b687a8cf2a4e734f601",
     "src/frob/gates/_models.py::DebtEntry": "9f6feb58835b32cbbdc4dba3ee85374b8d51e14e1b895216c42a8f5fffb10979",
@@ -2076,5 +2077,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.359.0"
+  "version": "0.360.0"
 }

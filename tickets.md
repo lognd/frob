@@ -11184,7 +11184,7 @@ which is the reading the current message invites.
 id: T-1700
 title: TICK006 fires on a Done report DISCUSSING a code-spanned ticket id; reuse DOC011's
   code-span stripping
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-06'
@@ -11196,8 +11196,55 @@ scope:
 - src/frob/gates/_doclink_docanchor.py
 - tests/unit/gates/test_doc011.py
 - docs/modules/gates.md
+- src/frob/gates/_tickets_gate.py
+- src/frob/gates/_markdown_scan.py
+- tests/test_gates.py
+- tests/unit/gates/test_markdown_scan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: the shared code-span-stripping helper needs a new home both _doclink_docanchor.py
+    and _tickets_gate.py can import from without one owning the other's private namespace;
+    TICK006's own regression test lives in tests/test_gates.py per its existing frob:tests
+    convention
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: src/frob/gates/_markdown_scan.py
+  reason: the shared code-span-stripping helper needs a new home both _doclink_docanchor.py
+    and _tickets_gate.py can import from without one owning the other's private namespace;
+    TICK006's own regression test lives in tests/test_gates.py per its existing frob:tests
+    convention
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/test_gates.py
+  reason: the shared code-span-stripping helper needs a new home both _doclink_docanchor.py
+    and _tickets_gate.py can import from without one owning the other's private namespace;
+    TICK006's own regression test lives in tests/test_gates.py per its existing frob:tests
+    convention
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/gates/test_markdown_scan.py
+  reason: direct unit tests for the new shared strip_code_spans helper, including
+    the double-backtick regression this ticket's own investigation found as the actual
+    root cause
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_double_backtick_span_is_blanked
+- tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_single_backtick_span_is_blanked
+- tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_triple_backtick_span_is_blanked
+- tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_fenced_code_block_is_blanked
+- tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_line_wrapped_inline_span_is_blanked_as_one_token
+- tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_blank_line_is_not_treated_as_inside_a_span
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_double_backtick_span_is_not_flagged
+- tests/test_gates.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
+- tests/test_gates.py::TestTick006PhantomFiling::test_backtick_styled_id_in_a_real_claim_still_fires
+- tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_run_length_must_match_to_close
 designated_repro_test: null
 threat: null
 component: null
@@ -11249,6 +11296,155 @@ assumes the finding is real and repairs the citation. This ticket is
 upstream of it -- if the finding is a false positive, auto-fixing it
 would rewrite correct prose. Land this first, and leave a note on T-1544
 saying so.
+
+## Done report
+
+Fixed main going red (two TICK006 errors on T-1542's own Done report)
+and, in the process of fixing it correctly, found a second, deeper bug
+that the obvious fix would have shipped unnoticed.
+
+1. Extracted DOC011's code-span stripping into ONE shared helper,
+   src/frob/gates/_markdown_scan.py::strip_code_spans, and pointed both
+   DOC011 (src/frob/gates/_doclink_docanchor.py, via a same-name import
+   alias so its own call sites needed no changes) and TICK006
+   (src/frob/gates/_tickets_gate.py) at it -- no second copy of the
+   regex pair.
+
+2. Applied it to TICK006's `_tick006_phantom_ids` with a NARROW rule,
+   not a blanket blank-and-rescan: a "filed" occurrence is skipped only
+   when the "filed" TRIGGER WORD's own position falls inside a code
+   span, via a new `_code_span_mask` helper. This preserves the
+   existing, legitimate "Filed: `T-draft-deadbeef`" shape (id styled in
+   backticks, "filed" left as plain prose -- a real, common Done-report
+   convention already covered by test_phantom_filed_colon_fires) while
+   fixing the actual incident shape (the whole `` `Filed: T-0104` ``
+   phrase, trigger word included, inside one code span, explaining a
+   sibling gate's exemption rather than claiming anything). A blanket
+   blank-the-whole-window approach would have silently broken that
+   existing test.
+
+3. THE DEEPER BUG: reusing DOC011's ORIGINAL `_strip_code_spans` alone
+   was not enough -- verified this by actually re-running the ticket-
+   scoped `--only tickets` gate after step 1+2 and finding TICK006 STILL
+   fired on T-1542's real, committed Done report. Root-caused it: T-1542's
+   prose uses DOUBLE-backtick delimiters (`` `` `Filed: T-0104` `` ``,
+   the standard CommonMark escape for a span whose content needs a
+   literal backtick), and the pre-existing `_INLINE_CODE_RE`
+   (`` `(?:[^`\n]|\n(?!\n))+` ``) only ever matched SINGLE-backtick
+   spans -- against a double-backtick input it silently mismatches,
+   consuming small unrelated 3-character fragments at the outer edges
+   and leaving the actual content ("Filed: T-0104") completely
+   UNBLANKED. This was DOC011's own latent bug too (confirmed directly:
+   before this fix, `_doc011_scan_doc` with a full known-ids set found 3
+   live findings against docs/modules/gates.md's own newly-added T-1700
+   prose section, which reuses this exact double-backtick phrasing).
+   Fixed `_INLINE_CODE_RE` to be CommonMark-correct on backtick-RUN
+   length: opens with a run of N backticks, closes with the NEXT run of
+   exactly N backticks, via a `\1` regex backreference
+   (`(`+)(?:(?!\1)[^\n]|\n(?!\n))+?\1`) -- this is a real fix to DOC011's
+   own long-standing exemption logic, not just a TICK006 fix, and would
+   have shipped hidden if I had stopped at "reuse the existing helper"
+   without re-verifying against the real committed prose that broke main.
+
+4. Item 3 in the ticket ("consider genuinely semantic filing-claim
+   detection"): DECLINED, staying at the code-span fix. The existing
+   "filed" + windowed-id + explicit-negation grammar already IS the
+   cheap, reliable version of "a filing verb near the id" -- the T-1542
+   incident's entire root cause was code-span blindness (now fixed
+   twice over: DOC011's own bug plus TICK006 reusing it), not a gap in
+   the filing-verb heuristic itself. Going further (distinguishing "will
+   be filed" from "was filed", spanning across unrelated sentences, ...)
+   would trade a concrete, testable fix for guesswork with no incident
+   motivating it -- exactly what this ticket asked not to ship.
+
+5. Left a note on T-1544 (Tier-A auto-fix for TICK006 phantom
+   citations) the honest way: `frob ticket block T-1544 --by T-1700`,
+   a real dependency edge rather than prose that could rot -- T-1544
+   assumes a TICK006 finding is real and repairs the citation; auto-
+   fixing a false positive (exactly what T-1700 fixes) would rewrite
+   correct prose.
+
+Regression coverage, in the exact incident shape the ticket asked for:
+- tests/test_gates.py::TestTick006PhantomFiling::
+  test_code_spanned_filed_claim_does_not_fire -- T-1542's own Done
+  report text, verbatim shape, must not fire.
+- tests/test_gates.py::TestTick006PhantomFiling::
+  test_backtick_styled_id_in_a_real_claim_still_fires -- the narrow-fix
+  guardrail: a real claim with just the id backtick-styled must still
+  fire.
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::
+  test_id_inside_double_backtick_span_is_not_flagged -- DOC011's own
+  latent double-backtick bug, fixed as part of the same extraction.
+- tests/unit/gates/test_markdown_scan.py (new file, 8 tests) -- direct
+  unit coverage of the shared helper itself: single/double/triple
+  backtick runs, fenced blocks, line-wrapped spans, the blank-line
+  paragraph-break boundary, newline-count preservation, and a no-op
+  pass-through for prose with no code spans at all.
+
+Verified with:
+- `uv run pytest tests/unit/gates/test_doc011.py
+  tests/unit/gates/test_markdown_scan.py -p no:cacheprovider -q` -- 16
+  passed.
+- `uv run pytest tests/test_gates.py -k TestTick006PhantomFiling
+  -p no:cacheprovider -q` -- 12 passed.
+- `uv run ruff check`/`ruff format --check` on every touched file --
+  clean.
+- `uv run ty check` on every touched production module -- clean.
+- `uv run frob check --only tickets --ticket T-1700` -- 0 errors (was 2
+  TICK006 errors before this land; confirms main-red is fixed).
+- `uv run frob check --only docanchor --only docblocks --only doclink
+  --only drift --only coverage --only test --ticket T-1700` -- 0
+  errors, only pre-existing unrelated warnings.
+- `uv run frob check --land-parity` -- clean, 0 unscoped errors.
+
+EXPLICIT CALLOUT (coordinator request): the double-backtick fix is a
+LATENT DEFECT found in the thing this ticket was told to reuse, not just
+a TICK006-side gap. DOC011's own original `_INLINE_CODE_RE` only ever
+matched single-backtick-delimited spans; T-1542's actual committed Done
+report uses double-backtick delimiters (the standard CommonMark escape),
+which that regex silently mismatched, leaving the content completely
+unblanked. DOC011 has carried this hole since it shipped (T-1486) --
+reusing the original implementation verbatim (step 1 of this ticket's
+plan, "reuse the fix that already exists in a sibling gate") would have
+faithfully reproduced the bug and shipped it hidden inside a change that
+LOOKED like it closed the incident. Caught only by actually re-running
+the ticket-scoped gate against the real committed prose after the
+straightforward reuse, rather than trusting that "DOC011 already does
+this correctly" without re-verifying it. Added a dedicated CommonMark
+backtick-RUN-length test (test_run_length_must_match_to_close) to
+tests/unit/gates/test_markdown_scan.py -- this is a property of the
+SHARED HELPER itself, independent of either caller, so it lives there
+rather than in either DOC011's or TICK006's own test file.
+
+### Changed
+```
+ docs/modules/gates.md                  |  37 +++++++
+ src/frob/gates/_doclink_docanchor.py   |  38 ++-----
+ src/frob/gates/_markdown_scan.py       |  95 ++++++++++++++++++
+ src/frob/gates/_tickets_gate.py        |  34 ++++++-
+ tests/test_gates.py                    |  45 +++++++++
+ tests/unit/gates/test_doc011.py        |  21 ++++
+ tests/unit/gates/test_markdown_scan.py |  76 ++++++++++++++
+ tickets.md                             | 174 ++++++++++++++++++++++++++++++++-
+ 8 files changed, 490 insertions(+), 30 deletions(-)
+```
+
+### Evidence
+- `tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_double_backtick_span_is_blanked` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_single_backtick_span_is_blanked` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_triple_backtick_span_is_blanked` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_fenced_code_block_is_blanked` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_line_wrapped_inline_span_is_blanked_as_one_token` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_blank_line_is_not_treated_as_inside_a_span` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_double_backtick_span_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_backtick_styled_id_in_a_real_claim_still_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_run_length_must_match_to_close` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 0 error(s), 1010 warning(s), 716 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1701 -->
 ```yaml

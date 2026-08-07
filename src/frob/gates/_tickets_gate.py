@@ -37,6 +37,7 @@ from pathlib import Path
 
 from typani.result import Result
 
+from frob.gates._markdown_scan import strip_code_spans
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids
@@ -456,6 +457,7 @@ def _tick006_done_report_text(body: str) -> str:
 
 
 # frob:ticket T-0726
+# frob:ticket T-1700
 def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
     """Every ticket id affirmatively claimed as filed somewhere in
     `done_report_text` -- i.e. following an unnegated occurrence of the
@@ -466,10 +468,29 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
     real T-#### id at land)`, `Filed a new standing ticket (drafted
     off-main as T-draft-05d8f716...)`. Explicit negations ("not filed",
     "no ticket filed", "never filed") are skipped per T-0726's Description
-    -- see `_TICK006_NEGATION_RE`."""
+    -- see `_TICK006_NEGATION_RE`.
+
+    T-1700: a "filed" occurrence whose OWN match falls inside a fenced or
+    inline code span (`frob.gates._markdown_scan.strip_code_spans`, the
+    same helper DOC011 uses for the identical reason) is skipped entirely,
+    the same way an explicit negation is -- a Done report routinely
+    MENTIONS the filing-claim grammar itself inside `` `backticks` `` to
+    illustrate a sibling gate's own behavior (the T-1700 incident:
+    `` `Filed: T-0104` `` inside one code span, explaining that DOC011
+    correctly ignores it, was misread as a real claim). Deliberately
+    narrower than blanking every code span in the whole text: an id that
+    is ITSELF backtick-styled while "filed" stays plain prose (`Filed:
+    ` + `` `T-draft-deadbeef` ``, a real and common Done-report style) is
+    still a genuine claim and must still fire -- only a "filed" trigger
+    word that is itself inside a span is illustrative, not the id near
+    it. `_code_span_mask` below answers "is this offset inside a span",
+    built once per call rather than per-occurrence."""
+    span_mask = _code_span_mask(done_report_text)
     seen: dict[str, None] = {}
     for occurrence in re.finditer(r"\bfiled\b", done_report_text, re.I):
         start = occurrence.start()
+        if span_mask[start]:
+            continue
         pre = done_report_text[max(0, start - _TICK006_NEGATION_WINDOW) : start]
         if _TICK006_NEGATION_RE.search(pre):
             continue
@@ -477,6 +498,17 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
         for tid in _TICK006_ID_RE.findall(window):
             seen.setdefault(tid, None)
     return tuple(seen)
+
+
+def _code_span_mask(text: str) -> list[bool]:
+    """`True` at every offset of `text` that `strip_code_spans` would blank
+    (fenced or inline code) -- a per-offset "is this inside a code span"
+    lookup, built by diffing the stripped text against the original one
+    character at a time (`strip_code_spans` guarantees identical length
+    and newline positions, so a straight index-by-index compare is exact,
+    never an approximation)."""
+    stripped = strip_code_spans(text)
+    return [orig != blanked for orig, blanked in zip(text, stripped, strict=True)]
 
 
 # frob:ticket T-0929

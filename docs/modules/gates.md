@@ -1390,6 +1390,43 @@ inside a single gate (docs/audits/check-performance.md row 10). Purely
 an internal signature change; TICK006's own detection contract above is
 unaffected.
 
+**T-1700 (code-span awareness, sharing DOC011's fix).** T-1542's own
+Done report turned main red: it EXPLAINED that two ids
+(`` `Filed: T-0104` ``, `` `waive ... ticket "T-9999";" `` ) are
+inline-code-span examples DOC011 correctly ignores, and the bare
+`\bfiled\b` scan above -- with no code-span awareness at all -- fired
+TICK006 on the explanation of the exemption the neighbouring gate
+correctly applies. Root cause: TICK006 is a lexical rule (does a
+`T-\d{4}`-shaped token follow the word "filed" within a window) with no
+notion that a code-spanned "filed" is being MENTIONED, not asserted.
+
+The fix reuses DOC011's own code-span stripping rather than copying it: a
+"filed" occurrence whose OWN match position falls inside a fenced or
+inline code span (`frob.gates._markdown_scan.strip_code_spans`, extracted
+from `_doclink_docanchor.py` into its own module so both rules import ONE
+implementation instead of risking a second copy drifting out of sync) is
+skipped, the same way an explicit negation is. Deliberately NARROW: only
+the "filed" TRIGGER word's own position is checked, not every id in the
+window -- an id that is itself backtick-styled while "filed" stays plain
+prose (`Filed: ` + `` `T-draft-deadbeef` ``, a real and common Done-report
+convention already covered by this repo's own test suite) is still a
+genuine, checkable claim and must still fire. Blanking the whole window
+instead of just gating on the trigger word's position would have silently
+dropped that legitimate case too.
+
+**Considered and declined: a fully semantic filing-claim parser.** T-1700
+weighed going further than code-span awareness -- distinguishing "a
+filing verb genuinely asserting X was filed" from any other prose shape
+near an id -- and declined: the existing "filed" + windowed-id grammar
+already IS the cheap, reliable version of that idea (a real filing verb,
+a bounded window, an explicit-negation carve-out), and the ONLY gap the
+T-1542 incident actually exposed was code-span blindness, now closed.
+Any further generalization (e.g. distinguishing "will be filed" from "was
+filed", or a claim spanning an intervening unrelated sentence) trades a
+concrete, testable fix for guesswork with no incident motivating it yet
+-- exactly the shipped-heuristic-that-fails-differently trap this ticket
+was asked not to walk into.
+
 ### TICK007 (T-0820)
 
 <!-- frob:describes src/frob/gates/_tickets_gate.py::_tick007_undispatched_stale -->

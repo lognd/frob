@@ -94,6 +94,27 @@ class TestDoc011TicketIdProse:
         violations = docstatus_gate(root)
         assert "DOC011" not in _test_rules(violations)
 
+    def test_id_inside_double_backtick_span_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_id_inside_double_backtick_span_is_not_flagged  # noqa: E501
+        # T-1700: a double-backtick-delimited span (`` `text` `` -- the
+        # CommonMark escape a writer reaches for the moment a span's own
+        # content needs a literal backtick, or just habit) is a REAL code
+        # span too, same as a single-backtick one. The pre-T-1700 regex
+        # only understood single-backtick spans and silently left this
+        # shape's content completely UNBLANKED -- the actual root cause
+        # behind T-1542's Done report turning main red (its prose used
+        # exactly this double-backtick style).
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "guide.md").write_text(
+            "# Guide\n\nExample: `` `Filed: T-9999` `` illustrates the syntax.\n",
+            encoding="utf-8",
+        )
+        violations = docstatus_gate(root)
+        assert "DOC011" not in _test_rules(violations)
+
     def test_id_inside_inline_code_span_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_id_inside_inline_code_span_is_not_flagged  # noqa: E501
         root = tmp_path / "repo"

@@ -14155,6 +14155,51 @@ class TestTick006PhantomFiling:
         violations = tickets_gate(tmp_path, self._queue(ticket))
         assert not any(v.rule == "TICK006" for v in violations)
 
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_code_spanned_filed_claim_does_not_fire  # noqa: E501
+    def test_code_spanned_filed_claim_does_not_fire(self, tmp_path: Path) -> None:
+        """T-1700's own incident, reproduced exactly: a Done report
+        EXPLAINS that a code-spanned mention is DOC011's illustrative-
+        example exemption, not a claim -- `` `Filed: T-0104` `` and
+        `` `waive ... ticket "T-9999";` `` both sit inside inline code
+        spans, and neither T-0104 nor T-9999 resolves to any ledger
+        block. Before T-1700, the bare `\\bfiled\\b` scan had no code-span
+        awareness and fired TICK006 on the explanation of the exemption
+        the neighbouring gate (DOC011) correctly applies -- this is the
+        exact shape that turned main red on T-1542's land."""
+        ticket = _ticket(
+            ticket_id="T-0011",
+            body=(
+                "## Done report\n\n"
+                "The remaining citations are inline-code-span examples "
+                "illustrating the id syntax itself (`Filed: T-0104`, "
+                '`waive ... ticket "T-9999";`) -- DOC011\'s own scan '
+                "already blanks fenced/inline code spans before "
+                "matching, so these were never real findings.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_backtick_styled_id_in_a_real_claim_still_fires  # noqa: E501
+    def test_backtick_styled_id_in_a_real_claim_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """The T-1700 fix must stay NARROW: when "filed" itself is plain
+        prose and only the id happens to be backtick-styled (a common,
+        legitimate Done-report convention -- see
+        `test_phantom_filed_colon_fires` above), TICK006 must still fire.
+        Only a "filed" occurrence that is ITSELF inside a code span is
+        illustrative; an id styled in backticks next to plain-prose
+        "Filed:" is still a real, checkable claim."""
+        ticket = _ticket(
+            ticket_id="T-0012",
+            body=("## Done report\n\nFiled: `T-9998` (never actually created).\n"),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick006 = [v for v in violations if v.rule == "TICK006"]
+        assert len(tick006) == 1
+        assert "T-9998" in tick006[0].message
+
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_negation_not_filed_is_silent  # noqa: E501
     def test_negation_not_filed_is_silent(self, tmp_path: Path) -> None:
         """ "not filed as a new ticket" (verbatim phrase used repeatedly in
