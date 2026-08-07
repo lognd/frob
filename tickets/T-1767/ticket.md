@@ -2,7 +2,7 @@
 id: T-1767
 title: 'Repo cleanup: retire the v1 monofiles, cull .claude skills and agents, land
   the verb refactors, fix worktree hygiene'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -18,6 +18,10 @@ scope:
 - skills/**
 - docs/guides/agentic-workflow.md
 - Makefile
+- docs/rework.md
+- docs/index.md
+- docs/modules/testing.md
+- src/frob/_cli_parsers/_ticket/_query.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -61,6 +65,92 @@ scope_changes:
     recipes
   actor: logan
   at: '2026-08-07'
+- op: add
+  glob: docs/rework.md
+  reason: 'Deleting agents/** and skills/** requires updating every doc that
+
+    references them, not just docs/guides/agentic-workflow.md (already in
+
+    scope): docs/rework.md, docs/index.md, and docs/modules/testing.md each
+
+    name agents/*/SKILL.md or skills/*/SKILL.md paths directly, and
+
+    src/frob/_cli_parsers/_ticket/_query.py carries a code comment citing
+
+    agentic-workflow.md''s #skills/next and #skills/plan anchors. Leaving any
+
+    of these pointing at deleted files is exactly the stale-reader-of-a-
+
+    deleted-path failure the ticket''s own item 1 section warns against.
+
+    '
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/index.md
+  reason: 'Deleting agents/** and skills/** requires updating every doc that
+
+    references them, not just docs/guides/agentic-workflow.md (already in
+
+    scope): docs/rework.md, docs/index.md, and docs/modules/testing.md each
+
+    name agents/*/SKILL.md or skills/*/SKILL.md paths directly, and
+
+    src/frob/_cli_parsers/_ticket/_query.py carries a code comment citing
+
+    agentic-workflow.md''s #skills/next and #skills/plan anchors. Leaving any
+
+    of these pointing at deleted files is exactly the stale-reader-of-a-
+
+    deleted-path failure the ticket''s own item 1 section warns against.
+
+    '
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'Deleting agents/** and skills/** requires updating every doc that
+
+    references them, not just docs/guides/agentic-workflow.md (already in
+
+    scope): docs/rework.md, docs/index.md, and docs/modules/testing.md each
+
+    name agents/*/SKILL.md or skills/*/SKILL.md paths directly, and
+
+    src/frob/_cli_parsers/_ticket/_query.py carries a code comment citing
+
+    agentic-workflow.md''s #skills/next and #skills/plan anchors. Leaving any
+
+    of these pointing at deleted files is exactly the stale-reader-of-a-
+
+    deleted-path failure the ticket''s own item 1 section warns against.
+
+    '
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: 'Deleting agents/** and skills/** requires updating every doc that
+
+    references them, not just docs/guides/agentic-workflow.md (already in
+
+    scope): docs/rework.md, docs/index.md, and docs/modules/testing.md each
+
+    name agents/*/SKILL.md or skills/*/SKILL.md paths directly, and
+
+    src/frob/_cli_parsers/_ticket/_query.py carries a code comment citing
+
+    agentic-workflow.md''s #skills/next and #skills/plan anchors. Leaving any
+
+    of these pointing at deleted files is exactly the stale-reader-of-a-
+
+    deleted-path failure the ticket''s own item 1 section warns against.
+
+    '
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
