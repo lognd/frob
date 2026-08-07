@@ -7,6 +7,7 @@ recurring stall pattern this drive has nudged 6+ times. A shell-level
 `timeout N` wrapper does NOT extend the tool cap, so this guard keys on the
 tool parameter itself and tells the caller exactly how to re-run.
 """
+
 import json
 import re
 import sys

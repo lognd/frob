@@ -49,7 +49,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _shellscan import POS as _POS, strip_quoted as _strip_quoted  # noqa: E402
+from _shellscan import POS as _POS  # noqa: E402
+from _shellscan import strip_quoted as _strip_quoted
 
 #: Markers older than this are pruned, so a command nudged long ago is
 #: nudged again rather than silently grandfathered forever.
@@ -79,9 +80,7 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
     ),
     (
         "hand-edit-ledger",
-        re.compile(
-            r"(?:>>?\s*|sed +-i[^|;&]*|tee +[^|;&]*)[\w./-]*tickets\.md", re.M
-        ),
+        re.compile(r"(?:>>?\s*|sed +-i[^|;&]*|tee +[^|;&]*)[\w./-]*tickets\.md", re.M),
         "Never hand-edit tickets.md. Use the `uv run frob ticket ...` CLI. A "
         "hand-written ledger edit has already broken the tickets.md YAML once "
         "and took every gate down with it.",
