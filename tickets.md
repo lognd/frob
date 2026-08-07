@@ -15311,6 +15311,20 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'OWNER DECISION 2026-08-07: lexical matching is acceptable and an LLM-evaluated
+    hook is REJECTED -- do not pipe coordinator messages through a second model. Given:
+    a turn ends; when the nudge evaluates it; then no additional model inference is
+    performed. The design must therefore be a plain command hook over text and/or
+    repo state, and the earlier ''semantic or state-based'' framing in the body is
+    superseded on the semantic half.'
+  evidence: []
+- text: 'The nudge NEVER blocks: it emits systemMessage and exits clean, so a missing
+    ticket can never become a stuck session.'
+  evidence: []
+- text: The nudge names what to file (e.g. 'N findings in X have no owning ticket'),
+    not merely that something is unfiled.
+  evidence: []
 threat: null
 component: null
 ```
