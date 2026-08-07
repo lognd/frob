@@ -10919,6 +10919,8 @@ kind: feature
 origin: human
 created: '2026-08-07'
 priority: high
+blocked_by:
+- T-1763
 parent: null
 tier: ticket
 sprint: null
