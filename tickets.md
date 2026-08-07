@@ -8936,3 +8936,129 @@ future non-zero reading meaningful on sight:
    superseded.
 
 Do all three in one pass; they share no code and none needs design work.
+
+<!-- ticket:T-1686 -->
+```yaml
+id: T-1686
+title: 'Verification watermark: make landing independent of verifying in every profile'
+state: queued
+kind: feature
+origin: agent
+created: '2026-08-06'
+priority: critical
+parent: null
+tier: epic
+sprint: null
+scope:
+- src/frob/tickets/_land_queue.py
+- src/frob/serve/_daemon.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- docs/modules/tickets.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: verification
+labels:
+- watermark-epic
+```
+T-1684 took the multi-minute verification sweep off the land critical
+path under `rapid`. The same reasoning generalises to `standard`, and
+doing so collapses three profile code paths into one mechanism at three
+settings.
+
+THE PRINCIPLE THAT DECIDES WHAT MAY BE DEFERRED
+
+A check must be synchronous if and only if its failure damages someone
+OTHER THAN the author. Ledger integrity, LAND-PROOF, lease/lock
+discipline, merge-conflict resolution and "the tree imports" corrupt
+other agents' work, so they stay on the critical path in every profile,
+forever. Coverage floors, doc drift, arch thresholds, dup, perf and the
+rest only assert that THIS change is good; their remedy is a follow-up
+ticket, not a revert. There is no correctness argument for making the
+author wait on those -- only habit.
+
+THE MECHANISM
+
+Verification is a pure function of tree state, so the unit of
+verification is a COMMIT, not a land. Introduce a durable watermark:
+"main is verified through commit X".
+
+The daemon becomes a COALESCING worker rather than a FIFO one. Each land
+appends a cheap intent record (commit sha, ticket id, touched symbol
+set). The worker wakes, drains the queue TO ITS TIP, verifies once at the
+newest commit, and advances the watermark past every commit in the batch.
+Five lands, one verification pass -- and it is not a trick: verifying at
+HEAD-after-L5 genuinely verifies L1..L5, because that is the tree that
+ships.
+
+The saving compounds twice: the gate pass amortises N-to-1, and the test
+run becomes the UNION of the batch's touched sets in a single pytest
+process (one collection, one set of fixtures) instead of N cold starts
+over overlapping files.
+
+THE HARD PART: ATTRIBUTION
+
+Batching trades wall-clock for attribution precision. Three tiers,
+cheapest first: (1) the T-1684 rolling-baseline set diff yields new
+(rule, symbol) identities rather than a count; (2) SYMBOLIC attribution
+-- a finding anchored at symbol S attributes to the commit whose touched
+symbol set REACHES S in the reference graph; (3) bisect only the residue
+tier 2 cannot attribute.
+
+WHAT KEEPS IT HONEST
+
+Bounded queue (depth and age; the land blocks at the ceiling -- deferral
+is a credit line, not free money) and a quarantine circuit breaker (a red
+batch stops further deferred lands until attributed, because landing on a
+known-broken base is what makes attribution cost explode).
+
+THE PAYOFF
+
+The profiles stop being three code paths and become one dial:
+`fortress` = depth 0 (synchronous, refuse on red); `standard` = bounded
+depth K, quarantine + file on red; `rapid` = unbounded, never blocks,
+files and never reverts. Every `if rapid:` seam scattered through the
+land pipeline deletes.
+
+RECORDED DECISION: on a red batch, `standard` QUARANTINES AND FILES; it
+does not auto-revert. Reverting a published commit other worktrees have
+already branched from is strictly worse than a filed high-priority ticket
+plus a stop-the-line flag. Auto-revert is coherent only at depth 0, where
+nobody can have branched yet.
+
+WHAT ALREADY EXISTS (this is a connect-what-exists epic, not greenfield)
+
+- `frob.tickets._land_queue`: persisted, locked, with enqueue/drain_next/
+  queue_status. T-1444's own Done report disclosed "sharing one baseline
+  capture and one post-drain sweep across a whole batch of N tickets" as
+  deferred follow-up. This epic is that owed work.
+- `frob.serve._warm`/`_watch`: the daemon already keys a WarmState on a
+  repo dirty key and has FS-watch push invalidation -- the watermark's
+  substrate, needing a durable commit-keyed sibling.
+- T-1684's rolling baseline and `frob ticket sweep-async`: the deferred
+  worker, today spawned per-land, becomes the daemon's queue worker.
+
+Adjacent open work: T-1479 (daemon-proxy ticket path), T-1554
+(post-commit checkpoint gap beyond the sweep window).
+
+Standing repo constraints (binding, not restatement):
+
+- SYMBOLIC, NEVER LEXICAL. Every decision this ticket makes about "which
+  code does this concern" must go through the symbol/reference graph
+  (frob.graph), never a path-string comparison, filename glob, or regex
+  over source text. A lexical shortcut here is a latent wrong answer that
+  only shows up under refactor.
+- Fallible operations return a typani `Result[T, E]` with a named
+  `ErrorSet`. Exceptions only for unrecoverable programmer bugs. Never a
+  bare `except` that turns an unknown state into a clean one.
+- "Cannot verify" is NEVER "verified". Every unmeasurable outcome must be
+  distinguishable from a measured-clean one, in the data model and in the
+  logs -- this is the single invariant the whole epic rests on.
+- Persisted records are pydantic models with `frozen=True, extra="forbid"`,
+  versioned, and forward-compatible on read.
+- LOG EVERYTHING WORTH LOGGING: every state change, queue transition,
+  boundary crossing, branch, and error path gets a module-logger line per
+  ~/.claude/refs/logging.md. Never `print`.
+- Docs land in the same change as the code. No follow-up docs ticket.
+- No waivers. If a gate fires, fix the cause or fix the gate; a waiver
+  here is a structural defect, not a resolution.
