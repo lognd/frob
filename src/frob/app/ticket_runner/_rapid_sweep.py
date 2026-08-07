@@ -508,7 +508,70 @@ def _file_regression_ticket(
             unfiled_pairs,
         )
         return None
-    return created.danger_ok.id
+    regression_id = created.danger_ok.id
+    _commit_regression_ticket(root, regression_id, final_id)
+    return regression_id
+
+
+# frob:ticket T-1755
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commits_the_ledger_write  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commit_failure_logs_at_error_and_does_not_raise  # noqa: E501
+def _commit_regression_ticket(root: Path, regression_id: str, final_id: str) -> None:
+    """T-1755: `_file_regression_ticket`'s `new_ticket(root, spec)` call
+    (the whole point of the deferred sweep) writes `tickets.md` through
+    `frob.tickets._new_renumber.new_ticket` DIRECTLY -- the LIBRARY
+    function, not the `frob ticket new` CLI verb -- and `new_ticket`
+    itself never commits (confirmed by reading it: it takes `ledger_lock`,
+    calls `write_ticket`, and returns; T-1130/T-1615's auto-commit lives
+    entirely in the CLI dispatch layer, `commit_ticket_ledger_change`,
+    which a programmatic caller like this one never reaches). This is the
+    THIRD root-cause candidate this ticket's own body named as most
+    likely, confirmed: T-1615's uniform auto-commit covers the CLI
+    surface, not programmatic callers, which is a wider gap than this one
+    call site -- filed as a follow-up (see this function's own Done
+    report for the real id) rather than silently left for the next
+    detached-write incident to rediscover.
+
+    Calls `frob.tickets._leases.commit_ticket_ledger_change` -- the SAME
+    scoped `git add <ledger pathspecs> && git commit -- <ledger
+    pathspecs>` primitive `frob ticket new`/`drop`/`fail`/`start` already
+    funnel through, never a bare `git commit` or `git add -A` (T-1740's
+    own incident: a blanket add on a root checkout concurrent lands are
+    racing against published 1416 lines of another agent's in-flight work
+    under an unrelated commit message). A commit failure is logged at
+    ERROR naming `regression_id` and warning explicitly that the NEXT
+    land will refuse with `DirtyMain` -- never swallowed, never silent;
+    this function's own return type is `None` (best-effort, matching
+    `_commit_rapid_debt`'s identical "must never fail an already-
+    succeeded sweep" posture immediately below it in this module) --
+    the regression ticket itself is already durably filed by the time
+    this runs, so a commit failure here degrades to "dirty root, logged
+    loudly", never to "the ticket silently vanishes"."""
+    from frob.tickets._leases import _ledger_pathspecs, commit_ticket_ledger_change
+
+    message = (
+        f"chore(tickets): file {regression_id} "
+        f"(post-land sweep regression from {final_id})"
+    )
+    committed = commit_ticket_ledger_change(root, regression_id, message)
+    if committed.is_err:
+        pathspecs = " ".join(_ledger_pathspecs(root, regression_id))
+        _log.error(
+            "rapid sweep: %s: committing the filed regression ticket %s "
+            "failed (%s) -- the ledger is now DIRTY and every subsequent "
+            "`frob ticket land` in %s will refuse with DirtyMain until a "
+            'human commits it by hand: git -C %s add %s && git -C %s '
+            "commit -m %r -- %s",
+            final_id,
+            regression_id,
+            committed.danger_err,
+            root,
+            root,
+            pathspecs,
+            root,
+            message,
+            pathspecs,
+        )
 
 
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684

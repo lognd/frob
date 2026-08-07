@@ -265,6 +265,78 @@ class TestDescribeRootDirt:
         (repo / "seed.txt").write_text("changed\n", encoding="utf-8")
         assert "seed.txt" in describe_root_dirt(repo)
 
+    def test_names_the_detached_sweep_as_likely_author(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
+        from frob.tickets._land_git_ops import describe_root_dirt
+
+        repo = _seed_repo(tmp_path)
+        (repo / "tickets.md").write_text("dirty\n", encoding="utf-8")
+        _git(repo, "add", "tickets.md")
+        rendered = describe_root_dirt(repo)
+        assert "tickets.md" in rendered
+        assert "detached post-land sweep" in rendered
+
+    def test_mixed_dirt_does_not_claim_the_sweep(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_mixed_dirt_does_not_claim_the_sweep  # noqa: E501
+        from frob.tickets._land_git_ops import describe_root_dirt
+
+        repo = _seed_repo(tmp_path)
+        (repo / "tickets.md").write_text("dirty\n", encoding="utf-8")
+        _git(repo, "add", "tickets.md")
+        (repo / "seed.txt").write_text("also changed\n", encoding="utf-8")
+        rendered = describe_root_dirt(repo)
+        assert "detached post-land sweep" not in rendered
+
+
+class TestCommitRegressionTicket:
+    """T-1755: the filed regression ticket's `tickets.md` write must be
+    committed by the sweep itself, scoped to the ledger paths only."""
+
+    def test_commits_the_ledger_write(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commits_the_ledger_write  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _commit_regression_ticket
+        from frob.tickets import Origin, TicketKind, new_ticket
+        from frob.tickets._models import TicketSpec
+
+        repo = _seed_repo(tmp_path)
+        created = new_ticket(
+            repo, TicketSpec(title="regression", kind=TicketKind.BUG, origin=Origin.AGENT)
+        )
+        assert created.is_ok
+        # `new_ticket` itself does NOT commit (T-1755's own confirmed root
+        # cause) -- the ledger is dirty until `_commit_regression_ticket`
+        # runs.
+        assert _git(repo, "status", "--porcelain").strip()
+        _commit_regression_ticket(repo, created.danger_ok.id, "T-9000")
+        # `.frob/` (untracked local state) is expected to remain; the
+        # LEDGER write specifically must be committed.
+        assert "tickets" not in _git(repo, "status", "--porcelain")
+        log = _git(repo, "log", "-1", "--format=%s")
+        assert created.danger_ok.id in log
+        assert "T-9000" in log
+
+    def test_commit_failure_logs_at_error_and_does_not_raise(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commit_failure_logs_at_error_and_does_not_raise  # noqa: E501
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+        from typani.result import Err
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda root, ticket_id, message: Err(LeaseError.CommitFailed),
+        )
+        errors: list[str] = []
+        monkeypatch.setattr(
+            rapid_sweep_mod._log, "error", lambda msg, *a: errors.append(msg % a)
+        )
+        # Must not raise even though the commit "fails".
+        rapid_sweep_mod._commit_regression_ticket(tmp_path, "T-1234", "T-9000")
+        assert len(errors) == 1
+        assert "T-1234" in errors[0]
+        assert "DirtyMain" in errors[0]
+
 
 def _seed_ticket(tmp_path: Path, *, state=None) -> str:
     """A minimal ticket for T-1690's attribution-filing tests. `state`

@@ -3730,6 +3730,49 @@ any commit, and covered by the same CLI surface tests as every other
 verb. It exits non-zero only when the sweep was unmeasurable, so a human
 re-running it can tell "verified" from "could not verify".
 
+**The filed regression ticket ALSO needed its own commit (T-1755).**
+`_file_regression_ticket`'s `new_ticket(root, spec)` call is the second
+tracked-file write the detached sweep makes, and -- unlike the debt
+line -- it went uncommitted for the same reason the debt line originally
+did: nothing committed it. Root-caused directly (not assumed): `frob.
+tickets._new_renumber.new_ticket` is the LIBRARY function -- it takes
+`ledger_lock`, calls `write_ticket`, and returns; the T-1130/T-1615
+auto-commit (`commit_ticket_ledger_change`) lives entirely in the CLI
+dispatch layer (`frob.app.ticket_runner`'s verb table), which a
+programmatic caller like the sweep never reaches. This confirms the
+THIRD candidate this incident's own investigation named as most likely:
+T-1615's uniform auto-commit covers the CLI surface, not programmatic
+callers -- a wider gap than this one call site, filed separately (see
+this section's own citation below for the real id) so the next
+detached/programmatic ledger writer does not rediscover the same hole.
+
+`_commit_regression_ticket` closes THIS call site: after `new_ticket`
+succeeds, it calls `commit_ticket_ledger_change` directly -- the SAME
+scoped `git add <ledger pathspecs> && git commit -- <ledger pathspecs>`
+primitive `frob ticket new`/`drop`/`fail`/`start` already funnel
+through, never a bare `git commit`/`git add -A` (T-1740's own incident:
+a blanket add on a root checkout concurrent lands are racing against
+published 1416 lines of another agent's in-flight work under an
+unrelated commit message). A commit failure is logged at ERROR, naming
+the regression ticket id and stating explicitly that the next land will
+refuse with `DirtyMain` -- the sweep's own regression ticket is already
+durably filed by the time this runs, so a commit failure here degrades
+to "dirty root, logged loudly", never to "the ticket silently
+vanishes".
+
+**`describe_root_dirt` now names the likely author, not just the
+paths (T-1755).** An agent hitting `DirtyMain` from a dirty `tickets.md`/
+`rapid-debt.jsonl` is, per this incident's own root-cause read, always
+correctly isolated from root and structurally unable to investigate WHO
+left it dirty -- naming the paths alone (T-1698) still left "now what"
+unanswered. When EVERY dirty path matches the sweep's own known writes
+(`rapid-debt.jsonl`, `tickets.md`), the refusal now says so explicitly:
+"likely author: a sweep child that filed something and did not commit
+it". A MIXED dirty set (a sweep-owned path plus something else) is
+deliberately NOT attributed to the sweep -- misattributing a genuinely
+unknown second cause would send the next agent looking in the wrong
+place just as surely as no attribution at all.
+
 ## Git merge driver
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_merge_driver -->

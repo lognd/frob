@@ -1542,10 +1542,37 @@ def _true_merge_base(worktree: Path, main_branch_name: str) -> Result[str, LandE
     return Ok(result.danger_ok.stdout.strip())
 
 
+# frob:ticket T-1755
+#: Dirty paths the DETACHED post-land sweep (T-1684) is the near-certain
+#: author of when they show up in a `DirtyMain` refusal: `rapid-debt.jsonl`
+#: (the deferral debt line, T-1699) and `tickets.md` (a filed regression
+#: ticket, T-1755 -- `new_ticket`'s own library call has no auto-commit of
+#: its own, see `_rapid_sweep._commit_regression_ticket`'s docstring for
+#: the confirmed root cause). NOT a v2-store path list (`tickets/T-####/`)
+#: -- naming a specific ticket dir here would require parsing WHICH ticket,
+#: which `describe_root_dirt` has no way to know from a bare path; the
+#: monofile name is the only sweep-owned path this can identify by name
+#: alone, so this stays a best-effort hint, not an exhaustive detector.
+_SWEEP_OWNED_DIRTY_PATHS = ("rapid-debt.jsonl", "tickets.md")
+
+
+# frob:ticket T-1755
+def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
+    """Whether every one of `paths` is a file the detached post-land sweep
+    (T-1684) is known to write -- see `_SWEEP_OWNED_DIRTY_PATHS`'s own
+    docstring. A MIX of a sweep-owned path and something else is NOT
+    called out as sweep-authored (that would misattribute the other,
+    genuinely unknown, dirty path to the sweep) -- only an ALL-sweep-owned
+    dirty set is confident enough to name."""
+    return bool(paths) and all(p in _SWEEP_OWNED_DIRTY_PATHS for p in paths)
+
+
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unavailable_status_is_not_reported_as_clean  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
 # frob:ticket T-1698
+# frob:ticket T-1755
 def describe_root_dirt(root: Path) -> str:
     """What is making `root` dirty, rendered for a `DirtyMain` refusal.
 
@@ -1563,14 +1590,29 @@ def describe_root_dirt(root: Path) -> str:
     in the working tree), that is called out explicitly and first --
     "uncommitted changes" alone reads as working-tree edits, and sent an
     agent looking for the wrong thing when the real cause was a PRIOR
-    land's leftover staged squash content."""
+    land's leftover staged squash content.
+
+    T-1755: when EVERY dirty path is one the detached post-land sweep is
+    known to write (`_SWEEP_OWNED_DIRTY_PATHS`), that is named too -- an
+    agent seeing this refusal is, per T-1755's own incident, structurally
+    isolated from root and cannot investigate WHO left it dirty; naming
+    the likely author turns "report and wait" into "report the specific,
+    actionable cause" without the agent needing to guess."""
     all_paths = _porcelain_dirty_paths(root)
     staged_paths = _porcelain_dirty_paths_staged(root)
     rendered = _render_dirty_paths(all_paths)
+    sweep_hint = (
+        " (all paths match the detached post-land sweep's own known "
+        "writes -- rapid-debt.jsonl/tickets.md, T-1699/T-1755 -- likely "
+        "author: a sweep child that filed something and did not commit "
+        "it)"
+        if _likely_sweep_authored(all_paths)
+        else ""
+    )
     if not staged_paths:
-        return rendered
+        return rendered + sweep_hint
     return (
         f"{len(staged_paths)} STAGED (likely a prior land's leftover "
         f"index, T-1740): {_render_dirty_paths(staged_paths)} -- plus "
-        f"overall: {rendered}"
+        f"overall: {rendered}{sweep_hint}"
     )
