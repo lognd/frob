@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.367.0] - unreleased
+
+- T-1760/T-1317/T-1627: release-artifact recompute, ack accountability, symbol-form via
+
 ## [0.366.0] - unreleased
 
 - T-1692/T-1755/T-1756: backpressure, sweep self-commit, lint fixes
