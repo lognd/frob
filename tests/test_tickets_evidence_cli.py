@@ -17,7 +17,6 @@ resolution/routing plumbing, not re-proving D-01's pass/fail behavior
 `TestD01CliWiring`'s job).
 """
 
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -643,6 +642,7 @@ class TestReplaceEvidence:
             "tests/x.py::test_new",
             collected=frozenset({"tests/x.py::test_new"}),
             passed=frozenset({"tests/x.py::test_new"}),
+            reason="test renamed, same coverage",
         )
         assert result.is_ok
         updated = result.danger_ok
@@ -653,6 +653,12 @@ class TestReplaceEvidence:
         on_disk = queue.tickets[ticket_id]
         assert on_disk.evidence == ("tests/x.py::test_new",)
         assert on_disk.acceptance[0].evidence == ("tests/x.py::test_new",)
+        # frob:ticket T-1733
+        assert len(on_disk.evidence_changes) == 1
+        change = on_disk.evidence_changes[0]
+        assert change.old_node == "tests/x.py::test_old"
+        assert change.new_node == "tests/x.py::test_new"
+        assert change.reason == "test renamed, same coverage"
 
     def test_old_node_absent_is_a_hard_refusal(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -666,6 +672,7 @@ class TestReplaceEvidence:
             "tests/x.py::does_not_exist",
             "tests/x.py::test_new",
             collected=frozenset({"tests/x.py::test_new"}),
+            reason="typo cleanup",
         )
         assert result.is_err
         assert result.danger_err == TicketError.EvidenceReplaceNotFound
@@ -685,6 +692,7 @@ class TestReplaceEvidence:
             "tests/x.py::test_old",
             "tests/x.py::does_not_resolve",
             collected=frozenset({"tests/x.py::test_old"}),
+            reason="attempted rename",
         )
         assert result.is_err
         assert result.danger_err == TicketError.UnknownEvidence
@@ -698,10 +706,43 @@ class TestReplaceEvidence:
 
         ticket_id = self._seed_ticket(tmp_path, monkeypatch)
         result = replace_evidence(
-            tmp_path, ticket_id, "tests/x.py::test_old", "tests/x.py::test_old"
+            tmp_path,
+            ticket_id,
+            "tests/x.py::test_old",
+            "tests/x.py::test_old",
+            reason="no-op check",
         )
         assert result.is_ok
         assert result.danger_ok.evidence == ("tests/x.py::test_old",)
+        # T-1733: a true no-op never appends an audit entry -- nothing
+        # was actually rebound, so there is nothing to record.
+        assert result.danger_ok.evidence_changes == ()
+
+    # frob:ticket T-1733
+    def test_blank_reason_is_a_hard_refusal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_blank_reason_is_a_hard_refusal  # noqa: E501
+        # T-1733's whole point: a `--replace` with no reason must refuse
+        # OUTRIGHT (a hard Err, no write performed), never silently
+        # succeed -- the asymmetry with `frob ticket scope --reason`
+        # this ticket exists to close.
+        from frob.tickets import TicketError, replace_evidence
+
+        ticket_id = self._seed_ticket(tmp_path, monkeypatch)
+        result = replace_evidence(
+            tmp_path,
+            ticket_id,
+            "tests/x.py::test_old",
+            "tests/x.py::test_new",
+            collected=frozenset({"tests/x.py::test_new"}),
+            passed=frozenset({"tests/x.py::test_new"}),
+            reason="",
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceReplaceReasonMissing
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets[ticket_id].evidence == ("tests/x.py::test_old",)
 
 
 # frob:ticket T-1537
@@ -733,12 +774,50 @@ class TestReplaceEvidenceCli:
             ticket_id="T-0001",
             ticket_path=tmp_path,
             ticket_evidence_replace=["tests/x.py::test_old", "tests/x.py::test_new"],
+            ticket_evidence_replace_reason="cli replace test",
         )
         _evidence(tmp_path, replace_cfg)
 
         queue = load_queue(tmp_path).danger_ok
         ticket = queue.tickets["T-0001"]
         assert ticket.evidence == ("tests/x.py::test_new",)
+
+    # frob:ticket T-1733
+    def test_cli_replace_without_reason_exits_nonzero_and_writes_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replace_without_reason_exits_nonzero_and_writes_nothing  # noqa: E501
+        # The exact CLI-level shape of the asymmetry this ticket closes:
+        # `--replace` with no `--reason`/`--reason-file` must refuse
+        # OUTRIGHT before ever touching the ledger, the same "required,
+        # not optional" bar `frob ticket scope` already enforces.
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_old"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="replace without reason",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_old"],
+        )
+        _new(tmp_path, cfg)
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_new"}))
+        _patch_passing(monkeypatch)
+        from frob.app.ticket_runner import _evidence
+
+        replace_cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_replace=["tests/x.py::test_old", "tests/x.py::test_new"],
+        )
+        with pytest.raises(SystemExit) as exc:
+            _evidence(tmp_path, replace_cfg)
+        assert exc.value.code == 1
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == ("tests/x.py::test_old",)
 
     def test_cli_requires_at_least_one_of_the_three_modes(self, tmp_path: Path) -> None:
         from frob.app.ticket_runner import _evidence
@@ -776,6 +855,7 @@ class TestReplaceEvidenceCli:
                 "tests/x.py::does_not_exist",
                 "tests/x.py::test_new",
             ],
+            ticket_evidence_replace_reason="cli not-found test",
         )
         with pytest.raises(SystemExit) as exc:
             _evidence(tmp_path, replace_cfg)
@@ -830,6 +910,7 @@ class TestReplaceEvidenceCli:
             ticket_path=tmp_path,
             ticket_evidence_replace=["tests/x.py::test_old", "tests/x.py::test_new"],
             ticket_evidence_archived=True,
+            ticket_evidence_replace_reason="archived cli replace test",
         )
         _evidence(tmp_path, replace_cfg)
 
@@ -876,7 +957,65 @@ class TestReplaceEvidenceCli:
             ticket_id="T-0001",
             ticket_path=tmp_path,
             ticket_evidence_replace=["tests/x.py::test_old", "tests/x.py::test_new"],
+            ticket_evidence_replace_reason="control case, no --archived",
         )
         with pytest.raises(SystemExit) as exc:
             _evidence(tmp_path, replace_cfg)
         assert exc.value.code == 1
+
+
+# frob:ticket T-1733
+class TestEvidenceChangesSurfaced:
+    """T-1733 requirement 4: `frob ticket evidence --replace` must be
+    surfaced by `frob ticket show`, never buried -- the same posture
+    T-1422 already gives acceptance amendments."""
+
+    def test_show_renders_evidence_change_and_reason(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestEvidenceChangesSurfaced.test_show_renders_evidence_change_and_reason  # noqa: E501
+        from frob.app.ticket_runner._query import _render_evidence_changes
+        from frob.tickets import replace_evidence
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_old"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="surfaced replace",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_old"],
+        )
+        _new(tmp_path, cfg)
+
+        result = replace_evidence(
+            tmp_path,
+            "T-0001",
+            "tests/x.py::test_old",
+            "tests/x.py::test_new",
+            collected=frozenset({"tests/x.py::test_new"}),
+            passed=frozenset({"tests/x.py::test_new"}),
+            reason="renamed for clarity",
+        )
+        assert result.is_ok, result.err
+
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        rendered = _render_evidence_changes(ticket)
+        assert "evidence_changes:" in rendered
+        assert "tests/x.py::test_old" in rendered
+        assert "tests/x.py::test_new" in rendered
+        assert "renamed for clarity" in rendered
+
+    def test_no_replace_ever_used_renders_nothing(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestEvidenceChangesSurfaced.test_no_replace_ever_used_renders_nothing  # noqa: E501
+        from frob.app.ticket_runner._query import _render_evidence_changes
+        from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
+
+        created = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="never replaced", kind=TicketKind.FEATURE, origin=Origin.AGENT
+            ),
+        )
+        assert created.is_ok
+        assert _render_evidence_changes(created.danger_ok) == ""

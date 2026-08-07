@@ -1127,13 +1127,14 @@ node vet : trusted {
 // frob:ticket T-1518
 // frob:ticket T-1687
 // frob:ticket T-1727
+// frob:ticket T-1733
 store tickets_ledger : trusted {
     may "env.read" via "src/frob/tickets/_land.py";
 
     attr interface=[
         AcceptanceAmendmentEntry, AcceptanceAmendmentOp, AcceptanceCriterion, Attachment, AttachmentSource, BOARD_STATES,
         CLI_WIRING_FILES, CMD_EVIDENCE_ALLOWED_KINDS, ClipboardError, ConfirmatoryFinding, DRAFT_PREFIX, DoneReportClaims,
-        FROB_AGENT_ENV, FROB_WORKTREE_ENV, FailureEntry, GateRuleRegistryUnresolvable, LAND_LOCK_REL, LEASE_TTL_SECONDS,
+        EvidenceChangeEntry, FROB_AGENT_ENV, FROB_WORKTREE_ENV, FailureEntry, GateRuleRegistryUnresolvable, LAND_LOCK_REL, LEASE_TTL_SECONDS,
         LandError, LandLockTimeout, LandReport, LeaseError, MutationEvidenceError, Origin,
         PRIORITY_RANK, Priority, ProfileName, QueueEntry, QueueError, RenumberReport,
         ReviewEntry, ReviewVerdict, ScopeChangeOp, SprintTransition, SprintVelocityReport, Stride,

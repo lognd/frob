@@ -68,6 +68,18 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_error_for_security_kind  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_findings_no_violations  # noqa: E501
 # frob:tests tests/gates/test_mutation_evidence_err_branches.py::TestMutationEvidenceErrBranches.test_exec_disabled_degrades_to_no_violations  # noqa: E501
+# frob:ticket T-1733
+# frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_evidence_weakened_and_confirmatory_refuses_outright  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_evidence_changes_never_produces_test018  # noqa: E501
+# frob:waive AFFECT001 reason="T-1733: mutation_evidence_violations's \
+# affects()-closure doc \
+# (docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755) genuinely \
+# needs a TEST018 paragraph -- but docs/modules/tickets.md is leased by another \
+# in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
+# touching it here would collide with that lease. TEST018 is documented in full in \
+# this ticket's own docs home instead (docs/modules/gates.md's new 'TEST018 (T-1733)' \
+# section); remove this waiver once the tickets.md lease clears and its own paragraph \
+# can be added"
 def mutation_evidence_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:
@@ -81,7 +93,21 @@ def mutation_evidence_violations(
     `Err` via `frob.tickets._mutation_evidence` directly if it needs to
     react to that case specially; this wrapper's job is only to turn
     genuine `ConfirmatoryFinding`s into `Violation`s.
-    """
+
+    T-1733/TEST018: when `ticket.evidence_changes` is non-empty (evidence
+    was rebound/weakened at LEAST once during this ticket's life, via
+    `frob ticket evidence --replace`) AND at least one `ConfirmatoryFinding`
+    survives against the CURRENT evidence set (confirmatory-only OR
+    T-1727's `unmeasured`), an ADDITIONAL, always-ERROR `TEST018`
+    violation is appended -- refusing the close OUTRIGHT (severity ERROR
+    regardless of ticket kind, never downgraded to WARN the way an
+    ordinary TEST016 finding is for a non-bug/security ticket), never
+    merely flagging it. This is the mechanical fingerprint T-1733 exists
+    to catch: evidence was weakened AND what remains cannot prove the
+    change -- exactly the shape of "the tests that proved it were removed
+    so it would close." A ticket whose evidence was rebound but whose
+    SURVIVING evidence still kills mutants is unaffected (rebinding to an
+    equally-strong or stronger test is not the incident this closes)."""
     result = check_ticket_mutation_evidence(root, ticket, base_ref)
     if result.is_err:
         if result.danger_err is MutationEvidenceError.ExecDisabled:
@@ -100,7 +126,41 @@ def mutation_evidence_violations(
                 message=_test016_message(ticket.id, finding),
             )
         )
+    if ticket.evidence_changes and findings:
+        violations.append(
+            Violation(
+                rule="TEST018",
+                severity=Severity.ERROR,
+                file=findings[0].file,
+                line=0,
+                message=_test018_message(ticket.id, findings),
+            )
+        )
     return tuple(violations)
+
+
+# frob:ticket T-1733
+def _test018_message(ticket_id: str, findings: tuple[ConfirmatoryFinding, ...]) -> str:
+    """T-1733: the TEST018 refusal message -- names every rebound
+    evidence id (from `ticket.evidence_changes`, via the caller) is NOT
+    done here since the caller already has the ticket; this only names
+    the confirmatory-only/unmeasured files the surviving evidence could
+    not prove, and the two remedies (strengthen evidence, or the
+    disclosed `--skip-mutation-evidence` escape hatch)."""
+    files = ", ".join(f.file for f in findings)
+    return (
+        f"TEST018: {ticket_id}'s evidence was rebound/replaced during "
+        f"this ticket's life (frob ticket evidence --replace, recorded "
+        f"in evidence_changes) AND the surviving evidence proves nothing "
+        f"against {files} -- confirmatory-only or unmeasured, per "
+        f"TEST016. This is refused OUTRIGHT, not merely flagged: it is "
+        f"the exact fingerprint of evidence weakened so a slow close "
+        f"could complete. Remedy: (1) rebind evidence that genuinely "
+        f"kills a mutant of the changed lines, or (2) if the rebind is "
+        f"honest and the surviving evidence really is the best "
+        f"available, `frob ticket land --skip-mutation-evidence` (logs "
+        f"a loud, justification-required override)."
+    )
 
 
 # frob:ticket T-1727

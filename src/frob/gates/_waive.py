@@ -168,6 +168,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1520
 # frob:ticket T-1225
 # frob:ticket T-1486
+# frob:ticket T-1733
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -249,6 +250,13 @@ _KNOWN_GATE_RULES = frozenset(
         # "the defect no longer reproduces" check); see
         # `frob.gates._mutation_evidence.bug_repro_violations`.
         "BUG002",
+        # T-1733: refuse OUTRIGHT (not merely flag) when a ticket's
+        # evidence was rebound/shrunk (evidence_changes non-empty) AND
+        # the surviving evidence is confirmatory-only or unmeasured per
+        # TEST016 -- the mechanical fingerprint of "the tests that proved
+        # it were removed so it would close"; see
+        # `frob.gates._mutation_evidence.evidence_weakened_confirmatory_violations`.
+        "TEST018",
         "TODO001",
         "TODO002",
         # T-0783: a frob:todo edge bound to a still-open ticket whose

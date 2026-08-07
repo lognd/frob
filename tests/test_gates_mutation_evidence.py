@@ -97,6 +97,90 @@ class TestMutationEvidenceViolations:
             violations = mutation_evidence_violations(tmp_path, ticket, "main")
         assert violations == ()
 
+    # frob:ticket T-1733
+    def test_evidence_weakened_and_confirmatory_refuses_outright(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_evidence_weakened_and_confirmatory_refuses_outright  # noqa: E501
+        # The exact fingerprint T-1733 exists to catch: evidence was
+        # rebound (evidence_changes non-empty) AND the surviving
+        # evidence is confirmatory-only per TEST016. Must produce a
+        # SECOND, always-ERROR TEST018 violation ON TOP of the ordinary
+        # TEST016 finding, refusing outright regardless of ticket kind
+        # (here FEATURE, which alone would only WARN on TEST016).
+        from frob.tickets._models import EvidenceChangeEntry
+
+        ticket = _ticket(TicketKind.FEATURE).model_copy(
+            update={
+                "evidence_changes": (
+                    EvidenceChangeEntry(
+                        old_node="tests/test_slow.py::test_watchdog",
+                        new_node="test_m.py::test_add",
+                        reason="test timed out locally",
+                        actor="agent",
+                        at=date(2026, 8, 7),
+                    ),
+                )
+            }
+        )
+        with patch(
+            "frob.gates._mutation_evidence.check_ticket_mutation_evidence",
+            return_value=Ok((_FINDING,)),
+        ):
+            violations = mutation_evidence_violations(tmp_path, ticket, "main")
+        rules = [v.rule for v in violations]
+        assert "TEST016" in rules
+        assert "TEST018" in rules
+        test018 = next(v for v in violations if v.rule == "TEST018")
+        assert test018.severity == "error"
+
+    # frob:ticket T-1733
+    def test_no_evidence_changes_never_produces_test018(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_evidence_changes_never_produces_test018  # noqa: E501
+        # A confirmatory finding alone (no --replace ever used on this
+        # ticket) is ordinary TEST016 territory -- T-1733's outright
+        # refusal is specifically about evidence that was WEAKENED, not
+        # merely evidence that happens to be weak from the start.
+        ticket = _ticket(TicketKind.FEATURE)
+        assert ticket.evidence_changes == ()
+        with patch(
+            "frob.gates._mutation_evidence.check_ticket_mutation_evidence",
+            return_value=Ok((_FINDING,)),
+        ):
+            violations = mutation_evidence_violations(tmp_path, ticket, "main")
+        assert [v.rule for v in violations] == ["TEST016"]
+
+    # frob:ticket T-1733
+    def test_evidence_changes_with_strong_surviving_evidence_no_test018(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_evidence_changes_with_strong_surviving_evidence_no_test018  # noqa: E501
+        # Evidence WAS rebound, but the surviving evidence still kills
+        # mutants (no ConfirmatoryFinding at all) -- an honest rename to
+        # an equally- or more-adversarial test, not the incident this
+        # rule exists to catch.
+        from frob.tickets._models import EvidenceChangeEntry
+
+        ticket = _ticket(TicketKind.FEATURE).model_copy(
+            update={
+                "evidence_changes": (
+                    EvidenceChangeEntry(
+                        old_node="test_m.py::test_add_old",
+                        new_node="test_m.py::test_add",
+                        reason="renamed for clarity",
+                        actor="agent",
+                        at=date(2026, 8, 7),
+                    ),
+                )
+            }
+        )
+        with patch(
+            "frob.gates._mutation_evidence.check_ticket_mutation_evidence",
+            return_value=Ok(()),
+        ):
+            violations = mutation_evidence_violations(tmp_path, ticket, "main")
+        assert violations == ()
+
 
 # ---------------------------------------------------------------------------
 # BUG002 (T-1421)

@@ -274,6 +274,26 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "node id no longer resolves; mutually usable alongside positional "
         "node-id ids/--evidence-cmd in the same invocation",
     )
+    # frob:ticket T-1733
+    ticket_evidence_p.add_argument(
+        "--reason",
+        dest="ticket_evidence_replace_reason",
+        metavar="TEXT",
+        help="required with --replace (T-1733): why this evidence id is "
+        "being rebound, recorded in the ticket's evidence_changes audit "
+        "trail -- the same T-0455 `frob ticket scope --reason` "
+        "precedent applied to evidence, so weakening what proves a "
+        "ticket costs at least as much bookkeeping as the honest "
+        "--skip-mutation-evidence escape hatch. Not required for a "
+        "plain positional-node-id/--evidence-cmd append, only --replace",
+    )
+    ticket_evidence_p.add_argument(
+        "--reason-file",
+        dest="ticket_evidence_replace_reason_file",
+        metavar="PATH",
+        help="read --replace's reason verbatim from PATH instead of the "
+        "shell (T-0737 precedent); mutually exclusive with --reason",
+    )
     # frob:ticket T-1561
     ticket_evidence_p.add_argument(
         "--archived",

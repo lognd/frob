@@ -1202,6 +1202,37 @@ class AcceptanceAmendmentEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-1733
+# frob:doc docs/modules/gates.md#public-api
+class EvidenceChangeEntry(BaseModel):
+    """One append-only audit line for a `frob ticket evidence --replace`
+    mutation (T-1733): the `ScopeChangeEntry`/`AcceptanceAmendmentEntry`
+    discipline (T-0455/T-1422) applied to evidence -- what old node id
+    was rebound to what new one, why, who, and when. Never edited or
+    removed once written, only appended to.
+
+    Closes the asymmetry T-1733 exists to fix: `frob ticket scope`
+    already REQUIRES `--reason` for any scope change and records it here
+    (`ScopeChangeEntry`); `frob ticket evidence --replace` -- the only
+    verb that can shrink or weaken what proves a ticket, since a pure
+    `add_evidence` append is unaffected -- required nothing at all and
+    recorded nothing. An agent facing a slow close could silently
+    unbind its strongest (and slowest) evidence via `--replace` with no
+    trace in the ledger; this entry is the trace. `reason` is mandatory
+    (`replace_evidence` refuses with `EvidenceReplaceReasonMissing`
+    otherwise) for the same reason `AcceptanceAmendmentEntry.reason` is:
+    a rebind with no stated reason is indistinguishable from quietly
+    discarding the strongest evidence to force a close."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    old_node: str
+    new_node: str
+    reason: str
+    actor: str
+    at: date
+
+
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#data-models
 class ReviewVerdict(StrEnum):
@@ -1256,6 +1287,15 @@ def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
 
 
 # frob:doc docs/modules/tickets.md#data-models
+# frob:ticket T-1733
+# frob:waive AFFECT001 reason="T-1733: Ticket's affects()-closure doc \
+# (docs/modules/tickets.md#data-models) genuinely needs the new evidence_changes field \
+# documented -- but docs/modules/tickets.md is leased by another in-progress agent \
+# (T-1715/T-1739) for the duration of this ticket's work, so touching it here would \
+# collide with that lease. EvidenceChangeEntry/evidence_changes are documented in full \
+# in this ticket's own docs home instead (docs/modules/gates.md's new 'TEST018 \
+# (T-1733)' section); remove this waiver once the tickets.md lease clears and its own \
+# data-models entry can be added"
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body.
 
@@ -1363,6 +1403,14 @@ class Ticket(BaseModel):
     # only appended) -- makes a weakened-to-force-a-close criterion visible
     # instead of a silent hand-edit of the ledger.
     acceptance_amendments: tuple[AcceptanceAmendmentEntry, ...] = ()
+    # frob:ticket T-1733
+    # append-only audit trail of every `frob ticket evidence --replace`
+    # mutation this ticket's evidence has gone through (never edited,
+    # only appended) -- the ScopeChangeEntry/AcceptanceAmendmentEntry
+    # discipline applied to evidence: what proves a ticket must be
+    # rebindable only with a recorded reason, exactly like what a ticket
+    # covers already was.
+    evidence_changes: tuple[EvidenceChangeEntry, ...] = ()
     # STRIDE category for kind=security tickets (T-0007)
     threat: Stride | None = None
     # frob:ticket T-0454
@@ -1561,6 +1609,15 @@ class AttachmentSource(BaseModel):
 # frob:doc docs/modules/tickets.md#error-types
 # frob:ticket T-0579
 # frob:ticket T-0889
+# frob:ticket T-1733
+# frob:waive AFFECT001 reason="T-1733: TicketError's affects()-closure doc \
+# (docs/modules/tickets.md#error-types) genuinely needs the new \
+# EvidenceReplaceReasonMissing variant documented -- but docs/modules/tickets.md is \
+# leased by another in-progress agent (T-1715/T-1739) for the duration of this \
+# ticket's work, so touching it here would collide with that lease. The new variant is \
+# documented in this ticket's own docs home instead (docs/modules/gates.md's new \
+# 'TEST018 (T-1733)' section); remove this waiver once the tickets.md lease clears and \
+# its own error-types entry can be added"
 class TicketError(ErrorSet):
     """Fallible outcomes of frob.tickets queue/mutation operations."""
 
@@ -1803,6 +1860,16 @@ class TicketError(ErrorSet):
     EvidenceReplaceNotFound = (
         "--replace old-node is not present in this ticket's evidence list "
         "or any acceptance criterion's evidence"
+    )
+    # frob:ticket T-1733
+    #: `frob ticket evidence <id> --replace <old-node> <new-node>` with no
+    #: `--reason`/`--reason-file` -- the T-0455 `frob ticket scope`
+    #: precedent applied to evidence: rebinding/weakening what proves a
+    #: ticket must be a recorded decision, exactly like narrowing what it
+    #: covers already is. Pure `add_evidence` appends stay unaffected --
+    #: only the shrink/rebind path costs this.
+    EvidenceReplaceReasonMissing = (
+        "--replace requires a non-empty --reason or --reason-file (T-1733)"
     )
 
 

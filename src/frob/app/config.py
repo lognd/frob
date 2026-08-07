@@ -467,6 +467,18 @@ class AppConfig(BaseModel):
     #: binding), atomically. Empty (default) means no `--replace` given --
     #: `[]`/2-element `[old, new]` matches `dup_probe`'s own `nargs=2` shape.
     ticket_evidence_replace: list[str] = []
+    # frob:ticket T-1733
+    #: `frob ticket evidence <id> --replace OLD NEW (--reason TEXT |
+    #: --reason-file PATH)`: why this evidence was rebound -- required,
+    #: same T-0455 `frob ticket scope` precedent applied to evidence.
+    #: Recorded in the ticket's `evidence_changes` audit trail so a
+    #: weakened test can never be silently swapped in the way a shrunk
+    #: `scope` already could not be.
+    ticket_evidence_replace_reason: str | None = None
+    # frob:ticket T-1733
+    #: `--reason-file PATH` twin of the above, same mutual-exclusion shape
+    #: as `ticket_scope_reason`/`ticket_scope_reason_file`.
+    ticket_evidence_replace_reason_file: Path | None = None
     # frob:ticket T-1561
     # `frob ticket evidence <id> --replace OLD NEW --archived`: target an
     # archived ticket instead of an active one (COV003 scans the archive

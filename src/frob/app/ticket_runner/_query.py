@@ -148,6 +148,7 @@ def _stats_line(root: Path, queue) -> str:  # noqa: ANN001
 
 
 # frob:ticket T-0716
+# frob:ticket T-1733
 def _show(root: Path, cfg: AppConfig) -> None:
     from frob.tickets import display_state, load_queue
 
@@ -171,7 +172,7 @@ def _show(root: Path, cfg: AppConfig) -> None:
 
     color = _stdout_color()
     _log.info(
-        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s%s\n\n%s",
+        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s%s%s\n\n%s",
         style_ticket_id(ticket.id, color),
         style_state(display_state(ticket, root), color),
         ticket.title,
@@ -180,6 +181,7 @@ def _show(root: Path, cfg: AppConfig) -> None:
         list(ticket.scope),
         _render_designated_repro(ticket),
         _render_acceptance(ticket),
+        _render_evidence_changes(ticket),
         ticket.body,
     )
 
@@ -238,6 +240,28 @@ def _render_acceptance_amendments(ticket) -> list[str]:  # noqa: ANN001
             f"(reason: {entry.reason}; {entry.actor}, {entry.at})"
         )
     return lines
+
+
+# frob:ticket T-1733
+def _render_evidence_changes(ticket) -> str:  # noqa: ANN001
+    """T-1733 requirement 4: the `\\nevidence_changes: ...` lines `frob
+    ticket show` appends after the acceptance block -- the SAME "never
+    buried, always shown with its reason" posture `_render_acceptance_
+    amendments` already gives acceptance criteria, applied to evidence.
+    A reviewer reading `frob ticket show` sees what was rebound and why,
+    not just the final evidence list a silent unbind would otherwise
+    leave looking perfectly fine. Empty string (no extra lines) when the
+    ticket's evidence was never rebound, matching every sibling
+    `_render_*` helper's "nothing to add" posture."""
+    if not ticket.evidence_changes:
+        return ""
+    lines = ["\nevidence_changes:"]
+    for entry in ticket.evidence_changes:
+        lines.append(
+            f"  {entry.old_node!r} -> {entry.new_node!r} "
+            f"(reason: {entry.reason}; {entry.actor}, {entry.at})"
+        )
+    return "\n".join(lines)
 
 
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process kind="unit"  # noqa: E501

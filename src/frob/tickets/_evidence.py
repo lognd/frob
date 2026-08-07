@@ -1179,10 +1179,41 @@ def _append_evidence_and_write(
     return Ok(updated)
 
 
+# frob:ticket T-1733
+# frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to getpass.getuser, a \
+# stdlib call the resolver cannot statically bound; the one documented raise path \
+# (OSError) is caught below"
+def _current_actor() -> str:
+    """Best-effort identity for an `evidence_changes` audit entry's
+    `actor` field (T-1733) -- the OS login name, or `"unknown"` if the
+    platform/sandbox refuses to report one (never raises). Duplicated
+    one-liner from `_accept._current_actor`/`_scope._current_actor`
+    rather than imported: importing across sibling mutation-family
+    modules for a single `getpass` call would create a needless load-
+    order coupling, the same tradeoff those two modules already accept
+    relative to each other (see `_accept._current_actor`'s own
+    docstring)."""
+    import getpass
+
+    try:
+        return getpass.getuser()
+    except OSError:
+        return "unknown"
+
+
 # frob:ticket T-1537
+# frob:ticket T-1733
 # frob:doc docs/modules/tickets.md#frob-ticket-evidence---replace-t-1537
 # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_replaces_flat_evidence_and_acceptance_binding_atomically  # noqa: E501
 # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_old_node_absent_is_a_hard_refusal  # noqa: E501
+# frob:waive AFFECT001 reason="T-1733: replace_evidence's affects()-closure doc \
+# (docs/modules/tickets.md#frob-ticket-evidence---replace-t-1537) genuinely needs the \
+# required-reason/evidence_changes update -- but docs/modules/tickets.md is leased by \
+# another in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
+# touching it here would collide with that lease. The full behavior change is \
+# documented in this ticket's own docs home instead (docs/modules/gates.md's new \
+# 'TEST018 (T-1733)' section); remove this waiver once the tickets.md lease clears and \
+# its own paragraph can be updated"
 def replace_evidence(
     root: Path,
     ticket_id: str,
@@ -1191,6 +1222,7 @@ def replace_evidence(
     collected: frozenset[str] | None = None,
     passed: frozenset[str] | None = None,
     *,
+    reason: str,
     archived: bool = False,
 ) -> Result[Ticket, TicketError]:
     """T-1537: rebind one evidence id everywhere it appears -- the flat
@@ -1219,6 +1251,17 @@ def replace_evidence(
     (the ticket is returned unchanged, no write performed) rather than an
     error -- nothing to replace is not a failure.
 
+    T-1733: `reason` (keyword-only, REQUIRED, no default) is `Err
+    (EvidenceReplaceReasonMissing)` when blank -- the T-0455 `frob ticket
+    scope --reason` precedent applied to evidence: `--replace` is the
+    only verb that can shrink or weaken what proves a ticket (a pure
+    `add_evidence` append is unaffected and stays free), so it costs the
+    same bookkeeping the honest `--skip-mutation-evidence` escape hatch
+    already costs. Every non-no-op replace appends an `EvidenceChangeEntry`
+    to `ticket.evidence_changes` -- never edited, only appended -- so a
+    reviewer sees what was rebound and why instead of a final list that
+    merely looks fine.
+
     T-1561: `archived=True` retargets both halves of this at ARCHIVE
     storage instead of active -- `ticket_id` is loaded via `load_archive`
     and written back via `write_archived_ticket`, never `_load_one`/
@@ -1227,12 +1270,18 @@ def replace_evidence(
     copy). Use this when COV003 fires on an archived ticket's stale
     evidence binding -- the gate scans `tickets-archive.md`/`tickets/
     archive/**` too, so the repair path must reach the same place."""
+    from datetime import date
+
     from frob.tickets import normalize_evidence_separator
+    from frob.tickets._models import EvidenceChangeEntry
     from frob.tickets._store import write_archived_ticket, write_ticket
 
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
+    if not reason.strip():
+        _log.error("tickets: %s --replace requires --reason (T-1733)", ticket_id)
+        return Err(TicketError.EvidenceReplaceReasonMissing)
 
     prepared = _prepare_replace_evidence(
         root, ticket_id, old_node, new_node, collected, passed, archived=archived
@@ -1244,7 +1293,17 @@ def replace_evidence(
         return Ok(ticket)
 
     normalized_new = normalize_evidence_separator(new_node)
-    updated = _rebind_evidence(ticket, normalized_old, normalized_new)
+    rebound = _rebind_evidence(ticket, normalized_old, normalized_new)
+    entry = EvidenceChangeEntry(
+        old_node=normalized_old,
+        new_node=normalized_new,
+        reason=reason,
+        actor=_current_actor(),
+        at=date.today(),
+    )
+    updated = rebound.model_copy(
+        update={"evidence_changes": ticket.evidence_changes + (entry,)}
+    )
     write_result = (
         write_archived_ticket(root, updated)
         if archived
@@ -1254,12 +1313,13 @@ def replace_evidence(
         return Err(write_result.danger_err)
     _log.info(
         "tickets: %s replaced evidence %r -> %r (%d evidence id(s), %d "
-        "acceptance binding(s) updated)",
+        "acceptance binding(s) updated): %s",
         ticket_id,
         normalized_old,
         normalized_new,
         len(updated.evidence),
         sum(1 for c in ticket.acceptance if normalized_old in c.evidence),
+        reason,
     )
     return Ok(updated)
 

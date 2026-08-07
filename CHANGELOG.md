@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.365.0] - unreleased
+
+- T-1733: Weakening a ticket's evidence is silent and free, while the honest escape hatch is logged and justified
+
 ## [0.364.0] - unreleased
 
 - T-1715: frob ticket land --finish deletes the calling agent's own worktree cwd, stranding it with no recovery

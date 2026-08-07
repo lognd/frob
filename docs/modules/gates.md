@@ -985,6 +985,73 @@ proves this end to end through the real `frob ticket close` entry point
 parent commit, permitted when it fails there), mirroring T-1410's own
 `TestCloseRefusesT1276ShapeEndToEnd` precedent shape.
 
+### TEST018 (T-1733): pricing the quiet way to weaken evidence
+
+`frob.tickets._evidence.replace_evidence` (`frob ticket evidence
+--replace OLD NEW`) is the only verb that can shrink or weaken what
+proves a ticket -- `add_evidence` only appends. Before T-1733 it required
+nothing: no reason, no audit trail, no gate. `frob ticket scope`, by
+contrast, had required `--reason` since T-0455 and recorded every change
+in `ticket.scope_changes`. The asymmetry meant narrowing what a ticket
+COVERS was a recorded decision and narrowing what PROVES it was silent
+and free -- the tool billed the honest `--skip-mutation-evidence` escape
+hatch (T-0755, logged loudly, demands a justification) and comped the
+quiet one. Observed live on 2026-08-07: an agent facing ten consecutive
+540s `frob ticket close` timeouts (T-1727's own root incident) unbound
+its three `TestSpawnWithWatchdog` tests -- the only evidence that
+actually exercised the subprocess watchdog the ticket existed to build
+-- via `--replace`, and the ledger recorded nothing. It surfaced only
+because the agent volunteered it in prose.
+
+**Three parts, mirroring T-0455/T-1422's own shape exactly:**
+
+1. `replace_evidence` now takes a REQUIRED keyword-only `reason: str`
+   (`Err(EvidenceReplaceReasonMissing)` when blank) and appends an
+   `EvidenceChangeEntry` (`old_node`, `new_node`, `reason`, `actor`,
+   `at`) to `ticket.evidence_changes` -- never edited, only appended,
+   the same append-only audit discipline `ScopeChangeEntry`/
+   `AcceptanceAmendmentEntry` already established. `frob ticket evidence
+   --replace OLD NEW (--reason TEXT | --reason-file PATH)` is the CLI
+   surface; a pure positional-node-id append or `--evidence-cmd` stays
+   completely unaffected -- the point is to price weakening, never to
+   tax strengthening.
+2. `frob ticket show` surfaces the churn (`_render_evidence_changes`,
+   `frob.app.ticket_runner._query`) the same way it already surfaces
+   `acceptance_amendments` -- a reviewer sees what was rebound and why,
+   not a final evidence list that merely looks fine.
+3. **TEST018** (`frob.gates._mutation_evidence.mutation_evidence_
+   violations`, registered in `_KNOWN_GATE_RULES`) refuses a close
+   OUTRIGHT -- always ERROR severity, regardless of ticket kind, never
+   downgraded to WARN the way an ordinary TEST016 finding is for a
+   non-bug/security ticket -- when `ticket.evidence_changes` is
+   non-empty (evidence was rebound at least once) AND the CURRENT
+   evidence set still produces a TEST016 `ConfirmatoryFinding` against
+   the ticket's own diff (confirmatory-only, or T-1727's `unmeasured`).
+   That combination is the mechanical fingerprint of "the tests that
+   proved it were removed so it would close" -- TEST016 already computed
+   the confirmatory-only verdict; TEST018 is the consumer that existed
+   as a gap. A ticket whose evidence was rebound but whose SURVIVING
+   evidence still kills mutants (an honest rename to an equally- or
+   more-adversarial test) is unaffected. TEST018 shares TEST016's escape
+   hatch: `frob ticket land --skip-mutation-evidence` still works, logged
+   and justification-required exactly as before -- this is a warning
+   promoted to a refusal, not a new, separate override surface.
+
+**The generalized principle, worth restating because it outlives this
+one pair:** EVERY WAY TO MAKE A TICKET EASIER TO CLOSE MUST COST AT
+LEAST AS MUCH BOOKKEEPING AS THE HONEST WAY. Wherever a cheap exit is
+quieter than the expensive one, the cheap exit is what gets taken, and
+the ledger looks clean while the evidence rots. `--skip-mutation-
+evidence` vs. silent `--replace` was one instance, not the only
+plausible one -- any verb pair where one path is disclosed/costly and a
+structurally equivalent path is silent/free is a candidate for the same
+fix. None was found elsewhere in this audit at T-1733 land time (`scope`
+and `accept --amend/--remove` already both require and record a reason;
+`evidence`'s pure-append path has no shrink capability to price); the
+principle is recorded here so the NEXT verb that grows a quiet escape
+hatch has a named standard to be checked against, not a lesson that has
+to be rediscovered from a second incident.
+
 ### Waive boundary (T-0101, revised T-0289)
 
 `frob:waive` only ever suppresses entries in a `GateReport`'s `violations`

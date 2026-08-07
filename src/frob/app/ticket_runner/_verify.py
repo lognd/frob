@@ -98,15 +98,29 @@ def _evidence_apply_cmd(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# frob:ticket T-1733
 def _evidence_apply_replace(root: Path, cfg: AppConfig) -> None:
-    """`_evidence`'s `--replace OLD NEW` channel (ARCH001 split, T-1537)."""
+    """`_evidence`'s `--replace OLD NEW (--reason TEXT | --reason-file
+    PATH)` channel (ARCH001 split, T-1537; `--reason` required as of
+    T-1733 -- the same "no reason, no mutation" refusal `frob ticket
+    scope` already enforces, applied here so weakening what proves a
+    ticket costs at least as much bookkeeping as the honest
+    `--skip-mutation-evidence` escape hatch)."""
     if not cfg.ticket_evidence_replace:
         return
     assert cfg.ticket_id is not None
+    reason = _resolve_evidence_replace_reason(cfg)
+    if not reason:
+        _log.error(
+            "ticket evidence --replace requires --reason TEXT or "
+            "--reason-file PATH (T-1733)"
+        )
+        sys.exit(1)
     replace_result = _apply_replace_evidence(
         root,
         cfg.ticket_id,
         cfg.ticket_evidence_replace,
+        reason=reason,
         archived=cfg.ticket_evidence_archived,
     )
     if replace_result.is_err:
@@ -1160,15 +1174,52 @@ def _apply_evidence(
 
 # frob:ticket T-1537
 # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidenceCli.test_cli_replaces_and_commits  # noqa: E501
+# frob:ticket T-1733
+def _resolve_evidence_replace_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket evidence --replace`'s `--reason` (T-1733):
+    `--reason-file` wins if given (read verbatim -- T-0737, same
+    rationale as `_resolve_scope_reason`), else the inline `--reason`
+    string. Exits 1 if both are given; returns `None` if neither is
+    given (the caller reports the "one is required" error, matching
+    `_resolve_scope_reason`'s own shape)."""
+    if (
+        cfg.ticket_evidence_replace_reason_file is not None
+        and cfg.ticket_evidence_replace_reason
+    ):
+        _log.error(
+            "ticket evidence --replace: --reason and --reason-file are "
+            "mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_evidence_replace_reason_file is not None:
+        try:
+            return cfg.ticket_evidence_replace_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket evidence --replace: could not read --reason-file %s: %s",
+                cfg.ticket_evidence_replace_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_evidence_replace_reason
+
+
+# frob:ticket T-1733
 def _apply_replace_evidence(
-    root: Path, ticket_id: str, replace_pair: list[str], *, archived: bool = False
+    root: Path,
+    ticket_id: str,
+    replace_pair: list[str],
+    *,
+    reason: str,
+    archived: bool = False,
 ):  # noqa: ANN201
-    """CLI wiring for `frob ticket evidence <id> --replace OLD NEW`
-    (T-1537): resolves the SAME `python_ids`/`rust_ids`/`passing` oracle
-    `_apply_evidence` uses (so a `--replace` target is held to the exact
-    same "must resolve, must pass" bar a fresh `add_evidence` id is) and
-    calls `frob.tickets.replace_evidence`, the single-writer path that
-    updates the flat evidence list AND every acceptance binding
+    """CLI wiring for `frob ticket evidence <id> --replace OLD NEW
+    (--reason TEXT | --reason-file PATH)` (T-1537, `reason` required as
+    of T-1733): resolves the SAME `python_ids`/`rust_ids`/`passing`
+    oracle `_apply_evidence` uses (so a `--replace` target is held to the
+    exact same "must resolve, must pass" bar a fresh `add_evidence` id
+    is) and calls `frob.tickets.replace_evidence`, the single-writer path
+    that updates the flat evidence list AND every acceptance binding
     atomically. `replace_pair` is the CLI's own `[old, new]` 2-element
     list (`nargs=2`). `archived` (T-1561, `--archived`) retargets the
     load/write at archive storage instead of active -- see
@@ -1199,6 +1250,7 @@ def _apply_replace_evidence(
         new_node,
         collected_ids,
         passed=passing,
+        reason=reason,
         archived=archived,
     )
     if result.is_err:

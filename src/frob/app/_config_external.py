@@ -97,6 +97,8 @@ _STRING_FIELDS = (
     # frob:ticket T-1684
     "ticket_sweep_commit",
     "ticket_scope_reason",
+    # frob:ticket T-1733
+    "ticket_evidence_replace_reason",
     "ticket_priority",
     "ticket_priority_level",
     "ticket_kind_value",
@@ -170,6 +172,8 @@ _PATH_FIELDS = (
     "ticket_body_file",
     "ticket_acceptance_file",
     "ticket_scope_reason_file",
+    # frob:ticket T-1733
+    "ticket_evidence_replace_reason_file",
     # frob:ticket T-1029
     "ticket_accept_criterion_file",
     # frob:ticket T-1422
