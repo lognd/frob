@@ -2749,6 +2749,124 @@ A finding refuses exactly like a held flock does, naming the ticket id
 parsed from the process's own argv (a `T-####`-shaped token) when one
 was found.
 
+## Root checkout write guard (T-1779)
+
+T-1619 (above) closed the ledger-COMMIT race between `land()` and every
+OTHER ledger-writing verb -- but `refuse_if_land_in_progress` only ran
+inside `_add_and_commit_tickets_md`, the commit-time choke point. A
+mutating verb's HANDLER runs first and already writes its change to the
+working tree (`write_ticket` is a plain filesystem write with no guard of
+its own) before that commit-time check ever gets a chance to refuse
+anything; `renumber`/`promote` write across many tracked files with no
+commit step at all (T-1615 deliberately excludes them from the uniform
+auto-commit, since each owns its own multi-file transaction), so the
+commit-time check never even ran for them. A real 2026-08-06/07 session
+hit five shapes of this same underlying gap -- root itself, not any
+agent's worktree, has no guard against a coordinator's own git commands
+racing a land -- one of which corrupted a closed ticket's state (T-1678
+read `done` on main with its code absent, because `frob ticket close` ran
+for it between a land's pre-land snapshot and its staging step).
+
+**Gap 1 -- every mutating verb, not just the closeout family, and BEFORE
+the write, not merely before the commit.**
+`frob.app.ticket_runner._refuse_if_land_in_progress_for_dispatch` runs
+BEFORE `handler(root, cfg)`, wrapping the single dispatch call site in
+`run()` (the same T-1615 "one choke point, no per-verb code" shape
+`_auto_commit_ledger_after_dispatch` already established) -- so this
+closes for every verb added to `_ticket_dispatch_table()` in the future
+too, with nothing new to remember per verb.
+
+**Incident 6 (observed live, after the first five, T-1779 follow-up)**
+sharpened WHERE this refusal has to run: the pre-T-1779 guard lived only
+in `_add_and_commit_tickets_md`, so `frob ticket runs-last <id> on`'s
+handler ran to completion -- writing `runs_last=True` to the ticket file
+-- and only the SUBSEQUENT auto-commit refused with `LandInProgress`. A
+"successful write, refused commit" is a PARTIAL write, not a clean
+refusal, and is the same corruption class T-1678 already paid for
+(incident 5). Refusing before `handler()` runs at all, not merely before
+its commit, is what actually closes this -- `test_refused_verb_never_
+writes_the_ticket_file_at_all` (`tests/test_ticket_leases.py::
+TestDispatchLandGuard`) asserts the ticket's on-disk field is UNCHANGED
+after a refused attempt, not merely uncommitted.
+
+Incident 6's OTHER half is a different bug entirely, already ticketed:
+`frob ticket new` itself left `tickets/T-1780/` on disk, UNTRACKED, with
+no commit step of its own -- `new_ticket` (and `write_ticket`/other
+`frob.tickets` mutators called directly) is a pure library call with no
+auto-commit; T-1615's uniform auto-commit wraps the CLI DISPATCH layer,
+not the library call underneath it. That untracked directory later
+DirtyMain-refused an unrelated agent's land. This is T-1758's scope
+(`src/frob/tickets/_new_renumber.py`/`_leases.py`/`_store.py`), not
+T-1779's -- the two are two halves of one fix (this ticket stops a
+verb's WRITE from racing a land already in progress; T-1758 stops a
+verb's write from becoming root dirt that blocks a LATER land), and
+leaving either one unlanded leaves the other's protection incomplete.
+
+Two explicit sets decide who is exempt from the T-1779 pre-dispatch
+guard:
+
+- `_LAND_SAFE_READ_ONLY_VERBS` (`list`/`show`/`doable`/`board`/`epic`/
+  `brief`/`flow`) -- verbs that never write anything, so a coordinator
+  can still inspect state while a land runs. Deliberately a SHORT
+  allowlist rather than an exclusion set: the default posture for any
+  verb not proven read-only here is GUARDED, so a future mutating verb
+  that forgets to add itself to an exclusion list still runs safely by
+  default (it is merely less convenient during a land, never unsafe).
+- `_LAND_LOCK_EXEMPT_VERBS` (`land`/`merge-driver`/`sweep-async`) --
+  exempt for a reason OTHER than being read-only: `land` is the process
+  HOLDING the lock (`_land_lock` already refuses a second concurrent
+  land at the OS `flock` level, so gating it here too would be
+  redundant, not unsafe, but the exclusion is kept explicit);
+  `merge-driver` is invoked BY git as a subprocess of a land that is
+  ALREADY holding the lock, and a fresh `open()` in that child process
+  would not observe itself as the same holder, so gating it here would
+  make a land deadlock against its own merge callback; `sweep-async`
+  (T-1699) deliberately races the lock on its own terms.
+
+**Gap 2 -- refuse to START a land on top of someone else's staged
+content.** Already closed, not new code: `_land_precheck` (the first
+thing `_land_locked` runs, before ANY of land's own staging) already
+calls `_refuse_if_main_dirty`, and `describe_root_dirt`'s T-1740 staged-
+path callout already names exactly this shape ("N STAGED (likely a
+prior land's leftover index, T-1740)"). Verified directly against
+incident 3 above: a staged `git rm -r agents skills` left in root DID
+refuse the next land with `DirtyMain`, naming the staged paths -- the
+guard worked as designed; the incident's cost was the wasted diagnosis
+time from three agents who could not see root, not a guard failure. No
+new refusal was added for this gap.
+
+**Gap 3 -- a safe path easier to reach than raw `git worktree remove`.**
+`git worktree remove` itself cannot be guarded (it is not this repo's
+code), so the fix is a safe ALTERNATIVE that is easier to reach than the
+raw command, not a wrapper around it. `frob.tickets._leases.
+remove_worktree(root, path, *, dry_run=False, force=False)` (T-1779) is
+the single-worktree twin of `sweep_worktrees` (T-0836/T-1739): it reuses
+`_sweep_verdict_for_worktree` directly for exactly ONE candidate, so the
+same liveness-first-and-unconditional gate (`kept:live` if a process is
+cwd'd into the worktree), the same clean/lease/age gates, and the same
+`force` escape hatch apply unchanged -- one candidate through
+`sweep_worktrees`'s own per-candidate loop body, not a re-derived
+mechanism. `Err(NotARegisteredWorktree)` if the target path is not one
+of `root`'s own git-registered `.claude/worktrees/` agent worktrees, the
+same restriction the bulk sweep already enforces.
+
+`frob worktree remove PATH [--dry-run] [--force]` (`frob.app.
+worktree_runner`) is the CLI surface -- same subcommand family as `frob
+worktree sweep`, one new `argparse` subparser, no new dispatch mechanism.
+
+**Gap 4 -- land-lock visibility without `pgrep` (partial).** The only
+way to check "is a land running against root right now" today is
+`.frob/land.lock`'s existence plus whether its `flock` is currently
+held -- `ls -la .frob/land.lock` shows the file exists (the repo has
+landed at least once) but not whether it is CURRENTLY held; a reliable
+answer needs a non-blocking `flock` probe, which
+`frob.tickets._leases.refuse_if_land_in_progress` already performs and
+which any of the guarded verbs above will now report if attempted. A
+dedicated `frob doctor`-style one-line surface for this (so a
+coordinator can check before touching root without a probe command that
+also has other side effects) is not built in this pass -- filed as a
+natural, small follow-up rather than half-built here.
+
 ## Verify-then-destroy: `frob ticket land --retire-on-proof` (T-1619)
 
 Real incident, same session as the lease gap above: an operator ran `frob

@@ -2,7 +2,7 @@
 id: T-1779
 title: 'Nothing guards the root checkout against a coordinator writing during a land:
   five stalls and one corrupted ticket state'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -16,8 +16,50 @@ scope:
 - src/frob/tickets/_leases.py
 - src/frob/app/worktree_runner.py
 - docs/modules/tickets.md
+- tests/test_ticket_leases.py
+- tickets/T-1779/ticket.md
+- tickets/T-1786/ticket.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: unit tests for remove_worktree and the new dispatch-level land-in-progress
+    guard belong beside the existing TestSweepWorktrees/TestRefuseIfLandInProgress
+    classes in this file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1779/ticket.md
+  reason: v2-store per-ticket ledger files for this ticket itself and its own follow-up
+    draft -- same LEDGER_PATH-only-covers-legacy-tickets.md gap T-1613 hit
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1786/ticket.md
+  reason: v2-store per-ticket ledger files for this ticket itself and its own follow-up
+    draft -- same LEDGER_PATH-only-covers-legacy-tickets.md gap T-1613 hit
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001/SYS104: the cli and tickets_ledger design nodes'' interface
+    lists must declare _refuse_if_land_in_progress_for_dispatch and remove_worktree
+    respectively'
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_ticket_leases.py::TestWorktreeRemoveCli::test_remove_cli_removes_a_clean_unleased_worktree
+- tests/test_ticket_leases.py::TestWorktreeRemoveCli::test_remove_cli_exits_1_and_names_the_error_for_a_bad_path
+- tests/test_ticket_leases.py::TestWorktreeRemoveCli::test_remove_cli_exits_1_when_kept
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_refuses_mutating_verb_while_land_in_progress
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_read_only_verb_runs_while_land_in_progress
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_refused_verb_never_writes_the_ticket_file_at_all
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_land_verb_itself_is_exempt
+- tests/test_ticket_leases.py::TestRemoveWorktree::test_removes_a_clean_unleased_worktree
+- tests/test_ticket_leases.py::TestRemoveWorktree::test_keeps_a_live_process_worktree
+- tests/test_ticket_leases.py::TestRemoveWorktree::test_refuses_a_path_not_registered_as_a_worktree
 designated_repro_test: null
 threat: null
 component: null

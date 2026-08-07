@@ -81,6 +81,7 @@ node registry : foreign { clearance Public; }
 // behavioral/architectural change -- the cited affects()-closure doc does not \
 // describe this node's public surface and has nothing to update here."
 // frob:ticket T-1644
+// frob:ticket T-1779
 node cli : trusted {
     attr interface=[
         ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS, ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS, ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS, ARCH_DEFAULT_LCOM4_MIN_METHODS, ARCH_DEFAULT_MAX_CLASS_METHODS, ARCH_DEFAULT_MAX_FILE_LINES,
@@ -90,7 +91,8 @@ node cli : trusted {
         _apply_evidence, _block, _brief, _check_gates_summary_fn, _close, _close_failure_hint,
         _doable, _done_report, _drop, _evidence, _fail, _kind,
         _land, _land_collected_fn, _land_passed_fn, _list, _log_evidence_result, _merge_driver,
-        _new, _render_acceptance, _reverify, _review, _run_pytest_directly, _run_tests_count_fn,
+        _new, _refuse_if_land_in_progress_for_dispatch, _render_acceptance, _reverify, _review, _run_pytest_directly,
+        _run_tests_count_fn,
         _scope, _scope_ack, _show, _start, _work, append_event,
         detect_footguns, ensure_daemon, estimate_tokens, fast_yaml_loader, is_disabled, is_excluded,
         is_skipped_dir, is_test_file, iso_now, iter_files, land_parity_findings, load_arch_config,
@@ -1133,6 +1135,7 @@ node vet : trusted {
 // frob:ticket T-1727
 // frob:ticket T-1733
 // frob:ticket T-1743
+// frob:ticket T-1779
 store tickets_ledger : trusted {
     may "env.read" via "src/frob/tickets/_land.py";
 
@@ -1161,7 +1164,8 @@ store tickets_ledger : trusted {
         missing_acceptance_for_new_rules, mutate_labels, mutate_scope, new_gate_rule_ids, new_ticket, on_default_branch,
         parse_claims_from_done_report, pending_sweep_count, queue_status, read_all_leases, read_done_report, reconcile,
         record_failure, record_force_override, record_lease, record_rapid_debt, record_review, recover_done_report_why,
-        refuse_if_land_in_progress, refuse_if_worktree_in_use, release_lease, remove_acceptance, rename_lease, render_changed_block,
+        refuse_if_land_in_progress, refuse_if_worktree_in_use, release_lease, remove_acceptance, remove_worktree, rename_lease,
+        render_changed_block,
         render_claims_block, render_evidence_block, renumber, renumber_one, replace_done_report_section, replace_evidence,
         replay_evidence_from_done_report, resolve_lease, reverify_close_guard, reverify_cmd_evidence, run_cmd_evidence, run_pending_sweep,
         sanitize_narrative_for_ledger, scan_for_live_worktree_process, scope_breadth_context, scope_matches, scope_overlap, scope_overlap_globs,

@@ -305,11 +305,17 @@ class _LeaseRecord(BaseModel):
 
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_computes_elapsed_time kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_computes_elapsed_time \
+# kind="unit"
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_none_for_unparseable_timestamp kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestLeaseAgeSecondsExceptionBranch.test_none_when_recorded_at_is_not_a_string kind="unit"  # noqa: E501
 # frob:ticket T-0601
-# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'defensive, a lease file is peer-writable' None-on-failure contract to cover any unresolvable timestamp, not just ValueError -- no observable behavior change, so docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'defensive, a \
+# lease file is peer-writable' None-on-failure contract to cover any unresolvable \
+# timestamp, not just ValueError -- no observable behavior change, so \
+# docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473 needs no update -- \
+# doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"
 def lease_age_seconds(
     record: _LeaseRecord, *, now: datetime | None = None
 ) -> float | None:
@@ -336,8 +342,10 @@ def lease_age_seconds(
 
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_expired_past_ttl kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_not_expired_within_ttl kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_expired_past_ttl \
+# kind="unit"
+# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_not_expired_within_ttl \
+# kind="unit"
 # frob:ticket T-0601
 def is_lease_ttl_expired(
     record: _LeaseRecord,
@@ -756,7 +764,9 @@ _STALE_WORKTREE_WARN_COMMITS_DEFAULT = 20
 # frob:ticket T-1059
 # frob:doc docs/modules/tickets.md#stale-worktree-cut-warning-t-1059
 # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_returns_default_when_frob_toml_absent kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_reads_configured_value kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_reads_configured_value \
+# kind="unit"
 # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_non_positive_value_falls_back_to_default kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestLoadPositiveIntConfig.test_malformed_toml_falls_back_to_default kind="unit"  # noqa: E501
 def load_positive_int_config(root: Path, key: str, default: int) -> int:
@@ -798,13 +808,19 @@ def _load_stale_worktree_warn_commits(root: Path) -> int:
 # frob:doc docs/modules/tickets.md#stale-worktree-cut-warning-t-1059
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_warns_when_behind_threshold kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_when_within_threshold kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_silent_on_non_git_root \
+# kind="unit"
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStale.test_respects_configured_threshold kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_main_ref_does_not_exist kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_rev_list_count_fails kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_count_is_not_numeric kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWarnIfWorktreeStaleFailureBranches.test_silent_when_config_lookup_raises kind="unit"  # noqa: E501
-# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'best-effort and non-fatal' silent-no-op contract to cover any git-result-shape surprise, not just the .is_err-checked cases -- no observable behavior change, so docs/modules/tickets.md#stale-worktree-cut-warning-t-1059 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens the already-documented 'best-effort \
+# and non-fatal' silent-no-op contract to cover any git-result-shape surprise, not \
+# just the .is_err-checked cases -- no observable behavior change, so \
+# docs/modules/tickets.md#stale-worktree-cut-warning-t-1059 needs no update -- doc \
+# edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"
 def warn_if_worktree_stale(
     root: Path, ticket_id: str, *, main_ref: str = "main"
 ) -> None:
@@ -1213,7 +1229,8 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
 # frob:ticket T-1619
 # frob:doc docs/modules/tickets.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
 def refuse_if_land_in_progress(root: Path) -> Result[None, LeaseError]:
     """`Err(LeaseError.LandInProgress)` iff `root` currently has a LIVE
@@ -1541,9 +1558,12 @@ def commit_ticket_ledger_change(
 
 
 # frob:ticket T-1615
-# frob:doc docs/modules/tickets.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615  # noqa: E501
+# frob:doc \
+# docs/modules/tickets.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615
 # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_commits_dirty_whole_ledger kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean \
+# kind="unit"
 # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_commit_flag_warns_when_dirty kind="unit"  # noqa: E501
 def commit_full_ledger_change(
     root: Path, message: str, *, no_commit: bool = False
@@ -1897,6 +1917,10 @@ class _WorktreeSweepError(ErrorSet):
 
     NotARepo = "root is not inside a git repository"
     ListFailed = "git worktree list --porcelain failed"
+    # frob:ticket T-1779
+    NotARegisteredWorktree = (
+        "path is not a git-registered .claude/worktrees/ agent worktree of root"
+    )
 
 
 # frob:ticket T-0836
@@ -2009,13 +2033,24 @@ def _worktree_head_age_seconds(
 # frob:ticket T-0836
 # frob:ticket T-1739
 # frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_expired_lease_clean_removed kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed \
+# kind="unit"
+# frob:tests \
+# tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept kind="unit"
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept kind="unit"
+# frob:tests \
+# tests/test_ticket_leases.py::TestSweepWorktrees.test_expired_lease_clean_removed \
+# kind="unit"
+# frob:tests \
+# tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing \
+# kind="unit"
+# frob:tests \
+# tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal \
+# kind="unit"
+# frob:tests \
+# tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree \
+# kind="unit"
 # frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_clean_no_lease_recent_head_live_process_kept  # noqa: E501
 # frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_force_overrides_the_live_process_keep  # noqa: E501
 # frob:ticket T-0601
@@ -2084,6 +2119,63 @@ def sweep_worktrees(
         for candidate in candidates.danger_ok
     ]
     return Ok(tuple(verdicts))
+
+
+# frob:ticket T-1779
+# frob:doc docs/modules/tickets.md#root-checkout-write-guard-t-1779
+# frob:tests \
+# tests/test_ticket_leases.py::TestRemoveWorktree.test_removes_a_clean_unleased_worktree
+# frob:tests \
+# tests/test_ticket_leases.py::TestRemoveWorktree.test_keeps_a_live_process_worktree
+# frob:tests tests/test_ticket_leases.py::TestRemoveWorktree.test_refuses_a_path_not_registered_as_a_worktree  # noqa: E501
+def remove_worktree(
+    root: Path,
+    path: Path,
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+    now: datetime | None = None,
+) -> Result[_WorktreeVerdict, _WorktreeSweepError]:
+    """`frob worktree remove PATH` (T-1779): the single-worktree twin of
+    `sweep_worktrees`, for a coordinator who wants a SAFE alternative to
+    raw `git worktree remove` for ONE specific worktree, not a bulk scan.
+
+    T-1779's incident 4: `git worktree remove` deleted a LIVE agent's
+    checkout outright -- there is no way to make the raw git command
+    itself refuse (T-1739's liveness gate is this repo's own invention,
+    not something `git worktree remove` knows about), so the fix is
+    making the SAFE path (this function, and the `frob worktree remove`
+    CLI verb it powers) easier to reach than the raw command, not
+    guarding the raw command itself.
+
+    Reuses `_sweep_verdict_for_worktree` (T-1739's per-candidate liveness/
+    dirty/lease/age decision) directly rather than re-deriving any of its
+    gates -- a single-worktree call is exactly `sweep_worktrees`'s own
+    per-candidate loop body with one candidate instead of every
+    `.claude/worktrees/` entry, so the same T-1739 liveness-first
+    ordering, the same `force` escape hatch, and the same failure-closed
+    posture on an unresolvable clean/lease/age check all apply unchanged.
+
+    `Err(NotARegisteredWorktree)` if `path` (resolved) is not one of
+    `root`'s own git-registered worktrees under the `.claude/worktrees/`
+    dispatch convention (`_is_agent_worktree_path`) -- this function will
+    never act on the repository's own primary checkout or a hand-made
+    worktree living elsewhere on disk, the same restriction
+    `_list_agent_worktrees` already enforces for the bulk sweep.
+    `Err(ListFailed)` if `git worktree list --porcelain` itself fails."""
+    resolved = path.resolve()
+    if not _is_agent_worktree_path(resolved):
+        return Err(_WorktreeSweepError.NotARegisteredWorktree)
+    candidates = _list_agent_worktrees(root)
+    if candidates.is_err:
+        return Err(candidates.danger_err)
+    if resolved not in candidates.danger_ok:
+        return Err(_WorktreeSweepError.NotARegisteredWorktree)
+    leases = read_all_leases(root)
+    verdict = _sweep_verdict_for_worktree(
+        root, resolved, leases, None, dry_run, now, force=force
+    )
+    return Ok(verdict)
 
 
 # frob:ticket T-1739
@@ -2228,9 +2320,13 @@ def _read_one_lease(leases_root: Path, ticket_id: str) -> _LeaseRecord | None:
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_resolves_own_ticket_own_worktree kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_tickets_leases.py::TestResolveLease.test_resolves_own_ticket_own_worktree \
+# kind="unit"
 # frob:tests tests/test_tickets_leases.py::TestResolveLease.test_never_returns_a_sibling_tickets_lease kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_no_lease_for_ticket_fails_loudly kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_tickets_leases.py::TestResolveLease.test_no_lease_for_ticket_fails_loudly \
+# kind="unit"
 # frob:tests tests/test_tickets_leases.py::TestResolveLease.test_lease_recorded_for_a_different_worktree_fails_loudly kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def resolve_lease(

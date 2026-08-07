@@ -16,7 +16,7 @@ from pathlib import Path
 
 from frob.logging import get_logger
 from frob.render import Renderer
-from frob.tickets._leases import sweep_worktrees
+from frob.tickets._leases import remove_worktree, sweep_worktrees
 
 _log = get_logger(__name__)
 
@@ -66,6 +66,28 @@ def _build_worktree_parser() -> argparse.ArgumentParser:
             "narrowly."
         ),
     )
+    # frob:ticket T-1779
+    remove_p = worktree_sub.add_parser(
+        "remove",
+        help="safe single-worktree removal with T-1739's liveness check (T-1779)",
+    )
+    remove_p.add_argument("path", help="the worktree to remove")
+    remove_p.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="print the verdict without removing anything",
+    )
+    remove_p.add_argument(
+        "--force",
+        dest="force",
+        action="store_true",
+        help=(
+            "T-1739: override the kept:live liveness gate for a worktree "
+            "confirmed genuinely wedged -- same narrow-use posture as "
+            "`sweep --force`"
+        ),
+    )
     return p
 
 
@@ -113,14 +135,47 @@ def _run_sweep(
     )
 
 
+# frob:ticket T-1779
+def _run_remove(path: str, *, dry_run: bool, force: bool) -> None:
+    """`frob worktree remove PATH` (T-1779): the safe single-worktree
+    twin of `sweep`, reachable without enumerating/deciding on every
+    OTHER worktree first -- the incident this closes (`git worktree
+    remove` deleting a live agent's checkout, T-1779's incident 4) needs
+    a path that is EASIER to reach than the raw command, not merely a
+    safer one. `root` is resolved from cwd (any worktree of a repository
+    can target `git worktree remove` at any other, since both share the
+    same underlying repository) -- `PATH`, not `root`, is the worktree
+    being acted on. Exits 1 with a logged error if `PATH` is not a
+    git-registered `.claude/worktrees/` agent worktree of this
+    repository, or if the T-1739 liveness/dirty/lease gates keep it."""
+    root = Path(".").resolve()
+    result = remove_worktree(root, Path(path), dry_run=dry_run, force=force)
+    if result.is_err:
+        _log.error("frob worktree remove: %s (%s)", result.danger_err.value, path)
+        sys.exit(1)
+    verdict = result.danger_ok
+    renderer = Renderer.for_stream(sys.stdout)
+    if verdict.detail:
+        renderer.line(f"{verdict.verdict}({verdict.detail}) {verdict.path}")
+    else:
+        renderer.line(f"{verdict.verdict} {verdict.path}")
+    if verdict.verdict != "removed":
+        sys.exit(1)
+
+
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-1779
 # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_prints_verdicts_and_summary  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_removes_a_clean_unleased_worktree  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_and_names_the_error_for_a_bad_path  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_when_kept
 def run(argv: list[str]) -> None:
     """`frob worktree <subcommand>` entry point (T-0836), dispatched
     directly by `__main__._dispatch` the same way `frob agent`/`frob
-    bind` are. The implemented subcommand surface today is `sweep`; an
-    unrecognized/missing subcommand falls through to argparse's own usage
-    error."""
+    bind` are. The implemented subcommand surface is `sweep` (bulk) and
+    `remove` (single-worktree, T-1779); an unrecognized/missing
+    subcommand falls through to argparse's own usage error."""
     parser = _build_worktree_parser()
     args = parser.parse_args(argv)
     if args.worktree_command == "sweep":
@@ -130,6 +185,9 @@ def run(argv: list[str]) -> None:
             min_age_hours=args.min_age_hours,
             force=args.force,
         )
+        return
+    if args.worktree_command == "remove":
+        _run_remove(args.path, dry_run=args.dry_run, force=args.force)
         return
     parser.print_help(sys.stderr)
     sys.exit(1)

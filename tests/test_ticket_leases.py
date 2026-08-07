@@ -149,7 +149,8 @@ class TestRefusesTerminalState:
     """Behavior 1: `start` refuses a done/dropped ticket outright."""
 
     def test_refuses_done_ticket(self, repo: Path, caplog) -> None:
-        # frob:tests tests/test_ticket_leases.py::TestRefusesTerminalState.test_refuses_done_ticket  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRefusesTerminalState.test_refuses_done_ticket
         ticket_run(
             AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
         )
@@ -384,7 +385,8 @@ class TestSweepWorktrees:
     """`sweep_worktrees`'s core removal decision: clean AND no live lease."""
 
     def test_clean_no_lease_removed(self, sweep_repo: Path) -> None:
-        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed
         wt = _add_agent_worktree(sweep_repo, "wt1")
 
         result = sweep_worktrees(sweep_repo)
@@ -395,7 +397,8 @@ class TestSweepWorktrees:
         assert not wt.exists()
 
     def test_clean_live_lease_kept(self, sweep_repo: Path) -> None:
-        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept
         wt = _add_agent_worktree(sweep_repo, "wt1")
         _write_lease(
             sweep_repo,
@@ -413,7 +416,7 @@ class TestSweepWorktrees:
         assert wt.exists()
 
     def test_dirty_kept(self, sweep_repo: Path) -> None:
-        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept  # noqa: E501
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept
         wt = _add_agent_worktree(sweep_repo, "wt1")
         (wt / "scratch.txt").write_text("uncommitted\n")
 
@@ -440,7 +443,8 @@ class TestSweepWorktrees:
         assert not wt.exists()
 
     def test_dry_run_removes_nothing(self, sweep_repo: Path) -> None:
-        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing
         wt = _add_agent_worktree(sweep_repo, "wt1")
 
         result = sweep_worktrees(sweep_repo, dry_run=True)
@@ -457,7 +461,8 @@ class TestSweepWorktrees:
         assert not wt.exists()
 
     def test_branches_survive_removal(self, sweep_repo: Path) -> None:
-        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal
         _add_agent_worktree(sweep_repo, "wt1")
         assert _branch_exists(sweep_repo, "agent-wt1")
 
@@ -565,6 +570,70 @@ class TestWorktreeSweepCli:
         assert exc_info.value.code == 1
         err = capsys.readouterr().err
         assert "usage" in err.lower()
+
+
+# frob:ticket T-1779
+class TestWorktreeRemoveCli:
+    """`frob worktree remove PATH`'s CLI entry point (T-1779) -- the safe
+    single-worktree alternative to raw `git worktree remove`."""
+
+    def test_remove_cli_removes_a_clean_unleased_worktree(
+        self, sweep_repo: Path, capsys
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_removes_a_clean_unleased_worktree  # noqa: E501
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        cwd = Path.cwd()
+        _os.chdir(sweep_repo)
+        try:
+            worktree_run(["remove", str(wt)])
+        finally:
+            _os.chdir(cwd)
+        out = capsys.readouterr().out
+        assert "removed" in out
+        assert not wt.exists()
+
+    def test_remove_cli_exits_1_and_names_the_error_for_a_bad_path(
+        self, sweep_repo: Path, tmp_path: Path, capsys
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_and_names_the_error_for_a_bad_path  # noqa: E501
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+
+        not_a_worktree = tmp_path / "elsewhere"
+        not_a_worktree.mkdir()
+        cwd = Path.cwd()
+        _os.chdir(sweep_repo)
+        try:
+            with pytest.raises(SystemExit) as exc_info:
+                worktree_run(["remove", str(not_a_worktree)])
+        finally:
+            _os.chdir(cwd)
+        assert exc_info.value.code == 1
+
+    def test_remove_cli_exits_1_when_kept(self, sweep_repo: Path, capsys) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_when_kept  # noqa: E501
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        (wt / "scratch.txt").write_text("uncommitted\n")
+        cwd = Path.cwd()
+        _os.chdir(sweep_repo)
+        try:
+            with pytest.raises(SystemExit) as exc_info:
+                worktree_run(["remove", str(wt)])
+        finally:
+            _os.chdir(cwd)
+        assert exc_info.value.code == 1
+        out = capsys.readouterr().out
+        assert "kept:dirty" in out
+        assert wt.exists()
 
 
 # frob:ticket T-1054
@@ -890,7 +959,8 @@ class TestCommitFullLedgerChange:
         assert log.stdout.strip() == "chore(tickets): archive 1 ticket(s)"
 
     def test_no_op_when_clean(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestCommitFullLedgerChange.test_no_op_when_clean
         from frob.tickets._leases import commit_full_ledger_change
 
         result = commit_full_ledger_change(repo, "chore(tickets): archive 0 ticket(s)")
@@ -1132,6 +1202,172 @@ class TestRefuseIfLandInProgress:
         )
         log = _run(["git", "log", "--oneline"], repo).stdout
         assert "racing ticket" not in log
+
+
+# frob:ticket T-1779
+class TestDispatchLandGuard:
+    """T-1779: `_refuse_if_land_in_progress_for_dispatch` -- the
+    pre-dispatch closing of gap 1 (`refuse_if_land_in_progress` used to
+    run only at COMMIT time, inside `_add_and_commit_tickets_md`, after a
+    mutating verb's handler had already written its change to the
+    working tree). This guard runs BEFORE `handler(root, cfg)` for every
+    verb except the read-only allowlist and land's own exempt set."""
+
+    def test_refuses_mutating_verb_while_land_in_progress(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
+        import fcntl
+
+        from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+                _refuse_if_land_in_progress_for_dispatch(repo, "priority")
+            assert exc.value.code == 1
+            assert "priority" in caplog.text
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+    def test_read_only_verb_runs_while_land_in_progress(self, repo: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
+        import fcntl
+
+        from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            # A pure-read verb (e.g. `show`/`list`) must never be blocked
+            # from inspecting state while a land holds the lock -- no
+            # SystemExit raised.
+            _refuse_if_land_in_progress_for_dispatch(repo, "show")
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+    def test_refused_verb_never_writes_the_ticket_file_at_all(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
+        # Incident 6 (T-1779 follow-up, observed live): the OLD
+        # commit-time-only guard let a verb's handler run to completion
+        # (writing `runs_last=True` to the ticket file) and only refused
+        # the SUBSEQUENT auto-commit -- a partial write, not a clean
+        # refusal ("`frob ticket runs-last T-1780 on` printed 'runs-last
+        # now True' and THEN 'ledger auto-commit failed... LandInProgress'").
+        # This proves the pre-dispatch guard closes that specific gap: the
+        # ticket's on-disk `runs_last` field must be UNCHANGED (never even
+        # written) when the guard refuses, not merely uncommitted.
+        from frob.tickets import load_all
+        from frob.tickets._land import _land_lock
+
+        before = load_all(repo)
+        assert before.is_ok
+        assert before.danger_ok["T-0001"].runs_last is False
+
+        with _land_lock(repo, "T-9999"):
+            with pytest.raises(SystemExit):
+                ticket_run(
+                    AppConfig(
+                        ticket_command="runs-last",
+                        ticket_path=repo,
+                        ticket_id="T-0001",
+                        ticket_runs_last_value="on",
+                    )
+                )
+
+        after = load_all(repo)
+        assert after.is_ok
+        assert after.danger_ok["T-0001"].runs_last is False, (
+            "the ticket's runs_last field was written to disk despite the "
+            "land-in-progress refusal -- the guard fired too late (at "
+            "commit time), the exact incident-6 partial-write bug"
+        )
+
+    def test_land_verb_itself_is_exempt(self, repo: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
+        import fcntl
+
+        from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            # "land"/"merge-driver"/"sweep-async" are exempt: `land`'s own
+            # `_land_lock` already refuses a second concurrent land, and
+            # gating "merge-driver" here would deadlock a land against
+            # its own git-invoked merge callback.
+            _refuse_if_land_in_progress_for_dispatch(repo, "land")
+            _refuse_if_land_in_progress_for_dispatch(repo, "merge-driver")
+            _refuse_if_land_in_progress_for_dispatch(repo, "sweep-async")
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+
+# frob:ticket T-1779
+class TestRemoveWorktree:
+    """T-1779: `remove_worktree` -- the single-worktree twin of
+    `sweep_worktrees`, reusing the SAME T-1739 per-candidate verdict
+    machinery so `frob worktree remove PATH` is a safe alternative to raw
+    `git worktree remove` that is actually easier to reach than the
+    bulk-scan `sweep` command for one specific worktree."""
+
+    def test_removes_a_clean_unleased_worktree(self, sweep_repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::remove_worktree kind="unit"
+        from frob.tickets._leases import remove_worktree
+
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+
+        result = remove_worktree(sweep_repo, wt)
+        assert result.is_ok
+        assert result.danger_ok.verdict == "removed"
+        assert not wt.exists()
+
+    def test_keeps_a_live_process_worktree(self, sweep_repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::remove_worktree kind="unit"
+        from frob.tickets._leases import remove_worktree
+
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        holder = subprocess.Popen(
+            ["sleep", "60"],
+            cwd=str(wt),
+        )
+        try:
+            time.sleep(0.2)
+            result = remove_worktree(sweep_repo, wt)
+            assert result.is_ok
+            assert result.danger_ok.verdict == "kept:live"
+            assert wt.exists()
+        finally:
+            holder.kill()
+            holder.wait(timeout=5)
+
+    def test_refuses_a_path_not_registered_as_a_worktree(
+        self, sweep_repo: Path, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_leases.py::remove_worktree kind="unit"
+        from frob.tickets._leases import _WorktreeSweepError, remove_worktree
+
+        not_a_worktree = tmp_path / "elsewhere"
+        not_a_worktree.mkdir()
+
+        result = remove_worktree(sweep_repo, not_a_worktree)
+        assert result.is_err
+        assert result.danger_err == _WorktreeSweepError.NotARegisteredWorktree
 
 
 # frob:ticket T-1130
@@ -1924,6 +2160,7 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "ticket_accept_criterion": ["a real criterion"],
         },
         "tier": {"ticket_id": "T-0001", "ticket_tier_value": "story"},
+        "runs-last": {"ticket_id": "T-0001", "ticket_runs_last_value": "on"},
         "attach": {"ticket_id": "T-0001"},  # path filled in per-test
         "requeue": {"ticket_id": "T-0001"},  # ticket started first, per-test
     }

@@ -224,6 +224,7 @@ __all__ = [
     "_python_for_tree",
     "_reconcile_cmd",
     "_refuse_if_foreign_live_lease",
+    "_refuse_if_land_in_progress_for_dispatch",
     "_refuse_if_terminal",
     "_render_acceptance",
     "_render_active_leases",
@@ -373,6 +374,78 @@ _LEDGER_TRANSACTIONAL_VERBS = frozenset(
 )
 
 
+# frob:ticket T-1779
+# Verbs that never write anything -- safe to run at any time, including
+# while a land holds the root repository's exclusive lock. Deliberately a
+# SHORT, explicit allowlist rather than "everything not in some exclusion
+# set": T-1779's five incidents were all root-checkout WRITES racing a
+# land, so the default posture for any verb not proven read-only here is
+# GUARDED, not permitted -- an allowlist fails closed on a future verb
+# added to `_ticket_dispatch_table()` (a new mutating command that forgets
+# to add itself to an exclusion list would otherwise run unguarded by
+# default; forgetting to add itself here instead just makes it briefly
+# less convenient during a land, never unsafe).
+_LAND_SAFE_READ_ONLY_VERBS = frozenset(
+    {"list", "show", "doable", "board", "epic", "brief", "flow"}
+)
+
+# frob:ticket T-1779
+# Verbs excluded from the pre-dispatch land-in-progress guard below for a
+# reason OTHER than being read-only:
+#   - "land" is the process that HOLDS the lock (T-1619's own `_land_lock`
+#     already refuses a second concurrent land at the OS `flock` level --
+#     gating it here too would be redundant, not unsafe, but the exclusion
+#     is kept explicit rather than relying on that redundancy).
+#   - "merge-driver" is invoked BY git as a subprocess of a land that is
+#     ALREADY holding the lock (T-0323) -- a fresh `open()` in that child
+#     process would not observe itself as the same holder, so gating it
+#     here would make a land deadlock against its own merge callback.
+#   - "sweep-async" (T-1699) is a detached child that deliberately races
+#     the land lock on its own terms; T-1699 owns that interaction.
+_LAND_LOCK_EXEMPT_VERBS = frozenset({"land", "merge-driver", "sweep-async"})
+
+
+# frob:ticket T-1779
+# frob:ticket T-1779
+# frob:tests tests/test_ticket_leases.py::TestDispatchLandGuard.test_refuses_mutating_verb_while_land_in_progress  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestDispatchLandGuard.test_read_only_verb_runs_while_land_in_progress  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestDispatchLandGuard.test_land_verb_itself_is_exempt
+# frob:tests tests/test_ticket_leases.py::TestDispatchLandGuard.test_refused_verb_never_writes_the_ticket_file_at_all  # noqa: E501
+def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) -> None:
+    """`run()`'s pre-dispatch closing of T-1779's gap 1: the EXISTING
+    `refuse_if_land_in_progress` guard (T-1619) only ran inside
+    `_add_and_commit_tickets_md`, the COMMIT half of a ledger write --
+    every mutating verb's HANDLER still ran first and already wrote its
+    change to the working tree (`write_ticket`, a plain filesystem write,
+    has no guard of its own) before that commit-time check could refuse
+    anything. A land reading/copying `root`'s tree mid-flight could
+    already observe a half-written mutation this way, and `renumber`/
+    `promote` write across MANY files with no commit step at all (T-1615
+    deliberately excludes them from the uniform auto-commit, since each
+    owns its own multi-file transaction), so the commit-time check never
+    even ran for them -- exactly incident 5's shape, generalized to every
+    verb rather than one closeout-family bug.
+
+    Runs BEFORE `handler(root, cfg)` for every verb except
+    `_LAND_SAFE_READ_ONLY_VERBS` (never writes) and
+    `_LAND_LOCK_EXEMPT_VERBS` (land itself, its own merge-driver callback,
+    and sweep-async's deliberate racing) -- exits the process with
+    `sys.exit(1)` rather than returning a `Result`, matching every other
+    top-level dispatch refusal in this module (`run()` has no caller that
+    consumes a return value)."""
+    if command in _LAND_SAFE_READ_ONLY_VERBS or command in _LAND_LOCK_EXEMPT_VERBS:
+        return
+    from frob.tickets._leases import refuse_if_land_in_progress
+
+    refused = refuse_if_land_in_progress(root)
+    if refused.is_err:
+        _log.error(
+            "ticket %s: refused -- %s", command or "<unknown>", refused.danger_err
+        )
+        sys.exit(1)
+
+
 # frob:ticket T-1615
 def _auto_commit_ledger_after_dispatch(
     root: Path, cfg: AppConfig, command: str | None
@@ -429,14 +502,17 @@ def _auto_commit_ledger_after_dispatch(
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
-# frob:doc docs/modules/tickets.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615  # noqa: E501
+# frob:doc \
+# docs/modules/tickets.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615
+# frob:doc docs/modules/tickets.md#root-checkout-write-guard-t-1779
 # frob:ticket T-0588
 # frob:ticket T-1029
 # frob:ticket T-1100
 # frob:ticket T-1615
+# frob:ticket T-1779
 # frob:waive AFFECT001 reason="T-1029 added a new SUBCOMMAND (accept) to the dispatch \
 # table -- REG010-gate-rule-staleness-t-0560 is about a live GATE RULE id drifting out \
 # of the registry's own count, an orthogonal concern this change never touches; \
@@ -456,6 +532,7 @@ def run(cfg: AppConfig) -> None:
             "component|label|accept|flow|archive|review|sprint|tier> ..."
         )
         sys.exit(1)
+    _refuse_if_land_in_progress_for_dispatch(root, cfg.ticket_command)
     with _diagnostic_log_ctx(cfg):
         try:
             handler(root, cfg)
