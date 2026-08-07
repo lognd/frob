@@ -9062,3 +9062,80 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
+
+<!-- ticket:T-1687 -->
+```yaml
+id: T-1687
+title: 'Verification watermark: durable commit-keyed verify queue and verified-through
+  record'
+state: queued
+kind: feature
+origin: agent
+created: '2026-08-06'
+priority: critical
+parent: T-1686
+tier: ticket
+sprint: null
+scope:
+- src/frob/verify/_watermark.py
+- src/frob/tickets/_land_queue.py
+- docs/modules/tickets.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: verification
+labels:
+- watermark-epic
+```
+The foundation every other leaf depends on. Useless alone; land it first
+anyway, because retrofitting a durable record under a running worker is
+strictly harder than building on one.
+
+Two persisted records:
+
+1. VERIFY QUEUE -- append-only intent log. One entry per land: commit
+   sha, ticket id, the TOUCHED SYMBOL SET (symbol ids from the graph, NOT
+   file paths -- tier-2 attribution is impossible without this, and a
+   path list is the lexical shortcut that makes it wrong under refactor),
+   enqueue timestamp, and the profile in force. Written BEFORE the land
+   returns, in the same spirit as T-1684's record_rapid_debt: an
+   unverified commit must never be a silent one, even if every consumer
+   dies immediately after.
+2. WATERMARK -- "verified through commit X at time T, by run R, against
+   baseline B". Advances only on a fully green batch verification.
+
+Both are pydantic models, frozen, extra-forbidding, schema-versioned.
+The queue is append-only with compaction below the watermark, never
+rewritten in place -- a torn rewrite of a shared intent log is exactly
+the corruption class this epic exists to avoid.
+
+Reuse `_land_queue`'s existing lock discipline rather than inventing a
+second locking protocol; two lock protocols over adjacent state in one
+repo is a deadlock waiting to be discovered in production.
+
+Acceptance: a land appends exactly one queue entry with a resolvable
+symbol set; the watermark round-trips; a truncated/corrupt queue file
+reads as "nothing verified" (never as "all verified") and says so at
+WARNING.
+
+Standing repo constraints (binding, not restatement):
+
+- SYMBOLIC, NEVER LEXICAL. Every decision this ticket makes about "which
+  code does this concern" must go through the symbol/reference graph
+  (frob.graph), never a path-string comparison, filename glob, or regex
+  over source text. A lexical shortcut here is a latent wrong answer that
+  only shows up under refactor.
+- Fallible operations return a typani `Result[T, E]` with a named
+  `ErrorSet`. Exceptions only for unrecoverable programmer bugs. Never a
+  bare `except` that turns an unknown state into a clean one.
+- "Cannot verify" is NEVER "verified". Every unmeasurable outcome must be
+  distinguishable from a measured-clean one, in the data model and in the
+  logs -- this is the single invariant the whole epic rests on.
+- Persisted records are pydantic models with `frozen=True, extra="forbid"`,
+  versioned, and forward-compatible on read.
+- LOG EVERYTHING WORTH LOGGING: every state change, queue transition,
+  boundary crossing, branch, and error path gets a module-logger line per
+  ~/.claude/refs/logging.md. Never `print`.
+- Docs land in the same change as the code. No follow-up docs ticket.
+- No waivers. If a gate fires, fix the cause or fix the gate; a waiver
+  here is a structural defect, not a resolution.
