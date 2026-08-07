@@ -3423,9 +3423,17 @@ deadlocked a whole three-agent wave. It stages `rapid-debt.jsonl` alone
 rather than `git add -A`, because concurrent lands are racing on that
 same root and a blanket add would swallow another agent's in-flight work.
 Relatedly, a `DirtyMain` refusal now NAMES the offending paths
-(`porcelain_dirty_paths`/`describe_dirty_paths`): the original message
+(`porcelain_dirty_paths`/`describe_root_dirt`): the original message
 said only "root has uncommitted changes", and three agents each burned
-minutes without learning it was a single one-line file.
+minutes without learning it was a single one-line file. T-1740 sharpened
+this further: `describe_root_dirt` now calls out STAGED state
+explicitly and first ("N STAGED (likely a prior land's leftover index,
+T-1740)") whenever any of the dirty paths are staged rather than merely
+modified in the working tree -- exactly this deferred-sweep commit's own
+failure mode (a killed/refused `_commit_rapid_debt` or land leaving
+`rapid-debt.jsonl`/a squash-apply's own content staged) is precisely the
+shape that used to read as undifferentiated "uncommitted changes" and
+sent an agent looking for working-tree edits instead of the real cause.
 
 `frob ticket sweep-async` is a real subcommand rather than a `-c` code
 string so the deferred sweep is inspectable, re-runnable by hand against

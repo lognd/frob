@@ -53,6 +53,7 @@ from frob.tickets._land_git_ops import (
     _splice_and_stage,
     _splice_and_stage_archive,
     _true_merge_base,
+    _unstage_index_only,
     _verified_reset_root,
 )
 from frob.tickets._land_merge import _commit_message
@@ -737,14 +738,28 @@ def _report_stacked_sibling_absorption(
     )
 
 
+# frob:ticket T-1740
 def _commit_squash_apply(
-    root: Path, ticket: Ticket, final_id: str
+    root: Path, ticket: Ticket, final_id: str, *, pre_land_tip: str
 ) -> Result[None, LandError]:
     """Commit the staged squash-apply with a conventional-commit message,
     under `FROB_LAND_INTERNAL=1` (T-0828) -- this commit legitimately
     carries the REL001 version bump and generated CHANGELOG.md entry
     (`_apply_release_bump`), so it MUST set the flag or the T-0731
-    land-owned-files `pre-commit` hook refuses land's own commit."""
+    land-owned-files `pre-commit` hook refuses land's own commit.
+
+    T-1740: THE gap this ticket's audit found -- every OTHER failure path
+    in the squash-apply pipeline already unwinds via `_verified_reset_
+    root`, but this, the LAST step, used to just tell the operator to
+    clean up by hand, leaving the fully-staged squash sitting in `root`'s
+    index on any commit failure (a hook rejection, an identity/config
+    issue, disk pressure). Now attempts `_verified_reset_root` first (the
+    normal, safe full unwind back to `pre_land_tip` -- nothing else can
+    have moved `root`'s tip between the successful stage and this commit
+    attempt in the ordinary case) and falls back to `_unstage_index_only`
+    if THAT itself reports drift, so the index is never left holding
+    land's own staged content for an unrelated `git commit` to sweep up,
+    even in this doubly-unlikely case."""
     commit_argv = [
         "git",
         "-C",
@@ -756,16 +771,25 @@ def _commit_squash_apply(
     with _land_internal_git_env():
         commit = run_argv(commit_argv)
     if commit.is_err or commit.danger_ok.returncode != 0:
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        if unwound.is_err:
+            _unstage_index_only(root)
         _log.error(
             "land: %s squash-apply staged onto %s but the final commit "
-            "failed (%s) -- inspect `git -C %s status`, commit manually "
-            "with a conventional-commit message, or `git -C %s reset "
-            "--hard` to unwind the staged squash",
+            "failed (%s) -- %s. Fix the underlying commit failure (a "
+            "pre-commit hook, git identity/config, disk pressure) and "
+            "retry `frob ticket land %s --worktree ...`",
             final_id,
             root,
             _describe_git_failure(commit_argv, commit),
-            root,
-            root,
+            "the staged squash was unwound"
+            if unwound.is_ok
+            else (
+                "the squash could not be safely unwound (tip drift); the "
+                f"index was unstaged instead (T-1740): {root} is unchanged "
+                "except for whatever a concurrent write already committed"
+            ),
+            final_id,
         )
         return Err(LandError.CommitFailed)
     return Ok(None)
@@ -997,7 +1021,7 @@ def _land_squash_apply_finish(
     if swept.is_err:
         return Err(swept.danger_err)
 
-    committed = _commit_squash_apply(root, ticket, final_id)
+    committed = _commit_squash_apply(root, ticket, final_id, pre_land_tip=pre_land_tip)
     if committed.is_err:
         return Err(committed.danger_err)
 

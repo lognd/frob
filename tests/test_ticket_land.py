@@ -6746,6 +6746,129 @@ class TestVerifiedResetRoot:
         # NOT reset -- the drifted commit must still be there, untouched.
         assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted_tip
 
+    def test_drift_refusal_still_unstages_the_index(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_drift_refusal_still_unstages_the_index  # noqa: E501
+        """T-1740: the 2026-08-07 incident -- a refused land used to leave
+        its own staged squash content sitting in root's index forever on
+        the drift path, because a full `reset --hard` there is unsafe (it
+        could destroy the concurrent commit that caused the drift). The
+        fix unstages (never touches HEAD or the concurrent commit) even
+        though it cannot fully unwind."""
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        # Land's own staged squash content, still in the index.
+        (repo / "land_staged.txt").write_text("land's own staged squash content\n")
+        _run(["git", "add", "land_staged.txt"], repo)
+        # A concurrent, unrelated real commit that moved HEAD past `pre`.
+        (repo / "concurrent.txt").write_text("a real concurrent commit\n")
+        _commit_all(repo, "advance main past the recorded pre-land tip")
+        drifted_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert drifted_tip != pre
+
+        result = _land_git_ops_mod._verified_reset_root(repo, pre, "T-TEST")
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+        # The concurrent commit survives untouched -- never reset.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted_tip
+        assert (repo / "concurrent.txt").exists()
+        # But the index no longer holds land's own staged content -- a
+        # bystander's next bare `git commit` cannot sweep it up anymore.
+        staged = _run(["git", "diff", "--cached", "--name-only"], repo).stdout.strip()
+        assert staged == ""
+
+    def test_unstage_index_only_never_moves_head_or_touches_tracked_content(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_unstage_index_only_never_moves_head_or_touches_tracked_content  # noqa: E501
+        head_before = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        (repo / "new_staged.txt").write_text("new staged file\n")
+        _run(["git", "add", "new_staged.txt"], repo)
+
+        result = _land_git_ops_mod._unstage_index_only(repo)
+        assert result.is_ok, result.err
+        # HEAD never moved.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == head_before
+        # Unstaged, but the file itself (an untracked leftover) still exists.
+        staged = _run(["git", "diff", "--cached", "--name-only"], repo).stdout.strip()
+        assert staged == ""
+        assert (repo / "new_staged.txt").exists()
+
+
+# frob:ticket T-1740
+class TestDescribeRootDirtNamesStagedState:
+    """T-1740: `DirtyMain`'s message used to say only "uncommitted
+    changes," which reads as working-tree edits and sent an agent
+    looking for the wrong thing when the real cause was a PRIOR land's
+    leftover STAGED index. `describe_root_dirt` now calls staged state
+    out explicitly and first."""
+
+    def test_working_tree_only_dirt_is_unchanged(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState.test_working_tree_only_dirt_is_unchanged  # noqa: E501
+        (repo / "modified.txt").write_text("unstaged edit\n")
+        described = _land_git_ops_mod.describe_root_dirt(repo)
+        assert "modified.txt" in described
+        assert "STAGED" not in described
+
+    def test_staged_dirt_is_called_out_explicitly(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState.test_staged_dirt_is_called_out_explicitly  # noqa: E501
+        (repo / "staged.txt").write_text("staged leftover\n")
+        _run(["git", "add", "staged.txt"], repo)
+        described = _land_git_ops_mod.describe_root_dirt(repo)
+        assert "STAGED" in described
+        assert "staged.txt" in described
+
+    def test_porcelain_dirty_paths_staged_only_reports_index_status(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState.test_porcelain_dirty_paths_staged_only_reports_index_status  # noqa: E501
+        (repo / "staged.txt").write_text("staged\n")
+        _run(["git", "add", "staged.txt"], repo)
+        (repo / "unstaged.txt").write_text("unstaged\n")
+
+        staged_only = _land_git_ops_mod._porcelain_dirty_paths_staged(repo)
+        assert staged_only == ("staged.txt",)
+
+
+# frob:ticket T-1740
+class TestCommitSquashApplyUnwindsOnCommitFailure:
+    """T-1740's audit found this the ONE real gap: every other failure
+    path in the squash-apply pipeline already unwinds via
+    `_verified_reset_root`, but `_commit_squash_apply` -- the LAST step,
+    the actual `git commit` -- used to just tell the operator to clean up
+    root by hand on failure, leaving the fully-staged squash sitting in
+    the index."""
+
+    def test_commit_failure_unwinds_the_staged_squash(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCommitSquashApplyUnwindsOnCommitFailure.test_commit_failure_unwinds_the_staged_squash  # noqa: E501
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        (repo / "staged_by_land.txt").write_text("staged squash content\n")
+        _run(["git", "add", "staged_by_land.txt"], repo)
+
+        ticket = Ticket(
+            id="T-9999",
+            title="test commit failure unwind",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+        )
+
+        _failing_run_argv(
+            monkeypatch,
+            lambda argv: "commit" in argv and "-m" in argv,
+        )
+
+        result = _land_squash_mod._commit_squash_apply(
+            repo, ticket, "T-9999", pre_land_tip=pre
+        )
+        assert result.is_err
+        assert result.danger_err == LandError.CommitFailed
+        # The staged squash was unwound -- root is back to its pre-land
+        # tip, clean, nothing left for a bystander's next commit to sweep.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre
+        assert _status_ignoring_frob(repo) == ""
+
 
 # frob:ticket T-0907
 class TestLandRepairMarker:
@@ -8436,6 +8559,42 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
         assert (repo / "foreign.txt").exists()
         log = _run(["git", "log", "--oneline"], repo).stdout
         assert "an unrelated interleaved commit" in log
+
+    # frob:ticket T-1740
+    def test_foreign_commit_refusal_still_unstages_own_leftover_content(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_refusal_still_unstages_own_leftover_content  # noqa: E501
+        """T-1740's second instance of the same defect class: `land
+        --plan` runs its OWN unwind primitive (T-1495), separate from
+        `_verified_reset_root`, with the identical gap -- refusing on
+        foreign-commit detection used to leave whatever this run itself
+        had staged sitting in root's index. Never allowed to reach the
+        `_land_plan_reset_hard` unwind itself (the tip mismatch refuses
+        first), so THIS staged content is whatever `check_ticks()`
+        itself leaves in the index while faking the foreign interleave."""
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        _commit_all(worktree, "docs: add new.md")
+
+        def foreign_commit_and_leave_staged() -> bool:
+            (repo / "foreign.txt").write_text("someone else's work\n")
+            _commit_all(repo, "chore: an unrelated interleaved commit")
+            (repo / "leftover_staged.txt").write_text("left behind by this run\n")
+            _run(["git", "add", "leftover_staged.txt"], repo)
+            return False
+
+        result = land_plan(repo, worktree, check_ticks=foreign_commit_and_leave_staged)
+        assert result.is_err
+        assert result.danger_err is LandError.GitFailed
+        staged = _run(["git", "diff", "--cached", "--name-only"], repo).stdout.strip()
+        assert staged == "", (
+            "land --plan's own T-1495 unwind path left staged content "
+            "behind -- the T-1740 incident, reproduced in the --plan path"
+        )
 
     # frob:ticket T-1495
     # frob:ticket T-1522

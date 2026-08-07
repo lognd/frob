@@ -58,6 +58,7 @@ from frob.tickets._land_git_ops import (
     _true_merge_base,
     _uncommitted_out_of_scope_waive_deletions,
     _unowned_deletions,
+    _unstage_index_only,
     _wip_commit,
 )
 from frob.tickets._land_merge import _validate_closeable
@@ -1205,12 +1206,30 @@ def _assert_reset_only_discards_own_commits(
     expected_tip = own_commits[-1] if own_commits else base_sha
     if current.danger_ok == expected_tip:
         return Ok(None)
+    # frob:ticket T-1740
+    # T-1740: unstage BEFORE refusing -- the same fix `_verified_reset_
+    # root`'s drift branch got, applied here since `land --plan` runs a
+    # SEPARATE unwind primitive (T-1495) with the identical structural
+    # gap: a refusal that leaves `land --plan`'s own staged finalize
+    # content sitting in root's index is not a refusal, it is a partial
+    # apply with an error message. Best-effort -- its own failure only
+    # logs, never masks the real refusal below.
+    unstaged = _unstage_index_only(root)
+    if unstaged.is_err:
+        _log.warning(
+            "land --plan: could not unstage %s's index after detecting "
+            "drift (%s) -- staged content may still be present",
+            root,
+            unstaged.danger_err,
+        )
     _log.error(
         "land: refused to reset %s to %s -- current tip is %s but this "
         "run's own last commit was %s; something else moved %s's tip "
         "since (another process's land, a manual ledger commit) and "
         "resetting would silently destroy it (T-1495, the 2026-08-04 "
-        "incident); NOT resetting -- inspect `git -C %s log --oneline "
+        "incident); NOT resetting, but the INDEX has been unstaged "
+        "(T-1740) so nothing this run staged can ride into someone "
+        "else's next commit -- inspect `git -C %s log --oneline "
         "%s..HEAD` by hand before retrying",
         root,
         base_sha,

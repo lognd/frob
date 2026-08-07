@@ -127,7 +127,92 @@ def _is_ignored_path_refusal(stderr: str) -> bool:
     return "ignored by one of your .gitignore files" in stderr
 
 
+# frob:ticket T-1740
+def _unstage_index_only(root: Path) -> Result[None, LandError]:
+    """`git reset` (bare, mixed, no target -- defaults to `HEAD`) in
+    `root`: clears the INDEX back to matching whatever `root`'s CURRENT
+    `HEAD` is, without moving `HEAD` and without touching a single
+    working-tree file's content (T-1740).
+
+    This is the "unstage what land staged" primitive `_verified_reset_
+    root`'s drift branch was missing (the 2026-08-07 incident: a refused
+    `land T-1688` left 14 files staged in root's index -- including
+    `_worker.py` and its tests -- with no cleanup at all, and the next
+    bare `git commit` anywhere in `root`, run by a human unaware of the
+    leftover state, published them under an unrelated message). Safe to
+    call even when `root`'s tip has drifted from this run's own `pre_
+    land_tip` (the exact case `_verified_reset_root` refuses to `reset
+    --hard` for, since a hard reset there could destroy the concurrent
+    commit that caused the drift) -- unstaging never touches commits or
+    tracked file bytes, only the index, so it cannot destroy anything a
+    concurrent write already committed."""
+    reset = run_argv(["git", "-C", str(root), "reset"])
+    if reset.is_err or reset.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(None)
+
+
 # frob:ticket T-0907
+# frob:ticket T-1740
+def _refuse_drift_but_unstage(
+    root: Path, pre_land_tip: str, current_tip: str, ticket_id: str
+) -> LandError:
+    """`_verified_reset_root`'s drift-detected branch (T-1740, split out
+    to keep that function under the ARCH001 line threshold): unstages
+    (`_unstage_index_only`, best-effort -- its own failure only logs, it
+    never masks the drift refusal itself) before refusing, so land's own
+    staged squash content can never ride into someone else's next `git
+    commit` (the 2026-08-07 T-1688 incident) even though a full `reset
+    --hard` here is unsafe (it could destroy the concurrent commit that
+    caused the drift). Always returns `LandError.GitFailed`."""
+    unstaged = _unstage_index_only(root)
+    if unstaged.is_err:
+        _log.warning(
+            "land: %s could not unstage %s's index after detecting drift "
+            "(%s) -- staged content may still be present",
+            ticket_id,
+            root,
+            unstaged.danger_err,
+        )
+    # Name exactly what this refusal leaves behind, rather than a bare
+    # pointer to "inspect by hand" -- a prior incident this same
+    # disclosure practice already closed once left four files staged
+    # with no disclosure of WHICH ones, so the operator had to discover
+    # them via a separate `git status` before they could even start
+    # cleaning up. T-1740: by this point the index has already been
+    # unstaged above, so `leftover_lines` here reports WORKING-TREE
+    # state only -- genuinely nothing left staged.
+    leftover = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    leftover_lines = (
+        [line for line in leftover.danger_ok.stdout.splitlines() if line.strip()]
+        if leftover.is_ok and leftover.danger_ok.returncode == 0
+        else []
+    )
+    _log.error(
+        "land: %s refused to unwind %s -- current tip is %s but this "
+        "run's recorded pre-land tip is %s (drift detected mid-staging, "
+        "T-0907) -- NOT hard-resetting (a blind reset here could destroy "
+        "the concurrent commit that caused the drift), but the INDEX has "
+        "been unstaged (T-1740) so nothing land itself staged can ride "
+        "into someone else's next commit; inspect `git -C %s reflog` and "
+        "`git -C %s log --oneline -5` by hand before retrying. "
+        "Working-tree state remaining in %s (%d path(s), index already "
+        "clear): %s",
+        ticket_id,
+        root,
+        current_tip,
+        pre_land_tip,
+        root,
+        root,
+        root,
+        len(leftover_lines),
+        ", ".join(leftover_lines)
+        if leftover_lines
+        else "(could not list -- run `git status` by hand)",
+    )
+    return LandError.GitFailed
+
+
 def _verified_reset_root(
     root: Path, pre_land_tip: str, ticket_id: str
 ) -> Result[None, LandError]:
@@ -136,53 +221,24 @@ def _verified_reset_root(
     target from whatever `HEAD` happens to be AT RESET TIME, the exact
     hazard the incident this ticket fixes exploited): resets to an
     EXPLICIT sha captured once at this run's start, and refuses loudly
-    (`Err(GitFailed)`, no reset performed) if `root`'s current tip has
-    already drifted from `pre_land_tip` by the time this runs -- root's
-    tip must never move between this run's start and its own final commit
+    (`Err(GitFailed)`) if `root`'s current tip has already drifted from
+    `pre_land_tip` by the time this runs -- root's tip must never move
+    between this run's start and its own final commit
     (`_commit_squash_apply`), so any drift here means something else
-    touched `root` mid-run and blindly resetting over it would risk
-    exactly the T-0907 incident class."""
+    touched `root` mid-run and blindly `reset --hard`-ing over it would
+    risk exactly the T-0907 incident class.
+
+    T-1740: the drift case still UNSTAGES before refusing
+    (`_refuse_drift_but_unstage`) -- a refusal that leaves land's own
+    staged squash content sitting in the index is not a refusal, it is a
+    partial apply with an error message."""
     current = _rev_parse(root, "HEAD")
     if current.is_err:
         return Err(current.danger_err)
     if current.danger_ok != pre_land_tip:
-        # frob:ticket T-1619
-        # T-1619: name exactly what this refusal leaves behind, rather than
-        # a bare pointer to "inspect by hand" -- the 2026-08-05 incident
-        # this closes left four files staged with no disclosure of WHICH
-        # ones, so the operator had to discover them via a separate `git
-        # status` before they could even start cleaning up. `git status
-        # --porcelain` failing here is itself best-effort (the drift refusal
-        # above is the actual signal; a status failure just means the
-        # leftover-files line is omitted, never that the refusal is
-        # skipped).
-        leftover = run_argv(["git", "-C", str(root), "status", "--porcelain"])
-        leftover_lines = (
-            [line for line in leftover.danger_ok.stdout.splitlines() if line.strip()]
-            if leftover.is_ok and leftover.danger_ok.returncode == 0
-            else []
+        return Err(
+            _refuse_drift_but_unstage(root, pre_land_tip, current.danger_ok, ticket_id)
         )
-        _log.error(
-            "land: %s refused to unwind %s -- current tip is %s but this "
-            "run's recorded pre-land tip is %s (drift detected mid-"
-            "staging, T-0907) -- NOT resetting (a blind reset here could "
-            "destroy the concurrent commit that caused the drift); "
-            "inspect `git -C %s reflog` and `git -C %s log --oneline -5` "
-            "by hand before retrying. Left staged/uncommitted in %s (%d "
-            "path(s)): %s",
-            ticket_id,
-            root,
-            current.danger_ok,
-            pre_land_tip,
-            root,
-            root,
-            root,
-            len(leftover_lines),
-            ", ".join(leftover_lines)
-            if leftover_lines
-            else "(could not list -- run `git status` by hand)",
-        )
-        return Err(LandError.GitFailed)
     reset = run_argv(["git", "-C", str(root), "reset", "--hard", pre_land_tip])
     if reset.is_err or reset.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)
@@ -239,6 +295,32 @@ def _porcelain_dirty_paths(root: Path) -> tuple[str, ...]:
         for line in spawned.danger_ok.stdout.splitlines()
         if line.strip() and not line[3:].strip().startswith(".frob/")
     )
+
+
+# frob:ticket T-1740
+def _porcelain_dirty_paths_staged(root: Path) -> tuple[str, ...]:
+    """The SUBSET of `_porcelain_dirty_paths(root)` that is STAGED (`git
+    status --porcelain`'s first/index column is non-blank/non-`?`) --
+    T-1740's distinction: a `DirtyMain` refusal that says only
+    "uncommitted changes" reads as working-tree edits and sent an agent
+    looking for the wrong thing when the real cause was a PRIOR land's
+    leftover staged squash content (`_verified_reset_root`'s drift path).
+    Same `.frob/`-ignoring rule and same best-effort-empty-on-git-failure
+    posture as `_porcelain_dirty_paths`."""
+    spawned = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return ()
+    staged: list[str] = []
+    for line in spawned.danger_ok.stdout.splitlines():
+        if not line.strip():
+            continue
+        path = line[3:].strip()
+        if path.startswith(".frob/"):
+            continue
+        index_status = line[0]
+        if index_status not in (" ", "?"):
+            staged.append(path)
+    return tuple(staged)
 
 
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
@@ -1475,5 +1557,20 @@ def describe_root_dirt(root: Path) -> str:
     file deadlocked every land in the repo, and three agents each burned
     minutes without ever learning which file it was. An error that does
     not name its own cause is a structural defect in a tool whose entire
-    job is enforcement."""
-    return _render_dirty_paths(_porcelain_dirty_paths(root))
+    job is enforcement.
+
+    T-1740: when any of the dirty paths are STAGED (not merely modified
+    in the working tree), that is called out explicitly and first --
+    "uncommitted changes" alone reads as working-tree edits, and sent an
+    agent looking for the wrong thing when the real cause was a PRIOR
+    land's leftover staged squash content."""
+    all_paths = _porcelain_dirty_paths(root)
+    staged_paths = _porcelain_dirty_paths_staged(root)
+    rendered = _render_dirty_paths(all_paths)
+    if not staged_paths:
+        return rendered
+    return (
+        f"{len(staged_paths)} STAGED (likely a prior land's leftover "
+        f"index, T-1740): {_render_dirty_paths(staged_paths)} -- plus "
+        f"overall: {rendered}"
+    )
