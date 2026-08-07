@@ -17,6 +17,9 @@ scope:
 - tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_tickets_migration.py::TestMigrateV1ToV2::test_golden_round_trip_semantic_equality
+- tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_write_archive_round_trips_many_tickets_count_and_content
 designated_repro_test: null
 threat: null
 component: null
