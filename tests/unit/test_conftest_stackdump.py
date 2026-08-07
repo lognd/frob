@@ -196,3 +196,59 @@ class TestSuiteResultLine:
         module.pytest_sessionfinish(session=session, exitstatus=0)
 
         assert reporter.lines == []
+
+    class _FakeReport:
+        """Minimal stand-in for pytest's `TestReport`, carrying just the
+        `nodeid` attribute `pytest_sessionfinish` reads off `stats`."""
+
+        def __init__(self, nodeid: str) -> None:
+            self.nodeid = nodeid
+
+    class _StatsReporter(_FakeReporter):
+        """`_FakeReporter` plus a `.stats` dict, mirroring the real
+        `TerminalReporter`'s outcome-keyed report list."""
+
+        def __init__(self, stats: "dict[str, list]") -> None:
+            super().__init__()
+            self.stats = stats
+
+    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_failing_node_ids  # noqa: E501
+    def test_sessionfinish_lists_failing_node_ids(self) -> None:
+        """T-1673: alongside the count-only `SUITE-RESULT:` line, the hook
+        writes one `SUITE-RESULT-FAILED:` line per failing/erroring node id
+        -- the content a reader needs to act without a second full run."""
+        module = _load_conftest()
+        stats = {
+            "failed": [self._FakeReport("tests/a.py::test_one")],
+            "error": [self._FakeReport("tests/b.py::test_two")],
+        }
+        reporter = self._StatsReporter(stats)
+        config = self._FakeConfig(reporter=reporter, is_worker=False)
+        session = self._FakeSession(config=config, collected=10, failed=2)
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        assert reporter.lines[0] == "SUITE-RESULT: exitstatus=1 collected=10 failed=2"
+        assert "SUITE-RESULT-FAILED: tests/a.py::test_one (failed)" in reporter.lines
+        assert "SUITE-RESULT-FAILED: tests/b.py::test_two (error)" in reporter.lines
+
+    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_failing_node_ids_with_and_n_more  # noqa: E501
+    def test_sessionfinish_caps_failing_node_ids_with_and_n_more(self) -> None:
+        """T-1673: past `_SUITE_RESULT_MAX_NODE_IDS` failures, the hook
+        collapses the remainder into a single 'and N more' line instead of
+        printing an unbounded list."""
+        module = _load_conftest()
+        cap = module._SUITE_RESULT_MAX_NODE_IDS
+        reports = [self._FakeReport(f"tests/x.py::test_{i}") for i in range(cap + 3)]
+        stats = {"failed": reports, "error": []}
+        reporter = self._StatsReporter(stats)
+        config = self._FakeConfig(reporter=reporter, is_worker=False)
+        session = self._FakeSession(config=config, collected=cap + 3, failed=cap + 3)
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        failed_lines = [
+            line for line in reporter.lines if "SUITE-RESULT-FAILED:" in line
+        ]
+        assert len(failed_lines) == cap + 1
+        assert failed_lines[-1] == "SUITE-RESULT-FAILED: and 3 more"

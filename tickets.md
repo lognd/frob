@@ -7925,7 +7925,7 @@ Related: the WSL OOM class already recorded against concurrent agent dispatch.
 ```yaml
 id: T-1673
 title: SUITE-RESULT reports failure COUNTS but never the failing node ids
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -7933,8 +7933,25 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+scope:
+- tests/conftest.py
+- tests/unit/test_conftest_stackdump.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/conftest.py
+  reason: narrow scope to the SUITE-RESULT hook and its test file
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: narrow scope to the SUITE-RESULT hook and its test file
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_lists_failing_node_ids
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_caps_failing_node_ids_with_and_n_more
 threat: null
 component: null
 ```
@@ -7945,6 +7962,37 @@ Observed 2026-08-06: a full coverage run reported 'SUITE-RESULT: exitstatus=3 co
 Fix: have the hook emit each failing node id (and its terminal outcome) on its own line, capped at a sane maximum with an 'and N more' tail. The whole point of the hook is that its output survives verbosity suppression; a count that cannot be acted on without a second full run does not meet that bar.
 
 Same root shape as T-1596: a diagnostic that is technically present but not sufficient to act on is not a working diagnostic.
+
+## Done report
+
+`pytest_sessionfinish`'s SUITE-RESULT line (T-1596) made the VERDICT
+(exitstatus/collected/failed counts) always visible regardless of `-q`
+stacking, but gave no way to act on a nonzero `failed` count without
+re-running the entire suite: under `-qq`, pytest's own "short test summary
+info" section (which normally lists failing node ids) is also suppressed.
+
+Fix: `pytest_sessionfinish` now also reads `terminalreporter.stats`
+(populated regardless of verbosity -- it drives the summary section, it is
+not gated by it) and writes one `SUITE-RESULT-FAILED: <nodeid> (<outcome>)`
+line per failed/errored test via the same `write_line` channel the
+SUITE-RESULT line already uses, which is not suppressed by `-q`/`-qq`. Capped
+at `_SUITE_RESULT_MAX_NODE_IDS` (50) with a trailing "and N more" line so a
+suite with hundreds of failures still produces bounded, greppable output.
+
+### Changed
+```
+ tickets.md | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_lists_failing_node_ids` (pytest node id, verified passing when recorded)
+- `tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_caps_failing_node_ids_with_and_n_more` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 118 warning(s), 717 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1674 -->
 ```yaml

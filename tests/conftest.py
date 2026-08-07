@@ -179,12 +179,23 @@ def pytest_configure(config: pytest.Config) -> None:
     restore_stale_journals(_REPO_ROOT)
 
 
+_SUITE_RESULT_MAX_NODE_IDS = 50
+"""T-1673: cap on how many failing node ids `pytest_sessionfinish` lists by
+name before collapsing the remainder into an 'and N more' tail -- keeps the
+always-visible summary bounded even on a suite with hundreds of failures."""
+
+
 # frob:ticket T-1596
+# frob:ticket T-1673
 # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
 # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
+# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_failing_node_ids  # noqa: E501
+# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_failing_node_ids_with_and_n_more  # noqa: E501
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """Print an always-visible `SUITE-RESULT:` line at the end of every run
-    (T-1596), independent of pytest's own verbosity-gated terminal summary.
+    (T-1596), independent of pytest's own verbosity-gated terminal summary,
+    followed by each failing test's node id (T-1673) so the line is
+    actionable without a second full run.
 
     Root cause investigated for T-1596: three background full-suite runs
     appeared to "truncate" with no final `N passed, M failed in Ts` line and
@@ -208,7 +219,17 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     invoked pytest. Controller-only under `pytest-xdist` (mirrors
     `pytest_configure`'s own `workerinput` early-return above) -- printing
     once per worker would defeat the "exactly one greppable line" contract
-    this exists to provide."""
+    this exists to provide.
+
+    T-1673 root cause: the count alone ("failed=5") was not actionable --
+    under stacked `-q`, pytest's own "short test summary info" section
+    (which normally lists failing node ids) is also suppressed, so a
+    reader had no way to learn WHICH five tests failed short of re-running
+    the entire suite. `terminalreporter.stats` is populated regardless of
+    verbosity (it drives the summary section, it is not gated by it), so
+    reading it here and writing each node id via the same unsuppressed
+    `write_line` channel makes the failing set visible without a second
+    run."""
     if hasattr(session.config, "workerinput"):
         return
     total = getattr(session, "testscollected", 0)
@@ -217,6 +238,20 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     reporter = session.config.pluginmanager.get_plugin("terminalreporter")
     if reporter is not None:
         reporter.write_line(line)
+        stats = getattr(reporter, "stats", None)
+        if stats:
+            failing_ids: list[str] = []
+            for outcome in ("failed", "error"):
+                for report in stats.get(outcome, []):
+                    nodeid = getattr(report, "nodeid", None)
+                    if nodeid is not None:
+                        failing_ids.append(f"{nodeid} ({outcome})")
+            shown = failing_ids[:_SUITE_RESULT_MAX_NODE_IDS]
+            for node_line in shown:
+                reporter.write_line(f"SUITE-RESULT-FAILED: {node_line}")
+            remaining = len(failing_ids) - len(shown)
+            if remaining > 0:
+                reporter.write_line(f"SUITE-RESULT-FAILED: and {remaining} more")
     else:  # pragma: no cover - defensive only, terminalreporter always registered
         print(line)
 
