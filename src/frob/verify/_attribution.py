@@ -128,7 +128,9 @@ class Attribution(BaseModel):
     reason: str = ""
 
 
-def _resolve_symbol(snapshot, file: str, line: int | None) -> str | None:  # noqa: ANN001
+def _resolve_symbol(  # noqa: ANN001
+    snapshot, file: str, line: int | None
+) -> str | None:
     """The single symref in `snapshot.symbols` whose file matches `file`
     and whose `span` contains `line`, or `None` when `line` is absent or
     no symbol's span contains it. Ambiguity (two symbols somehow claiming
@@ -150,8 +152,9 @@ def _symbols_in_file(snapshot, file: str) -> frozenset[str]:  # noqa: ANN001
     degraded, whole-file candidate set `_resolve_symbol` falls back to
     when `line` is unknown (see this module's own docstring, "SYMBOL
     RESOLUTION IS BEST-EFFORT...")."""
-    return frozenset(ref for ref, record in snapshot.symbols.items() if record.id.path == file)
-
+    return frozenset(
+        ref for ref, record in snapshot.symbols.items() if record.id.path == file
+    )
 
 def _reaches(
     calls: Mapping[str, tuple[str, ...]],
@@ -283,90 +286,135 @@ def attribute_batch(
             return Err(AttributionError.GraphUnavailable)
         snapshot, call_graph = loaded
 
-    results: list[Attribution] = []
-    for entry in findings:
-        line: int | None
-        if len(entry) == 3:
-            rule_id, file, line = entry
-        else:
-            rule_id, file = entry
-            line = None
-        symbol = _resolve_symbol(snapshot, file, line)
-        candidates = {symbol} if symbol is not None else _symbols_in_file(snapshot, file)
+    results = tuple(
+        _attribute_one(
+            entry, batch, snapshot, call_graph, max_depth=max_depth, max_nodes=max_nodes
+        )
+        for entry in findings
+    )
+    return Ok(results)
 
-        matches: list[tuple[VerifyQueueEntry, tuple[str, ...]]] = []
-        for batch_entry in batch:
-            found_path: tuple[str, ...] | None = None
-            for touched in batch_entry.touched_symbols:
-                for target in candidates:
-                    path = _reaches(
-                        call_graph.calls,
-                        touched,
-                        target,
-                        max_depth=max_depth,
-                        max_nodes=max_nodes,
-                    )
-                    if path is not None:
-                        found_path = path
-                        break
-                if found_path is not None:
+
+def _parse_finding(
+    entry: tuple[str, str] | tuple[str, str, int],
+) -> tuple[str, str, int | None]:
+    """Tier 1: split one raw `(rule_id, file)`/`(rule_id, file, line)`
+    finding identity into its three parts, `line` defaulting to `None`
+    when absent -- the exact shapes `_rapid_sweep`'s rolling-baseline
+    diff already produces."""
+    if len(entry) == 3:
+        rule_id, file, line = entry
+        return rule_id, file, line
+    rule_id, file = entry
+    return rule_id, file, None
+
+
+def _matching_batch_entries(
+    candidates: frozenset[str],
+    batch: Sequence[VerifyQueueEntry],
+    call_graph,  # noqa: ANN001
+    *,
+    max_depth: int,
+    max_nodes: int,
+) -> list[tuple[VerifyQueueEntry, tuple[str, ...]]]:
+    """Tier 2: THE reachability leaf. Every `batch` entry whose
+    `touched_symbols` reaches at least one of `candidates` via the
+    reference call graph, paired with the reachability path that proved
+    it -- the rule this whole module exists to implement (a finding
+    attributes to the batch commit whose touched symbols REACH it, never
+    a path-string match)."""
+    matches: list[tuple[VerifyQueueEntry, tuple[str, ...]]] = []
+    for batch_entry in batch:
+        found_path: tuple[str, ...] | None = None
+        for touched in batch_entry.touched_symbols:
+            for target in candidates:
+                path = _reaches(
+                    call_graph.calls,
+                    touched,
+                    target,
+                    max_depth=max_depth,
+                    max_nodes=max_nodes,
+                )
+                if path is not None:
+                    found_path = path
                     break
             if found_path is not None:
-                matches.append((batch_entry, found_path))
+                break
+        if found_path is not None:
+            matches.append((batch_entry, found_path))
+    return matches
 
-        if len(matches) == 1:
-            winner, path = matches[0]
-            _log.info(
-                "attribution: %s at %s%s -> commit=%s ticket=%s via %s",
-                rule_id,
-                file,
-                f":{line}" if line is not None else "",
-                winner.commit_sha[:12],
-                winner.ticket_id,
-                " -> ".join(path),
-            )
-            results.append(
-                Attribution(
-                    rule_id=rule_id,
-                    file=file,
-                    line=line,
-                    symbol=symbol,
-                    status="attributed",
-                    commit_sha=winner.commit_sha,
-                    ticket_id=winner.ticket_id,
-                    reachability_path=path,
-                )
-            )
-            continue
 
-        candidate_shas = tuple(m[0].commit_sha for m in matches)
-        reason = (
-            "no batch commit's touched symbols reach this finding"
-            if not matches
-            else f"{len(matches)} batch commits' touched symbols all reach this finding"
-        )
-        _log.warning(
-            "attribution: %s at %s%s UNATTRIBUTED (%s); candidates=%s",
+def _attribute_one(
+    entry: tuple[str, str] | tuple[str, str, int],
+    batch: Sequence[VerifyQueueEntry],
+    snapshot,  # noqa: ANN001
+    call_graph,  # noqa: ANN001
+    *,
+    max_depth: int,
+    max_nodes: int,
+) -> Attribution:
+    """Tier 3: the ambiguity/logging bookkeeping for ONE finding, given
+    its tier-2 matches -- exactly one reaching commit is `attributed`,
+    zero or more than one is `unattributed`, and either way the decision
+    is logged (INFO with the reachability path for an attribution,
+    WARNING with every candidate for an ambiguity or a miss) so it is
+    auditable, never a bare assertion."""
+    rule_id, file, line = _parse_finding(entry)
+    symbol = _resolve_symbol(snapshot, file, line)
+    candidates = (
+        frozenset({symbol}) if symbol is not None else _symbols_in_file(snapshot, file)
+    )
+    matches = _matching_batch_entries(
+        candidates, batch, call_graph, max_depth=max_depth, max_nodes=max_nodes
+    )
+    loc = f":{line}" if line is not None else ""
+
+    if len(matches) == 1:
+        winner, path = matches[0]
+        _log.info(
+            "attribution: %s at %s%s -> commit=%s ticket=%s via %s",
             rule_id,
             file,
-            f":{line}" if line is not None else "",
-            reason,
-            candidate_shas,
+            loc,
+            winner.commit_sha[:12],
+            winner.ticket_id,
+            " -> ".join(path),
         )
-        results.append(
-            Attribution(
-                rule_id=rule_id,
-                file=file,
-                line=line,
-                symbol=symbol,
-                status="unattributed",
-                candidate_commits=candidate_shas,
-                reason=reason,
-            )
+        return Attribution(
+            rule_id=rule_id,
+            file=file,
+            line=line,
+            symbol=symbol,
+            status="attributed",
+            commit_sha=winner.commit_sha,
+            ticket_id=winner.ticket_id,
+            reachability_path=path,
         )
 
-    return Ok(tuple(results))
-
+    candidate_shas = tuple(m[0].commit_sha for m in matches)
+    reason = (
+        "no batch commit's touched symbols reach this finding"
+        if not matches
+        else f"{len(matches)} batch commits' touched symbols all reach this finding"
+    )
+    _log.warning(
+        "attribution: %s at %s%s UNATTRIBUTED (%s); candidates=%s",
+        rule_id,
+        file,
+        loc,
+        reason,
+        candidate_shas,
+    )
+    return Attribution(
+        rule_id=rule_id,
+        file=file,
+        line=line,
+        symbol=symbol,
+        status="unattributed",
+        candidate_commits=candidate_shas,
+        reason=reason,
+    )
 
 __all__ = [
     "Attribution",

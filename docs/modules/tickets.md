@@ -3461,6 +3461,18 @@ candidate commits named in the body, for a human to read; there is no
 automated bisect trigger. This is a disclosed scope cut, not a silent
 gap: the bisect leaf is future work this ticket does not claim to close.
 
+**T-1753 follow-up (post-land sweep hygiene).** T-1690's own land
+tripped the deferred post-land sweep: `attribute_batch` split along its
+tier-1/tier-2/tier-3 seams (`_parse_finding`, `_matching_batch_entries`,
+`_attribute_one`) to clear ARCH001's 60-line function threshold, two
+lines wrapped under 88 chars (E501), and `_attribute_new_findings`'s
+`pairs` parameter widened from `list[tuple[str, str]]` to
+`list[tuple[str, str] | tuple[str, str, int]]` -- the annotation was
+narrower than what `attribute_batch` itself already accepted, and a real
+`ty` invalid-argument-type finding on the test exercising the 3-tuple
+(line-bearing) shape caught it. No behavior changed; the split is a pure
+extraction and the widened type is a correction, not a new capability.
+
 ## Development profiles (`frob.toml [profile]`, T-1575)
 
 <!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->

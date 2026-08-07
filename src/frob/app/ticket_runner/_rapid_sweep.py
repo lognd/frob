@@ -284,10 +284,11 @@ def spawn_deferred_post_land_sweep(
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_attributed_and_unattributed_round_trip  # noqa: E501
 def _attribute_new_findings(
-    root: Path, pairs: list[tuple[str, str]]
+    root: Path, pairs: list[tuple[str, str] | tuple[str, str, int]]
 ):  # noqa: ANN201 -- dict[tuple[str, str], Attribution], deferred-import type
-    """T-1690 tier-2: attribute each `(rule, file)` pair in `pairs` to the
-    single durable `VerifyQueueEntry` (if any) whose `touched_symbols`
+    """T-1690 tier-2: attribute each `(rule, file)` (or, when a caller has
+    a line number, `(rule, file, line)`) pair in `pairs` to the single
+    durable `VerifyQueueEntry` (if any) whose `touched_symbols`
     graph-reaches it, using the CURRENT verify queue as the batch (the set
     of lands recorded since the last watermark advance -- exactly the
     commits this red sweep could have been caused by). Returns `{}`
