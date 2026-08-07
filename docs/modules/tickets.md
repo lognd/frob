@@ -2791,6 +2791,7 @@ def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketErro
 <!-- frob:describes src/frob/tickets/_land_queue.py::enqueue -->
 <!-- frob:describes src/frob/tickets/_land_queue.py::drain_next -->
 <!-- frob:describes src/frob/tickets/_land_queue.py::queue_status -->
+<!-- frob:describes src/frob/tickets/_land_queue.py::file_lock -->
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_enqueue -->
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_drain -->
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_land_core -->
@@ -2873,6 +2874,106 @@ scoped-out remainder.
   closure captured. This module does not print anything itself (no CLI
   surface in this scope), so the contract is preserved by construction:
   nothing here bypasses or reimplements `land()`'s own reporting.
+
+## Verification watermark (T-1687, foundation of the T-1686 epic)
+
+<!-- frob:describes src/frob/verify/_watermark.py::SCHEMA_VERSION -->
+<!-- frob:describes src/frob/verify/_watermark.py::VerifyQueueEntry -->
+<!-- frob:describes src/frob/verify/_watermark.py::Watermark -->
+<!-- frob:describes src/frob/verify/_watermark.py::WatermarkError -->
+<!-- frob:describes src/frob/verify/_watermark.py::record_intent -->
+<!-- frob:describes src/frob/verify/_watermark.py::queue_status -->
+<!-- frob:describes src/frob/verify/_watermark.py::load_watermark -->
+<!-- frob:describes src/frob/verify/_watermark.py::advance_watermark -->
+<!-- frob:describes src/frob/verify/_watermark.py::compact_queue -->
+
+T-1686's epic makes landing independent of synchronously verifying in
+every profile: a check must stay on the critical path only if its
+failure damages someone OTHER than the author (ledger integrity,
+LAND-PROOF, lease/lock discipline); everything else (coverage floors, doc
+drift, arch thresholds, ...) can defer to a batch verification pass. That
+requires a durable record of what has and has not been verified yet,
+independent of whatever worker eventually drains it -- the frob.verify
+package is that record, and `frob.verify._watermark` (T-1687) is its
+whole content today: no daemon, no worker, no CLI verb. Landing the
+record first, standalone, is deliberate: retrofitting a durable store
+under an already-running worker is strictly harder than building the
+worker on a store that already exists.
+
+**Two persisted files, two independent concerns:**
+
+- **`.frob/verify-queue.json`** -- an append-only intent log. One
+  `VerifyQueueEntry` per land: `commit_sha`, `ticket_id`, `touched_symbols`
+  (see below), `enqueued_at`, and `profile`. `record_intent(root, *,
+  commit_sha, ticket_id, touched_symbols, profile)` appends exactly one
+  entry and refuses (`WatermarkError.EmptyTouchedSymbols`) on an empty
+  symbol set -- a land with nothing for tier-2 attribution to reach would
+  otherwise make every later finding at that commit permanently
+  unattributable. `queue_status(root)` is a read-only snapshot, oldest
+  first.
+- **`.frob/verify-watermark.json`** -- one record: "main is verified
+  through `commit_sha`, at `verified_at`, by `run_id`, against
+  `baseline_digest`". `advance_watermark(root, *, commit_sha, run_id,
+  baseline_digest)` unconditionally overwrites the prior record --
+  this module trusts the caller's own "fully green batch" decision and
+  does not re-derive it. `load_watermark(root)` reads it back.
+
+**Touched SYMBOLS, never file paths.** `VerifyQueueEntry.touched_symbols`
+is a tuple of symref-shaped symbol ids (the same id shape
+`frob.graph.GraphSnapshot.symbols` keys on), never a path list. Tier-2
+attribution (T-1686's own design: "a finding anchored at symbol S
+attributes to the commit whose touched symbol set REACHES S in the
+reference graph") is a graph reachability query over symbol ids -- a
+path-keyed record cannot answer it once a symbol moves between files
+without misreporting the move itself as a regression. Computing the
+touched-symbol set from a real `Diff`/`GraphSnapshot` pair is deliberately
+OUT of this module's own scope (frob.verify never imports `frob.graph`)
+-- a caller with graph access (a later leaf's land-time wiring) resolves
+and passes the set in; this module only validates the shape (non-empty)
+and persists it verbatim.
+
+**One shared lock implementation, not two.** Both files use
+`frob.tickets._land_queue.file_lock` (T-1687 extracted the merge queue's
+own fcntl advisory-lock mechanics into this reusable, `label`-tagged
+context manager so `_queue_lock` above and frob.verify's two locks all
+share one implementation) -- "two lock protocols over adjacent state in
+one repo is a deadlock waiting to be discovered in production" per this
+ticket's own scope note. The queue lock and the watermark lock are still
+two SEPARATE lock files (never reuse a lock/state file across a different
+concern, matching `_land_queue`'s own rule for `.frob/land.lock` vs
+`.frob/land-queue.lock`), just built from the same primitive.
+
+**Append-only, compacted below the watermark, never rewritten in
+place.** `record_intent` only ever appends. `compact_queue(root)` is the
+one operation that shortens `.frob/verify-queue.json`: it drops every
+entry at-or-before the CURRENT watermark's `commit_sha` (a no-op,
+`Ok(0)`, if there is no watermark yet or that commit is not present in
+the queue) and never rewrites or reorders a still-pending entry. Both
+operations still write the whole file in one `write_text` call under
+`file_lock`, the identical "not atomic-replace, but never torn under
+normal operation" posture `_land_queue._save_queue`'s own docstring
+documents.
+
+**"Cannot verify" is never "verified".** `load_watermark` treats a
+missing watermark file (nothing verified yet) and a CORRUPT watermark
+file identically at the read boundary: both return `Ok(None)`, logged at
+WARNING in the corrupt case so the corruption itself stays visible even
+though the read degrades safely -- a caller must never be able to
+mistake a corrupted record for a stale-but-real one. `queue_status`, by
+contrast, propagates a corrupt QUEUE file as
+`Err(WatermarkError.StoreCorrupt)` rather than degrading to an empty
+tuple: an unreadable intent log misread as "nothing pending" is itself a
+false "how far is main verified" claim, just as dangerous as a stale
+watermark reading as current. `record_intent`/`compact_queue` (the two
+mutators) both refuse outright on that `Err` rather than risk silently
+discarding or duplicating intent records on top of an unreadable file.
+
+**What this ticket does NOT do (disclosed, next leaves in the epic):**
+no daemon-side coalescing worker (T-1688), no CLI wiring that calls
+`record_intent` from a real `land()`, no tier-1/2/3 attribution logic, no
+profile-to-queue-depth dial. This module is purely the data model plus
+its read/write primitives, verified in isolation
+(`tests/unit/verify/test_watermark.py`).
 
 ## Development profiles (`frob.toml [profile]`, T-1575)
 

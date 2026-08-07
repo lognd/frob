@@ -160,34 +160,54 @@ def _queue_lock_path(root: Path) -> Path:
     return root / _QUEUE_LOCK_REL
 
 
+# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:ticket T-1687
+@contextmanager
+def file_lock(lock_path: Path, *, label: str) -> Iterator[None]:
+    """Exclusive, blocking, cross-process advisory lock over `lock_path`
+    (T-1687): the ONE fcntl-backed lock implementation every module that
+    needs to serialize mutations to a small JSON-file-backed store in this
+    package should reuse, rather than each hand-rolling its own near-
+    identical copy (this module's own `_queue_lock` now delegates here) --
+    "two lock protocols over adjacent state in one repo is a deadlock
+    waiting to be discovered in production" (T-1687's own scope note).
+    `label` is used only for log messages, so a caller sharing this one
+    implementation across several distinct lock files still gets
+    distinguishable log lines. Degrades to a documented no-op (logged at
+    WARNING) on a platform without `fcntl`, matching every other lock in
+    this package."""
+    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
+        _log.warning(
+            "land_queue: file_lock(%s): fcntl unavailable on this platform, "
+            "lock is a NO-OP -- concurrent mutations against %s are NOT "
+            "serialized here",
+            label,
+            lock_path,
+        )
+        yield
+        return
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    _log.debug("land_queue: file_lock(%s) acquired (%s)", label, lock_path)
+    try:
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+        _log.debug("land_queue: file_lock(%s) released (%s)", label, lock_path)
+
+
+# frob:ticket T-1687
 @contextmanager
 def _queue_lock(root: Path) -> Iterator[None]:
     """Exclusive, blocking, cross-process lock serializing every queue-file
     mutation (`enqueue`, the pop-and-mark-landing step, the record-outcome
     step) against `root` -- deliberately NOT held across a `land_fn` call
     (see this module's docstring, "One drainer, not a distributed lock").
-    Degrades to a documented no-op (logged at WARNING) on a platform
-    without `fcntl`, matching every other lock in this package."""
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "land_queue: _queue_lock: fcntl unavailable on this platform, "
-            "lock is a NO-OP -- concurrent queue mutations against %s are "
-            "NOT serialized here",
-            root,
-        )
+    Delegates to `file_lock` (T-1687) for the actual fcntl mechanics."""
+    with file_lock(_queue_lock_path(root), label="land-queue"):
         yield
-        return
-    path = _queue_lock_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    fcntl.flock(fd, fcntl.LOCK_EX)
-    _log.debug("land_queue: _queue_lock acquired (%s)", path)
-    try:
-        yield
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
-        _log.debug("land_queue: _queue_lock released (%s)", path)
 
 
 def _load_queue(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
@@ -211,20 +231,35 @@ def _load_queue(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
         return Err(QueueError.StoreCorrupt)
 
 
-def _save_queue(root: Path, entries: tuple[QueueEntry, ...]) -> None:
-    """Write `entries` back to `.frob/land-queue.json` as one `write_text`
-    call (single syscall-level write, not a partial-write hazard under
-    normal operation) -- caller must hold `_queue_lock`. A process killed
-    mid-write leaves whatever the filesystem itself guarantees for a
-    partial `write_text`; the NEXT `_load_queue` call surfaces that as
-    `QueueError.StoreCorrupt` rather than silently reading a torn file,
-    matching this package's existing fail-loud posture for corrupt derived
-    state (see `frob.check._derived_state_integrity_result`'s same rule
-    for `.frob/cache.db`/`.frob/baseline`)."""
-    path = _queue_path(root)
+# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:ticket T-1687
+def write_json_records(path: Path, records: tuple[BaseModel, ...]) -> None:
+    """Write `records` to `path` as one `write_text` call (T-1687): the ONE
+    "list-of-pydantic-model, one JSON array, single syscall-level write"
+    implementation every small JSON-file-backed store in this repo should
+    reuse -- `_save_queue` below and `frob.verify._watermark`'s own queue
+    writer both delegate here now, instead of each carrying a byte-
+    identical copy (DUP001 flagged the pre-extraction duplicate directly).
+    Not atomic-replace -- a process killed mid-write leaves whatever the
+    filesystem itself guarantees for a partial `write_text`; the NEXT read
+    of `path` must surface that as a store-corrupt error rather than
+    silently reading a torn file (every caller's own load function already
+    does this, matching this package's existing fail-loud posture for
+    corrupt derived state -- see `frob.check._derived_state_integrity_
+    result`'s same rule for `.frob/cache.db`/`.frob/baseline`). Caller must
+    already hold whatever lock guards `path`."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps([e.model_dump(mode="json") for e in entries], indent=2)
+    payload = json.dumps([r.model_dump(mode="json") for r in records], indent=2)
     path.write_text(payload, encoding="utf-8")
+
+
+# frob:ticket T-1687
+def _save_queue(root: Path, entries: tuple[QueueEntry, ...]) -> None:
+    """Write `entries` back to `.frob/land-queue.json` -- caller must hold
+    `_queue_lock`. Delegates to `write_json_records` (T-1687) for the
+    actual write mechanics; see that function's own docstring for the
+    partial-write/corruption-detection contract."""
+    write_json_records(_queue_path(root), entries)
 
 
 # frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
@@ -382,5 +417,7 @@ __all__ = [
     "QueueError",
     "drain_next",
     "enqueue",
+    "file_lock",
     "queue_status",
+    "write_json_records",
 ]

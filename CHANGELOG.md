@@ -17,9 +17,9 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.361.0] - unreleased
+## [0.362.0] - unreleased
 
-- T-1679: Invert the content-loss guard default: refuse, and give test fixtures an explicit unchecked primitive
+- T-1687: Verification watermark: durable commit-keyed verify queue and verified-through record
 
 ## [0.360.0] - unreleased
 

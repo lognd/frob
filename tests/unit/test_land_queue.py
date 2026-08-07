@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from typani.result import Err, Ok
@@ -10,6 +11,7 @@ from frob.tickets._land_queue import (
     QueueError,
     drain_next,
     enqueue,
+    file_lock,
     queue_status,
 )
 from frob.tickets._models import LandError, LandReport
@@ -180,3 +182,47 @@ class TestStoreCorrupt:
         result = queue_status(tmp_path)
         assert result.is_err
         assert result.danger_err is QueueError.StoreCorrupt
+
+
+class TestFileLock:
+    """T-1687: `file_lock` is the one shared fcntl lock implementation this
+    module and `frob.verify._watermark` both reuse."""
+
+    def test_serializes_a_read_modify_write_sequence(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::file_lock kind="unit"
+        lock_path = tmp_path / ".frob" / "some.lock"
+        counter_path = tmp_path / "counter.txt"
+        counter_path.write_text("0", encoding="utf-8")
+        for _ in range(5):
+            with file_lock(lock_path, label="test"):
+                current = int(counter_path.read_text(encoding="utf-8"))
+                counter_path.write_text(str(current + 1), encoding="utf-8")
+        assert counter_path.read_text(encoding="utf-8") == "5"
+
+    def test_creates_the_lock_file(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::file_lock kind="unit"
+        lock_path = tmp_path / ".frob" / "some.lock"
+        with file_lock(lock_path, label="test"):
+            pass
+        assert lock_path.exists()
+
+
+class TestWriteJsonRecords:
+    """T-1687: `write_json_records` is the one shared JSON-array write
+    implementation `_save_queue` (this module) and `frob.verify._watermark`
+    both reuse."""
+
+    def test_round_trips_via_load_queue(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::write_json_records kind="unit"
+        enqueue(tmp_path, "T-0001", tmp_path / "wt", "b1")
+        loaded = queue_status(tmp_path)
+        assert loaded.is_ok
+        assert len(loaded.danger_ok) == 1
+
+    def test_writes_a_json_array(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::write_json_records kind="unit"
+        enqueue(tmp_path, "T-0001", tmp_path / "wt", "b1")
+        path = tmp_path / ".frob" / "land-queue.json"
+        parsed = json.loads(path.read_text(encoding="utf-8"))
+        assert isinstance(parsed, list)
+        assert parsed[0]["ticket_id"] == "T-0001"
