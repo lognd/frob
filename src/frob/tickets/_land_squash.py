@@ -585,7 +585,20 @@ def _assert_land_complete(
         unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
         return Err(unwound.danger_err if unwound.is_err else staged.danger_err)
 
-    missing = expected.danger_ok - staged.danger_ok
+    # frob:ticket T-1769
+    # T-1769: the land-owned release artifacts are DELIBERATELY absent
+    # from the staged apply. T-1760's `_reset_release_artifacts_to_pre_land`
+    # discards whatever the squash carried for them (recompute, do not
+    # carry), so a worktree that merged main after a sibling's version bump
+    # legitimately "changed" all three and legitimately has none of them
+    # staged. Counting that as an incomplete land made every such worktree
+    # permanently unlandable -- the two guards contradicted each other.
+    # `_apply_release_bump` writes the correct values afterwards.
+    from frob.tickets._land_release import _LAND_OWNED_RELEASE_FILES
+
+    missing = (expected.danger_ok - staged.danger_ok) - set(
+        _LAND_OWNED_RELEASE_FILES
+    )
     if missing:
         unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
         if unwound.is_err:
