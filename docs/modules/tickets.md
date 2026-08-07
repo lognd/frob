@@ -2536,6 +2536,29 @@ own plan does not call for one, and the remedy (file a successor ticket
 and re-point the citing rows, or re-point them in this same change) is
 always mechanical.
 
+**Left-anchored patterns, and the ledger excluded from the waiver grep
+(T-1633).** The waiver alternatives (`ticket=`/`ticket "..."`/
+`follow_up=`) originally had a right-hand word boundary but no left-hand
+one, so `ticket=T-0605` matched as a SUBSTRING of any longer identifier
+ending that way -- `active_ticket=T-0605` in ordinary Done-report prose
+read as a citation and refused a land twice (2026-08-06, T-1582) before
+the id in question was even the citing pattern's actual target.
+`_WAIVER_TICKET_PATTERN` is now left-anchored with an explicit
+leading-character alternation, `(^|[^A-Za-z0-9_.-])`, rather than a
+lookbehind -- the pattern is handed to `git grep -E` (POSIX ERE), which
+has no lookbehind support at all. Separately, the waiver grep now
+EXCLUDES `tickets.md`/`tickets-archive.md`/`tickets/**`
+(`_WAIVER_PATHSPEC`) entirely: a real `frob:waive ... ticket=`/
+`follow_up=` directive is a source-code comment and never legitimately
+appears in the ledger, where every occurrence is narrative -- a Done
+report quoting the very pattern that misfired, or an incident write-up
+describing this class of bug (the ticket text you are reading right now
+is exactly that shape, and an earlier revision of it WAS itself flagged
+and refused the land describing the fix -- a self-demonstrating
+instance of the underlying problem). The registry-disposition grep is
+unaffected -- a registry YAML row is structured data, not narrative
+prose, so no analogous exclusion applies there.
+
 ## Land hardening (T-0577)
 
 Three gaps found in one real landing session, closed together:

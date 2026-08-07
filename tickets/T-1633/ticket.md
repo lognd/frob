@@ -2,7 +2,7 @@
 id: T-1633
 title: live-tracker scan reads narrative prose as declarations (and its regex lacked
   a left boundary)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -38,6 +38,10 @@ scope_changes:
   reason: TICK009 pre-dispatch narrowing
   actor: logan
   at: '2026-08-07'
+evidence:
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_ledger_prose_quoting_a_waiver_attribute_is_not_a_citation
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_longer_identifier_ending_in_ticket_is_not_a_citation
+- tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_standalone_attributes_are_still_citations
 designated_repro_test: null
 threat: null
 component: null
