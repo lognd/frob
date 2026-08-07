@@ -258,7 +258,7 @@ _NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"
 
 
 class _BugReproOutcome(Enum):
-    """The four possible outcomes of running BUG002's single designated
+    """The five possible outcomes of running BUG002's single designated
     reproduction test against the ticket's parent commit."""
 
     #: The test genuinely FAILED at the parent commit (pytest exit 1) --
@@ -279,6 +279,19 @@ class _BugReproOutcome(Enum):
     #: same posture `MutationEvidenceError.ExecDisabled` already uses one
     #: function up in this same module.
     NO_VERDICT = auto()
+    #: `base_ref` resolves to the SAME commit as HEAD -- the comparison is
+    #: structurally impossible, not merely undecided (T-1678). This is the
+    #: "committed straight to main" degenerate case: `base_ref` (a branch
+    #: name like `"main"`, or a merge-base computed against it) turns out
+    #: to already point AT the fix commit under test, so "run the repro
+    #: test at base_ref" would just re-run it at the fix -- a vacuous,
+    #: confirmatory-only comparison, never a real pre-fix reproduction.
+    #: Distinct from `NO_VERDICT` (an infra failure) so the caller can log
+    #: an explicit, honestly-worded UNRESOLVED explanation instead of a
+    #: generic "could not check out" warning; treated identically to
+    #: `NO_VERDICT` by every violation-producing caller (never a false
+    #: PASSED_AT_PARENT violation, never a false FAILED_AT_PARENT pass).
+    SAME_AS_HEAD = auto()
 
 
 # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_reason_present_suppresses  # noqa: E501
@@ -343,8 +356,22 @@ def _designated_repro_test(ticket: Ticket) -> str | None:
     return None
 
 
+# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous  # noqa: E501
+def _resolve_sha(root: Path, ref: str) -> str | None:
+    """`git rev-parse <ref>`, trimmed, or `None` on any spawn/exit failure
+    -- split out purely so `_bug_repro_outcome_at_ref`'s vacuous-comparison
+    check (T-1678) has a single place to resolve both `HEAD` and
+    `base_ref` to comparable commit shas before deciding whether to spend
+    a real checkout+subprocess on a comparison that cannot mean anything."""
+    resolved = run_argv(("git", "-C", str(root), "rev-parse", ref))
+    if resolved.is_err or resolved.danger_ok.returncode != 0:
+        return None
+    return resolved.danger_ok.stdout.strip()
+
+
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_exec_disabled_is_no_verdict  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_worktree_add_failure_is_no_verdict  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous  # noqa: E501
 def _bug_repro_outcome_at_ref(
     root: Path, test_id: str, base_ref: str, *, timeout_s: float = _BUG_REPRO_TIMEOUT_S
 ) -> _BugReproOutcome:
@@ -372,6 +399,21 @@ def _bug_repro_outcome_at_ref(
             test_id,
         )
         return _BugReproOutcome.NO_VERDICT
+    head_sha = _resolve_sha(root, "HEAD")
+    base_sha = _resolve_sha(root, base_ref)
+    if head_sha is not None and base_sha is not None and head_sha == base_sha:
+        _log.warning(
+            "BUG002: base_ref %r resolves to HEAD itself (%s) -- the fix "
+            "commit under test IS the commit the repro would run against, "
+            "so no pre-fix comparison is possible; reporting UNRESOLVED "
+            "for %s rather than a verdict computed against itself. This "
+            "is the direct-commit-to-main shape (T-1678): the pre-fix "
+            "state was never a separate ref this check can reach",
+            base_ref,
+            head_sha,
+            test_id,
+        )
+        return _BugReproOutcome.SAME_AS_HEAD
     scratch = Path(tempfile.mkdtemp(prefix="frob-bug002-"))
     worktree = scratch / "wt"
     try:
@@ -525,6 +567,8 @@ def _no_behavior_change_message(ticket_id: str, test_id: str, base_ref: str) -> 
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_no_verdict_no_violation  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_uncalled_guard_passes_at_both_is_refused kind="integration"  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_wired_guard_fails_at_parent_is_permitted kind="integration"  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_fix_committed_direct_to_main_is_unresolved_not_refused kind="integration"  # noqa: E501
+# frob:ticket T-1678
 def bug_repro_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:

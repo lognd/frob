@@ -359,6 +359,21 @@ class TestBugReproAtRef:
         outcome = _bug_repro_outcome_at_ref(tmp_path, "tests/test_x.py::test_x", "main")
         assert outcome is _BugReproOutcome.NO_VERDICT
 
+    def test_same_as_head_is_vacuous(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous  # noqa: E501
+        # T-1678: a fix committed directly to main (the coordinator's flow,
+        # no divergent branch) leaves HEAD and "main" pointing at the SAME
+        # commit -- the exact shape that made T-1676's BUG002 message call
+        # the fix commit "the parent commit" and refuse a genuinely-fixed
+        # ticket. This must resolve to SAME_AS_HEAD, never a checkout+
+        # subprocess run against the fix commit re-labeled as "parent".
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "README.md").write_text("placeholder\n", encoding="utf-8")
+        _commit(repo, "only commit -- HEAD and main are identical")
+        outcome = _bug_repro_outcome_at_ref(repo, "tests/test_x.py::test_x", "main")
+        assert outcome is _BugReproOutcome.SAME_AS_HEAD
+
 
 class TestBugReproViolations:
     def test_non_bug_kind_never_checked(self, tmp_path: Path) -> None:
@@ -508,4 +523,37 @@ class TestBugRepro:
         _commit(repo, "fix: caller wired to guard")
         ticket = _bug_ticket(evidence=("tests/test_caller.py::test_uses_guard",))
         violations = bug_repro_violations(repo, ticket, parent)
+        assert violations == ()
+
+    def test_fix_committed_direct_to_main_is_unresolved_not_refused(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_fix_committed_direct_to_main_is_unresolved_not_refused kind="integration"  # noqa: E501
+        # T-1678, reproducing T-1676 exactly: the fix lands as a single
+        # commit directly onto main (the coordinator's flow, no worktree
+        # branch), so `base_ref="main"` resolves to HEAD itself -- the fix
+        # commit under test. The old code ran the repro test against that
+        # commit, called it "the parent commit", saw it PASS (since it IS
+        # the fix), and refused with a false EvidenceConfirmatoryOnly. The
+        # fixed check must report no violation at all (UNRESOLVED, not a
+        # failed obligation) for a test that genuinely proves the fix.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "src").mkdir()
+        (repo / "src" / "thing.py").write_text(
+            "def do_the_thing() -> str:\n    return 'new'\n",
+            encoding="utf-8",
+        )
+        (repo / "tests").mkdir()
+        (repo / "tests" / "test_thing.py").write_text(
+            "import sys\n"
+            "sys.path.insert(0, 'src')\n"
+            "import thing\n\n"
+            "def test_returns_new():\n"
+            "    assert thing.do_the_thing() == 'new'\n",
+            encoding="utf-8",
+        )
+        _commit(repo, "fix: committed straight to main, no separate parent ref")
+        ticket = _bug_ticket(evidence=("tests/test_thing.py::test_returns_new",))
+        violations = bug_repro_violations(repo, ticket, "main")
         assert violations == ()
