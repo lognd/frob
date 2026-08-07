@@ -1,7 +1,7 @@
 ---
 id: T-1631
 title: 'coordinator: migrate main''s own ledger to v2 in a quiet window'
-state: planned
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
