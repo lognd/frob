@@ -380,8 +380,8 @@ def _unscoped_error_findings(
     budget: int = _POST_LAND_SWEEP_BUDGET_S,
     env: dict[str, str] | None = None,
 ) -> frozenset[tuple[str, str]] | None:
-    """Spawn an UNSCOPED, `--budget`-bounded `frob check` in `root` and
-    parse the `(rule_id, file)` error-identity set from it, reusing
+    """Spawn an UNSCOPED, `--budget`-bounded `frob check --json` in `root`
+    and parse the `(rule_id, file)` error-identity set from it, reusing
     `_parse_error_findings_from_stdout` (T-0846's shared parser -- no
     second hand-typed copy of the `## Errors` section format). Unlike
     `_check_gate_findings_fn`, this deliberately passes NO `--ticket`: the
@@ -389,10 +389,26 @@ def _unscoped_error_findings(
     any one ticket's own scope (a relocated waiver, drifted format, a
     stale registry denominator) that a `--ticket`-scoped re-verification
     structurally cannot see (playbook section 6c). `None` means
-    unmeasurable (refused spawn, timeout, unparsable output) -- the caller
+    unmeasurable (refused spawn, timeout, unparsable output, OR -- T-1703
+    -- a `--budget` run that deferred any stage group) -- the caller
     treats that as "skip the sweep, do not compare a real set against a
     guess," matching every other T-0846/T-0850 unmeasured-is-not-zero
     convention in this module.
+
+    T-1703: the live incident this closed -- a deferred rapid-profile
+    sweep logged `CLEAN, 0 errors` at a commit a plain unscoped `frob
+    check` found 5 real errors in (2 of them TICK006 regressions the same
+    land had just introduced). `--budget` runs whichever stage groups fit
+    the time budget and DEFERS the rest; a gate that never ran emits no
+    diagnostic lines, so a partial run's error set used to be
+    indistinguishable from a genuinely clean full run. `--json` (this
+    call) plus `_parse_error_findings_from_json`'s `_budget_deferred_
+    stage_groups` check (via `_parse_error_findings_from_stdout`'s
+    JSON-first dispatch) close this: any deferred stage group makes the
+    whole result `None`, never a partial set. Confirmed independently
+    time-dependent before the fix: two `--budget 300` runs on the
+    IDENTICAL tree minutes apart selected different stage groups, so the
+    old parsed "error identity set" was not even a function of tree state.
 
     `env` (T-1535, `--land-parity`'s own cache-bypassed evaluation): when
     given, passed straight through to `guarded_subprocess_run`'s own
@@ -417,7 +433,15 @@ def _unscoped_error_findings(
         spawn_kwargs["env"] = env
     try:
         guarded = _ticket_runner.guarded_subprocess_run(
-            [_python_for_tree(root), "-m", "frob", "check", "--budget", str(budget)],
+            [
+                _python_for_tree(root),
+                "-m",
+                "frob",
+                "check",
+                "--budget",
+                str(budget),
+                "--json",
+            ],
             **spawn_kwargs,
         )
     except subprocess.TimeoutExpired:

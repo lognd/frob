@@ -171,6 +171,23 @@ _GATE_SUMMARY_COUNTS_RE = re.compile(
     r"gate-summary\s+(\d+)\s+errors?,\s+(\d+)\s+warnings?,\s+(\d+)\s+waived"
 )
 
+# frob:ticket T-1703
+# The counts-only half of `_GATE_SUMMARY_COUNTS_RE`, without the leading
+# `"gate-summary"` anchor: that anchor matched the RENDERED text line's
+# own tool-name column (`f"  {icon}  {r.tool:<22}  {r.summary}"`,
+# `frob.check._python._gate_summary_result`'s caller), which never
+# appears inside `ToolResult.summary` itself -- the JSON payload's
+# `results[].summary` field is bare `"N errors, M warnings, K waived
+# [timing]"` with no tool-name prefix, since the caller already located
+# the right entry by `tool == "gate-summary"` before ever reading this
+# field. Used only against a `summary` string already known to belong to
+# the `"gate-summary"` `ToolResult` -- unlike `_GATE_SUMMARY_COUNTS_RE`,
+# this pattern alone cannot tell a gate-summary line from some other
+# tool's summary that happens to share the same shape.
+_GATE_SUMMARY_COUNTS_ONLY_RE = re.compile(
+    r"^\s*(\d+)\s+errors?,\s+(\d+)\s+warnings?,\s+(\d+)\s+waived"
+)
+
 
 # frob:ticket T-0846
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree kind="unit"  # noqa: E501
@@ -239,7 +256,16 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
     that wants only ONE of the two claims still gets the old
     one-spawn-per-consumer behavior for free by passing `spawn=None` (the
     default on both consumers), which makes each build its own private,
-    unshared spawn closure exactly as before this ticket."""
+    unshared spawn closure exactly as before this ticket.
+
+    T-1703: spawns `--json` now, not plain text -- see
+    `_parse_error_findings_from_stdout`'s docstring for why: a regex over
+    rendered console prose cannot distinguish "this gate ran and found
+    nothing" from "this gate never ran", and cannot parse a diagnostic
+    whose renderer does not happen to match the assumed `file:line CODE`
+    shape (`ty`'s `file:line:col` is one such miss). `--json` gives every
+    consumer the same structured `CheckResult` a regex was standing in
+    for."""
     cache: dict[str, subprocess.CompletedProcess | None] = {}
 
     def spawn() -> subprocess.CompletedProcess | None:
@@ -248,7 +274,15 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
         from frob.app import ticket_runner as _ticket_runner
 
         guarded = _ticket_runner.guarded_subprocess_run(
-            [_python_for_tree(root), "-m", "frob", "check", "--ticket", ticket_id],
+            [
+                _python_for_tree(root),
+                "-m",
+                "frob",
+                "check",
+                "--ticket",
+                ticket_id,
+                "--json",
+            ],
             cwd=root,
             capture_output=True,
             text=True,
@@ -335,59 +369,201 @@ def _check_gates_summary_fn(  # noqa: ANN201
         result = _spawn()
         if result is None:
             return None
-        match = _GATE_SUMMARY_COUNTS_RE.search(result.stdout)
+        data = _parse_check_json(result.stdout)
+        if data is None:
+            _log.warning(
+                "ticket %s: `frob check --ticket %s --json` output was not "
+                "parsable JSON (exit=%d) -- gate state is unmeasured, not "
+                "zero",
+                ticket_id,
+                ticket_id,
+                result.returncode,
+            )
+            return None
+        findings = _parse_error_findings_from_json(ticket_id, data)
+        if findings is None:
+            # T-1703: a budget-truncated (or otherwise partial) run
+            # already logged its own warning inside
+            # `_parse_error_findings_from_json` -- partial coverage
+            # cannot back a trustworthy COUNT any more than it can back
+            # an identity set, so this claim is unmeasured too, not a
+            # smaller number.
+            return None
+        gate_summary = _find_tool_result(data["results"], "gate-summary")
+        summary_text = gate_summary.get("summary", "") if gate_summary else ""
+        match = _GATE_SUMMARY_COUNTS_ONLY_RE.search(summary_text)
         if match is None:
             _log.warning(
-                "ticket %s: `frob check --ticket %s` output had no "
-                "parsable gate-summary line (exit=%d) -- gate state is "
+                "ticket %s: `frob check --ticket %s --json` produced no "
+                "gate-summary tool result (exit=%d) -- gate state is "
                 "unmeasured, not zero",
                 ticket_id,
                 ticket_id,
                 result.returncode,
             )
             return None
-        raw_errors, warnings, waived = (int(g) for g in match.groups())
-        findings = _parse_error_findings_from_stdout(
-            ticket_id, result.stdout, result.returncode
-        )
-        errors = (
-            len(_exclude_scoped_run_flaky(findings))
-            if findings is not None
-            else raw_errors
-        )
+        _raw_errors, warnings, waived = (int(g) for g in match.groups())
+        errors = len(_exclude_scoped_run_flaky(findings))
         return (errors, warnings, waived)
 
     return fn
 
 
-# frob:ticket T-0846
-# T-0846: one printed error-diagnostic line's shape, e.g.
-# "  [gate:SCOPE] src/frob/tickets/_land.py:0  SCOPE001  SCOPE001: message"
-# (`frob.check._section_lines`'s `f"  [{tool}] {d.as_text()}"`, `Diagnostic.
-# as_text`'s own `file:line  CODE  message` rendering) -- captures the file
-# and rule-id code, deliberately not the message (whose wording can change
-# without the finding's identity changing).
-_GATE_ERROR_LINE_RE = re.compile(
-    r"^\s*\[[^\]]*\]\s+(?P<file>\S+?):\d+\s+(?P<code>[A-Za-z][A-Za-z0-9]*)\s"
-)
+# frob:ticket T-1703
+def _parse_check_json(stdout: str) -> dict | None:
+    """`json.loads(stdout)` if it decodes to a dict shaped like a `frob
+    check --json` `CheckResult` payload (a `"results"` list present),
+    else `None`.
+
+    T-1703: this is the sole gate between "trust this as a structured
+    `CheckResult`" and "fall back to nothing" -- deliberately permissive
+    about WHAT is in `results` (empty list included: a real, measured
+    clean run), strict only about the shape being present at all, so a
+    caller that spawned a non-`--json` `frob check` (still a real, live
+    caller: `frob.app.ticket_runner._close_cmd`'s T-1399 gate-claim
+    check) gets a clean `None` here rather than a crash, and can keep
+    using its own legacy text path unaffected by this ticket."""
+    import json
+
+    try:
+        data = json.loads(stdout)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("results"), list):
+        return None
+    return data
+
+
+# frob:ticket T-1703
+def _find_tool_result(results: list, tool_name: str) -> dict | None:  # noqa: ANN001
+    """The first `results` entry (a `frob check --json` `ToolResult` dict)
+    whose `"tool"` field equals `tool_name`, or `None` if no such entry
+    ran this invocation -- e.g. no `"gate-summary"` entry means the gates
+    stage itself never ran (an `--only`-scoped call that excluded it), not
+    that it ran and found nothing."""
+    for r in results:
+        if isinstance(r, dict) and r.get("tool") == tool_name:
+            return r
+    return None
+
+
+# frob:ticket T-1703
+def _budget_deferred_stage_groups(results: list) -> list[str]:  # noqa: ANN001
+    """Every stage-group name a `--budget`-bounded `frob check --json` run
+    DEFERRED (T-1703's BUDGET001 signal, `frob.app._check_chunking.
+    _budget_deferred_result`), parsed straight from the `"budget"` tool
+    result's own diagnostic message rather than re-deriving the deferred
+    set some other way -- empty if no `"budget"` entry ran at all (every
+    selected stage group fit, or `--budget` was never passed)."""
+    budget_result = _find_tool_result(results, "budget")
+    if budget_result is None:
+        return []
+    names: list[str] = []
+    for diag in budget_result.get("diagnostics", ()):
+        if not isinstance(diag, dict) or diag.get("code") != "BUDGET001":
+            continue
+        message = diag.get("message", "")
+        # `_budget_deferred_result`'s own message shape: "BUDGET001:
+        # --budget N deferred M stage group(s) to a later run: a, b, c.
+        # Resume state persisted -- ...". The `": "` after "BUDGET001"
+        # itself is NOT the split point (T-1703 regression: a naive
+        # first-`": "` partition stops there, leaving "to a later run: a,
+        # b, c" un-split) -- anchor on the literal "to a later run: "
+        # phrase instead.
+        _prefix, sep, rest = message.partition("to a later run: ")
+        if not sep:
+            continue
+        names_part = rest.split(". Resume state", 1)[0]
+        names.extend(n.strip() for n in names_part.split(",") if n.strip())
+    return names
 
 
 # frob:ticket T-0846
 # frob:ticket T-0850
+# frob:ticket T-1703
+def _parse_error_findings_from_json(
+    ticket_id: str, data: dict
+) -> frozenset[tuple[str, str]] | None:
+    """Recover the `frozenset[(rule_id, file)]` identity set from a `frob
+    check --json` payload already decoded by `_parse_check_json`, or
+    `None` when the run is UNMEASURED -- not "measured zero", not
+    "measured some" (T-1703).
+
+    Two independent ways this returns `None`, both closing a real
+    incident:
+
+    1. `--budget`-truncated (`_budget_deferred_stage_groups` finds a
+       `"budget"` tool result): gates that never ran emit no diagnostics
+       at all, so a partial run's `results` list is structurally
+       indistinguishable from a genuinely clean full run -- it is a
+       DIFFERENT question, not a smaller answer (T-1703's live incident:
+       a rolling-baseline sweep recorded `CLEAN, 0 errors` at a commit a
+       plain unscoped `frob check` found 5 errors in, 2 of them TICK006
+       regressions the same land had just introduced).
+    2. No `results` at all, or a run whose exit code and payload disagree
+       in a way `_parse_check_json` already rejected as unparsable
+       upstream -- callers see this via `_parse_check_json` returning
+       `None` before this function is ever reached.
+
+    Every diagnostic across every `ToolResult` with `severity == "error"`
+    counts, sourced from the diagnostic's own structured `code`/`file`
+    fields -- NOT a regex over that diagnostic's rendered text. This is
+    the actual fix for the second T-1703 defect: the old `_GATE_ERROR_
+    LINE_RE` text scan assumed every diagnostic renders as `[tag]
+    file:line CODE message`, which `ty` (`file:line:col`, an extra
+    `:col` the regex's `:\\d+\\s` never matches) and any future renderer
+    shape silently violate. Reading `code`/`file` directly off the
+    `Diagnostic` model is immune to how any tool chooses to RENDER
+    itself, by construction -- there is no shape left to drift out of
+    sync with."""
+    results = data["results"]
+    deferred = _budget_deferred_stage_groups(results)
+    if deferred:
+        _log.warning(
+            "ticket %s: `frob check --json --budget` run deferred %d "
+            "stage group(s) (%s) -- error-finding identities are "
+            "unmeasured, not a partial set (T-1703: a truncated run is a "
+            "DIFFERENT question, never a smaller answer)",
+            ticket_id,
+            len(deferred),
+            ", ".join(deferred),
+        )
+        return None
+    findings: set[tuple[str, str]] = set()
+    for r in results:
+        if not isinstance(r, dict):
+            continue
+        for d in r.get("diagnostics", ()):
+            if isinstance(d, dict) and d.get("severity") == "error":
+                findings.add((d.get("code") or "", d.get("file") or ""))
+    return frozenset(findings)
+
+
+# frob:ticket T-0846
+# frob:ticket T-0850
+# frob:ticket T-1703
 def _parse_error_findings_from_stdout(
     ticket_id: str, stdout: str, returncode: int
 ) -> frozenset[tuple[str, str]] | None:
     """Recover the `frozenset[(rule_id, file)]` identity set from a fresh
-    `frob check --ticket <id>` run's captured `stdout`, or `None` when the
-    output carries no parsable gate-summary at all (T-0846: unmeasured,
-    never a false empty-set claim of "definitely zero").
+    `frob check <...>` run's captured `stdout`, or `None` when the run is
+    unmeasured (T-0846: never a false empty-set claim of "definitely
+    zero").
 
-    Shared by `_check_gate_findings_fn` (the identity set itself) and
-    `_check_gates_summary_fn` (T-0850: deriving a `SCOPED_RUN_FLAKY_RULE_
-    IDS`-excluded error COUNT from the same `## Errors` section, rather
-    than trusting the raw gate-summary count that still includes them) so
-    the two never parse the same section text via two independently
-    hand-typed copies (NO DUPLICATION)."""
+    T-1703: JSON-first. `stdout` is tried as a `frob check --json` payload
+    (`_parse_check_json`) and, if it decodes, handed straight to
+    `_parse_error_findings_from_json` -- every current in-scope caller of
+    this function now spawns `--json` (`_shared_check_spawn_fn`,
+    `frob.app.ticket_runner._land_cmd._unscoped_error_findings`), so this
+    is the live path in practice. The legacy text-scan below survives
+    ONLY for `frob.app.ticket_runner._close_cmd`'s T-1399 gate-claim
+    check, which still spawns plain-text `frob check --only gates` and is
+    out of this ticket's declared scope -- `stdout` that fails to decode
+    as JSON at all falls through to it unchanged from before this ticket,
+    same regex, same limitations, not touched here."""
+    data = _parse_check_json(stdout)
+    if data is not None:
+        return _parse_error_findings_from_json(ticket_id, data)
     section = stdout.split("## Errors", 1)
     if len(section) < 2:
         # No "## Errors" heading at all means zero error diagnostics were
@@ -415,6 +591,20 @@ def _parse_error_findings_from_stdout(
         if match:
             findings.add((match.group("code"), match.group("file")))
     return frozenset(findings)
+
+
+# frob:ticket T-0846
+# T-0846: one printed error-diagnostic line's shape, e.g.
+# "  [gate:SCOPE] src/frob/tickets/_land.py:0  SCOPE001  SCOPE001: message"
+# (`frob.check._section_lines`'s `f"  [{tool}] {d.as_text()}"`, `Diagnostic.
+# as_text`'s own `file:line  CODE  message` rendering) -- captures the file
+# and rule-id code, deliberately not the message (whose wording can change
+# without the finding's identity changing). T-1703: legacy fallback only,
+# used when `stdout` does not decode as `--json` at all -- see
+# `_parse_error_findings_from_stdout`'s docstring.
+_GATE_ERROR_LINE_RE = re.compile(
+    r"^\s*\[[^\]]*\]\s+(?P<file>\S+?):\d+\s+(?P<code>[A-Za-z][A-Za-z0-9]*)\s"
+)
 
 
 # frob:ticket T-0850

@@ -493,14 +493,30 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
     timing = _load_budget_timing(root)
     selected, deferred = _select_budget_chunks(remaining, timing, budget_s)
 
-    _log.info(
-        "check --budget %d: running %d stage group(s) (%s), deferring %d (%s)",
-        budget_s,
-        len(selected),
-        ", ".join(selected),
-        len(deferred),
-        ", ".join(deferred) if deferred else "none",
-    )
+    # T-1703: these two progress lines are the ONLY output this function
+    # prints outside `_run_budget_chunk`'s own `_run_all_stages` call,
+    # which enters/exits `_stdout_log_ctx` for the duration of each chunk
+    # it runs (quiet under `--json`, same as every other stage). Left
+    # unguarded, they printed straight to stdout ahead of the eventual
+    # JSON payload `_report_check_result` emits below -- corrupting it
+    # for any `json.loads` consumer (the exact leak `_unscoped_error_
+    # findings`'s own `--budget ... --json` spawn, frob.app.ticket_
+    # runner._land_cmd, hit in practice: `[{"tool": "gate:...", ...` with
+    # this line's own prose prepended is not valid JSON). `_log.info` at
+    # its own default level would otherwise reach stdout even under
+    # `--json`'s later `quiet_stdout_logs` wrap in `run` -- that wrap
+    # only covers the SETUP calls before `_handle_early_exit_modes`
+    # dispatches here, not this function's own body.
+    if not cfg.check_json:
+        _log.info(
+            "check --budget %d: running %d stage group(s) (%s), deferring "
+            "%d (%s)",
+            budget_s,
+            len(selected),
+            ", ".join(selected),
+            len(deferred),
+            ", ".join(deferred) if deferred else "none",
+        )
 
     all_results: list[ToolResult] = []
     for group in selected:
@@ -508,7 +524,10 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
         all_results.extend(chunk_result.results)
         timing = _update_budget_timing(timing, group, elapsed)
         _save_budget_timing(root, timing)
-        _log.info("check --budget: stage group %r done in %.1fs", group, elapsed)
+        if not cfg.check_json:
+            _log.info(
+                "check --budget: stage group %r done in %.1fs", group, elapsed
+            )
 
     if deferred:
         all_results.append(_budget_deferred_result(deferred, budget_s))

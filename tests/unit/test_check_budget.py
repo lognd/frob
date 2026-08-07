@@ -154,6 +154,41 @@ class TestRunBudgetedCheck:
 
         assert json.loads(state_path.read_text()) == ["g2"]
 
+    # frob:ticket T-1703
+    def test_budget_json_stdout_is_pure_parsable_json(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_budget_json_stdout_is_pure_parsable_json  # noqa: E501
+        """T-1703: `--budget SECONDS --json`'s stdout must be valid JSON
+        end to end, no leading/trailing prose. Before this fix,
+        `_run_budgeted_check`'s own progress `_log.info` lines (`"running
+        N stage group(s)..."`, `"stage group %r done in %.1fs"`) printed
+        UNCONDITIONALLY, ahead of the JSON payload `_report_check_result`
+        emits -- `run`'s `quiet_stdout_logs` `--json` wrap only covers the
+        setup calls AFTER `_handle_early_exit_modes` dispatches here, so
+        those two lines corrupted every `--budget --json` caller's stdout
+        (the live break: `_unscoped_error_findings`,
+        `frob.app.ticket_runner._land_cmd`, spawns exactly this shape).
+        A caller monkeypatching `--budget`'s own selection to defer one
+        group proves the SAME contract holds even on a partial run."""
+        import json
+
+        monkeypatch.setattr(check_mod, "available_stages", lambda: ["g1", "g2"])
+
+        def _fake_run_all_stages(cfg, root, **kwargs):  # noqa: ANN001
+            (group,) = cfg.check_only
+            return self._fake_result(group)
+
+        monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
+        check_chunking_mod._save_budget_timing(tmp_path, {"g1": 10.0})
+        cfg = AppConfig(check_path=tmp_path, check_budget=15, check_json=True)
+        check_run(cfg)
+        stdout = capsys.readouterr().out
+        data = json.loads(stdout)
+        assert data["results"][0]["tool"] == "g1"
+        tool_names = [r["tool"] for r in data["results"]]
+        assert "budget" in tool_names
+
     def test_resumes_from_prior_remaining_state(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

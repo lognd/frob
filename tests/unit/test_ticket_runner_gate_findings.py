@@ -15,6 +15,7 @@ end-to-end integration test (that already exists in
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -34,44 +35,158 @@ class _FakeProc:
         self.stderr = stderr
 
 
+# frob:ticket T-1703
+def _check_result_json(
+    *,
+    errors: list[tuple[str, str, str]] = (),  # (tool, code, file)
+    warnings: list[tuple[str, str, str]] = (),
+    gate_summary: str | None,
+) -> str:
+    """A minimal `frob check --json` `CheckResult` payload (T-1703): every
+    in-scope caller of `_parse_error_findings_from_stdout`/
+    `_check_gates_summary_fn` now spawns `--json`, so these fixtures must
+    be real structured payloads, not the pre-T-1703 rendered-text shape
+    they replace -- a fixture built from a well-formed complete text
+    `## Errors` section would prove nothing about the failure mode T-1703
+    actually closed (a diagnostic whose renderer never matched the old
+    regex at all, and a run whose `results` never got a chance to
+    populate a section because a stage never ran). `gate_summary=None`
+    omits the `"gate-summary"` tool result entirely, simulating a run
+    that never reached/reported gates (unmeasured)."""
+    results: list[dict] = []
+    for tool, code, file in errors:
+        results.append(
+            {
+                "tool": tool,
+                "exit_code": 1,
+                "diagnostics": [
+                    {"file": file, "severity": "error", "code": code, "message": code}
+                ],
+                "tests": [],
+                "summary": "",
+            }
+        )
+    for tool, code, file in warnings:
+        results.append(
+            {
+                "tool": tool,
+                "exit_code": 0,
+                "diagnostics": [
+                    {"file": file, "severity": "warning", "code": code, "message": code}
+                ],
+                "tests": [],
+                "summary": "",
+            }
+        )
+    if gate_summary is not None:
+        results.append(
+            {
+                "tool": "gate-summary",
+                "exit_code": 0,
+                "diagnostics": [],
+                "tests": [],
+                "summary": gate_summary,
+            }
+        )
+    return json.dumps({"path": ".", "results": results})
+
+
 # frob:ticket T-0850
-_TWO_FINDINGS_STDOUT = """frob check .  [FAIL]  2 errors  1 warnings
-
-## Errors
-  [gate:SEC] src/frob/x.py:0  SEC110  SEC110: env-var read
-  [gate:PII] tests/other.py:12  PII010  PII010: pii-shaped field
-
-## Warnings
-  [gate:PERF] src/x.py:1  PERF001  PERF001: whatever
-
-## Tool summary
-  FAIL  gate-summary            2 errors, 1 warnings, 0 waived  [archgate=1.00s]
-"""
+# frob:ticket T-1703
+_TWO_FINDINGS_STDOUT = _check_result_json(
+    errors=[
+        ("gate:SEC", "SEC110", "src/frob/x.py"),
+        ("gate:PII", "PII010", "tests/other.py"),
+    ],
+    warnings=[("gate:PERF", "PERF001", "src/x.py")],
+    gate_summary="2 errors, 1 warnings, 0 waived  [archgate=1.00s]",
+)
 
 # frob:ticket T-0850
-# T-0850: a fixture whose `## Errors` section mixes two
-# `SCOPED_RUN_FLAKY_RULE_IDS` findings (SCOPE001, COV002) with one
-# non-flaky finding (SEC110) -- the flaky pair must be excluded from both
-# `_check_gate_findings_fn`'s identity set and `_check_gates_summary_fn`'s
-# derived error count, leaving only the non-flaky finding/count of 1.
-_MIXED_FLAKY_AND_REAL_FINDINGS_STDOUT = """frob check .  [FAIL]  3 errors  0 warnings
+# frob:ticket T-1703
+# T-0850: a fixture whose error set mixes two `SCOPED_RUN_FLAKY_RULE_IDS`
+# findings (SCOPE001, COV002) with one non-flaky finding (SEC110) -- the
+# flaky pair must be excluded from both `_check_gate_findings_fn`'s
+# identity set and `_check_gates_summary_fn`'s derived error count,
+# leaving only the non-flaky finding/count of 1.
+_MIXED_FLAKY_AND_REAL_FINDINGS_STDOUT = _check_result_json(
+    errors=[
+        ("gate:SCOPE", "SCOPE001", "src/frob/tickets/_land.py"),
+        ("gate:COV", "COV002", "tests/other.py"),
+        ("gate:SEC", "SEC110", "src/frob/x.py"),
+    ],
+    gate_summary="3 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+)
 
-## Errors
-  [gate:SCOPE] src/frob/tickets/_land.py:0  SCOPE001  SCOPE001: outside scope
-  [gate:COV] tests/other.py:12  COV002  COV002: no frob:ticket edge
-  [gate:SEC] src/frob/x.py:0  SEC110  SEC110: env-var read
-
-## Tool summary
-  FAIL  gate-summary            3 errors, 0 warnings, 0 waived  [archgate=1.00s]
-"""
-
-_NO_ERRORS_HEADING_MEASURED_STDOUT = """frob check .  [PASS]  0 errors  0 warnings
-
-## Tool summary
-  pass  gate-summary            0 errors, 0 warnings, 0 waived  [archgate=1.00s]
-"""
+_NO_ERRORS_HEADING_MEASURED_STDOUT = _check_result_json(
+    gate_summary="0 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+)
 
 _UNPARSABLE_STDOUT = "some garbage output with no gate-summary line at all\n"
+
+# frob:ticket T-1703
+# T-1703's own live incident, reconstructed exactly: a `ty` diagnostic
+# (`file:line:col`, the shape `_GATE_ERROR_LINE_RE`'s pre-T-1703 regex
+# never matched, since its capture group required `:\d+\s` immediately
+# after `file` with no room for a `:col` suffix) alongside an ordinary
+# gate error -- both must appear in the parsed identity set now that
+# extraction reads the structured `code`/`file` fields directly instead
+# of re-deriving them from rendered text.
+_TY_AND_GATE_ERROR_STDOUT = _check_result_json(
+    errors=[
+        ("ty", "unresolved-attribute", "src/frob/x.py"),
+        ("gate:SEC", "SEC110", "src/frob/y.py"),
+    ],
+    gate_summary="2 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+)
+
+# frob:ticket T-1703
+# A `--budget`-truncated run's own JSON shape: a `"budget"` tool result
+# carrying a BUDGET001 diagnostic, alongside whatever DID run -- the
+# truncated/partial-run failure mode T-1703 closed. Must parse as `None`
+# (unmeasured), never as "the stage groups that ran, zero findings".
+_BUDGET_TRUNCATED_STDOUT = json.dumps(
+    {
+        "path": ".",
+        "results": [
+            {
+                "tool": "gate:SEC",
+                "exit_code": 0,
+                "diagnostics": [],
+                "tests": [],
+                "summary": "",
+            },
+            {
+                "tool": "gate-summary",
+                "exit_code": 0,
+                "diagnostics": [],
+                "tests": [],
+                "summary": "0 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+            },
+            {
+                "tool": "budget",
+                "exit_code": 0,
+                "diagnostics": [
+                    {
+                        "file": None,
+                        "line": None,
+                        "col": None,
+                        "severity": "warning",
+                        "code": "BUDGET001",
+                        "message": (
+                            "BUDGET001: --budget 300 deferred 1 stage "
+                            "group(s) to a later run: static. Resume state "
+                            "persisted -- run `frob check --budget "
+                            "<seconds>` again to continue."
+                        ),
+                    }
+                ],
+                "tests": [],
+                "summary": "deferred 1 stage group(s): static",
+            },
+        ],
+    }
+)
 
 
 class TestCheckGateFindingsFn:
@@ -277,6 +392,74 @@ class TestCheckGatesSummaryFn:
         fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
         errors, warnings, waived = fn()
         assert (errors, warnings, waived) == (0, 0, 0)
+
+
+class TestParseErrorFindingsFromJson:
+    """T-1703: the highest-integrity fix in this file -- a truncated/
+    partial `--budget` run must yield `None`, never a smaller set, and a
+    diagnostic whose OLD rendered-text shape never matched `_GATE_ERROR_
+    LINE_RE` (`ty`'s `file:line:col`) must now appear in the parsed set
+    since extraction reads structured `code`/`file` fields directly."""
+
+    # frob:ticket T-1703
+    def test_ty_and_gate_error_both_appear_in_parsed_set(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_ty_and_gate_error_both_appear_in_parsed_set  # noqa: E501
+        """T-1703's second named defect: `_GATE_ERROR_LINE_RE`'s text scan
+        assumed every diagnostic renders as `[tag] file:line CODE
+        message` -- `ty`'s `file:line:col` (an extra `:col` the regex's
+        `:\\d+\\s` never matches) silently dropped every `ty` error from
+        the identity set. Reading `code`/`file` off the structured JSON
+        `Diagnostic` instead is immune to how a tool renders itself, so
+        BOTH the `ty` error and an ordinary gate error must appear."""
+        findings = ticket_runner._parse_error_findings_from_stdout(
+            "T-0001", _TY_AND_GATE_ERROR_STDOUT, 1
+        )
+        assert findings == frozenset(
+            {
+                ("unresolved-attribute", "src/frob/x.py"),
+                ("SEC110", "src/frob/y.py"),
+            }
+        )
+
+    # frob:ticket T-1703
+    def test_budget_truncated_run_yields_none_not_a_partial_set(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_budget_truncated_run_yields_none_not_a_partial_set  # noqa: E501
+        """T-1703's first, highest-integrity named defect: a `--budget`
+        run that deferred any stage group must parse as `None`
+        (unmeasured), never as the (possibly empty) set of what the
+        stage groups that DID run happened to find -- a gate that never
+        ran emits no diagnostic lines, so a partial run's error set is
+        structurally indistinguishable from a genuinely clean full run
+        unless the caller is told which stages actually ran. The live
+        incident this closes: a deferred rapid-profile sweep logged
+        `CLEAN, 0 errors` at a commit a full unscoped `frob check` found
+        5 real errors in."""
+        findings = ticket_runner._parse_error_findings_from_stdout(
+            "T-0001", _BUDGET_TRUNCATED_STDOUT, 0
+        )
+        assert findings is None
+
+    # frob:ticket T-1703
+    def test_check_gates_summary_fn_returns_none_on_budget_truncated_run(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_check_gates_summary_fn_returns_none_on_budget_truncated_run  # noqa: E501
+        """The count-only path must refuse a truncated run the same way
+        the identity-set path does -- a partial run's raw gate-summary
+        count is not a smaller, still-trustworthy answer; it is a
+        different question `_check_gates_summary_fn` must not answer at
+        all."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(0, stdout=_BUDGET_TRUNCATED_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
+        assert fn() is None
 
 
 class TestPythonForTree:
