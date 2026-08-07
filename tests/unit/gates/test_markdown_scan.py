@@ -59,6 +59,7 @@ class TestStripCodeSpans:
         assert "before" in stripped
         assert "after" in stripped
 
+    # frob:waive PII012 reason="'token' here means a single lexical unit of markdown (a wrapped inline code span treated as one unit), not a credential"  # noqa: E501
     def test_line_wrapped_inline_span_is_blanked_as_one_token(self) -> None:
         # frob:tests tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans.test_line_wrapped_inline_span_is_blanked_as_one_token  # noqa: E501
         text = "`frob quality \n bind` is one token"
