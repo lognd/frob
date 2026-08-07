@@ -636,12 +636,12 @@
       "ref": "src/frob/tickets/_leases.py::read_all_leases"
     },
     {
-      "digest": "2f1075bc6a9c9244196f5b31d22b4788222237abbd1266286bcd4874dc48e210",
+      "digest": "b9fc079b9260c74cd48441d2c53f3413f8619e4a7b8ad7d7b8dea513ac5c6f3a",
       "facet": "body",
       "ref": "src/frob/tickets/_leases.py::sweep_worktrees"
     },
     {
-      "digest": "8f9b41bb54868ac9770a38919580f3fe2e01b7f22ba31977faabf2282298430f",
+      "digest": "b8e84dbc667b1dbc6cf93f85cc8790f788e328674abd6ca9e21534c024f14d0f",
       "facet": "sig",
       "ref": "src/frob/tickets/_leases.py::sweep_worktrees"
     },

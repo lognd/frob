@@ -2653,6 +2653,98 @@ covers `--retire-on-proof`'s branch deletion on a real verified land, the
 `None`-branch no-op, and the refuse-and-touch-nothing path on an
 unverified proof.
 
+## Worktree liveness scan (T-1715, T-1739)
+
+`--finish`/`--retire-on-proof`'s `verified` gate (above) proves the LAND
+succeeded. It proves nothing about whether the WORKTREE being removed is
+still in use -- and dispatch briefs tell an agent to run `frob ticket land
+<id> --worktree <their own path>` from the root checkout, so the natural,
+documented invocation is the one that deletes the caller's own sandbox.
+Real incident, 2026-08-06: `--finish` did exactly what its contract said
+and removed a just-landed worktree that the calling agent's own process
+was still cwd'd into -- every subsequent tool call failed with "the
+isolation worktree appears to have been removed", the agent could not
+create a replacement (worktree creation is reserved to whatever spawned
+it), and it had to be abandoned and re-dispatched, losing its accumulated
+context. `frob worktree sweep` (T-0836, "Coordinator worktree cleanup" in
+the playbook) has the identical hazard at fleet scale: its keep-criteria
+(lease/dirty/age) are all PROXIES for liveness, not liveness itself, and a
+2026-08-07 dry-run during a four-agent drive caught them exactly inverted
+-- the one worktree kept belonged to a retired agent holding a stale
+lease, the three worktrees marked for removal belonged to agents that
+were actively running (one mid-implementation on a critical ticket). The
+sharpest edge: `dirty` under-covers precisely because a well-behaved agent
+COMMITS its work-in-progress as stall insurance (this repo's own
+guidance) -- following the guidance makes a worktree look MORE removable,
+not less.
+
+Both incidents share one fix mechanism rather than each growing a new
+heuristic: `scan_for_live_worktree_process(path)`
+(`frob.tickets._leases`) generalizes T-1619's `_scan_for_live_land_process`
+`/proc` walk (see "Land exclusivity lease" above) to answer "is ANY live
+process cwd'd into `path`", not just a `frob ticket land` process cwd'd
+into the primary checkout. Same degrade-to-no-finding contract: `/proc`
+unavailable, an unreadable pid, or simply no match all return `None`,
+never a refusal by themselves. `refuse_if_worktree_in_use(root, worktree)`
+combines that scan with the existing lease machinery
+(`read_all_leases`/`is_lease_ttl_expired`, factored into a shared
+`_live_lease_for_worktree` helper) into one `Result`:
+`Err(WorktreeInUseError.LiveProcess)` names the pid and its argv;
+`Err(WorktreeInUseError.LiveLease)` names the pinning ticket id and when
+the lease was recorded. Both are logged at ERROR before returning, so a
+refusal always names what it is refusing to remove and why -- "could not
+finish" with no cause named is the exact DirtyMain-class mistake
+(playbook section, T-1698/T-1699) this repo has already paid for once.
+
+**`--finish`/`--retire-on-proof`** (`_finish_worktree`,
+`frob.app.ticket_runner._land_cmd`): calls `refuse_if_worktree_in_use`
+immediately before `git worktree remove`, after the existing `verified`
+LAND-PROOF gate has already passed. A refusal here `sys.exit(1)`s WITHOUT
+unwinding anything -- the land itself already fully succeeded, only the
+cleanup step is refused, and the worktree branch remains the recovery
+path exactly as it did before `--finish` existed. `frob ticket land <id>
+--worktree PATH --finish --force` overrides the refusal, for a worktree
+independently confirmed genuinely wedged (the process scan cannot always
+prove a pid is dead); `--force` has no effect on anything except this
+guard.
+
+**`frob worktree sweep`** (`sweep_worktrees`/`_sweep_verdict_for_worktree`,
+`frob.tickets._leases`; CLI in `frob.app.worktree_runner`): the liveness
+scan runs FIRST, before the pre-existing dirty/lease/age gates, and
+produces a new `kept:live` verdict naming the pid
+(`kept:live(pid <N>) <path>`) -- unconditionally, regardless of whether
+the worktree is clean, leased, or old, which is exactly the property the
+2026-08-07 incident needed and the old three-gate design did not have.
+`frob worktree sweep --force` overrides the `kept:live` gate specifically
+(dirty/age are unaffected by `--force`); refuse-by-default is the point
+of the flag existing at all, so reach for it narrowly, worktree by
+worktree, not as a blanket unblock for a whole sweep.
+
+Both call sites share `scan_for_live_worktree_process` and
+`_live_lease_for_worktree` directly -- there is intentionally only one
+process-liveness scanner and one lease-liveness judgment in
+`frob.tickets._leases`, not a third or fourth heuristic layered
+alongside lease/dirty/age. "Could not determine liveness" is never
+reachable as "prove it is dead": both underlying checks degrade to
+`None`/no-match on any uncertainty, and a `None`/no-match result is
+always treated as "not proven in use" -- never as "proven not in use" --
+by the two call sites, not by the checks manufacturing false confidence
+themselves.
+
+Regression coverage (`tests/unit/test_land_finish_guard.py`,
+`tests/test_worktree_guard.py`) specifically covers the exact shape that
+would have killed three agents: a worktree that is CLEAN, holds NO lease,
+has a RECENT HEAD commit, and has a live process cwd'd into it -- asserts
+it is kept/refused and that the pid is named, not just that some
+generically-stale worktree is caught.
+
+Related, separately ticketed rather than folded in here: T-1739 also
+surfaced a lease/state disagreement (a stale lease naming one ticket as
+the `doable --show-blocked` holder while the ledger has a different
+ticket queued) -- that is a distinct defect in `doable`'s own attribution
+logic, not a liveness question, and is tracked as its own ticket (see
+T-1743) rather than folded into the scan this section documents.
+
 ## Passenger-ticket disclosure (T-1618)
 
 `frob ticket land <id> --worktree W` merges `W`'s BRANCH, not just the

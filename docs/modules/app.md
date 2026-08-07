@@ -312,8 +312,11 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   (docs/commands/sys.md).
 - `test_runner.run` -- `frob test [--all] [--base REF] [--lang L]
   [--fallback MODE]` (docs/modules/testing.md).
-- `worktree_runner.run` -- `frob worktree sweep` (T-0836): lease-aware
-  stale-worktree cleanup.
+- `worktree_runner.run` -- `frob worktree sweep [--dry-run] [--min-age
+  HOURS] [--force]` (T-0836): lease-aware stale-worktree cleanup. T-1739
+  added `--force` and the `kept:live` verdict -- see docs/modules/
+  tickets.md#worktree-liveness-scan-t-1715-t-1739 for the liveness scan
+  this now runs before the dirty/lease/age gates.
 
 ## Shared graph-snapshot helper (T-1085)
 

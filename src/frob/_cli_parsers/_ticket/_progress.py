@@ -366,4 +366,19 @@ def _add_ticket_land_parser(ticket_sub):
             "land, or a failed verify."
         ),
     )
+    # frob:ticket T-1715
+    ticket_land_p.add_argument(
+        "--force",
+        dest="ticket_force",
+        action="store_true",
+        help=(
+            "T-1715: override --finish/--retire-on-proof's refusal to "
+            "remove --worktree when a live process is still cwd'd into "
+            "it, or an active cross-worktree lease is still pinned to "
+            "it -- use only for a worktree you have independently "
+            "confirmed is genuinely wedged (the process scan cannot "
+            "always prove a pid is dead). Has no effect without "
+            "--finish/--retire-on-proof."
+        ),
+    )
     return ticket_land_p

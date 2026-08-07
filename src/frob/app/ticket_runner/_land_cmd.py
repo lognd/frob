@@ -26,6 +26,7 @@ from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
 from frob.tickets._land_git_ops import _describe_git_failure, _land_internal_git_env
+from frob.tickets._leases import refuse_if_worktree_in_use
 
 from ._verify import (
     _check_gate_findings_fn,
@@ -1087,22 +1088,68 @@ def _report_stale_post_land_verify_markers(root: Path) -> None:
         _clear_post_land_verify_marker(root, ticket_id)
 
 
+# frob:ticket T-1715
+def _refuse_finish_if_worktree_in_use(
+    root: Path, worktree: Path, ticket_id: str
+) -> None:
+    """`_finish_worktree`'s liveness guard, split out to stay under
+    ARCH103's per-body complexity budget: `sys.exit(1)`s (worktree left in
+    place) if `refuse_if_worktree_in_use` finds either a live process
+    cwd'd into `worktree` or an active cross-worktree lease still pinned
+    to it -- the land itself already succeeded by this point, so this
+    only ever refuses the CLEANUP step, never unwinds anything."""
+    guard = refuse_if_worktree_in_use(root, worktree)
+    if guard.is_err:
+        _log.error(
+            "ticket land --finish: %s refusing to remove worktree %s "
+            "(%s) -- the land itself already succeeded and is not "
+            "affected; land already happened, only cleanup did not -- "
+            "retry --finish once the worktree is free, or rerun with "
+            "--force if you have independently confirmed it is stale",
+            ticket_id,
+            worktree,
+            guard.danger_err.value,
+        )
+        sys.exit(1)
+
+
 # frob:ticket T-1175
-def _finish_worktree(root: Path, worktree: Path, ticket_id: str) -> None:
+# frob:ticket T-1715
+# frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_refuses_to_remove_a_worktree_a_live_process_is_cwd_into  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_removes_a_worktree_with_no_live_process  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_force_removes_despite_a_live_process  # noqa: E501
+def _finish_worktree(
+    root: Path, worktree: Path, ticket_id: str, *, force: bool = False
+) -> None:
     """`frob ticket land --finish`'s worktree-removal half: `git -C root
     worktree remove <worktree>`, called ONLY after `_print_land_proof` has
     already verified the land -- this function itself does no re-
-    verification, it trusts its caller (`_land`) to have gated on
-    `ancestor_ok and state_ok` first. Run from `root` (the primary
-    checkout `worktree` belongs to), not from an arbitrary cwd -- `git
-    worktree remove` resolves its target against the repo the invoking
-    working copy belongs to, so an unrelated cwd can spuriously report
-    "not a working tree" even for a real, live worktree path. A failed
-    removal (uncommitted stray files, a stale lock) is logged at ERROR but
-    does not raise -- the land itself already fully succeeded by this
-    point, so a cleanup failure is reported separately rather than
-    unwinding anything (playbook section 12b: never force-remove a
-    worktree the mechanical way, surface it instead)."""
+    verification of the LAND-PROOF, it trusts its caller (`_land`) to have
+    gated on `ancestor_ok and state_ok` first.
+
+    T-1715: before removing anything, refuses (exits 1, worktree left in
+    place) if `refuse_if_worktree_in_use` finds either a live process
+    cwd'd into `worktree` or an active cross-worktree lease still pinned
+    to it -- this is the fix for the incident where `--finish` deleted
+    the calling agent's own worktree out from under it: dispatch briefs
+    tell an agent to run `frob ticket land --worktree <their own>` from
+    the root checkout, so the natural, documented invocation is the one
+    that used to strand the caller. `force=True` (`--force`) skips this
+    check entirely, for a worktree independently confirmed genuinely
+    wedged -- the process scan cannot always prove a pid is dead.
+
+    Run from `root` (the primary checkout `worktree` belongs to), not
+    from an arbitrary cwd -- `git worktree remove` resolves its target
+    against the repo the invoking working copy belongs to, so an
+    unrelated cwd can spuriously report "not a working tree" even for a
+    real, live worktree path. A failed removal (uncommitted stray files,
+    a stale lock) is logged at ERROR but does not raise -- the land
+    itself already fully succeeded by this point, so a cleanup failure is
+    reported separately rather than unwinding anything (playbook section
+    12b: never force-remove a worktree the mechanical way, surface it
+    instead)."""
+    if not force:
+        _refuse_finish_if_worktree_in_use(root, worktree, ticket_id)
     removed = run_argv(["git", "-C", str(root), "worktree", "remove", str(worktree)])
     if removed.is_err or removed.danger_ok.returncode != 0:
         detail = removed.danger_err if removed.is_err else removed.danger_ok.stderr
@@ -1147,6 +1194,7 @@ def _resolve_land_root(root: Path, worktree: Path, ticket_id: str) -> Path:
 
 
 # frob:ticket T-1175
+# frob:ticket T-1715
 def _finish_land_after_success(
     root: Path, worktree: Path, report, cfg: AppConfig
 ) -> None:  # noqa: ANN001
@@ -1167,7 +1215,12 @@ def _finish_land_after_success(
     removes the worktree checkout, and deletion only ever runs after the
     SAME `verified` gate `--finish` already uses -- there is no path from
     an unverified/failed land to either the worktree or its branch being
-    touched."""
+    touched.
+
+    T-1715: `_finish_worktree` itself also refuses (independent of the
+    `verified` gate above) if `worktree` is still provably in use --
+    `cfg.ticket_force` (`--force`) is threaded through to override that
+    refusal for a worktree confirmed genuinely wedged."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     if report.dry_run:
         return
@@ -1188,7 +1241,7 @@ def _finish_land_after_success(
         if cfg.ticket_land_retire_on_proof
         else None
     )
-    _finish_worktree(root, worktree, cfg.ticket_id)
+    _finish_worktree(root, worktree, cfg.ticket_id, force=cfg.ticket_force)
     if cfg.ticket_land_retire_on_proof:
         _delete_worktree_branch(root, branch, cfg.ticket_id)
 

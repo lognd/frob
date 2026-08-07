@@ -14156,7 +14156,7 @@ frob:waive BUG002 reason="this ticket's own fix is a tickets.md evidence rebind 
 id: T-1715
 title: frob ticket land --finish deletes the calling agent's own worktree cwd, stranding
   it with no recovery
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-06'
@@ -14169,8 +14169,45 @@ scope:
 - src/frob/tickets/_leases.py
 - tests/unit/test_land_finish_guard.py
 - docs/modules/tickets.md
+- src/frob/_cli_parsers/_ticket/_progress.py
+- frob.lock
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: need to wire --force onto `ticket land` so --finish can be overridden for
+    a genuinely wedged tree per T-1715 plan
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: frob.lock
+  reason: frob ack src/frob/tickets/_leases.py::sweep_worktrees (DRIFT001 self-heal
+    after this ticket edited sweep_worktrees) writes frob.lock as a byproduct
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/frob.strata
+  reason: frob sys sync-interface auto-writes this derived interface manifest whenever
+    a tickets_ledger public symbol changes (WorktreeInUseError/refuse_if_worktree_in_use/scan_for_live_worktree_process)
+    -- land absorbs this automatically per playbook sec 0 item 5, adding to scope
+    for a clean pre-land check
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_finds_a_process_cwd_into_the_path
+- tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_none_when_no_process_matches
+- tests/unit/test_land_finish_guard.py::TestLiveLeaseForWorktree::test_finds_a_live_lease_pinned_to_the_worktree
+- tests/unit/test_land_finish_guard.py::TestLiveLeaseForWorktree::test_expired_lease_is_not_live
+- tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse::test_refuses_on_a_live_process_and_names_the_pid
+- tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse::test_refuses_on_a_live_lease
+- tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse::test_allows_when_neither_signal_fires
+- tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_refuses_to_remove_a_worktree_a_live_process_is_cwd_into
+- tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_removes_a_worktree_with_no_live_process
+- tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_force_removes_despite_a_live_process
+- tests/unit/test_land_finish_guard.py::TestForceFlagParsing::test_force_flag_sets_the_namespace_dest
+- tests/unit/test_land_finish_guard.py::TestForceFlagParsing::test_force_defaults_false
 designated_repro_test: null
 threat: null
 component: null
@@ -14220,6 +14257,62 @@ refused by `--finish`; the same worktree with no live process is removed;
 "could not finish" without naming what is holding it repeats the
 DirtyMain lesson (T-1698/T-1699) where an error that did not name its own
 cause cost three agents their budgets.
+
+## Done report
+
+Fix: `_finish_worktree` (the `--finish`/`--retire-on-proof` worktree
+removal half of `frob ticket land`) now refuses to remove a worktree it
+cannot prove is dead, instead of trusting the LAND-PROOF `verified` gate
+alone. Two liveness signals, both reused from existing machinery per the
+ticket's explicit instruction not to write a second scanner:
+
+- `scan_for_live_worktree_process(path)` (new, `frob.tickets._leases`)
+  generalizes T-1619's `_scan_for_live_land_process` `/proc` walk to find
+  ANY live process cwd'd into `path`, not just a `frob ticket land`
+  process cwd'd into the primary checkout.
+- `_live_lease_for_worktree` (factored out of `_sweep_verdict_for_worktree`,
+  now shared with T-1739) answers whether a live cross-worktree lease is
+  still pinned to the worktree.
+
+`refuse_if_worktree_in_use(root, worktree)` combines both into one
+`Result`, logging the pid or the pinning ticket id at ERROR before
+returning -- never a refusal without naming its own cause. `_finish_
+worktree` calls it before `git worktree remove` and `sys.exit(1)`s on a
+refusal without unwinding the (already-succeeded) land itself. `--force`
+(new CLI flag, threaded to `cfg.ticket_force`, the same field `frob
+ticket archive --force` already uses) overrides the guard for a worktree
+independently confirmed genuinely wedged.
+
+docs/modules/tickets.md gained a new "Worktree liveness scan (T-1715,
+T-1739)" section documenting both incidents and the shared mechanism;
+docs/modules/app.md's runner summary got a one-line pointer update for
+T-1739's own CLI surface change (worktree_runner.py is shared scope with
+the sibling ticket).
+
+### Changed
+```
+ tickets.md | 42 ++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 38 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_finds_a_process_cwd_into_the_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_none_when_no_process_matches` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestLiveLeaseForWorktree::test_finds_a_live_lease_pinned_to_the_worktree` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestLiveLeaseForWorktree::test_expired_lease_is_not_live` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse::test_refuses_on_a_live_process_and_names_the_pid` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse::test_refuses_on_a_live_lease` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse::test_allows_when_neither_signal_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_refuses_to_remove_a_worktree_a_live_process_is_cwd_into` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_removes_a_worktree_with_no_live_process` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_force_removes_despite_a_live_process` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestForceFlagParsing::test_force_flag_sets_the_namespace_dest` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestForceFlagParsing::test_force_defaults_false` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: 5 error(s), 556 warning(s), 724 waived
+- error-findings: ARCH001@src/frob/tickets/_leases.py, ARCH103@src/frob/app/ticket_runner/_land_cmd.py, DUP001@tests/unit/test_land_finish_guard.py, SELFAUDIT001@design, WIRE001@tests/unit/test_land_finish_guard.py
 
 <!-- ticket:T-1716 -->
 ```yaml
@@ -16342,7 +16435,7 @@ throughput problem.
 id: T-1739
 title: 'frob worktree sweep would delete LIVE agents'' worktrees: keep-criteria have
   no liveness check and are exactly inverted'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -16355,8 +16448,21 @@ scope:
 - src/frob/tickets/_leases.py
 - tests/test_worktree_guard.py
 - docs/modules/tickets.md
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/app.md
+  reason: 'AFFECT001: frob worktree sweep --force/--dry-run CLI doc summary in docs/modules/app.md#runners
+    must move with worktree_runner.py::run in the same diff'
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess::test_clean_no_lease_recent_head_live_process_kept
+- tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess::test_force_overrides_the_live_process_keep
+- tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_finds_a_process_cwd_into_the_path
+- tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_none_when_no_process_matches
 designated_repro_test: null
 threat: null
 component: null
@@ -16428,6 +16534,62 @@ REGRESSION COVERAGE must include the real shape: a worktree that is
 CLEAN, holds NO lease, has a recent HEAD commit, and has a live process
 cwd'd into it -- today's "remove" verdict, and the one that would have
 killed three agents. Assert it is kept and the pid is named.
+
+## Done report
+
+Fix: `frob worktree sweep`'s keep-criteria (lease/dirty/age) had no
+liveness check at all -- a 2026-08-07 dry-run during a four-agent drive
+caught them exactly inverted (the one worktree kept belonged to a
+RETIRED agent's stale lease; the three marked for removal belonged to
+LIVE agents, one mid-implementation on a critical ticket). `dirty`
+under-covers precisely because a well-behaved agent commits its own
+work-in-progress as this repo's own stall-insurance guidance instructs --
+following the guidance made a worktree look MORE removable, not less.
+
+`_sweep_verdict_for_worktree` now runs a liveness check FIRST, before
+dirty/lease/age, using the exact same `scan_for_live_worktree_process`
+primitive T-1715 introduced (reused, not a second scanner, per the
+ticket's explicit instruction) -- a candidate with a live process cwd'd
+into it is unconditionally `kept:live`, naming the pid, regardless of
+whether it is clean/unleased/recent. `frob worktree sweep --force`
+overrides this specific gate (dirty/age are unaffected). `--dry-run`'s
+preview reflects the same verdict as a real sweep.
+
+`_sweep_verdict_for_worktree` and `sweep_worktrees` were also split
+(`_kept_live_verdict_if_process_present`, `_kept_lease_or_age_verdict`)
+to stay under this repo's own ARCH001 line budget after the new gate was
+added; `_live_lease_for_worktree` was factored out of the pre-existing
+inline lease loop so T-1715's `--finish` refusal and this sweep gate
+make the identical lease-liveness judgment rather than two copies.
+
+T-1739's own body also raised a lease/state disagreement (a stale lease
+naming the wrong ticket as `doable --show-blocked`'s holder while the
+ledger has a different ticket queued). That is investigated and
+addressed as its own ticket, T-1743 (attribution + a supported release
+path for an orphaned lease) -- read there before assuming it duplicates
+this ticket; it does not, this ticket's scope is the liveness scan only.
+
+docs/modules/tickets.md's new "Worktree liveness scan (T-1715, T-1739)"
+section (added under T-1715, shared with this ticket) documents both
+incidents and the shared mechanism; docs/modules/app.md's runner summary
+picked up the CLI surface change (`--force`, `kept:live`).
+
+### Changed
+```
+ tickets.md | 110 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 107 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess::test_clean_no_lease_recent_head_live_process_kept` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess::test_force_overrides_the_live_process_keep` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_finds_a_process_cwd_into_the_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_none_when_no_process_matches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 2 error(s), 598 warning(s), 730 waived
+- error-findings: E501@/home/logan/projects/frob/.claude/worktrees/agent-a3af69208737b1061/src/frob/app/ticket_runner/_land_cmd.py, E501@/home/logan/projects/frob/.claude/worktrees/agent-a3af69208737b1061/src/frob/tickets/_leases.py
 
 <!-- ticket:T-1740 -->
 ```yaml

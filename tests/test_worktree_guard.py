@@ -7,8 +7,10 @@ checkout instead of its own worktree."""
 
 from __future__ import annotations
 
+import os
 import shlex
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,7 @@ from frob.app.agent_runner import run as agent_run
 from frob.gitio import GitError
 from frob.scaffold._managed import _apply_stash_guard
 from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
+from frob.tickets._leases import sweep_worktrees
 from frob.tickets._models import TicketError
 from frob.tickets._worktree_guard import (
     FROB_AGENT_ENV,
@@ -261,3 +264,86 @@ class TestStashGuardHook:
             _apply_stash_guard(main_repo)
             == "hook reference-transaction: already current"
         )
+
+
+def _proc_test_cwd_matches(pid: int, expected: Path) -> bool:
+    """`True` iff `/proc/<pid>/cwd` resolves to `expected` (test-only
+    startup-race helper, same shape as `test_ticket_leases.py`'s own)."""
+    try:
+        return Path(os.readlink(f"/proc/{pid}/cwd")).resolve() == expected.resolve()
+    except OSError:
+        return False
+
+
+class TestSweepWorktreesLiveProcess:
+    """T-1739: `frob worktree sweep` must not remove a worktree a live
+    process is cwd'd into, no matter how removable the dirty/lease/age
+    proxies say it looks. Real 2026-08-07 dry-run: three LIVE agents'
+    worktrees were CLEAN (they had committed their own work-in-progress
+    as this repo's own stall-insurance guidance instructs), held no
+    lease, and had a recent HEAD commit -- exactly the shape that used
+    to read as `removed`. This is that exact shape, reproduced."""
+
+    def test_clean_no_lease_recent_head_live_process_kept(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_clean_no_lease_recent_head_live_process_kept  # noqa: E501
+        main_repo = tmp_path / "main"
+        _init_repo(main_repo)
+        wt = tmp_path / "main" / ".claude" / "worktrees" / "agent-live"
+        wt.parent.mkdir(parents=True, exist_ok=True)
+        _git(
+            "worktree", "add", "-b", "agent-live", str(wt), cwd=main_repo
+        )
+        # CLEAN (nothing uncommitted), NO lease recorded, RECENT HEAD --
+        # every proxy this repo used to trust says "safe to remove".
+        holder = subprocess.Popen(
+            ["python3", "-c", "import time; time.sleep(30)"], cwd=str(wt)
+        )
+        try:
+            for _ in range(50):
+                if _proc_test_cwd_matches(holder.pid, wt):
+                    break
+                time.sleep(0.1)
+
+            result = sweep_worktrees(main_repo, dry_run=True)
+            assert result.is_ok
+            verdicts = result.danger_ok
+            assert len(verdicts) == 1
+            assert verdicts[0].verdict == "kept:live"
+            assert str(holder.pid) in verdicts[0].detail
+            assert wt.exists()
+
+            # A real (non-dry-run) sweep must keep it too, not just the
+            # preview.
+            result2 = sweep_worktrees(main_repo)
+            assert result2.is_ok
+            assert result2.danger_ok[0].verdict == "kept:live"
+            assert wt.exists()
+        finally:
+            holder.kill()
+            holder.wait(timeout=5)
+
+    def test_force_overrides_the_live_process_keep(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_force_overrides_the_live_process_keep  # noqa: E501
+        main_repo = tmp_path / "main"
+        _init_repo(main_repo)
+        wt = tmp_path / "main" / ".claude" / "worktrees" / "agent-live"
+        wt.parent.mkdir(parents=True, exist_ok=True)
+        _git("worktree", "add", "-b", "agent-live", str(wt), cwd=main_repo)
+        holder = subprocess.Popen(
+            ["python3", "-c", "import time; time.sleep(30)"], cwd=str(wt)
+        )
+        try:
+            for _ in range(50):
+                if _proc_test_cwd_matches(holder.pid, wt):
+                    break
+                time.sleep(0.1)
+
+            result = sweep_worktrees(main_repo, force=True)
+            assert result.is_ok
+            assert result.danger_ok[0].verdict == "removed"
+            assert not wt.exists()
+        finally:
+            holder.kill()
+            holder.wait(timeout=5)

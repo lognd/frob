@@ -1015,6 +1015,58 @@ def _proc_cwd(pid: int) -> Path | None:
 _TICKET_ID_ARGV_RE = re.compile(r"^T-\d+$")
 
 
+# frob:ticket T-1715
+# frob:doc docs/modules/tickets.md#worktree-liveness-scan-t-1715-t-1739
+# frob:tests tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess.test_finds_a_process_cwd_into_the_path  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess.test_none_when_no_process_matches  # noqa: E501
+def scan_for_live_worktree_process(
+    path: Path,
+) -> tuple[int, tuple[str, ...] | None] | None:
+    """Generalizes T-1619's `_scan_for_live_land_process` `/proc` walk for
+    T-1715/T-1739: find the first LIVE process -- ANY process, not just a
+    `frob ticket land` invocation -- whose `/proc/<pid>/cwd` resolves to
+    `path`. Built directly on this module's existing `_proc_cwd` primitive
+    and the exact same degrade-to-no-finding contract: `/proc` missing, an
+    unreadable pid, or simply no match all return `None`, never a refusal
+    by themselves -- an inability to scan must never itself become "proven
+    dead".
+
+    Both `frob ticket land --finish` (T-1715, refusing to remove a
+    worktree a live process is still cwd'd into out from under it) and
+    `frob worktree sweep` (T-1739, the fleet-scale version of the exact
+    same hazard) call this single function rather than each re-deriving
+    their own `/proc` walk -- there is intentionally only ever one
+    process-liveness scanner in this module; `_scan_for_live_land_process`
+    below stays a distinct function because it ALSO filters by argv shape
+    for land's own belt-and-braces exclusivity check, a different question
+    ("is a *land* running against *root*") from this one ("is *anything*
+    running in *path*").
+
+    Returns `(pid, argv)` for the first match (`argv` is `None` only if
+    that pid's own `/proc/<pid>/cmdline` could not be read, e.g. a
+    permissions race between the cwd read and the cmdline read) -- or
+    `None` if no live process is cwd'd into `path`."""
+    proc_dir = Path("/proc")
+    if not proc_dir.is_dir():
+        return None
+    resolved = path.resolve()
+    self_pid = os.getpid()
+    try:
+        entries = tuple(proc_dir.iterdir())
+    except OSError:
+        return None
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid == self_pid:
+            continue
+        if _proc_cwd(pid) != resolved:
+            continue
+        return (pid, _proc_cmdline(pid))
+    return None
+
+
 # frob:ticket T-1619
 # frob:doc docs/modules/tickets.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
@@ -1130,6 +1182,102 @@ def refuse_if_land_in_progress(root: Path) -> Result[None, LeaseError]:
             landing_ticket if landing_ticket else "an unknown ticket",
         )
         return Err(LeaseError.LandInProgress)
+    return Ok(None)
+
+
+# frob:ticket T-1715
+# frob:doc docs/modules/tickets.md#worktree-liveness-scan-t-1715-t-1739
+class WorktreeInUseError(ErrorSet):
+    """Fallible outcomes of `refuse_if_worktree_in_use` (T-1715): the two
+    liveness signals this repo can actually prove -- a live process
+    physically cwd'd into the worktree, and an active cross-worktree
+    lease still pinned to it."""
+
+    LiveProcess = "a live process is still cwd'd into the worktree"
+    LiveLease = "the worktree still holds an active cross-worktree lease"
+
+
+# frob:ticket T-1715
+# frob:tests tests/unit/test_land_finish_guard.py::TestLiveLeaseForWorktree.test_finds_a_live_lease_pinned_to_the_worktree  # noqa: E501
+def _live_lease_for_worktree(
+    worktree: Path,
+    leases: tuple[_LeaseRecord, ...],
+    *,
+    now: datetime | None = None,
+) -> _LeaseRecord | None:
+    """The first LIVE (unexpired, `is_lease_ttl_expired`) lease among
+    `leases` whose recorded worktree path resolves to `worktree`, or
+    `None`. Factored out of `_sweep_verdict_for_worktree` (T-0836) so
+    T-1715's `--finish` liveness refusal makes the EXACT SAME lease-
+    liveness judgment `frob worktree sweep` already makes for its own
+    `kept:lease` verdict, rather than a second, possibly-diverging copy
+    of the same loop -- `_sweep_verdict_for_worktree` now calls this too."""
+    resolved = worktree.resolve()
+    for record in leases:
+        try:
+            record_path = Path(record.worktree).resolve()
+        except OSError:
+            continue
+        if record_path != resolved:
+            continue
+        if not is_lease_ttl_expired(record, now=now):
+            return record
+    return None
+
+
+# frob:ticket T-1715
+# frob:doc docs/modules/tickets.md#worktree-liveness-scan-t-1715-t-1739
+# frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_refuses_on_a_live_process_and_names_the_pid  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_refuses_on_a_live_lease  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse.test_allows_when_neither_signal_fires  # noqa: E501
+def refuse_if_worktree_in_use(
+    root: Path, worktree: Path, *, now: datetime | None = None
+) -> Result[None, WorktreeInUseError]:
+    """`Err(...)` iff `worktree` is provably still in use, by either of
+    the two signals this repo can actually check (T-1715, reused verbatim
+    by T-1739's sweep): a live process cwd'd into it
+    (`scan_for_live_worktree_process`), or a live cross-worktree lease
+    still pinned to it (`_live_lease_for_worktree` over
+    `read_all_leases`). `Ok(None)` only when NEITHER signal fires --
+    "could not determine liveness" is not a state this function can even
+    produce, by construction: both checks are best-effort and degrade to
+    `None`/no-match rather than raising, and a `None`/no-match result
+    from either one is treated as "not proven in use", never as "proven
+    not in use" -- the caller (`_finish_worktree`'s `--finish` guard,
+    `_sweep_verdict_for_worktree`'s `kept:live` verdict) is the one that
+    turns an `Ok(None)` here into an actual removal; this function only
+    ever answers the liveness question, it never removes anything itself.
+
+    Every refusal logs (at ERROR) the pid or the pinning ticket id by
+    name -- playbook precedent (T-1698/T-1699's DirtyMain lesson): an
+    error that does not name its own cause is what has cost agents their
+    entire budget, repeatedly."""
+    found = scan_for_live_worktree_process(worktree)
+    if found is not None:
+        pid, argv = found
+        argv_str = " ".join(argv) if argv else "argv unknown"
+        _log.error(
+            "tickets: refusing to remove %s -- pid %s has it as its cwd "
+            "(%s); land/sweep without removing it, retry once that "
+            "process exits, or pass --force if you have independently "
+            "confirmed it is stale",
+            worktree,
+            pid,
+            argv_str,
+        )
+        return Err(WorktreeInUseError.LiveProcess)
+    leases = read_all_leases(root)
+    live_lease = _live_lease_for_worktree(worktree, leases, now=now)
+    if live_lease is not None:
+        _log.error(
+            "tickets: refusing to remove %s -- it still holds an active "
+            "lease for %s (recorded %s); pass --force if you have "
+            "independently confirmed the lease is stale",
+            worktree,
+            live_lease.ticket_id,
+            live_lease.recorded_at,
+        )
+        return Err(WorktreeInUseError.LiveLease)
     return Ok(None)
 
 
@@ -1658,13 +1806,16 @@ class _WorktreeSweepError(ErrorSet):
 
 # frob:ticket T-0836
 # frob:ticket T-0601
+# frob:ticket T-1739
 class _WorktreeVerdict(BaseModel):
     """One decided outcome for a single dispatched-agent worktree during
     `frob worktree sweep` (T-0836): the worktree's resolved path, the
-    verdict tag (`"removed"`, `"kept:lease"`, `"kept:dirty"`, or
-    `"kept:age"`), and a human-readable `detail` string (e.g. the pinning
-    ticket id and lease age for `"kept:lease"`; empty for the other
-    verdicts unless a `git worktree remove` call itself failed)."""
+    verdict tag (`"removed"`, `"kept:live"` [T-1739, a live process is
+    cwd'd into it], `"kept:lease"`, `"kept:dirty"`, or `"kept:age"`), and
+    a human-readable `detail` string (e.g. the pinning pid for
+    `"kept:live"`, the pinning ticket id and lease age for
+    `"kept:lease"`; empty for the other verdicts unless a `git worktree
+    remove` call itself failed)."""
 
     model_config = {}
 
@@ -1761,6 +1912,7 @@ def _worktree_head_age_seconds(
 
 
 # frob:ticket T-0836
+# frob:ticket T-1739
 # frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept kind="unit"  # noqa: E501
@@ -1769,6 +1921,8 @@ def _worktree_head_age_seconds(
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree kind="unit"  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_clean_no_lease_recent_head_live_process_kept  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_force_overrides_the_live_process_keep  # noqa: E501
 # frob:ticket T-0601
 def sweep_worktrees(
     root: Path,
@@ -1776,6 +1930,7 @@ def sweep_worktrees(
     min_age_hours: float | None = None,
     dry_run: bool = False,
     now: datetime | None = None,
+    force: bool = False,
 ) -> Result[tuple[_WorktreeVerdict, ...], _WorktreeSweepError]:
     """Decide, and (unless `dry_run`) act on, a removal verdict for every
     dispatched-agent worktree under `root`'s repository (T-0836) -- the
@@ -1784,7 +1939,20 @@ def sweep_worktrees(
     check cannot see a live agent between writes, only this repo's own
     lease machinery (`read_all_leases`/`is_lease_ttl_expired`) can.
 
-    A worktree is removed only if BOTH hold:
+    T-1739: BEFORE any of the below, a candidate is kept (`kept:live`) if
+    `scan_for_live_worktree_process` finds a live process cwd'd into it --
+    this is the fix for the exactly-inverted dry-run this ticket
+    documents (a clean, unleased, recently-committed worktree with a
+    live agent still in it used to read as `removed`). This gate is
+    UNCONDITIONAL relative to the three below: dirty/lease/age are all
+    proxies for liveness, and a well-behaved agent that COMMITS ITS OWN
+    WORK-IN-PROGRESS (this repo's own stall-insurance guidance) defeats
+    the dirty proxy specifically -- following the guidance must never
+    make a worktree MORE likely to be swept. `force=True` is the only
+    override.
+
+    A worktree is removed only if ALL of these hold:
+      (0) [T-1739] no live process is cwd'd into it (unless `force`);
       (a) its working tree is clean (`_worktree_is_clean` is `True` --
           `None`/unresolvable counts as dirty, never as clean);
       (b) no LIVE (unexpired) lease (`is_lease_ttl_expired`) among
@@ -1792,7 +1960,7 @@ def sweep_worktrees(
           treated as not live, exactly like a dead agent's abandoned
           worktree, and does not block removal.
 
-    `min_age_hours`, if given, adds a third gate: a worktree whose HEAD
+    `min_age_hours`, if given, adds a fourth gate: a worktree whose HEAD
     commit (`_worktree_head_age_seconds`) is newer than `min_age_hours`
     (or whose age is unresolvable) is kept regardless of (a)/(b).
 
@@ -1802,10 +1970,11 @@ def sweep_worktrees(
     does); the branch this worktree points to survives every removal
     this function performs.
 
-    Reuses `read_all_leases`/`is_lease_ttl_expired`/`lease_age_seconds`
-    directly rather than re-deriving liveness -- this ticket's own
-    incident was caused by a sweep that bypassed the lease machinery
-    entirely, not by a bug within it.
+    Reuses `scan_for_live_worktree_process`/`read_all_leases`/
+    `is_lease_ttl_expired`/`lease_age_seconds` directly rather than
+    re-deriving liveness -- this ticket's own incident was caused by a
+    sweep whose keep-criteria had no liveness check at all, not by a bug
+    within the liveness machinery itself.
 
     `Err(ListFailed)` if `_list_agent_worktrees` itself fails; never
     raises."""
@@ -1815,42 +1984,53 @@ def sweep_worktrees(
     leases = read_all_leases(root)
     verdicts = [
         _sweep_verdict_for_worktree(
-            root, candidate, leases, min_age_hours, dry_run, now
+            root, candidate, leases, min_age_hours, dry_run, now, force=force
         )
         for candidate in candidates.danger_ok
     ]
     return Ok(tuple(verdicts))
 
 
-# frob:ticket T-0976
-def _sweep_verdict_for_worktree(
-    root: Path,
+# frob:ticket T-1739
+def _kept_live_verdict_if_process_present(candidate: Path) -> "_WorktreeVerdict | None":
+    """`_sweep_verdict_for_worktree`'s T-1739 liveness gate, split out to
+    stay under ARCH001's per-function line budget: `kept:live` (naming the
+    pid) if `scan_for_live_worktree_process` finds a live process cwd'd
+    into `candidate`, else `None` (the caller falls through to the
+    dirty/lease/age gates)."""
+    found = scan_for_live_worktree_process(candidate)
+    if found is None:
+        return None
+    pid, argv = found
+    argv_str = " ".join(argv) if argv else "argv unknown"
+    _log.warning(
+        "tickets: worktree sweep: kept %s -- pid %s has it as its cwd (%s)",
+        candidate,
+        pid,
+        argv_str,
+    )
+    return _WorktreeVerdict(
+        path=str(candidate), verdict="kept:live", detail=f"pid {pid}"
+    )
+
+
+# frob:ticket T-1739
+def _kept_lease_or_age_verdict(
     candidate: Path,
     leases: tuple["_LeaseRecord", ...],
     min_age_hours: float | None,
-    dry_run: bool,
     now: datetime | None,
-) -> "_WorktreeVerdict":
-    """One candidate worktree's removal verdict: `sweep_worktrees`'s per-
-    candidate half, split from its own candidate-listing loop. See
-    `sweep_worktrees`'s own docstring for the dirty/lease/age gates this
-    implements, in the same order."""
-    clean = _worktree_is_clean(candidate)
-    if clean is not True:
-        return _WorktreeVerdict(path=str(candidate), verdict="kept:dirty")
-
+) -> "_WorktreeVerdict | None":
+    """`_sweep_verdict_for_worktree`'s lease/age gates, split out to stay
+    under ARCH001's per-function line budget: `kept:lease` if a live lease
+    (`_live_lease_for_worktree`) is pinned to `candidate`, `kept:age` if
+    `min_age_hours` is set and `candidate`'s HEAD commit is too recent (or
+    unresolvable) to judge, else `None` (the caller proceeds to remove).
+    Any surprise while judging either gate fails CLOSED to `kept:age`, the
+    same removal-safety posture `sweep_worktrees`'s own docstring
+    documents (EXHAUST001/EXHAUST002, T-1371)."""
     try:
-        live_lease: _LeaseRecord | None = None
-        for record in leases:
-            try:
-                record_path = Path(record.worktree).resolve()
-            except OSError:
-                continue
-            if record_path != candidate:
-                continue
-            if not is_lease_ttl_expired(record, now=now):
-                live_lease = record
-                break
+        live_lease = _live_lease_for_worktree(candidate, leases, now=now)
         if live_lease is not None:
             age = lease_age_seconds(live_lease, now=now)
             age_str = f"{int(age)}s" if age is not None else "unknown-age"
@@ -1859,19 +2039,57 @@ def _sweep_verdict_for_worktree(
                 verdict="kept:lease",
                 detail=f"{live_lease.ticket_id} {age_str}",
             )
-
         if min_age_hours is not None:
             head_age = _worktree_head_age_seconds(candidate, now=now)
             if head_age is None or head_age < min_age_hours * 3600:
                 return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
     except (TypeError, ValueError):
-        # This is a removal-safety verdict: any surprise while judging
-        # lease/age must fail CLOSED to "do not remove", the same
-        # posture `sweep_worktrees`'s own docstring already documents
-        # for the dirty/lease/age gates (EXHAUST001/EXHAUST002, T-1371).
         return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
     except Exception:
         return _WorktreeVerdict(path=str(candidate), verdict="kept:age")
+    return None
+
+
+# frob:ticket T-1739
+def _sweep_verdict_for_worktree(
+    root: Path,
+    candidate: Path,
+    leases: tuple["_LeaseRecord", ...],
+    min_age_hours: float | None,
+    dry_run: bool,
+    now: datetime | None,
+    *,
+    force: bool = False,
+) -> "_WorktreeVerdict":
+    """One candidate worktree's removal verdict: `sweep_worktrees`'s per-
+    candidate half, split from its own candidate-listing loop.
+
+    T-1739: the LIVENESS check (a live process cwd'd into `candidate`,
+    `scan_for_live_worktree_process`) runs FIRST, before the dirty/lease/
+    age gates below, and unconditionally overrides them -- this is the
+    exact fix for the inverted-verdict incident this ticket documents: a
+    worktree that is clean, holds no lease, and has a recent HEAD commit
+    (today's "remove" shape) still gets `kept:live` if a process is
+    actually sitting in it, because a well-behaved agent committing its
+    own work-in-progress (this repo's own stall-insurance guidance) makes
+    it look identical to an abandoned one under the dirty/lease/age
+    proxies alone. `force=True` (the CLI's `--force`) is the only way
+    past this gate, for a worktree confirmed genuinely wedged.
+
+    See `sweep_worktrees`'s own docstring for the dirty/lease/age gates
+    below this one, in the same order as before."""
+    if not force:
+        live = _kept_live_verdict_if_process_present(candidate)
+        if live is not None:
+            return live
+
+    clean = _worktree_is_clean(candidate)
+    if clean is not True:
+        return _WorktreeVerdict(path=str(candidate), verdict="kept:dirty")
+
+    lease_or_age = _kept_lease_or_age_verdict(candidate, leases, min_age_hours, now)
+    if lease_or_age is not None:
+        return lease_or_age
 
     if dry_run:
         return _WorktreeVerdict(
