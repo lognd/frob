@@ -572,6 +572,28 @@ def _inv006_src_files(root: Path) -> tuple[Path, ...]:
     )
 
 
+# frob:ticket T-1640
+# T-1640: a directive's `reason="..."` attribute value is an ARGUMENT for
+# why a finding does not apply, not a specification of system behavior --
+# reading it as a normative claim penalises PRECISE justification, since
+# the cheapest way to satisfy the gate becomes writing a vaguer reason
+# (the exact opposite of what the waiver audit, T-1614, wants). Spans
+# `reason="..."` across embedded newlines/backslash-continuations (T-0286's
+# `# ...\` comment-continuation style is exactly where a multi-sentence
+# reason lives) so a folded, multi-line waiver reason is stripped as one
+# span, not left partially matched.
+_REASON_ATTR_RE = re.compile(r'reason\s*=\s*"(?:[^"\\]|\\.)*"', re.DOTALL)
+
+
+def _strip_directive_reason_prose(text: str) -> str:
+    """`text` with every `reason="..."` directive-attribute value removed
+    -- INV006's claim scan runs over what is LEFT, so a waiver's own
+    justification prose (`frob:waive ... reason="int() can only ever
+    raise ValueError, never TypeError"`) can no longer trip the gate it
+    is explaining away (T-1640's live incident)."""
+    return _REASON_ATTR_RE.sub("", text)
+
+
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0408
 def _inv006_waived(rel: str, snapshot: GraphSnapshot) -> bool:
@@ -617,7 +639,7 @@ def _inv006_src_violations(
     except OSError as exc:
         _log.warning("INV006: could not read %s: %s", path, exc)
         return ()
-    claims = find_exclusivity_claims(text)
+    claims = find_exclusivity_claims(_strip_directive_reason_prose(text))
     if not claims:
         return ()
     rel = path.relative_to(root).as_posix()

@@ -3815,6 +3815,28 @@ a child of it at design time) can wire the same detector into PII012's
 (file, token)-keyed allowlist, which has the identical code-moves-need-a-
 new-entry failure mode (T-1076 precedent).
 
+**T-1640: a `reason="..."` directive-attribute value is not itself a
+claim.** INV006's claim scan used to run over a source file's WHOLE raw
+text, including every directive's `reason="..."` attribute string --
+so a `frob:waive EXHAUST002 reason="int(str) can only ever raise
+ValueError, never TypeError"` justification (the live incident: this
+sentence genuinely uses "only"/"never") tripped INV006 on its own,
+demanding an unrelated `frob:invariant` binding for a sentence that is an
+ARGUMENT for why a DIFFERENT finding does not apply, not a specification
+of this file's behavior. Read the wrong way, the rule rewards a vaguer
+waiver reason (the cheapest way to dodge the gate) over a precise one --
+backwards from what the waiver audit (T-1614) wants. `_inv006_src_
+violations` now scans `_strip_directive_reason_prose(text)` instead of
+raw `text`: every `reason="..."` span (any directive verb, not just
+`frob:waive`, spanning embedded newlines/backslash-continuations so a
+folded multi-line reason is stripped as one span) is removed before the
+claim-shape scan runs. A genuine claim living OUTSIDE a `reason=` span,
+even in a file that also carries an unrelated waiver, still fires
+normally. Scoped to INV006's SOURCE-file scan only (`frob.gates._inv`) --
+INV003/INV004's doc-side scans (`frob.gates.invariants.find_exclusivity_
+claims`/`find_normative_claims`) are unchanged, since a doc file's own
+directive-attribute prose was not this ticket's observed incident.
+
 ### INV007 and INV008 (T-0757)
 
 INV001-INV006 (above) are all about whether a DECLARED invariant has

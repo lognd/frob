@@ -6135,6 +6135,49 @@ class TestInv006Gate:
         violations = inv006_gate(tmp_path, snapshot)
         assert violations == ()
 
+    # frob:ticket T-1640
+    def test_exclusivity_claim_inside_a_waiver_reason_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1640's live incident: a `frob:waive ... reason="..."` sentence
+        that itself contains exclusivity vocabulary ("can only ever raise
+        ValueError, never TypeError") is an ARGUMENT for why a DIFFERENT
+        finding does not apply, not a normative claim about this file --
+        it must not need its own `frob:invariant` binding, and must not
+        require ANOTHER `frob:waive INV006` on top of the waiver it is
+        already inside of."""
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            '# frob:waive EXHAUST002 reason="int(str) can only ever raise \\\n'
+            '# ValueError, never TypeError"\n'
+            "def parse(s: str) -> int:\n"
+            "    return int(s)\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        assert inv006_gate(tmp_path, snapshot) == ()
+
+    # frob:ticket T-1640
+    def test_exclusivity_claim_outside_a_reason_attribute_still_warns(
+        self, tmp_path: Path
+    ) -> None:
+        """The reason-prose strip must not swallow a genuine claim living
+        OUTSIDE any `reason="..."` span -- a docstring claim right next to
+        an unrelated waiver still trips INV006."""
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            '# frob:waive EXHAUST002 reason="unrelated, no exclusivity language here"\n'
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert violations[0].rule == "INV006"
+
     # frob:ticket T-0408
     def test_no_exclusivity_language_is_silent(self, tmp_path: Path) -> None:
         _write(
