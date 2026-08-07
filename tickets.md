@@ -8627,7 +8627,7 @@ analysis) so a waiver line binds to one symbol.
 id: T-1684
 title: 'rapid: post-land sweep runs detached, files a ticket on red instead of blocking
   the land'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-06'
