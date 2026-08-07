@@ -9438,3 +9438,78 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
+
+<!-- ticket:T-1692 -->
+```yaml
+id: T-1692
+title: 'Backpressure: bound the unverified window by depth and age, and block the
+  land at the ceiling'
+state: queued
+kind: feature
+origin: agent
+created: '2026-08-06'
+priority: critical
+blocked_by:
+- T-1688
+parent: T-1686
+tier: ticket
+sprint: null
+scope:
+- src/frob/verify/_backpressure.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- docs/modules/tickets.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: verification
+labels:
+- watermark-epic
+```
+Deferral is a credit line, not free money. Without this leaf the epic is
+a mechanism for accumulating unbounded unverified debt with a pleasant
+user experience, which is worse than the synchronous sweep it replaces.
+
+Two independent ceilings, either one sufficient to trip:
+
+- DEPTH: unverified commits above the watermark exceeds K.
+- AGE: the oldest unverified entry is older than T.
+
+Both axes are needed. Depth alone lets one commit sit unverified all
+weekend behind a dead worker; age alone lets a burst of forty lands
+through inside the window.
+
+At the ceiling the land BLOCKS -- waits for the watermark to advance --
+rather than failing. A refusal makes the developer re-run the whole land;
+a block simply pays back the deferred cost at the moment it came due, and
+is the behaviour a bounded queue should have. Log the block loudly with
+the current depth, age, and the watermark being waited on, so the wait is
+never mysterious. Blocking silently is the one unacceptable outcome.
+
+The ceilings are per-profile settings, which is what the profile-collapse
+leaf consumes: fortress K=0, standard K bounded, rapid unbounded.
+
+Acceptance: with K=2, a third land blocks until the worker advances the
+watermark, then proceeds; the block emits depth/age/watermark at WARNING;
+an unbounded setting never blocks.
+
+Standing repo constraints (binding, not restatement):
+
+- SYMBOLIC, NEVER LEXICAL. Every decision this ticket makes about "which
+  code does this concern" must go through the symbol/reference graph
+  (frob.graph), never a path-string comparison, filename glob, or regex
+  over source text. A lexical shortcut here is a latent wrong answer that
+  only shows up under refactor.
+- Fallible operations return a typani `Result[T, E]` with a named
+  `ErrorSet`. Exceptions only for unrecoverable programmer bugs. Never a
+  bare `except` that turns an unknown state into a clean one.
+- "Cannot verify" is NEVER "verified". Every unmeasurable outcome must be
+  distinguishable from a measured-clean one, in the data model and in the
+  logs -- this is the single invariant the whole epic rests on.
+- Persisted records are pydantic models with `frozen=True, extra="forbid"`,
+  versioned, and forward-compatible on read.
+- LOG EVERYTHING WORTH LOGGING: every state change, queue transition,
+  boundary crossing, branch, and error path gets a module-logger line per
+  ~/.claude/refs/logging.md. Never `print`.
+- Docs land in the same change as the code. No follow-up docs ticket.
+- No waivers. If a gate fires, fix the cause or fix the gate; a waiver
+  here is a structural defect, not a resolution.
