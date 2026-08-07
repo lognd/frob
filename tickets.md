@@ -9949,8 +9949,28 @@ scope:
 - src/frob/tickets/_land.py
 - tests/unit/test_rapid_sweep.py
 - docs/modules/tickets.md
+- src/frob/tickets/_land_git_ops.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: porcelain_dirty_paths/describe_dirty_paths live beside _porcelain_dirty
+    so the refusal message can never disagree with the rule that produced it
+  actor: logan
+  at: '2026-08-06'
+- op: add
+  glob: design/frob.strata
+  reason: SYS100 capability declaration for the test module's git subprocess use,
+    plus the SYS104 interface row for describe_root_dirt written by frob sys sync-interface
+  actor: logan
+  at: '2026-08-06'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_leaves_the_repo_clean
+- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_stages_only_the_debt_file
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_a_real_dirty_file
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_truncation_declares_itself
 threat: null
 component: null
 ```
