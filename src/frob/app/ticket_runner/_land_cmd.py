@@ -499,7 +499,35 @@ def _apply_root_tier_a_fixes(root: Path, ticket_id: str) -> list[str]:
     applied = apply_tier_a_fixes(
         root, snapshot_result.danger_ok, queue_result.danger_ok, ticket_id=ticket_id
     )
-    return sorted({entry.file for entry in applied})
+    # frob:ticket T-1775
+    # An auto-fix must never undo the change being landed. These handlers
+    # run in ROOT against ROOT's INSTALLED frob, which is still the
+    # PRE-land build -- so a ticket that deletes a gate rule lands a
+    # registry with that rule's row removed, and `fix_reg010_registry_sync`
+    # (reading the old `known_gate_rule_ids()`) immediately files it back.
+    # T-1763 hit exactly that on every one of ~4 land attempts and reached
+    # main REG002-red. Any file the landing changeset itself modified is
+    # the ticket's deliberate intent, so drop it from the fix set rather
+    # than letting a stale-code repair overwrite it.
+    landed = _worktree_touched_paths(root)
+    return sorted({entry.file for entry in applied} - landed)
+
+
+# frob:ticket T-1775
+def _worktree_touched_paths(root: Path) -> set[str]:
+    """Repo-relative paths the in-flight land has already staged in
+    `root`'s index.
+
+    Empty set on any git failure -- "cannot tell what the land touched"
+    must never silently widen what an auto-fix may overwrite, but it also
+    must not block the land, so the fixes simply proceed unfiltered as
+    they did before."""
+    staged = run_argv(["git", "-C", str(root), "diff", "--cached", "--name-only"])
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        return set()
+    return {
+        line.strip() for line in staged.danger_ok.stdout.splitlines() if line.strip()
+    }
 
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
