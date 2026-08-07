@@ -7879,7 +7879,7 @@ T-1675 established, not a second inference-from-emptiness check.
 id: T-1745
 title: Detect a queued ticket whose described fix already landed outside the ticket
   workflow (false queue signal)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -7930,6 +7930,8 @@ overlaps a LATER ticket's `frob:ticket` directive, or a draft residue
 citation) needs the same "positive signal, not absence" discipline
 T-1675 established, not a second inference-from-emptiness check.
 
+## Drop reason
+- 2026-08-07: exact duplicate title and subject, filed twice from the same finding (draft renumbering at land produced two entries). T-1744 is canonical (absorbed by T-1744)
 <!-- ticket:T-1746 -->
 ```yaml
 id: T-1746
