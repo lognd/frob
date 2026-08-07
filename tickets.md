@@ -3780,10 +3780,62 @@ sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/graph/**
-- tests/**
-- docs/**
+- docs/modules/vet.md
+- tests/test_vet_capability.py
+- tests/unit/vet/test_taint.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'TICK009 pre-dispatch narrowing: docs/** and tests/** are mega-globs that
+    lease essentially every doc and test in the repo, which is exactly how T-1629
+    silently serialized the whole queue across sessions (see T-1743). Narrowed to
+    this ticket''s real surface -- capability detection lives in src/frob/vet, its
+    docs home is docs/modules/vet.md, and its tests are the vet capability/taint suites.
+    Re-add with a reason if the work genuinely reaches further'
+  actor: logan
+  at: '2026-08-07'
+- op: remove
+  glob: tests/**
+  reason: 'TICK009 pre-dispatch narrowing: docs/** and tests/** are mega-globs that
+    lease essentially every doc and test in the repo, which is exactly how T-1629
+    silently serialized the whole queue across sessions (see T-1743). Narrowed to
+    this ticket''s real surface -- capability detection lives in src/frob/vet, its
+    docs home is docs/modules/vet.md, and its tests are the vet capability/taint suites.
+    Re-add with a reason if the work genuinely reaches further'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/vet.md
+  reason: 'TICK009 pre-dispatch narrowing: docs/** and tests/** are mega-globs that
+    lease essentially every doc and test in the repo, which is exactly how T-1629
+    silently serialized the whole queue across sessions (see T-1743). Narrowed to
+    this ticket''s real surface -- capability detection lives in src/frob/vet, its
+    docs home is docs/modules/vet.md, and its tests are the vet capability/taint suites.
+    Re-add with a reason if the work genuinely reaches further'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_vet_capability.py
+  reason: 'TICK009 pre-dispatch narrowing: docs/** and tests/** are mega-globs that
+    lease essentially every doc and test in the repo, which is exactly how T-1629
+    silently serialized the whole queue across sessions (see T-1743). Narrowed to
+    this ticket''s real surface -- capability detection lives in src/frob/vet, its
+    docs home is docs/modules/vet.md, and its tests are the vet capability/taint suites.
+    Re-add with a reason if the work genuinely reaches further'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/unit/vet/test_taint.py
+  reason: 'TICK009 pre-dispatch narrowing: docs/** and tests/** are mega-globs that
+    lease essentially every doc and test in the repo, which is exactly how T-1629
+    silently serialized the whole queue across sessions (see T-1743). Narrowed to
+    this ticket''s real surface -- capability detection lives in src/frob/vet, its
+    docs home is docs/modules/vet.md, and its tests are the vet capability/taint suites.
+    Re-add with a reason if the work genuinely reaches further'
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null
@@ -3811,7 +3863,6 @@ This repo already owns the machinery: frob.graph.callgraph does call-graph resol
 Fail-closed requirement: when resolution cannot determine a call's target (genuinely dynamic dispatch, a computed getattr), that must surface as an explicit UNRESOLVED finding demanding a declaration or a waiver -- never as "no capability found". This drive has repeatedly been burned by analysis that reported nothing when it could not look; the capability layer must not repeat it.
 
 Prerequisite for symbol-level `via`: attributing a capability to a specific declared symbol is only meaningful once the hit itself is symbol-resolved. Sequence this before, or together with, the via-granularity work.
-
 <!-- ticket:T-1627 -->
 ```yaml
 id: T-1627
