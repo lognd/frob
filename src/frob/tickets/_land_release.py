@@ -303,7 +303,63 @@ def _ensure_release_quartet_coherent(
         pyproject_version,
         manifest_version,
     )
-    return _resync_release_manifest(root, final_id, pyproject_version)
+    resynced = _resync_release_manifest(root, final_id, pyproject_version)
+    if resynced.is_err:
+        return resynced
+    return _ensure_uv_lock_coherent(root, final_id, pyproject_version)
+
+
+# frob:ticket T-1771
+def _read_working_uv_lock_version(root: Path) -> str | None:
+    """The `frob` package's own `version` as `uv.lock` currently records
+    it on disk, or `None` when there is no lock or the entry cannot be
+    found -- `None` means "nothing to compare", never "they agree"."""
+    import re
+
+    lock = root / "uv.lock"
+    if not lock.exists():
+        return None
+    try:
+        text = lock.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = re.search(
+        r'\[\[package\]\]\nname = "frob"\nversion = "([^"]+)"', text
+    )
+    return match.group(1) if match else None
+
+
+# frob:ticket T-1771
+def _ensure_uv_lock_coherent(
+    root: Path, final_id: str, pyproject_version: str
+) -> Result[None, LandError]:
+    """Keep `uv.lock`'s recorded `frob` version in step with
+    `pyproject.toml`, unconditionally, at the end of every land.
+
+    `_sync_uv_lock_for_land` only ever ran inside `_apply_release_bump`'s
+    "a bump was reported" branch, and `_ensure_release_quartet_coherent`
+    compared only pyproject against the manifest -- so the "quartet" was
+    in practice a trio and `uv.lock` could drift a version behind without
+    anything noticing. It then flapped dirty on the next `uv run`
+    anywhere in the repo, tripping REL002/DirtyMain for whichever
+    worktree looked next (T-1770; observed on main at
+    pyproject/manifest 0.368.0 against a lock still recording 0.367.0).
+
+    Version syncing is meant to be automatic, so this is a structural
+    guarantee rather than a bump-path patch: if the lock disagrees, it is
+    re-derived and staged regardless of how the version got where it is."""
+    lock_version = _read_working_uv_lock_version(root)
+    if lock_version is None or lock_version == pyproject_version:
+        return Ok(None)
+    _log.warning(
+        "land: %s uv.lock records frob %s but pyproject.toml declares %s "
+        "-- re-syncing the lock so it does not flap dirty on the next "
+        "invocation (T-1770)",
+        final_id,
+        lock_version,
+        pyproject_version,
+    )
+    return _sync_uv_lock_for_land(root, final_id)
 
 
 # frob:ticket T-1078
