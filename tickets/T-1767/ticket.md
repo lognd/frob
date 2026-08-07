@@ -14,8 +14,53 @@ scope:
 - tickets.md
 - tickets-archive.md
 - docs/modules/tickets.md
+- agents/**
+- skills/**
+- docs/guides/agentic-workflow.md
+- Makefile
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: agents/**
+  reason: the ROOT agents/ and skills/ dirs are the ones CLAUDE.md names for removal-or-rework,
+    not .claude/'s -- 13 tracked SKILL.md files, referenced by docs/guides/agentic-workflow.md,
+    docs/rework.md, docs/index.md, docs/modules/testing.md and a doc anchor in _cli_parsers/_ticket/_query.py,
+    so removal requires updating those rather than a bare delete. Makefile added because
+    the cross-platform directive says workflows belong in frob subcommands, not GNU-make
+    recipes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: skills/**
+  reason: the ROOT agents/ and skills/ dirs are the ones CLAUDE.md names for removal-or-rework,
+    not .claude/'s -- 13 tracked SKILL.md files, referenced by docs/guides/agentic-workflow.md,
+    docs/rework.md, docs/index.md, docs/modules/testing.md and a doc anchor in _cli_parsers/_ticket/_query.py,
+    so removal requires updating those rather than a bare delete. Makefile added because
+    the cross-platform directive says workflows belong in frob subcommands, not GNU-make
+    recipes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/guides/agentic-workflow.md
+  reason: the ROOT agents/ and skills/ dirs are the ones CLAUDE.md names for removal-or-rework,
+    not .claude/'s -- 13 tracked SKILL.md files, referenced by docs/guides/agentic-workflow.md,
+    docs/rework.md, docs/index.md, docs/modules/testing.md and a doc anchor in _cli_parsers/_ticket/_query.py,
+    so removal requires updating those rather than a bare delete. Makefile added because
+    the cross-platform directive says workflows belong in frob subcommands, not GNU-make
+    recipes
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: Makefile
+  reason: the ROOT agents/ and skills/ dirs are the ones CLAUDE.md names for removal-or-rework,
+    not .claude/'s -- 13 tracked SKILL.md files, referenced by docs/guides/agentic-workflow.md,
+    docs/rework.md, docs/index.md, docs/modules/testing.md and a doc anchor in _cli_parsers/_ticket/_query.py,
+    so removal requires updating those rather than a bare delete. Makefile added because
+    the cross-platform directive says workflows belong in frob subcommands, not GNU-make
+    recipes
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null
