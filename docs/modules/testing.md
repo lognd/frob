@@ -1097,7 +1097,7 @@ first-class target, not an afterthought:
   `collect_python_tests`/`collect_rust_tests` from `frob.testing`, merged in
   `_load_tests` into one `CollectedTests` COV003 resolves evidence against.
 - Agents: implementer runs `frob test` before writing a done-report;
-  `skills/next` treats a red `frob test` as a blocker on close.
+  the `/next` skill treats a red `frob test` as a blocker on close.
 - CI: `frob test --all` plus `make coverage` for the stamp.
 - T-0538: `make coverage`/`make coverage-fast` both depend on `$(STAMP)`
   (`uv sync`), which reconciles the venv against only the declared

@@ -68,7 +68,7 @@ changing the skill's phase structure.
 ## MCP wiring
 
 `.mcp.json` at the repo root declares the servers this workflow depends on,
-the same way `agents/*` and `skills/*` depend on the `frob` MCP server for
+the same way the dispatched agents and skills depend on the `frob` MCP server for
 the ticket graph:
 
 ```json
@@ -147,7 +147,7 @@ The design draws on two externalization/memory papers, retrievable via the
 ## Running it
 
 ```text
-Use the exhaustive-research skill (or dispatch agents/exhaustive-researcher)
+Use the exhaustive-research skill (or dispatch the exhaustive-researcher agent)
 for: <the thing that needs total coverage>
 ```
 

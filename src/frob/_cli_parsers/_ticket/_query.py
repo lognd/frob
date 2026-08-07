@@ -15,8 +15,8 @@ from __future__ import annotations
 # frob:ticket T-0030
 # frob:ticket T-1100
 # frob:waive AFFECT001 reason="T-1100 added a new read-only SUBCOMMAND (flow) to this \
-# parser registration function -- the bound agentic-workflow.md #skills/next and \
-# #skills/plan doc anchors describe the dispatch-loop/planning skills' USE of frob \
+# parser registration function -- the bound agentic-workflow.md #next and \
+# #plan doc anchors describe the dispatch-loop/planning skills' USE of frob \
 # ticket doable/plan, an orthogonal concern this addition never touches; \
 # docs/modules/tickets.md (the doc this change IS actually about) was updated in the \
 # same diff"

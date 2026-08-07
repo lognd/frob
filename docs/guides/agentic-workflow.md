@@ -25,7 +25,7 @@ every other ledger-mutating verb, `--no-commit` opts out.
 
 Everything downstream -- decomposition, implementation, review, proof -- is
 an agent's job, dispatched through the roles below and defined in
-`agents/*/SKILL.md`.
+`~/.claude/agents/*` (user scope) and `.claude/agents/*` (project scope).
 
 ---
 
@@ -33,13 +33,13 @@ an agent's job, dispatched through the roles below and defined in
 
 | Role | Agent | Reads | Writes |
 |---|---|---|---|
-| Decompose a goal into work | `agents/planner` | the goal, `frob ticket list` | ticket tree (`parent`/`blocked_by`) |
-| Implement one ticket | `agents/implementer` | the ticket, its scope | code, directives, Done report |
-| Verify a Done report | `agents/reviewer` | diff, evidence, gate output | a verdict (APPROVE/REJECT) -- never fixes |
-| Close invariant gaps | `agents/prover` | `frob check --only invariant` | property tests, policy rules, evidence lists |
-| Audit one module boundary | `agents/interface-auditor` | one package's public API | tickets only |
-| Run a security sweep | `agents/security-auditor` | the repo/subtree | policy rules + invariants + tickets, always all three |
-| Fix one failing test | `agents/debugger` | the error, the target function | a fix, or a `frob ticket fail` entry |
+| Decompose a goal into work | `planner` | the goal, `frob ticket list` | ticket tree (`parent`/`blocked_by`) |
+| Implement one ticket | `implementer` | the ticket, its scope | code, directives, Done report |
+| Verify a Done report | `reviewer` | diff, evidence, gate output | a verdict (APPROVE/REJECT) -- never fixes |
+| Close invariant gaps | `prover` | `frob check --only invariant` | property tests, policy rules, evidence lists |
+| Audit one module boundary | `interface-auditor` | one package's public API | tickets only |
+| Run a security sweep | `security-auditor` | the repo/subtree | policy rules + invariants + tickets, always all three |
+| Fix one failing test | `debugger` | the error, the target function | a fix, or a `frob ticket fail` entry |
 
 No agent holds private state. The ticket queue, `frob.lock`, `invariants/`,
 and `frob.toml` policy are the only durable memory; a mission that doesn't
@@ -48,7 +48,7 @@ concerned.
 
 ---
 
-## skills/plan: goal -> ticket tree
+## /plan: goal -> ticket tree
 
 <!-- frob:describes src/frob/_cli_parsers/_core.py::_add_map_parser -->
 <!-- frob:describes src/frob/_cli_parsers/_ticket/_query.py::_add_ticket_query_parsers -->
@@ -57,8 +57,8 @@ frob map src/                     # also `frob explore map src/` (T-1238)
 frob ticket list                 # don't replan what's already queued
 ```
 
-`skills/plan` orients (without reading source files), resolves design risks
-before decomposition locks in scope, then dispatches `agents/planner`. The
+`/plan` orients (without reading source files), resolves design risks
+before decomposition locks in scope, then dispatches `planner`. The
 planner never implements -- it emits `frob ticket new` calls with
 `parent`/`blocked_by` edges and a narrow `scope` per leaf, and ends with the
 full list of ticket ids it created. If a leaf ticket's scope is `src/**`,
@@ -66,14 +66,14 @@ it isn't decomposed; split it further.
 
 ---
 
-## skills/next: the work loop
+## /next: the work loop
 
 <!-- frob:describes src/frob/_cli_parsers/_ticket/_query.py::_add_ticket_query_parsers -->
 ```bash
 frob ticket doable                # ordered, unblocked, oldest-first
 ```
 
-`skills/next` is the loop that pops one ticket, dispatches `implementer`,
+`/next` is the loop that pops one ticket, dispatches `implementer`,
 dispatches `reviewer` against the same ticket id, and either closes
 (APPROVE) or hands the reviewer's findings back to a fresh `implementer`
 dispatch (REJECT). It re-queries `frob ticket doable` every pass, since
@@ -102,13 +102,13 @@ frob ticket new --title "..." --kind bug --scope "..." --body "found while worki
 The reviewer re-runs `frob check --ticket T-0042`, reads the actual diff
 against the claimed scope, opens every evidence test node id, and confirms
 docs that carry a `doc` edge were genuinely updated (not rubber-stamp
-`frob ack`s). One failed checklist item is REJECT -- see `agents/reviewer`
+`frob ack`s). One failed checklist item is REJECT -- see `reviewer`
 for the full six-point checklist. The reviewer never fixes and never calls
 `frob ticket close` itself; its verdict is the only output.
 
 ---
 
-## skills/audit: interface + security sweeps
+## /audit: interface + security sweeps
 
 <!-- frob:describes src/frob/_cli_parsers/_core.py::_add_map_parser -->
 <!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->
@@ -126,14 +126,14 @@ rule that would have caught it recurring is treated as half-done.
 
 ---
 
-## skills/prove: closing invariant gaps
+## /prove: closing invariant gaps
 
 <!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->
 ```bash
 frob check --only invariant       # INV001 (no evidence) / INV002 (no anchor)
 ```
 
-`agents/prover` anchors missing `frob:invariant` comments and writes
+`prover` anchors missing `frob:invariant` comments and writes
 property tests (hypothesis-style where the property is a "for all inputs"
 claim) or policy rules as evidence, looping until `frob check --only
 invariant` is clean. It never implements missing enforcement code itself --
