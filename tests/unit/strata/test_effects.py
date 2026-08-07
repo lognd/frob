@@ -15,9 +15,12 @@ from frob.strata import (
     bind_code,
     check_capability_conformance,
     check_legacy_capability_aliases,
+    elaborate,
     extract_effects,
     node_may_kinds,
+    parse_module,
 )
+from frob.strata._effects import StaleViaSymbolViolation, check_stale_via_symbols
 
 
 def _write(root: Path, rel: str, source: str) -> None:
@@ -446,3 +449,176 @@ class TestDeployServeMutateNodeSplitConformance:
         binding = bind_code(model, root).danger_ok
         report = check_capability_conformance(model, binding, root)
         assert report.violations == ()
+
+
+class TestSymbolFormViaConformance:
+    """T-1627: a symbol-form `via "glob::qualname"` entry narrows the SYS100
+    join down to one enclosing symbol, not the whole file."""
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_effect_inside_granted_symbol_is_clean(self, tmp_path: Path):
+        _write(tmp_path, "app/site.py", "def run(cmd):\n    subprocess.run(cmd)\n")
+        module = parse_module(
+            'module m\nnode app: trusted { code "app/site.py"; '
+            + 'may "exec" via "app/site.py::run";'
+            + " }\n"
+        ).danger_ok
+        model = elaborate(module).danger_ok
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_effect_outside_granted_symbol_in_same_file_is_a_violation(
+        self, tmp_path: Path
+    ):
+        _write(
+            tmp_path,
+            "app/site.py",
+            "def run(cmd):\n"
+            "    subprocess.run(cmd)\n"
+            "\n\n"
+            "def other(cmd):\n"
+            "    subprocess.run(cmd)\n",
+        )
+        module = parse_module(
+            'module m\nnode app: trusted { code "app/site.py"; '
+            + 'may "exec" via "app/site.py::run";'
+            + " }\n"
+        ).danger_ok
+        model = elaborate(module).danger_ok
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert [v.line for v in report.violations] == [6]
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_exclusive_grant_still_flags_a_second_site(self, tmp_path: Path):
+        _write(
+            tmp_path,
+            "app/site.py",
+            "def run(cmd):\n"
+            "    subprocess.run(cmd)\n"
+            "\n\n"
+            "def sneaky(cmd):\n"
+            "    subprocess.run(cmd)\n",
+        )
+        module = parse_module(
+            'module m\nnode app: trusted { code "app/site.py"; '
+            + 'may "exec" via "app/site.py::run" exclusive;'
+            + " }\n"
+        ).danger_ok
+        model = elaborate(module).danger_ok
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert [v.line for v in report.violations] == [6]
+
+
+class TestExclusiveGrammar:
+    """T-1627: `exclusive` is only accepted on a single symbol-form `via`
+    entry -- everything else is a parse-time error, not a later gate
+    finding."""
+
+    # frob:tests strata_core.parse_source kind="unit"
+    def test_exclusive_with_symbol_form_via_parses(self):
+        src = (
+            "module m\n"
+            'node app: trusted { code "app/site.py"; '
+            'may "exec" via "app/site.py::run" exclusive; }\n'
+        )
+        result = parse_module(src)
+        assert result.is_ok
+        grant = result.danger_ok.nodes[0].may_grants[0]
+        assert grant.exclusive is True
+        assert grant.via == ("app/site.py::run",)
+
+    # frob:tests strata_core.parse_source kind="unit"
+    def test_exclusive_with_file_form_via_is_a_parse_error(self):
+        src = (
+            "module m\n"
+            'node app: trusted { code "app/site.py"; '
+            'may "exec" via "app/site.py" exclusive; }\n'
+        )
+        assert parse_module(src).is_err
+
+    # frob:tests strata_core.parse_source kind="unit"
+    def test_exclusive_with_multiple_via_entries_is_a_parse_error(self):
+        src = (
+            "module m\n"
+            'node app: trusted { code "app/site.py", "app/other.py"; '
+            'may "exec" via "app/site.py::run", "app/other.py::run" exclusive; }\n'
+        )
+        assert parse_module(src).is_err
+
+    # frob:tests strata_core.parse_source kind="unit"
+    def test_exclusive_with_bare_via_less_may_is_a_parse_error(self):
+        src = 'module m\nnode app: trusted { code "app/site.py"; may "exec" exclusive; }\n'
+        assert parse_module(src).is_err
+
+
+class TestStaleViaSymbol:
+    """T-1627: a symbol-form `via` entry naming a symbol that resolves to
+    nothing is its own loud, distinct finding (`StaleViaSymbolViolation`,
+    SYS109) -- never a silent pass and never folded into the ordinary
+    undeclared-capability `CapabilityViolation`."""
+
+    # frob:tests src/frob/strata/_effects.py::check_stale_via_symbols kind="unit"
+    def test_resolvable_symbol_is_not_flagged(self, tmp_path: Path):
+        _write(tmp_path, "app/site.py", "def run(cmd):\n    pass\n")
+        module = parse_module(
+            'module m\nnode app: trusted { code "app/site.py"; '
+            + 'may "exec" via "app/site.py::run";'
+            + " }\n"
+        ).danger_ok
+        model = elaborate(module).danger_ok
+        binding = bind_code(model, tmp_path).danger_ok
+        assert check_stale_via_symbols(model, binding, tmp_path) == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_stale_via_symbols kind="unit"
+    def test_unresolvable_symbol_is_flagged(self, tmp_path: Path):
+        _write(tmp_path, "app/site.py", "def run(cmd):\n    pass\n")
+        module = parse_module(
+            'module m\nnode app: trusted { code "app/site.py"; '
+            + 'may "exec" via "app/site.py::gone";'
+            + " }\n"
+        ).danger_ok
+        model = elaborate(module).danger_ok
+        binding = bind_code(model, tmp_path).danger_ok
+        found = check_stale_via_symbols(model, binding, tmp_path)
+        assert found == (
+            StaleViaSymbolViolation(node="app", atom="exec", via="app/site.py::gone"),
+        )
+
+    # frob:tests src/frob/strata/_effects.py::check_stale_via_symbols kind="unit"
+    def test_symbol_matching_a_nested_qualname_resolves(self, tmp_path: Path):
+        # `_via_matches_site`'s containment rule: a via entry naming the
+        # OUTER symbol resolves as long as ANY declaration under it
+        # exists -- resolution mirrors coverage exactly, so a class-level
+        # via entry is not spuriously flagged stale just because the
+        # class itself has no direct body statement matching its own name.
+        _write(
+            tmp_path,
+            "app/site.py",
+            "class Runner:\n    def run(self, cmd):\n        pass\n",
+        )
+        module = parse_module(
+            'module m\nnode app: trusted { code "app/site.py"; '
+            + 'may "exec" via "app/site.py::Runner";'
+            + " }\n"
+        ).danger_ok
+        model = elaborate(module).danger_ok
+        binding = bind_code(model, tmp_path).danger_ok
+        assert check_stale_via_symbols(model, binding, tmp_path) == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_stale_via_symbols kind="unit"
+    def test_file_form_via_entries_are_never_checked(self, tmp_path: Path):
+        # file-form via has no symbol to resolve -- check_stale_via_symbols
+        # only ever inspects entries containing "::".
+        _write(tmp_path, "app/site.py", "pass\n")
+        module = parse_module(
+            'module m\nnode app: trusted { code "app/site.py"; '
+            + 'may "exec" via "app/site.py";'
+            + " }\n"
+        ).danger_ok
+        model = elaborate(module).danger_ok
+        binding = bind_code(model, tmp_path).danger_ok
+        assert check_stale_via_symbols(model, binding, tmp_path) == ()

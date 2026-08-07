@@ -190,7 +190,21 @@ owner is ready to commit. GAP STATEMENT: nothing else in this module (or
 coverage -- SYS100/SYS101 both join declared-vs-observed per file or per
 node, never asking whether a via-less grant's blast radius is large
 enough to be worth narrowing at all.
-"""
+
+SYS109 (T-1627) stale via symbol -- a symbol-form `via` entry
+(`"glob::qualname"`, T-1627) whose named symbol resolves to NOTHING in
+any of the node's own bound files: renamed, moved, or deleted since the
+grant was written. ALWAYS ERROR: a `via` naming a symbol that no longer
+exists is worse than no `via` at all -- it reads as a deliberate, narrow
+grant while authorizing nothing real, exactly the failure mode a stale
+declaration must never be allowed to hide as ("cannot resolve the named
+symbol" must be its own loud outcome, never a silent pass or a silent
+deny). `_effects.py::check_stale_via_symbols` implements the check and is
+independently unit-tested; GAP STATEMENT: it is not yet wired into `frob
+sys audit`'s own CLI/gate surface (`_audit.py`, `frob.gates._sys_
+selfaudit`) -- both live outside this ticket's declared scope, so the
+wiring is filed as its own follow-up ticket rather than silently folded
+in here."""
 
 from __future__ import annotations
 

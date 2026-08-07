@@ -200,7 +200,96 @@ its own follow-up ticket (T-1440's child) rather than bundled into the
 grammar/join landing.
 <!-- frob:until T-1478 -->
 
-**Migration note:** this repo's own `design/frob.strata` was deliberately
+### `via` names a SYMBOL, and `exclusive` (T-1627)
+
+A file-form `via` glob (T-1440, above) is still coarser than what most
+grants actually mean: `may "eval" via "src/frob/doctor.py"` permits
+`eval` anywhere in a 700+ line module, not just at the one call site the
+declaration was written to bless. T-1627 extends the grammar with two
+additions, both fully backward compatible with every existing T-1440
+`via` entry:
+
+```
+may_clause := "may" STRING ("via" STRING ("," STRING)* "exclusive"?)?
+```
+
+**Symbol-form `via`.** A `via` entry may name a specific declaration
+instead of (or as well as scoping down to) a whole file:
+`"path/to/file.py::qualname"` -- the same STRING token as always (no new
+lexical form), split on the first `"::"` into (glob, symbol) by
+`_effects.py::_via_glob_and_symbol`. `qualname` is the same dotted form
+`RawSymbol.qualname` (`frob.lang`) already produces (`Class.method` for a
+method), so a symbol-form entry covers that symbol AND anything nested
+inside it (a closure, a nested `def`) -- `_effects.py::_via_matches_site`
+is the one place that decides "does this observation site count as
+inside this via entry", covering both the file-form and symbol-form
+cases so no two consumers can silently disagree on the rule. A bare
+file-form entry (no `::`) keeps its exact T-1440 meaning: it covers
+every symbol in a matching file. **Nothing about existing `.strata`
+source needs to change** -- every pre-T-1627 `via` list still parses and
+still means exactly what it meant before.
+
+The capability-conformance join (`SYS100`,
+`_effects.py::check_capability_conformance`) is now per-OBSERVATION-SITE
+rather than merely per-file whenever a node declares at least one
+symbol-form entry: each observed effect's enclosing symbol is resolved
+(`_effects.py::_enclosing_symbol`, only paid for when the node actually
+has a symbol-form grant -- `_node_has_symbol_form_via`) and joined
+against `_declared_kinds_for_effect` instead of the file-only
+`_declared_kinds_for_file`. A second `eval` call added anywhere else in
+the same file, even one line below the granted function, is now a real
+SYS100 violation -- the whole point: a file-granular `via` cannot express
+"only here", a symbol-granular one can.
+
+**`exclusive`.** A grant may add an `exclusive` trailer after its `via`
+list to assert that its one named symbol is the SOLE legitimate site for
+that capability atom. The parser (`strata-core/src/parse/
+grammar_node.rs`) enforces the shape this requires as a hard PARSE
+ERROR, not a later gate finding: `exclusive` is only accepted when `via`
+has EXACTLY ONE entry and that entry is symbol-form
+(`"path::qualname"`). A bare `via`, a multi-entry `via`, or a file-form
+`via` combined with `exclusive` all fail to parse -- "exclusive about
+what?" has to have one unambiguous answer at declaration time. Once that
+shape is guaranteed, exclusivity needs no separate runtime check: because
+`via` already narrows the join down to exactly that one symbol, ANY other
+site in the codebase exercising the same kind is already an ordinary
+undeclared-capability SYS100 finding the moment the grant is symbol-
+scoped -- `exclusive` is a documentation/intent marker over a shape the
+grammar already forces, not a second enforcement mechanism.
+
+**Stale via symbol (`SYS109`, T-1627).** "Cannot resolve the named
+symbol" is its own loud, distinct outcome -- never a silent pass (a
+grant pointing at nothing quietly authorizing nothing while reading as a
+deliberate narrow grant) and never a silent deny (an observation at the
+real, still-current call site failing SYS100 for the wrong reason).
+`_effects.py::check_stale_via_symbols` walks every symbol-form `via`
+entry across the model, resolves its glob against the owning node's real
+bound files, and parses each candidate file (`frob.lang.parse_file`) to
+look for a matching `RawSymbol.qualname` (same containment rule as
+`_via_matches_site`: an entry naming `run` also resolves against a
+nested `run.<helper>`). Zero matches across every candidate file (a
+rename, a move, a deletion, or a typo) is `StaleViaSymbolViolation` --
+its own model, its own `SYS109` rule id, never folded into
+`CapabilityViolation`. GAP: the check function exists and is unit-tested
+but is not yet wired into `frob sys audit`'s CLI surface (`_audit.py`,
+`frob.gates._sys_selfaudit`) -- that wiring, plus exporting
+`check_stale_via_symbols`/`StaleViaSymbolViolation` from `frob.strata`'s
+public `__init__.py`, is a follow-up ticket (both files sit outside
+T-1627's own declared scope).
+
+**Migration note (T-1627):** `design/frob.strata` was NOT converted to
+symbol-form `via` by this ticket -- it carries 876 file-form `via`
+entries across its existing grants (measured directly against the
+committed design file), every one of which is a candidate for tightening
+to a single symbol. That number is the argument for doing the
+conversion incrementally, not a mandate to do it in one sweep: exactly
+the same node-by-node, grant-by-grant migration T-1440 itself already
+established for the file-form rollout applies here too -- a flag-day
+rewrite of 876 entries, each requiring a human or tool to identify the
+ONE real call site per grant, is its own (large) follow-up, not part of
+landing the grammar/join support.
+
+**Migration note (T-1440, unchanged):** this repo's own `design/frob.strata` was deliberately
 NOT migrated to `via` by T-1440 itself -- every existing grant stayed
 via-less (whole-node) so the repo stayed green throughout; narrowing the
 real grants down to their actual observing files is T-1453 (using the

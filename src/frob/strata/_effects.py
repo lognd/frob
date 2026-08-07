@@ -49,6 +49,7 @@ from __future__ import annotations
 import fnmatch
 from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
 
@@ -69,6 +70,14 @@ from frob.vet._capability_modes import (
 
 from ._code_binding import FOREIGN, CodeBinding
 from ._models import KernelModel, Node
+
+if TYPE_CHECKING:
+    # T-1627: `frob.lang` is imported lazily at runtime (module-load-cycle
+    # note on `_symbols_for_file`) but the static checker still needs a
+    # real type for `RawSymbol.qualname`/`.span` accesses in this module,
+    # not the loose `tuple[object, ...]` those two functions carry at
+    # runtime for that same import-cycle reason.
+    from frob.lang import RawSymbol
 
 _log = get_logger(__name__)
 
@@ -180,12 +189,67 @@ def _declared_kinds(node: Node) -> frozenset[str]:
     return frozenset(declared)
 
 
+# frob:ticket T-1627
+def _via_glob_and_symbol(entry: str) -> tuple[str, str | None]:
+    """Split one `via` entry into its (file-glob, symbol-qualname-or-None)
+    parts (T-1627): `"src/x.py"` (the pre-T-1627 whole-file shape) splits
+    to `("src/x.py", None)`; `"src/x.py::run"` (symbol-form) splits to
+    `("src/x.py", "run")`. `"::"` rather than a single `:` because a
+    capability-atom-style target suffix already uses bare `:`
+    (`"net.out:stripe.com"`) elsewhere in this grammar -- reusing that
+    separator for the file/symbol split would be ambiguous. Only the
+    FIRST `::` splits: a qualname itself may contain further `.`/`::`-free
+    dotted segments (`Class.method`) that stay inside the symbol part
+    untouched."""
+    glob, sep, symbol = entry.partition("::")
+    return (glob, symbol if sep else None)
+
+
+# frob:ticket T-1627
 def _via_matches(rel: str, via: tuple[str, ...]) -> bool:
     """`True` if `rel` (a binding-relative file path) matches at least one
     glob in `via` (T-1440), same `fnmatch.fnmatch` matcher `_code_binding.py`
     already uses for a node's own `code` globs -- one shared matching
-    convention across both the node-level and grant-level glob surfaces."""
-    return any(fnmatch.fnmatch(rel, glob) for glob in via)
+    convention across both the node-level and grant-level glob surfaces.
+
+    T-1627: a symbol-form via entry (`"glob::symbol"`) still matches here
+    on its glob half alone -- this function answers "does `rel` fall
+    inside this grant's FILE surface at all", which is what `_selfconform.
+    py`'s per-file joins (unaware of symbols) still need; the stricter
+    per-SYMBOL join a capability observation needs is `_via_matches_site`,
+    below, not this function."""
+    return any(fnmatch.fnmatch(rel, _via_glob_and_symbol(glob)[0]) for glob in via)
+
+
+# frob:ticket T-1627
+def _via_matches_site(rel: str, symbol: str | None, via: tuple[str, ...]) -> bool:
+    """`True` if `rel`:`symbol` (T-1627: `symbol` is the qualname of the
+    innermost declaration enclosing the observation site, or `None` if the
+    site sits outside every declared symbol -- module level) is covered by
+    at least one entry in `via`.
+
+    A file-form entry (no `::`) covers every symbol in a matching file,
+    exactly like pre-T-1627 `_via_matches` -- this is the backward-
+    compatible half (docs/strata/surface.md#may-scope migration note). A
+    symbol-form entry (`"glob::qualname"`) covers only an observation
+    whose enclosing `symbol` IS `qualname` or is NESTED inside it
+    (`symbol == qualname` or `symbol.startswith(qualname + ".")`, so a
+    closure or nested `def` declared inside the granted function still
+    counts as "at that site", not as an escape from it) -- an observation
+    with `symbol=None` (module level, outside every declaration) never
+    matches a symbol-form entry, since there is no symbol identity to
+    compare against a bare top-level effect."""
+    for entry in via:
+        glob, want_symbol = _via_glob_and_symbol(entry)
+        if not fnmatch.fnmatch(rel, glob):
+            continue
+        if want_symbol is None:
+            return True
+        if symbol is None:
+            continue
+        if symbol == want_symbol or symbol.startswith(want_symbol + "."):
+            return True
+    return False
 
 
 # frob:doc docs/strata/surface.md#may-scope
@@ -214,6 +278,34 @@ def _declared_kinds_for_file(node: Node, rel: str) -> frozenset[str]:
     declared: set[str] = set()
     for grant in node.may_grants:
         if grant.via and not _via_matches(rel, grant.via):
+            continue
+        kind = canonical_declared_kind(_may_kind(grant.atom))
+        declared |= expand_declared_kind(kind)
+    return frozenset(declared)
+
+
+# frob:ticket T-1627
+def _declared_kinds_for_effect(
+    node: Node, rel: str, symbol: str | None
+) -> frozenset[str]:
+    """The precise capability kinds `node` declares that cover an
+    observation at `rel`, enclosed by `symbol` (T-1627's per-SYMBOL SYS100
+    join, the sibling of `_declared_kinds_for_file`'s per-FILE join): a
+    grant with no `via` covers everything, exactly like
+    `_declared_kinds_for_file`; a file-form `via` entry covers every
+    symbol in a matching file (unchanged migration behavior); a
+    symbol-form `via` entry (`"glob::qualname"`) covers ONLY an
+    observation whose `symbol` is `qualname` or nested inside it
+    (`_via_matches_site`) -- an effect sitting anywhere else in that same
+    file, even one line away, is no longer covered, which is the whole
+    point of naming a symbol instead of a file. `node.may_grants` empty
+    falls back to `_declared_kinds`'s whole-node join, same as
+    `_declared_kinds_for_file`."""
+    if not node.may_grants:
+        return _declared_kinds(node)
+    declared: set[str] = set()
+    for grant in node.may_grants:
+        if grant.via and not _via_matches_site(rel, symbol, grant.via):
             continue
         kind = canonical_declared_kind(_may_kind(grant.atom))
         declared |= expand_declared_kind(kind)
@@ -380,25 +472,113 @@ def extract_effects(binding: CodeBinding, root: Path) -> tuple[ObservedEffect, .
     return tuple(effects)
 
 
+# frob:ticket T-1627
+def _node_has_symbol_form_via(node: Node) -> bool:
+    """`True` if any of `node`'s grants declares a symbol-form via entry
+    (T-1627: an entry containing `"::"`) -- gates whether
+    `_file_capability_violations` bothers paying for a real parse of each
+    of the node's files to resolve enclosing symbols. A node with only
+    file-form (or no) `via` entries never needs per-symbol resolution, so
+    this keeps the pre-T-1627 file-only join's cost unchanged for every
+    design that has not adopted symbol-form `via` yet."""
+    return any("::" in entry for grant in node.may_grants for entry in grant.via)
+
+
+# frob:ticket T-1627
+def _enclosing_symbol(line: int, symbols: tuple[object, ...]) -> str | None:
+    """Qualname of the deepest (narrowest-span) symbol whose 1-based
+    inclusive line-range contains `line`, or `None` if none does (T-1627).
+
+    Deliberately a small LOCAL reimplementation of `frob.lang._common.
+    _find_enclosing_symbol`'s narrowest-span search rather than an import
+    of it: that helper is a private module of a DIFFERENT package
+    (`frob.lang`), and this ticket's declared scope does not include
+    `src/frob/lang/**` -- reaching into another package's private surface
+    from outside it would be a real architecture violation, not a style
+    nit, and widening scope to add one public wrapper function belongs to
+    a separate ticket, not folded silently into this one. The search
+    itself is ~5 lines with no shared state to desync (RawSymbol's
+    `.span`/`.qualname` fields are the only two ever forwarded to it,
+    each read via a defensive `getattr` here rather than a `RawSymbol`
+    type import at runtime, so this one small helper stays free of the
+    `frob.lang` import-cycle concern `_symbols_for_file` documents for
+    itself -- `symbols` is typed loosely as `tuple[object, ...]` for
+    exactly that reason, unlike `_symbols_for_file`'s own return type,
+    which IS `RawSymbol`-typed under `TYPE_CHECKING`)."""
+    best_qualname: str | None = None
+    best_width: int | None = None
+    for sym in symbols:
+        span = getattr(sym, "span", None)
+        qualname = getattr(sym, "qualname", None)
+        if span is None or qualname is None:
+            continue
+        start, end = span
+        if start <= line <= end:
+            width = end - start
+            if best_width is None or width < best_width:
+                best_width = width
+                best_qualname = qualname
+    return best_qualname
+
+
+# frob:ticket T-1627
+def _symbols_for_file(root: Path, rel: str) -> tuple[RawSymbol, ...]:
+    """Every `RawSymbol` declared in `root / rel`, or `()` on any parse
+    failure (T-1627): a file that fails to parse degrades to "no symbol
+    resolved" for every effect in it, which `_via_matches_site` already
+    treats as "does not match a symbol-form via entry" -- fail CLOSED
+    (the observation stays undeclared) rather than silently trusting an
+    unparseable file's symbol-form grants. Imports `frob.lang` lazily to
+    avoid a module-load-time cycle (`frob.lang` -> `frob.check._memo` ->
+    ... -> `frob.strata` in some call orders; every other `frob.strata`
+    call site that needs `frob.lang` does the same lazy import) -- the
+    RETURN type is still resolvable statically via the `TYPE_CHECKING`
+    import above, only the runtime import is deferred."""
+    from frob.lang import parse_file
+
+    result = parse_file(root / rel)
+    if result.is_err:
+        _log.warning(
+            "strata effects: could not parse %s for symbol-form via resolution: %s",
+            rel,
+            result.danger_err,
+        )
+        return ()
+    return result.danger_ok.symbols
+
+
+# frob:ticket T-1627
 def _file_capability_violations(
-    rel: str, owner: str, kinds: frozenset[str], root: Path
+    rel: str, owner: str, node: Node | None, root: Path
 ) -> list[CapabilityViolation]:
     """Every undeclared-capability effect inside one bound file `rel`,
-    against the ALREADY file-scoped `kinds` set the caller computed
-    (T-1440's `_declared_kinds_for_file`) -- this function itself stays
-    kind-only and `via`-unaware, matching every other join in this
-    module."""
+    joined per-EFFECT against `node`'s grants (T-1627's per-symbol SYS100
+    join, generalizing T-1440's per-file join): each effect's enclosing
+    symbol is resolved via `frob.lang` ONLY when `node` actually declares
+    a symbol-form `via` entry somewhere (`_node_has_symbol_form_via`) --
+    otherwise every effect resolves with `symbol=None`, which
+    `_declared_kinds_for_effect`'s file-form/via-less branches never
+    consult, so a design with no symbol-form `via` pays no parse cost
+    beyond what T-1440 already paid."""
     found: list[CapabilityViolation] = []
+    no_kinds: frozenset[str] = frozenset()
+    needs_symbols = node is not None and _node_has_symbol_form_via(node)
+    symbols = _symbols_for_file(root, rel) if needs_symbols else ()
     for effect in _line_effects(root / rel, root):
+        symbol = _enclosing_symbol(effect.line, symbols) if symbols else None
+        kinds = (
+            no_kinds if node is None else _declared_kinds_for_effect(node, rel, symbol)
+        )
         if effect.kind in kinds:
             continue
         _log.warning(
-            "strata effects: undeclared capability effect %s:%d %s (%s) on %s",
+            "strata effects: undeclared capability effect %s:%d %s (%s) on %s%s",
             effect.file,
             effect.line,
             effect.kind,
             effect.needle,
             owner,
+            f" in {symbol}" if symbol else "",
         )
         found.append(
             CapabilityViolation(
@@ -415,34 +595,117 @@ def _file_capability_violations(
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1455
+# frob:ticket T-1627
 def check_capability_conformance(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> EffectReport:
     """Every observed net/fs/exec effect in `binding`'s bound code whose
     owning node declares no `may` grant covering BOTH the matching
-    capability kind AND that specific file -- "undeclared capability
-    effect" (T-0079), deny-by-default exactly like
+    capability kind AND that specific observation SITE -- "undeclared
+    capability effect" (T-0079), deny-by-default exactly like
     `check_import_conformance`'s undeclared-import join.
 
-    T-1440: the join is now per-FILE, not per-node. A node's own kind-only
-    declared set (`_declared_kinds`, still used for `node_may_kinds`'s
-    seccomp/syscall export and every other kind-only reader) is no longer
-    what this join tests against -- `_declared_kinds_for_file` narrows it
-    per grant's `via` glob(s), so an observation in a file outside every
-    `via` surface stays a violation even though the node nominally holds
-    the capability elsewhere (acceptance clause 0), while a via-less grant
-    (or a node with no `may_grants` at all, the legacy/direct-construction
-    shape) still covers every file exactly as before (acceptance clause
-    1)."""
+    T-1440: the join is per-FILE, not per-node. T-1627: for a node with at
+    least one symbol-form `via` entry, the join narrows FURTHER to
+    per-SYMBOL -- `_declared_kinds_for_effect` (via
+    `_file_capability_violations`) narrows a grant's coverage per its
+    `via` glob(s) AND, when an entry names a symbol, per that symbol's own
+    enclosing scope, so an observation in a file (or, T-1627, a different
+    function of the SAME file) outside every `via` surface stays a
+    violation even though the node nominally holds the capability
+    elsewhere (acceptance clause 0), while a via-less grant (or a node
+    with no `may_grants` at all, the legacy/direct-construction shape)
+    still covers every file exactly as before (acceptance clause 1)."""
     nodes_by_id: dict[str, Node] = {node.id: node for node in model.nodes}
     violations: list[CapabilityViolation] = []
-    no_kinds: frozenset[str] = frozenset()
     for rel in _sorted_owned_files(binding):
         owner = binding.owner[rel]
         node = nodes_by_id.get(owner)
-        kinds = no_kinds if node is None else _declared_kinds_for_file(node, rel)
-        violations.extend(_file_capability_violations(rel, owner, kinds, root))
+        violations.extend(_file_capability_violations(rel, owner, node, root))
     return EffectReport(violations=tuple(violations))
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1627
+class StaleViaSymbolViolation(BaseModel):
+    """One symbol-form `via` entry (T-1627) whose named symbol could not be
+    found in any file matching its glob under the node's own bound code:
+    the grant points at a symbol that has been renamed, moved, or deleted.
+    This is DELIBERATELY its own violation kind, never folded into
+    `CapabilityViolation` or silently dropped -- a `via` naming a symbol
+    that no longer exists reads as a deliberate, narrow grant while
+    actually authorizing NOTHING (every real effect in that file now
+    falls outside every via surface and is separately flagged as
+    undeclared) or, worse, is silently treated as unscoped by a careless
+    reader. `frob sys audit`/`frob check` wires this to its own rule id
+    (SYS109, docs/modules/gates.md) rather than reusing SYS100's, so a
+    stale declaration is diagnosed as EXACTLY that -- not as a generic
+    undeclared-capability finding whose real cause (a dangling
+    declaration, not a missing one) would be invisible in the message."""
+
+    model_config = ConfigDict(frozen=True)
+
+    node: str
+    atom: str
+    via: str
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1627
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestStaleViaSymbol.test_unresolvable_symbol_is_fla\
+# gged kind="unit"
+# frob:waive WIRE001 reason="the SYS109 detector itself is in scope for T-1627 and \
+# independently unit-tested; wiring it into frob sys audit's CLI surface \
+# (src/frob/strata/_audit.py, src/frob/gates/_sys_selfaudit.py) needs files outside \
+# T-1627's own declared scope, so the wiring is its own follow-up rather than a scope \
+# creep onto this ticket" follow_up="T-1761"
+def check_stale_via_symbols(
+    model: KernelModel, binding: CodeBinding, root: Path
+) -> tuple[StaleViaSymbolViolation, ...]:
+    """Every symbol-form `via` entry across `model`'s nodes whose named
+    symbol resolves to NOTHING in the node's own bound files (T-1627): for
+    each grant's symbol-form entries, every non-`FOREIGN` bound file
+    matching the entry's glob is parsed (`_symbols_for_file`) and checked
+    for a `RawSymbol` whose qualname is the entry's symbol or nests inside
+    it (`_via_matches_site`'s own containment rule, reused so "resolves"
+    means exactly what "covers an effect" means); if NO file under the
+    node's binding matching that glob declares a symbol matching the
+    entry, the entry is stale. A glob matching zero files at all (a typo'd
+    path, or a file the node no longer binds) is stale by the same rule --
+    zero candidate files trivially contain zero matching symbols."""
+    found: list[StaleViaSymbolViolation] = []
+    owned_by_node: dict[str, list[str]] = {}
+    for rel in _sorted_owned_files(binding):
+        owned_by_node.setdefault(binding.owner[rel], []).append(rel)
+    for node in model.nodes:
+        for grant in node.may_grants:
+            for entry in grant.via:
+                glob, symbol = _via_glob_and_symbol(entry)
+                if symbol is None:
+                    continue
+                owned = owned_by_node.get(node.id, ())
+                candidates = [rel for rel in owned if fnmatch.fnmatch(rel, glob)]
+                resolved = any(
+                    qualname == symbol or qualname.startswith(symbol + ".")
+                    for rel in candidates
+                    for qualname in (s.qualname for s in _symbols_for_file(root, rel))
+                )
+                if resolved:
+                    continue
+                _log.warning(
+                    "strata effects: stale via symbol on node %s atom %s: %s does not "
+                    "resolve against %d candidate file(s)",
+                    node.id,
+                    grant.atom,
+                    entry,
+                    len(candidates),
+                )
+                found.append(
+                    StaleViaSymbolViolation(node=node.id, atom=grant.atom, via=entry)
+                )
+    _log.info("strata effects: %d stale via-symbol violation(s) found", len(found))
+    return tuple(found)
 
 
 __all__ = [
@@ -450,8 +713,10 @@ __all__ = [
     "EffectReport",
     "LegacyCapabilityAliasViolation",
     "ObservedEffect",
+    "StaleViaSymbolViolation",
     "check_capability_conformance",
     "check_legacy_capability_aliases",
+    "check_stale_via_symbols",
     "extract_effects",
     "node_may_kinds",
 ]

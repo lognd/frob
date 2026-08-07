@@ -267,22 +267,32 @@ class DeployContract(BaseModel):
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1440
+# frob:ticket T-1627
 class MayGrant(BaseModel):
-    """One `may "ATOM" [via "GLOB"[, "GLOB"...]]` declaration on a node
-    (T-1440): `atom` is the same capability-atom string `Node.may` already
-    carries flat; `via` names the sub-glob(s) of the node's own `code`
-    binding this ONE grant actually covers. `via=()` means unscoped --
-    the pre-T-1440 whole-node meaning, kept for migration
-    (docs/strata/surface.md#may-scope). A capability kind can be granted
-    by more than one `MayGrant` (e.g. one scoped, one via-less on the same
-    kind); the per-file join (`_effects.py::_declared_kinds_for_file`)
-    takes the union of every grant whose `via` matches the file, or that
-    is via-less, for a given node."""
+    """One `may "ATOM" [via "GLOB"[, "GLOB"...] [exclusive]]` declaration
+    on a node (T-1440; symbol-form via + `exclusive`, T-1627): `atom` is
+    the same capability-atom string `Node.may` already carries flat;
+    `via` names the sub-glob(s) -- or, T-1627, sub-SYMBOL(s) -- of the
+    node's own `code` binding this ONE grant actually covers. `via=()`
+    means unscoped -- the pre-T-1440 whole-node meaning, kept for
+    migration (docs/strata/surface.md#may-scope). A capability kind can
+    be granted by more than one `MayGrant` (e.g. one scoped, one via-less
+    on the same kind); the per-file/per-symbol join (`_effects.py::
+    _declared_kinds_for_effect`) takes the union of every grant whose
+    `via` matches the observation site, or that is via-less, for a given
+    node. `exclusive=True` (T-1627) asserts this grant's single
+    symbol-form via entry is the SOLE legitimate site for `atom` --
+    enforced structurally rather than by a separate cross-check: because
+    `via` narrows what the per-observation join even counts as declared,
+    any OTHER site exercising the same kind is already an ordinary
+    undeclared-capability violation the moment `via` is symbol-scoped
+    down to just the one site (`docs/strata/surface.md#may-scope`)."""
 
     model_config = ConfigDict(frozen=True)
 
     atom: str
     via: tuple[str, ...] = ()
+    exclusive: bool = False
 
 
 # frob:doc docs/strata/waive.md#surface-syntax

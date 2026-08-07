@@ -77,23 +77,39 @@ class _DeployDecl(BaseModel):
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1440
+# frob:ticket T-1627
 class MayGrantDecl(BaseModel):
-    """A parsed `may "ATOM" [via "GLOB"[, "GLOB"...]]` clause (T-1440):
-    pairs each declared capability atom with the sub-glob surface it is
-    actually scoped to, narrowing the pre-T-1440 whole-node grant down to
-    the files that need it. `via=()` (the parser's default when the
-    `via` trailer is omitted) means "no scoping" -- the grant still
-    covers the whole node, preserving pre-T-1440 semantics for migration
+    """A parsed `may "ATOM" [via "GLOB"[, "GLOB"...] [exclusive]]` clause
+    (T-1440, symbol-form via and `exclusive` added by T-1627): pairs each
+    declared capability atom with the sub-glob (or, T-1627, sub-SYMBOL)
+    surface it is actually scoped to, narrowing the pre-T-1440 whole-node
+    grant down to the files -- or, preferably, the one function/method --
+    that need it. `via=()` (the parser's default when the `via` trailer
+    is omitted) means "no scoping" -- the grant still covers the whole
+    node, preserving pre-T-1440 semantics for migration
     (docs/strata/surface.md#may-scope). Carried ALONGSIDE the flat
     `NodeDecl.may`/`StoreDecl.may` atom tuple (unchanged) rather than
     replacing it, so the many existing kind-only `may` readers (seccomp/
     syscall export, threat discharge, lint, ...) need no change; only the
-    per-file SYS100 join (`_effects.py`) reads this."""
+    per-file/per-symbol SYS100 join (`_effects.py`) reads this.
+
+    T-1627: each `via` entry may be a bare file glob (`"src/x.py"`, the
+    pre-T-1627 whole-file shape, still fully supported for migration) OR
+    a symbol-qualified entry `"src/x.py::qualname"` naming the ONE
+    function/method the grant actually covers -- `_effects.py::
+    _via_glob_and_symbol` is the single place that splits an entry into
+    its (glob, symbol-or-None) parts, so every via consumer agrees on the
+    syntax. `exclusive=True` (the parser's `exclusive` trailer) asserts
+    this is the SOLE legitimate site for the atom; the parser itself
+    refuses to accept `exclusive` on anything but a single symbol-form
+    via entry (strata-core/src/parse/grammar_node.rs), so an `exclusive`
+    grant reaching Python always already satisfies that shape."""
 
     model_config = ConfigDict(frozen=True)
 
     atom: str
     via: tuple[str, ...] = ()
+    exclusive: bool = False
 
 
 # frob:doc docs/strata/surface.md#parser

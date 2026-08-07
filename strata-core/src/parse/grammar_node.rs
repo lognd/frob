@@ -8,6 +8,7 @@
 // by reading the code it annotates) rather than a separate cross-module contract \
 // needing its own tracked invariant; disposed as the same calibration batch, not \
 // claim-by-claim"
+// frob:ticket T-1627
 
 impl Parser {
     fn parse_node(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
@@ -394,8 +395,33 @@ impl Parser {
                             via.push(self.expect_string("may via glob")?);
                         }
                     }
+                    // T-1627: an optional `exclusive` trailer after the via
+                    // list marks this ONE grant as the sole legitimate site
+                    // for its capability atom -- turning a permission into
+                    // an invariant (docs/strata/surface.md#may-scope). Only
+                    // meaningful paired with a single symbol-form via entry
+                    // (`"path::qualname"`, T-1627's other half): a bare or
+                    // multi-entry/file-form `via` gives no single site to be
+                    // exclusive ABOUT, so that combination is a hard parse
+                    // error here rather than a silently-ignored keyword --
+                    // "cannot express what the grant claims" must fail loud
+                    // at parse time, not be discovered later at conformance
+                    // time (or never).
+                    let mut exclusive = false;
+                    if self.at_keyword("exclusive") {
+                        self.advance();
+                        exclusive = true;
+                        if via.len() != 1 || !via[0].contains("::") {
+                            return self.err(format!(
+                                "may \"{}\" exclusive requires exactly one symbol-form via \
+                                 entry (\"path::qualname\"), got {} via entry/entries",
+                                atom,
+                                via.len()
+                            ));
+                        }
+                    }
                     may.push(atom.clone());
-                    may_grants.push(json!({"atom": atom, "via": via}));
+                    may_grants.push(json!({"atom": atom, "via": via, "exclusive": exclusive}));
                 } else if self.at_keyword("carries") {
                     // T-0154: `carries PII_TAG+` -- one or more STRING-
                     // quoted PII tags (e.g. "identifier.email"), the SAME
