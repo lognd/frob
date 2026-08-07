@@ -2,7 +2,7 @@
 id: T-1769
 title: 'T-1760''s artifact reset and T-0463''s completeness assertion contradict:
   any worktree that merged main after a version bump cannot land'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-07'
