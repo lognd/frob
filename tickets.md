@@ -9936,7 +9936,7 @@ Standing repo constraints (binding, not restatement):
 id: T-1698
 title: rapid land leaves root dirty via rapid-debt.jsonl, deadlocking every other
   agent's land
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-06'

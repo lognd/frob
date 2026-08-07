@@ -2984,6 +2984,21 @@ baseline. Semantics:
   filed as a ticket must not be re-filed by the next land; from then on
   the filed ticket is the record.
 
+**The debt line commits itself (T-1698).** `rapid-debt.jsonl` is tracked
+on purpose, and the deferred-sweep record is written AFTER the land
+commit is sealed (it names that commit), so it cannot ride along in it.
+`_commit_rapid_debt` therefore gives it its own tiny follow-up commit,
+staging that one path and nothing else. This is not cosmetic: without it
+every rapid land left the shared root checkout dirty and the NEXT land
+from ANY agent refused with `DirtyMain` -- one uncommitted line
+deadlocked a whole three-agent wave. It stages `rapid-debt.jsonl` alone
+rather than `git add -A`, because concurrent lands are racing on that
+same root and a blanket add would swallow another agent's in-flight work.
+Relatedly, a `DirtyMain` refusal now NAMES the offending paths
+(`porcelain_dirty_paths`/`describe_dirty_paths`): the original message
+said only "root has uncommitted changes", and three agents each burned
+minutes without learning it was a single one-line file.
+
 `frob ticket sweep-async` is a real subcommand rather than a `-c` code
 string so the deferred sweep is inspectable, re-runnable by hand against
 any commit, and covered by the same CLI surface tests as every other

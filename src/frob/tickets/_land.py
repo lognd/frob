@@ -1656,12 +1656,18 @@ def _refuse_if_main_dirty(
         if main_dirty.is_err:
             return Err(main_dirty.danger_err)
     if main_dirty.danger_ok:
+        # T-1698: name the offending paths. A bare "has uncommitted
+        # changes" deadlocked a three-agent wave on ONE one-line file
+        # nobody could identify from the refusal alone.
+        from frob.tickets._land_git_ops import describe_root_dirt
+
         _log.error(
-            "land: %s refused -- %s has uncommitted changes; commit or stash "
-            "them first (git -C %s status), then retry `frob ticket land %s "
-            "--worktree %s`",
+            "land: %s refused -- %s has uncommitted changes in: %s; commit or "
+            "stash them first (git -C %s status), then retry `frob ticket "
+            "land %s --worktree %s`",
             ticket_id,
             root,
+            describe_root_dirt(root),
             root,
             ticket_id,
             worktree,

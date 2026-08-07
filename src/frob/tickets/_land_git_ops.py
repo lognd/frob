@@ -212,6 +212,49 @@ def _porcelain_dirty(root: Path) -> Result[bool, LandError]:
     return Ok(bool(dirty_lines))
 
 
+# frob:ticket T-1698
+_DIRTY_PATHS_SHOWN = 10
+
+
+# frob:ticket T-1698
+def _porcelain_dirty_paths(root: Path) -> tuple[str, ...]:
+    """The paths making `root` dirty, by the SAME `.frob/`-ignoring rule
+    `_porcelain_dirty` decides on -- so what a DirtyMain refusal names can
+    never disagree with what made it refuse.
+
+    Exists because `DirtyMain` used to say only "root has uncommitted
+    changes" (T-1698): during a three-agent wave, one uncommitted
+    one-line file deadlocked every land in the repo, and three agents each
+    burned minutes without ever learning which file it was. An error that
+    does not name its own cause is a structural defect in a tool whose job
+    is enforcement. Empty tuple on a git failure -- the caller has already
+    reported that separately and must not turn "cannot tell" into "clean".
+    """
+    spawned = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return ()
+    return tuple(
+        line[3:].strip()
+        for line in spawned.danger_ok.stdout.splitlines()
+        if line.strip() and not line[3:].strip().startswith(".frob/")
+    )
+
+
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_truncation_declares_itself  # noqa: E501
+# frob:ticket T-1698
+def _render_dirty_paths(paths: tuple[str, ...]) -> str:
+    """`paths` rendered for a refusal message, capped at
+    `_DIRTY_PATHS_SHOWN` with an explicit `(+N more)` -- a truncated list
+    that hides its own truncation would send someone to fix one file when
+    twenty are dirty."""
+    if not paths:
+        return "(git status unavailable)"
+    shown = ", ".join(paths[:_DIRTY_PATHS_SHOWN])
+    extra = len(paths) - _DIRTY_PATHS_SHOWN
+    return f"{shown} (+{extra} more)" if extra > 0 else shown
+
+
 # frob:ticket T-0793
 _LOCK_VERSION_LINE = re.compile(r'^[+-]version = "[^"]*"$')
 
@@ -1366,3 +1409,22 @@ def _true_merge_base(worktree: Path, main_branch_name: str) -> Result[str, LandE
         )
         return Err(LandError.GitFailed)
     return Ok(result.danger_ok.stdout.strip())
+
+
+# frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unavailable_status_is_not_reported_as_clean  # noqa: E501
+# frob:ticket T-1698
+def describe_root_dirt(root: Path) -> str:
+    """What is making `root` dirty, rendered for a `DirtyMain` refusal.
+
+    Decides by the SAME `.frob/`-ignoring rule `_porcelain_dirty` uses, so
+    what a refusal NAMES can never disagree with what made it refuse.
+
+    Exists because `DirtyMain` used to say only "root has uncommitted
+    changes" (T-1698): during a three-agent wave, one uncommitted one-line
+    file deadlocked every land in the repo, and three agents each burned
+    minutes without ever learning which file it was. An error that does
+    not name its own cause is a structural defect in a tool whose entire
+    job is enforcement."""
+    return _render_dirty_paths(_porcelain_dirty_paths(root))

@@ -132,6 +132,78 @@ def _write_baseline(
     )
 
 
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_leaves_the_repo_clean  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_stages_only_the_debt_file  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_is_a_noop_when_nothing_was_appended  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_a_non_repo_never_raises  # noqa: E501
+# frob:ticket T-1698
+def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
+    """Commit the `rapid-debt.jsonl` line this land just appended, so the
+    land leaves `root` CLEAN.
+
+    `rapid-debt.jsonl` is tracked on purpose (it must survive a clone and
+    a `frob clean`, and be reviewable in a diff), and this record is
+    written AFTER the land commit is sealed because it names that commit
+    -- so it cannot ride along in it, and amending is forbidden here. It
+    therefore gets its own tiny follow-up commit. Without this, every
+    rapid land left the shared root checkout dirty and the NEXT land from
+    ANY agent refused with `DirtyMain`: one uncommitted line deadlocked a
+    whole three-agent wave (T-1698).
+
+    Stages `rapid-debt.jsonl` and NOTHING else. A blanket `git add -A` on
+    a root checkout that concurrent lands are racing against would sweep
+    up whatever another agent had in flight -- the opposite of the
+    isolation this file exists to record.
+
+    Best-effort: a failure here must never fail a land that has already
+    succeeded, but it is logged at ERROR, because the resulting dirty root
+    is invisible in the `DirtyMain` error every other agent then hits."""
+    from frob.gitio import run_argv
+
+    rel = "rapid-debt.jsonl"
+    status = run_argv(["git", "-C", str(root), "status", "--porcelain", "--", rel])
+    if status.is_err or status.danger_ok.returncode != 0:
+        _log.error(
+            "rapid sweep: %s could not read %s status in %s -- if it is "
+            "dirty, every subsequent land in this repo will refuse with "
+            "DirtyMain",
+            ticket_id,
+            rel,
+            root,
+        )
+        return
+    if not status.danger_ok.stdout.strip():
+        return  # nothing appended (e.g. the write failed and logged already)
+
+    staged = run_argv(["git", "-C", str(root), "add", "--", rel])
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.error("rapid sweep: %s could not stage %s in %s", ticket_id, rel, root)
+        return
+    committed = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "commit",
+            "-m",
+            f"chore(rapid): record {ticket_id}'s deferred post-land sweep",
+            "--",
+            rel,
+        ]
+    )
+    if committed.is_err or committed.danger_ok.returncode != 0:
+        _log.error(
+            "rapid sweep: %s could not commit %s in %s -- root is now DIRTY "
+            "and the next land from any agent will refuse with DirtyMain; "
+            "commit it by hand",
+            ticket_id,
+            rel,
+            root,
+        )
+        return
+    _log.info("rapid sweep: %s committed the deferred-sweep debt line", ticket_id)
+
+
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn.test_exec_disabled_records_debt_and_refuses  # noqa: E501
 # frob:ticket T-1684
@@ -151,6 +223,7 @@ def spawn_deferred_post_land_sweep(
     from frob.tickets._evidence import record_rapid_debt
 
     record_rapid_debt(root, ticket_id, "post-land-unscoped-sweep-deferred")
+    _commit_rapid_debt(root, ticket_id)
 
     if not exec_enabled():
         _log.warning(
