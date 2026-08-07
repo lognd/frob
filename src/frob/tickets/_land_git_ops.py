@@ -59,6 +59,7 @@ from frob.tickets._land_merge_zones import (
 from frob.tickets._models import (
     LandError,
     Ticket,
+    TicketError,
     _done_report_section_lines,
     scope_matches,
 )
@@ -521,6 +522,7 @@ def _archived_ids(root: Path) -> frozenset[str]:
     return frozenset(parsed.danger_ok)
 
 
+# frob:ticket T-1721
 def _splice_and_stage(
     checkout: Path,
     pre_text: str,
@@ -528,6 +530,7 @@ def _splice_and_stage(
     *,
     archived_ids: frozenset[str] = frozenset(),
     ticket_id: str | None = None,
+    base_text: str | None = None,
 ) -> Result[str, LandError]:
     """Write the ledger splice of `pre_text`/`incoming_text` to `checkout`'s
     tickets.md and `git add` it; overrides whatever git's own textual merge
@@ -537,16 +540,29 @@ def _splice_and_stage(
 
     `ticket_id`, when given, scopes the splice to ONLY that ticket's own
     block via `_splice_only_ticket` (T-0479) -- every other id comes from
-    `pre_text` untouched, so a worktree's stale sibling-ticket state can
-    never overlay main's newer one. `ticket_id=None` (the default) keeps the
-    original whole-ledger `splice_ledger` merge, used only where BOTH sides
-    are pulling in each other's full set of tickets on purpose (there is no
-    "one ticket being landed" to scope to). `archived_ids` excludes anything
-    main has already archived from ever re-entering the merged active
-    ledger, either way."""
+    `pre_text` untouched BY DEFAULT, so a worktree's stale sibling-ticket
+    state can never overlay main's newer one. `ticket_id=None` (the
+    default) keeps the original whole-ledger `splice_ledger` merge, used
+    only where BOTH sides are pulling in each other's full set of tickets on
+    purpose (there is no "one ticket being landed" to scope to). `archived_
+    ids` excludes anything main has already archived from ever re-entering
+    the merged active ledger, either way.
+
+    T-1721: `base_text` (the true merge-base's ledger text), passed through
+    to `_splice_only_ticket` when `ticket_id` is given, lets a SIBLING id's
+    edit be carried forward (or a genuine conflict refused loudly) instead
+    of T-0479's blanket main-wins default silently discarding it -- see
+    `_splice_only_ticket`'s own docstring. Maps its
+    `TicketError.SiblingLedgerEditConflict` to the distinct
+    `LandError.SiblingLedgerEditConflict` rather than the generic
+    `GitFailed`, so the refusal names its own real cause."""
     if ticket_id is not None:
         spliced = _splice_only_ticket(
-            pre_text, incoming_text, ticket_id, archived_ids=archived_ids
+            pre_text,
+            incoming_text,
+            ticket_id,
+            archived_ids=archived_ids,
+            base_text=base_text,
         )
     else:
         spliced = splice_ledger(pre_text, incoming_text, archived_ids=archived_ids)
@@ -556,6 +572,8 @@ def _splice_and_stage(
             spliced.danger_err,
             checkout,
         )
+        if spliced.danger_err is TicketError.SiblingLedgerEditConflict:
+            return Err(LandError.SiblingLedgerEditConflict)
         return Err(LandError.GitFailed)
     ledger_path(checkout).write_text(spliced.danger_ok, encoding="utf-8")
     add = run_argv(["git", "-C", str(checkout), "add", "tickets.md"])
@@ -687,6 +705,28 @@ def _splice_and_stage_archive(
     return Ok(rendered)
 
 
+# frob:ticket T-1154
+# frob:ticket T-1721
+def _resolve_merge_base_texts(
+    worktree: Path, main_branch: str
+) -> tuple[str | None, str | None]:
+    """`_merge_main_into_worktree`'s own true-merge-base text resolution
+    (ARCH001 split): `(tickets.md, tickets-archive.md)` content at
+    `_true_merge_base(worktree, main_branch)`, best-effort -- either or
+    both are `None` on any git failure resolving the base or reading the
+    file at it, never a hard error (a merge-base-aware splice is a
+    sharpening of the existing merge, not a new hard requirement)."""
+    base_sha = _true_merge_base(worktree, main_branch)
+    if base_sha.is_err:
+        return None, None
+    sha = base_sha.danger_ok
+    return (
+        _read_text_at_ref(worktree, sha, "tickets.md"),
+        _read_text_at_ref(worktree, sha, "tickets-archive.md"),
+    )
+
+
+# frob:ticket T-1721
 def _merge_main_into_worktree(
     root: Path, worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[bool, LandError]:
@@ -702,21 +742,28 @@ def _merge_main_into_worktree(
     so a same-id divergence prefers whichever side made a REAL edit over
     whichever side is merely stale relative to the branch point -- see
     `_merge_ledger_tickets`/`_resolve_divergence` for the wrong-side-merge
-    class this closes. tickets.md's own splice (`_splice_and_stage`) does
-    not need this: `ticket_id`-scoping (T-0479) already makes every sibling
-    id come from `main_text` untouched, so the archive file -- whose splice
-    is NOT scoped to one id -- is the one exposed to this class."""
+    class this closes.
+
+    T-1721 CORRECTION to this docstring's own prior claim: it used to say
+    tickets.md's `_splice_and_stage` call "does not need this" because
+    `ticket_id`-scoping (T-0479) "already makes every sibling id come from
+    `main_text` untouched" -- true as a description of T-0479's mechanism,
+    but wrong as a justification: that blanket untouched-default is exactly
+    what silently discarded a worktree's genuine SIBLING edit (the T-1637
+    field incident -- an evidence rebind on an unrelated ticket, made mid-
+    another-ticket's-land, dropped without a trace by every land attempt
+    that tried to carry it, three times, before the pattern was diagnosed).
+    tickets.md's own splice now ALSO receives `base_text` below, for the
+    same reason the archive splice already did: to tell a sibling's genuine
+    isolated edit apart from mere staleness instead of assuming every
+    sibling id is stale by construction."""
     pre_text = _read_ledger_text_or_empty(worktree)
     main_text = _read_ledger_text_or_empty(root)
     # frob:ticket T-0959
     pre_archive_text = _read_archive_text_or_empty(worktree)
     main_archive_text = _read_archive_text_or_empty(root)
-    # frob:ticket T-1154
-    base_sha = _true_merge_base(worktree, main_branch)
-    base_archive_text = (
-        _read_text_at_ref(worktree, base_sha.danger_ok, "tickets-archive.md")
-        if base_sha.is_ok
-        else None
+    base_ledger_text, base_archive_text = _resolve_merge_base_texts(
+        worktree, main_branch
     )
 
     merged = run_argv(
@@ -742,15 +789,17 @@ def _merge_main_into_worktree(
     # remembered as in-progress (from before it was later requeued back to
     # queued on main) beat main's newer queued state on `_newer`'s state-
     # rank comparison and resurrected it. Scoping to `ticket.id` makes every
-    # sibling ticket's state come from main untouched, unconditionally --
-    # only the ticket actually being landed is ever taken from the
-    # worktree.
+    # sibling ticket's state come from main untouched BY DEFAULT -- only
+    # the ticket actually being landed is unconditionally taken from the
+    # worktree; `base_text` (T-1721) lets a genuine sibling edit still be
+    # carried forward (or a real conflict refused) instead of assumed away.
     spliced = _splice_and_stage(
         worktree,
         main_text,
         pre_text,
         archived_ids=_archived_ids(root),
         ticket_id=ticket.id,
+        base_text=base_ledger_text,
     )
     if spliced.is_err:
         _abort_merge(worktree)

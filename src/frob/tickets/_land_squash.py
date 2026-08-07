@@ -48,6 +48,7 @@ from frob.tickets._land_git_ops import (
     _land_internal_git_env,
     _read_archive_text_or_empty,
     _read_ledger_text_or_empty,
+    _read_text_at_ref,
     _rev_parse,
     _splice_and_stage,
     _splice_and_stage_archive,
@@ -242,6 +243,7 @@ def _squash_and_splice_ledger(
     final_id: str,
     branch_name: str,
     pre_land_tip: str,
+    main_branch_name: str | None = None,
 ) -> Result[None, LandError]:
     """`git merge --squash --no-commit` the worktree's finalized `branch_name`
     onto `root`, then splice tickets.md and tickets-archive.md (T-0959);
@@ -249,6 +251,17 @@ def _squash_and_splice_ledger(
     in-scope conflict), or a splice failure. `pre_land_tip` (T-0907) is this
     run's verified pre-mutation root tip, threaded through to
     `_check_squash_conflicted` and this function's own unwind.
+
+    T-1721: `main_branch_name`, when given, resolves the true merge-base
+    (`_true_merge_base(worktree, main_branch_name)`) and reads tickets.md
+    at that commit, threading it into the ledger splice as `base_text` --
+    this is the FINAL splice that actually lands on main, so it is the
+    real fix site for the T-1637 field incident (a legitimate sibling-
+    ticket ledger edit, made in the same worktree while landing a
+    different ticket, silently dropped by T-0479's blanket main-wins
+    sibling default -- see `_splice_only_ticket`'s own docstring).
+    `None` (the default, and the degrade path on any git failure resolving
+    the base) falls back to the pre-T-1721 behavior unchanged.
 
     T-1036: the ledger read that this splice is BASED ON is deliberately
     deferred until immediately before the write, and taken under `root`'s
@@ -290,6 +303,14 @@ def _squash_and_splice_ledger(
 
     worktree_final_text = ledger_path(worktree).read_text(encoding="utf-8")
     worktree_final_archive_text = _read_archive_text_or_empty(worktree)
+    # frob:ticket T-1721
+    base_ledger_text = None
+    if main_branch_name is not None:
+        base_sha = _true_merge_base(worktree, main_branch_name)
+        if base_sha.is_ok:
+            base_ledger_text = _read_text_at_ref(
+                worktree, base_sha.danger_ok, "tickets.md"
+            )
 
     with ledger_lock(root):
         # T-1036: re-read root's CURRENT ledger/archive/archived-ids HERE,
@@ -304,7 +325,9 @@ def _squash_and_splice_ledger(
         # the analogous comment in `_merge_main_into_worktree`. This is the
         # final splice that actually lands on main, so it is the last line
         # of defense against sibling-ticket resurrection even if something
-        # upstream missed it.
+        # upstream missed it -- and (T-1721) also the last chance to carry
+        # a genuine sibling edit forward via `base_ledger_text` before it
+        # is silently and permanently lost.
         archived_ids = _archived_ids(root)
         spliced = _splice_and_stage(
             root,
@@ -312,6 +335,7 @@ def _squash_and_splice_ledger(
             worktree_final_text,
             archived_ids=archived_ids,
             ticket_id=final_id,
+            base_text=base_ledger_text,
         )
         if spliced.is_err:
             return _unwind_squash_apply(
@@ -779,6 +803,7 @@ def _absorbed_land_report(
 
 
 # frob:ticket T-0907
+# frob:ticket T-1721
 def _land_squash_apply(
     root: Path,
     worktree: Path,
@@ -843,7 +868,13 @@ def _land_squash_apply(
         )
         if v2_mode
         else _squash_and_splice_ledger(
-            root, worktree, ticket, final_id, branch_name, pre_land_tip
+            root,
+            worktree,
+            ticket,
+            final_id,
+            branch_name,
+            pre_land_tip,
+            main_branch_name=main_branch_name,
         )
     )
     if squashed.is_err:

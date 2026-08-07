@@ -2287,7 +2287,10 @@ Three gaps found in one real landing session, closed together:
   for each sibling id, the worktree's copy wins ONLY when it carries a
   substantive Done report main's copy lacks -- a stale advanced state with
   NO Done report on either side (the T-0479/T-0475 case) is untouched,
-  main's side still wins.
+  main's side still wins. **T-1721 replaced this Done-report-only special
+  case with a general base-aware comparison** -- see "Sibling ledger
+  edits, carried forward or refused (T-1721)" below; it did not generalize
+  on its own, see that section for why.
 - **Land-call serialization (`_land_lock`).** The entire `land()` body
   (precheck through the squash-commit) now runs under a dedicated,
   cross-process `flock` on `<root>/.frob/land.lock` -- a SEPARATE file from
@@ -2321,6 +2324,77 @@ Three gaps found in one real landing session, closed together:
   automatic merge commit `pre-merge-commit` fires for; `FROB_LAND_INTERNAL=1`
   is offered anyway as an explicit, documented manual override, never set
   by `land` itself since it never needs it.
+
+## Sibling ledger edits, carried forward or refused (T-1721)
+
+The T-0577 Done-report preservation above closed ONE shape of the
+T-0479-scoping cost (a sibling's Done report silently erased); a
+different shape of the SAME cost went unnoticed for a full session
+afterward: `_splice_only_ticket`'s blanket "every sibling id comes from
+main untouched" default also silently discards a worktree's genuine
+EDIT to a sibling ticket's OWN section whenever that edit does not
+happen to change Done-report presence -- an evidence-list rebind (e.g.
+`frob ticket evidence <other-id> --replace OLD NEW`, made in the same
+worktree while landing a DIFFERENT ticket) is invisible to
+`_preserve_sibling_done_reports`'s narrower check.
+
+**Field incident.** T-1637 (a DONE, unrelated ticket) needed its
+evidence rebound after T-1679 renamed the tests it cited. The rebind was
+made correctly, in the same worktree, and verified locally -- and then
+silently vanished, THREE separate times in a row, regardless of which
+ticket's land was carrying it (T-1679's own land, a dedicated follow-up
+ticket T-1714 filed specifically to re-fix it, and T-1706 after that) --
+because `_splice_only_ticket` never even considered T-1637's section for
+anything but a wholesale main-wins overwrite. The pattern was diagnosed
+as structural only after the third silent loss.
+
+**Why T-1154's fix did not cover this.** T-1154 already threaded a true
+merge-base 3-way comparison into the TICKETS-ARCHIVE.MD splice for
+exactly this class of problem -- but that fix's own docstring explicitly
+reasoned tickets.md's OWN scoped splice "does not need this" because
+"`ticket_id`-scoping (T-0479) already makes every sibling id come from
+`main_text` untouched". That is a true description of T-0479's
+mechanism and a wrong justification: the untouched-by-default behavior
+IS the bug, not a reason base-awareness is unnecessary. T-0577's own fix
+generalized only as far as the ONE incident shape it was built to close
+(Done-report presence), not to arbitrary sibling content changes.
+
+**Fix.** `_carry_forward_or_refuse_sibling_edits`
+(`frob.tickets._land_ledger_merge`) replaces the narrow Done-report-only
+check with a full base-aware 3-way comparison, when a `base_text`
+snapshot (the true merge-base's `tickets.md`, resolved via the same
+`_true_merge_base` + `_read_text_at_ref` pattern T-1154 already
+established for the archive file) is available -- now threaded into
+BOTH `_splice_and_stage` call sites: the pre-squash `_merge_main_into_
+worktree` stage and the FINAL `_squash_and_splice_ledger` stage that
+actually lands on main. For each sibling id, comparing main's current
+copy, the worktree's copy, and the common base's copy:
+
+- worktree unchanged since base: main's copy stands (the ordinary,
+  already-correct T-0479 case).
+- worktree changed, main unchanged since base: the worktree made a real,
+  isolated edit main never touched -- carried forward. This is the
+  T-1637 shape.
+- both sides changed but converged to the same content: nothing to do.
+- both sides changed to DIFFERENT content: neither side is stale -- both
+  made a real, independent edit since the same base. This is the case
+  the OLD `_newer` richness heuristic (T-0682/T-0764: state-rank, then
+  Done-report/evidence/acceptance richness, never raw content) could not
+  actually answer -- a same-rank, same-richness divergence fell through
+  to an arbitrary positional tiebreak that silently discarded whichever
+  side lost. Per the explicit design constraint driving this fix:
+  silently choosing is the bug, not WHICH side gets chosen. Refused
+  instead (`Err(TicketError.SiblingLedgerEditConflict)` /
+  `LandError.SiblingLedgerEditConflict` at the land layer), naming the
+  conflicting id, so an operator resolves the real conflict by hand (or
+  lands the sibling ticket on its own first) instead of a land quietly
+  deciding it for them.
+
+`base_text=None` (git could not resolve the true merge-base, or its
+ledger text failed to parse) degrades to the pre-T-1721
+`_preserve_sibling_done_reports` heuristic exactly as before -- never a
+hard failure just because the sharper comparison was unavailable this
+once.
 
 ## Land exclusivity lease (T-1619)
 
@@ -3719,6 +3793,15 @@ class TicketError(ErrorSet):
     OwnObligationsUnclean = (
         "this ticket's own diff leaves a new-symbol doc edge, testsuite "
         "declaration, or REL001 bump outstanding"
+    )
+    # T-1721: `_splice_only_ticket`'s base-aware sibling-edit comparison
+    # (see "`frob ticket land`" below) refuses rather than silently
+    # picking a side when a SIBLING ticket's section was independently
+    # edited on both main and the worktree since their common base.
+    SiblingLedgerEditConflict = (
+        "a sibling ticket's ledger section was independently edited on "
+        "both main and the worktree since their common base, in ways "
+        "that do not converge"
     )
 
 class ClipboardError(ErrorSet):

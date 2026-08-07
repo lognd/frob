@@ -231,10 +231,12 @@ def _pin_v1_mode_on_bare_tmp_path(
         atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
 
 
+# frob:ticket T-1721
 _V1_PINNED_CLASSES = frozenset(
     {
         "TestSpliceLedger",
         "TestSpliceOnlyTicket",
+        "TestCarryForwardOrRefuseSiblingEdits",
         "TestSiblingDoneReportPreserved",
         "TestSpliceLedgerRicherStatePreference",
         "TestSpliceLedgerPrefersEvidenceRichSideOnRankTie",
@@ -567,6 +569,203 @@ class TestSpliceOnlyTicket:
         parsed = _parse_ledger(spliced.danger_ok)
         assert parsed.is_ok
         assert parsed.danger_ok[tid].state == TicketState.DONE
+
+
+# frob:ticket T-1721
+class TestCarryForwardOrRefuseSiblingEdits:
+    """`_carry_forward_or_refuse_sibling_edits` / `_splice_only_ticket`'s
+    `base_text` parameter (T-1721): the fix for the T-1637 field incident
+    -- a legitimate sibling-ticket ledger edit made in the same worktree
+    while landing a DIFFERENT ticket, silently and permanently dropped by
+    T-0479's blanket main-wins sibling default, three separate times,
+    before the pattern was diagnosed as structural rather than a one-off.
+
+    All four tests share the same shape: two sibling tickets A (landing)
+    and B (edited or not, on one or both sides); `base_text` is B's ledger
+    state at the fork point, `main_text` is root's current state, and
+    `worktree_text` is the worktree's finalized state."""
+
+    # frob:ticket T-1721
+    def _evidence_only(self, ticket, ids: tuple[str, ...]):  # noqa: ANN001, ANN202
+        return ticket.model_copy(update={"evidence": ids})
+
+    # frob:ticket T-1721
+    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_worktree_only_edit_is_carried_forward  # noqa: E501
+    def test_worktree_only_edit_is_carried_forward(self, tmp_path: Path) -> None:
+        """The T-1637 shape exactly: B is DONE on both main and the
+        worktree at the fork point; the worktree rebinds B's evidence
+        (main never touches B again); landing A must carry B's rebind
+        forward instead of reverting it to the base/main value."""
+        created_a = new_ticket(tmp_path, _spec("Landing A"))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        created_b = new_ticket(tmp_path, _spec("Sibling B"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        loaded_b = load_all(tmp_path).danger_ok[tid_b]
+        done_b = loaded_b.model_copy(
+            update={
+                "state": TicketState.DONE,
+                "evidence": ("tests/test_x.py::test_old",),
+                "body": loaded_b.body + "\n## Done report\n\nshipped\n",
+            }
+        )
+        assert write_ticket(tmp_path, done_b).is_ok
+        base_text = ledger_path(tmp_path).read_text()
+
+        # Worktree: rebinds B's evidence (a legitimate correction, no
+        # state change) while separately landing A.
+        rebound_b = done_b.model_copy(
+            update={"evidence": ("tests/test_x.py::test_new",)}
+        )
+        assert write_ticket(tmp_path, rebound_b).is_ok
+        assert transition(tmp_path, tid_a, TicketState.PLANNED).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        # Main: only ever saw B's original (base) state -- never touched
+        # it again. main_text == base_text for B's own section.
+        main_text = base_text
+
+        spliced = _land_git_ops_mod._splice_only_ticket(
+            main_text, worktree_text, tid_a, base_text=base_text
+        )
+        assert spliced.is_ok, spliced.err
+        from frob.tickets._store import _parse_ledger
+
+        merged = _parse_ledger(spliced.danger_ok).danger_ok
+        assert merged[tid_b].evidence == ("tests/test_x.py::test_new",)
+
+    # frob:ticket T-1721
+    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_main_only_edit_is_left_alone  # noqa: E501
+    def test_main_only_edit_is_left_alone(self, tmp_path: Path) -> None:
+        """Inverse of the above: main independently edited B since the
+        base, the worktree never touched B at all -- main's edit must
+        survive untouched (the ordinary, already-correct T-0479 case)."""
+        created_a = new_ticket(tmp_path, _spec("Landing A"))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        created_b = new_ticket(tmp_path, _spec("Sibling B"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        base_text = ledger_path(tmp_path).read_text()
+
+        # Worktree: never touches B again after the base snapshot.
+        assert transition(tmp_path, tid_a, TicketState.PLANNED).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        # Main: independently progresses B.
+        assert transition(tmp_path, tid_b, TicketState.PLANNED).is_ok
+        assert transition(tmp_path, tid_b, TicketState.IN_PROGRESS).is_ok
+        main_text = ledger_path(tmp_path).read_text()
+
+        spliced = _land_git_ops_mod._splice_only_ticket(
+            main_text, worktree_text, tid_a, base_text=base_text
+        )
+        assert spliced.is_ok, spliced.err
+        from frob.tickets._store import _parse_ledger
+
+        merged = _parse_ledger(spliced.danger_ok).danger_ok
+        assert merged[tid_b].state == TicketState.IN_PROGRESS
+
+    # frob:ticket T-1721
+    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_the_same_way_converges_silently  # noqa: E501
+    def test_both_sides_edit_the_same_way_converges_silently(
+        self, tmp_path: Path
+    ) -> None:
+        """Both main and the worktree independently make the SAME edit to
+        B (e.g. two agents both correctly rebind the same evidence id) --
+        no conflict, both sides already agree, splice succeeds quietly."""
+        created_a = new_ticket(tmp_path, _spec("Landing A"))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        created_b = new_ticket(tmp_path, _spec("Sibling B"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        base_text = ledger_path(tmp_path).read_text()
+
+        loaded_b = load_all(tmp_path).danger_ok[tid_b]
+        agreed_b = self._evidence_only(loaded_b, ("tests/test_x.py::test_shared",))
+        assert write_ticket(tmp_path, agreed_b).is_ok
+        assert transition(tmp_path, tid_a, TicketState.PLANNED).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+        # main independently converges to the identical evidence value.
+        main_text = (
+            ledger_path(tmp_path)
+            .read_text()
+            .replace("state: planned", "state: queued", 1)
+        )
+
+        spliced = _land_git_ops_mod._splice_only_ticket(
+            main_text, worktree_text, tid_a, base_text=base_text
+        )
+        assert spliced.is_ok, spliced.err
+
+    # frob:ticket T-1721
+    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_differently_refuses  # noqa: E501
+    def test_both_sides_edit_differently_refuses(self, tmp_path: Path) -> None:
+        """The genuine conflict this ticket exists to stop silently
+        resolving: main and the worktree each independently rebind B's
+        evidence to a DIFFERENT new id since the same base. Neither side
+        is stale -- both made a real, independent edit. Must refuse
+        (`SiblingLedgerEditConflict`), not silently pick one."""
+        created_a = new_ticket(tmp_path, _spec("Landing A"))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        created_b = new_ticket(tmp_path, _spec("Sibling B"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        base_text = ledger_path(tmp_path).read_text()
+
+        loaded_b = load_all(tmp_path).danger_ok[tid_b]
+        worktree_b = self._evidence_only(loaded_b, ("tests/test_x.py::test_worktree",))
+        assert write_ticket(tmp_path, worktree_b).is_ok
+        assert transition(tmp_path, tid_a, TicketState.PLANNED).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        main_b = self._evidence_only(loaded_b, ("tests/test_x.py::test_main",))
+        assert _write_ticket_unchecked(tmp_path, main_b).is_ok
+        main_text = ledger_path(tmp_path).read_text()
+
+        spliced = _land_git_ops_mod._splice_only_ticket(
+            main_text, worktree_text, tid_a, base_text=base_text
+        )
+        assert spliced.is_err
+        assert spliced.danger_err.name == "SiblingLedgerEditConflict"
+
+    # frob:ticket T-1721
+    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_no_base_available_falls_back_to_done_report_heuristic  # noqa: E501
+    def test_no_base_available_falls_back_to_done_report_heuristic(
+        self, tmp_path: Path
+    ) -> None:
+        """`base_text=None` (git could not resolve a merge-base) must
+        degrade to the pre-T-1721 `_preserve_sibling_done_reports`
+        heuristic, never a hard failure -- same shape
+        `TestSiblingDoneReportPreserved` already pins for the no-base
+        code path."""
+        created_a = new_ticket(tmp_path, _spec("Landing A"))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        created_b = new_ticket(tmp_path, _spec("Sibling B"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        main_text = ledger_path(tmp_path).read_text()
+
+        loaded_b = load_all(tmp_path).danger_ok[tid_b]
+        worktree_b = loaded_b.model_copy(
+            update={"body": loaded_b.body + "\n## Done report\n\nshipped\n"}
+        )
+        assert write_ticket(tmp_path, worktree_b).is_ok
+        assert transition(tmp_path, tid_a, TicketState.PLANNED).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        spliced = _land_git_ops_mod._splice_only_ticket(
+            main_text, worktree_text, tid_a, base_text=None
+        )
+        assert spliced.is_ok, spliced.err
+        from frob.tickets._store import _parse_ledger
+
+        merged = _parse_ledger(spliced.danger_ok).danger_ok
+        assert "## Done report" in merged[tid_b].body
 
 
 # frob:ticket T-1194
@@ -1017,6 +1216,7 @@ class TestSpliceLedgerIdDropGuard:
         assert spliced.danger_err.name == "LedgerIntegrityViolation"
 
 
+# frob:ticket T-1721
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
 
@@ -1074,6 +1274,54 @@ class TestLand:
         landed = load_all(repo)
         assert landed.is_ok
         assert landed.danger_ok[report.final_id].state == TicketState.DONE
+
+    # frob:ticket T-1721
+    def test_sibling_evidence_rebind_carried_forward_end_to_end(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLand.test_sibling_evidence_rebind_carried_forward_end_to_end  # noqa: E501
+        """The real T-1637 field incident, reproduced end to end through
+        the actual `land()` entry point (not just the splice primitive):
+        a sibling ticket B is already DONE on main; in the SAME worktree
+        that is landing ticket A, an agent rebinds B's evidence (a
+        legitimate correction, e.g. after a rename -- no state change).
+        Before T-1721, `land(repo, A, wt)` silently dropped B's rebind
+        because `_splice_only_ticket`'s T-0479 sibling-scoping had no way
+        to tell "B is merely stale" from "B was genuinely, deliberately
+        edited". After T-1721, main's copy of B must carry the rebind."""
+        created_b = new_ticket(repo, _spec("Sibling B, already done"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        _make_closeable(repo, tid_b)
+        assert transition(repo, tid_b, TicketState.DONE, covers_scope=True).is_ok
+        _commit_all(repo, f"close {tid_b}")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-sibling-rebind", str(wt)], repo)
+
+        created_a = new_ticket(wt, _spec("Landing A", scope=("src/a.py",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        _make_closeable(wt, tid_a)
+        (wt / "src" / "a.py").write_text("# a\n")
+
+        # The T-1637 shape: in the SAME worktree, rebind B's evidence to a
+        # renamed test -- main never touches B again after this point.
+        loaded_b = load_all(wt).danger_ok[tid_b]
+        rebound_b = loaded_b.model_copy(
+            update={"evidence": ("tests/test_x.py::TestFoo::test_renamed",)}
+        )
+        assert write_ticket(wt, rebound_b).is_ok
+        _commit_all(wt, f"rebind {tid_b} evidence")
+
+        result = land(repo, tid_a, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        assert landed.danger_ok[tid_b].evidence == (
+            "tests/test_x.py::TestFoo::test_renamed",
+        )
 
     def test_refuses_on_dirty_main(self, repo: Path) -> None:
         wt = repo.parent / "wt"
@@ -4958,6 +5206,7 @@ class TestLandRetryAfterFinalizeThenFail:
 
 
 # frob:ticket T-1701
+# frob:ticket T-1721
 class TestLandDroppedTicket:
     """T-1701: `frob ticket land` must be able to publish a DROPPED
     ticket's ledger entry to main -- before this fix, `_close_finalized_
@@ -4970,6 +5219,7 @@ class TestLandDroppedTicket:
     root checkout (the live incident: T-1538, then independently again
     T-1683 within the same hour)."""
 
+    # frob:ticket T-1721
     def test_dropped_ticket_with_a_reason_lands_cleanly(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestLandDroppedTicket.test_dropped_ticket_with_a_reason_lands_cleanly  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
@@ -4984,9 +5234,7 @@ class TestLandDroppedTicket:
         tid = created.danger_ok.id
         assert transition(wt, tid, TicketState.PLANNED).is_ok
         assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
-        dropped = drop_ticket(
-            wt, tid, "premise already resolved by an earlier ticket"
-        )
+        dropped = drop_ticket(wt, tid, "premise already resolved by an earlier ticket")
         assert dropped.is_ok, dropped.err
         _commit_all(wt, "drop the ticket")
 

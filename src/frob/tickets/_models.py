@@ -1678,6 +1678,25 @@ class TicketError(ErrorSet):
     LedgerIntegrityViolation = (
         "rendered ledger text lost a ticket id or marker -- write refused"
     )
+    # frob:ticket T-1721
+    # `_splice_only_ticket` (T-0479) scopes a land's own ledger overlay to
+    # ONLY the ticket being landed -- every sibling id comes from main
+    # untouched by default, which is correct when the worktree's sibling
+    # copy is merely STALE, but silently drops a genuine edit the worktree
+    # made to a sibling's own section (e.g. `frob ticket evidence <other>
+    # --replace ...`) whenever main ALSO changed that same sibling section
+    # since the worktree's fork point, in a way that does not converge to
+    # the same content. Neither side is "wrong" here -- both made a real,
+    # independent edit -- so silently picking one (the old T-0682/T-0764
+    # richness heuristic, or T-0479's blanket main-wins default) would
+    # discard real work no matter which side it picked. Refused instead,
+    # naming the conflicting id, so an operator resolves it explicitly
+    # rather than the land silently choosing a winner.
+    SiblingLedgerEditConflict = (
+        "a sibling ticket's ledger section was independently edited on "
+        "both main and the worktree since their common base, in ways that "
+        "do not converge -- refusing rather than silently picking a side"
+    )
     # T-1179: a land-time ticket-scoped splice (`_splice_only_ticket`) whose
     # overlay id already exists on main's side under a DIFFERENT title is a
     # collision between two unrelated tickets sharing one id, not a genuine
@@ -1893,6 +1912,17 @@ class LandError(ErrorSet):
         "(T-1618, the common consequence of a passenger-ticket land: "
         "another ticket's land already carried this one's own code); "
         "verify by hand and close directly instead of retrying this land"
+    )
+    # frob:ticket T-1721
+    # Land-level twin of TicketError.SiblingLedgerEditConflict -- surfaced
+    # distinctly from the generic GitFailed so an operator sees "a sibling
+    # ticket's section conflicts, resolve by hand" rather than an opaque
+    # git-operation failure.
+    SiblingLedgerEditConflict = (
+        "a sibling ticket's ledger section was independently edited on "
+        "both main and the worktree since their common base, in ways that "
+        "do not converge -- resolve the conflicting sibling ticket's "
+        "section by hand (or land it on its own first), then retry"
     )
 
 

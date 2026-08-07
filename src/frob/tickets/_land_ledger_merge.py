@@ -418,6 +418,124 @@ def _preserve_sibling_done_reports(
             merged[ticket_id] = _union_evidence(ticket, main_side, ticket)
 
 
+# frob:ticket T-1721
+# frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_worktree_only_edit_is_carried_forward  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_main_only_edit_is_left_alone  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_the_same_way_converges_silently  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_differently_refuses  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_no_base_available_falls_back_to_done_report_heuristic  # noqa: E501
+def _carry_forward_or_refuse_sibling_edits(
+    merged: dict[str, Ticket],
+    worktree_tickets: dict[str, Ticket],
+    landed_id: str,
+    base_tickets: dict[str, Ticket] | None,
+) -> Result[None, TicketError]:
+    """T-1721: `_splice_only_ticket`'s general sibling-edit rule, replacing
+    `_preserve_sibling_done_reports`'s narrower Done-report-only special
+    case with a full base-aware 3-way comparison, when a `base_tickets`
+    snapshot (the true merge-base's ledger, T-1154's `_true_merge_base` +
+    `_read_text_at_ref`) is available.
+
+    For each sibling id (not `landed_id`) present in both `merged` (from
+    main) and `worktree_tickets`, compare all three of main's current
+    copy, the worktree's copy, and the common base's copy:
+
+    - worktree unchanged since base: main's copy stands (the ordinary
+      T-0479 case -- nothing to carry).
+    - worktree changed, main unchanged since base: the worktree made a
+      real, isolated edit main never touched -- safe to carry forward.
+      This is the T-1637 shape this ticket exists to fix: an evidence
+      rebind on an unrelated DONE sibling, made mid-another-ticket's-work,
+      previously silently dropped by T-0479's blanket main-wins default.
+    - both sides changed but converged to the same content: nothing to do,
+      already resolved.
+    - both sides changed to DIFFERENT content: neither side is stale --
+      both made a real, independent edit since the same base. This is the
+      case `_newer`'s old richness heuristic could not actually answer
+      (T-0682/T-0764's tiebreak compares state-rank and Done-report/
+      evidence/acceptance richness, never raw content, so a same-rank,
+      same-richness divergence was resolved by an arbitrary positional
+      tiebreak that silently discarded whichever side lost). Per the
+      T-1721 finding: silently choosing is the bug, not which side it
+      chooses -- refused instead (`Err(SiblingLedgerEditConflict)`),
+      naming the id, so an operator resolves the real conflict by hand
+      instead of a land quietly deciding it for them.
+
+    `base_tickets=None` (git could not resolve the true merge-base, or its
+    ledger text failed to parse) degrades to the pre-T-1721
+    `_preserve_sibling_done_reports` heuristic -- never a hard failure
+    just because the sharper comparison was unavailable this once."""
+    if base_tickets is None:
+        _preserve_sibling_done_reports(merged, worktree_tickets, landed_id)
+        return Ok(None)
+    for ticket_id, worktree_ticket in worktree_tickets.items():
+        if ticket_id == landed_id or ticket_id not in merged:
+            continue
+        main_ticket = merged[ticket_id]
+        if main_ticket == worktree_ticket:
+            continue
+        resolved = _resolve_one_sibling_edit(
+            merged, ticket_id, main_ticket, worktree_ticket, base_tickets, landed_id
+        )
+        if resolved.is_err:
+            return resolved
+    return Ok(None)
+
+
+# frob:ticket T-1721
+def _resolve_one_sibling_edit(
+    merged: dict[str, Ticket],
+    ticket_id: str,
+    main_ticket: Ticket,
+    worktree_ticket: Ticket,
+    base_tickets: dict[str, Ticket],
+    landed_id: str,
+) -> Result[None, TicketError]:
+    """`_carry_forward_or_refuse_sibling_edits`'s own per-id 3-way decision
+    (ARCH001 split): mutates `merged[ticket_id]` in place when the
+    worktree's edit should be carried forward, returns
+    `Err(SiblingLedgerEditConflict)` on a genuine both-sides divergence,
+    `Ok(None)` otherwise (including every "nothing to do" case) -- see the
+    caller's own docstring for the full decision table this implements."""
+    base_ticket = base_tickets.get(ticket_id)
+    if base_ticket is None:
+        # No base-era record for this id (e.g. finalized from a draft
+        # since the fork point) -- the 3-way comparison has nothing to
+        # compare against; fall back to the narrow Done-report rule for
+        # this one id, same posture as the no-base-at-all case.
+        if _has_done_report(worktree_ticket.body) and not _has_done_report(
+            main_ticket.body
+        ):
+            merged[ticket_id] = _union_evidence(
+                worktree_ticket, main_ticket, worktree_ticket
+            )
+        return Ok(None)
+    worktree_changed = worktree_ticket != base_ticket
+    main_changed = main_ticket != base_ticket
+    if not worktree_changed:
+        return Ok(None)
+    if not main_changed:
+        _log.info(
+            "tickets: land splice -- carried forward %s's edit from "
+            "the worktree (main unchanged since the common base) "
+            "while landing %s",
+            ticket_id,
+            landed_id,
+        )
+        merged[ticket_id] = worktree_ticket
+        return Ok(None)
+    _log.error(
+        "tickets: land splice refused -- %s was independently edited "
+        "on both main and the worktree since their common base, in "
+        "ways that do not converge (T-1721) -- resolve %s by hand "
+        "(or land it on its own first), then retry landing %s",
+        ticket_id,
+        ticket_id,
+        landed_id,
+    )
+    return Err(TicketError.SiblingLedgerEditConflict)
+
+
 # frob:ticket T-0637
 # frob:tests tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand.test_sibling_draft_ticket_finalized_and_lands_alongside  # noqa: E501
 def _carry_forward_new_worktree_tickets(
@@ -484,40 +602,83 @@ def _overlay_landed_ticket(
     return Ok(None)
 
 
-# frob:ticket T-0479
-def _splice_only_ticket(
-    main_text: str,
-    worktree_text: str,
-    ticket_id: str,
-    *,
-    archived_ids: frozenset[str] = frozenset(),
-) -> Result[str, TicketError]:
-    """Merge `tickets.md` by taking MAIN's ledger as the base and overlaying
-    ONLY `ticket_id`'s own block from `worktree_text` (T-0479): every other
-    ticket id comes from `main_text` untouched. `splice_ledger`'s original
-    whole-ledger, keep-newest-per-id merge let a worktree's stale view of a
-    SIBLING ticket (in-progress in the worktree from before that sibling was
-    later requeued back to queued on main) win the `_newer` state-rank
-    comparison and resurrect the stale state on main (T-0475) -- state-rank
-    assumes forward-only progress and cannot tell a genuine advance from a
-    requeue's backward transition. Scoping the overlay to just the one
-    ticket actually being landed makes that whole class of resurrection
-    structurally impossible: a sibling ticket's ledger entry is never even
-    considered here, no matter what the worktree's copy says. If `ticket_id`
-    is present in both with a genuine divergence, `_newer` still resolves
-    the winner (and unions evidence) for that one id, exactly as before.
-    A `ticket_id` that exists only in `worktree_text` (not yet in
-    `main_text`, e.g. a fresh/draft ticket) is still applied -- `land`
-    lands one ticket per call, and this is that ticket's own first entry
-    onto main."""
+# frob:ticket T-1721
+_SpliceOnlySides = tuple[
+    dict[str, Ticket], dict[str, Ticket], "dict[str, Ticket] | None"
+]
 
+
+# frob:ticket T-1721
+def _parse_splice_only_sides(
+    main_text: str, worktree_text: str, base_text: str | None
+) -> Result[_SpliceOnlySides, TicketError]:
+    """`_splice_only_ticket`'s own parse-every-side prelude (ARCH001
+    split): parses `main_text`/`worktree_text` (either failure is a hard
+    `Err`, exactly as before) and best-effort parses `base_text` (a
+    failure there degrades to `None`, never a hard error -- the 3-way
+    comparison is a sharpening of the existing splice, not a new hard
+    requirement, matching `base_text`'s own docstring contract)."""
     main_parsed = _parse_ledger(main_text)
     if main_parsed.is_err:
         return Err(main_parsed.danger_err)
     worktree_parsed = _parse_ledger(worktree_text)
     if worktree_parsed.is_err:
         return Err(worktree_parsed.danger_err)
-    main_tickets, worktree_tickets = main_parsed.danger_ok, worktree_parsed.danger_ok
+    base_tickets = None
+    if base_text is not None:
+        base_parsed = _parse_ledger(base_text)
+        base_tickets = base_parsed.danger_ok if base_parsed.is_ok else None
+    return Ok((main_parsed.danger_ok, worktree_parsed.danger_ok, base_tickets))
+
+
+# frob:ticket T-0479
+# frob:ticket T-1721
+def _splice_only_ticket(
+    main_text: str,
+    worktree_text: str,
+    ticket_id: str,
+    *,
+    archived_ids: frozenset[str] = frozenset(),
+    base_text: str | None = None,
+) -> Result[str, TicketError]:
+    """Merge `tickets.md` by taking MAIN's ledger as the base and overlaying
+    ONLY `ticket_id`'s own block from `worktree_text` (T-0479): every other
+    ticket id comes from `main_text` untouched BY DEFAULT. `splice_ledger`'s
+    original whole-ledger, keep-newest-per-id merge let a worktree's stale
+    view of a SIBLING ticket (in-progress in the worktree from before that
+    sibling was later requeued back to queued on main) win the `_newer`
+    state-rank comparison and resurrect the stale state on main (T-0475) --
+    state-rank assumes forward-only progress and cannot tell a genuine
+    advance from a requeue's backward transition. Scoping the overlay to
+    just the one ticket actually being landed makes that whole class of
+    resurrection structurally impossible: a sibling ticket's ledger entry is
+    never even considered for OVERWRITE here, no matter what the worktree's
+    copy says. If `ticket_id` is present in both with a genuine divergence,
+    `_newer` still resolves the winner (and unions evidence) for that one
+    id, exactly as before. A `ticket_id` that exists only in `worktree_text`
+    (not yet in `main_text`, e.g. a fresh/draft ticket) is still applied --
+    `land` lands one ticket per call, and this is that ticket's own first
+    entry onto main.
+
+    T-1721: `base_text` (the true merge-base's ledger text, when the caller
+    has one -- `_true_merge_base` + `_read_text_at_ref`, mirroring T-1154's
+    identical pattern for the archive splice) sharpens what happens to
+    SIBLING ids beyond T-0479's blanket "main wins" default:
+    `_carry_forward_or_refuse_sibling_edits` carries forward a sibling edit
+    the worktree made that main never touched since the same base (the
+    T-1637 field incident this exists to fix -- a legitimate cross-ticket
+    ledger correction, silently dropped before this fix, no matter which
+    ticket's land carried it), and REFUSES loudly
+    (`Err(SiblingLedgerEditConflict)`) rather than silently picking a side
+    when both main and the worktree independently edited the same sibling
+    id to DIFFERENT content since that base. `base_text=None` (the default)
+    degrades to the pre-T-1721 `_preserve_sibling_done_reports` heuristic,
+    never a hard requirement."""
+
+    parsed_sides = _parse_splice_only_sides(main_text, worktree_text, base_text)
+    if parsed_sides.is_err:
+        return Err(parsed_sides.danger_err)
+    main_tickets, worktree_tickets, base_tickets = parsed_sides.danger_ok
 
     merged = dict(main_tickets)
     incoming = worktree_tickets.get(ticket_id)
@@ -525,7 +686,11 @@ def _splice_only_ticket(
         overlaid = _overlay_landed_ticket(merged, ticket_id, incoming)
         if overlaid.is_err:
             return Err(overlaid.danger_err)
-    _preserve_sibling_done_reports(merged, worktree_tickets, ticket_id)
+    sibling_result = _carry_forward_or_refuse_sibling_edits(
+        merged, worktree_tickets, ticket_id, base_tickets
+    )
+    if sibling_result.is_err:
+        return Err(sibling_result.danger_err)
     _carry_forward_new_worktree_tickets(merged, worktree_tickets, ticket_id)
     _drop_resurrected_ids(merged, archived_ids)
     _log.info(
