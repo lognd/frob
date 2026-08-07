@@ -13580,7 +13580,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-07'
-priority: medium
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -13657,7 +13657,6 @@ work and should not be relied on again; it burned two ticket-cycles
 
 Filed while working T-1706 (the T-1670 part-2 split), after discovering
 T-1714's land had not actually fixed what it claimed to fix.
-
 <!-- ticket:T-1722 -->
 ```yaml
 id: T-1722
