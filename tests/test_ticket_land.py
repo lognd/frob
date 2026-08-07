@@ -4957,6 +4957,72 @@ class TestLandRetryAfterFinalizeThenFail:
         assert result.danger_ok.final_id != ""
 
 
+# frob:ticket T-1701
+class TestLandDroppedTicket:
+    """T-1701: `frob ticket land` must be able to publish a DROPPED
+    ticket's ledger entry to main -- before this fix, `_close_finalized_
+    ticket` unconditionally forced a `dropped -> done` transition
+    (illegal, `InvalidTransition`, every single retry) and `_validate_
+    closeable` unconditionally required evidence + a Done report (neither
+    applicable to a ticket dropped, not done), leaving no path through
+    `land` for a legitimate DROPPED outcome -- forcing an agent to bypass
+    worktree isolation and run `frob ticket drop` directly against the
+    root checkout (the live incident: T-1538, then independently again
+    T-1683 within the same hour)."""
+
+    def test_dropped_ticket_with_a_reason_lands_cleanly(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandDroppedTicket.test_dropped_ticket_with_a_reason_lands_cleanly  # noqa: E501
+        # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
+        # kind="unit"
+        from frob.tickets import drop_ticket
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-dropped", str(wt)], repo)
+        created = new_ticket(wt, _spec("Already fixed elsewhere"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        dropped = drop_ticket(
+            wt, tid, "premise already resolved by an earlier ticket"
+        )
+        assert dropped.is_ok, dropped.err
+        _commit_all(wt, "drop the ticket")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        on_main = load_all(repo).danger_ok[result.danger_ok.final_id]
+        assert on_main.state == TicketState.DROPPED
+        assert "premise already resolved" in on_main.body
+
+    def test_dropped_ticket_with_no_reason_refuses(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandDroppedTicket.test_dropped_ticket_with_no_reason_refuses  # noqa: E501
+        # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
+        """A `state: dropped` ticket whose body carries no `## Drop
+        reason` section at all (only reachable by hand-editing the ledger
+        -- `frob ticket drop` itself always refuses an empty reason at
+        write time, `DropReasonMissing`) must still refuse to land: a
+        drop with no recorded reason is indistinguishable from a silent
+        discard, the exact hazard `_validate_closeable`'s DROPPED branch
+        exists to keep unreachable end to end, not just at the CLI
+        surface."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-dropped-blank", str(wt)], repo)
+        created = new_ticket(wt, _spec("No reason recorded"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        assert transition(wt, tid, TicketState.DROPPED).is_ok
+        _commit_all(wt, "drop with no recorded reason (hand-transitioned)")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_err
+        assert result.danger_err == LandError.NotCloseable
+
+
 # frob:ticket T-0795
 class TestLandRefusesWhenRootIsWorktree:
     """T-0795: `land()` invoked with `--worktree` resolving to the SAME

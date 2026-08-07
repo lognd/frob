@@ -520,6 +520,50 @@ def _rewrite_one_waive_site_file(
     return Ok(True)
 
 
+# frob:ticket T-1701
+def _skip_close_for_legitimate_drop(
+    current: Ticket, final_id: str
+) -> Result[str, LandError] | None:
+    """`Ok(final_id)` if `current` is a legitimately DROPPED ticket
+    (`_has_drop_reason`) that should skip `_close_finalized_ticket`'s DONE
+    transition entirely, else `None` (caller falls through to the
+    ordinary transition attempt).
+
+    T-1701: a ticket already DROPPED in the worktree ledger (`frob ticket
+    drop`, not `close`) has no legal `dropped -> done` edge in
+    `_TRANSITIONS` -- forcing one always failed with `InvalidTransition`
+    AFTER the merge had already landed in the worktree (main untouched),
+    and retrying could never help (the live incident: 3 identical
+    failures in a row landing T-1683). A dropped ticket is ALREADY in its
+    own terminal state; publish that ledger entry to main exactly as-is,
+    the same way an already-DONE retry skips straight to squash-apply.
+
+    Gated on `_has_drop_reason`, NOT merely `state == DROPPED`: a
+    legitimate `frob ticket drop` always writes a reason first
+    (`DropReasonMissing` refuses an empty one), so this is a trustworthy
+    signal for "the agent working THIS ticket actually dropped it" -- as
+    opposed to the pre-existing `TestCloseFailAfterMerge::test_close_
+    fails_after_merge_when_main_dropped_same_id` race this must NOT
+    change: main independently ends up DROPPED for the SAME ticket id via
+    an unrelated write with no reason recorded, the ledger splice adopts
+    that state post-merge even though the worktree itself was
+    legitimately landing a DONE ticket, and THAT case must keep failing
+    loudly (`InvalidTransition` -> `CloseFailed`) rather than silently
+    publishing an unintended drop."""
+    if current.state != TicketState.DROPPED:
+        return None
+    from frob.tickets._land_merge import _has_drop_reason
+
+    if not _has_drop_reason(current.body):
+        return None
+    _log.warning(
+        "land: %s is DROPPED, not landing a done ticket -- publishing "
+        "the drop reason to main as-is, no done transition attempted",
+        final_id,
+    )
+    return Ok(final_id)
+
+
 def _close_finalized_ticket(
     worktree: Path,
     ticket_id: str,
@@ -573,6 +617,10 @@ def _close_finalized_ticket(
             worktree,
         )
         return Ok(final_id)
+
+    skip = _skip_close_for_legitimate_drop(current, final_id)
+    if skip is not None:
+        return skip
 
     # T-0821: a ticket landed with full evidence and a Done report but
     # never actually run through `frob ticket start` (or reverted to

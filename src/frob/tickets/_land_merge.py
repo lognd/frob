@@ -38,8 +38,10 @@ from frob.tickets._land_git_ops import _archived_ids, _deletion_owned
 from frob.tickets._land_ledger_merge import _has_done_report, splice_ledger
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
+    DROP_REASON_HEADING,
     LandError,
     Ticket,
+    TicketState,
     is_cmd_evidence,
     unbound_acceptance,
 )
@@ -57,6 +59,35 @@ __all__ = [
 _log = get_logger(__name__)
 
 
+# frob:ticket T-1701
+def _has_drop_reason(body: str) -> bool:
+    """Whether `body` carries a `## Drop reason` heading with at least one
+    real (non-blank) line under it -- the DROPPED-side twin of
+    `_has_done_report` (T-1701). `frob.tickets._reporting.drop_ticket`
+    always writes a dated bullet line here before ever transitioning to
+    DROPPED (`Err(DropReasonMissing)` refuses an empty reason at write
+    time), so this should never see a heading with nothing under it in
+    practice -- checked anyway rather than trusting the heading's mere
+    presence, matching `_has_done_report`'s own "heading alone is not
+    enough" posture for the DONE side (D-03)."""
+    if DROP_REASON_HEADING not in body:
+        return False
+    lines = body.splitlines()
+    try:
+        start = next(
+            i for i, ln in enumerate(lines) if ln.strip() == DROP_REASON_HEADING
+        )
+    except StopIteration:
+        return False
+    for line in lines[start + 1 :]:
+        if line.startswith("## "):
+            break
+        if line.strip():
+            return True
+    return False
+
+
+# frob:ticket T-1701
 def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
     """The evidence + Done-report + acceptance-binding preconditions
     `transition(..., DONE)` will enforce anyway -- checked here FIRST,
@@ -81,7 +112,31 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
     DONE-path twin): a non-docs-kind ticket carrying any `cmd:` evidence
     entry -- kind hand-edited after the entry was recorded, or the entry
     hand-pasted directly into the ledger -- must never land, mirroring the
-    write-time gate in `add_cmd_evidence`."""
+    write-time gate in `add_cmd_evidence`.
+
+    T-1701: a ticket already `DROPPED` in the worktree ledger (`frob
+    ticket drop`, not `close`) takes a SEPARATE, state-dependent path --
+    a REASON is the whole artifact a drop records (`drop_ticket` already
+    refuses an empty one at write time, `DropReasonMissing`), and
+    evidence/a Done report/acceptance-binding are simply not applicable
+    to work that was explicitly cut, not done. Requiring them anyway
+    forced every dropped ticket around `frob ticket land` entirely --
+    the exact defect this ticket closes (an agent bypassing worktree
+    isolation to `frob ticket drop` directly against the root checkout,
+    since land had no other path for a legitimate DROPPED outcome)."""
+    if ticket.state == TicketState.DROPPED:
+        if not _has_drop_reason(ticket.body):
+            _log.error(
+                "land: %s cannot land -- dropped with no recorded reason; "
+                "this should be unreachable (`frob ticket drop` refuses an "
+                "empty --reason at write time) -- if you see this, the "
+                "ledger was likely hand-edited; run `frob ticket drop %s "
+                "--reason '...'` to record one properly",
+                ticket.id,
+                ticket.id,
+            )
+            return Err(LandError.NotCloseable)
+        return Ok(None)
     if not ticket.evidence or not _has_done_report(ticket.body):
         _log.error(
             "land: %s cannot land -- missing evidence or a Done report; "

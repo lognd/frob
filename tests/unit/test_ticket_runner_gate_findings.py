@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -38,8 +39,8 @@ class _FakeProc:
 # frob:ticket T-1703
 def _check_result_json(
     *,
-    errors: list[tuple[str, str, str]] = (),  # (tool, code, file)
-    warnings: list[tuple[str, str, str]] = (),
+    errors: Sequence[tuple[str, str, str]] = (),  # (tool, code, file)
+    warnings: Sequence[tuple[str, str, str]] = (),
     gate_summary: str | None,
 ) -> str:
     """A minimal `frob check --json` `CheckResult` payload (T-1703): every
