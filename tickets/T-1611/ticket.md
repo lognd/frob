@@ -1,7 +1,7 @@
 ---
 id: T-1611
 title: Audit why frob missed each doc gap, and ticket every detector gap found
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -11,6 +11,7 @@ blocked_by:
 parent: T-1609
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/gates/**
 - docs/modules/gates.md
@@ -29,6 +30,8 @@ scope_changes:
     the queue'
   actor: logan
   at: '2026-08-07'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -44,3 +47,5 @@ For each gap, classify the cause and act accordingly:
 - THE RULE FIRED AND WAS IGNORED as a warning that never became an error -- file a ticket to decide whether it should be promoted, and say why it was tolerated.
 
 Deliverable: a written classification of every gap plus one filed ticket per distinct detector gap. A gap left unclassified is the outcome to avoid -- it is precisely the silent hole the exercise exists to close.
+
+frob:no-behavior-change reason="This ticket is a classification/audit deliverable, not a code fix: its output is a written classification (the Done report) plus four newly filed tickets against the detector gaps found. No frob code path was changed, so there is no defect for a designated reproduction test to reproduce -- the same shape T-1616 carved this escape hatch for."
