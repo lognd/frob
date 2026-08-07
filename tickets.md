@@ -9139,3 +9139,82 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
+
+<!-- ticket:T-1688 -->
+```yaml
+id: T-1688
+title: 'Coalescing verify worker: drain the queue to its tip, verify once, advance
+  the watermark'
+state: queued
+kind: feature
+origin: agent
+created: '2026-08-06'
+priority: critical
+blocked_by:
+- T-1687
+parent: T-1686
+tier: ticket
+sprint: null
+scope:
+- src/frob/verify/_worker.py
+- src/frob/serve/_daemon.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- docs/modules/tickets.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: verification
+labels:
+- watermark-epic
+```
+The trailing-edge-debounce half of the epic, and where the wall-clock
+saving actually comes from.
+
+The worker must COALESCE, not iterate. On wake: read the queue, take its
+TIP commit, verify once at that tip, and on green advance the watermark
+past every entry at or below it. A FIFO worker that verifies each entry
+in turn reproduces exactly the per-land cost this epic exists to remove
+-- if the implementation ever loops over entries running a check per
+entry, it has missed the point.
+
+Verification at the tip is what makes this sound: tree state is the only
+input, so a green result at the tip is a green result for every commit
+that composes it. What it does NOT give you is per-commit attribution --
+that is deliberately deferred to the attribution leaf, and this leaf must
+not pretend to answer it.
+
+Wake conditions: a queue append, the FS-watch signal `frob.serve._watch`
+already provides, and a periodic floor so a stalled watcher cannot leave
+the window open indefinitely. Debounce so a burst of five lands in ninety
+seconds produces one verification, not five.
+
+T-1684's `sweep-async` becomes this worker's body rather than a
+per-land spawn. Keep the rolling baseline; it is already the right
+comparison substrate.
+
+Acceptance: five lands inside the debounce window produce exactly ONE
+full verification pass and one watermark advance covering all five,
+demonstrated by a test that counts verification invocations rather than
+by inspecting timings.
+
+Standing repo constraints (binding, not restatement):
+
+- SYMBOLIC, NEVER LEXICAL. Every decision this ticket makes about "which
+  code does this concern" must go through the symbol/reference graph
+  (frob.graph), never a path-string comparison, filename glob, or regex
+  over source text. A lexical shortcut here is a latent wrong answer that
+  only shows up under refactor.
+- Fallible operations return a typani `Result[T, E]` with a named
+  `ErrorSet`. Exceptions only for unrecoverable programmer bugs. Never a
+  bare `except` that turns an unknown state into a clean one.
+- "Cannot verify" is NEVER "verified". Every unmeasurable outcome must be
+  distinguishable from a measured-clean one, in the data model and in the
+  logs -- this is the single invariant the whole epic rests on.
+- Persisted records are pydantic models with `frozen=True, extra="forbid"`,
+  versioned, and forward-compatible on read.
+- LOG EVERYTHING WORTH LOGGING: every state change, queue transition,
+  boundary crossing, branch, and error path gets a module-logger line per
+  ~/.claude/refs/logging.md. Never `print`.
+- Docs land in the same change as the code. No follow-up docs ticket.
+- No waivers. If a gate fires, fix the cause or fix the gate; a waiver
+  here is a structural defect, not a resolution.
