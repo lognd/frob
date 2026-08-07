@@ -11,12 +11,12 @@ parent: null
 tier: ticket
 sprint: null
 scope:
-- src/frob/app/ticket_runner/**
-- src/frob/_cli_parsers/**
-- docs/**
-- tests/**
 - src/frob/tickets/_models.py
 - src/frob/tickets/_store.py
+- src/frob/app/ticket_runner/_query.py
+- src/frob/_cli_parsers/_ticket/_query.py
+- tests/test_tickets_organization.py
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -38,6 +38,54 @@ scope_changes:
     body
   actor: logan
   at: '2026-08-06'
+- op: remove
+  glob: docs/**
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
+- op: remove
+  glob: tests/**
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
+- op: remove
+  glob: src/frob/app/ticket_runner/**
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_tickets_organization.py
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'TICK009 pre-dispatch narrowing: four mega-globs replaced with the real
+    surface for a runs-last marker'
+  actor: logan
+  at: '2026-08-07'
 designated_repro_test: null
 threat: null
 component: null
