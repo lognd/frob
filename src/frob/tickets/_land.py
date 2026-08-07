@@ -747,16 +747,17 @@ def land(
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
-    check_already_landed: bool = False,
 ) -> Result[LandReport, LandError]:
-    """T-1618: `check_already_landed` (default `False`, `frob ticket land
-    --check-already-landed`) opts into an early, distinct refusal
+    """T-1618/T-1675: `_land_precheck` runs an early, distinct refusal
     (`LandError.AlreadyLandedOnMain`) when the ticket's own declared scope
-    has no changes on this branch relative to main -- the common
-    consequence of a passenger-ticket land (see `PassengerTickets` above)
-    that already carried this ticket's content onto main ahead of its own
-    close. See `_land_precheck`'s own docstring for why this stays opt-in
-    rather than a default-on preflight.
+    has no changes on this branch relative to main AND the ticket's own
+    record already shows `done` on main -- the common consequence of a
+    passenger-ticket land (see `PassengerTickets` above) that already
+    carried this ticket's content onto main ahead of its own close. See
+    `_check_already_landed`'s own docstring for the positive-signal check
+    this now always runs (T-1675 removed the `--check-already-landed`
+    opt-in flag once the check stopped inferring from an empty diff
+    alone).
 
     T-1514: `pre_commit_sweep(root, final_id)` (opt-in), if supplied, is
     invoked at the last checkpoint before the final squash-apply commit --
@@ -972,7 +973,6 @@ def land(
                 skip_mutation_evidence=skip_mutation_evidence,
                 allow_cross_ticket=allow_cross_ticket,
                 pre_commit_sweep=pre_commit_sweep,
-                check_already_landed=check_already_landed,
             )
     except LandLockTimeout as exc:
         _log.error(
@@ -1455,7 +1455,6 @@ def _land_locked(
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
-    check_already_landed: bool = False,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -1486,7 +1485,6 @@ def _land_locked(
         covers_scope=covers_scope,
         skip_mutation_evidence=skip_mutation_evidence,
         allow_cross_ticket=allow_cross_ticket,
-        check_already_landed=check_already_landed,
     )
     if precheck.is_err:
         return Err(precheck.danger_err)
@@ -2184,6 +2182,26 @@ def _branch_changed_files(
     )
 
 
+# frob:ticket T-1675
+def _ledger_ticket_at_ref(worktree: Path, ref: str, ticket_id: str) -> Ticket | None:
+    """`ticket_id`'s ticket record as it exists in the ledger AT `ref`
+    itself (T-1675), read directly via `git show <ref>:tickets.md` -- the
+    primitive `_ledger_ticket_at_merge_base` below builds on for the
+    fork-point variant. Returns `None` when the ref/ledger is unreadable
+    or the id does not exist there (never landed, or landed under a
+    different id) -- callers decide what `None` means for their own
+    check; this function only ever reports what it can positively read."""
+    from frob.tickets._store import _parse_ledger
+
+    shown = run_argv(["git", "-C", str(worktree), "show", f"{ref}:tickets.md"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    parsed = _parse_ledger(shown.danger_ok.stdout)
+    if parsed.is_err:
+        return None
+    return parsed.danger_ok.get(ticket_id)
+
+
 # frob:ticket T-1390
 def _ledger_ticket_at_merge_base(
     worktree: Path, base_ref: str, ticket_id: str
@@ -2200,21 +2218,13 @@ def _ledger_ticket_at_merge_base(
     is real work done here, never a false positive) -- the caller treats
     `None` the same as "changed" (fail toward still flagging a candidate
     leak, never toward silently clearing one)."""
-    from frob.tickets._store import _parse_ledger
-
     merge_base = run_argv(["git", "-C", str(worktree), "merge-base", base_ref, "HEAD"])
     if merge_base.is_err or merge_base.danger_ok.returncode != 0:
         return None
     sha = merge_base.danger_ok.stdout.strip()
     if not sha:
         return None
-    shown = run_argv(["git", "-C", str(worktree), "show", f"{sha}:tickets.md"])
-    if shown.is_err or shown.danger_ok.returncode != 0:
-        return None
-    parsed = _parse_ledger(shown.danger_ok.stdout)
-    if parsed.is_err:
-        return None
-    return parsed.danger_ok.get(ticket_id)
+    return _ledger_ticket_at_ref(worktree, sha, ticket_id)
 
 
 # frob:ticket T-1390
@@ -2494,52 +2504,65 @@ def _check_passenger_tickets(
 
 
 # frob:ticket T-1618
+# frob:ticket T-1675
 # frob:doc docs/modules/tickets.md#already-landed-on-main-first-class-outcome-t-1618
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_has_real_changes_in_its_own_scope  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_declares_no_scope_at_all  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed  # noqa: E501
 def _check_already_landed(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
     """Refuse with a DISTINCT, self-explaining outcome (T-1618's second
-    requirement) when `worktree`'s branch has NO changes at all inside
-    `ticket`'s own declared scope, relative to `base_ref` -- the common,
-    confusing consequence of the T-1618 passenger-ticket class: once one
-    ticket's land has already carried a SIBLING's code onto main (the
-    passenger check above exists to stop that going forward, but does
-    nothing for a worktree that already leaked before this fix landed),
-    the sibling's own later `frob ticket land` finds an empty diff for its
-    own scope. Before this check, that fell through into whatever the
-    normal land path does with an empty changeset -- reported in the
-    incident as a confusing BUG002/TEST016 refusal the operator had to
-    diagnose and route around by hand (verify content by hand, `frob
-    ticket close --skip-mutation-evidence`) three times in one session.
+    requirement) when `ticket`'s content is POSITIVELY already present on
+    `base_ref` -- the common, confusing consequence of the T-1618
+    passenger-ticket class: once one ticket's land has already carried a
+    SIBLING's code onto main (the passenger check above exists to stop
+    that going forward, but does nothing for a worktree that already
+    leaked before this fix landed), the sibling's own later `frob ticket
+    land` finds an empty diff for its own scope. Before this check, that
+    fell through into whatever the normal land path does with an empty
+    changeset -- reported in the incident as a confusing BUG002/TEST016
+    refusal the operator had to diagnose and route around by hand (verify
+    content by hand, `frob ticket close --skip-mutation-evidence`) three
+    times in one session.
 
-    This function only judges the DIFF -- it deliberately does NOT itself
-    verify the content is genuinely present and correct on `base_ref` (an
-    `AlreadyLandedOnMain` refusal is a strong hint, not a proof: `frob.
-    tickets` cannot run `base_ref`'s tests or gates to confirm the
-    content actually behaves as this ticket's evidence claims -- that
-    verification needs `frob.gates`/`frob.testing`, which this package
-    deliberately does not import, docs/rework.md's cycle-avoidance rule).
-    The refusal message names the exact manual recipe the incident's
-    operator worked out by hand three times: verify, then `frob ticket
-    close` directly (`--skip-mutation-evidence` if TEST016 also reports
-    an empty diff) instead of retrying the land.
+    T-1675: an empty scope-diff ALONE used to be read as "already landed"
+    -- but that signal cannot distinguish "the work is already on main"
+    from "this ticket legitimately changed only docs/the ledger" or "its
+    scope globs never matched anything it touched": all three produce the
+    identical empty-diff shape (the R1 "absence read as a negative"
+    class). That forced this check off by default, so it never ran for a
+    real land. Now the check requires a SECOND, POSITIVE signal alongside
+    the empty diff: `ticket.id`'s own ledger record, read directly off
+    `base_ref` (`_ledger_ticket_at_ref`), must ALREADY be in a terminal
+    `TicketState.DONE` state there. A ticket that has not yet landed
+    cannot already be `done` on `base_ref` -- that record is written
+    exclusively by `frob ticket close`/`land`'s own squash-apply, never by
+    an external replacement -- so this is genuine evidence the content
+    made it to main, not an inference from silence. A docs-only ticket
+    whose scope-diff is legitimately empty but that has never been closed
+    on `base_ref` before now correctly gets `Ok(None)` here: absence of a
+    diff is no longer, by itself, sufficient to refuse.
 
-    OFF BY DEFAULT (`frob ticket land --check-already-landed` opts in),
-    and the reason is a measured false-positive rate, not timidity:
-    against this repo's own test/fixture population, an empty scope-diff
-    is ALSO the ordinary shape of a docs-only, ledger-only, or
-    Done-report-only ticket that never needed to touch a file matching
-    its declared scope. Refusing those by default would be a worse
-    false-positive rate than the confusion this check exists to replace.
-    An operator who already suspects the "this probably already landed
-    via a passenger" shape (the situation the incident hit three times)
-    opts in explicitly rather than meeting it as a surprise. T-1675
-    tracks the real fix: decide "already landed" by finding the ticket's
-    content ON main, positively, rather than inferring it from the
-    ABSENCE of a diff -- at which point this can be on unconditionally.
+    This function still does NOT verify the content is CORRECT on
+    `base_ref` (an `AlreadyLandedOnMain` refusal remains a strong hint,
+    not a full proof: `frob.tickets` cannot run `base_ref`'s tests or
+    gates to confirm the content actually behaves as this ticket's
+    evidence claims -- that verification needs `frob.gates`/
+    `frob.testing`, which this package deliberately does not import,
+    docs/rework.md's cycle-avoidance rule) -- only that the ticket's OWN
+    record already claims `done` there, which is what "already landed"
+    concretely means in this ledger's own vocabulary. The refusal message
+    names the exact manual recipe: verify, then `frob ticket close`
+    directly (`--skip-mutation-evidence` if TEST016 also reports an empty
+    diff) instead of retrying the land.
+
+    ON BY DEFAULT as of T-1675 (no opt-in flag any more) -- the positive
+    on-main-state requirement above is what makes that safe: the false-
+    positive class the old empty-diff-only check had (a docs-only/ledger-
+    only ticket landing for the FIRST time) cannot also have `state:
+    done` on `base_ref` yet, so it no longer trips this refusal.
 
     A ticket with no declared `scope` at all is a no-op here (`Ok(None)`)
     -- an empty scope matches nothing by this repo's own `scope_matches`
@@ -2556,7 +2579,7 @@ def _check_already_landed(
     be refused incorrectly. Only a CLEAN worktree's empty scope-diff is
     unambiguous evidence that this ticket's own scope truly has nothing
     new relative to `base_ref`."""
-    from frob.tickets._models import LEDGER_PATH, scope_matches
+    from frob.tickets._models import LEDGER_PATH, TicketState, scope_matches
     from frob.tickets._store import archive_path
 
     if not ticket.scope:
@@ -2578,23 +2601,33 @@ def _check_already_landed(
     archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
     relevant = frozenset(changed.danger_ok) - {LEDGER_PATH, archive_rel}
     hits = [
-        path
-        for path in relevant
-        if scope_matches(path, ticket.scope, kind=ticket.kind)
+        path for path in relevant if scope_matches(path, ticket.scope, kind=ticket.kind)
     ]
     if hits:
         return Ok(None)
+    # T-1675: the positive signal. An empty scope-diff alone is not enough
+    # -- require ticket.id's OWN record, read directly off base_ref, to
+    # already claim `done` there. A not-yet-landed ticket cannot have that
+    # state on base_ref (only close/land ever write it), so this cannot
+    # false-positive on a legitimately-empty-scope first-time land.
+    on_main = _ledger_ticket_at_ref(worktree, base_ref, ticket.id)
+    if on_main is None or on_main.state is not TicketState.DONE:
+        return Ok(None)
     _log.warning(
         "land: %s refused -- this branch has NO changes inside %s's own "
-        "declared scope relative to %s (T-1618) -- its content is very "
-        "likely ALREADY on %s, most often because a sibling ticket's "
-        "earlier land already carried it there (the passenger-ticket "
-        "class T-1618's own %s check exists to stop, going forward). "
-        "Verify by hand that %s's evidence/acceptance criteria genuinely "
-        "hold against %s's current tree, then close directly: `frob "
-        "ticket close %s` (add --skip-mutation-evidence if TEST016 also "
-        "reports an empty diff) -- do not keep retrying this land",
+        "declared scope relative to %s (T-1618), AND %s's own record on "
+        "%s already shows state=done (T-1675's positive signal) -- its "
+        "content is very likely ALREADY on %s, most often because a "
+        "sibling ticket's earlier land already carried it there (the "
+        "passenger-ticket class T-1618's own %s check exists to stop, "
+        "going forward). Verify by hand that %s's evidence/acceptance "
+        "criteria genuinely hold against %s's current tree, then close "
+        "directly: `frob ticket close %s` (add --skip-mutation-evidence "
+        "if TEST016 also reports an empty diff) -- do not keep retrying "
+        "this land",
         ticket.id,
+        ticket.id,
+        base_ref,
         ticket.id,
         base_ref,
         base_ref,
@@ -2840,20 +2873,20 @@ def _land_precheck(
     covers_scope: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
-    check_already_landed: bool = False,
 ) -> Result[tuple[Ticket, str], LandError]:
     """Refuse on root/worktree being the same path (T-0795) or a dirty
     main, load+validate the worktree's ticket is closeable (including,
     T-0774, a `covers_scope` preflight simulation, T-0755's diff-scoped
     mutation-evidence obligation, bypassable via `skip_mutation_evidence`,
-    T-0854's live-tracker-citation preflight, and T-1355's cross-ticket
-    leakage preflight, bypassable via `allow_cross_ticket`), and resolve
-    main's current branch name -- everything `land` must check BEFORE any
-    git mutation.
+    T-0854's live-tracker-citation preflight, T-1355's cross-ticket
+    leakage preflight (bypassable via `allow_cross_ticket`), and T-1618/
+    T-1675's already-landed preflight), and resolve main's current branch
+    name -- everything `land` must check BEFORE any git mutation.
 
-    `check_already_landed` (T-1618) is an opt-in extra preflight; see
-    `_check_already_landed` for what it decides and why it is off by
-    default (T-1680 moved the rationale onto the check itself)."""
+    `_check_already_landed` (T-1618, positive-signal fix T-1675) always
+    runs now -- no opt-in flag; see that function's own docstring for why
+    requiring a positive on-main `done` state alongside the empty
+    scope-diff makes an unconditional default safe."""
     same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
     if same_path_check.is_err:
         return Err(same_path_check.danger_err)
@@ -2885,10 +2918,9 @@ def _land_precheck(
     if scope_preflight.is_err:
         return Err(scope_preflight.danger_err)
 
-    if check_already_landed:
-        already_landed_check = _check_already_landed(worktree, ticket, main_branch_name)
-        if already_landed_check.is_err:
-            return Err(already_landed_check.danger_err)
+    already_landed_check = _check_already_landed(worktree, ticket, main_branch_name)
+    if already_landed_check.is_err:
+        return Err(already_landed_check.danger_err)
 
     remaining = _land_precheck_remaining_checks(
         root,

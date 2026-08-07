@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.358.0] - unreleased
+
+- T-1675: already-landed detection is opt-in because it cannot tell 'no diff' from 'docs-only ticket'
+
 ## [0.357.0] - unreleased
 
 - T-1558: WIRE001 module-local test-helper false-positive class: teach the gate or wire the helpers (T-1490/T-1488 successor, waiver home)

@@ -1,15 +1,16 @@
-"""T-1618: `frob.tickets._land._check_already_landed` -- landing a ticket
-whose own declared scope has no changes relative to main is a distinct,
-self-explaining outcome (`LandError.AlreadyLandedOnMain`), not a confusing
-fall-through into whatever the normal land path does with an empty
-changeset. Opt-in via `land(..., check_already_landed=True)` / `frob
-ticket land --check-already-landed` -- see `_land_precheck`'s own
-docstring for why this stays off by default (measured against this
-repo's own fixture population, an empty scope-diff is ALSO the ordinary
-shape of a docs-only/ledger-only/Done-report-only ticket, so refusing by
-default would trade one false-positive class for a worse one). Real git
-fixture repos throughout, matching
-`tests/unit/test_land_cross_ticket_leakage.py`'s own style."""
+"""T-1618/T-1675: `frob.tickets._land._check_already_landed` -- landing a
+ticket whose own declared scope has no changes relative to main, AND whose
+own ledger record read directly off main already shows `state: done`, is a
+distinct, self-explaining outcome (`LandError.AlreadyLandedOnMain`), not a
+confusing fall-through into whatever the normal land path does with an
+empty changeset. Always runs now (T-1675 removed the `check_already_landed`
+opt-in flag) -- see `_check_already_landed`'s own docstring for why
+requiring that second, POSITIVE on-main signal alongside the empty
+scope-diff makes an unconditional default safe: the false-positive class
+the old empty-diff-only check had (a docs-only/ledger-only/Done-report-only
+ticket landing for the FIRST time) cannot also already be `done` on main,
+so it no longer trips this refusal. Real git fixture repos throughout,
+matching `tests/unit/test_land_cross_ticket_leakage.py`'s own style."""
 
 from __future__ import annotations
 
@@ -86,11 +87,34 @@ def repo(tmp_path: Path) -> Path:
     return main_repo
 
 
+# frob:waive WIRE001 reason="private test-seed helper used only by this module's own \
+# TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_emp\
+# ty -- module-local test-fixture builder, no production caller to wire it to by \
+# design, same waived shape as tests/unit/perf/test_hotpath_smells.py's own precedent" \
+# permanent="true"
+def _seed_done_on_main(repo: Path, wt: Path, tid: str) -> None:
+    """Simulate T-1618's passenger shape for real: transition `tid` to
+    `DONE` in the worktree's OWN ledger (a valid state transition, so the
+    resulting `Ticket` is a legitimate closed record), then write that
+    SAME record directly into `repo` (main)'s ledger and commit it there
+    -- as if a sibling ticket's earlier land had already carried `tid`'s
+    content and closure onto main ahead of `tid`'s own land. This is the
+    positive T-1675 signal `_check_already_landed` now requires: `tid`'s
+    record read directly off `repo`'s tip must already show `state:
+    done`, not merely an empty scope-diff."""
+    assert transition(wt, tid, TicketState.DONE).is_ok
+    done_ticket = load_all(wt).danger_ok[tid]
+    assert write_ticket(repo, done_ticket).is_ok
+    _commit_all(repo, f"seed: {tid} already closed on main (simulated passenger land)")
+
+
 # frob:ticket T-1618
+# frob:ticket T-1675
 class TestAlreadyLandedOnMain:
     """`_check_already_landed` -- an empty diff inside the ticket's own
-    scope refuses with a distinct, self-explaining outcome instead of
-    falling through to a confusing generic failure."""
+    scope, PLUS the ticket's own record already showing `done` on main
+    (T-1675's positive signal), refuses with a distinct, self-explaining
+    outcome instead of falling through to a confusing generic failure."""
 
     def test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty(
         self, repo: Path, caplog: pytest.LogCaptureFixture
@@ -110,6 +134,9 @@ class TestAlreadyLandedOnMain:
         assert created.is_ok
         tid = created.danger_ok.id
         _make_closeable(wt, tid)
+        # T-1675's positive signal: tid's OWN record already shows `done`
+        # on main, not just an empty scope-diff.
+        _seed_done_on_main(repo, wt, tid)
         # Committed on the branch, but touching a DIFFERENT file than the
         # ticket's own declared scope -- e.g. only its own ledger record
         # moved; no actual change to src/already-there.py on this branch.
@@ -117,7 +144,7 @@ class TestAlreadyLandedOnMain:
         _commit_all(wt, f"{tid}: ledger-only, no scope change")
 
         with caplog.at_level("WARNING"):
-            result = land(repo, tid, wt, dry_run=False, check_already_landed=True)
+            result = land(repo, tid, wt, dry_run=False)
 
         assert result.is_err
         assert result.danger_err == LandError.AlreadyLandedOnMain
@@ -137,7 +164,7 @@ class TestAlreadyLandedOnMain:
         (wt / "src" / "fix.py").write_text("# real change\n")
         _commit_all(wt, f"{tid}: real change")
 
-        result = land(repo, tid, wt, dry_run=False, check_already_landed=True)
+        result = land(repo, tid, wt, dry_run=False)
 
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
@@ -153,7 +180,36 @@ class TestAlreadyLandedOnMain:
         (wt / "src" / "fix.py").write_text("# change under an empty scope\n")
         _commit_all(wt, f"{tid}: change, no declared scope")
 
-        result = land(repo, tid, wt, dry_run=False, check_already_landed=True)
+        result = land(repo, tid, wt, dry_run=False)
 
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
+
+    def test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"  # noqa: E501
+        """T-1675's actual regression target: a docs-only ticket whose
+        declared scope legitimately has no hits on this branch (it only
+        ever needed a Done-report note, never a byte inside `docs/**`)
+        must NOT be refused as 'already landed' just because its
+        scope-diff is empty -- unlike the sibling test above, `tid` was
+        NEVER written to `repo`'s ledger at all, so it has no `done`
+        record there; the empty-diff-alone inference this ticket exists
+        to close would have refused this incorrectly."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-docs-only", str(wt)], repo)
+        created = new_ticket(wt, _spec("Docs-only ticket", scope=("docs/**",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # Committed on the branch, but nothing under docs/** -- the
+        # ordinary shape of a docs-only ticket whose real content is its
+        # Done report, already folded into the ledger-only diff `_check_
+        # already_landed` deliberately excludes from scope-hit counting.
+        (wt / "src" / "unrelated.py").write_text("# unrelated bookkeeping\n")
+        _commit_all(wt, f"{tid}: ledger-only, docs scope never touched")
+
+        result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_ok, result.err

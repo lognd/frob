@@ -1234,9 +1234,7 @@ def _delete_worktree_branch(root: Path, branch: str | None, ticket_id: str) -> N
             branch,
         )
         return
-    _log.info(
-        "ticket land --retire-on-proof: %s deleted branch %s", ticket_id, branch
-    )
+    _log.info("ticket land --retire-on-proof: %s deleted branch %s", ticket_id, branch)
 
 
 def _require_land_args(cfg: AppConfig) -> None:
@@ -2223,7 +2221,6 @@ def _land_core_invoke(
             if rapid_land
             else _land_pre_commit_sweep_fn(baseline_thread, baseline_holder, cfg)
         ),
-        check_already_landed=cfg.ticket_check_already_landed,
     )
 
 

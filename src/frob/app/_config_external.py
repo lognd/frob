@@ -338,8 +338,6 @@ _BOOL_FLAGS = (
     "ticket_skip_mutation_evidence",
     # frob:ticket T-1369
     "ticket_allow_cross_ticket",
-    # frob:ticket T-1618
-    "ticket_check_already_landed",
     "ticket_close_skip_mutation_evidence",
     "ticket_land_push",
     # frob:ticket T-1175

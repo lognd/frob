@@ -2489,51 +2489,57 @@ times in one session (verify content on main, `frob ticket close
 
 `_check_already_landed` (`frob.tickets._land`) recognizes the shape
 directly: when `worktree` is CLEAN (`_porcelain_dirty` -- see below for
-why this matters) and the ticket's own declared scope (excluding the
-ledger path, which changes on every land regardless) has zero hits in
-`_branch_changed_files(worktree, base_ref)`, it refuses with `LandError.
+why this matters), the ticket's own declared scope (excluding the ledger
+path, which changes on every land regardless) has zero hits in
+`_branch_changed_files(worktree, base_ref)`, AND (T-1675) the ticket's own
+ledger record read directly off `base_ref` (`_ledger_ticket_at_ref`)
+already shows `state: done` there, it refuses with `LandError.
 AlreadyLandedOnMain` and a message naming the exact manual recipe the
 incident's operator worked out by hand: verify the content against
-`base_ref`, then `frob ticket close <id>` directly. This function
-deliberately does NOT verify the content itself -- `frob.tickets` cannot
+`base_ref`, then `frob ticket close <id>` directly. This function still
+does NOT verify the content's correctness itself -- `frob.tickets` cannot
 run `base_ref`'s tests or gates (docs/rework.md's cycle-avoidance rule:
 that needs `frob.gates`/`frob.testing`, which this package does not
-import) -- so a `AlreadyLandedOnMain` refusal is a strong, well-targeted
-HINT, not a proof; the operator's own verification step is still real
-work, just no longer undirected work.
+import) -- so a `AlreadyLandedOnMain` refusal remains a strong,
+well-targeted HINT, not a full proof; the operator's own verification step
+is still real work, just no longer undirected work.
 
-**The signal is the real limitation (T-1675).** "No diff in the declared
-scope" is being asked to answer "was this already landed?", and it
-cannot: an empty scope-diff is equally consistent with *the work is
+**The signal problem, and its fix (T-1675).** "No diff in the declared
+scope" alone was being asked to answer "was this already landed?", and it
+could not: an empty scope-diff is equally consistent with *the work is
 already on main*, *the work landed outside its declared scope globs*, and
-*this ticket legitimately changed only docs or the ledger*. That is
-absence-of-evidence read as evidence-of-absence. T-1675 tracks deciding
-it positively instead -- establishing "already landed" by finding the
-ticket's content ON main (its commit, its directive edges, its evidence
-resolving there) -- at which point the check can be unconditional and the
-flag can go away. The rationale below explains why it is opt-in *today*,
-not why the design is right.
+*this ticket legitimately changed only docs or the ledger*. That was
+absence-of-evidence read as evidence-of-absence, and it forced this check
+off by default -- it never ran for a real land, so the defect class it
+targets still reached main. T-1675 closed the gap by requiring a SECOND,
+positive signal alongside the empty diff: the ticket's own ledger record,
+read directly off `base_ref`, must already claim `state: done` there. A
+ticket that has not yet landed cannot already be `done` on `base_ref` --
+only `frob ticket close`/`land`'s own squash-apply ever write that state
+-- so this is genuine positive evidence the content made it to main, not
+an inference from silence. A docs-only, ledger-only, or scope-mismatched
+ticket landing for the FIRST time still gets `Ok(None)` here: its scope-
+diff may be empty, but its own record on `base_ref` is not yet `done`,
+so the refusal correctly does not fire.
 
-**Deliberately opt-in, not wired into the default land path.** An early
-draft wired this into `_land_precheck` unconditionally and it regressed
-20 existing tests across this repo's own `test_ticket_land.py` suite: an
-empty scope-diff turns out to be the ORDINARY shape of a large legitimate
-class -- a docs-only ticket, a ledger-only/Done-report-only ticket, or
-simply a test fixture that declares a scope without ever writing a file
-under it (this repo's own test suite does this routinely; scope is
-declared intent, not a promise every land literally touches a byte inside
-it). Refusing on that by default would trade the T-1618 confusion for a
-strictly worse false-positive rate. `land(..., check_already_landed=True)`
-/ `frob ticket land --check-already-landed` opts in explicitly -- for an
-operator who already suspects the "this probably already landed via a
-passenger" shape, not for every land unconditionally. `_porcelain_dirty`
-gates it further: this check runs in `_land_precheck`, BEFORE `land`'s own
-wip-commit stage folds uncommitted work into a real commit, so a DIRTY
-worktree's empty COMMITTED diff would otherwise look identical to
-"already landed" even though the real work simply has not been committed
-yet -- the check is skipped entirely whenever the worktree is dirty,
-deferring to whatever the rest of the land pipeline does with that
-uncommitted work.
+**On by default, no opt-in flag (T-1675).** An early draft (T-1618) wired
+the empty-diff signal alone into `_land_precheck` unconditionally and it
+regressed 20 existing tests across this repo's own `test_ticket_land.py`
+suite -- an empty scope-diff turns out to be the ORDINARY shape of a large
+legitimate class (a docs-only ticket, a ledger-only/Done-report-only
+ticket, a test fixture that declares a scope without ever writing a file
+under it). That forced the check behind a now-removed `land` opt-in flag
+(formerly `--check-already-landed`). The positive on-main-state
+requirement above is what makes an unconditional default safe now: every
+member of that false-positive class is landing for the first time, so its
+own record on `base_ref` cannot already show `done` -- the flag and its
+CLI switch are gone; the check always runs. `_porcelain_dirty` still gates
+it: this check runs in `_land_precheck`, BEFORE `land`'s own wip-commit
+stage folds uncommitted work into a real commit, so a DIRTY worktree's
+empty COMMITTED diff would otherwise look identical to "already landed"
+even though the real work simply has not been committed yet -- the check
+is skipped entirely whenever the worktree is dirty, deferring to whatever
+the rest of the land pipeline does with that uncommitted work.
 
 **Why `CrossTicketLeakage` did not fire for the T-1579 case** (the
 ticket's own explicit question): two independent reasons, both closed by
