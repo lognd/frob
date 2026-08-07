@@ -9951,6 +9951,7 @@ created: '2026-08-06'
 priority: critical
 blocked_by:
 - T-1687
+- T-1703
 parent: T-1686
 tier: ticket
 sprint: null
@@ -10017,7 +10018,6 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
-
 <!-- ticket:T-1689 -->
 ```yaml
 id: T-1689
@@ -10101,6 +10101,7 @@ created: '2026-08-06'
 priority: critical
 blocked_by:
 - T-1688
+- T-1703
 parent: T-1686
 tier: ticket
 sprint: null
@@ -10166,7 +10167,6 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
-
 <!-- ticket:T-1691 -->
 ```yaml
 id: T-1691
