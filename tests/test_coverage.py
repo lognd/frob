@@ -399,6 +399,115 @@ class TestCoverageFileCache:
         assert merged.module_line["src/bar.py"] == 10.0
 
 
+# frob:ticket T-1672
+class TestComputeWorkerCount:
+    """T-1672 item 1: `_compute_worker_count`'s memory-aware xdist pool
+    sizing, and `_pytest_argv`'s `-n` override wiring."""
+
+    def test_explicit_zero_opts_out_entirely(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_explicit_zero_opts_out_entirely  # noqa: E501
+        monkeypatch.setenv(_refresh_mod._MAX_WORKERS_ENV, "0")
+        assert _refresh_mod._compute_worker_count() is None
+
+    def test_explicit_positive_override_wins_over_memory(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_explicit_positive_override_wins_over_memory  # noqa: E501
+        monkeypatch.setenv(_refresh_mod._MAX_WORKERS_ENV, "3")
+        monkeypatch.setattr(_refresh_mod, "_available_memory_mb", lambda: 1)
+        assert _refresh_mod._compute_worker_count() == 3
+
+    def test_malformed_override_falls_back_to_memory_sizing(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_malformed_override_falls_back_to_memory_sizing  # noqa: E501
+        monkeypatch.setenv(_refresh_mod._MAX_WORKERS_ENV, "not-a-number")
+        monkeypatch.setattr(_refresh_mod, "_available_memory_mb", lambda: 100000)
+        monkeypatch.delenv(_refresh_mod._PER_WORKER_MEM_ENV, raising=False)
+        monkeypatch.setattr(_refresh_mod.os, "cpu_count", lambda: 16)
+        # 100000MB / 1536MB(default) ~= 65 workers, capped at cpu_count=16.
+        assert _refresh_mod._compute_worker_count() == 16
+
+    def test_memory_is_the_binding_constraint(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_memory_is_the_binding_constraint  # noqa: E501
+        """The field incident's exact shape: 16 cores, not enough memory
+        for 16 workers -- the computed count must be memory-bound, not
+        core-bound."""
+        monkeypatch.delenv(_refresh_mod._MAX_WORKERS_ENV, raising=False)
+        monkeypatch.setattr(_refresh_mod, "_available_memory_mb", lambda: 4096)
+        monkeypatch.setenv(_refresh_mod._PER_WORKER_MEM_ENV, "1536")
+        monkeypatch.setattr(_refresh_mod.os, "cpu_count", lambda: 16)
+        # 4096MB / 1536MB ~= 2 workers -- far below the 16 cores available.
+        assert _refresh_mod._compute_worker_count() == 2
+
+    def test_unmeasurable_memory_returns_none_not_a_guess(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_unmeasurable_memory_returns_none_not_a_guess  # noqa: E501
+        """Non-Linux (or any measurement failure): `None` (keep `-n auto`
+        untouched), never a fabricated number -- a wrong guess here is
+        exactly the class of silent misbehavior this ticket is about."""
+        monkeypatch.delenv(_refresh_mod._MAX_WORKERS_ENV, raising=False)
+        monkeypatch.setattr(_refresh_mod, "_available_memory_mb", lambda: None)
+        assert _refresh_mod._compute_worker_count() is None
+
+    def test_available_memory_mb_parses_real_proc_meminfo_shape(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_available_memory_mb_parses_real_proc_meminfo_shape  # noqa: E501
+        fake_meminfo = tmp_path / "meminfo"
+        fake_meminfo.write_text(
+            "MemTotal:       16384000 kB\n"
+            "MemFree:         1024000 kB\n"
+            "MemAvailable:    8192000 kB\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(
+            _refresh_mod,
+            "Path",
+            lambda p: fake_meminfo if p == "/proc/meminfo" else Path(p),
+        )  # noqa: E501
+        assert _refresh_mod._available_memory_mb() == 8192000 // 1024
+
+    def test_available_memory_mb_missing_file_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_available_memory_mb_missing_file_returns_none  # noqa: E501
+        missing = tmp_path / "does-not-exist"
+        monkeypatch.setattr(
+            _refresh_mod, "Path", lambda p: missing if p == "/proc/meminfo" else Path(p)
+        )  # noqa: E501
+        assert _refresh_mod._available_memory_mb() is None
+
+    def test_pytest_argv_appends_computed_n_flag(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_appends_computed_n_flag  # noqa: E501
+        """`-n <computed>` must land AFTER `pytest`'s own base args so it
+        overrides `addopts`'s `-n auto` (last `-n` on the command line
+        wins for xdist's plain argparse `store` option)."""
+        monkeypatch.setattr(_refresh_mod, "_compute_worker_count", lambda: 4)
+        argv = _refresh_mod._pytest_argv(
+            targets=(), cov_target="src/frob", append=False
+        )
+        assert "-n" in argv
+        assert argv[argv.index("-n") + 1] == "4"
+
+    def test_pytest_argv_omits_n_flag_when_unmeasurable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestComputeWorkerCount.test_pytest_argv_omits_n_flag_when_unmeasurable  # noqa: E501
+        monkeypatch.setattr(_refresh_mod, "_compute_worker_count", lambda: None)
+        argv = _refresh_mod._pytest_argv(
+            targets=(), cov_target="src/frob", append=False
+        )
+        assert "-n" not in argv
+
+
 # frob:ticket T-1516
 class TestNativeCoverageRefresh:
     """T-1516: `native_coverage_refresh`'s branching logic (full/cold-start

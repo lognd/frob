@@ -558,6 +558,47 @@ answer" defect class), and every caller mocking `_spawn` wholesale in a
 test is unaffected -- the watchdog/crash-retry machinery lives entirely
 inside the real implementation, invisible to a full replacement.
 
+### Memory-aware xdist worker sizing (T-1672 item 1)
+
+The field incident's root cause, not just its symptom: `pyproject.toml`'s
+`addopts = "-n auto"` sizes the worker pool from CORE COUNT alone
+(pytest-xdist's own default). On a box under concurrent agent load, 16
+cores does not mean 16 workers' worth of free memory -- this repo
+measured reliable OOM-kills at exactly that count.
+
+`_pytest_argv` now appends an explicit `-n <count>` computed by
+`_compute_worker_count`, which caps the pool at `min(cpu_count,
+available_memory_mb // per_worker_budget_mb)`. This OVERRIDES `addopts`'s
+`-n auto` without editing `pyproject.toml` -- pytest-xdist's `-n` is a
+plain argparse `store` option, and the LAST `-n` on the command line
+wins, so a second one appended here is sufficient.
+
+`_available_memory_mb` reads `/proc/meminfo`'s `MemAvailable` line
+(Linux only -- there is no portable stdlib equivalent without adding a
+dependency this repo does not carry). On any other platform, or any
+parse failure, it returns `None`, and `_compute_worker_count` then
+returns `None` too: NO `-n` is appended, `-n auto` is left completely
+untouched. A wrong guess here would be exactly the class of silent
+misbehavior this ticket exists to close, so "cannot measure" degrades to
+"do not override," never to a fabricated number.
+
+Two env-var knobs, same "disclosed, configurable" precedent as T-1677's
+watchdog deadlines:
+
+- `FROB_COVERAGE_MAX_WORKERS`: `0` opts out entirely (keep `-n auto`); a
+  positive integer pins an exact count, skipping memory measurement
+  altogether.
+- `FROB_COVERAGE_PER_WORKER_MEM_MB` (default 1536): the per-worker memory
+  budget the sizing formula divides available memory by -- a coarse,
+  intentionally conservative heuristic (a Python interpreter running this
+  repo's suite under coverage instrumentation), not a profiled-and-tuned
+  number; tune it per box if the default over- or under-caps.
+
+Scoped narrowly to `native_coverage_refresh`'s own pytest invocation --
+`frob test`'s general (non-coverage) runner does not build its own pytest
+argv the way `_coverage_refresh.py` does, and is a separate call path
+this fix does not touch.
+
 ### Coverage as managed derived state (T-1516/T-1517)
 
 Coverage data (`coverage.xml`, `.frob/coverage-stamp`,

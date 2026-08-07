@@ -196,6 +196,9 @@ def _watchdog_config_from_env() -> _WatchdogConfig:
     refresh over a bad env var."""
 
     def _read(env_name: str, default: float) -> float:
+        # frob:waive SEC110 reason="FROB_COVERAGE_WALLCLOCK_DEADLINE_S/ \
+        # FROB_COVERAGE_NO_PROGRESS_DEADLINE_S are numeric watchdog-timeout knobs \
+        # (T-1677), not secrets"
         raw = os.environ.get(env_name)
         if raw is None:
             return default
@@ -216,6 +219,12 @@ def _watchdog_config_from_env() -> _WatchdogConfig:
     )
 
 
+# frob:waive ARCH103 reason="T-1677: one cohesive POSIX-vs-Windows teardown routine -- \
+# SIGTERM-then-SIGKILL-then-reap on POSIX, taskkill on Windows, both branches ending \
+# in the same final proc.wait() reap. Splitting either platform branch into its own \
+# helper would just relocate the same lines behind an extra call boundary with no \
+# independent sub-concern to separate out (each branch is already the minimal \
+# platform-specific kill sequence, not several fused phases)."
 def _kill_process_group(proc: subprocess.Popen, *, grace_s: float) -> None:
     """Kill `proc` AND every descendant it spawned (T-1677 item 4: "never
     leave zombies") -- a plain `proc.kill()` only kills the top-level
@@ -271,6 +280,100 @@ def _kill_process_group(proc: subprocess.Popen, *, grace_s: float) -> None:
         )
 
 
+def _start_watchdog_process(
+    argv: list[str], *, cwd: Path, log_fd: int
+) -> subprocess.Popen | None:
+    """`Popen`-spawn `argv` with stdout+stderr redirected to `log_fd`, in
+    its own process GROUP (T-1677, split out of `_spawn_with_watchdog` to
+    keep it under the ARCH001 line threshold) -- POSIX via
+    `start_new_session=True` (the pid doubles as the group id, so
+    `_kill_process_group`'s `os.killpg` can reach every descendant later);
+    Windows via `CREATE_NEW_PROCESS_GROUP` (no killpg equivalent, so
+    `_kill_process_group` falls back to `taskkill /T /F` there instead).
+
+    `None` on a spawn failure (logged here) -- the caller's `log_fd` is
+    ALWAYS closed by this function before returning, success or failure,
+    since `Popen` duplicates it for the child and the parent's own copy
+    must close for the watchdog loop to see a live file, not one this
+    process is still itself holding open for write."""
+    try:
+        if sys.platform == "win32":
+            return subprocess.Popen(  # noqa: S603
+                argv,
+                cwd=str(cwd),
+                stdout=log_fd,
+                stderr=subprocess.STDOUT,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+            )
+        return subprocess.Popen(  # noqa: S603
+            argv,
+            cwd=str(cwd),
+            stdout=log_fd,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        _log.error("coverage_refresh: watchdog spawn of %r failed: %s", argv, exc)
+        return None
+    finally:
+        try:
+            os.close(log_fd)
+        except OSError:
+            pass
+
+
+def _watchdog_poll_loop(
+    proc: subprocess.Popen, argv: list[str], log_path: Path, *, config: _WatchdogConfig
+) -> Result[subprocess.CompletedProcess, _WatchdogAbortReason]:
+    """Poll `proc` until it exits or one of `config`'s two deadlines trips
+    (T-1677, split out of `_spawn_with_watchdog` to keep it under the
+    ARCH001 line threshold) -- the file's mtime is the no-progress
+    signal, kept fresh by the child's own stdout/stderr writes. Either
+    deadline tripping kills the WHOLE process group via
+    `_kill_process_group`, never just `proc` itself."""
+    start = time.monotonic()
+    while True:
+        code = proc.poll()
+        if code is not None:
+            content = log_path.read_text(encoding="utf-8", errors="replace")
+            return Ok(subprocess.CompletedProcess(argv, code, stdout=content))
+
+        elapsed = time.monotonic() - start
+        if elapsed >= config.wall_clock_s:
+            _log.error(
+                "coverage_refresh: %r exceeded its %.0fs wall-clock deadline "
+                "(pid %d) -- killing the process GROUP; coverage is "
+                "UNMEASURED for this run, not partial or zero",
+                argv,
+                config.wall_clock_s,
+                proc.pid,
+            )
+            _kill_process_group(proc, grace_s=_KILL_GRACE_PERIOD_S)
+            return Err(_WatchdogAbortReason.WallClockExceeded)
+
+        try:
+            mtime = log_path.stat().st_mtime
+        except OSError:
+            mtime = start
+        since_progress = time.time() - mtime
+        if since_progress >= config.no_progress_s:
+            _log.error(
+                "coverage_refresh: %r produced no output for %.0fs (pid %d, "
+                "%.0fs total elapsed) -- treating as HUNG and killing the "
+                "process GROUP; coverage is UNMEASURED for this run, not "
+                "partial or zero",
+                argv,
+                config.no_progress_s,
+                proc.pid,
+                elapsed,
+            )
+            _kill_process_group(proc, grace_s=_KILL_GRACE_PERIOD_S)
+            return Err(_WatchdogAbortReason.NoProgress)
+
+        remaining = config.wall_clock_s - elapsed
+        time.sleep(min(config.poll_interval_s, remaining) if remaining > 0 else 0)
+
+
 # frob:ticket T-1677
 def _spawn_with_watchdog(
     argv: list[str], *, cwd: Path, config: _WatchdogConfig
@@ -282,15 +385,16 @@ def _spawn_with_watchdog(
     Cannot use `guarded_subprocess_run`/`subprocess.run` here: both block
     until the child exits with no way to observe it mid-run, which is
     exactly the field incident's shape (a controller blocked forever in
-    the xdist scheduler, no timeout anywhere in the call stack). This
-    spawns via `Popen` instead, redirecting stdout+stderr to a temp file
-    this function itself polls -- the file's mtime is the no-progress
-    signal (T-1677's explicit ask: "if the subprocess produces no output
-    for N minutes, treat it as hung," the one signal that actually
-    distinguishes hung from slow), and the returned `CompletedProcess`'s
-    `.stdout` is that file's full content, so a caller reading it (the
-    worker-crash signature scan) sees exactly what a blocking
-    `subprocess.run(capture_output=True)` would have given it.
+    the xdist scheduler, no timeout anywhere in the call stack).
+    `_start_watchdog_process` spawns via `Popen` instead, redirecting
+    stdout+stderr to a temp file `_watchdog_poll_loop` polls -- the file's
+    mtime is the no-progress signal (T-1677's explicit ask: "if the
+    subprocess produces no output for N minutes, treat it as hung," the
+    one signal that actually distinguishes hung from slow), and the
+    returned `CompletedProcess`'s `.stdout` is that file's full content,
+    so a caller reading it (the worker-crash signature scan) sees exactly
+    what a blocking `subprocess.run(capture_output=True)` would have
+    given it.
 
     The `FROB_DISABLE_EXEC` kill switch is checked by the CALLER
     (`_pytest_outcome`) before this is ever invoked -- the same guard
@@ -302,79 +406,13 @@ def _spawn_with_watchdog(
     log_path = Path(log_path_str)
 
     _log.debug("coverage_refresh: spawning %r under watchdog (log=%s)", argv, log_path)
-    try:
-        if sys.platform == "win32":
-            proc = subprocess.Popen(  # noqa: S603
-                argv,
-                cwd=str(cwd),
-                stdout=log_fd,
-                stderr=subprocess.STDOUT,
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
-            )
-        else:
-            proc = subprocess.Popen(  # noqa: S603
-                argv,
-                cwd=str(cwd),
-                stdout=log_fd,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-            )
-    except OSError as exc:
-        os.close(log_fd)
+    proc = _start_watchdog_process(argv, cwd=cwd, log_fd=log_fd)
+    if proc is None:
         log_path.unlink(missing_ok=True)
-        _log.error("coverage_refresh: watchdog spawn of %r failed: %s", argv, exc)
         return Err(_WatchdogAbortReason.WallClockExceeded)
-    finally:
-        # `Popen` duplicates the fd for the child; the parent's copy must
-        # be closed here regardless of spawn success so tailing the file
-        # below sees a live, not-still-open-for-write-by-us descriptor.
-        try:
-            os.close(log_fd)
-        except OSError:
-            pass
 
-    start = time.monotonic()
     try:
-        while True:
-            code = proc.poll()
-            if code is not None:
-                content = log_path.read_text(encoding="utf-8", errors="replace")
-                return Ok(subprocess.CompletedProcess(argv, code, stdout=content))
-
-            elapsed = time.monotonic() - start
-            if elapsed >= config.wall_clock_s:
-                _log.error(
-                    "coverage_refresh: %r exceeded its %.0fs wall-clock deadline "
-                    "(pid %d) -- killing the process GROUP; coverage is "
-                    "UNMEASURED for this run, not partial or zero",
-                    argv,
-                    config.wall_clock_s,
-                    proc.pid,
-                )
-                _kill_process_group(proc, grace_s=_KILL_GRACE_PERIOD_S)
-                return Err(_WatchdogAbortReason.WallClockExceeded)
-
-            try:
-                mtime = log_path.stat().st_mtime
-            except OSError:
-                mtime = start
-            since_progress = time.time() - mtime
-            if since_progress >= config.no_progress_s:
-                _log.error(
-                    "coverage_refresh: %r produced no output for %.0fs (pid %d, "
-                    "%.0fs total elapsed) -- treating as HUNG and killing the "
-                    "process GROUP; coverage is UNMEASURED for this run, not "
-                    "partial or zero",
-                    argv,
-                    config.no_progress_s,
-                    proc.pid,
-                    elapsed,
-                )
-                _kill_process_group(proc, grace_s=_KILL_GRACE_PERIOD_S)
-                return Err(_WatchdogAbortReason.NoProgress)
-
-            remaining = config.wall_clock_s - elapsed
-            time.sleep(min(config.poll_interval_s, remaining) if remaining > 0 else 0)
+        return _watchdog_poll_loop(proc, argv, log_path, config=config)
     finally:
         log_path.unlink(missing_ok=True)
 
@@ -434,7 +472,16 @@ def _pytest_argv(
     pass does not itself re-execute stays intact -- the same contract
     `make coverage-fast` already relies on (`_incremental_coverage.py`'s
     own module docstring). `targets` empty with `append=False` means a
-    full, unrestricted suite run (cold start or `--full`)."""
+    full, unrestricted suite run (cold start or `--full`).
+
+    T-1672 item 1: appends an explicit `-n <count>` computed from BOTH
+    core count and available memory (`_compute_worker_count`) when one
+    can be measured -- this OVERRIDES `pyproject.toml`'s `addopts = "-n
+    auto"` (pytest-xdist's own `-n` is a plain argparse `store` option;
+    the LAST occurrence on the command line wins, so appending a second
+    `-n` here is enough, no `addopts` edit needed). Appended nowhere
+    (silently keeps `-n auto`) when memory cannot be measured (non-Linux)
+    or `FROB_COVERAGE_MAX_WORKERS=0` opts out explicitly."""
     argv = [
         "pytest",
         f"--cov={cov_target}",
@@ -442,8 +489,146 @@ def _pytest_argv(
     ]
     if append:
         argv.append("--cov-append")
+    worker_count = _compute_worker_count()
+    if worker_count is not None:
+        argv.extend(["-n", str(worker_count)])
     argv.extend(targets)
     return argv
+
+
+# frob:ticket T-1672
+#: Rough per-worker memory budget in MiB used to cap the xdist pool
+#: (`_compute_worker_count`) -- this repo's own field incident measured
+#: reliable OOM-kills at 16 workers under concurrent agent load, which is
+#: `-n auto`'s cpu-count-only sizing on that box; this is a coarse,
+#: intentionally conservative heuristic (a Python interpreter running
+#: this repo's test suite under coverage instrumentation), not a
+#: profiled-and-tuned number -- overridable per-box via
+#: `FROB_COVERAGE_PER_WORKER_MEM_MB`.
+_DEFAULT_PER_WORKER_MEM_MB = 1536
+_PER_WORKER_MEM_ENV = "FROB_COVERAGE_PER_WORKER_MEM_MB"
+
+# frob:ticket T-1672
+#: Explicit worker-count override/opt-out, checked BEFORE any
+#: memory-based computation. Set to `0` to keep pytest-xdist's own `-n
+#: auto` untouched (e.g. a box this heuristic mis-sizes for); set to a
+#: positive integer to pin an exact count regardless of measured memory.
+_MAX_WORKERS_ENV = "FROB_COVERAGE_MAX_WORKERS"
+
+
+# frob:ticket T-1672
+def _available_memory_mb() -> int | None:
+    """Best-effort available memory in MiB, Linux only (`/proc/meminfo`'s
+    `MemAvailable` line, the kernel's own "could be given to a new
+    process without swapping" estimate -- deliberately not `MemFree`,
+    which excludes reclaimable cache/buffers and under-reports headroom).
+
+    `None` on any other platform (no portable stdlib equivalent without
+    adding a dependency -- `psutil` is not one this repo carries) or any
+    parse failure -- `_compute_worker_count` degrades to "do not override
+    `-n auto`" rather than guessing, since a wrong guess here is exactly
+    the class of silent misbehavior this ticket is about."""
+    meminfo = Path("/proc/meminfo")
+    if not meminfo.exists():
+        return None
+    try:
+        text = meminfo.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    for line in text.splitlines():
+        if line.startswith("MemAvailable:"):
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].isdigit():
+                return int(parts[1]) // 1024  # kB -> MiB
+    return None
+
+
+# frob:ticket T-1672
+def _max_workers_override() -> tuple[bool, int | None]:
+    """Read `FROB_COVERAGE_MAX_WORKERS` (T-1672), split out of
+    `_compute_worker_count` to keep it under the ARCH001 line threshold.
+    Returns `(True, value)` when the override applies (`value` is `None`
+    for an explicit opt-out, i.e. `<= 0`) -- `(False, None)` when unset OR
+    malformed, in which case the caller falls through to memory-based
+    sizing exactly as if no override existed."""
+    # frob:waive SEC110 reason="FROB_COVERAGE_MAX_WORKERS is a numeric xdist \
+    # worker-count knob (T-1672), not a secret"
+    raw = os.environ.get(_MAX_WORKERS_ENV)
+    if raw is None:
+        return (False, None)
+    try:
+        override = int(raw)
+    except ValueError:
+        _log.warning(
+            "coverage_refresh: %s=%r is not an integer, ignoring",
+            _MAX_WORKERS_ENV,
+            raw,
+        )
+        return (False, None)
+    return (True, override if override > 0 else None)
+
+
+def _per_worker_mem_budget_mb() -> int:
+    """Read `FROB_COVERAGE_PER_WORKER_MEM_MB` (T-1672), falling back to
+    `_DEFAULT_PER_WORKER_MEM_MB` on absence or any malformed/non-positive
+    value -- split out of `_compute_worker_count` to keep it under the
+    ARCH001 line threshold."""
+    # frob:waive SEC110 reason="FROB_COVERAGE_PER_WORKER_MEM_MB is a numeric \
+    # memory-budget knob (T-1672), not a secret"
+    raw = os.environ.get(_PER_WORKER_MEM_ENV)
+    if raw is None:
+        return _DEFAULT_PER_WORKER_MEM_MB
+    try:
+        value = int(raw)
+    except ValueError:
+        _log.warning(
+            "coverage_refresh: %s=%r is not an integer, using default %dMB",
+            _PER_WORKER_MEM_ENV,
+            raw,
+            _DEFAULT_PER_WORKER_MEM_MB,
+        )
+        return _DEFAULT_PER_WORKER_MEM_MB
+    return value if value > 0 else _DEFAULT_PER_WORKER_MEM_MB
+
+
+# frob:ticket T-1672
+def _compute_worker_count() -> int | None:
+    """Size the pytest-xdist worker pool from BOTH core count and
+    available memory (T-1672 item 1), capping at whichever is smaller --
+    `-n auto` (pytest-xdist's own default) sizes from `cpu_count()`
+    alone, which OOM-kills reliably at 16 workers on a box under
+    concurrent agent load (the field incident this ticket is about:
+    `INTERNALERROR> ... KeyError: <WorkerController gw15>`).
+
+    `None` means "do not append `-n`, leave `addopts`'s `-n auto`
+    untouched" -- either `FROB_COVERAGE_MAX_WORKERS=0` opted out
+    explicitly, or memory could not be measured (non-Linux) and guessing
+    would be worse than pytest-xdist's own default. A malformed
+    `FROB_COVERAGE_MAX_WORKERS`/`FROB_COVERAGE_PER_WORKER_MEM_MB`
+    override is logged and ignored, never a crash."""
+    overridden, override_value = _max_workers_override()
+    if overridden:
+        return override_value
+
+    mem_mb = _available_memory_mb()
+    if mem_mb is None:
+        return None
+
+    per_worker_mb = _per_worker_mem_budget_mb()
+    cpu_count = os.cpu_count() or 1
+    mem_workers = max(1, mem_mb // per_worker_mb)
+    computed = max(1, min(cpu_count, mem_workers))
+    if computed < cpu_count:
+        _log.info(
+            "coverage_refresh: capping xdist workers at %d (cpu=%d, "
+            "available_mem=%dMB, per_worker_budget=%dMB) -- memory is the "
+            "binding constraint, not core count",
+            computed,
+            cpu_count,
+            mem_mb,
+            per_worker_mb,
+        )
+    return computed
 
 
 # frob:ticket T-1677
@@ -518,7 +703,49 @@ def _run(argv: list[str], *, cwd: Path) -> Result[subprocess.CompletedProcess, U
     return Ok(proc)
 
 
-# frob:ticket T-1676
+# frob:ticket T-1672
+def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
+    """The ONE serial retry `_pytest_outcome` runs after matching
+    `_WORKER_CRASH_SIGNATURE_RE` (T-1672), split out to keep that function
+    under the ARCH001 line threshold. Returns the FINAL exit code to
+    classify the pass with: the retry's own code on success, or the
+    ORIGINAL `code` unchanged if the retry itself could not even
+    complete (still worth keeping the original pass's data, per
+    `_pytest_outcome`'s own docstring)."""
+    _log.error(
+        "coverage_refresh: %s exited %d and matched the xdist "
+        "worker-crash signature (T-1672: a worker process was killed, "
+        "most often OOM) -- retrying ONCE serially (-p no:xdist) "
+        "instead of discarding an already-mostly-passing run",
+        " ".join(argv),
+        code,
+    )
+    retry_argv = [*argv, "-p", "no:xdist"]
+    respawned = _spawn(retry_argv, cwd=cwd)
+    if respawned.is_err:
+        _log.error(
+            "coverage_refresh: serial retry after worker-crash also "
+            "failed to complete (%s) -- keeping the original pass's "
+            "data, still marked worker_crash",
+            respawned.danger_err.value,
+        )
+        return code
+    retry_code = respawned.danger_ok.returncode
+    if retry_code == 0:
+        _log.info(
+            "coverage_refresh: serial retry after worker-crash "
+            "succeeded -- run is no longer degraded"
+        )
+    else:
+        _log.error(
+            "coverage_refresh: serial retry after worker-crash "
+            "still exited %d -- this is a REAL failure, not the "
+            "worker-crash artifact",
+            retry_code,
+        )
+    return retry_code
+
+
 def _pytest_outcome(argv: list[str], *, cwd: Path) -> Result[_PytestPass, _SpawnError]:
     """Run one pytest pass and classify its exit (T-1676), now also
     detecting and recovering from an xdist worker crash (T-1677/T-1672).
@@ -556,38 +783,7 @@ def _pytest_outcome(argv: list[str], *, cwd: Path) -> Result[_PytestPass, _Spawn
     worker_crash = bool(code != 0 and _WORKER_CRASH_SIGNATURE_RE.search(output))
 
     if worker_crash:
-        _log.error(
-            "coverage_refresh: %s exited %d and matched the xdist "
-            "worker-crash signature (T-1672: a worker process was killed, "
-            "most often OOM) -- retrying ONCE serially (-p no:xdist) "
-            "instead of discarding an already-mostly-passing run",
-            " ".join(argv),
-            code,
-        )
-        retry_argv = [*argv, "-p", "no:xdist"]
-        respawned = _spawn(retry_argv, cwd=cwd)
-        if respawned.is_err:
-            _log.error(
-                "coverage_refresh: serial retry after worker-crash also "
-                "failed to complete (%s) -- keeping the original pass's "
-                "data, still marked worker_crash",
-                respawned.danger_err.value,
-            )
-        else:
-            proc = respawned.danger_ok
-            code = proc.returncode
-            if code == 0:
-                _log.info(
-                    "coverage_refresh: serial retry after worker-crash "
-                    "succeeded -- run is no longer degraded"
-                )
-            else:
-                _log.error(
-                    "coverage_refresh: serial retry after worker-crash "
-                    "still exited %d -- this is a REAL failure, not the "
-                    "worker-crash artifact",
-                    code,
-                )
+        code = _retry_after_worker_crash(argv, cwd=cwd, code=code)
 
     if code != 0 and not worker_crash:
         _log.error(
