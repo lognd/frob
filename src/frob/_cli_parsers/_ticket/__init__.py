@@ -22,6 +22,7 @@ from ._closeout import (
     _add_ticket_fail_evidence_archive_parsers,
     _add_ticket_reverify_parser,
     _add_ticket_review_parser,
+    _add_ticket_sweep_async_parser,
 )
 from ._metadata import (
     _add_ticket_accept_parser,
@@ -68,6 +69,7 @@ __all__ = [
     "_add_ticket_query_parsers",
     "_add_ticket_renumber_parser",
     "_add_ticket_reverify_parser",
+    "_add_ticket_sweep_async_parser",
     "_add_ticket_review_parser",
     "_add_ticket_scope_ack_parser",
     "_add_ticket_scope_parser",
@@ -87,6 +89,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
         + [
             # frob:ticket T-1005
             _add_ticket_reverify_parser(ticket_sub),
+            # frob:ticket T-1684
+            _add_ticket_sweep_async_parser(ticket_sub),
             _add_ticket_done_report_parser(ticket_sub),
             _add_ticket_scope_parser(ticket_sub),
             # frob:ticket T-1484

@@ -180,9 +180,10 @@ def _wire_reach_patterns(
     short: str, kind: SymbolKind
 ) -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str] | None]:
     """The three "reached" regexes `_is_reached_outside_diff_tests` scans
-    with: a plain call-shaped token, the T-1502/T-1532 bare-name-argument
-    shape (decorator/memoization wrapper markers PLUS job-table
-    constructors -- both pass the symbol BY REFERENCE, not as a call),
+    with: a plain call-shaped token, the T-1502/T-1532/T-1684
+    bare-name-argument shape (decorator/memoization wrapper markers, job-
+    table constructors, PLUS dict-table values -- all three pass the
+    symbol BY REFERENCE, not as a call),
     and (CLASS records only, T-1527) the ErrorSet bare-member-access
     shape -- split out purely to keep the scanning function itself under
     ARCH001's line threshold, no behavior change from inlining."""
@@ -190,8 +191,16 @@ def _wire_reach_patterns(
     marker_names = "|".join(
         re.escape(name) for name in (*_WRAPPER_MARKER_NAMES, *_JOB_TABLE_MARKER_NAMES)
     )
+    # T-1684: a DICT-TABLE entry (`"sweep-async": _sweep_async,` in
+    # `_ticket_dispatch_table`) is the third by-reference wiring shape in
+    # this repo, alongside the wrapper-marker and job-table ones above --
+    # every `frob ticket <verb>` handler is wired exactly this way and
+    # nothing else ever calls it by name. Without this, every new CLI
+    # subcommand handler is a WIRE001 false positive whose only remedy is
+    # a waiver, which is how a gate teaches people to waive it.
     wrapper_pattern = re.compile(
         rf"(?<![A-Za-z0-9_.])(?:{marker_names})\s*\(\s*{re.escape(short)}\s*[,)]"
+        rf"|:\s*{re.escape(short)}\s*[,}}]"
     )
     member_access_pattern = None
     if kind == SymbolKind.CLASS:

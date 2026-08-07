@@ -375,3 +375,29 @@ def _add_ticket_done_report_parser(ticket_sub):
         "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
     )
     return ticket_done_report_p
+
+
+# frob:ticket T-1684
+def _add_ticket_sweep_async_parser(ticket_sub):
+    """Register `frob ticket sweep-async <id> --commit <sha>` -- the
+    detached child half of the rapid profile's deferred post-land sweep
+    (T-1684). Not a verb a developer normally types: `frob ticket land`
+    spawns it. It exists as a real subcommand rather than a `-c` code
+    string so the deferred sweep is inspectable, re-runnable by hand
+    against any commit, and covered by the same CLI surface tests as
+    every other verb."""
+    ticket_sweep_async_p = ticket_sub.add_parser(
+        "sweep-async",
+        help="run the deferred post-land unscoped sweep for a landed "
+        "ticket (rapid profile; normally spawned by `land`)",
+    )
+    ticket_sweep_async_p.add_argument("ticket_id", metavar="id")
+    ticket_sweep_async_p.add_argument(
+        "--commit",
+        dest="ticket_sweep_commit",
+        required=True,
+        metavar="SHA",
+        help="the land commit this sweep is verifying, recorded in the "
+        "rolling baseline and any filed regression ticket",
+    )
+    return ticket_sweep_async_p

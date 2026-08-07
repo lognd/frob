@@ -135,6 +135,7 @@ from ._query import (
     _renumber_one,
     _show,
 )
+from ._rapid_sweep import _sweep_async
 from ._verify import (
     _apply_cmd_evidence,
     _apply_evidence,
@@ -298,6 +299,8 @@ def _ticket_dispatch_table() -> dict:
         "work": _work,
         "requeue": _requeue,
         "sweep": _sweep_cmd,
+        # frob:ticket T-1684
+        "sweep-async": _sweep_async,
         "reconcile": _reconcile_cmd,
         "migrate": lambda root, cfg: _migrate(root, to=cfg.ticket_migrate_to),
         "renumber": _renumber,

@@ -92,6 +92,8 @@ _STRING_FIELDS = (
     "ticket_review_commit",
     "ticket_why",
     "ticket_base_ref",
+    # frob:ticket T-1684
+    "ticket_sweep_commit",
     "ticket_scope_reason",
     "ticket_priority",
     "ticket_priority_level",

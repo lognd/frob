@@ -334,14 +334,76 @@ def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
             rel_result.danger_err,
         )
         return True
-    if rel_result.danger_ok is not None:
-        _log.warning(
-            "ticket close: %s REL001 version bump outstanding (needs %s)",
+    if rel_result.danger_ok is None:
+        return False
+
+    # T-1684: `_required_release_bump` answers "what version does the API
+    # at HEAD's manifest require", NOT "is that bump still outstanding" --
+    # it never looks at the version the working tree already DECLARES.
+    # `_apply_release_bump_for_land` compares the two before writing
+    # anything; this guard did not, so a developer who had already bumped
+    # pyproject.toml and re-stamped was told to bump again, forever, with
+    # no reachable state that satisfied the check. Compare here too.
+    needed = rel_result.danger_ok
+    declared = _declared_pyproject_version(root)
+    if declared is not None and _version_covers(declared, needed):
+        _log.info(
+            "ticket close: %s REL001 bump to %s is already applied on disk "
+            "(pyproject declares %s) -- satisfied",
             ticket.id,
-            rel_result.danger_ok,
+            needed,
+            declared,
         )
-        return True
-    return False
+        return False
+    _log.warning(
+        "ticket close: %s REL001 version bump outstanding (needs %s, "
+        "pyproject declares %s)",
+        ticket.id,
+        needed,
+        declared or "unreadable",
+    )
+    return True
+
+
+# frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_absent_pyproject_is_none  # noqa: E501
+# frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_unparsable_pyproject_is_none  # noqa: E501
+# frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_reads_the_declared_version  # noqa: E501
+# frob:ticket T-1684
+def _declared_pyproject_version(root: Path) -> str | None:
+    """`root/pyproject.toml`'s declared `version`, or `None` if the file
+    is absent or unparsable -- `None` means "cannot verify", and every
+    caller must treat that as NOT satisfying a bump obligation."""
+    import tomllib
+
+    path = root / "pyproject.toml"
+    if not path.exists():
+        return None
+    try:
+        with path.open("rb") as handle:
+            doc = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("ticket close: %s unparsable for the REL001 check: %s", path, exc)
+        return None
+    version = doc.get("project", {}).get("version")
+    return str(version) if version else None
+
+
+# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_equal_covers  # noqa: E501
+# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_higher_covers  # noqa: E501
+# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_lower_does_not_cover  # noqa: E501
+# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_non_numeric_never_covers  # noqa: E501
+# frob:ticket T-1684
+def _version_covers(declared: str, needed: str) -> bool:
+    """Whether `declared` is at least `needed`, compared as numeric
+    dotted components (`0.356.0` covers `0.356.0` and `0.355.0`).
+    Anything non-numeric compares `False` -- an unrecognizable version
+    must never be read as satisfying a release obligation."""
+    try:
+        left = tuple(int(part) for part in declared.split("."))
+        right = tuple(int(part) for part in needed.split("."))
+    except ValueError:
+        return False
+    return left >= right
 
 
 # frob:ticket T-1387

@@ -9,6 +9,7 @@ from frob.tickets._profile import (
     configured_profile,
     downgrade_profile_ratchet,
     effective_profile,
+    ratchet_override_enabled,
 )
 
 
@@ -121,3 +122,33 @@ class TestDowngrade:
         result = downgrade_profile_ratchet(tmp_path, reason="no-op check")
         assert result.is_ok
         assert result.danger_ok is False
+
+
+# frob:ticket T-1684
+class TestRatchetOverride:
+    """`ratchet_override_enabled` (T-1681): the explicit, tracked owner
+    decision to keep `rapid` in a repo the size ratchet would upgrade."""
+
+    def test_absent_frob_toml_is_not_overridden(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_frob_toml_is_not_overridden  # noqa: E501
+        assert ratchet_override_enabled(tmp_path) is False
+
+    def test_absent_key_is_not_overridden(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_key_is_not_overridden  # noqa: E501
+        (tmp_path / "frob.toml").write_text(
+            '[profile]\nprofile = "rapid"\n', encoding="utf-8"
+        )
+        assert ratchet_override_enabled(tmp_path) is False
+
+    def test_explicit_true_overrides(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_explicit_true_overrides  # noqa: E501
+        (tmp_path / "frob.toml").write_text(
+            '[profile]\nprofile = "rapid"\noverride_ratchet = true\n', encoding="utf-8"
+        )
+        assert ratchet_override_enabled(tmp_path) is True
+
+    def test_malformed_toml_fails_strict_not_relaxed(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_malformed_toml_fails_strict_not_relaxed  # noqa: E501
+        # A broken config can only ever make the ceremony STRICTER.
+        (tmp_path / "frob.toml").write_text("[profile\n", encoding="utf-8")
+        assert ratchet_override_enabled(tmp_path) is False

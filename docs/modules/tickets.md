@@ -2866,15 +2866,13 @@ not proportional to repo size. `rapid` trims it:
   enqueue. BUG002 (`bug_repro_violations`) is unaffected by the profile
   and still runs/blocks for bug/security kind regardless of profile.
 - **No pre-commit sweep.** `_land_cmd.py::_land` passes
-  `pre_commit_sweep=None` to `land()` when rapid -- the single post-land
-  sweep (`_post_land_unscoped_error_sweep`, unchanged, still revert-on-
-  red) is the only sweep that runs. The T-1463 baseline-capture thread
-  itself still runs even under rapid in this increment, since it is the
-  SAME thread/result the post-land sweep also reads (T-1514) -- a fully
-  baseline-thread-free rapid path (this ticket's "no baseline snapshot
-  worktree" line, taken literally) is disclosed as deferred follow-up
-  work, not implemented here (see T-1575's Done report for the filed
-  follow-up id).
+  `pre_commit_sweep=None` to `land()` when rapid.
+- **No synchronous post-land sweep, and no baseline thread** (T-1684):
+  the post-land sweep runs DETACHED and files a ticket instead of
+  reverting; the T-1463 baseline-capture thread is not started at all,
+  because the deferred sweep carries its own rolling baseline. See
+  "Deferred post-land sweep" below. `standard` keeps both the
+  synchronous revert-on-red sweep and the baseline thread verbatim.
 - **Evidence/done-report leniency for `kind in {docs, chore}`, and
   REL001 off under rapid** are likewise disclosed as deferred follow-up
   in T-1575's Done report, not wired in this increment -- the ticket's
@@ -2914,6 +2912,83 @@ This does NOT affect an EXISTING repo's `frob.toml`: an absent `[profile]`
 key still means `standard` (`configured_profile`'s own documented
 default), unchanged by this ticket -- only the scaffold's OWN generated
 template content changed.
+
+## Rapid debt and the ratchet override (T-1681)
+
+<!-- frob:describes src/frob/tickets/_profile.py::ratchet_override_enabled -->
+<!-- frob:describes src/frob/tickets/_evidence.py::record_rapid_debt -->
+
+The size auto-ratchet above made `rapid` unreachable for exactly the
+repos where the ceremony costs the most -- frob's own tree trips the file
+and ticket thresholds many times over, so configuring `rapid` here was a
+silent no-op. `[profile] override_ratchet = true` (read by
+`ratchet_override_enabled`) is the explicit owner decision to keep
+`rapid` anyway. Deliberately a config key and not an env var: it lives in
+a tracked file, so `git log frob.toml` states exactly which commits were
+produced under relaxed rules.
+
+`record_rapid_debt(root, ticket_id, skipped)` is the other half of that
+bargain -- every check `rapid` skips appends one self-contained JSON line
+(`ticket`, `skipped`, `commit`) to `rapid-debt.jsonl`. TRACKED, not under
+`.frob/`: the debt must survive a clone and a `frob clean`, and must be
+reviewable in a diff. Best-effort by construction (failing to record debt
+never fails a close) but logged at ERROR, because an unrecorded
+relaxation is the one outcome that makes the cleanup pass unreliable.
+The T-1681 re-verification pass drains that file rather than
+re-deriving what happened from git archaeology.
+
+## Deferred post-land sweep (`rapid` only, T-1684)
+
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::spawn_deferred_post_land_sweep -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::RapidSweepError -->
+
+`standard`'s post-land sweep is synchronous and reverts a just-made land
+commit when it finds new unscoped errors. Correct when lands are rare,
+but it puts a full-repo `frob check` (2-8 minutes on this repo) plus the
+T-1463 baseline check on the critical path of every land -- and a
+five-minute land is its own correctness risk, because the queue stops
+draining and work batches into giant unreviewable lands.
+
+Under `rapid`, `_land_core_finish_post_land` calls
+`spawn_deferred_post_land_sweep` instead. That:
+
+1. appends a `rapid-debt.jsonl` line
+   (`post-land-unscoped-sweep-deferred`) BEFORE spawning anything, so
+   "this commit landed unverified" is a machine-readable fact from the
+   instant it is true, even if the child never starts;
+2. spawns `frob ticket sweep-async <id> --commit <sha>` detached
+   (`start_new_session=True`), logging to
+   `.frob/rapid-sweep/<id>-<sha12>.log`;
+3. returns immediately -- the land does not wait.
+
+The child runs `run_deferred_post_land_sweep`, which pays exactly ONE
+unscoped check by diffing against a **rolling baseline**
+(`.frob/rapid-sweep-baseline.json`, the previous deferred sweep's
+absolute `(rule_id, file)` set) rather than measuring a fresh pre-land
+baseline. Semantics:
+
+- **No baseline yet** (first sweep in a repo, or a corrupt file): record
+  one, file nothing. An absent baseline is `None`, never an empty set --
+  comparing against assumed-clean would report every pre-existing error
+  as newly introduced, which is exactly how an automated filer earns
+  being ignored.
+- **Unmeasurable check** (refused spawn, timeout, unparsable output):
+  `Err(Unmeasurable)`, and the baseline is left untouched, so the next
+  sweep still diffs against a set we actually trust.
+- **New pairs found:** one `bug` ticket at `high` priority naming every
+  new `(rule_id, file)` pair and the commit, scoped to the offending
+  files. The commit STANDS -- rapid never rewrites published history,
+  because under rapid other agents are already branching from it.
+- **Every sweep, red or green, rewrites the baseline.** An error already
+  filed as a ticket must not be re-filed by the next land; from then on
+  the filed ticket is the record.
+
+`frob ticket sweep-async` is a real subcommand rather than a `-c` code
+string so the deferred sweep is inspectable, re-runnable by hand against
+any commit, and covered by the same CLI surface tests as every other
+verb. It exits non-zero only when the sweep was unmeasurable, so a human
+re-running it can tell "verified" from "could not verify".
 
 ## Git merge driver
 

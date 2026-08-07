@@ -175,6 +175,11 @@ def configured_profile(root: Path) -> Result[ProfileName, ProfileError]:
         return Err(ProfileError.BadConfig)
 
 
+# frob:doc docs/modules/tickets.md#rapid-debt-and-the-ratchet-override-t-1681
+# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_frob_toml_is_not_overridden  # noqa: E501
+# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_key_is_not_overridden  # noqa: E501
+# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_explicit_true_overrides  # noqa: E501
+# frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_malformed_toml_fails_strict_not_relaxed  # noqa: E501
 # frob:ticket T-1681
 def ratchet_override_enabled(root: Path) -> bool:
     """Whether `root`'s `frob.toml` sets `[profile] override_ratchet = true`

@@ -603,6 +603,10 @@ class AppConfig(BaseModel):
     ticket_why: str | None = None
     ticket_why_file: Path | None = None
     ticket_base_ref: str = "main"
+    # frob:ticket T-1684
+    # `frob ticket sweep-async <id> --commit <sha>`: the land commit the
+    # detached rapid-profile post-land sweep is verifying.
+    ticket_sweep_commit: str | None = None
     # T-0323: `frob ticket merge-driver %O %A %B` -- git's merge-driver
     # protocol passes base/ours/theirs as temp file paths; ours (%A) is
     # both read and overwritten with the splice result.

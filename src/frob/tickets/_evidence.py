@@ -192,6 +192,29 @@ def _transition_guard(
     return Ok(None)
 
 
+# frob:ticket T-1684
+def _head_commit_or_unknown(root: Path) -> str:
+    """`root`'s HEAD sha, or the literal `"unknown"` -- never an empty
+    string.
+
+    `run_argv` reports a SPAWN failure via `Err`, NOT a nonzero exit, so
+    an `is_ok`-only check let a failed `rev-parse` (rc=128: not a repo, or
+    a repo with no commits yet) record `""`, which reads as a
+    real-but-empty value to anything draining `rapid-debt.jsonl` rather
+    than as the "we could not determine this" it actually means."""
+    from frob.gitio import run_argv
+
+    head = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
+    if head.is_err or head.danger_ok.returncode != 0:
+        return "unknown"
+    return head.danger_ok.stdout.strip() or "unknown"
+
+
+# frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_appends_one_json_line_per_call  # noqa: E501
+# frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_records_a_commit_field_even_outside_a_git_repo  # noqa: E501
+# frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_is_tracked_not_under_dot_frob  # noqa: E501
+# frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_an_unwritable_path_never_raises  # noqa: E501
+# frob:doc docs/modules/tickets.md#rapid-debt-and-the-ratchet-override-t-1681
 # frob:ticket T-1681
 def record_rapid_debt(root: Path, ticket_id: str, skipped: str) -> None:
     """Append one line to `rapid-debt.jsonl` naming a check that `rapid`
@@ -210,11 +233,11 @@ def record_rapid_debt(root: Path, ticket_id: str, skipped: str) -> None:
     to record debt must never fail a close, but it is logged at ERROR
     because an unrecorded relaxation is the one outcome that makes the
     cleanup pass unreliable."""
-    from frob.gitio import run_argv
-
-    head = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
-    commit = head.danger_ok.stdout.strip() if head.is_ok else "unknown"
-    entry = {"ticket": ticket_id, "skipped": skipped, "commit": commit}
+    entry = {
+        "ticket": ticket_id,
+        "skipped": skipped,
+        "commit": _head_commit_or_unknown(root),
+    }
     path = root / "rapid-debt.jsonl"
     try:
         with path.open("a", encoding="utf-8") as handle:

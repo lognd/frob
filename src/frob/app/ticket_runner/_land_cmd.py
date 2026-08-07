@@ -2041,7 +2041,9 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
 
     root, rapid_land = _land_core_prepare(root, cfg, worktree)
 
-    baseline_thread, baseline_holder = _land_core_start_baseline(root, cfg)
+    baseline_thread, baseline_holder = _land_core_start_baseline(
+        root, cfg, rapid_land=rapid_land
+    )
 
     result = _land_core_invoke(
         root, cfg, worktree, rapid_land, baseline_thread, baseline_holder
@@ -2061,7 +2063,7 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
     )
 
     return _land_core_finish_post_land(
-        root, cfg, report, pre_land_sha, pre_land_findings
+        root, cfg, report, pre_land_sha, pre_land_findings, rapid_land=rapid_land
     )
 
 
@@ -2118,14 +2120,42 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
 
 
 # frob:ticket T-1593
-def _land_core_start_baseline(root: Path, cfg: AppConfig):  # noqa: ANN201
+def _land_core_start_baseline(  # noqa: ANN201
+    root: Path, cfg: AppConfig, *, rapid_land: bool = False
+):
     """Background-baseline seam of `_land_core` (T-1593 split): starts the
     T-1463 pre-land baseline capture thread, snapshot-isolated so it is
     safe to run concurrently with `land()`'s own merge/checks -- pure
     extraction of the original thread-start block, unchanged. Returns
     `(thread, holder)`; the caller joins `thread` and reads `holder[0]`
-    once the `land()` call has returned."""
+    once the `land()` call has returned.
+
+    T-1684: `rapid_land` starts NO thread and returns a never-started
+    stand-in (`join()` is a no-op, holder stays empty, so the caller's
+    `pre_land_sha` is `None`). Rapid's post-land sweep is deferred to a
+    detached child that diffs against its own rolling baseline
+    (`frob.app.ticket_runner._rapid_sweep`), so this whole snapshot check
+    -- a full `frob check` the land still had to JOIN before finishing --
+    has no consumer under that profile. The baseline capture stays exactly
+    as-is for `standard`/`fortress`."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
+
+    if rapid_land:
+        import threading
+
+        _log.info(
+            "ticket land: %s profile=rapid -- skipping the T-1463 pre-land "
+            "baseline snapshot check; the post-land sweep is deferred to a "
+            "detached child with its own rolling baseline (T-1684)",
+            cfg.ticket_id,
+        )
+        # Started (not merely constructed) so the caller's unconditional
+        # `.join()` stays valid -- an unstarted Thread raises on join.
+        noop = threading.Thread(
+            target=lambda: None, name=f"frob-land-baseline-noop-{cfg.ticket_id}"
+        )
+        noop.start()
+        return noop, []
 
     # T-1463: run concurrently with land()'s own merge/checks below -- see
     # `_capture_pre_land_baseline`'s docstring for why this is safe
@@ -2204,6 +2234,8 @@ def _land_core_finish_post_land(
     report,  # noqa: ANN001
     pre_land_sha: str | None,
     pre_land_findings: frozenset[tuple[str, str]] | None,
+    *,
+    rapid_land: bool = False,
 ):
     """T-1523 post-land verification seam of `_land_core` (T-1593 split):
     writes/clears the post-land-verify marker around the unscoped-error
@@ -2216,6 +2248,22 @@ def _land_core_finish_post_land(
     from frob.tickets._models import LandError
 
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
+
+    # T-1684: under rapid the sweep is the ONLY thing left between a
+    # durable land commit and the developer's prompt, and it is a
+    # multi-minute full-repo check. Hand it to a detached child and
+    # return -- a red result becomes a filed bug ticket, never a revert of
+    # a commit other agents may already have branched from.
+    if rapid_land:
+        if not report.dry_run and report.commit_sha is not None:
+            from frob.app.ticket_runner._rapid_sweep import (
+                spawn_deferred_post_land_sweep,
+            )
+
+            spawn_deferred_post_land_sweep(
+                root, cfg.ticket_id, report.final_id, report.commit_sha
+            )
+        return Ok(report)
 
     if not report.dry_run and pre_land_sha is not None:
         # T-1523: the land commit (`report.commit_sha`) is ALREADY durably
