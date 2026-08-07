@@ -3105,6 +3105,7 @@ created: '2026-08-05'
 priority: medium
 blocked_by:
 - T-1725
+- T-1764
 parent: T-1238
 tier: ticket
 sprint: null
@@ -3115,7 +3116,6 @@ threat: null
 component: null
 ```
 Refiled from T-1569 (T-1238 taxonomy slice, draft-loss class). Group operational verbs under frob ops following the frob explore precedent.
-
 <!-- ticket:T-1570 -->
 ```yaml
 id: T-1570
