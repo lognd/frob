@@ -3362,6 +3362,105 @@ continuous stream of notifies that never lets the debounce window go
 quiet still forces a run once the floor elapses, so a busy repo cannot
 starve verification indefinitely.
 
+## Symbolic attribution (T-1690)
+
+<!-- frob:describes src/frob/verify/_attribution.py::AttributionError -->
+<!-- frob:describes src/frob/verify/_attribution.py::Attribution -->
+<!-- frob:describes src/frob/verify/_attribution.py::attribute_batch -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_attribute_new_findings -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_ticket_is_open -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket -->
+
+The hard leaf T-1686's own design called out first: when a batch
+verification goes red, map each finding to the commit that caused it,
+without ever guessing.
+
+**The rule.** A finding anchored at symbol S attributes to the batch
+commit whose `VerifyQueueEntry.touched_symbols` REACHES S in the
+reference graph (`frob.graph.callgraph.build_reference_graph`'s
+caller-symref -> callee-symref edges, walked forward). "The commit that
+touched the same file" is the lexical shortcut this module refuses: it is
+wrong the moment a change breaks a CALLER rather than the symbol itself,
+and it misreports a pure symbol-move between files as a regression the
+instant the moved symbol's file changes out from under a path-keyed
+identity. `frob.verify._attribution.attribute_batch` never compares a
+path string to decide "does this commit explain this finding" -- every
+decision walks real symrefs.
+
+**Ambiguity is a first-class outcome.** Exactly one candidate commit
+reaching the finding's symbol is `Attribution(status="attributed", ...)`;
+zero candidates, or more than one, is `status="unattributed"` -- a
+distinct, equally real state, NEVER resolved by picking the newest commit
+as a tiebreak (T-1686's own standing decision: a confident wrong
+attribution costs more than an honest "unknown", because it sends someone
+to read a diff that is not the cause). `candidate_commits` names every
+commit that DID reach the finding for the ambiguous case (empty for the
+zero-candidate case), so a reader can tell "nobody could have caused
+this" apart from "too many could have" at a glance.
+
+**The reachability path is logged, not just the verdict.**
+`Attribution.reachability_path` is the actual symref chain the BFS walked
+from the owning commit's touched symbol to the finding's own symbol;
+`attribute_batch` logs it at INFO for every attributed finding and logs
+every candidate commit at WARNING for every unattributed one. An
+attribution nobody can audit is an assertion, not evidence (T-1686's own
+standing constraint) -- this is how that constraint is actually met, not
+just stated.
+
+**Symbol resolution degrades honestly when line information is
+missing.** T-1690's declared scope (`_attribution.py`, `_rapid_sweep.py`)
+does not include `_land_cmd.py`/`_verify.py`, so the `(rule_id, file)`
+finding identity those modules already produce still carries no line
+number. When a finding's line IS known, `_resolve_symbol` picks the
+single enclosing symbol from `SymbolRecord.span`. When it is NOT known,
+every symbol `GraphSnapshot.symbols` records against that file becomes a
+candidate target -- strictly better than a bare file-level identity
+comparison (a per-symbol reachability check still runs against each
+candidate), but weaker than true line-precision: a multi-symbol file
+where only one function actually broke can widen the candidate set enough
+to manufacture ambiguity that line-precision would have resolved. This is
+a disclosed, deliberate degradation, not a silently narrowed guess --
+extending the upstream finding identity to carry a line number is future
+work outside this ticket's scope.
+
+**"Cannot verify" is never "verified", extended to attribution.** A
+reference graph that fails to build/load at all makes EVERY finding's
+attribution impossible; `attribute_batch` returns
+`Err(AttributionError.GraphUnavailable)` for the WHOLE batch rather than
+silently attributing some findings and skipping others.
+
+**Wired into the filer, not a separate report.**
+`_rapid_sweep._file_regression_ticket` (T-1684's own regression filer,
+called from both the rapid deferred sweep and T-1688's coalescing worker
+red branch) now runs every new finding through
+`_attribute_new_findings` first (reads the CURRENT durable verify queue
+as the batch -- the commits landed since the last watermark advance,
+exactly the set a red sweep could have been caused by) before deciding
+what to file:
+
+- A finding attributed to EXACTLY ONE commit whose OWNING ticket is
+  still open (`_ticket_is_open`: loaded, and not `done`/`dropped`) is
+  logged and left OFF the regression ticket entirely -- it already has a
+  home, and re-filing it would just be noise.
+- Everything else -- attributed to a closed/dropped ticket's commit, or
+  genuinely UNATTRIBUTED -- is filed, with the full attribution audit
+  trail (commit, symbol, reachability path, or the specific reason
+  attribution failed) written into the ticket body so a reader never has
+  to re-derive what `attribute_batch` already computed.
+- Attribution UNAVAILABILITY (`_attribute_new_findings` returns `{}` when
+  the queue is unreadable/empty or the graph cannot be built) degrades to
+  the pre-T-1690 behavior verbatim: every finding filed, no attribution
+  lines -- "cannot attribute" must never suppress a real regression's own
+  ticket.
+
+**What this leaf does NOT do.** The bisect leaf T-1686's own design names
+as the handoff for UNATTRIBUTED findings ("tier 3: bisect only the
+residue tier 2 cannot attribute") is not built yet -- an unattributed
+finding today is filed as an ordinary regression ticket with its
+candidate commits named in the body, for a human to read; there is no
+automated bisect trigger. This is a disclosed scope cut, not a silent
+gap: the bisect leaf is future work this ticket does not claim to close.
+
 ## Development profiles (`frob.toml [profile]`, T-1575)
 
 <!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->

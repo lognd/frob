@@ -286,8 +286,9 @@ node security : trusted {
 // docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
 node verify : trusted {
     attr interface=[
-        CoalescingWorker, WatermarkError, WorkerError, WorkerOutcome, advance_watermark, compact_queue,
-        load_watermark, queue_status, record_intent, run_coalesced_verification,
+        AttributionError, CoalescingWorker, VerifyQueueEntry, WatermarkError, WorkerError, WorkerOutcome,
+        advance_watermark, attribute_batch, compact_queue, load_watermark, queue_status, record_intent,
+        run_coalesced_verification,
     ];
     clearance Internal;
     code "src/frob/verify/**";

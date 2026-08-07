@@ -7,15 +7,25 @@ land, keyed by commit sha and touched SYMBOL ids) and a persisted
 WATERMARK ("main is verified through commit X"). `frob.verify._worker`
 (T-1688) is the daemon-side coalescing worker that consumes it: on wake,
 verify ONCE at the queue's tip and advance the watermark past every
-entry it covers, never once per queued entry. Tier-2/3 attribution and
+entry it covers, never once per queued entry. `frob.verify._attribution`
+(T-1690) is the tier-2 leaf: given a red batch's findings and the durable
+queue entries that batch covers, decide which commit's touched symbol set
+graph-reaches each finding -- exactly one reaching commit attributes,
+zero or more than one is UNATTRIBUTED (a first-class outcome, never a
+newest-commit tiebreak). Backpressure (bound the unverified window) and
 the profile-to-queue-depth dial are still later leaves this package does
 not yet contain.
 """
 # frob:waive INV006 preset="split-carried-prose"
-# frob:waive TEST003 reason="unit-tested exhaustively via tests/unit/verify/test_watermark.py and tests/unit/verify/test_worker.py; no CLI/subprocess integration entrypoint exists yet -- both T-1687 and T-1688 are data-model/worker-only tickets, not wired into frob.__main__ (that wiring is a later leaf in the T-1686 epic)"  # noqa: E501
+# frob:waive TEST003 reason="unit-tested exhaustively via tests/unit/verify/test_watermark.py, tests/unit/verify/test_worker.py, and tests/unit/verify/test_attribution.py; no CLI/subprocess integration entrypoint exists yet -- T-1687/T-1688/T-1690 are data-model/worker/attribution-only tickets, not wired into frob.__main__ (that wiring is a later leaf in the T-1686 epic)"  # noqa: E501
 
 from __future__ import annotations
 
+from frob.verify._attribution import (
+    Attribution,
+    AttributionError,
+    attribute_batch,
+)
 from frob.verify._watermark import (
     SCHEMA_VERSION,
     VerifyQueueEntry,
@@ -41,6 +51,8 @@ __all__ = [
     "DEFAULT_DEBOUNCE_WINDOW_S",
     "DEFAULT_PERIODIC_FLOOR_S",
     "SCHEMA_VERSION",
+    "Attribution",
+    "AttributionError",
     "CoalescingWorker",
     "VerifyFn",
     "VerifyQueueEntry",
@@ -49,6 +61,7 @@ __all__ = [
     "WorkerError",
     "WorkerOutcome",
     "advance_watermark",
+    "attribute_batch",
     "compact_queue",
     "load_watermark",
     "queue_status",

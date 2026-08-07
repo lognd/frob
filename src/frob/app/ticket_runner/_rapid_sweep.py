@@ -1,9 +1,9 @@
 # frob:ticket T-1684
-# frob:waive INV006 reason="this module docstring's exclusivity wording (the sweep \
-# is the only thing between a durable commit and the prompt; an already-filed error \
-# must not be re-filed) describes this module's OWN implemented branching, \
-# verifiable by reading the code it annotates -- not a cross-module contract needing \
-# a tracked invariant, same disposition as _profile.py's identical waiver"
+# frob:waive INV006 reason="this module docstring's exclusivity wording (the sweep is \
+# the only thing between a durable commit and the prompt; an already-filed error must \
+# not be re-filed) describes this module's OWN implemented branching, verifiable by \
+# reading the code it annotates -- not a cross-module contract needing a tracked \
+# invariant, same disposition as _profile.py's identical waiver"
 """T-1684: the `rapid`-profile replacement for `_land_cmd`'s synchronous
 post-land unscoped error sweep -- a DETACHED sweep that files a ticket
 instead of blocking the land.
@@ -279,26 +279,204 @@ def spawn_deferred_post_land_sweep(
     return Ok(proc.pid)
 
 
+# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:ticket T-1690
+# frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_attributed_and_unattributed_round_trip  # noqa: E501
+def _attribute_new_findings(
+    root: Path, pairs: list[tuple[str, str]]
+):  # noqa: ANN201 -- dict[tuple[str, str], Attribution], deferred-import type
+    """T-1690 tier-2: attribute each `(rule, file)` pair in `pairs` to the
+    single durable `VerifyQueueEntry` (if any) whose `touched_symbols`
+    graph-reaches it, using the CURRENT verify queue as the batch (the set
+    of lands recorded since the last watermark advance -- exactly the
+    commits this red sweep could have been caused by). Returns `{}`
+    (attribution unavailable for every pair, never a partial mapping) when
+    the queue cannot be read or the reference graph cannot be built --
+    `_file_regression_ticket` treats an empty mapping as "no attribution
+    information", not "everything unattributed", falling back to filing
+    the whole set exactly as it did before this ticket."""
+    from frob.verify import attribute_batch, queue_status
+
+    queue = queue_status(root)
+    if queue.is_err:
+        _log.warning(
+            "rapid sweep: attribution: verify queue unreadable (%s) -- "
+            "filing without attribution",
+            queue.danger_err,
+        )
+        return {}
+    batch = queue.danger_ok
+    if not batch:
+        _log.info(
+            "rapid sweep: attribution: verify queue is empty -- filing "
+            "without attribution"
+        )
+        return {}
+    attributed = attribute_batch(root, pairs, batch)
+    if attributed.is_err:
+        _log.warning(
+            "rapid sweep: attribution: reference graph unavailable (%s) -- "
+            "filing without attribution",
+            attributed.danger_err,
+        )
+        return {}
+    return {(a.rule_id, a.file): a for a in attributed.danger_ok}
+
+
+# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:ticket T-1690
+# frob:tests tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_open_ticket_is_open
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_done_ticket_is_not_open
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_missing_ticket_is_not_open
+def _ticket_is_open(root: Path, ticket_id: str) -> bool:
+    """`True` when `ticket_id` still exists and is NOT `done`/`dropped` --
+    the "owning ticket still open" half of T-1690's filing rule. A ticket
+    that cannot be loaded at all (queue read failure, id not found)
+    counts as NOT open: attribution should never suppress a real
+    regression's own ticket because the owning ticket became
+    unreadable."""
+    from frob.tickets import load_queue
+    from frob.tickets._models import TicketState
+
+    queue = load_queue(root)
+    if queue.is_err:
+        return False
+    ticket = queue.danger_ok.tickets.get(ticket_id)
+    if ticket is None:
+        return False
+    return ticket.state not in (TicketState.DONE, TicketState.DROPPED)
+
+
+# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:ticket T-1690
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed  # noqa: E501
+def _partition_findings_by_attribution(
+    root: Path, final_id: str, pairs: list[tuple[str, str]]
+) -> tuple[list[tuple[str, str]], list[str]]:
+    """T-1690: split `pairs` into `(unfiled_pairs, attribution_lines)`
+    (ARCH001 split of `_file_regression_ticket`, which was previously one
+    122-line function). `unfiled_pairs` is every pair that still needs its
+    own regression ticket -- unattributed, or attributed to a
+    closed/dropped ticket's commit; a pair attributed to a STILL-OPEN
+    ticket is left out of it entirely (logged instead, at INFO, once per
+    owning ticket) since it already has a home. `attribution_lines` is the
+    human-readable audit trail for EVERY pair with attribution
+    information (including the already-open ones, so a caller that wants
+    the full picture -- not just what got filed -- still has it), in the
+    same order `pairs` was given."""
+    attributions = _attribute_new_findings(root, pairs)
+
+    unfiled_pairs: list[tuple[str, str]] = []
+    attribution_lines: list[str] = []
+    already_open: dict[str, int] = {}
+    for rule, file in pairs:
+        attr = attributions.get((rule, file))
+        if attr is None:
+            unfiled_pairs.append((rule, file))
+            continue
+        if attr.status == "attributed" and _ticket_is_open(root, attr.ticket_id):
+            already_open[attr.ticket_id] = already_open.get(attr.ticket_id, 0) + 1
+            attribution_lines.append(
+                f"- {rule}  {file}  -> attributed to {attr.ticket_id} "
+                f"(commit {attr.commit_sha[:12]}, already open -- not "
+                f"re-filed) via {' -> '.join(attr.reachability_path)}"
+            )
+            continue
+        unfiled_pairs.append((rule, file))
+        if attr.status == "attributed":
+            attribution_lines.append(
+                f"- {rule}  {file}  -> attributed to {attr.ticket_id} "
+                f"(commit {attr.commit_sha[:12]}, already closed/dropped -- "
+                f"filed below) via {' -> '.join(attr.reachability_path)}"
+            )
+        else:
+            attribution_lines.append(
+                f"- {rule}  {file}  -> UNATTRIBUTED ({attr.reason}); "
+                f"candidate commits: {list(attr.candidate_commits)}"
+            )
+
+    if already_open:
+        _log.info(
+            "rapid sweep: %s: %d finding(s) already attributed to still-"
+            "open ticket(s) %s -- not re-filed",
+            final_id,
+            sum(already_open.values()),
+            sorted(already_open),
+        )
+    return unfiled_pairs, attribution_lines
+
+
+# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:ticket T-1690
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_closed_ticket_is_refiled  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
 def _file_regression_ticket(
     root: Path, final_id: str, commit_sha: str, new_findings: frozenset[tuple[str, str]]
 ) -> str | None:
     """File one `bug` ticket naming every newly-introduced `(rule_id,
-    file)` pair, and return its id (`None` if the ledger write failed --
-    logged at ERROR, since an unfiled regression is the one outcome that
-    makes deferred sweeping unsound)."""
+    file)` pair NOT already owned by a still-open ticket, and return its
+    id (`None` if the ledger write failed -- logged at ERROR, since an
+    unfiled regression is the one outcome that makes deferred sweeping
+    unsound; also `None` when every finding attributes to an
+    already-open ticket, since that finding already has a home and
+    re-filing it would just be noise).
+
+    T-1690: each pair is first run through `_partition_findings_by_
+    attribution` (tier-2 symbolic reachability over the durable verify
+    queue, via `_attribute_new_findings`). A pair that attributes to
+    EXACTLY ONE batch commit whose ticket is still open is logged and left
+    off this ticket entirely -- it is already tracked. Every other pair
+    (attributed to a closed/dropped ticket's commit, or UNATTRIBUTED --
+    zero or more than one reaching commit) is filed here, with the full
+    attribution audit trail (commit, symbol, reachability path, or the
+    reason it could not be attributed) in the body, so a reader never has
+    to re-derive what this ticket already computed. Attribution
+    unavailability (empty mapping from `_attribute_new_findings`)
+    degrades to the pre-T-1690 behavior: every pair filed, no attribution
+    lines -- "cannot attribute" must never suppress a real regression's
+    own ticket."""
     from frob.tickets import TicketSpec, new_ticket
     from frob.tickets._models import Origin, Priority, TicketKind
 
     pairs = sorted(new_findings)
-    rules = sorted({rule for rule, _ in pairs})
+    unfiled_pairs, attribution_lines = _partition_findings_by_attribution(
+        root, final_id, pairs
+    )
+
+    if not unfiled_pairs:
+        _log.info(
+            "rapid sweep: %s: every new finding attributed to an already-"
+            "open ticket -- no regression ticket filed",
+            final_id,
+        )
+        return None
+
+    rules = sorted({rule for rule, _ in unfiled_pairs})
     body_lines = [
         f"The deferred post-land unscoped sweep (T-1684) for {final_id} at "
         f"commit {commit_sha} found {len(pairs)} error identit(ies) that "
         "were not present in the previous sweep's baseline.",
         "",
-        "New (rule, file) pairs:",
+        "New (rule, file) pairs filed here:",
         "",
-        *(f"- {rule}  {file}" for rule, file in pairs),
+        *(f"- {rule}  {file}" for rule, file in unfiled_pairs),
+    ]
+    if attribution_lines:
+        body_lines += [
+            "",
+            "Attribution (T-1690, symbolic reachability over the verify "
+            "queue's touched-symbol sets):",
+            "",
+            *attribution_lines,
+        ]
+    body_lines += [
         "",
         "Under the rapid profile the sweep runs detached and files this "
         "ticket rather than reverting an already-published commit. Fix the "
@@ -309,12 +487,12 @@ def _file_regression_ticket(
     spec = TicketSpec(
         title=(
             f"post-land sweep regression from {final_id}: "
-            f"{len(pairs)} new error(s) ({', '.join(rules[:4])})"
+            f"{len(unfiled_pairs)} new error(s) ({', '.join(rules[:4])})"
         ),
         kind=TicketKind.BUG,
         origin=Origin.AGENT,
         priority=Priority.HIGH,
-        scope=tuple(sorted({file for _, file in pairs})),
+        scope=tuple(sorted({file for _, file in unfiled_pairs})),
         body="\n".join(body_lines),
     )
     created = new_ticket(root, spec)
@@ -323,9 +501,9 @@ def _file_regression_ticket(
             "rapid sweep: %s introduced %d new error(s) but the regression "
             "ticket could NOT be filed (%s) -- pairs: %s",
             final_id,
-            len(pairs),
+            len(unfiled_pairs),
             created.danger_err,
-            pairs,
+            unfiled_pairs,
         )
         return None
     return created.danger_ok.id

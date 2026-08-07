@@ -11,7 +11,10 @@ import pytest
 from frob.app.ticket_runner import _rapid_sweep
 from frob.app.ticket_runner._rapid_sweep import (
     RapidSweepError,
+    _attribute_new_findings,
+    _file_regression_ticket,
     _read_baseline,
+    _ticket_is_open,
     _write_baseline,
     run_deferred_post_land_sweep,
     spawn_deferred_post_land_sweep,
@@ -261,3 +264,261 @@ class TestDescribeRootDirt:
         repo = _seed_repo(tmp_path)
         (repo / "seed.txt").write_text("changed\n", encoding="utf-8")
         assert "seed.txt" in describe_root_dirt(repo)
+
+
+def _seed_ticket(tmp_path: Path, *, state=None) -> str:
+    """A minimal ticket for T-1690's attribution-filing tests. `state`
+    (a `TicketState`), when given, transitions the ticket there -- `DONE`
+    is reached the cheap way (via `drop_ticket`, landing on `DROPPED`,
+    which is in `_ticket_is_open`'s CLOSED set alongside `DONE`) rather
+    than satisfying `done`'s own evidence/Done-report requirements, which
+    this test has no need to exercise."""
+    from frob.tickets import Origin, TicketKind, new_ticket
+    from frob.tickets._models import TicketSpec, TicketState
+
+    spec = TicketSpec(title="seed", kind=TicketKind.BUG, origin=Origin.AGENT)
+    created = new_ticket(tmp_path, spec)
+    assert created.is_ok
+    ticket_id = created.danger_ok.id
+    if state is TicketState.DONE:
+        from frob.tickets import drop_ticket
+
+        dropped = drop_ticket(tmp_path, ticket_id, reason="seed")
+        assert dropped.is_ok
+    return ticket_id
+
+
+class TestTicketIsOpen:
+    """`_ticket_is_open` is the "still open" half of T-1690's filing rule."""
+
+    def test_open_ticket_is_open(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_open_ticket_is_open  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path)
+        assert _ticket_is_open(tmp_path, ticket_id) is True
+
+    def test_done_ticket_is_not_open(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_done_ticket_is_not_open  # noqa: E501
+        from frob.tickets._models import TicketState
+
+        ticket_id = _seed_ticket(tmp_path, state=TicketState.DONE)
+        assert _ticket_is_open(tmp_path, ticket_id) is False
+
+    def test_missing_ticket_is_not_open(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_missing_ticket_is_not_open  # noqa: E501
+        assert _ticket_is_open(tmp_path, "T-9999") is False
+
+
+class TestAttributeNewFindings:
+    """`_attribute_new_findings` degrades to `{}` (no attribution info,
+    never a false 'everything unattributed') whenever the queue or the
+    graph is unavailable."""
+
+    def test_empty_queue_returns_empty_mapping(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
+        assert _attribute_new_findings(tmp_path, [("RULE1", "a.py")]) == {}
+
+    def test_attributed_and_unattributed_round_trip(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_attributed_and_unattributed_round_trip  # noqa: E501
+        import frob.verify._attribution as attribution_mod
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import record_intent
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-0001",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        call_graph = CallGraph(calls={})
+        monkeypatch.setattr(
+            attribution_mod,
+            "_load_snapshot_and_call_graph",
+            lambda root: (snapshot, call_graph),
+        )
+        result = _attribute_new_findings(
+            tmp_path, [("RULE1", "a.py", 2), ("RULE2", "nowhere.py", 9)]
+        )
+        assert result[("RULE1", "a.py")].status == "attributed"
+        assert result[("RULE1", "a.py")].commit_sha == "commitA"
+        assert result[("RULE2", "nowhere.py")].status == "unattributed"
+
+
+class TestFileRegressionTicket:
+    """T-1690: attributed findings owned by a still-open ticket are not
+    re-filed; everything else is filed with a full attribution trail."""
+
+    def _patch_graph(
+        self, monkeypatch: pytest.MonkeyPatch, snapshot, call_graph
+    ) -> None:
+        import frob.verify._attribution as attribution_mod
+
+        monkeypatch.setattr(
+            attribution_mod,
+            "_load_snapshot_and_call_graph",
+            lambda root: (snapshot, call_graph),
+        )
+
+    def test_no_attribution_files_everything_as_before(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
+        # No verify queue at all -- attribution unavailable, falls back to
+        # the pre-T-1690 behavior of filing every pair.
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+
+    def test_attributed_to_open_ticket_is_not_refiled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import record_intent
+
+        owner = _seed_ticket(tmp_path)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is None
+
+    def test_attributed_to_closed_ticket_is_refiled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_closed_ticket_is_refiled  # noqa: E501
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.tickets._models import TicketState
+        from frob.verify import record_intent
+
+        owner = _seed_ticket(tmp_path, state=TicketState.DONE)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+
+    def test_unattributed_is_filed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed  # noqa: E501
+        from frob.graph import CallGraph, GraphSnapshot
+        from frob.verify import record_intent
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-0001",
+            touched_symbols=("unrelated.py::other",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+
+    def test_all_attributed_to_open_tickets_files_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import record_intent
+
+        owner = _seed_ticket(tmp_path)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn", "b.py::fn2"),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                ),
+                "b.py::fn2": SymbolRecord(
+                    id=SymbolId(path="b.py", qualname="fn2"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                ),
+            },
+            edges=(),
+        )
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
+        )
+        assert filed is None
