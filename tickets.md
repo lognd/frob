@@ -14278,7 +14278,7 @@ finds; the count is itself the argument for how bad the coupling is.
 ```yaml
 id: T-1726
 title: Fix ARCH001/ARCH103/SEC110 drift in _coverage_refresh.py from T-1677
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -14317,3 +14317,6 @@ separate, already-landed ticket. Split the two oversized functions along
 an existing boundary the way this module's siblings already do, and
 either map the env-var read to a declared std.secrets node or add a
 reasoned SEC110 waiver.
+
+## Drop reason
+- 2026-08-07: duplicate: the deferred post-land sweep auto-filed T-1723 for the identical 3 errors in _coverage_refresh.py from T-1677's land, before this hand-filed one. Keeping the auto-filed record as canonical since it carries the sweep's own attribution to the introducing commit (absorbed by T-1723)
