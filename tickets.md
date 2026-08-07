@@ -8621,3 +8621,47 @@ Plan: thread a per-symbol `symref` through `DeadSymbolViolation`/
 `OpaqueViolation` construction (both already resolve the specific symbol
 under inspection internally -- this is exposing existing data, not new
 analysis) so a waiver line binds to one symbol.
+
+<!-- ticket:T-1684 -->
+```yaml
+id: T-1684
+title: 'rapid: post-land sweep runs detached, files a ticket on red instead of blocking
+  the land'
+state: queued
+kind: feature
+origin: human
+created: '2026-08-06'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- tests/unit/test_rapid_sweep.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+threat: null
+component: null
+```
+Under rapid, land waits ~5 minutes on a synchronous full-repo unscoped
+frob check (plus the T-1463 baseline snapshot check, joined just before
+it). That is the entire land latency; frob startup (0.24s) and graph
+build (5.4s) are not. Target is <10s per land.
+
+Change: under rapid only, skip the T-1463 baseline thread and replace the
+synchronous post-land sweep with a detached child (`frob ticket
+sweep-async`) that runs the same unscoped check against a ROLLING
+baseline stored at `.frob/rapid-sweep-baseline.json` (the last recorded
+absolute error set), files a bug ticket naming any new (rule, file)
+pairs, and NEVER reverts an already-published commit. Each deferred sweep
+appends a rapid-debt.jsonl line, so the unverified window is a
+machine-readable record rather than a silent gap.
+
+The rolling baseline is what makes this a single check: standard mode
+pays two full checks (baseline + post), rapid pays zero in the
+foreground and one in the background.
+
+standard/fortress paths are untouched.
