@@ -48,6 +48,9 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _shellscan import POS as _POS, strip_quoted as _strip_quoted  # noqa: E402
+
 #: Markers older than this are pruned, so a command nudged long ago is
 #: nudged again rather than silently grandfathered forever.
 _MARKER_TTL_S = 12 * 3600
@@ -58,48 +61,21 @@ _VERSION_TTL_S = 30 * 60
 
 _STATE_DIR = Path.home() / ".claude" / "hooks" / "state" / "frob-suggest"
 
-#: Command position: line start, after a shell connector, or after `uv run`
-#: (optionally `timeout N`-wrapped).
-#:
-#: `(` is deliberately NOT a connector here. It matched prose parentheticals
-#: -- "(make targets, ...)" inside a commit message blocked a commit on the
-#: very first real use of this hook. A subshell is rare; an English sentence
-#: in a quoted string is constant.
-_POS = r"(?:^|[;&|]\s*|\buv +run +)(?:timeout +\d+ +)?"
-
 #: Bare `frob` at command position, NOT already routed through `uv run`.
 _BARE_FROB = re.compile(r"(?:^|[;&|]\s*)(?:timeout +\d+ +)?frob +", re.M)
 
-#: Quoted spans and heredoc bodies, stripped before matching. Everything a
-#: command SAYS is prose; only what it RUNS is a command. Without this, any
-#: commit message, echo, or heredoc that names a tool trips its own rule --
-#: the exact failure `frob-timeout-guard.py` records having paid for once.
-_QUOTED = re.compile(
-    r"'[^']*'"                      # single-quoted span
-    r"|\"(?:[^\"\\]|\\.)*\""       # double-quoted span (backslash-aware)
-    r"|<<-?\s*'?(\w+)'?.*?^\1\b",   # heredoc body, incl. quoted delimiter
-    re.S | re.M,
-)
-
-
-def _strip_quoted(command: str) -> str:
-    """`command` with quoted spans and heredoc bodies blanked out.
-
-    Matching is done on the REMAINDER, so a rule fires only on what the
-    shell would actually execute, never on text the command merely
-    carries."""
-    return _QUOTED.sub(" ", command)
 
 #: (name, compiled pattern, suggestion). Deliberately narrow: a nudge that
 #: fires on routine correct work trains the reader to bypass it, which costs
 #: more than the nudge ever saved.
-_RULES: list[tuple[str, re.Pattern[str], str]] = [
+_RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
     (
         "make-target",
         re.compile(_POS + r"make +[a-z]", re.M),
         "Prefer the `uv run frob ...` subcommand over a make target. Workflows "
         "belong in frob subcommands, not GNU-make recipes (cross-platform "
         "directive) -- make is not available everywhere this has to run.",
+        None,
     ),
     (
         "hand-edit-ledger",
@@ -109,13 +85,18 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         "Never hand-edit tickets.md. Use the `uv run frob ticket ...` CLI. A "
         "hand-written ledger edit has already broken the tickets.md YAML once "
         "and took every gate down with it.",
+        None,
     ),
     (
         "unscoped-pytest",
-        re.compile(_POS + r"pytest(?!.*(?:tests?/|\.py|::))", re.M),
+        re.compile(_POS + r"pytest\b", re.M),
         "Prefer `uv run frob test` over a bare `pytest`: it runs the TOUCHED "
         "SET rather than the whole suite. If you genuinely need specific "
         "tests, pass their path or node id.",
+        # A path or node id ANYWHERE in the RAW command means the caller
+        # already scoped it -- the good case, not the bad one. Read raw:
+        # stripping quotes would delete the very proof of scoping.
+        re.compile(r"tests?/|\.py\b|::"),
     ),
     (
         "raw-linters",
@@ -123,6 +104,7 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         "Prefer `uv run frob check` over invoking ruff/mypy/ty directly -- it "
         "runs the whole gate family and reports findings in one accountable "
         "place. A single linter passing is not the repo being clean.",
+        None,
     ),
     (
         "raw-worktree",
@@ -130,6 +112,7 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         "Use the EnterWorktree tool (or `uv run frob worktree`) rather than "
         "`git worktree add` -- frob tracks worktree leases, and a worktree it "
         "does not know about will not be swept and can strand a ticket lease.",
+        None,
     ),
     (
         "raw-coverage",
@@ -137,6 +120,7 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         "Use `uv run frob coverage` -- it owns the coverage stamp and the "
         "delta baseline. A hand-run coverage pass leaves the recorded "
         "artifact stale, and everything downstream reads it as current.",
+        None,
     ),
 ]
 
@@ -267,7 +251,9 @@ def _match(raw: str, root: Path) -> tuple[str, str] | None:
                 "wrong measurement. Use `uv run frob ...` here, or reconcile "
                 "the installs with `uv tool upgrade frob`.",
             )
-    for name, pattern, suggestion in _RULES:
+    for name, pattern, suggestion, raw_exempt in _RULES:
+        if raw_exempt is not None and raw_exempt.search(raw):
+            continue
         if pattern.search(command):
             return name, suggestion
     return None

@@ -36,6 +36,7 @@ _HOME_CLAUDE = Path.home() / ".claude"
 #: enumerated explicitly -- a glob here would silently start managing a file
 #: nobody decided to manage.
 _MANAGED: list[tuple[str, str]] = [
+    (".claude/hooks/_shellscan.py", "hooks/_shellscan.py"),
     (".claude/hooks/frob-suggest.py", "hooks/frob-suggest.py"),
     (".claude/hooks/frob-timeout-guard.py", "hooks/frob-timeout-guard.py"),
     ("docs/guides/agent-playbook.md", "refs/agent-playbook.md"),
@@ -72,19 +73,15 @@ def _rendered(source_rel: str, dest: Path) -> str | None:
     return _banner_for(source_rel, dest) + source.read_text(encoding="utf-8")
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="report drift without writing; exit 1 if any managed file differs",
-    )
-    args = parser.parse_args()
+def _plan() -> tuple[list[tuple[str, Path, str]], list[str]]:
+    """`(actions, missing)` -- what the sync would do, decided without doing
+    any of it.
 
-    drifted: list[str] = []
+    Split from `main` so the DECISION is separable from the WRITING and the
+    REPORTING (ARCH103): the same plan drives both `--check` and a real
+    sync, so the two can never disagree about what counts as drift."""
+    actions: list[tuple[str, Path, str]] = []
     missing: list[str] = []
-    wrote: list[str] = []
-
     for source_rel, dest_rel in _MANAGED:
         dest = _HOME_CLAUDE / dest_rel
         want = _rendered(source_rel, dest)
@@ -94,43 +91,61 @@ def main() -> int:
         have = dest.read_text(encoding="utf-8") if dest.exists() else None
         if have == want:
             continue
-        if args.check:
-            state = "absent" if have is None else "differs"
-            drifted.append(f"{dest_rel} ({state} vs {source_rel})")
-            continue
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        # Write-temp-then-replace: a half-written hook is a hook that fails
-        # to parse on every subsequent tool call.
-        tmp = dest.with_suffix(dest.suffix + ".tmp")
-        tmp.write_text(want, encoding="utf-8")
-        shutil.move(str(tmp), str(dest))
-        wrote.append(dest_rel)
+        state = "absent" if have is None else "differs"
+        actions.append((f"{dest_rel} ({state} vs {source_rel})", dest, want))
+    return actions, missing
 
+
+def _materialize(dest: Path, want: str) -> None:
+    """Write `want` to `dest` atomically.
+
+    Write-temp-then-replace, because a half-written hook does not fail
+    once -- it fails to parse on every subsequent tool call."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(dest.suffix + ".tmp")
+    tmp.write_text(want, encoding="utf-8")
+    shutil.move(str(tmp), str(dest))
+
+
+def _report_check(actions: list[tuple[str, Path, str]], missing: list[str]) -> int:
+    """`--check`'s reporting half: name every drifted path, never just a
+    count. An error that does not name its own cause has cost this repo
+    three separate fleet stalls."""
+    for entry, _dest, _want in actions:
+        print(f"DRIFT: {entry}", file=sys.stderr)
+    if actions or missing:
+        print(
+            f"sync-claude-config --check: {len(actions)} drifted, "
+            f"{len(missing)} missing -- run "
+            "`python3 .claude/hooks/sync-claude-config.py` to reconcile",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"sync-claude-config --check: {len(_MANAGED)} file(s) in sync")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="report drift without writing; exit 1 if any managed file differs",
+    )
+    args = parser.parse_args()
+
+    actions, missing = _plan()
     for source_rel in missing:
         print(f"MISSING canonical source: {source_rel}", file=sys.stderr)
-
     if args.check:
-        for entry in drifted:
-            print(f"DRIFT: {entry}", file=sys.stderr)
-        if drifted or missing:
-            print(
-                f"sync-claude-config --check: {len(drifted)} drifted, "
-                f"{len(missing)} missing -- run "
-                "`python3 .claude/hooks/sync-claude-config.py` to reconcile",
-                file=sys.stderr,
-            )
-            return 1
-        print(f"sync-claude-config --check: {len(_MANAGED)} file(s) in sync")
-        return 0
+        return _report_check(actions, missing)
 
-    if missing:
-        return 1
-    if wrote:
-        for entry in wrote:
-            print(f"synced ~/.claude/{entry}")
-    else:
+    for entry, dest, want in actions:
+        _materialize(dest, want)
+        print(f"synced ~/.claude/{entry.split(' (')[0]}")
+    if not actions:
         print(f"sync-claude-config: {len(_MANAGED)} file(s) already in sync")
-    return 0
+    return 1 if missing else 0
 
 
 if __name__ == "__main__":

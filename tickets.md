@@ -5937,8 +5937,8 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/unit/test_ticket_store.py::TestWriteTicket::test_content_loss_warns_loudly_by_default
-- tests/unit/test_ticket_store.py::TestWriteTicket::test_strict_no_content_loss_refuses
+- tests/unit/test_ticket_store.py::TestWriteTicket::test_content_loss_refuses_by_default
+- tests/unit/test_ticket_store.py::TestWriteTicketUnchecked::test_skips_the_content_loss_guard_entirely
 - tests/unit/test_ticket_store.py::TestWriteTicket::test_keeping_evidence_or_done_report_is_never_refused
 - tests/unit/test_ticket_store.py::TestWriteTicket::test_first_write_for_a_new_id_is_never_refused
 - tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promotes_a_draft_carrying_evidence_and_done_report
@@ -6098,7 +6098,6 @@ test_cli_ticket_promote.py`, `tests/test_ticket_land.py` (326 collected,
 - tests: 6 passed (from 6 evidence id(s))
 - gates: 0 error(s), 4942 warning(s), 713 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-1638 -->
 ```yaml
 id: T-1638

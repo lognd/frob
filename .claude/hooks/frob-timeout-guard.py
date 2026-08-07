@@ -10,6 +10,10 @@ tool parameter itself and tells the caller exactly how to re-run.
 import json
 import re
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _shellscan import strip_quoted  # noqa: E402
 
 MIN_TIMEOUT_MS = 300000
 # Command-position only: start-of-line, after a shell connector, or after
@@ -40,7 +44,10 @@ def main() -> None:
     tool_input = payload.get("tool_input") or {}
     command = tool_input.get("command") or ""
     timeout_ms = tool_input.get("timeout") or 0
-    if PATTERN.search(command) and timeout_ms < MIN_TIMEOUT_MS:
+    # Quoted text is prose, not program: this guard blocked a command
+    # purely because `uv run frob test` appeared inside a quoted string
+    # it was carrying. Same class its own docstring warns about.
+    if PATTERN.search(strip_quoted(command)) and timeout_ms < MIN_TIMEOUT_MS:
         print(
             json.dumps(
                 {
