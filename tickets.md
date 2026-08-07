@@ -2230,13 +2230,52 @@ tier: ticket
 sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
 Refiled: original draft T-1538 (filed during T-1318) died in the t-1350 ledger corruption spans. One stale doc anchor in docs/modules/gates.md still points at the pre-move frob.gates._secrets redaction internals; file was leased by T-1205 at the time. Repoint to frob.security._redact's section.
 
+## Failure log
+- 2026-08-06 attempt 1: already fixed: docs/modules/gates.md's frob.security._redact.py::_redact anchor was corrected in T-1318's own land (commit a579f23e), before this refile of the ledger-corrupted draft was created; verified 0 DOC004/DOC006/DRIFT001 findings against gates.md's redaction section
+
 ## Drop reason
-- 2026-08-06: already fixed: T-1318's own land (commit a579f23e) already corrected docs/modules/gates.md's frob:describes anchor to src/frob/security/_redact.py::_redact before this refile of the ledger-corrupted draft was even created; verified 0 DOC004/DOC006/DRIFT001 findings scoped to the file (frob check --only docanchor --only doclink --only drift --only docblocks --ticket T-1538, worktree agent-ad4d34f749af9b292)
+- 2026-08-06: already fixed: T-1318's own land (commit a579f23e) already corrected docs/modules/gates.md's frob:describes anchor to src/frob/security/_redact.py::_redact before this refile of the ledger-corrupted draft was even created; verified 0 DOC004/DOC006/DRIFT001 findings scoped to the file's redaction section (frob check --only docanchor --only doclink --only drift --only docblocks --ticket T-1538)
+
+## Done report
+
+Verified this ticket's premise no longer holds: the stale doc anchor it
+describes (docs/modules/gates.md's frob:describes pointer for the moved
+redaction engine) was already corrected in T-1318's own land (commit
+a579f23e0..., see `git log -S "src/frob/security/_redact.py::_redact" --
+docs/modules/gates.md`) -- before this refile of the ledger-corrupted
+T-1538 draft was even created. The live anchor already reads
+`<!-- frob:describes src/frob/security/_redact.py::_redact -->`, matching
+exactly what this ticket asks for.
+
+Confirmed with a fresh, unscoped-family gate run against the file:
+`uv run frob check --only docanchor --only doclink --only drift --only
+docblocks --ticket T-1538` reports 0 errors and 4 warnings, all four
+pre-existing and unrelated (DOC006 findings in tickets.md, not
+gates.md).
+
+Dropped via `frob ticket drop T-1538 --reason ...` rather than closed
+done, since there is no code/doc change left to make -- the described
+defect does not exist on this branch.
+
+### Changed
+```
+ tickets.md | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-1539 -->
 ```yaml
@@ -8899,7 +8938,7 @@ integration test.
 ```yaml
 id: T-1682
 title: Add a dedicated docs section for frob coverage (T-1516/T-1525)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-06'
@@ -8911,6 +8950,8 @@ scope:
 - docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
@@ -8927,6 +8968,56 @@ top-level verb of comparable weight (frob clean, frob vet, frob release)
 has its own module-doc section; this one should too. Read the actual CLI
 wiring in src/frob/_cli_parsers/** and native_coverage_refresh's
 implementation before writing it, to avoid a stale/guessed description.
+
+## Done report
+
+Added a dedicated "## `frob coverage` (CLI verb, T-1516/T-1525)" section to
+docs/modules/testing.md, right before "## Data models" (the end of the
+existing "Public API" coverage discussion). Read the real CLI wiring
+(src/frob/_cli_parsers/_misc.py::_add_coverage_parser, src/frob/app/
+coverage_runner.py::run) and native_coverage_refresh's implementation
+(src/frob/testing/_coverage_refresh.py) before writing, per the ticket's
+own instruction, rather than guessing from the passing aside that used to
+be the only prose here.
+
+docs/modules/cli.md already carries a full "## frob coverage (T-1525)"
+section (command reference, the auto-trigger decision writeup) -- rather
+than duplicate that prose, the new testing.md section is a shorter
+pointer to it PLUS the one piece of detail cli.md's own summary elides:
+the two distinct code paths behind the single verb (default delegates to
+run_coverage_wait's single-flight/freshness-checked path; --full calls
+native_coverage_refresh directly, bypassing both), and how each surfaces
+failure at the CLI layer (SystemExit(1) vs. a degraded-but-recorded run
+still exiting 0).
+
+No frob:doc/describes edge changes needed: src/frob/app/coverage_runner.py
+'s `run` already carries `frob:doc docs/modules/cli.md#frob-coverage-t-1525`
+-- this ticket only adds prose, it does not touch code or move where the
+symbol's doc obligation is anchored.
+
+Verified with `uv run frob check --only docanchor --only doclink --only
+docblocks --only drift --ticket T-1682` (0 errors, 4 pre-existing
+unrelated DOC006 warnings in tickets.md) and `uv run frob check
+--land-parity` (clean, 0 unscoped errors).
+
+Docs-only ticket with no pytest surface of its own; evidence recorded per
+the T-0167 precedent (playbook section 5): the existing CLI-dispatch
+integration test.
+
+### Changed
+```
+ rapid-debt.jsonl |  1 +
+ tickets.md       | 47 ++++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 45 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 209 warning(s), 715 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-1683 -->
 ```yaml

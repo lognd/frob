@@ -563,6 +563,48 @@ language instead of placeholder-substituting `command`. This keeps
 stay pure (the decision is fully resolved by the time `run_selected` reads
 it, with no separate side-channel of "languages needing --all").
 
+## `frob coverage` (CLI verb, T-1516/T-1525)
+
+`frob coverage` (`frob.app.coverage_runner.run`, `src/frob/_cli_parsers/
+_misc.py::_add_coverage_parser`) is the user-facing entrypoint over
+`native_coverage_refresh` above -- before T-1525 the function was only
+reachable as a library call (`make coverage-fast`'s shell recipe, or a
+direct Python import), with no CLI verb of its own. See
+`docs/modules/cli.md#frob-coverage-t-1525` for the full command
+reference and the "why does `frob check` not auto-trigger this"
+decision writeup; this section is the pointer from the test-tooling doc
+a reader lands on first, plus the two-path detail cli.md's own summary
+elides.
+
+```
+frob coverage [path]     # touched-set incremental refresh via run_coverage_wait
+frob coverage --full      # whole-suite run via native_coverage_refresh(full=True)
+```
+
+Two distinct code paths, not one function branching on a flag:
+
+- **Default** (no `--full`): delegates to `run_coverage_wait` (T-1095/
+  T-1516/T-1126, documented in full above under "Public API" and "T-1126:
+  daemon-owned coverage lease") -- the single-flight-locked, freshness-
+  checked path. A caller racing another worktree of the same clone on an
+  identical tree digest adopts that settled result (`CoverageWaitOutcome
+  (ran=False, ...)`) instead of re-running; `frob coverage` logs
+  `already fresh, nothing to do` in that case, or `refreshed in N.Ns` when
+  it actually ran.
+- **`--full`**: calls `native_coverage_refresh(root, snapshot, full=True)`
+  directly, bypassing `run_coverage_wait`'s freshness check and shared
+  lock entirely -- an explicit whole-suite request should not be
+  short-circuited by another caller's already-fresh (and possibly
+  touched-set-narrower) result. Builds its own `GraphSnapshot` first
+  (`load_graph`, falling back to `build_graph` on a cold cache).
+
+Both paths exit non-zero (`SystemExit(1)`) on failure, logging the
+specific `CoverageWaitError`/`CoverageRefreshError` value -- there is no
+partial-success return code distinct from a hard failure at the CLI
+layer; a degraded-but-recorded run (the "A red suite does not discard the
+run" section below) still exits 0, since the coverage artifact itself was
+produced successfully even though the suite verdict was red.
+
 ## Data models
 
 ```python
