@@ -1,7 +1,7 @@
 ---
 id: T-1847
 title: Warm-tree re-check before raising quarantine on an UNATTRIBUTED finding
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -12,8 +12,25 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+- tickets/T-1865/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'T-1847: test coverage for the warm-tree re-check'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1865/**
+  reason: 'T-1847: own follow-up draft ticket filed during this ticket''s work'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_drops_cold_worktree_native_noise
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
 designated_repro_test: null
 threat: null
 component: null

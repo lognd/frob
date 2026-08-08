@@ -423,11 +423,77 @@ def _partition_findings_by_attribution(
     return unfiled_pairs, attribution_lines
 
 
+#: T-1847: rule ids whose shape is consistent with cold-worktree
+#: native-extension noise (a `ty check`/import-resolution failure that
+#: fires on a fresh worktree before `frob natives build`/`make core` has
+#: run) rather than a genuine regression. Deliberately narrow -- widening
+#: this set silently swallows real findings, so only the one rule id the
+#: T-1697 incident actually observed is listed; add another only against a
+#: second confirmed incident, never speculatively.
+_NATIVE_EXTENSION_ADJACENT_RULE_IDS = frozenset({"unresolved-import"})
+
+
+# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:ticket T-1847
+# frob:waive AFFECT001 reason="docs/modules/tickets.md is leased in-scope by the \
+# concurrently in-progress T-1686 (ScopeLeaseConflict on 'frob ticket scope T-1847 \
+# --add docs/modules/tickets.md') -- cannot extend this ticket's scope to it; the \
+# T-1847 doc addition is queued as T-1865, a follow-up once T-1686 releases \
+# the lease"
+def _warm_tree_clears_unattributed_native_noise(
+    root: Path, rule: str, attr
+) -> bool:  # noqa: ANN001 -- Attribution | None, deferred-import type
+    """T-1847: `True` when `(rule, attr)` matches the cold-worktree
+    native-extension-noise shape (UNATTRIBUTED, rule in
+    `_NATIVE_EXTENSION_ADJACENT_RULE_IDS`) AND a re-check RIGHT NOW shows
+    every declared native imports cleanly. That combination means the
+    finding's own likely cause -- a native extension not yet built when
+    the sweep's check ran -- no longer holds: the tree has since warmed
+    (another sweep/build finished, or this is simply a slightly later
+    point in the same cold-worktree window), so treating this one finding
+    as durable regression signal would just be re-reporting environment
+    staleness. `attr` is the `Attribution | None` for the pair; only a
+    genuinely UNATTRIBUTED pair (no attribution info, or `attr.status !=
+    "attributed"`) is eligible -- an attributed finding already has a real
+    commit behind it and this warm re-check is never allowed to override
+    that.
+
+    If any declared native is STILL unimportable right now, this returns
+    `False` -- that is not transient noise, it is a still-broken
+    environment, and the raise proceeds exactly as before this ticket."""
+    if rule not in _NATIVE_EXTENSION_ADJACENT_RULE_IDS:
+        return False
+    if attr is not None and attr.status == "attributed":
+        return False
+    from frob.strata._native_staleness import unimportable_natives
+
+    broken = unimportable_natives(root)
+    if broken:
+        _log.debug(
+            "rapid sweep: quarantine warm-tree re-check: %s still broken "
+            "(%s) -- treating %r as real, not cold-worktree noise",
+            rule,
+            [s.name for s in broken],
+            rule,
+        )
+        return False
+    return True
+
+
 # frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1791
+# frob:ticket T-1847
+# frob:waive AFFECT001 reason="docs/modules/tickets.md is leased in-scope by the \
+# concurrently in-progress T-1686 (ScopeLeaseConflict on 'frob ticket scope T-1847 \
+# --add docs/modules/tickets.md') -- cannot extend this ticket's scope to it; the \
+# T-1847 doc addition is queued as T-1865, a follow-up once T-1686 releases \
+# the lease"
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raises_with_attributed_and_unattributed_findings  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raise_failure_is_logged_not_raised  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_drops_cold_worktree_native_noise  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_keeps_finding_when_native_still_broken  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_never_drops_an_attributed_finding  # noqa: E501
 def _raise_quarantine_for_red_batch(
     root: Path,
     final_id: str,
@@ -454,7 +520,18 @@ def _raise_quarantine_for_red_batch(
     failure) is logged at ERROR and swallowed: the regression ticket
     filing this function's caller does next must never be blocked by the
     quarantine flag failing to persist -- the filed ticket is still the
-    primary, durable record of what went wrong."""
+    primary, durable record of what went wrong.
+
+    T-1847: before naming the batch, every pair is passed through
+    `_warm_tree_clears_unattributed_native_noise` -- a pair matching the
+    cold-worktree native-extension-noise shape (UNATTRIBUTED,
+    `unresolved-import`) whose warm re-check now shows every native
+    importing cleanly is dropped from the set that raises quarantine
+    entirely (it is still filed as a regression ticket by this function's
+    caller -- this only changes what reaches the quarantine dispose
+    queue). If dropping cold-worktree noise leaves nothing, the raise is
+    skipped altogether and logged at INFO, same "nothing to name" shape as
+    the empty-queue branch below."""
     from frob.verify import queue_status
     from frob.verify._quarantine import raise_quarantine
 
@@ -468,8 +545,35 @@ def _raise_quarantine_for_red_batch(
         )
         return
 
+    quarantine_pairs = [
+        (rule, file)
+        for rule, file in pairs
+        if not _warm_tree_clears_unattributed_native_noise(
+            root, rule, attributions.get((rule, file))
+        )
+    ]
+    dropped = len(pairs) - len(quarantine_pairs)
+    if dropped:
+        _log.info(
+            "rapid sweep: %s: warm-tree re-check cleared %d cold-worktree "
+            "native-extension finding(s) from the quarantine raise (still "
+            "filed as a regression ticket, just not sent to the dispose "
+            "queue)",
+            final_id,
+            dropped,
+        )
+    if not quarantine_pairs:
+        _log.info(
+            "rapid sweep: %s: every finding in this red batch cleared as "
+            "cold-worktree native-extension noise -- quarantine NOT raised",
+            final_id,
+        )
+        return
+
     batch_commit_shas = tuple(e.commit_sha for e in queue.danger_ok)
-    findings = _quarantined_findings_from_attributions(pairs, attributions)
+    findings = _quarantined_findings_from_attributions(
+        quarantine_pairs, attributions
+    )
     raised = raise_quarantine(
         root, batch_commit_shas=batch_commit_shas, findings=findings
     )

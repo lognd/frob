@@ -748,6 +748,7 @@ class TestFileRegressionTicket:
 
 
 # frob:ticket T-1791
+# frob:ticket T-1847
 class TestRaiseQuarantineForRedBatch:
     """T-1791: wiring `raise_quarantine` into the shared "a red batch
     verification came back" seam both drivers (`_file_regression_ticket`)
@@ -879,3 +880,128 @@ class TestRaiseQuarantineForRedBatch:
             tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
         )
         assert filed is not None
+
+    # frob:ticket T-1847
+    def test_warm_tree_recheck_drops_cold_worktree_native_noise(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_drops_cold_worktree_native_noise  # noqa: E501
+        from frob.strata import _native_staleness
+        from frob.verify import record_intent
+        from frob.verify._quarantine import is_quarantined
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-9000",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        # Every declared native imports cleanly RIGHT NOW -- the sole
+        # finding is UNATTRIBUTED + "unresolved-import", the exact
+        # cold-worktree-noise shape, so the warm re-check must clear it
+        # and the raise must be skipped entirely.
+        monkeypatch.setattr(_native_staleness, "unimportable_natives", lambda root: ())
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("unresolved-import", "a.py")}),
+        )
+        assert filed is not None  # still filed as a regression ticket
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-1847
+    def test_warm_tree_recheck_keeps_finding_when_native_still_broken(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_keeps_finding_when_native_still_broken  # noqa: E501
+        from frob.strata import _native_staleness
+        from frob.testing._models import NativeSpec
+        from frob.verify import record_intent
+        from frob.verify._quarantine import is_quarantined, load_quarantine
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-9000",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        broken = (NativeSpec(name="strata_core", build_cmd="true"),)
+        monkeypatch.setattr(
+            _native_staleness, "unimportable_natives", lambda root: broken
+        )
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("unresolved-import", "a.py")}),
+        )
+        assert filed is not None
+        assert is_quarantined(tmp_path).danger_ok is True
+        record = load_quarantine(tmp_path)
+        assert record.danger_ok is not None
+        assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
+            ("unresolved-import", "a.py"),
+        }
+
+    # frob:ticket T-1847
+    def test_warm_tree_recheck_never_drops_an_attributed_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_never_drops_an_attributed_finding  # noqa: E501
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.strata import _native_staleness
+        from frob.verify import record_intent
+        from frob.verify._quarantine import is_quarantined, load_quarantine
+
+        owner = _seed_ticket(tmp_path)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        import frob.verify._attribution as attribution_mod
+
+        monkeypatch.setattr(
+            attribution_mod,
+            "_load_snapshot_and_call_graph",
+            lambda root: (snapshot, CallGraph(calls={})),
+        )
+        # unimportable_natives says everything is warm -- if the finding
+        # were unattributed this would clear it, but this pair reaches
+        # a.py::fn and must attribute to a STILL-OPEN ticket (owner), a
+        # wholly different case than "unattributed". The finding must NOT
+        # be treated as cold-worktree noise just because the rule id
+        # matches.
+        monkeypatch.setattr(_native_staleness, "unimportable_natives", lambda root: ())
+        filed = _file_regression_ticket(
+            tmp_path,
+            owner,
+            "deadbeef",
+            frozenset({("unresolved-import", "a.py")}),
+        )
+        assert filed is None  # already attributed to an open ticket
+        assert is_quarantined(tmp_path).danger_ok is True
+        record = load_quarantine(tmp_path)
+        assert record.danger_ok is not None
+        assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
+            ("unresolved-import", "a.py"),
+        }
