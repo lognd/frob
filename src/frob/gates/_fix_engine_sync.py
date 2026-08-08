@@ -155,7 +155,8 @@ def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixAppl
 
 # frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
 # frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys104_interface_union_applies_via_apply_tier_a_fixes  # noqa: E501
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys104_no_design_dir_is_a_no_op  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_sys104_no_design_dir_is_a_no_op
 # frob:ticket T-1531
 def fix_sys104_interface_union(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
     """Tier-A fix (T-1531): SYS104 already names its own remedy verbatim
@@ -214,7 +215,8 @@ def fix_sys104_interface_union(root: Path, snapshot: GraphSnapshot) -> list[FixA
 
 # frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
 # frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys100_may_via_union_applies_via_apply_tier_a_fixes  # noqa: E501
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys100_no_design_dir_is_a_no_op  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_sys100_no_design_dir_is_a_no_op
 # frob:ticket T-1531
 def fix_sys100_may_via_union(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
     """Tier-A fix (T-1531): widen a node's `may "<kind>" via [...]` grant
@@ -332,7 +334,7 @@ def _insert_ticket_directive_above(
     return _write_text(path, "".join(lines))
 
 
-# frob:doc docs/modules/gates.md#fix_cov002_ticket_directive_insertion-auto-fix-t-1548  # noqa: E501
+# frob:doc docs/modules/gates.md#fix_cov002_ticket_directive_insertion-auto-fix-t-1548
 # frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_open_landing_ticket_gets_directive_inserted_and_reverifies_clean  # noqa: E501
 # frob:tests tests/test_gates_fix_engine.py::TestFixCov002TicketDirectiveInsertion.test_no_ticket_id_is_a_no_op  # noqa: E501
 # frob:ticket T-1548
@@ -418,6 +420,15 @@ _WAIVE_SINGLE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")
 #: below the incident's own 50-waiver footprint so this guard would have
 #: caught it with margin to spare, and well above the handful a normal
 #: single-PR cleanup would ever produce for one rule at once.
+#:
+#: T-1620: this absolute count is STRUCTURALLY BLIND to any rule with
+#: fewer than this many live waivers total -- a rule with exactly 2 live
+#: `frob:waive` directives can never reach 5 candidates no matter how
+#: degraded the run is, so both of its waivers silently pass through
+#: this guard and get deleted. `_mass_invalidation_rules` below now also
+#: flags the PROPORTIONAL case (every one of a rule's live waivers going
+#: stale in the same run) regardless of the raw count -- 2 of 2 is at
+#: least as suspicious as 40 of 40, arguably more so.
 _WAIVE004_MASS_INVALIDATION_THRESHOLD = 5
 
 #: `GateStats.skipped` names that `_build_ticket_scoped_jobs` (`frob.gates.
@@ -455,16 +466,32 @@ def _degraded_verification_reason(report: GateReport) -> str | None:
     return None
 
 
-def _mass_invalidation_rules(candidates: list[tuple[str, int, str]]) -> dict[str, int]:
+def _mass_invalidation_rules(
+    candidates: list[tuple[str, int, str]], live_counts: dict[str, int]
+) -> dict[str, int]:
     """Every target rule in `candidates` (each a `(file, line, rule)`
-    WAIVE004 deletion candidate) whose count meets or exceeds
-    `_WAIVE004_MASS_INVALIDATION_THRESHOLD`, mapped to its count -- the
-    T-1323 incident's own shape (one rule family's waivers ALL going
-    stale in the same run) treated as anomalous-zero-findings evidence in
-    its own right, without needing a separately recorded baseline pool to
-    compare against. Returns EVERY rule meeting the threshold (not just
-    the first), so `_drop_untrustworthy_mass_stale_candidates` can report
-    and drop each one by name."""
+    WAIVE004 deletion candidate) that looks like a mass-invalidation
+    signature, mapped to its candidate count -- the T-1323 incident's own
+    shape (one rule family's waivers ALL going stale in the same run)
+    treated as anomalous-zero-findings evidence in its own right, without
+    needing a separately recorded baseline pool to compare against.
+    Returns EVERY rule meeting either check (not just the first), so
+    `_drop_untrustworthy_mass_stale_candidates` can report and drop each
+    one by name.
+
+    Two independent triggers (T-1620 adds the second):
+    - ABSOLUTE: candidate count >= `_WAIVE004_MASS_INVALIDATION_THRESHOLD`
+      (T-1323's original guard).
+    - PROPORTIONAL: `live_counts[rule]` (this rule's total live
+      `frob:waive` directives, from `_waivers_by_rule` over the SAME
+      snapshot this run measured) is nonzero and EVERY one of them is a
+      candidate this run -- structurally invisible to the absolute
+      threshold for any rule with fewer than
+      `_WAIVE004_MASS_INVALIDATION_THRESHOLD` live waivers, and just as
+      much the T-1323 incident's own shape at any count: a rule with 2
+      live waivers both going stale in the same run is the same
+      signature as 40 of 40, not weaker evidence just because there were
+      fewer to begin with."""
     counts: dict[str, int] = {}
     for _file, _line, rule in candidates:
         counts[rule] = counts.get(rule, 0) + 1
@@ -472,6 +499,7 @@ def _mass_invalidation_rules(candidates: list[tuple[str, int, str]]) -> dict[str
         rule: count
         for rule, count in counts.items()
         if count >= _WAIVE004_MASS_INVALIDATION_THRESHOLD
+        or (live_counts.get(rule, 0) > 0 and count >= live_counts[rule])
     }
 
 
@@ -554,10 +582,38 @@ def _waive004_verified_candidates(
             continue
         candidates.append((violation.file, violation.line, target_rule))
 
-    return _drop_untrustworthy_mass_stale_candidates(candidates)
+    return _drop_untrustworthy_mass_stale_candidates(root, candidates)
+
+
+def _live_waiver_counts(root: Path) -> dict[str, int]:
+    """T-1620: every rule id's total live `frob:waive` directive count in
+    `root`'s current tree (`frob.gates._waive._waivers_by_rule` over a
+    freshly built `GraphSnapshot`) -- the denominator
+    `_mass_invalidation_rules`'s proportional check needs to tell "every
+    one of this rule's 2 live waivers went stale" from "2 of this rule's
+    40 live waivers went stale". Best-effort: a build failure returns an
+    empty mapping (the proportional check then simply never fires,
+    falling back to the absolute-threshold check alone -- never worse
+    than before this ticket, never a crash)."""
+    from frob.gates._waive import _waivers_by_rule
+    from frob.graph import build_graph
+
+    cache = root / ".frob" / "cache.db"
+    result = build_graph(root, cache)
+    if result.is_err:
+        _log.debug(
+            "_live_waiver_counts: build_graph failed (%s) -- proportional "
+            "mass-invalidation check disabled this run",
+            result.danger_err,
+        )
+        return {}
+    return {
+        rule: len(edges) for rule, edges in _waivers_by_rule(result.danger_ok).items()
+    }
 
 
 def _drop_untrustworthy_mass_stale_candidates(
+    root: Path,
     candidates: list[tuple[str, int, str]],
 ) -> list[tuple[str, int, str]]:
     """Drop every candidate belonging to a rule `_mass_invalidation_rules`
@@ -573,10 +629,12 @@ def _drop_untrustworthy_mass_stale_candidates(
     cover. Measured 2026-08-05: the perf gate reported ZERO PERF004 while
     `_degraded_verification_reason` returned None, the escape opened, and
     55 live waivers across arch/strata/perf/graph/vet were deleted during
-    a land. The escape can only come back once the degraded-run signal
-    fires for a silently under-reporting perf/reach substrate -- which is
-    exactly what T-1578 does NOT yet cover."""
-    mass_rules = _mass_invalidation_rules(candidates)
+    a land. T-1578 (frob_core-only) did not cover this; T-1620 extends the
+    degraded-run signal to `strata_core` too (`_perf_reach_degraded_marker`
+    in `frob.gates`) and adds the proportional check below, so a rule with
+    few live waivers is no longer invisible to this guard either."""
+    live_counts = _live_waiver_counts(root)
+    mass_rules = _mass_invalidation_rules(candidates, live_counts)
     for mass_rule, count in mass_rules.items():
         _log.error(
             "WAIVE004 auto-fix: %d frob:waive %s directives went stale in one "

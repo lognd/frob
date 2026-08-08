@@ -5331,15 +5331,26 @@ def _perf_gate_candidate_paths(snapshot: GraphSnapshot) -> list[str]:
     return candidate_paths
 
 
-#: T-1578: the `[[native]]` `name` (frob.toml) `frob.graph.callgraph`
-#: resolves call edges through -- `frob.perf`'s reach-dependent rules
+#: T-1578/T-1620: the `[[native]]` `name`s (frob.toml) the perf gate's
+#: OWN substrate transitively depends on -- `frob_core`, `frob.graph.
+#: callgraph`'s native fast path `frob.perf`'s reach-dependent rules
 #: (PERF008/PERF012, loop-invariant-effect / duplicate-spawn detection)
-#: walk that same call graph via `EffectGraph.reachable_effect`, so a
-#: content-stale (built but source-newer) `frob_core` can silently change
-#: which call edges resolve without ever failing to IMPORT -- invisible
-#: to `NATIVE001`, which only checks import failure (`unimportable_
-#: natives`), never staleness.
-_PERF_REACH_NATIVE_NAME = "frob_core"
+#: walk via `EffectGraph.reachable_effect`; and `strata_core`, the
+#: tree-sitter native EVERY perf rule's own INPUT depends on --
+#: `perf_gate` parses every candidate file via `frob.lang.parse_file`
+#: (`_perf_gate_parse_files`) before `perf_rules` ever sees a token,
+#: and that parse goes through `strata_core`'s tree-sitter grammar.
+#: T-1578 covered only `frob_core`; a content-stale (built but source-
+#: newer) `strata_core` was invisible to it, and to `NATIVE001` (which
+#: only checks import failure, never staleness) -- a stale-but-
+#: importable `strata_core` can silently parse fewer/wrong symbols,
+#: silently under-reporting even the natively-independent PERF001-004
+#: lexical rules, since they consume the SAME parsed tokens PERF008/012
+#: do. Measured 2026-08-05: PERF004 read zero findings repo-wide against
+#: a stale worktree while this marker (frob_core-only at the time)
+#: reported healthy -- T-1592's own comment names this exact gap as
+#: still open. Either native stale is now the same degradation signal.
+_PERF_REACH_NATIVE_NAMES = frozenset({"frob_core", "strata_core"})
 
 #: T-1578: the `GateStats.skipped` marker name `_perf_reach_degraded_
 #: marker` appends when the reach substrate is stale -- deliberately NOT
@@ -5350,21 +5361,31 @@ _PERF_REACH_NATIVE_NAME = "frob_core"
 PERF_REACH_DEGRADED_SKIP_MARKER = "perf_reach_native_stale"
 
 
+# frob:waive AFFECT001 reason="T-1620 widens this function's native-staleness check \
+# from frob_core-only to frob_core+strata_core; docs/modules/gates.md's T-1578 section \
+# (in this ticket's scope) is updated in the same diff, but the mirror text in \
+# docs/modules/perf.md is out of T-1620's declared scope (docs/modules/ gates.md only) \
+# -- filed as its own follow-up, T-1793, rather than edited here"
 def _perf_reach_degraded_marker(root: Path) -> str | None:
-    """T-1578: `PERF_REACH_DEGRADED_SKIP_MARKER` if `frob.strata.
-    stale_natives` still reports `_PERF_REACH_NATIVE_NAME` (`frob_core`)
-    stale at gate-build time (i.e. AFTER `run_gates`'s own `_maybe_
-    autorebuild_natives` already had its chance to fix it -- this only
-    fires when that rebuild was disabled or failed), else `None`.
+    """T-1578/T-1620: `PERF_REACH_DEGRADED_SKIP_MARKER` if `frob.strata.
+    stale_natives` still reports ANY of `_PERF_REACH_NATIVE_NAMES`
+    (`frob_core`, `strata_core`) stale at gate-build time (i.e. AFTER
+    `run_gates`'s own `_maybe_autorebuild_natives` already had its chance
+    to fix it -- this only fires when that rebuild was disabled or
+    genuinely failed), else `None`.
 
     This closes the gap `_native_unavailable_report`/`NATIVE001` cannot:
     NATIVE001 only ever sees an UNIMPORTABLE native (`unimportable_
-    natives`) -- a stale-but-still-importable `frob_core` imports fine
-    and NATIVE001 stays silent, while `frob.graph.callgraph`'s native
-    fast path can still be resolving edges against OUTDATED compiled
-    logic. Never raises: any failure reading native state is treated as
-    "cannot prove degradation", the same fail-open posture `stale_
-    natives` itself already takes for an unreadable `frob.toml`."""
+    natives`) -- a stale-but-still-importable `frob_core`/`strata_core`
+    imports fine and NATIVE001 stays silent, while `frob.graph.
+    callgraph`'s native fast path (`frob_core`) can still be resolving
+    edges against OUTDATED compiled logic, and `frob.lang.parse_file`'s
+    tree-sitter grammar (`strata_core`) can still be parsing against an
+    outdated grammar -- silently under-reporting EVERY perf rule, not
+    just the reach-dependent two. Never raises: any failure reading
+    native state is treated as "cannot prove degradation", the same
+    fail-open posture `stale_natives` itself already takes for an
+    unreadable `frob.toml`."""
     from frob.strata import stale_natives
 
     try:
@@ -5372,7 +5393,7 @@ def _perf_reach_degraded_marker(root: Path) -> str | None:
     except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
         _log.debug("_perf_reach_degraded_marker: stale_natives probe failed: %s", exc)
         return None
-    if any(s.spec.name == _PERF_REACH_NATIVE_NAME for s in stale):
+    if any(s.spec.name in _PERF_REACH_NATIVE_NAMES for s in stale):
         return PERF_REACH_DEGRADED_SKIP_MARKER
     return None
 

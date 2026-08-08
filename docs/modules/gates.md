@@ -3698,20 +3698,48 @@ silently under-reports PERF008/PERF012 findings to zero, and only
 T-1323's mass-invalidation COUNT heuristic (above, in the `--fix` Tier-A
 section) saved live waivers from being misread as stale.
 
+**T-1620 widened the structural signal beyond `frob_core`.** The
+original T-1578 marker checked ONLY `frob_core` staleness, on the theory
+that `perf_gate`'s own natively-independent rules (PERF001-004) "stay
+fully trustworthy" regardless. That theory missed that every perf rule's
+INPUT -- not just PERF008/012's reach analysis -- passes through `frob.
+lang.parse_file`'s tree-sitter grammar, which is `strata_core`, a
+DIFFERENT native than the one T-1578 watched. Measured 2026-08-05: a
+worktree with a stale `strata_core` read ZERO PERF004 findings
+repo-wide while this marker (frob_core-only at the time) reported
+healthy, and the resulting land deleted 55 live waivers T-1323's own
+mass-invalidation guard should have caught. `_perf_reach_degraded_marker`
+now checks `frob.strata.stale_natives` against BOTH declared natives
+(`_PERF_REACH_NATIVE_NAMES = {"frob_core", "strata_core"}`) -- either one
+stale trips the same `PERF_REACH_DEGRADED_SKIP_MARKER` signal.
+
+**T-1620 also closed a second, independent hole**: T-1323's own
+mass-invalidation guard (`_WAIVE004_MASS_INVALIDATION_THRESHOLD = 5`, in
+the `--fix` Tier-A section above) is an ABSOLUTE count, structurally
+blind to any rule with fewer than 5 live waivers -- a rule with exactly 2
+live waivers can never reach 5 candidates no matter how degraded the run
+is, so both waivers pass through silently (the 2026-08-05 incident's own
+4-waiver DEPR005/DEAD001 residue). `_mass_invalidation_rules` now ALSO
+flags the PROPORTIONAL case -- every one of a rule's live waivers
+(`frob.gates._waive._waivers_by_rule` over a fresh snapshot,
+`_live_waiver_counts`) going stale in the same run -- independent of the
+absolute count: 2 of 2 is the same T-1323 incident signature as 40 of 40,
+not weaker evidence for having fewer waivers to begin with.
+
 Two-layer fix, matching the two places this gap actually bites:
 
 1. **Structural signal** (`docs/modules/perf.md#perf-reach-native-staleness-signal-t-1578`
-   has the full writeup): `_perf_reach_
+   has the full writeup, not yet updated for the T-1620 native-name
+   widening above -- see that ticket's filed follow-up): `_perf_reach_
    degraded_marker` (`frob.gates.__init__`) checks `frob.strata.
-   stale_natives` for `frob_core` specifically, AFTER `_maybe_
-   autorebuild_natives` already had its chance to fix it -- `_build_
-   jobs` appends its `PERF_REACH_DEGRADED_SKIP_MARKER` name to
+   stale_natives` for either declared reach-adjacent native, AFTER
+   `_maybe_autorebuild_natives` already had its chance to fix it --
+   `_build_jobs` appends its `PERF_REACH_DEGRADED_SKIP_MARKER` name to
    `GateStats.skipped` whenever `perf` is a selected gate and this
    fires, so `_fix_engine._degraded_verification_reason`'s existing
    "unexpected skip" branch (T-1323) now also catches this case --
    "zero findings" and "could not analyze" become distinguishable for
-   perf's reach-dependent rules specifically, without actually skipping
-   perf_gate's OWN still-correct, native-independent PERF001-004 rules.
+   every perf rule, reach-dependent or not.
 2. **Land preflight**: `_worktree_natives_verifiably_healthy`
    (`src/frob/app/ticket_runner/_land_cmd.py`) runs the SAME auto-rebuild
    attempt `run_gates` itself would, then checks every declared native

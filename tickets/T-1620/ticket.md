@@ -2,7 +2,7 @@
 id: T-1620
 title: Degraded-run detection misses zero-findings under-reports and sub-threshold
   mass staleness
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -17,6 +17,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_gates_ratchet.py
 - docs/modules/gates.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -44,6 +45,21 @@ scope_changes:
     real surface'
   actor: logan
   at: '2026-08-07'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-1620's fix to _perf_reach_degraded_marker (strata_core now also trips
+    the degraded marker, not just frob_core) directly falsifies the pre-existing TestPerfReachDegradedMarker.test_stale_unrelated_native_returns_none
+    assertion in this file; must be updated in the same change or CI breaks on a test
+    asserting the old, now-incorrect behavior
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_below_threshold_but_all_live_waivers_stale_is_flagged
+- tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_below_threshold_with_more_live_waivers_than_stale_is_not_flagged
+- tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_absolute_threshold_still_fires_with_no_live_count_data
+- tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_partial_stale_below_threshold_and_below_live_count_is_not_flagged
+- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_strata_core_also_returns_the_marker
+- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none
 designated_repro_test: null
 threat: null
 component: null

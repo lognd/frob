@@ -178,3 +178,72 @@ class TestRatchetEnabledRules:
             "[arch]\nmax_file_lines = 800\n", encoding="utf-8"
         )
         assert ratchet_enabled_rules(tmp_path) == frozenset()
+
+
+# T-1620: `_mass_invalidation_rules` (`frob.gates._fix_engine_sync`) is the
+# other half of this repo's degraded-run defenses, alongside the ratchet
+# severity/baseline machinery already tested above -- placed here per this
+# ticket's own declared test-file scope rather than a new file, since
+# `frob.gates._fix_engine_sync`/`frob.gates.__init__` are both already in
+# `src/frob/gates/**` scope but `tests/test_gates.py` (where the ratchet-
+# adjacent T-1578 marker tests already live) is not.
+# frob:ticket T-1620
+class TestMassInvalidationRulesProportional:
+    """T-1620: the absolute `_WAIVE004_MASS_INVALIDATION_THRESHOLD` (5) is
+    structurally blind to any rule with fewer than 5 live waivers -- a
+    rule with exactly 2 live waivers can never reach the threshold no
+    matter how degraded the run is. `_mass_invalidation_rules` now also
+    flags the PROPORTIONAL case (every one of a rule's live waivers going
+    stale in the same run), independent of the absolute count."""
+
+    def test_below_threshold_but_all_live_waivers_stale_is_flagged(self) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional.test_below_threshold_but_all_live_waivers_stale_is_flagged  # noqa: E501
+        from frob.gates._fix_engine_sync import _mass_invalidation_rules
+
+        candidates = [("a.py", 1, "DEPR005"), ("b.py", 2, "DEPR005")]
+        live_counts = {"DEPR005": 2}
+
+        result = _mass_invalidation_rules(candidates, live_counts)
+
+        assert result == {"DEPR005": 2}
+
+    def test_below_threshold_with_more_live_waivers_than_stale_is_not_flagged(
+        self,
+    ) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional.test_below_threshold_with_more_live_waivers_than_stale_is_not_flagged  # noqa: E501
+        from frob.gates._fix_engine_sync import _mass_invalidation_rules
+
+        candidates = [("a.py", 1, "DEPR005")]
+        live_counts = {"DEPR005": 3}
+
+        result = _mass_invalidation_rules(candidates, live_counts)
+
+        assert result == {}
+
+    def test_absolute_threshold_still_fires_with_no_live_count_data(self) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional.test_absolute_threshold_still_fires_with_no_live_count_data  # noqa: E501
+        from frob.gates._fix_engine_sync import (
+            _WAIVE004_MASS_INVALIDATION_THRESHOLD,
+            _mass_invalidation_rules,
+        )
+
+        candidates = [
+            ("f.py", i, "PERF004") for i in range(_WAIVE004_MASS_INVALIDATION_THRESHOLD)
+        ]
+
+        result = _mass_invalidation_rules(candidates, {})
+
+        assert result == {"PERF004": _WAIVE004_MASS_INVALIDATION_THRESHOLD}
+
+    def test_partial_stale_below_threshold_and_below_live_count_is_not_flagged(
+        self,
+    ) -> None:
+        # frob:tests tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional.test_partial_stale_below_threshold_and_below_live_count_is_not_flagged  # noqa: E501
+        from frob.gates._fix_engine_sync import _mass_invalidation_rules
+
+        candidates = [("a.py", 1, "INV006")]
+        live_counts = {"INV006": 40}
+
+        result = _mass_invalidation_rules(candidates, live_counts)
+
+        assert result == {}

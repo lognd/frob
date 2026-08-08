@@ -2022,8 +2022,7 @@ class TestCoverageGate:
 
     # frob:ticket T-0783
     # frob:tests \
-    # tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_ticket_closes  # \
-    # noqa: E501
+    # tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_ticket_closes
     def test_todo003_silent_when_ticket_closes(self, tmp_path: Path) -> None:
         """Acceptance (T-0783): once the deferred-to ticket closes, the
         finding clears -- `_todo003_long_deferred` only considers edges
@@ -2294,7 +2293,9 @@ class TestDupPipelineClosureConsumers:
     scoped to `tests/test_gates.py` per T-0814's declared scope."""
 
     # frob:ticket T-0814
-    # frob:tests tests/test_gates.py::TestDupPipelineClosureConsumers.test_is_symref_dup kind="unit"  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestDupPipelineClosureConsumers.test_is_symref_dup \
+    # kind="unit"
     def test_is_symref_dup(self) -> None:
         """T-0814: `frob.dup._pipeline._is_symref` mirrors `frob.gates`'s
         helper of the same name -- both files are outside a shared home
@@ -2415,7 +2416,12 @@ class TestWaivePresets:
         assert resolve_preset("no-such-preset") is None
 
     # frob:ticket T-1272
-    # frob:waive COV006 reason="genuinely reachable via _snapshot -> build_graph -> parse_directives -> _parse_attrs -> _parse_attrs_verb_error -> _VERB_ATTRS_VALIDATORS[verb] -> _attrs_verb_error_waive, but frob.graph.callgraph's best-effort BFS cannot trace through that dict-of-callables dispatch, same blind spot as the T-1024 _scope_covers waivers above"  # noqa: E501
+    # frob:waive COV006 reason="genuinely reachable via _snapshot -> build_graph -> \
+    # parse_directives -> _parse_attrs -> _parse_attrs_verb_error -> \
+    # _VERB_ATTRS_VALIDATORS[verb] -> _attrs_verb_error_waive, but \
+    # frob.graph.callgraph's best-effort BFS cannot trace through that \
+    # dict-of-callables dispatch, same blind spot as the T-1024 _scope_covers waivers \
+    # above"
     def test_waive_preset_resolves_reason_and_matches_like_inline(
         self, tmp_path: Path
     ) -> None:
@@ -2446,7 +2452,12 @@ class TestWaivePresets:
         assert waived[0].waived.reason == WAIVE_PRESETS["split-carried-prose"]
 
     # frob:ticket T-1272
-    # frob:waive COV006 reason="genuinely reachable via _snapshot -> build_graph -> parse_directives -> _parse_attrs -> _parse_attrs_verb_error -> _VERB_ATTRS_VALIDATORS[verb] -> _attrs_verb_error_waive, but frob.graph.callgraph's best-effort BFS cannot trace through that dict-of-callables dispatch, same blind spot as the T-1024 _scope_covers waivers above"  # noqa: E501
+    # frob:waive COV006 reason="genuinely reachable via _snapshot -> build_graph -> \
+    # parse_directives -> _parse_attrs -> _parse_attrs_verb_error -> \
+    # _VERB_ATTRS_VALIDATORS[verb] -> _attrs_verb_error_waive, but \
+    # frob.graph.callgraph's best-effort BFS cannot trace through that \
+    # dict-of-callables dispatch, same blind spot as the T-1024 _scope_covers waivers \
+    # above"
     def test_unknown_preset_is_malformed_directive(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_attrs_verb_error_waive kind="unit"
         source = (
@@ -4704,7 +4715,8 @@ class TestDebtGate:
         """T-0807: a check run with `--ticket T-XXXX` whose lease pins to
         THIS root (no linked worktree required -- e.g. a single-checkout
         repo with an in-progress ticket) is also land-owned via the lease."""
-        # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease
         from frob.gates import release_gate
         from frob.release import stamp
         from frob.tickets._leases import _LeaseRecord, leases_dir
@@ -4755,7 +4767,8 @@ class TestDebtGate:
     def test_rel001_linked_worktree_detected(self, tmp_path: Path) -> None:
         """T-0807: `_rel001_is_linked_worktree` is `True` for a linked
         worktree and `False` for the main checkout it was created from."""
-        # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_linked_worktree_detected  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_rel001_linked_worktree_detected
         from frob.gates import _rel001_is_linked_worktree
 
         main_root = tmp_path / "main"
@@ -4816,7 +4829,8 @@ class TestDeprecatedGate:
         """T-0576: a frob:deprecated bound to a closed ticket is DEPR002 --
         the ticket closed but the directive (presumably the symbol) is
         still here."""
-        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -4853,7 +4867,8 @@ class TestDeprecatedGate:
     def test_depr004_past_sunset_errors(self, tmp_path: Path) -> None:
         """T-0576: an open frob:deprecated past its sunset date escalates
         from a warning to DEPR004, an ERROR."""
-        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr004_past_sunset_errors  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestDeprecatedGate.test_depr004_past_sunset_errors
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2026-01-01" ticket="T-0001"\n'
@@ -4884,7 +4899,8 @@ class TestDeprecatedGate:
         assert _rules(violations) == ["DEPR003"]
 
     def test_lists_every_deprecated_entry(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_lists_every_deprecated_entry  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestDeprecatedGate.test_lists_every_deprecated_entry
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -4922,7 +4938,8 @@ class TestDeprecatedGate:
         """T-0639: a `frob:deprecated` symbol with a baselined entry that
         omits a currently-observed reference fires DEPR005, naming the new
         call site."""
-        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr005_new_caller_errors  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestDeprecatedGate.test_depr005_new_caller_errors
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -10307,7 +10324,8 @@ class TestAutofixManifest:
 
     # frob:ticket T-1348
     def test_write_then_clear_roundtrip(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
         from frob.gates._fix_engine import FixApplied
         from frob.gates._fix_engine_shared import (
             _autofix_manifest_path,
@@ -11055,7 +11073,11 @@ class TestCov002ScopeCoverage:
     # frob:tests src/frob/gates/__init__.py::_scope_covers
     # frob:ticket T-0542
     # frob:ticket T-0543
-    # frob:waive COV006 reason="T-1024: genuinely reachable via run_gates -> the SCOPE gate's job-table dispatch -> _scope_covers, but frob.graph.callgraph's best-effort BFS cannot trace through the gate job-table's dict-of-callables indirection; the binding is correct, the reachability heuristic just cannot see it"  # noqa: E501
+    # frob:waive COV006 reason="T-1024: genuinely reachable via run_gates -> the SCOPE \
+    # gate's job-table dispatch -> _scope_covers, but frob.graph.callgraph's \
+    # best-effort BFS cannot trace through the gate job-table's dict-of-callables \
+    # indirection; the binding is correct, the reachability heuristic just cannot see \
+    # it"
     def test_ambiguous_overlapping_open_scopes_do_not_cover(self, tmp_path):
         """B10: two open, EQUALLY specific tickets whose scopes both cover
         the same file must NOT silently cover a changed symbol -- that is
@@ -11104,7 +11126,10 @@ class TestCov002ScopeCoverage:
     # frob:tests src/frob/gates/__init__.py::_scope_covers
     # frob:ticket T-0542
     # frob:ticket T-0543
-    # frob:waive COV006 reason="T-1024: same reachability-heuristic gap as test_ambiguous_overlapping_open_scopes_do_not_cover above -- genuinely reachable via run_gates -> the SCOPE gate's job-table dispatch -> _scope_covers, just not provable by frob.graph.callgraph's best-effort BFS"  # noqa: E501
+    # frob:waive COV006 reason="T-1024: same reachability-heuristic gap as \
+    # test_ambiguous_overlapping_open_scopes_do_not_cover above -- genuinely reachable \
+    # via run_gates -> the SCOPE gate's job-table dispatch -> _scope_covers, just not \
+    # provable by frob.graph.callgraph's best-effort BFS"
     def test_active_ticket_own_scope_wins_over_a_broader_open_ticket(self, tmp_path):
         """B10: the active ticket's own scope covers the symbol even when a
         second, broader open ticket ALSO happens to cover the same file --
@@ -11634,7 +11659,8 @@ class TestTest013NativeUnverified:
 
     # frob:ticket T-0552
     def test_silent_on_executed_edge(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge
         # A python edge with real collected execution evidence (pytest node
         # id) must never be mistaken for the native-unverified case -- the
         # extension check in `_edge_is_native_unverified` is what keeps
@@ -12131,7 +12157,8 @@ class TestTest015VacuousCredit:
 
     # frob:ticket T-0548
     def test_fires_on_no_op_test_body(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
+        # frob:tests \
+        # tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body
         # The audit's own repro: a public function whose only covering
         # test, matched by naming convention, has an empty (no-op) body.
         from typani.option import Nothing
@@ -12529,18 +12556,41 @@ class TestPerfReachDegradedMarker:
 
         assert _perf_reach_degraded_marker(tmp_path) == PERF_REACH_DEGRADED_SKIP_MARKER
 
+    def test_stale_strata_core_also_returns_the_marker(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_perf_reach_degraded_marker
+        """T-1620: `strata_core` (the tree-sitter native EVERY perf rule's
+        own parsed INPUT depends on via `frob.lang.parse_file`, not just
+        the frob_core-reach-dependent PERF008/012) must ALSO trip this
+        marker -- a stale-but-importable `strata_core` can silently parse
+        fewer/wrong symbols, under-reporting even the natively-independent
+        PERF001-004 lexical rules. Before T-1620 this returned None,
+        which is exactly the gap the 2026-08-05 incident measured (PERF004
+        read zero findings against a stale worktree while this marker
+        reported healthy)."""
+        from types import SimpleNamespace
+
+        from frob.gates import PERF_REACH_DEGRADED_SKIP_MARKER, _perf_reach_degraded_marker
+
+        stale_entry = SimpleNamespace(spec=SimpleNamespace(name="strata_core"))
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: (stale_entry,))
+
+        assert _perf_reach_degraded_marker(tmp_path) == PERF_REACH_DEGRADED_SKIP_MARKER
+
     def test_stale_unrelated_native_returns_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/gates/__init__.py::_perf_reach_degraded_marker
-        """A stale native that is NOT `frob_core` (e.g. `strata_core`,
-        already caught by its own NATIVE001-adjacent paths for design/
-        strata loading) must not trip this perf-specific marker."""
+        """A stale native that is NEITHER `frob_core` NOR `strata_core`
+        (this repo declares only those two today, but the check is a
+        frozenset membership test, not a hardcoded pair) must not trip
+        this perf-specific marker."""
         from types import SimpleNamespace
 
         from frob.gates import _perf_reach_degraded_marker
 
-        stale_entry = SimpleNamespace(spec=SimpleNamespace(name="strata_core"))
+        stale_entry = SimpleNamespace(spec=SimpleNamespace(name="some_other_native"))
         monkeypatch.setattr("frob.strata.stale_natives", lambda root: (stale_entry,))
 
         assert _perf_reach_degraded_marker(tmp_path) is None
@@ -13615,7 +13665,8 @@ class TestRenderLintGate:
 
         assert _by_rule(violations, "RENDER001") == []
 
-    # frob:tests tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent
     def test_stderr_directed_print_is_silent(self, tmp_path: Path) -> None:
         """A `print(..., file=sys.stderr)` call is never flagged --
         INV-RENDER-SOLE-STDOUT governs stdout only."""
@@ -13635,7 +13686,8 @@ class TestRenderLintGate:
 
         assert _by_rule(violations, "RENDER001") == []
 
-    # frob:tests tests/test_gates.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestRenderLintGate.test_unparseable_file_fires_parse001
     # frob:ticket T-0897
     def test_unparseable_file_fires_parse001(self, tmp_path: Path) -> None:
         """A file with a Python syntax error fires PARSE001 instead of
@@ -13668,7 +13720,8 @@ class TestTick006PhantomFiling:
         """A `TicketQueue` of `tickets`, keyed by id."""
         return TicketQueue(tickets={t.id: t for t in tickets})
 
-    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires
     def test_phantom_filed_colon_fires(self, tmp_path: Path) -> None:
         """`Filed: T-draft-deadbeef` (a real T-0726/T-0577-class draft-loss
         shape) resolving to no block, active or archived, is TICK006."""
@@ -13688,7 +13741,8 @@ class TestTick006PhantomFiling:
         assert "T-draft-deadbeef" in tick006[0].message
         assert tick006[0].severity == Severity.ERROR
 
-    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_as_fires  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_as_fires
     def test_phantom_filed_as_fires(self, tmp_path: Path) -> None:
         """The T-0707 incident class: `filed as T-0999` where T-0999 was
         never actually filed anywhere -- an invented filing trail."""
@@ -13727,7 +13781,8 @@ class TestTick006PhantomFiling:
         violations = tickets_gate(tmp_path, self._queue(followup, reporter))
         assert not any(v.rule == "TICK006" for v in violations)
 
-    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_filed_colon_none_is_silent  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick006PhantomFiling.test_filed_colon_none_is_silent
     def test_filed_colon_none_is_silent(self, tmp_path: Path) -> None:
         """`Filed: none` -- the common "nothing to file" Done-report
         shape -- names no id at all and must never fire."""
@@ -13807,7 +13862,8 @@ class TestTick006PhantomFiling:
         assert len(tick006) == 1
         assert "T-9998" in tick006[0].message
 
-    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_negation_not_filed_is_silent  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick006PhantomFiling.test_negation_not_filed_is_silent
     def test_negation_not_filed_is_silent(self, tmp_path: Path) -> None:
         """ "not filed as a new ticket" (verbatim phrase used repeatedly in
         this repo's ledger) is an explicit negation and must never fire,
@@ -14162,7 +14218,8 @@ class TestTick007UndispatchedStale:
         )
 
     # frob:ticket T-0820
-    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires
     def test_stale_critical_fires(self, tmp_path: Path) -> None:
         """A CRITICAL ticket filed long ago (far past the 4h default
         threshold), still queued and unblocked, is TICK007."""
@@ -14178,7 +14235,8 @@ class TestTick007UndispatchedStale:
         assert tick007[0].severity == Severity.WARN
 
     # frob:ticket T-0820
-    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent
     def test_fresh_critical_is_silent(self, tmp_path: Path) -> None:
         """A CRITICAL ticket filed today has not crossed the 4h threshold
         yet (whole-day granularity means same-day is 0h elapsed) -- no
@@ -14192,7 +14250,8 @@ class TestTick007UndispatchedStale:
         assert not any(v.rule == "TICK007" for v in violations)
 
     # frob:ticket T-0820
-    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick007UndispatchedStale.test_medium_priority_never_fires
     def test_medium_priority_never_fires(self, tmp_path: Path) -> None:
         """MEDIUM/LOW carry no default threshold (T-0752: "a queue always
         has some") -- an ancient MEDIUM ticket never alarms TICK007."""
@@ -14205,7 +14264,8 @@ class TestTick007UndispatchedStale:
         assert not any(v.rule == "TICK007" for v in violations)
 
     # frob:ticket T-0820
-    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent
     def test_blocked_ticket_is_silent(self, tmp_path: Path) -> None:
         """A CRITICAL ticket blocked on an open blocker is not in the
         dispatchable set at all (`doable()` excludes it), so it never
@@ -14288,7 +14348,8 @@ class TestTick008UnknownLedgerFields:
         }
         return Ticket.model_validate(data)
 
-    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field
     def test_fires_on_unknown_field(self, tmp_path: Path) -> None:
         """A ticket with a genuinely unknown field fires TICK008, naming
         both the ticket id and the unknown field, at WARN (not ERROR --
@@ -14313,7 +14374,8 @@ class TestTick008UnknownLedgerFields:
         assert "priorty" in tick008[0].message
         assert "did you mean 'priority'" in tick008[0].message
 
-    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger
     def test_silent_on_clean_ledger(self, tmp_path: Path) -> None:
         """A ticket with only known fields carries no `__pydantic_extra__`
         and never fires TICK008."""
@@ -14336,7 +14398,7 @@ class TestTick008UnknownLedgerFields:
         tick008 = _by_rule(violations, "TICK008")
         assert tick008 == []
 
-    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable  # noqa: E501
+    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable
     def test_waivable(self) -> None:
         """TICK008 is waivable like TICK004/TICK006/TICK007 (not added to
         `_UNWAIVABLE_RULES`) -- a genuinely temporary, disclosed exception
@@ -14432,7 +14494,8 @@ class TestPiiStructuralCrossLanguage:
         pii010 = _by_rule(violations, "PII010")
         assert any("unresolvable" in v.message for v in pii010)
 
-    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires
     def test_ts_process_env_fires(self, tmp_path: Path) -> None:
         """`process.env.SECRET_KEY` fires SEC110 -- the TS equivalent of
         `os.environ[...]`/`os.getenv(...)`."""
@@ -14459,7 +14522,8 @@ class TestPiiStructuralCrossLanguage:
         sec110 = _by_rule(violations, "SEC110")
         assert any("API_TOKEN" in v.message and "config2.ts" in v.file for v in sec110)
 
-    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_import_meta_env_fires  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_import_meta_env_fires
     def test_ts_import_meta_env_fires(self, tmp_path: Path) -> None:
         """`import.meta.env.VITE_SECRET` (Vite-style bundler env access)
         fires SEC110 -- the ticket-named `import.meta.env` equivalent."""
@@ -14527,7 +14591,8 @@ class TestPiiStructuralCrossLanguage:
         violations = pii_structural_gate(tmp_path)
         assert not _by_rule(violations, "PII010")
 
-    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
+    # frob:tests \
+    # tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires
     def test_rust_env_var_fires(self, tmp_path: Path) -> None:
         """`std::env::var("API_KEY")` fires SEC110 -- the Rust equivalent
         of `os.getenv(...)`."""
