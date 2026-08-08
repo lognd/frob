@@ -281,8 +281,14 @@ def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_ledger_always_in_scope
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_feature_kind_implies_cli_wiring_files_in_scope  # noqa: E501
+# frob:tests tests/test_tickets.py::TestScopeMatching.test_own_shard_always_in_scope
+# frob:ticket T-1819
 def scope_matches(
-    path: str, scope: Sequence[str], *, kind: TicketKind | None = None
+    path: str,
+    scope: Sequence[str],
+    *,
+    kind: TicketKind | None = None,
+    ticket_id: str | None = None,
 ) -> bool:
     """Whether `path` is covered by a ticket's declared `scope`.
 
@@ -300,10 +306,24 @@ def scope_matches(
     structurally needs to touch the dispatch table/config/runner wiring no
     matter what its author anticipated when filing it. `kind=None` (the
     default, and every pre-T-0446 call site) preserves the exact prior
-    behavior unchanged."""
+    behavior unchanged.
+
+    T-1819: when `ticket_id` is given, `tickets/<ticket_id>/**` is ALSO
+    implicitly in scope -- the sharded-ledger mirror of `LEDGER_PATH`'s
+    `tickets.md`-always-in-scope rule. `LEDGER_PATH` predates the sharded
+    per-ticket store (`tickets/<id>/ticket.md`, `tickets/<id>/done-
+    report.md`, written by routine `frob ticket start`/`sweep` auto-
+    commits), so without this a ticket's own bookkeeping shard tripped a
+    false SCOPE001 against its own declared scope -- the sibling gap
+    T-1817 already closed for the unscoped B9 path (`frob.gates.
+    _b9_exempt_file`), here closed for the per-ticket declared-scope
+    check. `ticket_id=None` (the default, and every pre-T-1819 call site)
+    preserves the exact prior behavior unchanged."""
     globs = _scope_globs(_split_scope_entries(scope))
     if kind is TicketKind.FEATURE:
         globs = (*globs, *CLI_WIRING_FILES)
+    if ticket_id is not None:
+        globs = (*globs, f"tickets/{ticket_id}/**")
     return any(fnmatch.fnmatch(path, glob) for glob in globs)
 
 

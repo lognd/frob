@@ -2,7 +2,7 @@
 id: T-1819
 title: SCOPE001 false-positives on a ticket's own tickets/<id>/** shard file (LEDGER_PATH
   predates sharded ledger)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,8 +13,32 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_models.py
+- src/frob/gates/__init__.py
+- tests/test_tickets.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: SCOPE001's own scope_gate check site needs to pass ticket_id through to
+    scope_matches for the fix to take effect
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_tickets.py
+  reason: unit tests for the sharded-ledger scope fix
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_gates.py
+  reason: unit tests for the sharded-ledger scope fix
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_tickets.py::TestScopeMatching::test_own_shard_always_in_scope
+- tests/test_gates.py::TestScopePrework::test_scope001_own_sharded_ledger_shard_implicitly_in_scope
+- tests/test_gates.py::TestScopePrework::test_scope001_another_tickets_shard_still_out_of_scope
 designated_repro_test: null
 threat: null
 component: null

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.400.0] - unreleased
+
+- T-1819: SCOPE001 false-positives on a ticket's own tickets/<id>/** shard file (LEDGER_PATH predates sharded ledger)
+
 ## [0.399.0] - unreleased
 
 - T-1572: frob coverage: add --base override, thread through make coverage-fast BASE=

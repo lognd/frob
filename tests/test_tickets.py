@@ -1958,6 +1958,26 @@ class TestScopeMatching:
         for wiring_file in CLI_WIRING_FILES:
             assert not scope_matches(wiring_file, narrow_scope, kind=TicketKind.BUG)
 
+    # frob:ticket T-1819
+    def test_own_shard_always_in_scope(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        # LEDGER_PATH predates the sharded per-ticket store; a ticket's own
+        # tickets/<id>/** bookkeeping files (routine start/sweep
+        # auto-commits) must not trip a false SCOPE001 against its own
+        # declared scope.
+        narrow_scope = ("src/frob/tickets/_models.py",)
+        assert not scope_matches("tickets/T-1819/ticket.md", narrow_scope)
+        assert scope_matches(
+            "tickets/T-1819/ticket.md", narrow_scope, ticket_id="T-1819"
+        )
+        assert scope_matches(
+            "tickets/T-1819/done-report.md", narrow_scope, ticket_id="T-1819"
+        )
+        # A DIFFERENT ticket's own shard is not implicitly covered.
+        assert not scope_matches(
+            "tickets/T-0001/ticket.md", narrow_scope, ticket_id="T-1819"
+        )
+
     # frob:ticket T-1163
     def test_cli_wiring_files_resolve_to_real_paths_on_disk(self) -> None:
         # frob:tests src/frob/tickets/_models.py::CLI_WIRING_FILES

@@ -5356,6 +5356,40 @@ class TestScopePrework:
         diff = Diff(base="x", hunks=(Hunk(file="src/frob/__main__.py", span=(1, 1)),))
         assert any(v.rule == "SCOPE001" for v in scope_gate(diff, ticket, snap))
 
+    # frob:ticket T-1819
+    def test_scope001_own_sharded_ledger_shard_implicitly_in_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-1819: LEDGER_PATH ('tickets.md') predates the sharded
+        # per-ticket store -- a ticket's own tickets/<id>/** bookkeeping
+        # files (routine start/sweep auto-commits) must not trip a false
+        # SCOPE001, mirroring the tickets.md-always-in-scope rule.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(ticket_id="T-1819", scope=("src/a/**",))
+        diff = Diff(
+            base="x",
+            hunks=(
+                Hunk(file="tickets/T-1819/ticket.md", span=(1, 1)),
+                Hunk(file="tickets/T-1819/done-report.md", span=(1, 1)),
+            ),
+        )
+        assert scope_gate(diff, ticket, snap) == ()
+
+    # frob:ticket T-1819
+    def test_scope001_another_tickets_shard_still_out_of_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-1819: the implicit exemption is per-ticket -- a DIFFERENT
+        # ticket's own shard is not implicitly covered.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(ticket_id="T-1819", scope=("src/a/**",))
+        diff = Diff(
+            base="x", hunks=(Hunk(file="tickets/T-0001/ticket.md", span=(1, 1)),)
+        )
+        assert any(v.rule == "SCOPE001" for v in scope_gate(diff, ticket, snap))
+
     def test_scope001_exempts_file_committed_by_earlier_ticket(
         self, tmp_path: Path
     ) -> None:

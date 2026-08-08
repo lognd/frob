@@ -3514,9 +3514,10 @@ def _scope_gate_check_file(
 ) -> Violation | None:
     """The SCOPE001 `Violation` for one touched `file`, or None when it
     matches `ticket.scope` (T-0446: a FEATURE ticket's CLI-wiring files are
-    implicitly included here too) or is exempt (already committed under
-    another ticket's own scope, T-0108)."""
-    if scope_matches(file, ticket.scope, kind=ticket.kind):
+    implicitly included here too; T-1819: the ticket's own `tickets/<id>/**`
+    sharded-ledger bookkeeping files are implicitly included too) or is
+    exempt (already committed under another ticket's own scope, T-0108)."""
+    if scope_matches(file, ticket.scope, kind=ticket.kind, ticket_id=ticket.id):
         return None
     if (
         root is not None
