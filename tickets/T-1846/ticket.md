@@ -1,7 +1,7 @@
 ---
 id: T-1846
 title: 'post-land sweep regression from T-1554: 1 new error(s) (DOC001)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-08'
@@ -12,8 +12,18 @@ sprint: null
 runs_last: false
 scope:
 - docs/design/land-checkpoint-durability.md
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/index.md
+  reason: DOC001 requires a real markdown link, not just a backtick-mentioned path;
+    docs/index.md already prose-references this file but never actually links it
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
