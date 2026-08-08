@@ -2,7 +2,7 @@
 id: T-1863
 title: Reusable coordinator scripts under scripts/ (check summary, fleet status, land
   verification)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -38,9 +38,35 @@ scope_changes:
     src/frob module'
   actor: logan
   at: '2026-08-08'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestLoadReport::test_reads_path
+- tests/unit/test_coordinator_scripts.py::TestLoadReport::test_reads_stdin
+- tests/unit/test_coordinator_scripts.py::TestIterDiagnostics::test_yields_tool_and_diagnostic
+- tests/unit/test_coordinator_scripts.py::TestIterDiagnostics::test_empty_results
+- tests/unit/test_coordinator_scripts.py::TestSummarise::test_counts_by_severity
+- tests/unit/test_coordinator_scripts.py::TestSummarise::test_collects_error_rows
+- tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain::test_exit_zero_when_clean
+- tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain::test_exit_one_when_errors
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_clean_repo
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_dirty_repo
+- tests/unit/test_coordinator_scripts.py::TestLeases::test_reads_lease_records
+- tests/unit/test_coordinator_scripts.py::TestLeases::test_no_lease_dir
+- tests/unit/test_coordinator_scripts.py::TestLeases::test_unreadable_lease_file
+- tests/unit/test_coordinator_scripts.py::TestWorktrees::test_reports_idle_age
+- tests/unit/test_coordinator_scripts.py::TestWorktrees::test_no_worktree_dir
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusMain::test_exit_zero_when_clean
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusMain::test_exit_one_when_dirty
+- tests/unit/test_coordinator_scripts.py::TestResolve::test_resolves_full_sha
+- tests/unit/test_coordinator_scripts.py::TestResolve::test_unknown_sha_returns_none
+- tests/unit/test_coordinator_scripts.py::TestIsAncestor::test_true_when_ancestor
+- tests/unit/test_coordinator_scripts.py::TestIsAncestor::test_false_when_not_ancestor
+- tests/unit/test_coordinator_scripts.py::TestSubject::test_returns_commit_subject
+- tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_distinguishes_unknown_from_missing
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 The coordinator re-derives the same three analyses by hand, dozens of
 times per session, from inline python. That is not a style complaint --
