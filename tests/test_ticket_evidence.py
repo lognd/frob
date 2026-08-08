@@ -253,7 +253,8 @@ class TestKindHistory:
     def test_history_is_append_only(self, tmp_path: Path) -> None:
         """A second post-evidence reclassification appends a SECOND entry,
         never overwriting the first."""
-        # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_history_is_append_only  # noqa: E501
+        # frob:tests \
+        # tests/test_ticket_evidence.py::TestKindHistory.test_history_is_append_only
         from frob.tickets._evidence import add_evidence
 
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
@@ -351,3 +352,55 @@ class TestSetDesignatedReproTest:
         assert result.danger_err is TicketError.DesignatedReproNotInEvidence
         reloaded = load_active(tmp_path).danger_ok.tickets[tid]
         assert reloaded.designated_repro_test is None
+
+    def test_first_time_designation_appends_no_audit_entry(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_first_time_des\
+        # ignation_appends_no_audit_entry
+        tid = _seed_ticket(tmp_path)
+        add_evidence(tmp_path, tid, ["tests/test_a.py::test_a"])
+
+        result = set_designated_repro_test(tmp_path, tid, "tests/test_a.py::test_a")
+
+        assert result.is_ok, result.err
+        assert result.danger_ok.designated_repro_changes == ()
+
+    def test_redesignation_appends_an_audit_entry(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_\
+        # appends_an_audit_entry
+        tid = _seed_ticket(tmp_path)
+        add_evidence(
+            tmp_path, tid, ["tests/test_a.py::test_a", "tests/test_b.py::test_b"]
+        )
+        set_designated_repro_test(tmp_path, tid, "tests/test_a.py::test_a")
+
+        result = set_designated_repro_test(
+            tmp_path, tid, "tests/test_b.py::test_b", reason="a stronger repro"
+        )
+
+        assert result.is_ok, result.err
+        entries = result.danger_ok.designated_repro_changes
+        assert len(entries) == 1
+        assert entries[0].old_value == "tests/test_a.py::test_a"
+        assert entries[0].new_value == "tests/test_b.py::test_b"
+        assert entries[0].reason == "a stronger repro"
+        reloaded = load_active(tmp_path).danger_ok.tickets[tid]
+        assert len(reloaded.designated_repro_changes) == 1
+
+    def test_redesignating_the_same_id_appends_no_audit_entry(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignating_\
+        # the_same_id_appends_no_audit_entry
+        tid = _seed_ticket(tmp_path)
+        add_evidence(tmp_path, tid, ["tests/test_a.py::test_a"])
+        set_designated_repro_test(tmp_path, tid, "tests/test_a.py::test_a")
+
+        result = set_designated_repro_test(tmp_path, tid, "tests/test_a.py::test_a")
+
+        assert result.is_ok, result.err
+        assert result.danger_ok.designated_repro_changes == ()

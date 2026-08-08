@@ -34,6 +34,7 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._models import (
+    DesignatedReproChangeEntry,
     Priority,
     SprintReport,
     SprintTransition,
@@ -108,7 +109,8 @@ def set_priority(
 # frob:ticket T-1616
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
-# frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded  # noqa: E501
+# frob:tests \
+# tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded
 # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
 def set_kind(
     root: Path, ticket_id: str, kind: TicketKind
@@ -209,7 +211,8 @@ def set_runs_last(
 
 # frob:ticket T-1484
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields  # noqa: E501
+# frob:tests \
+# tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields
 def set_scope_breadth_ack(
     root: Path, ticket_id: str, reason: str
 ) -> Result[Ticket, TicketError]:
@@ -247,12 +250,66 @@ def set_scope_breadth_ack(
     return Ok(updated)
 
 
-# frob:ticket T-1670
-# frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evidence_id  # noqa: E501
-# frob:tests tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_evidence  # noqa: E501
+# frob:ticket T-1749
+def _current_actor() -> str:
+    """Best-effort identity for a `designated_repro_changes` audit entry's
+    `actor` field (T-1749) -- duplicated one-liner from `_evidence.
+    _current_actor`/`_accept._current_actor`/`_scope._current_actor`
+    rather than imported, matching those modules' own documented
+    cross-sibling-module tradeoff (see `_evidence._current_actor`'s own
+    docstring)."""
+    import getpass
+
+    try:
+        return getpass.getuser()
+    except OSError:
+        return "unknown"
+
+
+# frob:ticket T-1749
+def _redesignation_entry(
+    old_value: str | None, node_id: str, reason: str | None
+) -> DesignatedReproChangeEntry | None:
+    """The `DesignatedReproChangeEntry` (T-1749) to append for this
+    designation, or `None` when nothing should be recorded: a FIRST-time
+    designation (`old_value is None`) is pure addition, the same "no audit
+    event" posture `replace_evidence` gives an `old_node == new_node`
+    no-op -- only a genuine REdesignation (an already-set value changing
+    to a different one) leaves a trace. `old_value == node_id` (a
+    redundant re-designation of the SAME id) is also a no-op, not an
+    event -- nothing was actually redirected."""
+    from datetime import date
+
+    if old_value is None or old_value == node_id:
+        return None
+    return DesignatedReproChangeEntry(
+        old_value=old_value,
+        new_value=node_id,
+        reason=reason,
+        actor=_current_actor(),
+        at=date.today(),
+    )
+
+
+# frob:ticket T-1749
+# frob:doc docs/modules/gates.md#public-api
+# frob:tests \
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_designates_a_bound_evi\
+# dence_id
+# frob:tests \
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_refuses_an_id_not_in_e\
+# vidence
+# frob:tests \
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignation_appends_\
+# an_audit_entry
+# frob:tests \
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_first_time_designation\
+# _appends_no_audit_entry
+# frob:tests \
+# tests/test_ticket_evidence.py::TestSetDesignatedReproTest.test_redesignating_the_same\
+# _id_appends_no_audit_entry
 def set_designated_repro_test(
-    root: Path, ticket_id: str, node_id: str
+    root: Path, ticket_id: str, node_id: str, *, reason: str | None = None
 ) -> Result[Ticket, TicketError]:
     """`frob ticket evidence <id> --designate-repro NODE-ID` (T-1670): mark
     `node_id` as the explicit BUG002 repro test, regardless of bind order
@@ -265,7 +322,20 @@ def set_designated_repro_test(
     first, so this check sees it; designating an id that was never bound
     (a typo, or the wrong ticket) is rejected at set time rather than
     silently recorded as a designation that can never match anything in
-    `_designated_repro_test`'s own `designated in ticket.evidence` guard."""
+    `_designated_repro_test`'s own `designated in ticket.evidence` guard.
+
+    T-1749: `reason` (keyword-only, optional) is recorded in a new
+    `DesignatedReproChangeEntry` appended to `ticket.
+    designated_repro_changes` whenever this call is a genuine
+    REdesignation (see `_redesignation_entry`'s docstring for exactly
+    which transitions count) -- closing the "no audit trail" half of the
+    asymmetry T-1749 found in `--designate-repro` (the same class T-1733
+    fixed for `--replace`). `reason=None` is accepted and recorded as
+    such; a CLI flag that REQUIRES a reason on redesignation (mirroring
+    `--replace`'s `EvidenceReplaceReasonMissing` refusal) is deliberately
+    NOT added here -- it needs `src/frob/_cli_parsers/**`/`src/frob/app/
+    config.py` wiring outside this ticket's declared scope; see the Done
+    report for the follow-up ticket."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -288,11 +358,22 @@ def set_designated_repro_test(
                 node_id,
             )
             return Err(TicketError.DesignatedReproNotInEvidence)
-        updated = ticket.model_copy(update={"designated_repro_test": node_id})
+        entry = _redesignation_entry(ticket.designated_repro_test, node_id, reason)
+        update: dict = {"designated_repro_test": node_id}
+        if entry is not None:
+            update["designated_repro_changes"] = ticket.designated_repro_changes + (
+                entry,
+            )
+        updated = ticket.model_copy(update=update)
         write_result = write_ticket(root, updated)
         if write_result.is_err:
             return Err(write_result.danger_err)
-    _log.info("tickets: %s designated_repro_test set to %s", ticket_id, node_id)
+    _log.info(
+        "tickets: %s designated_repro_test set to %s%s",
+        ticket_id,
+        node_id,
+        " (redesignation recorded)" if entry is not None else "",
+    )
     return Ok(updated)
 
 
@@ -548,7 +629,8 @@ def _mine_done_transitions(
 
 # frob:ticket T-0938
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_velocity.py::TestSprintVelocity.test_transitions_mined_from_history  # noqa: E501
+# frob:tests \
+# tests/test_tickets_velocity.py::TestSprintVelocity.test_transitions_mined_from_history
 def sprint_velocity(
     root: Path, queue: TicketQueue, sprint: str
 ) -> SprintVelocityReport:
@@ -684,10 +766,13 @@ def _build_flow_rows(
 # frob:ticket T-1142
 # frob:ticket T-1162
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day  # noqa: E501
+# frob:tests \
+# tests/test_tickets_velocity.py::TestTicketFlow.test_filed_and_landed_counted_per_day
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_zero_activity_days_are_filled_not_sparse  # noqa: E501
-# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_none_when_queue_not_shrinking  # noqa: E501
-# frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking  # noqa: E501
+# frob:tests \
+# tests/test_tickets_velocity.py::TestTicketFlow.test_eta_none_when_queue_not_shrinking
+# frob:tests \
+# tests/test_tickets_velocity.py::TestTicketFlow.test_eta_computed_when_queue_shrinking
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_landed  # noqa: E501
 # frob:tests tests/test_tickets_velocity.py::TestTicketFlow.test_archived_ticket_still_counts_toward_filed  # noqa: E501
 # frob:waive AFFECT001 reason="T-1162 is a pure internal extraction \
@@ -781,7 +866,8 @@ def _median_cycle_days(all_tickets: dict, first_done: dict[str, date]) -> float 
 
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field  # noqa: E501
+# frob:tests \
+# tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field
 def set_component(
     root: Path, ticket_id: str, component: str | None
 ) -> Result[Ticket, TicketError]:

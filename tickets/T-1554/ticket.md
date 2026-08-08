@@ -13,6 +13,7 @@ sprint: null
 runs_last: false
 scope:
 - docs/design/land-checkpoint-durability.md
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -32,6 +33,12 @@ scope_changes:
   glob: docs/design/land-checkpoint-durability.md
   reason: design-only deliverable per ticket body ('needs its own design doc before
     implementation'); no code changes belong to this ticket
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/index.md
+  reason: 'DOC001: link the new design doc from the index so it is not linked from
+    nowhere'
   actor: logan
   at: '2026-08-08'
 evidence:

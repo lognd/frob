@@ -1258,6 +1258,42 @@ class EvidenceChangeEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-1749
+# frob:doc docs/modules/gates.md#public-api
+class DesignatedReproChangeEntry(BaseModel):
+    """One append-only audit line for a `frob ticket evidence
+    --designate-repro` REDESIGNATION (T-1749): who retargeted BUG002's
+    repro check away from a previously-designated id, to what, when, and
+    (optionally) why.
+
+    T-1733 found and fixed the identical shape of gap for
+    `--replace` (see `EvidenceChangeEntry`); T-1749 found a second
+    instance in `--designate-repro`: it can silently redirect BUG002's
+    FAIL-at-parent check onto a different already-bound id with no trace
+    in the ledger. Narrower than the `--replace` gap in one respect
+    (`set_designated_repro_test` already refuses a target that is not one
+    of the ticket's own bound evidence ids -- it cannot invent an
+    unverified id), so `reason` here is OPTIONAL, not required: a
+    FIRST-time designation on a fresh ticket (`old_value is None`) is
+    closer to pure addition and records no entry at all (mirroring
+    `replace_evidence`'s own old==new no-op-is-not-an-audit-event
+    posture); only a REdesignation (an already-set value being changed to
+    a different one) appends here, `reason=None` when the caller did not
+    supply one -- CLI enforcement of a REQUIRED reason on redesignation is
+    follow-up work (see this ticket's own Done report) that needs
+    `src/frob/_cli_parsers/**`/`src/frob/app/config.py` wiring outside
+    this ticket's declared scope; this model exists so that follow-up has
+    real data to consume rather than inventing the field itself."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    old_value: str | None
+    new_value: str
+    reason: str | None
+    actor: str
+    at: date
+
+
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#data-models
 class ReviewVerdict(StrEnum):
@@ -1429,6 +1465,13 @@ class Ticket(BaseModel):
     # test and refused land). Explicit designation makes the choice a
     # value, not an inferred position.
     designated_repro_test: str | None = None
+    # frob:ticket T-1749
+    # append-only audit trail of every REDESIGNATION (not first-time
+    # designation) of `designated_repro_test` -- the EvidenceChangeEntry
+    # discipline applied to the OTHER silent BUG002-check-redirect T-1733's
+    # audit pass found: `--designate-repro` can retarget BUG002's check
+    # onto a weaker already-bound id with no trace unless this records it.
+    designated_repro_changes: tuple[DesignatedReproChangeEntry, ...] = ()
     # frob:ticket T-0571
     # append-only structured adversarial-review records (`frob ticket
     # review`), each naming the commit reviewed -- `close --strict` (T-0571)

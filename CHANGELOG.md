@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.404.0] - unreleased
+
+- T-1749: frob ticket evidence --designate-repro is a second silent BUG002-check-redirect asymmetry
+
 ## [0.403.0] - unreleased
 
 - T-1545: Tier-A auto-fix: SYS100 EXTENDED-kind capability declaration (eval/process-control/ffi/...)

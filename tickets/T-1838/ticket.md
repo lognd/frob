@@ -53,3 +53,20 @@ also invisible to the gates that would need one.
 
 Landed with these two findings present and undisclosed-waivable; see
 T-1787's Done report.
+
+CORRECTION (T-1839's post-land sweep fix, commit c14906e75): the SEC110
+finding on `.claude/hooks/dispatch-telemetry.py` WAS actually waivable --
+moving the `# frob:waive SEC110 reason=...` comment onto its own line
+directly ABOVE a single-line `os.environ.get(...)` call (rather than
+trailing on the call's own closing-paren line, which is what the T-1787
+version had) made the waiver take effect. This narrows this ticket's
+diagnosis: it is NOT true that no `.claude/hooks/**` waiver can ever take
+effect (SEC110 clearly can, once correctly placed) -- what remains
+unconfirmed is whether the SAME comment-placement fix would have worked
+for the ARCH103 finding this ticket also cited (moot for T-1787's own
+case, since that finding was independently eliminated by a refactor, not
+waived) or for OTHER gate families' waivers under `.claude/hooks/**`.
+Retest before doing the BUILTIN_SKIP_DIRS fix this ticket proposes --
+the root cause may be narrower (a waive-comment-placement parsing
+quirk specific to single- vs multi-line statements) rather than the
+whole-directory graph-pruning theory this ticket's body argues for.
