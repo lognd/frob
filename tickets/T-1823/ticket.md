@@ -2,7 +2,7 @@
 id: T-1823
 title: wire frob serve daemon / check subprocess pool into the SIGUSR1 stack-dump
   handler
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -12,12 +12,67 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/serve/**
+- src/frob/serve/server.py
+- tests/test_serve.py
+- src/frob/serve/_daemon.py
+- src/frob/testing/_stackdump.py
+- docs/modules/serve.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/serve/**
+  reason: SIGUSR1 stackdump wiring only needs run_stdio (the process entry point that
+    actually starts the daemon thread and blocks) in src/frob/serve/server.py; the
+    rest of src/frob/serve/** (socketd, watch, leases, events, tools) has no relevant
+    entry point for this ticket
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/serve/server.py
+  reason: SIGUSR1 stackdump wiring only needs run_stdio (the process entry point that
+    actually starts the daemon thread and blocks) in src/frob/serve/server.py; the
+    rest of src/frob/serve/** (socketd, watch, leases, events, tools) has no relevant
+    entry point for this ticket
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_serve.py
+  reason: SIGUSR1 stackdump wiring only needs run_stdio (the process entry point that
+    actually starts the daemon thread and blocks) in src/frob/serve/server.py; the
+    rest of src/frob/serve/** (socketd, watch, leases, events, tools) has no relevant
+    entry point for this ticket
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/serve/_daemon.py
+  reason: run_stdio genuinely calls _start_daemon (src/frob/serve/_daemon.py) directly
+    -- scope-closure under-capture warning
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/testing/_stackdump.py
+  reason: T-1823's wiring makes the two frob:waive WIRE001 follow_up=T-1823 waivers
+    here stale (a real non-test caller now exists) -- removing the now-unneeded waivers
+    and re-pointing away from T-1823 is required so closing T-1823 does not orphan
+    a still-live citation (LiveTrackerCited)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'AFFECT001: run_stdio''s doc anchor docs/modules/serve.md#mcp-sdk needs
+    the SIGUSR1 stackdump wiring mentioned'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_serve.py::TestBuildServer::test_run_stdio_installs_stackdump_handler_before_serving
+- tests/unit/test_stackdump.py::TestStackdumpHandler::test_sigusr1_writes_all_thread_stacks_when_enabled
+- tests/unit/test_stackdump.py::TestStackdumpHandler::test_handler_not_installed_when_env_unset
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1466 extracted frob's SIGUSR1 stack-dump handler out of tests/conftest.py
 into frob.testing._stackdump (install_stackdump_handler, opt-in via

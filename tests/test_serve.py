@@ -148,6 +148,56 @@ class TestBuildServer:
             raised = True
         assert raised
 
+    # frob:ticket T-1823
+    def test_run_stdio_installs_stackdump_handler_before_serving(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_serve.py::TestBuildServer.test_run_stdio_installs_stackdump_handle\
+        # r_before_serving
+        """T-1823: `run_stdio` -- the actual `frob serve` process entry
+        point -- installs the T-1433/T-1466 SIGUSR1 stack-dump handler
+        before blocking on `server.run`, so a wedged daemon process can
+        self-diagnose the same way a wedged pytest worker already could.
+        Everything past `install_stackdump_handler` is monkeypatched out
+        (no real MCP transport, no real background daemon thread) so this
+        exercises only the wiring order this ticket adds."""
+        import frob.serve.server as server_module
+
+        calls: list[str] = []
+
+        class _FakeServer:
+            def run(self, transport: str) -> None:
+                calls.append(f"server.run:{transport}")
+
+        class _FakeStop:
+            def set(self) -> None:
+                calls.append("stop_daemon.set")
+
+        monkeypatch.setattr(server_module, "build_server", lambda root: _FakeServer())
+
+        import frob.serve._daemon as daemon_module
+
+        def _fake_start_daemon(root):
+            calls.append("start_daemon")
+            return _FakeStop()
+
+        monkeypatch.setattr(daemon_module, "_start_daemon", _fake_start_daemon)
+
+        import frob.testing._stackdump as stackdump_module
+
+        monkeypatch.setattr(
+            stackdump_module,
+            "install_stackdump_handler",
+            lambda: calls.append("install_stackdump_handler"),
+        )
+
+        server_module.run_stdio(tmp_path)
+
+        assert calls[0] == "install_stackdump_handler"
+        assert "start_daemon" in calls
+        assert "server.run:stdio" in calls
+
 
 class TestServeRunner:
     def test_run_delegates_to_run_stdio_with_resolved_root(
@@ -522,7 +572,8 @@ class TestWarmState:
 def test_warm_state_rebuilds_iff_tree_changed(
     edits: list[bool], tmp_path_factory
 ) -> None:
-    # frob:tests tests/test_serve.py::test_warm_state_rebuilds_iff_tree_changed kind="unit"  # noqa: E501
+    # frob:tests tests/test_serve.py::test_warm_state_rebuilds_iff_tree_changed \
+    # kind="unit"
     # Property (T-0177's invalidation-logic guarantee, vacuous-pass
     # doctrine): for ANY sequence of "edit the tracked file, then call
     # warm_state" vs "call warm_state with nothing touched", a rebuild
@@ -558,8 +609,8 @@ def test_warm_state_rebuilds_iff_tree_changed(
             # frob:waive PERF008 reason="this test's entire point is calling \
             # warm_state(root) repeatedly across a sequence of edits to verify its \
             # incremental cache/invalidation behavior (asserting build_count only \
-            # increments on an actual edit) -- hoisting the call out of the loop \
-            # would defeat the test"  # noqa: E501
+            # increments on an actual edit) -- hoisting the call out of the loop would \
+            # defeat the test"
             result = _warm._warm_state(root)
             assert result.is_ok
             assert build_count == expected_builds

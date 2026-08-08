@@ -150,12 +150,25 @@ def build_server(root: Path):  # noqa: ANN201
 
 
 # frob:doc docs/modules/serve.md#mcp-sdk
+# frob:ticket T-1823
 def run_stdio(root: Path) -> None:
     """Build the server, start the T-0733 background daemon (post-land
     re-verify + rebase-bot), and block serving tool calls over stdio
-    transport; stops the daemon thread on the way out."""
-    from frob.serve._daemon import _start_daemon
+    transport; stops the daemon thread on the way out.
 
+    T-1823: installs the T-1433/T-1466 SIGUSR1 stack-dump handler
+    (`frob.testing._stackdump.install_stackdump_handler`, opt-in via
+    `FROB_COVERAGE_STACKDUMP`) FIRST, before the daemon thread or the
+    blocking `server.run` call -- `frob serve` is a long-lived process
+    that can wedge the same way a `make coverage` xdist worker can (a
+    lock in `_run_daemon_cycle`'s post-land poll, a hung MCP tool call),
+    and until this the daemon had no way to self-diagnose one, the exact
+    "tested but unwired outside pytest" gap T-1466's own body disclosed
+    (T-1823 is the follow-up ticket it named for this)."""
+    from frob.serve._daemon import _start_daemon
+    from frob.testing._stackdump import install_stackdump_handler
+
+    install_stackdump_handler()
     server = build_server(root)
     stop_daemon = _start_daemon(root)
     _log.info("serve: starting stdio transport, root=%s", root)

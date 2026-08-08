@@ -43,13 +43,9 @@ STACKDUMP_ENV = "FROB_COVERAGE_STACKDUMP"
 
 # frob:ticket T-1433
 # frob:ticket T-1466
+# frob:ticket T-1823
 # frob:doc docs/modules/testing.md#sigusr1-stack-dump-handler-t-1433-t-1466
 # frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
-# frob:waive WIRE001 reason="genuinely new function, only caller today is \
-# install_stackdump_handler's own signal.signal registration in this same diff plus \
-# tests/conftest.py's re-exported pytest wiring (a test path WIRE001 discounts by \
-# design) -- the real non-test caller (frob serve's daemon / frob check's subprocess \
-# pool) is T-1466's own disclosed follow-up, not yet wired" follow_up="T-1823"
 def dump_all_thread_stacks(_signum: int, _frame: object) -> None:
     """`SIGUSR1` handler (T-1433, moved here T-1466): write every live
     thread's stack in THIS process to a per-pid file under
@@ -70,13 +66,9 @@ def dump_all_thread_stacks(_signum: int, _frame: object) -> None:
 
 # frob:ticket T-1433
 # frob:ticket T-1466
+# frob:ticket T-1823
 # frob:doc docs/modules/testing.md#sigusr1-stack-dump-handler-t-1433-t-1466
 # frob:tests tests/unit/test_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
-# frob:waive WIRE001 reason="genuinely new function; today's only caller is \
-# tests/conftest.py's re-exported pytest_configure wiring, a test path WIRE001 \
-# discounts by design -- the real non-test caller (frob serve's daemon / frob check's \
-# subprocess pool) is T-1466's own disclosed follow-up, not yet wired" \
-# follow_up="T-1823"
 def install_stackdump_handler() -> None:
     """Install `dump_all_thread_stacks` as the `SIGUSR1` handler for THIS
     process, gated on `STACKDUMP_ENV` (T-1433, generalized beyond pytest

@@ -30,6 +30,14 @@ package raises `McpUnavailable`. `frob.app.serve_runner.run` (the `frob
 serve` CLI entry) catches `McpUnavailable` and prints a clear "mcp SDK not
 installed" message, exiting 1, instead of letting the import error propagate.
 
+T-1823: `run_stdio` also installs the T-1433/T-1466 SIGUSR1 stack-dump
+handler (`frob.testing._stackdump.install_stackdump_handler`, opt-in via
+`FROB_COVERAGE_STACKDUMP`) before building the server or starting the
+background daemon thread -- a long-lived `frob serve` process can wedge
+the same way a `make coverage` xdist worker can, and this gives it the
+same self-diagnosis path (send `SIGUSR1`, read
+`.frob/stackdumps/pid-<pid>.txt`).
+
 ## Tools
 
 <!-- frob:describes src/frob/serve/_tools.py::frob_doable_tickets -->
