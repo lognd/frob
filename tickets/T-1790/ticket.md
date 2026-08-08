@@ -2,7 +2,7 @@
 id: T-1790
 title: Refuse (or warn on) creating a nested agent worktree under another worktree
   (T-1779 finding 7, source)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -13,8 +13,45 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
+- tests/test_ticket_work_and_land_finish.py
+- tickets/T-1790/ticket.md
+- tickets/T-1786/ticket.md
+- tickets/T-1795/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: the new nested-worktree-creation refusal needs test coverage; TestWork already
+    exercises frob ticket work's happy path in this same file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1790/ticket.md
+  reason: v2-store per-ticket ledger file for this ticket itself
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1786/ticket.md
+  reason: carried on this same branch from earlier ticket-management ops in this worktree
+    (dropping T-1786 as superseded, filing T-1795) -- not touched by T-1790's
+    own code change but part of this branch's diff vs main since the worktree was
+    not reset between tickets
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1795/ticket.md
+  reason: carried on this same branch from earlier ticket-management ops in this worktree
+    (dropping T-1786 as superseded, filing T-1795) -- not touched by T-1790's
+    own code change but part of this branch's diff vs main since the worktree was
+    not reset between tickets
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree::test_detects_root_under_dot_claude_worktrees
+- tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree::test_primary_checkout_is_not_nested
+- tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree::test_work_refuses_from_a_nested_worktree
+- tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree::test_work_cluster_refuses_from_a_nested_worktree
 designated_repro_test: null
 threat: null
 component: null

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.381.0] - unreleased
+
+- T-1790: Refuse (or warn on) creating a nested agent worktree under another worktree (T-1779 finding 7, source)
+
 ## [0.380.0] - unreleased
 
 - T-1620: Degraded-run detection misses zero-findings under-reports and sub-threshold mass staleness

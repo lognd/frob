@@ -253,6 +253,39 @@ def _default_work_worktree(root: Path, ticket_id: str) -> Path:
     return root / ".claude" / "worktrees" / ticket_id.lower()
 
 
+# frob:ticket T-1790
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_detects_root_under_dot_claude_worktrees  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_primary_checkout_is_not_nested  # noqa: E501
+def _root_is_itself_a_nested_worktree(root: Path) -> bool:
+    """`True` iff `root` (already resolved) has a `.claude/worktrees`
+    segment anywhere in its own path -- i.e. `root` is ITSELF a
+    dispatched agent worktree, not the primary checkout (T-1790, the
+    root cause behind T-1779 finding 7).
+
+    `frob ticket work` always creates the new worktree UNDER `root`'s
+    OWN `.claude/worktrees/` (`_default_work_worktree`) -- when `root`
+    already lives under someone else's `.claude/worktrees/agent-X/`, the
+    result NESTS: `agent-X/.claude/worktrees/t-1766`. This is doomed on
+    two counts observed live: it cannot land cleanly (the "nested-
+    worktree lands don't stick" failure mode), and it dies SILENTLY the
+    moment its parent worktree is retired/removed -- taking the nested
+    one with it while any lease pointing at it survives untouched,
+    orphaning whatever ticket held it (T-1766's actual incident; see
+    `frob.tickets._leases.orphaned_leases`, T-1779's downstream fix for
+    the SYMPTOM this function prevents at the SOURCE).
+
+    Same segment-matching shape as `frob.tickets._leases.
+    _is_agent_worktree_path` (not imported directly -- that module's own
+    private helper, and this ticket's declared scope is `_lifecycle.py`
+    alone), deliberately kept as a small, independent check rather than
+    a new cross-module dependency for one boolean test."""
+    parts = root.parts
+    return any(
+        parts[i] == ".claude" and parts[i + 1] == "worktrees"
+        for i in range(len(parts) - 1)
+    )
+
+
 # frob:ticket T-1175
 def _run_git_or_exit(argv: list[str], *, ticket_id: str, error_template: str) -> None:
     """Spawn `argv` via `run_argv`; `sys.exit(1)` with `error_template %
@@ -449,6 +482,8 @@ def _start_cluster_members(
 
 
 # frob:ticket T-1243
+# frob:ticket T-1790
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_work_cluster_refuses_from_a_nested_worktree  # noqa: E501
 def _work_cluster(root: Path, cfg: AppConfig) -> None:
     """`frob ticket work --cluster <epic-or-story-id> [--worktree PATH]`
     (T-1243): the cluster form of `_work` -- create/reuse ONE worktree,
@@ -502,6 +537,21 @@ def _work_cluster(root: Path, cfg: AppConfig) -> None:
 
     _refuse_on_cluster_scope_conflict(root, cluster_id, members)
 
+    # frob:ticket T-1790
+    if _root_is_itself_a_nested_worktree(root.resolve()):
+        _log.error(
+            "ticket work --cluster: %s refused -- %s is itself a "
+            "dispatched agent worktree (nested under another "
+            ".claude/worktrees/ entry); creating a worktree UNDER it "
+            "would nest a second level, which dies silently if the "
+            "parent is ever retired (T-1790, the T-1766 incident) -- "
+            "run `frob ticket work --cluster` from the PRIMARY checkout "
+            "instead",
+            cluster_id,
+            root,
+        )
+        sys.exit(1)
+
     worktree = (
         cfg.ticket_worktree or _default_cluster_worktree(root, cluster_id)
     ).resolve()
@@ -530,6 +580,8 @@ def _work_cluster(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1175
+# frob:ticket T-1790
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestRootIsItselfANestedWorktree.test_work_refuses_from_a_nested_worktree  # noqa: E501
 def _work(root: Path, cfg: AppConfig) -> None:
     """`frob ticket work <id> [--worktree PATH]` (T-1175): the one-verb
     replacement for playbook section 0 steps 1-2 plus `start` -- create or
@@ -553,6 +605,20 @@ def _work(root: Path, cfg: AppConfig) -> None:
 
     if cfg.ticket_id is None:
         _log.error("frob ticket work requires <id> or --cluster <epic-or-story-id>")
+        sys.exit(1)
+
+    # frob:ticket T-1790
+    if _root_is_itself_a_nested_worktree(root.resolve()):
+        _log.error(
+            "ticket work: %s refused -- %s is itself a dispatched agent "
+            "worktree (nested under another .claude/worktrees/ entry); "
+            "creating a worktree UNDER it would nest a second level, "
+            "which dies silently if the parent is ever retired (T-1790, "
+            "the T-1766 incident) -- run `frob ticket work` from the "
+            "PRIMARY checkout instead",
+            cfg.ticket_id,
+            root,
+        )
         sys.exit(1)
 
     worktree = (

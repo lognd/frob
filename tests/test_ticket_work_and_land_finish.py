@@ -149,6 +149,80 @@ class TestWork:
         assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
 
 
+# frob:ticket T-1790
+class TestRootIsItselfANestedWorktree:
+    """T-1790: `frob ticket work` refuses to create a SECOND-level nested
+    worktree when `root` is itself already a dispatched agent worktree
+    -- the source of T-1766's incident (its own worktree was nested
+    under another agent's, and died silently when the parent was
+    retired, taking the nested one and orphaning its lease with it)."""
+
+    def test_detects_root_under_dot_claude_worktrees(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # src/frob/app/ticket_runner/_lifecycle.py::_root_is_itself_a_nested_worktree \
+        # kind="unit"
+        from frob.app.ticket_runner._lifecycle import (
+            _root_is_itself_a_nested_worktree,
+        )
+
+        nested = tmp_path / "main" / ".claude" / "worktrees" / "agent-x"
+        assert _root_is_itself_a_nested_worktree(nested) is True
+
+    def test_primary_checkout_is_not_nested(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # src/frob/app/ticket_runner/_lifecycle.py::_root_is_itself_a_nested_worktree \
+        # kind="unit"
+        from frob.app.ticket_runner._lifecycle import (
+            _root_is_itself_a_nested_worktree,
+        )
+
+        primary = tmp_path / "main"
+        assert _root_is_itself_a_nested_worktree(primary) is False
+
+    def test_work_refuses_from_a_nested_worktree(self, repo: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_work kind="unit"
+        created = new_ticket(repo, _spec("Work verb nested refusal"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        nested_root = repo / ".claude" / "worktrees" / "agent-outer"
+        nested_root.mkdir(parents=True)
+
+        cfg = AppConfig(ticket_command="work", ticket_id=tid, ticket_foreground=True)
+        with pytest.raises(SystemExit) as exc_info:
+            _work(nested_root, cfg)
+        assert exc_info.value.code == 1
+        # The doomed nested worktree must never actually be created.
+        assert not (nested_root / ".claude" / "worktrees" / tid.lower()).exists()
+
+    def test_work_cluster_refuses_from_a_nested_worktree(self, repo: Path) -> None:
+        # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_work_cluster kind="unit"
+        from frob.tickets import TicketTier, set_tier
+
+        epic = new_ticket(repo, _spec("Epic for nested refusal"))
+        assert epic.is_ok
+        epic_id = epic.danger_ok.id
+        assert set_tier(repo, epic_id, TicketTier.EPIC).is_ok
+        leaf_spec = TicketSpec(
+            title="Leaf under epic",
+            kind=TicketKind.FEATURE,
+            origin=Origin.AGENT,
+            parent=epic_id,
+        )
+        leaf = new_ticket(repo, leaf_spec)
+        assert leaf.is_ok
+        _commit_all(repo, "add cluster tickets")
+
+        nested_root = repo / ".claude" / "worktrees" / "agent-outer"
+        nested_root.mkdir(parents=True)
+
+        cfg = AppConfig(ticket_command="work", ticket_cluster=epic_id)
+        with pytest.raises(SystemExit) as exc_info:
+            _work(nested_root, cfg)
+        assert exc_info.value.code == 1
+
+
 # frob:ticket T-1175
 class TestAbsorbPreLandFixes:
     """T-1175's `_absorb_pre_land_fixes` -- the `frob fmt` half is exercised

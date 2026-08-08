@@ -2,7 +2,7 @@
 id: T-1786
 title: Give the land lock a discoverable, side-effect-free visibility surface (frob
   doctor or similar)
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -32,3 +32,6 @@ a coordinator "a land is in progress for T-XXXX" WITHOUT running `pgrep`
 or a command whose only purpose is the probe. The primitive already
 exists (`frob.tickets._leases.refuse_if_land_in_progress`); this ticket
 is just giving it a dedicated, side-effect-free read surface.
+
+## Drop reason
+- 2026-08-07: superseded by T-1795, which carries the same requirement plus two pieces of live evidence (DirtyMain misattribution, pgrep self-matching hang) gathered while clearing root dirt during T-1779's own landing
