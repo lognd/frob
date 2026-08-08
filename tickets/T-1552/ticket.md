@@ -19,8 +19,39 @@ scope:
 - .gitattributes
 - docs/modules/tickets.md
 - docs/design/ledger-v2.md
+- tickets.md
+- src/frob/tickets/_store.py
+- src/frob/tickets/_draft_finalize.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets.md
+  reason: 'Owner directive 2026-08-08: remove tickets v1, v2 is battle-tested. The
+    v1 monofile tickets.md (545KB) is the primary deletion target and was not in scope;
+    _store.py still carries v1 readers and _draft_finalize.py the v1 promote path.
+    Deleting the splice machinery without the file it splices leaves the artifact
+    on main.'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: 'Owner directive 2026-08-08: remove tickets v1, v2 is battle-tested. The
+    v1 monofile tickets.md (545KB) is the primary deletion target and was not in scope;
+    _store.py still carries v1 readers and _draft_finalize.py the v1 promote path.
+    Deleting the splice machinery without the file it splices leaves the artifact
+    on main.'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/tickets/_draft_finalize.py
+  reason: 'Owner directive 2026-08-08: remove tickets v1, v2 is battle-tested. The
+    v1 monofile tickets.md (545KB) is the primary deletion target and was not in scope;
+    _store.py still carries v1 readers and _draft_finalize.py the v1 promote path.
+    Deleting the splice machinery without the file it splices leaves the artifact
+    on main.'
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
