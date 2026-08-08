@@ -12,6 +12,8 @@ time (docs/strata/policy.md#compilation).
 
 from __future__ import annotations
 
+import itertools
+
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
@@ -223,22 +225,28 @@ def _at_call_require_weakenings(
     for rule in child.rules:
         if isinstance(rule, AtCallRequire):
             child_args.setdefault(rule.ident, set()).add(rule.arg)
+    # PERF004: sort once over the flattened (ident, arg) pairs instead of
+    # calling sorted() once per `ident` in the loop below -- same
+    # deterministic per-ident-then-per-arg ordering, one sort instead of N.
+    dropped_pairs = [
+        (ident, arg)
+        for ident, required in parent_args.items()
+        if ident in child_args
+        for arg in required - child_args[ident]
+    ]
     violations: list[PolicyWeakening] = []
-    for ident, required in parent_args.items():
-        if ident not in child_args:
-            continue
-        for arg in sorted(required - child_args[ident]):
-            violations.append(
-                PolicyWeakening(
-                    parent_id=parent.id,
-                    child_id=child.id,
-                    rule_kind="at_call_require_arg",
-                    detail=(
-                        f"parent requires arg {arg!r} at call {ident!r} but child "
-                        f"re-declares at call {ident!r} without it"
-                    ),
-                )
+    for ident, arg in sorted(dropped_pairs):
+        violations.append(
+            PolicyWeakening(
+                parent_id=parent.id,
+                child_id=child.id,
+                rule_kind="at_call_require_arg",
+                detail=(
+                    f"parent requires arg {arg!r} at call {ident!r} but child "
+                    f"re-declares at call {ident!r} without it"
+                ),
             )
+        )
     return violations
 
 
@@ -333,16 +341,17 @@ def find_policy_weakenings(compiled: CompiledPolicies) -> tuple[PolicyWeakening,
     weakening; this pass only has anything to say about an EXPLICIT
     child-side re-declaration for the same target atom.
     """
+    # PERF003: generate distinct (parent, child) pairs directly via
+    # itertools.permutations instead of a nested loop with an inner `==`
+    # self-exclusion check -- structurally excludes self-pairs rather than
+    # filtering them out with an equality comparison per candidate.
     violations: list[PolicyWeakening] = []
-    for parent in compiled.policies:
+    for parent, child in itertools.permutations(compiled.policies, 2):
         parent_ids = set(parent.node_ids)
         if not parent_ids:
             continue
-        for child in compiled.policies:
-            if child.id == parent.id:
-                continue
-            child_ids = set(child.node_ids)
-            if not child_ids or not child_ids < parent_ids:
-                continue
-            violations.extend(_pairwise_weakenings(parent, child))
+        child_ids = set(child.node_ids)
+        if not child_ids or not child_ids < parent_ids:
+            continue
+        violations.extend(_pairwise_weakenings(parent, child))
     return tuple(violations)

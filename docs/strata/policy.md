@@ -82,6 +82,12 @@ any re-declaration that is strictly less restrictive:
   `ident` is flagged, fail-closed rather than silently assumed
   equivalent.
 
+(T-1844 perf fix: the pairwise scan now generates distinct (parent,
+child) pairs via `itertools.permutations` instead of a nested loop with
+an inner `==` self-exclusion check, and `_at_call_require_weakenings`
+sorts the flattened dropped-arg set once instead of once per `ident` --
+same findings, same order, cheaper.)
+
 Deliberately silent when the child never re-declares a given target at
 all -- TIER-2 conformance enforcement applies the UNION of every policy
 whose scope covers a node (docs/strata/policy.md#compilation), so an
