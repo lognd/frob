@@ -1851,6 +1851,22 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
     # resyncs the manifest to pyproject.toml's value whenever the two
     # on-disk files disagree, as the very last step before `_apply_release_
     # bump` returns.
+    # T-1771: the "release quartet" is `pyproject.toml`/`.frob-release.
+    # json`/`uv.lock`/`CHANGELOG.md`. `_ensure_release_quartet_coherent`
+    # verifies the FIRST THREE at land time (`uv.lock`'s own check,
+    # `_ensure_uv_lock_coherent`, added by this ticket, runs whenever
+    # `pyproject_version` is known at all -- NOT nested inside the
+    # pyproject/manifest-disagree branch the way an earlier version of
+    # this fix left it, which skipped the lock check entirely in the
+    # common already-coherent case). `CHANGELOG.md`, the fourth member,
+    # is deliberately checked elsewhere: REL001 (`frob.gates.
+    # release_gate`) refuses with "no CHANGELOG.md entry for {version}"
+    # at GATE time instead of land time, since a missing entry is
+    # something an operator can see and fix (there is no single correct
+    # PROSE to auto-write the way there is a correct version NUMBER for
+    # the other three). This split is deliberate, not an oversight --
+    # written down here so it does not go unnoticed the way the `uv.lock`
+    # gap itself did.
 def splice_ledger(ours_text: str, theirs_text: str, *,
                    base_text: str | None = None) -> Result[str, TicketError]
     # Merge two tickets.md texts at the TICKET-ID level (newest state per

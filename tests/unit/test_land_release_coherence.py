@@ -25,6 +25,7 @@ from frob.tickets._land_release import (
     _ensure_release_quartet_coherent,
     _read_working_manifest_version,
     _read_working_pyproject_version,
+    _read_working_uv_lock_version,
 )
 
 if TYPE_CHECKING:
@@ -145,6 +146,70 @@ class TestEnsureReleaseQuartetCoherent:
         assert result.is_ok
         assert result.danger_ok is None
         assert not (tmp_path / ".frob-release.json").exists()
+
+
+# frob:ticket T-1771
+class TestUvLockCoherenceWhenAlreadyBumped:
+    """T-1771 item 1: the real shape a `bump_version` callback returning
+    `Ok(None)` produces is pyproject.toml and `.frob-release.json`
+    ALREADY agreeing (nothing for the manifest-resync branch to do) --
+    `_ensure_uv_lock_coherent` must still run and fix a `uv.lock` that is
+    a version behind, not be skipped because the manifest half found
+    nothing to do. Asserts the lock's own RECORDED VERSION after the
+    call, not merely that a sync helper was invoked."""
+
+    def test_stale_lock_resynced_even_when_pyproject_and_manifest_agree(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped.test_stale_lock_resynced_even_when_pyproject_and_manifest_agree  # noqa: E501
+        _write_pyproject(tmp_path, "0.290.0")
+        _write_manifest(tmp_path, "0.290.0")
+        (tmp_path / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.289.0"\n', encoding="utf-8"
+        )
+
+        def _fake_uv_lock_rewrite(argv, **_kwargs):  # noqa: ANN001, ANN201
+            # A realistic-enough `uv lock` stand-in: actually rewrites the
+            # on-disk lock's recorded version, so the test can assert
+            # against the real artifact instead of a mock call count.
+            if list(argv[:2]) == ["uv", "lock"]:
+                (tmp_path / "uv.lock").write_text(
+                    '[[package]]\nname = "frob"\nversion = "0.290.0"\n',
+                    encoding="utf-8",
+                )
+            return Ok(SimpleNamespace(returncode=0, stdout="", stderr=""))
+
+        monkeypatch.setattr(_land_release, "run_argv", _fake_uv_lock_rewrite)
+
+        result = _ensure_release_quartet_coherent(tmp_path, "T-1771")
+
+        assert result.is_ok, result.danger_err
+        assert _read_working_uv_lock_version(tmp_path) == "0.290.0"
+
+    def test_lock_already_coherent_is_untouched(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped.test_lock_already_coherent_is_untouched  # noqa: E501
+        _write_pyproject(tmp_path, "0.290.0")
+        _write_manifest(tmp_path, "0.290.0")
+        (tmp_path / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.290.0"\n', encoding="utf-8"
+        )
+
+        calls: list[list[str]] = []
+
+        def _tracking_run_argv(argv, **_kwargs):  # noqa: ANN001, ANN201
+            calls.append(list(argv))
+            return Ok(SimpleNamespace(returncode=0, stdout="", stderr=""))
+
+        monkeypatch.setattr(_land_release, "run_argv", _tracking_run_argv)
+
+        result = _ensure_release_quartet_coherent(tmp_path, "T-1771")
+
+        assert result.is_ok
+        assert not any(list(c[:2]) == ["uv", "lock"] for c in calls), (
+            "an already-coherent lock must not trigger a re-sync spawn"
+        )
 
 
 class TestApplyReleaseBumpCoherenceGuard:

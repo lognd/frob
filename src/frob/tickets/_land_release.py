@@ -264,6 +264,9 @@ def _read_working_manifest_version(root: Path) -> str | None:
 
 
 # frob:ticket T-1358
+# frob:ticket T-1771
+# frob:tests tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped.test_stale_lock_resynced_even_when_pyproject_and_manifest_agree  # noqa: E501
+# frob:tests tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped.test_lock_already_coherent_is_untouched  # noqa: E501
 def _ensure_release_quartet_coherent(
     root: Path, final_id: str
 ) -> Result[None, LandError]:
@@ -287,11 +290,51 @@ def _ensure_release_quartet_coherent(
     agree; force-resyncs and stages `.frob-release.json` to pyproject.
     toml's value otherwise. A resync failure here is `Err(LandError.
     ReleaseBumpFailed)`, same fail-closed posture as every other release
-    step in this module -- caller unwinds via `_verified_reset_root`."""
+    step in this module -- caller unwinds via `_verified_reset_root`.
+
+    T-1771: `_ensure_uv_lock_coherent` used to be called ONLY from inside
+    the `pyproject_version != manifest_version` branch below -- so the
+    COMMON case (pyproject and the manifest already agree, no bump
+    needed) skipped the `uv.lock` check entirely, leaving it exactly the
+    "quartet is really a trio" gap this ticket's own body describes. The
+    lock check now runs whenever `pyproject_version` is known at all,
+    independent of whether the manifest half needed a resync -- the two
+    checks are siblings under the same "always verify this member of the
+    quartet" umbrella, not one nested inside the other.
+
+    NAME NOTE (T-1771 item 3, written down rather than silently fixed by
+    a rename that would touch every caller/test referencing this name):
+    this function verifies THREE of the release quartet's four members
+    at LAND time -- `pyproject.toml`, `.frob-release.json`, `uv.lock`.
+    The fourth, `CHANGELOG.md`, is deliberately NOT checked here -- it is
+    checked by REL001 (`frob.gates.release_gate`, `_no CHANGELOG.md
+    entry for {version}` check) at GATE time instead, since a missing
+    entry is a `frob check` finding an operator can see and fix before
+    landing, not a land-time auto-resync the way the other three members
+    are (there is no single "correct" changelog PROSE to force-write the
+    way there is a correct version NUMBER). If this function is ever
+    renamed, keep this split explicit in the new name/docstring rather
+    than re-litigating where CHANGELOG.md belongs."""
     pyproject_version = _read_working_pyproject_version(root)
     manifest_version = _read_working_manifest_version(root)
-    if pyproject_version is None or manifest_version is None:
+    if pyproject_version is not None and manifest_version is not None:
+        resynced = _resync_manifest_if_diverged(
+            root, final_id, pyproject_version, manifest_version
+        )
+        if resynced.is_err:
+            return resynced
+    if pyproject_version is None:
         return Ok(None)
+    return _ensure_uv_lock_coherent(root, final_id, pyproject_version)
+
+
+# frob:ticket T-1771
+def _resync_manifest_if_diverged(
+    root: Path, final_id: str, pyproject_version: str, manifest_version: str
+) -> Result[None, LandError]:
+    """The manifest half of `_ensure_release_quartet_coherent`'s check --
+    split out purely to keep the parent under ARCH001's line threshold,
+    no behavior change. `Ok(None)` when the two already agree."""
     if pyproject_version == manifest_version:
         return Ok(None)
     _log.warning(
@@ -302,10 +345,7 @@ def _ensure_release_quartet_coherent(
         pyproject_version,
         manifest_version,
     )
-    resynced = _resync_release_manifest(root, final_id, pyproject_version)
-    if resynced.is_err:
-        return resynced
-    return _ensure_uv_lock_coherent(root, final_id, pyproject_version)
+    return _resync_release_manifest(root, final_id, pyproject_version)
 
 
 # frob:ticket T-1771
@@ -661,7 +701,8 @@ def _apply_reported_bump(
 
 
 # frob:ticket T-1011
-# frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
+# frob:tests \
+# tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop
 # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
 def _apply_gate_rule_sync(

@@ -2,7 +2,7 @@
 id: T-1771
 title: uv.lock is excluded from the release quartet coherence check and only synced
   inside the bump branch
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -15,8 +15,24 @@ scope:
 - src/frob/tickets/_land_release.py
 - tests/unit/test_land_release_coherence.py
 - docs/modules/tickets.md
+- tickets/T-1771/ticket.md
+- tickets/T-1771/done-report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-1771/ticket.md
+  reason: v2 per-ticket ledger files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1771/done-report.md
+  reason: v2 per-ticket ledger files
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped::test_stale_lock_resynced_even_when_pyproject_and_manifest_agree
+- tests/unit/test_land_release_coherence.py::TestUvLockCoherenceWhenAlreadyBumped::test_lock_already_coherent_is_untouched
 designated_repro_test: null
 threat: null
 component: null
