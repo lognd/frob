@@ -195,9 +195,11 @@ __all__ = [
     "_epic",
     "_evidence",
     "_exclude_scoped_run_flaky",
+    "_explicit_ticket_path",
     "_fail",
     "_filter_by_state",
     "_find_landing_commit",
+    "_frob_root_env",
     "_kind",
     "_label",
     "_land",
@@ -504,12 +506,42 @@ def _auto_commit_ledger_after_dispatch(
 
 
 # frob:ticket T-1674
+def _explicit_ticket_path(cfg: AppConfig) -> Path | None:
+    """`_resolve_ticket_root`'s first question, split out for ARCH103
+    (T-1674 follow-up): did the caller explicitly name `--path`? `--path`'s
+    own CLI default is the literal string `"."` (not `None`) -- argparse
+    always supplies SOME value -- so `cfg.ticket_path == "."` is treated
+    as "not explicitly overridden" (`None` here), letting `FROB_ROOT`
+    still be consulted; any OTHER value means the caller explicitly named
+    a path, returned as-is to win outright over every other source."""
+    if cfg.ticket_path is not None and str(cfg.ticket_path) != ".":
+        return cfg.ticket_path
+    return None
+
+
+# frob:ticket T-1674
+def _frob_root_env() -> Path | None:
+    """`_resolve_ticket_root`'s second question, split out for ARCH103:
+    is `FROB_ROOT` set in the environment? Reads a filesystem PATH, never
+    a credential -- see this function's own `frob:waive SEC110` for why
+    that observation gate does not apply here."""
+    # frob:waive SEC110 reason="FROB_ROOT names a repository checkout PATH (an \
+    # explicit-root pin for frob ticket <verb>, T-1674) -- it is read the same way \
+    # --path's own CLI argument is, and a filesystem path is not something this \
+    # variable could carry a credential inside; nothing about its shape or use ever \
+    # becomes a secret-source observation"
+    env_root = os.environ.get("FROB_ROOT")
+    return Path(env_root) if env_root else None
+
+
+# frob:ticket T-1674
 def _resolve_ticket_root(cfg: AppConfig) -> Path:
     """The repository root `run()` dispatches every `frob ticket <verb>`
     against (T-1674): `--path`/`cfg.ticket_path` when explicitly given
-    (never overridden -- an explicit CLI flag always wins), else the
-    `FROB_ROOT` environment variable when set, else `cwd` (the pre-T-1674
-    default, unchanged for the common case).
+    (`_explicit_ticket_path`, never overridden -- an explicit CLI flag
+    always wins), else the `FROB_ROOT` environment variable when set
+    (`_frob_root_env`), else `cwd` (the pre-T-1674 default, unchanged for
+    the common case).
 
     T-1674's own incident: a shell whose cwd had silently drifted into
     `.claude/worktrees/w34-dispatch` ran `frob ticket new` -- the command
@@ -518,22 +550,17 @@ def _resolve_ticket_root(cfg: AppConfig) -> Path:
     Nothing distinguished the wrong-tree run except the id shape
     (`T-draft-*` instead of `T-####`), a tell that exists only for `new`;
     `close`/`drop`/`evidence`/`done-report` would have written to the
-    wrong ledger with no distinguishing signal at all. `FROB_ROOT` gives
-    a caller (a coordinator's own dispatch wrapper, which already pins
-    its measurement root by hand for exactly this reason) a way to PIN
-    the tree independent of ambient cwd, instead of every invocation
-    trusting wherever the shell happens to be.
-
-    `--path`'s own CLI default is the literal string `"."` (not `None`)
-    -- argparse always supplies SOME value -- so `cfg.ticket_path == "."`
-    is treated as "not explicitly overridden" and still checks
-    `FROB_ROOT`; any OTHER value means the caller explicitly named a path
-    and wins outright, no environment fallback consulted."""
-    if cfg.ticket_path is not None and str(cfg.ticket_path) != ".":
-        return cfg.ticket_path.resolve()
-    env_root = os.environ.get("FROB_ROOT")
-    if env_root:
-        return Path(env_root).resolve()
+    wrong ledger with no distinguishing signal at all. `FROB_ROOT` is the
+    mechanism that lets a caller (a coordinator's own dispatch wrapper,
+    which otherwise has nothing but ambient cwd to go on) PIN the tree
+    explicitly, instead of every invocation trusting wherever the shell
+    happens to be."""
+    explicit = _explicit_ticket_path(cfg)
+    if explicit is not None:
+        return explicit.resolve()
+    env_root = _frob_root_env()
+    if env_root is not None:
+        return env_root.resolve()
     return (cfg.ticket_path or Path(".")).resolve()
 
 
