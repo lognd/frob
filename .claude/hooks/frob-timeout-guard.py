@@ -16,17 +16,20 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _shellscan import strip_quoted  # noqa: E402
 
+# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 MIN_TIMEOUT_MS = 300000
 # Command-position only: start-of-line, after a shell connector, or after
 # `uv run` (optionally timeout-wrapped) -- so prose mentions of frob verbs
 # inside heredocs/echo strings do not false-positive (first FP was a
 # coordinator memory-checkpoint heredoc).
+# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 PATTERN = re.compile(
     r"(?:^|[;&|(]\s*|\buv +run +)(?:timeout +\d+ +)?"
     r"frob +(ticket +(land|done-report)|check|test)\b",
     re.M,
 )
 
+# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 REASON = (
     "BLOCKED by project hook (frob-timeout-guard): this frob command can "
     "exceed the 120s foreground cap and get auto-backgrounded -- the known "
@@ -37,6 +40,7 @@ REASON = (
 )
 
 
+# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 def main() -> None:
     try:
         payload = json.load(sys.stdin)

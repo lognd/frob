@@ -242,6 +242,7 @@ def _emit_nudge_if_any(payload: dict) -> None:
         print(json.dumps({"systemMessage": message}))
 
 
+# frob:doc docs/guides/claude-hooks.md#diagnosis-nudgepy
 def main() -> int:
     """Entry point: JSON payload on stdin, `{"systemMessage": ...}` on
     stdout when a nudge fires, nothing otherwise. Always exits 0 -- a

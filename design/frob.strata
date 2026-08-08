@@ -1392,6 +1392,7 @@ node scripts_ops : trusted {
 // five. `may` measured directly via `frob check --only gates-security`:
 // `env.read`/`fs.read`/`fs.write` (config/state reads and writes) and
 // `exec` (dispatch-telemetry.py's git subprocess call).
+// frob:doc docs/guides/claude-hooks.md#the-claude_hooks-design-node
 node claude_hooks : trusted {
 
     attr interface=[];
@@ -1402,6 +1403,21 @@ node claude_hooks : trusted {
     may "fs.write";
     may "fs.read";
 }
+
+// T-1857 (T-1838's own COV001/TEST001 fallout ticket): `claude_hooks`'s
+// `may "exec"` (dispatch-telemetry.py's `_run_git` helper) drags in the
+// same THREAT003 CWE-78 discharge obligation core/vet/tickets_ledger/
+// fleet/mutate/natives/deploy above already carry. `registry` (the
+// foreign PyPI/npm/crates.io/OSV node) has no flow into `claude_hooks` at
+// all -- this node only receives a JSON payload on stdin from the Claude
+// Code harness itself, never registry response bytes -- so this is the
+// same graph-provable NoFlow case those nodes' comments document;
+// `assume` used for the same uniformity reason. `_run_git`'s only argv is
+// a fixed `["git", "-C", str(root), *args]` where `args` is a hardcoded
+// literal list (`["rev-parse", "--abbrev-ref", "HEAD"]`) at every call
+// site, never payload- or registry-derived.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:claude_hooks" noflow registry -> claude_hooks owner logan review "2026-10-15"
 
 // The `strata_core` native extension's Rust source (`strata-core/src/**`
 // -- `.strata` lexer/parser, PyO3 bindings `natives`/T-0175 loads). `may

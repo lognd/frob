@@ -36,6 +36,7 @@ import re
 #: "(make targets, ...)" inside a commit message -- and blocked a commit on
 #: the first real use. A subshell is rare; an English sentence in a quoted
 #: string is constant.
+# frob:doc docs/guides/claude-hooks.md#_shellscanpy
 POS = r"(?:^|[;&|]\s*|\buv +run +)(?:timeout +\d+ +)?"
 
 #: Quoted spans and heredoc bodies.
@@ -47,6 +48,7 @@ _QUOTED = re.compile(
 )
 
 
+# frob:doc docs/guides/claude-hooks.md#_shellscanpy
 def strip_quoted(command: str) -> str:
     """`command` with quoted spans and heredoc bodies blanked to a space.
 

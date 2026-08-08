@@ -258,6 +258,7 @@ def _match(raw: str, root: Path) -> tuple[str, str] | None:
     return None
 
 
+# frob:doc docs/guides/claude-hooks.md#frob-suggestpy
 def main() -> None:
     try:
         payload = json.load(sys.stdin)

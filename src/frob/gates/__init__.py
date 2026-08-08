@@ -3733,6 +3733,7 @@ def _test002_below_min(record, effective: int, cfg: TestPolicy) -> Violation:  #
     )
 
 
+# frob:ticket T-1861
 def _test001_002(
     snapshot: GraphSnapshot,
     tests: CollectedTests,
@@ -3764,6 +3765,16 @@ def _test001_002(
             or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
             or is_test_file(record.id.path)
             or record.id.path.endswith(".strata")
+            # T-1838's COV001/TEST001 fallout ticket: `.claude/hooks/**`
+            # scripts run ONLY under the Claude Code dispatch harness
+            # (stdin JSON payload, PreToolUse/SessionStart/Stop event
+            # dispatch) -- demanding pytest unit coverage of them is not
+            # real assurance the way it is for `src/frob/**`, and becomes
+            # a waived-forever tax the same way COV002 already treats
+            # `.strata` files as outside pytest's obligation surface
+            # (T-0168, immediately above). A path-class exemption here is
+            # visible and auditable; a directory-wide `frob:waive` is not.
+            or record.id.path.startswith(".claude/hooks/")
         ):
             continue
         verdict = _test001_002_one(record, unit_edges, tests, cfg, snapshot, coverage)

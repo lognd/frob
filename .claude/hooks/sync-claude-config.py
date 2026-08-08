@@ -127,6 +127,7 @@ def _report_check(actions: list[tuple[str, Path, str]], missing: list[str]) -> i
     return 0
 
 
+# frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(

@@ -11986,6 +11986,31 @@ class TestConventionUnitBinding:
         )
         assert any(v.rule == "TEST001" and "::of" in v.message for v in violations)
 
+    # frob:ticket T-1861
+    def test_test001_exempts_claude_hooks_path(self, tmp_path):
+        """T-1857 (T-1838's COV001/TEST001 fallout): `.claude/hooks/**`
+        scripts run only under the Claude Code dispatch harness -- demanding
+        pytest unit coverage of them is not real assurance and becomes a
+        waived-forever tax, so TEST001 exempts this path class the same
+        way `_test001_002` already exempts `*.strata` files by extension
+        (see the sibling `test_test001_exempts_strata_flow_declarations`
+        test immediately below)."""
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, ".claude/hooks/example-hook.py", "def main():\n    return 0\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
+        )
+        assert not any(
+            v.rule in ("TEST001", "TEST002") and v.file == ".claude/hooks/example-hook.py"
+            for v in violations
+        )
+
     # frob:tests \
     # tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_d\
     # eclarations kind="unit"

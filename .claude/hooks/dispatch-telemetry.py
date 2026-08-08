@@ -202,6 +202,7 @@ def _parse_stdin_payload(raw: str) -> dict | None:
     return payload if isinstance(payload, dict) else None
 
 
+# frob:doc docs/guides/claude-hooks.md#dispatch-telemetrypy
 def main() -> int:
     """Entry point: dispatches on `hook_event_name` in the stdin JSON
     payload (`SessionStart` or `Stop`); unrecognized/missing event names are
