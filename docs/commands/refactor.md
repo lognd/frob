@@ -335,7 +335,10 @@ rewrites into `reference_ops`/`unresolved`. Since T-1200, also folds
 model" above. Since T-1199, also calls `carry_lock_acks` after a
 successful Apply, before the WIP commit, so a carried `frob.lock` ack
 lands in the same commit (and reverts together with everything else on a
-verify-failure rollback).
+verify-failure rollback). Since T-1854, calls `_route_evidence_rebinds_
+through_replace_evidence` on the plan BEFORE `apply_plan` -- see
+`scan_evidence_citations`'s own entry above for what that routing does
+and why.
 
 <a id="cli"></a>
 <!-- frob:describes src/frob/refactor/_cli.py::add_refactor_parser -->
@@ -391,6 +394,21 @@ file this repo's ledger-v2 layout actually uses -- a pre-migration repo
 only ever hits the legacy files; this repo, post-migration, hits the
 per-ticket ones. `build_plan` folds all three repointer scans into
 `reference_ops`/`unresolved` alongside T-1199's directive carrier.
+
+T-1854: every hit still produces a `RewriteOp` here (this scan and its
+own dry-run preview are unchanged) -- but for a per-ticket file's
+structured-evidence NODE-ID citation specifically, `run_refactor`'s
+apply phase (`_route_evidence_rebinds_through_replace_evidence`) routes
+the actual write through `frob.tickets.replace_evidence`'s audited,
+`--reason`-required path instead of applying this op's raw text
+substitution, so the rebind leaves an `EvidenceChangeEntry` trail
+exactly like a manual `frob ticket evidence --replace` would. A hit that
+`replace_evidence` cannot bind (free prose mentioning the id, not a real
+structured evidence entry) falls back to this op's own raw-text apply,
+unchanged from before -- never silently dropped either way.
+`evidence_citation_targets`/`ticket_id_from_ledger_path` (both public)
+are the two small helpers that make this routing possible without
+re-deriving the scan.
 
 <a id="scan_python_prose_mentions"></a>
 <!-- frob:describes src/frob/refactor/_prose.py::scan_python_prose_mentions -->

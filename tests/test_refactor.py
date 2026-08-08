@@ -602,6 +602,136 @@ class TestRunRefactor:
         mod_text = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
         assert "def greet" in mod_text
 
+    # frob:ticket T-1854
+    def test_per_ticket_evidence_rewrite_routes_through_replace_evidence(
+        self, tmp_path
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunRefactor.test_per_ticket_evidence_rewrite_rout\
+        # es_through_replace_evidence
+        """T-1854: a moving method's pytest node-id citation, actually
+        bound as a ticket's structured evidence, is rebound through
+        `frob.tickets.replace_evidence` (an audited `EvidenceChangeEntry`
+        appears) -- not a raw text substitution with no audit trail.
+        Drives `_route_evidence_rebinds_through_replace_evidence` (the
+        apply-phase routing step) directly against a real `build_plan`
+        output, rather than the full `run_refactor` pipeline -- that
+        pipeline's `verify_import_resolution` step `ast.parse`s every
+        touched file with no extension filter, a PRE-EXISTING gap
+        (unrelated to this ticket, filed separately as T-1885)
+        that
+        trips on any touched non-Python ticket.md file regardless of
+        this fix."""
+        from frob.refactor._transaction import (
+            _route_evidence_rebinds_through_replace_evidence,
+        )
+        from frob.tickets import TicketKind, TicketSpec, load_all, new_ticket
+        from frob.tickets._models import Origin
+
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "class Greeter:\n    def greet(self):\n        return 'hi'\n",
+        )
+        old_node_id = "src/pkg/mod.py::Greeter::greet"
+        created = new_ticket(
+            root,
+            TicketSpec(
+                title="t1854 evidence rebind",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("src/pkg/mod.py",),
+                evidence=(old_node_id,),
+            ),
+        )
+        assert created.is_ok, created.err
+        ticket_id = created.danger_ok.id
+        _commit_all(root, "initial")
+
+        source = SymbolRef(module="pkg.mod", qualname="Greeter.greet")
+        destination = SymbolRef(module="pkg.mod", qualname="Greeter.salute")
+        plan = build_plan(root, RefactorKind.RENAME, source, destination).danger_ok
+        ledger_op = next(
+            op for op in plan.reference_ops if old_node_id in op.old_text
+        )
+        assert ledger_op in plan.reference_ops
+
+        routed = _route_evidence_rebinds_through_replace_evidence(
+            root, plan, destination
+        )
+        assert ledger_op not in routed.reference_ops
+
+        new_node_id = "src/pkg/mod.py::Greeter::salute"
+        loaded = load_all(root)
+        assert loaded.is_ok, loaded.err
+        ticket = loaded.danger_ok[ticket_id]
+        assert new_node_id in ticket.evidence
+        assert old_node_id not in ticket.evidence
+        # The audited path (not a raw substitution) leaves an
+        # evidence_changes trail behind.
+        assert len(ticket.evidence_changes) >= 1
+        latest = ticket.evidence_changes[-1]
+        assert latest.old_node == old_node_id
+        assert latest.new_node == new_node_id
+        assert "frob refactor rename" in latest.reason
+
+    # frob:ticket T-1854
+    def test_evidence_rewrite_not_in_structured_evidence_falls_back_to_raw_op(
+        self, tmp_path
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunRefactor.test_evidence_rewrite_not_in_structur\
+        # ed_evidence_falls_back_to_raw_op
+        """T-1854: a per-ticket file citing the moving node id in free
+        PROSE (never bound as real structured evidence) is not something
+        `replace_evidence` can rebind (`EvidenceReplaceNotFound`) -- the
+        op is left UNCHANGED in the routed plan (the pre-existing
+        raw-text apply mechanism still carries it), never silently
+        dropped."""
+        from frob.refactor._transaction import (
+            _route_evidence_rebinds_through_replace_evidence,
+        )
+        from frob.tickets import TicketKind, TicketSpec, new_ticket
+        from frob.tickets._models import Origin
+
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "class Greeter:\n    def greet(self):\n        return 'hi'\n",
+        )
+        old_node_id = "src/pkg/mod.py::Greeter::greet"
+        created = new_ticket(
+            root,
+            TicketSpec(
+                title="t1854 prose mention only",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("src/pkg/mod.py",),
+                body=f"## Description\nSee {old_node_id} for context.\n",
+            ),
+        )
+        assert created.is_ok, created.err
+        _commit_all(root, "initial")
+
+        source = SymbolRef(module="pkg.mod", qualname="Greeter.greet")
+        destination = SymbolRef(module="pkg.mod", qualname="Greeter.salute")
+        plan = build_plan(root, RefactorKind.RENAME, source, destination).danger_ok
+        ledger_op = next(
+            op for op in plan.reference_ops if old_node_id in op.old_text
+        )
+
+        routed = _route_evidence_rebinds_through_replace_evidence(
+            root, plan, destination
+        )
+        # replace_evidence refused (not real structured evidence) -- the
+        # op survives unchanged in the routed plan, ready for the
+        # ordinary raw-text apply mechanism to carry it.
+        assert ledger_op in routed.reference_ops
+        new_node_id = "src/pkg/mod.py::Greeter::salute"
+        assert new_node_id in ledger_op.new_text
+
 
 class TestVerify:
     def test_import_resolution_catches_syntax_error(self, tmp_path):
@@ -1274,6 +1404,62 @@ class TestRepointer:
         ops, unresolved = scan_evidence_citations(root, resolved, destination)
         assert ops == []
         assert unresolved == []
+
+    # frob:ticket T-1854
+    def test_ticket_id_from_ledger_path_active(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_active
+        from frob.refactor._repointer import _ticket_id_from_ledger_path
+
+        assert (
+            _ticket_id_from_ledger_path("/repo/tickets/T-0042/ticket.md") == "T-0042"
+        )
+
+    # frob:ticket T-1854
+    def test_ticket_id_from_ledger_path_archived(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_archived
+        from frob.refactor._repointer import _ticket_id_from_ledger_path
+
+        assert (
+            _ticket_id_from_ledger_path("/repo/tickets/archive/T-0042/ticket.md")
+            == "T-0042"
+        )
+
+    # frob:ticket T-1854
+    def test_ticket_id_from_ledger_path_legacy_monofile_is_none(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_legacy_\
+        # monofile_is_none
+        from frob.refactor._repointer import _ticket_id_from_ledger_path
+
+        assert _ticket_id_from_ledger_path("/repo/tickets.md") is None
+        assert _ticket_id_from_ledger_path("/repo/tickets-archive.md") is None
+
+    # frob:ticket T-1854
+    def test_evidence_citation_targets_matches_scan_inputs(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_evidence_citation_targets_matches_\
+        # scan_inputs
+        from frob.refactor._repointer import _evidence_citation_targets
+
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "class Greeter:\n    def greet(self):\n        return 'hi'\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="Greeter.greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="Greeter.salute")
+        old_symref, new_symref, old_node_id, new_node_id = _evidence_citation_targets(
+            root, resolved, destination
+        )
+        assert old_symref == "src/pkg/mod.py::Greeter.greet"
+        assert new_symref == "src/pkg/mod.py::Greeter.salute"
+        assert old_node_id == "src/pkg/mod.py::Greeter::greet"
+        assert new_node_id == "src/pkg/mod.py::Greeter::salute"
 
 
 class TestProseCarrier:

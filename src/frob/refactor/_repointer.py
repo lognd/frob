@@ -212,6 +212,46 @@ def _pytest_node_id(rel_path: str, qualname: str) -> str | None:
     return f"{rel_path}::{qualname.replace('.', '::')}"
 
 
+# frob:ticket T-1854
+# frob:tests \
+# tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_active
+# frob:tests \
+# tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_archived
+# frob:tests \
+# tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_legacy_monofile_is_none  # noqa: E501
+def _ticket_id_from_ledger_path(ledger_path: str) -> str | None:
+    """T-1854: the ticket id a per-ticket ledger file path names --
+    `"tickets/T-1234/ticket.md"` and `"tickets/archive/T-1234/ticket.md"`
+    both yield `"T-1234"` -- or `None` for a path that is not a
+    per-ticket file at all (the two legacy monofiles `tickets.md`/
+    `tickets-archive.md`, or anything else). `ledger_path` is matched by
+    its trailing components only (via `PurePosixPath`, platform-
+    independent), never assumed to be repo-root-relative already -- a
+    `RewriteOp.file_path` is an absolute filesystem path in practice, and
+    this must still resolve correctly against that. Split out (rather
+    than inlined) so `_transaction.py`'s apply-phase routing (T-1854:
+    per-ticket evidence-citation rewrites go through `frob.tickets.
+    replace_evidence`'s audited path instead of a raw text substitution)
+    can recover a `RewriteOp`'s owning ticket id without re-deriving this
+    matching logic a second time -- imported directly across the module
+    boundary within this same `frob.refactor` package, the same
+    private-helper-reuse precedent `_display_path`'s own docstring
+    documents."""
+    from pathlib import PurePosixPath
+
+    parts = PurePosixPath(ledger_path.replace("\\", "/")).parts
+    if len(parts) >= 3 and parts[-1] == "ticket.md" and parts[-3] == "tickets":
+        return parts[-2]
+    if (
+        len(parts) >= 4
+        and parts[-1] == "ticket.md"
+        and parts[-4] == "tickets"
+        and parts[-3] == "archive"
+    ):
+        return parts[-2]
+    return None
+
+
 # frob:ticket T-1546
 def _per_ticket_ledger_files(repo_root: Path) -> list[Path]:
     """Every `tickets/<id>/ticket.md` and `tickets/archive/<id>/ticket.md`
@@ -226,6 +266,29 @@ def _per_ticket_ledger_files(repo_root: Path) -> list[Path]:
     return sorted((repo_root / "tickets").glob("*/ticket.md")) + sorted(
         (repo_root / "tickets" / "archive").glob("*/ticket.md")
     )
+
+
+# frob:ticket T-1854
+# frob:tests \
+# tests/test_refactor.py::TestRepointer.test_evidence_citation_targets_matches_scan_inputs  # noqa: E501
+def _evidence_citation_targets(
+    repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
+) -> tuple[str, str, str | None, str | None]:
+    """T-1854: the exact `(old_symref, new_symref, old_node_id,
+    new_node_id)` quadruple `scan_evidence_citations` matches lines
+    against -- split out so `_transaction.py`'s apply-phase routing
+    (per-ticket structured-evidence node-id hits go through `frob.
+    tickets.replace_evidence`'s audited path, never a raw text
+    substitution) can recover the SAME two id strings from a `RewriteOp`
+    it already has, without re-deriving this computation a second time.
+    `old_node_id`/`new_node_id` are `None` for a bare top-level function
+    (no `.` in its qualname -- see `_pytest_node_id`)."""
+    old_rel, dest_rel = _old_and_dest_rel(repo_root, resolved, destination)
+    old_symref = f"{old_rel}::{resolved.ref.qualname}"
+    new_symref = f"{dest_rel}::{destination.qualname}"
+    old_node_id = _pytest_node_id(old_rel, resolved.ref.qualname)
+    new_node_id = _pytest_node_id(dest_rel, destination.qualname)
+    return old_symref, new_symref, old_node_id, new_node_id
 
 
 # frob:doc docs/commands/refactor.md#scan_evidence_citations
@@ -250,12 +313,14 @@ def scan_evidence_citations(
     overwhelmingly hits the per-ticket ones instead. A ledger with no
     matching citation (evidence overwhelmingly cites TEST node ids for
     unrelated test functions, not a moving PRODUCTION symbol) yields
-    empty ops, not an error."""
-    old_rel, dest_rel = _old_and_dest_rel(repo_root, resolved, destination)
-    old_symref = f"{old_rel}::{resolved.ref.qualname}"
-    new_symref = f"{dest_rel}::{destination.qualname}"
-    old_node_id = _pytest_node_id(old_rel, resolved.ref.qualname)
-    new_node_id = _pytest_node_id(dest_rel, destination.qualname)
+    empty ops, not an error.
+
+    T-1854: still returns a `RewriteOp` per hit -- see this function's
+    own doc entry for how `_transaction.py` now routes a per-ticket
+    node-id hit through `replace_evidence` instead of applying it raw."""
+    old_symref, new_symref, old_node_id, new_node_id = _evidence_citation_targets(
+        repo_root, resolved, destination
+    )
 
     rewrite_map: dict[str, str] = {}
     if old_symref != new_symref:

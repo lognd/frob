@@ -133,7 +133,8 @@ def _prose_carrier_ops(
 
 
 # frob:doc docs/commands/refactor.md#build_plan
-# frob:tests tests/test_refactor.py::TestBuildPlan.test_plan_includes_move_and_reference_ops  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestBuildPlan.test_plan_includes_move_and_reference_ops
 def build_plan(
     repo_root: Path,
     kind: RefactorKind,
@@ -236,6 +237,92 @@ def build_plan(
         len(plan.unresolved),
     )
     return Ok(plan)
+
+
+# frob:ticket T-1854
+# frob:tests \
+# tests/test_refactor.py::TestRunRefactor.test_per_ticket_evidence_rewrite_routes_through_replace_evidence  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestRunRefactor.test_evidence_rewrite_not_in_structured_evidence_falls_back_to_raw_op  # noqa: E501
+def _route_evidence_rebinds_through_replace_evidence(
+    repo_root: Path, plan: RefactorPlan, destination: SymbolRef
+) -> RefactorPlan:
+    """T-1854: `scan_evidence_citations` builds a `RewriteOp` for every
+    citation hit, INCLUDING a per-ticket ledger file's structured-
+    evidence node-id citation -- but applying that op as a raw text
+    substitution (the same mechanism every other reference-op uses)
+    bypasses `frob.tickets._evidence.replace_evidence`'s `--reason`-
+    required, `EvidenceChangeEntry`-audited rebind path entirely, the
+    exact asymmetry T-1733 built that audit trail to close for a MANUAL
+    `--replace`.
+
+    Returns a COPY of `plan` with every per-ticket structured-evidence
+    op REMOVED from `reference_ops` and its rebind already applied
+    (written to disk, uncommitted -- captured by the same `git add -A`
+    WIP commit `_commit_plan` performs regardless of which mechanism
+    wrote it) through `replace_evidence` instead. A citation this
+    function cannot confidently attribute to a ticket id, or one
+    `replace_evidence` itself refuses (most commonly `EvidenceReplace
+    NotFound`: the hit was free prose mentioning the node id, not an
+    actual structured `evidence:`/acceptance-criterion binding) is left
+    UNCHANGED in the returned plan's `reference_ops` -- the raw-text
+    fallback this ticket's own scope note anticipated, never a silently
+    dropped rewrite. `plan.source`/`plan.destination` (not fresh
+    `resolve_symbol`/`destination` params) are reused so this matches
+    EXACTLY what `scan_evidence_citations` computed during planning, not
+    a second independent resolution that could disagree."""
+    from frob.refactor._repointer import (
+        _evidence_citation_targets,
+        _ticket_id_from_ledger_path,
+    )
+    from frob.tickets import replace_evidence
+
+    _, _, old_node_id, new_node_id = _evidence_citation_targets(
+        repo_root, plan.source, destination
+    )
+    if old_node_id is None or new_node_id is None:
+        return plan
+
+    reason = (
+        f"carried by frob refactor rename: {plan.source.ref.qualname} -> "
+        f"{destination.qualname}"
+    )
+    remaining_ops: list[RewriteOp] = []
+    for op in plan.reference_ops:
+        ticket_id = _ticket_id_from_ledger_path(op.file_path)
+        if ticket_id is None or old_node_id not in op.old_text:
+            remaining_ops.append(op)
+            continue
+        archived = "/archive/" in op.file_path.replace("\\", "/")
+        result = replace_evidence(
+            repo_root,
+            ticket_id,
+            old_node_id,
+            new_node_id,
+            reason=reason,
+            archived=archived,
+        )
+        if result.is_err:
+            _log.info(
+                "refactor.evidence_rebind: %s could not route %s -> %s "
+                "through replace_evidence (%s) -- falling back to the "
+                "raw text substitution for %s",
+                ticket_id,
+                old_node_id,
+                new_node_id,
+                result.danger_err,
+                op.file_path,
+            )
+            remaining_ops.append(op)
+            continue
+        _log.info(
+            "refactor.evidence_rebind: %s evidence %s -> %s carried via "
+            "replace_evidence (audited)",
+            ticket_id,
+            old_node_id,
+            new_node_id,
+        )
+    return plan.model_copy(update={"reference_ops": tuple(remaining_ops)})
 
 
 def _commit_plan(
@@ -344,7 +431,12 @@ def run_refactor(
         return Err(preamble_result.danger_err)
     pre_sha, plan = preamble_result.danger_ok
 
-    apply_result = apply_plan(repo_root, plan)
+    # frob:ticket T-1854
+    routed_plan = _route_evidence_rebinds_through_replace_evidence(
+        repo_root, plan, destination
+    )
+
+    apply_result = apply_plan(repo_root, routed_plan)
     if apply_result.is_err:
         # Nothing was committed yet; a partial write here would still be
         # uncommitted, so a plain reset (not reset --hard, no commit

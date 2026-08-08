@@ -2,7 +2,7 @@
 id: T-1617
 title: Ledger merge silently drops a frontmatter field changed on main when a worktree
   edited the same ticket
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -34,6 +34,8 @@ scope_changes:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 A ticket field changed and committed on main was silently dropped when main was merged into a worktree whose copy of that same ticket block had also changed. No conflict, no warning, no log line -- the field simply kept the worktree's older value, and the next command read the stale one.
 
@@ -58,3 +60,6 @@ Deliverables:
 - A regression test reproducing the exact sequence above: edit a field on main, edit the same ticket's body in a worktree, merge, and assert the field change survived.
 
 Note for the fix: ledger v2 (tickets/T-####/ticket.md, one file per ticket) narrows this considerably, since concurrent edits to different tickets stop sharing a file at all -- but it does NOT eliminate it, because this case had both sides editing the SAME ticket. Do not close this on the strength of the v2 migration alone.
+
+## Drop reason
+- 2026-08-08: Reproduced twice under this repos default ledger v2: same-ticket concurrent edits to disjoint fields (kind vs evidence; priority vs done-report) merge cleanly via gits own 3-way merge, field survives correctly, no custom driver involved. Root cause is v1-monofile-specific (tickets.md merge=frob-ledger driver plus splice_ledger), inside T-1552s deletion blast radius. See T-1617 evidence trail for the two reproduction runs. (absorbed by T-1552)

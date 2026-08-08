@@ -2,7 +2,7 @@
 id: T-1854
 title: frob refactor rename's evidence-citation rewrite bypasses replace_evidence's
   audit trail (T-1546 follow-up)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -14,11 +14,55 @@ runs_last: false
 scope:
 - src/frob/refactor/_repointer.py
 - src/frob/refactor/_transaction.py
+- tests/test_refactor.py
+- tickets/T-1617/ticket.md
+- tickets/T-1885/ticket.md
+- docs/commands/refactor.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_refactor.py
+  reason: The regression test for routing per-ticket evidence-citation rewrites through
+    replace_evidence lives in tests/test_refactor.py alongside every other test this
+    file already carries for scan_evidence_citations (T-1546 precedent).
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1617/ticket.md
+  reason: These two tickets/ files are prior ledger-only commits already sitting on
+    this branch (T-1617 drop and T-1885 filing, both completed earlier this
+    session in response to coordinator direction) that will land together with T-1854
+    rather than as a separate land.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1885/ticket.md
+  reason: These two tickets/ files are prior ledger-only commits already sitting on
+    this branch (T-1617 drop and T-1885 filing, both completed earlier this
+    session in response to coordinator direction) that will land together with T-1854
+    rather than as a separate land.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: AFFECT001 requires the affects()-closure docs actually be touched when the
+    bound code changes, not merely resolve; scan_evidence_citations/run_refactor both
+    changed behavior (T-1854 routing) and their doc anchors need the update.
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_refactor.py::TestRepointer::test_ticket_id_from_ledger_path_active
+- tests/test_refactor.py::TestRepointer::test_ticket_id_from_ledger_path_archived
+- tests/test_refactor.py::TestRepointer::test_ticket_id_from_ledger_path_legacy_monofile_is_none
+- tests/test_refactor.py::TestRepointer::test_evidence_citation_targets_matches_scan_inputs
+- tests/test_refactor.py::TestRunRefactor::test_per_ticket_evidence_rewrite_routes_through_replace_evidence
+- tests/test_refactor.py::TestRunRefactor::test_evidence_rewrite_not_in_structured_evidence_falls_back_to_raw_op
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Follow-up from T-1546: `scan_evidence_citations`
 (src/frob/refactor/_repointer.py) now detects and rewrites a moved/
