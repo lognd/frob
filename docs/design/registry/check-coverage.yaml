@@ -1229,7 +1229,13 @@ concern_family_entries:
     # stamp and delta baseline still live in gitignored .frob/ and are
     # never restored in CI, so TEST005/TEST006 stay structurally inert
     # there; repointed to T-1366 for that remainder.
-    disposition: "deferred:T-1366"
+    # T-1366 close: closed the remainder -- ci.yml's new
+    # "coverage stamp + delta baseline must be freshly measurable and
+    # clean" step runs make coverage + frob check --stamp-baseline in
+    # the runner itself, then fails the build on a missing/stale/
+    # tampered stamp (is_stamp_stale) or baseline (is_baseline_stale) or
+    # a fresh TEST005/TEST006 finding.
+    disposition: "handled_by:TEST006"
     cross_refs: []
   - id: "CHK-SUBSYS-TICKETS-TESTING"
     name: "tickets + testing: evidence means a test EXISTS, never passed/covers; a red or unrelated test closes any ticket; land re-runs nothing"

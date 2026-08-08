@@ -8606,6 +8606,31 @@ class TestCoverageLoad:
         assert stamp is not None
         assert "src/frob/pkg/a.py" in stamp["file_hashes"]
 
+    # frob:ticket T-1366
+    def test_stamp_not_stale_when_files_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::is_stamp_stale kind="unit"
+        from frob.gates._coverage import is_stamp_stale, load_stamp
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        (tmp_path / "coverage.xml").write_text("<coverage></coverage>")
+        assert stamp_coverage(tmp_path).is_ok
+        stamp = load_stamp(tmp_path)
+        assert stamp is not None
+        assert is_stamp_stale(tmp_path, stamp) is False
+
+    # frob:ticket T-1366
+    def test_stamp_stale_when_file_changes(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::is_stamp_stale kind="unit"
+        from frob.gates._coverage import is_stamp_stale, load_stamp
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        (tmp_path / "coverage.xml").write_text("<coverage></coverage>")
+        assert stamp_coverage(tmp_path).is_ok
+        stamp = load_stamp(tmp_path)
+        assert stamp is not None
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x + 1\n")
+        assert is_stamp_stale(tmp_path, stamp) is True
+
     # frob:ticket T-0545
     def test_stamp_coverage_refreshes_committed_lock(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage

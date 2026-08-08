@@ -24,6 +24,14 @@ against a freshly-loaded `CoverageData` and flag drift beyond tolerance --
 e.g. a lock committed from a locally-inflated coverage.xml that a genuine
 CI run cannot reproduce.
 """
+# frob:waive ARCH102 reason="T-1366's new is_stamp_stale tipped this module from 30 to \
+# 31 top-level exports, crossing the threshold that makes the naming/usage cluster \
+# heuristic report at all -- it is not a new independent concern. is_stamp_stale reads \
+# the exact same .frob/coverage-stamp file_hashes shape stamp_coverage/load_stamp \
+# already own (mirroring frob.gates._baseline's is_baseline_stale/load_baseline pair \
+# one module over), coupled to them by the stamp's data shape rather than by direct \
+# calls, which is exactly the naming/usage heuristic's documented blind spot (same \
+# class of false split as frob.lang/__init__.py's own ARCH102 waiver above it)."
 
 from __future__ import annotations
 
@@ -742,7 +750,8 @@ _CANARY_MODULES: tuple[str, ...] = ("src/frob/__main__.py",)
 
 
 # frob:ticket T-1236
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_zero_canary_module  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_zero_canary_module
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_canary_check_skipped_when_module_unknown  # noqa: E501
 def _canary_deflation(module_line: Mapping[str, float]) -> str | None:
     """Name of the first known canary module reading exactly 0.0% coverage.
@@ -1054,7 +1063,8 @@ def _apply_lock_ratchet(root: Path, rounded: dict[str, float]) -> None:
 # below; docs/modules/gates.md#public-api needs a matching update but docs/** was held \
 # by T-1235's concurrent in-progress lease for this ticket's whole duration -- tracked \
 # as T-1405, land the doc update there"
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_allow_decrease_overrides_ratchet  # noqa: E501
 def write_coverage_lock(
@@ -1225,9 +1235,38 @@ def load_stamp(root: Path) -> dict | None:
         return None
 
 
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-1366
+# frob:waive WIRE001 reason="new in this diff, real caller today is CI's inline python \
+# verification step, not traceable by the callgraph; TEST006 hand-rolls the identical \
+# loop and should call this instead, closing this waiver" follow_up="T-1830"
+def is_stamp_stale(root: Path, stamp: dict) -> bool:
+    """Whether any file hash `stamp` recorded no longer matches the live
+    tree -- the coverage-stamp twin of `frob.gates._baseline.is_baseline_
+    stale`, same content-hash-comparison shape, same reason: TEST005/006
+    trust `.frob/coverage-stamp` as a claim that `coverage.xml` still
+    reflects the CURRENT tree, and neither `load_stamp` nor `stamp_
+    coverage` themselves ever re-verify that after write time. A caller
+    that needs to KNOW the stamp is still trustworthy -- not merely
+    present -- must check this (T-1366: this is exactly the "stale" leg
+    of `CI still cannot verify the .frob/-local coverage stamp and delta
+    baseline`'s acceptance criterion; `stamp['file_hashes']` not matching
+    the live tree is indistinguishable from tampering by content alone --
+    both mean the stamp's claim can no longer be trusted, and both must
+    fail the same way)."""
+    stamped: dict[str, str] = stamp.get("file_hashes", {})
+    for path, digest in stamped.items():
+        live = _sha_of(root / path)
+        if live != digest:
+            _log.debug("is_stamp_stale: %s changed since stamp", path)
+            return True
+    return False
+
+
 __all__ = [
     "coverage_lock_diff",
     "exclude_filtered_coverage",
+    "is_stamp_stale",
     "load_coverage",
     "load_coverage_lock",
     "load_lock_audit_log",

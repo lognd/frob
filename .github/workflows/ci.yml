@@ -80,6 +80,72 @@ jobs:
               print('::error::frob-coverage.lock.json is missing or drifted (TEST012) -- run: make coverage')
           sys.exit(1 if hits else 0)
           "
+      # T-1366 (T-1265 successor): the step above only checks the ONE
+      # committed coverage channel (frob-coverage.lock.json's rounded
+      # summary). `.frob/coverage-stamp` and `.frob/baseline` are
+      # gitignored and never restored here, so TEST005/006 (per-symbol/
+      # per-module coverage floors) and `--delta` baseline filtering stay
+      # structurally inert in CI -- a fresh checkout has no stamp/baseline
+      # to check them against, so `frob check` above cannot fail on a
+      # signal it never had, and neither an ABSENT nor a TAMPERED stamp
+      # is distinguishable from "never measured" without this step. This
+      # step produces a REAL, fresh stamp/baseline in the CI runner
+      # itself (never trusts one carried in from the checkout -- there is
+      # none, by design) and then fails the build if either one is
+      # missing, stale (content-hash mismatch against the tree that
+      # produced it, `is_stamp_stale`/`is_baseline_stale` -- the same
+      # signal that catches tampering, since a hand-edited stamp cannot
+      # reproduce a matching content hash either), or if a fresh TEST005/
+      # TEST006 evaluation against it still finds a violation.
+      - name: coverage stamp + delta baseline must be freshly measurable and clean (T-1366)
+        run: |
+          make coverage
+          uv run frob check --stamp-baseline --only gates-native
+          uv run frob check --stamp-baseline --only gates-security
+          uv run frob check --stamp-baseline --only test
+          uv run frob check --stamp-baseline --only drift --only coverage --only invariant \
+            --only policy --only doclink --only docanchor --only fuzz --only release \
+            --only decisions --only tickets --only refs --only registry --only compliance \
+            --only docblocks --only walk_lint --only excludehazard --only debt --only deprecated \
+            --only render_lint --only parse_failures --only lang_conformance \
+            --only lang_project_conformance --only scope --only prework --only fmt --only affect_drift \
+            --only ffi_boundary
+          uv run frob check --only test --json > /tmp/frob-test-recheck.json
+          uv run python -c "
+          import json, sys
+          from pathlib import Path
+          from frob.gates._coverage import load_stamp, is_stamp_stale
+          from frob.gates._baseline import load_baseline, is_baseline_stale
+
+          root = Path('.')
+          failures = []
+
+          stamp = load_stamp(root)
+          if stamp is None:
+              failures.append('.frob/coverage-stamp is missing after a fresh make coverage run')
+          elif is_stamp_stale(root, stamp):
+              failures.append('.frob/coverage-stamp is stale (content-hash mismatch) immediately after stamping -- tampered or a stamp/measurement race')
+
+          baseline = load_baseline(root)
+          if baseline is None:
+              failures.append('.frob/baseline is missing after a fresh frob check --stamp-baseline run')
+          elif is_baseline_stale(root, baseline):
+              failures.append('.frob/baseline is stale (content-hash mismatch) immediately after stamping -- tampered or a stamp/measurement race')
+
+          report = json.load(open('/tmp/frob-test-recheck.json'))
+          hits = [
+              d
+              for result in report.get('results', [])
+              for d in result.get('diagnostics', [])
+              if d.get('code') in ('TEST005', 'TEST006') and d.get('severity') == 'error'
+          ]
+          for d in hits:
+              failures.append(f\"{d.get('code')}: {d.get('file', '?')}: {d.get('message', '')}\")
+
+          for f in failures:
+              print(f'::error::{f}')
+          sys.exit(1 if failures else 0)
+          "
 
   # Locks the T-0133 degrade contract: a bare `pip install`/`uv tool
   # install` of the frob wheel (NO frob-core, NO strata-core -- exactly what

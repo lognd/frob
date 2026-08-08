@@ -541,6 +541,7 @@
     "src/frob/gates/_cache_gate.py::cache_gate": "c6d0c4357a0810c8fdcca40555ef3d8cfbd8078ba69f611c9fb85baabb254608",
     "src/frob/gates/_coverage.py::coverage_lock_diff": "a84589524e4a03e0bc9b986066caa8b889cad3a7776a602f250ad91449c3c847",
     "src/frob/gates/_coverage.py::exclude_filtered_coverage": "4d5650647a1bf47078a311b5d10bc49c119507d7a36613f1c1a20a7272f96f2b",
+    "src/frob/gates/_coverage.py::is_stamp_stale": "d4881fc6e8de28f38935f33c16fe0d18583ac6b903b0af6ea13cdf0f45a6e615",
     "src/frob/gates/_coverage.py::load_coverage": "11c8be26f27b5dc5f7fedb8bd72404b05212131cff0dec4602e153ff01745296",
     "src/frob/gates/_coverage.py::load_coverage_lock": "849839787bcc59682c09ab70370f83a27c71f8c6c3bb072e48cfdc133eef8dfc",
     "src/frob/gates/_coverage.py::load_lock_audit_log": "8310f59608a054d5a22b5077881903f53b14e5b1d4ddaf2e7720eac1442f436d",
@@ -2157,5 +2158,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.396.0"
+  "version": "0.397.0"
 }
