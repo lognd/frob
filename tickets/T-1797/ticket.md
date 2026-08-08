@@ -1,7 +1,7 @@
 ---
 id: T-1797
 title: 'post-land sweep regression from T-1674: 2 new error(s) (ARCH103, SEC110)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -26,3 +26,6 @@ New (rule, file) pairs filed here:
 - SEC110  src/frob/app/ticket_runner/__init__.py
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-07: Real when filed, fixed since. ARCH103/SEC110 on _resolve_ticket_root were genuine and fleet-blocking (ARCH103 tripped land-parity, so no ticket could land). Resolved by T-1801. Verified: 'frob check --only archgate --only secrets' reports 0 errors on main. (absorbed by T-1801)
