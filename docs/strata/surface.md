@@ -831,14 +831,43 @@ through `frob.strata._sysdoc.merge_models` first, so this is not a
 behavior change for them -- merging pre- vs post-elaboration only
 changes what CAN resolve, not what a caller does with the result.
 
-Left for a follow-up (filed T-1521, renumbers at land):
-`check_cross_file_references` only
-covers the two reference shapes `elaborate()` itself does NOT validate
-at all today (a flow's `src`/`dst` are never checked against known node
-ids by `elaborate()`, single-file or merged -- confirmed empirically
-while implementing this ticket); `elaborate()`'s OWN validators
-(duplicate ids, boundary-flow, bound-claim-target) already run
-correctly against the merged `Module` and need no parallel pre-check.
+**T-1521 decision: NO -- do not move flow `src`/`dst` validation into
+`elaborate()` itself, as currently designed.** The apparent gap looked
+like an oversight, but empirically it is not: bare `elaborate()` is
+relied on by existing, test-covered callers to accept a `flow` whose
+`src`/`dst` name NO declared node at all --
+`tests/unit/strata/test_boundary_phases.py::TestPhaseBlockHappyPath::
+test_boundary_without_phases_still_elaborates` elaborates `flow f1 : a
+-> b` with zero `node` declarations in the module and asserts success.
+A first implementation attempt copied `check_cross_file_references`'s
+`_known_node_ids` join straight into `_validate_references` and it
+broke that test plus a sibling in the same file
+(`TestPhaseBlockFailClosed::
+test_refuse_respond_label_must_be_in_labels_lattice`, which now failed
+on the wrong error kind, `UnknownReference` instead of
+`UnknownLevel`, because the new check fired first) -- confirmed by
+reverting the change and re-running the identical tests clean. Whatever
+this permissiveness is FOR (a forward reference resolved by a later
+desugar pass, a deliberate escape hatch, or genuinely dead
+slack nobody has hit) is not established by this ticket, and a
+DECISION ticket is not license to also design and land that follow-on
+work blind. The two known-good validators
+(`check_cross_file_references` for the multi-file `elaborate_merged`
+path, silence for a bare `elaborate()` call) stay exactly as they are.
+
+The one confirmed, narrower gap from this investigation: `frob sys
+export` (`sys_runner.py::_load_export_model`) calls `elaborate()`
+DIRECTLY on a single parsed `Module`, bypassing
+`check_cross_file_references` entirely -- so a `.strata` file exported
+this way, with a flow naming an unknown node, silently builds a
+`KernelModel` with a dangling flow endpoint rather than failing
+closed, the same way `check_cross_file_references` would catch it for
+a design loaded via `elaborate_merged`. Whether that is itself a real
+problem (and if so, whether the fix is routing single-file export
+through `elaborate_merged`/`check_cross_file_references` instead of
+`elaborate()` directly, rather than changing `elaborate()`'s own
+contract) is left as a separate, narrower follow-up rather than folded
+into this ticket's already-settled "no" (renumbers at land).
 
 ## Directives: frob:channel / frob:boundary / frob:secret (T-0080)
 
