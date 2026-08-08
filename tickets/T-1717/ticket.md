@@ -2,7 +2,7 @@
 id: T-1717
 title: consider relocating _write_ticket_unchecked out of src/frob/tickets/_store.py
   into a test-only helper module
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -32,3 +32,6 @@ module instead (it needs access to the private `_write_ticket_impl` split
 point in `_store.py`, so this may require exporting a narrow test-only
 seam, or may simply not be worth the churn -- either outcome is a
 legitimate close for this ticket).
+
+## Drop reason
+- 2026-08-07: Exact duplicate of T-1711: identical title and identical scope (src/frob/tickets/_store.py). Keeping the lower id. Same independent-refiling cause as T-1716/T-1702. (absorbed by T-1711)
