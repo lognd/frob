@@ -75,8 +75,10 @@ def _selfaudit_violation(
 # SELFAUDIT001's own shape/behavior is unchanged, only which findings it now correctly \
 # skips); docs/modules/gates.md is not in T-1146's declared scope"
 # frob:invariant INV-041
-# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation  # noqa: E501
-# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation
+# frob:tests \
+# tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_suppressed_on_design_load_error  # noqa: E501
 def _selfaudit_violations(
     root: Path,
@@ -132,6 +134,7 @@ def _selfaudit_violations(
         check_reliability_timeouts,
         check_resource_contention,
         check_self_conformance,
+        check_stale_via_symbols,
         merge_models,
     )
 
@@ -186,6 +189,26 @@ def _selfaudit_violations(
         violations.extend(
             _selfaudit_violation(v.rule, v.node, v.detail, design_dir, root)
             for v in mode_conformance.violations
+        )
+
+        # T-1761: SYS109 (T-1627 stale via-symbol check) was built and unit-
+        # tested but had NO caller outside its own test module -- exactly
+        # the "catalogued but check-invisible" gap this family exists to
+        # close for every other SYS10x sub-check. Reuses the SAME
+        # `binding.danger_ok` `bind_code` result `check_mode_conformance`
+        # just consumed above, so a binding failure already skips this
+        # sub-family too (no separate try/except needed).
+        stale_via = check_stale_via_symbols(model, binding.danger_ok, root)
+        violations.extend(
+            _selfaudit_violation(
+                "SYS109",
+                v.node,
+                f"atom={v.atom} via={v.via!r} does not resolve to a declared symbol "
+                "in the node's own bound files",
+                design_dir,
+                root,
+            )
+            for v in stale_via
         )
 
     timeouts = check_reliability_timeouts(model, root)
@@ -243,7 +266,8 @@ def _compliance_selfaudit_violation(view: str, cv, design_dir: str) -> Violation
 
 # frob:ticket T-1314
 # frob:invariant INV-041
-# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_violation  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_violation
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_compliance_clean_model_no_violations  # noqa: E501
 # frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_compliance_suppressed_on_design_load_error  # noqa: E501
 def _compliance_selfaudit_violations(

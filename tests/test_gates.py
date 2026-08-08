@@ -13453,6 +13453,34 @@ class TestSelfAuditGate:
         assert matches[0].severity == Severity.ERROR
         assert "widget" in matches[0].message
 
+    # frob:ticket T-1761
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations kind="unit"
+    def test_selfaudit001_folds_stale_via_symbol_violation(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1761: GIVEN a node whose symbol-form `via` entry names a
+        symbol that no longer exists WHEN `sys_gate` (the production
+        `frob check` entry point) runs THEN it FAILS with an unwaived
+        SELFAUDIT001 ERROR naming the underlying SYS109 finding, proving
+        `check_stale_via_symbols` (built and unit-tested by T-1627) is
+        actually wired into `frob check`, not just reachable in its own
+        test module."""
+        design = (
+            "module m\n"
+            'node app : trusted { code "app/site.py"; '
+            'may "exec" via "app/site.py::gone"; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "app/site.py", "def run(cmd):\n    pass\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        matches = [v for v in selfaudit if "SYS109" in v.message]
+        assert len(matches) >= 1
+        assert matches[0].severity == Severity.ERROR
+        assert "app" in matches[0].message
+        assert "gone" in matches[0].message
+
     # frob:tests src/frob/gates/_sys_selfaudit.py::_compliance_selfaudit_violations \
     # kind="unit"
     def test_selfaudit001_folds_compliance_violation(self, tmp_path: Path) -> None:

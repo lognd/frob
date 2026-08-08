@@ -270,12 +270,11 @@ look for a matching `RawSymbol.qualname` (same containment rule as
 nested `run.<helper>`). Zero matches across every candidate file (a
 rename, a move, a deletion, or a typo) is `StaleViaSymbolViolation` --
 its own model, its own `SYS109` rule id, never folded into
-`CapabilityViolation`. GAP: the check function exists and is unit-tested
-but is not yet wired into `frob sys audit`'s CLI surface (`_audit.py`,
-`frob.gates._sys_selfaudit`) -- that wiring, plus exporting
-`check_stale_via_symbols`/`StaleViaSymbolViolation` from `frob.strata`'s
-public `__init__.py`, is a follow-up ticket (both files sit outside
-T-1627's own declared scope).
+`CapabilityViolation`. `check_stale_via_symbols`/`StaleViaSymbolViolation`
+are exported from `frob.strata`'s public `__init__.py` and wired into
+`_sys_selfaudit._selfaudit_violations` (T-1761), so a stale via-symbol
+entry surfaces as a SELFAUDIT001 finding on every `frob check`/`frob
+ticket land`, the same run-by-default surface as SYS100-108.
 
 **Migration note (T-1627):** `design/frob.strata` was NOT converted to
 symbol-form `via` by this ticket -- it carries 876 file-form `via`

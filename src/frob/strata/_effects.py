@@ -654,11 +654,6 @@ class StaleViaSymbolViolation(BaseModel):
 # frob:tests \
 # tests/unit/strata/test_effects.py::TestStaleViaSymbol.test_unresolvable_symbol_is_fla\
 # gged kind="unit"
-# frob:waive WIRE001 reason="the SYS109 detector itself is in scope for T-1627 and \
-# independently unit-tested; wiring it into frob sys audit's CLI surface \
-# (src/frob/strata/_audit.py, src/frob/gates/_sys_selfaudit.py) needs files outside \
-# T-1627's own declared scope, so the wiring is its own follow-up rather than a scope \
-# creep onto this ticket" follow_up="T-1761"
 def check_stale_via_symbols(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> tuple[StaleViaSymbolViolation, ...]:

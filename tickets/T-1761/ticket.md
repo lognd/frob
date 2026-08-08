@@ -1,7 +1,7 @@
 ---
 id: T-1761
 title: wire SYS109 (T-1627 stale via-symbol check) into frob sys audit
-state: queued
+state: done
 kind: invariant
 origin: human
 created: '2026-08-07'
@@ -17,8 +17,18 @@ scope:
 - src/frob/strata/_effects.py
 - docs/modules/gates.md
 - docs/strata/surface.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: SYS109/SELFAUDIT001 fold needs a regression test in the gate test module,
+    same file every sibling SELFAUDIT001 sub-family test lives in
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_stale_via_symbol_violation
 designated_repro_test: null
 threat: null
 component: null
