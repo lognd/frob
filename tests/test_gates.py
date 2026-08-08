@@ -9399,6 +9399,160 @@ class TestCoverageLoad:
         assert coverage_lock_diff(lock, live_drifted) == ("a.py",)
 
 
+# frob:ticket T-1824
+class TestSuspectDeflatedSymbols:
+    """`frob.gates._coverage._suspect_deflated_symbols`: the per-symbol
+    deflation heuristic distinct from `_module_join_fraction`'s aggregate
+    signal -- flags a symbol whose def line hit but every body line
+    reads 0, the specific shape of a partial xdist worker-crash merge
+    loss, corroborated by a `frob:tests` edge so a genuinely dead code
+    path is never a false positive."""
+
+    def test_def_line_hit_body_zero_flagged(self, tmp_path: Path) -> None:
+        # frob:ticket T-1824
+        # frob:tests src/frob/gates/_coverage.py::_suspect_deflated_symbols
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            "# frob:tests tests/test_pkg_a.py::test_helper\n"
+            "def helper(x):\n    y = x + 1\n    return y\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::helper"]
+        start, end = record.span
+        hits_by_class_line = {
+            "src/frob/pkg/a.py": {
+                start: (1, 100),
+                start + 1: (0, 0),
+                end: (0, 0),
+            }
+        }
+        from frob.gates._coverage import _suspect_deflated_symbols
+
+        suspects = _suspect_deflated_symbols(snap, hits_by_class_line)
+        assert record.symref in suspects
+
+    def test_genuinely_dead_code_not_flagged_without_tests_edge(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-1824
+        # frob:tests src/frob/gates/_coverage.py::_suspect_deflated_symbols
+        # No frob:tests edge here -- a symbol with no declared test
+        # coverage must never be flagged, since a genuinely-unexercised
+        # path is indistinguishable from lost worker data by the
+        # per-line shape alone (this ticket's own corroboration
+        # requirement).
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            "def dead(x):\n    y = x + 1\n    return y\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::dead"]
+        start, end = record.span
+        hits_by_class_line = {
+            "src/frob/pkg/a.py": {
+                start: (1, 100),
+                start + 1: (0, 0),
+                end: (0, 0),
+            }
+        }
+        from frob.gates._coverage import _suspect_deflated_symbols
+
+        suspects = _suspect_deflated_symbols(snap, hits_by_class_line)
+        assert record.symref not in suspects
+
+    def test_uniformly_covered_symbol_not_flagged(self, tmp_path: Path) -> None:
+        # frob:ticket T-1824
+        # frob:tests src/frob/gates/_coverage.py::_suspect_deflated_symbols
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            "# frob:tests tests/test_pkg_a.py::test_helper\n"
+            "def helper(x):\n    y = x + 1\n    return y\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::helper"]
+        start, end = record.span
+        hits_by_class_line = {
+            "src/frob/pkg/a.py": {
+                start: (1, 100),
+                start + 1: (1, 100),
+                end: (1, 100),
+            }
+        }
+        from frob.gates._coverage import _suspect_deflated_symbols
+
+        suspects = _suspect_deflated_symbols(snap, hits_by_class_line)
+        assert record.symref not in suspects
+
+    def test_single_line_symbol_not_flagged(self, tmp_path: Path) -> None:
+        # frob:ticket T-1824
+        # frob:tests src/frob/gates/_coverage.py::_suspect_deflated_symbols
+        # Only the def line itself was recorded -- nothing to compare a
+        # body against, so this must not be judged either way.
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            "# frob:tests tests/test_pkg_a.py::test_helper\ndef helper(x): ...\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::helper"]
+        start, _end = record.span
+        hits_by_class_line = {"src/frob/pkg/a.py": {start: (1, 100)}}
+        from frob.gates._coverage import _suspect_deflated_symbols
+
+        suspects = _suspect_deflated_symbols(snap, hits_by_class_line)
+        assert record.symref not in suspects
+
+    def test_load_coverage_logs_warning_for_suspect_symbol(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:ticket T-1824
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # T-1824: load_coverage wires the heuristic in and logs a
+        # WARNING when it fires -- not yet a gate Violation (that needs
+        # frob.gates.__init__/_waive.py, outside this ticket's declared
+        # scope; see the ticket's Done report), but the signal must not
+        # be silently computed and discarded.
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            "# frob:tests tests/test_pkg_a.py::test_helper\n"
+            "def helper(x):\n    y = x + 1\n    return y\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::helper"]
+        start, end = record.span
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <sources>
+    <source>{(tmp_path / "src/frob").resolve()}</source>
+  </sources>
+  <packages>
+    <package>
+      <classes>
+        <class filename="pkg/a.py" line-rate="0.33">
+          <lines>
+            <line number="{start}" hits="1" branch="false"/>
+            <line number="{start + 1}" hits="0" branch="false"/>
+            <line number="{end}" hits="0" branch="false"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        with caplog.at_level("WARNING"):
+            result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        assert any(
+            "per-symbol deflated" in rec.message for rec in caplog.records
+        )
+
+
 # frob:ticket T-0541
 # frob:ticket T-0542
 # frob:ticket T-0543

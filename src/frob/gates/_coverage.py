@@ -50,7 +50,7 @@ from typani.unit import Unit
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._filehash import _collect_file_hashes, _sha_of
 from frob.gates._models import CoverageData, CoverageError, GateError
-from frob.graph import GraphSnapshot
+from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
@@ -369,6 +369,78 @@ def _symbol_branch(
     return symbol_branch
 
 
+# frob:ticket T-1824
+# frob:tests \
+# tests/test_gates.py::TestSuspectDeflatedSymbols.test_def_line_hit_body_zero_flagged
+# frob:tests \
+# tests/test_gates.py::TestSuspectDeflatedSymbols.test_genuinely_dead_code_not_flagged_\
+# without_tests_edge
+# frob:tests \
+# tests/test_gates.py::TestSuspectDeflatedSymbols.test_uniformly_covered_symbol_not_fla\
+# gged
+# frob:tests \
+# tests/test_gates.py::TestSuspectDeflatedSymbols.test_single_line_symbol_not_flagged
+def _suspect_deflated_symbols(
+    snapshot: GraphSnapshot | None,
+    hits_by_class_line: dict[str, dict[int, tuple[int, int]]],
+) -> tuple[str, ...]:
+    """Symrefs whose defining line shows a hit but every other body line
+    in the same span shows zero -- the per-symbol shape of a partial
+    xdist worker-crash merge loss (T-1824), distinct from
+    `_module_join_fraction`'s aggregate/repo-wide signal. A worker crash
+    can drop just the handful of symbols that worker happened to be the
+    SOLE source of data for, without moving the repo-wide join fraction
+    enough for `_module_join_fraction`/TEST017 to notice at all.
+
+    Corroborated against `snapshot.edges`' TESTS edges (checked on both
+    `edge.src`/`edge.target`, matching `_evidence_binds_to_scope`'s own
+    either-direction convention in `frob.gates`): a symbol with no
+    declared test coverage is never flagged. An honestly unexercised or
+    genuinely dead code path is indistinguishable from lost worker data
+    by the per-line shape alone -- without a `frob:tests` edge raising
+    the expectation that this symbol SHOULD show real hits, flagging it
+    would be a false positive, and TEST005/TEST011 already gate real
+    work on this signal (a false positive here costs more than the
+    missed detections this heuristic accepts by requiring corroboration,
+    per this ticket's own plan sketch).
+
+    A symbol with fewer than two hit-lines recorded in its span (no body
+    line distinct from the def line to compare against) is skipped, not
+    flagged either way -- there is nothing to judge a deflation shape
+    against, same "cannot analyse, so do not claim a verdict" posture as
+    this repo's other coverage checks (`_module_join_fraction`'s own
+    `_DEFLATION_MIN_KNOWN_MODULES` sample-size floor)."""
+    if snapshot is None:
+        return ()
+    tested_symrefs = {
+        side
+        for edge in snapshot.edges
+        if edge.kind == EdgeKind.TESTS
+        for side in (edge.src, edge.target)
+    }
+    suspects: list[str] = []
+    for record in snapshot.symbols.values():
+        symref = record.symref
+        if symref not in tested_symrefs:
+            continue
+        sym_line_hits = hits_by_class_line.get(record.id.path)
+        if not sym_line_hits:
+            continue
+        start, end = record.span
+        def_entry = sym_line_hits.get(start)
+        if def_entry is None:
+            continue
+        def_hits = def_entry[0]
+        body_hits = [
+            hits for line, (hits, _pct) in sym_line_hits.items() if start < line <= end
+        ]
+        if not body_hits:
+            continue
+        if def_hits > 0 and all(hits == 0 for hits in body_hits):
+            suspects.append(symref)
+    return tuple(suspects)
+
+
 def _load_coverage_xml(
     xml_path: Path,
 ) -> Result[tuple[str, ET.ElementTree[ET.Element]], CoverageError]:
@@ -589,6 +661,25 @@ def load_coverage(
             _UNJOINED_LOG_THRESHOLD,
             len(unjoined),
             unjoined,
+        )
+
+    # T-1824: per-symbol deflation heuristic, distinct from the aggregate
+    # join_fraction signal just above -- catches the case where a worker
+    # crash drops just a handful of symbols without moving the repo-wide
+    # fraction enough to trip. Logged here (not yet a Violation -- wiring
+    # a new gate rule needs frob.gates.__init__/_waive.py, outside this
+    # module's own scope; see this ticket's Done report) so the signal is
+    # not silently computed and discarded.
+    suspect_deflated = _suspect_deflated_symbols(snapshot, hits_by_class_line)
+    if suspect_deflated:
+        _log.warning(
+            "load_coverage: %s -> %d symbol(s) look per-symbol deflated "
+            "(def line hit, every body line 0, each corroborated by a "
+            "frob:tests edge) -- possible partial xdist worker-crash "
+            "merge loss (T-1824): %s",
+            xml_path,
+            len(suspect_deflated),
+            suspect_deflated,
         )
 
     _log.info(
