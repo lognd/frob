@@ -2,7 +2,7 @@
 id: T-1796
 title: 'A malformed design/frob.strata lands undetected: land''s Tier-A step warns-and-skips
   on ParseFailed instead of refusing'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -14,8 +14,57 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - design/frob.strata
+- src/frob/app/ticket_runner/__init__.py
+- tests/test_ticket_work_and_land_finish.py
+- tests/unit/test_app_runners_batch7.py
+- tickets/T-1674/done-report.md
+- tickets/T-1796/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: src/frob/app/ticket_runner/__init__.py/tests/unit/test_app_runners_batch7.py/tickets/T-1674/done-report.md
+    carried on this same branch from T-1674's own land (not touched by T-1796's own
+    code); tests/test_ticket_work_and_land_finish.py holds the new refusal's own test
+    coverage; tickets/T-1796/ticket.md is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: src/frob/app/ticket_runner/__init__.py/tests/unit/test_app_runners_batch7.py/tickets/T-1674/done-report.md
+    carried on this same branch from T-1674's own land (not touched by T-1796's own
+    code); tests/test_ticket_work_and_land_finish.py holds the new refusal's own test
+    coverage; tickets/T-1796/ticket.md is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: src/frob/app/ticket_runner/__init__.py/tests/unit/test_app_runners_batch7.py/tickets/T-1674/done-report.md
+    carried on this same branch from T-1674's own land (not touched by T-1796's own
+    code); tests/test_ticket_work_and_land_finish.py holds the new refusal's own test
+    coverage; tickets/T-1796/ticket.md is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1674/done-report.md
+  reason: src/frob/app/ticket_runner/__init__.py/tests/unit/test_app_runners_batch7.py/tickets/T-1674/done-report.md
+    carried on this same branch from T-1674's own land (not touched by T-1796's own
+    code); tests/test_ticket_work_and_land_finish.py holds the new refusal's own test
+    coverage; tickets/T-1796/ticket.md is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1796/ticket.md
+  reason: src/frob/app/ticket_runner/__init__.py/tests/unit/test_app_runners_batch7.py/tickets/T-1674/done-report.md
+    carried on this same branch from T-1674's own land (not touched by T-1796's own
+    code); tests/test_ticket_work_and_land_finish.py holds the new refusal's own test
+    coverage; tickets/T-1796/ticket.md is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestSyncInterfacePreLandRefusesOnParseFailed::test_refuses_when_a_design_file_is_malformed
+- tests/test_ticket_work_and_land_finish.py::TestSyncInterfacePreLandRefusesOnParseFailed::test_still_proceeds_when_design_dir_absent
 designated_repro_test: null
 threat: null
 component: null

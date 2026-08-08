@@ -318,6 +318,35 @@ class TestAbsorbPreLandFixes:
             assert len(line) <= 88
 
 
+# frob:ticket T-1796
+class TestSyncInterfacePreLandRefusesOnParseFailed:
+    """T-1796: a `design/**` file that fails to PARSE must refuse the
+    land outright, not degrade to a WARNING and proceed -- the exact gap
+    that let a single dropped quote in `design/frob.strata` break
+    `strata` parsing repo-wide and survive three lands undetected."""
+
+    def test_refuses_when_a_design_file_is_malformed(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSyncInterfacePreLandRefusesOnParseFailed.test_refuses_when_a_design_file_is_malformed  # noqa: E501
+        design_dir = repo / "design"
+        design_dir.mkdir()
+        (design_dir / "broken.strata").write_text(
+            'node broken : trusted {\n    attr interface=["unterminated\n};\n'
+        )
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _absorb_pre_land_fixes(repo, "T-1796")
+        assert exc_info.value.code == 1
+
+    def test_still_proceeds_when_design_dir_absent(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSyncInterfacePreLandRefusesOnParseFailed.test_still_proceeds_when_design_dir_absent  # noqa: E501
+        # No design/ directory at all -- must NOT be treated as a parse
+        # failure; a fixture repo with nothing to sync is the common case
+        # every OTHER TestAbsorbPreLandFixes test already relies on.
+        assert not (repo / "design").is_dir()
+        _absorb_pre_land_fixes(repo, "T-1796")  # must not raise
+
+
 # frob:ticket T-1578
 class TestWorktreeNativesVerifiablyHealthy:
     """`_worktree_natives_verifiably_healthy` (T-1578): the pre-land

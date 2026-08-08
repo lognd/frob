@@ -186,11 +186,27 @@ def _fmt_pre_land_step(
 
 
 # frob:ticket T-1175
+# frob:ticket T-1796
 def _sync_interface_pre_land_step(worktree: Path, ticket_id: str) -> None:
     """The sys sync-interface half of `_absorb_pre_land_fixes` -- writes
-    interface= drift fixes into `worktree`'s design root when one exists,
-    logging and skipping on any report failure (a land convenience, not a
-    precondition)."""
+    interface= drift fixes into `worktree`'s design root when one exists.
+
+    T-1796: `sync_interface_report`'s ONLY `Err` path is a design file
+    that failed to LOAD (`load_design_ids(...).errors` non-empty --
+    confirmed by reading `sync_interface_report`'s own body: an empty/
+    missing `design/` tree returns `Ok(SyncInterfaceReport(files=()))`,
+    never an `Err`), so an `Err` here always means a genuinely corrupted
+    `.strata` file already committed to the tree -- never a benign "no
+    design root" case that would make refusing overzealous. Before
+    T-1796 this only logged a WARNING and let the land proceed: the exact
+    gap that let a single dropped quote in `design/frob.strata` break
+    `strata` parsing repo-wide and survive THREE separate lands
+    undetected, because the one gate that would have caught it (SYS004)
+    only fires on an explicit `frob check --only sys`, and nothing in the
+    land path forced that invocation. `frob ticket land` is the one
+    process that mutates `design/**` on every run -- it must never accept
+    a commit on top of a design file it cannot even parse, so this now
+    refuses (`sys.exit(1)`) instead of degrading to a WARNING."""
     from frob.strata._sync_interface import (
         apply_sync_interface,
         sync_interface_report,
@@ -199,11 +215,17 @@ def _sync_interface_pre_land_step(worktree: Path, ticket_id: str) -> None:
     if (worktree / "design").is_dir():
         sync_result = sync_interface_report(worktree, "design")
         if sync_result.is_err:
-            _log.warning(
-                "ticket land: %s pre-land sys sync-interface skipped: %s",
+            _log.error(
+                "ticket land: %s refused -- design/**  failed to load (%s); "
+                "a pre-existing corrupt .strata file cannot be tolerated by "
+                "the process that mutates it on every land -- fix the "
+                "design file (see `frob check --only sys` for the exact "
+                "parse error) before retrying `frob ticket land %s`",
                 ticket_id,
                 sync_result.danger_err,
+                ticket_id,
             )
+            sys.exit(1)
         elif sync_result.danger_ok.has_drift:
             written = apply_sync_interface(worktree, sync_result.danger_ok)
             _log.info(
