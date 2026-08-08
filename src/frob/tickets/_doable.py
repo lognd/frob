@@ -956,9 +956,10 @@ def _narrow_scope_files(
 # frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_own_directive_present_flags_the_ticket  # noqa: E501
 # frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_absent_directive_is_silent  # noqa: E501
 # frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_over_broad_scope_entry_is_not_scanned  # noqa: E501
-# frob:waive WIRE001 reason="T-1744's own declared scope is \
-# src/frob/tickets/_doable.py and docs/modules/tickets.md only -- CLI/alarm wiring \
-# belongs in frob.app.ticket_runner, outside this scope" follow_up="T-1822"
+# T-1822 wired this into frob.app.ticket_runner._query's doable render
+# (_render_already_landed_markers + _doable_row's landed_ids) -- the
+# WIRE001 waiver this line used to carry is discharged, not just
+# suppressed, now that a real caller exists.
 def already_landed_markers(
     queue: TicketQueue,
     root: Path,

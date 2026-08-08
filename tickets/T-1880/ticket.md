@@ -1,5 +1,5 @@
 ---
-id: T-draft-8353ea8f
+id: T-1880
 title: frob ticket start grants a lease without checking cross-ticket scope collision
   at grant time
 state: queued

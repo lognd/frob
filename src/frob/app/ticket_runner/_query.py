@@ -320,6 +320,7 @@ def _try_doable_via_daemon(root: Path, cfg: AppConfig) -> bool:
 
 
 # frob:ticket T-0453
+# frob:ticket T-1822
 def _doable(root: Path, cfg: AppConfig) -> None:
     """Render `frob ticket doable`: the default collision-safe list, or
     `--show-blocked`'s per-exclusion explanation, or `--ignore-lease`'s raw
@@ -383,6 +384,7 @@ def _doable(root: Path, cfg: AppConfig) -> None:
 
     _render_active_leases(queue)
     _render_scope_breadth_summary(root, queue, breadth=breadth)
+    landed_ids = _render_already_landed_markers(root, queue, breadth=breadth)
 
     if not tickets:
         _log.info(
@@ -403,7 +405,7 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     dispatchable = [t for t in tickets if t.id not in in_flight_ids]
 
     ordered, alarm_by_id = _order_dispatchable_with_alarms(dispatchable, root)
-    _render_doable_dispatchable(ordered, alarm_by_id, queue, cfg)
+    _render_doable_dispatchable(ordered, alarm_by_id, queue, cfg, landed_ids=landed_ids)
     _render_doable_in_flight(in_flight)
 
 
@@ -427,10 +429,23 @@ def _order_dispatchable_with_alarms(
 
 
 # frob:ticket T-0976
-def _doable_row(t: "Ticket", alarm_by_id: dict, color: bool) -> str:
+# frob:ticket T-1822
+# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestDoableRowLandedMarker.test_flagged_id_gets_inline_marker  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestDoableRowLandedMarker.test_unflagged_id_gets_no_marker  # noqa: E501
+def _doable_row(
+    t: "Ticket",
+    alarm_by_id: dict,
+    color: bool,
+    *,
+    landed_ids: frozenset[str] = frozenset(),
+) -> str:
     """One doable-list line for `t`, including its UNDISPATCHED alarm (if
     any) -- shared by the flat and `--by-parent` grouped renders (T-0715)
-    so the two stay in sync instead of duplicating the format."""
+    so the two stay in sync instead of duplicating the format. T-1822:
+    also appends an ALREADY-LANDED marker when `t.id` is in `landed_ids`
+    (`_render_already_landed_markers`'s return value) -- the inline,
+    per-row half of that wiring, alongside the summary line it prints
+    once per `doable` call."""
     row = "%s  %s  (%s)  priority=%s" % (
         style_ticket_id(t.id, color),
         t.title,
@@ -440,26 +455,37 @@ def _doable_row(t: "Ticket", alarm_by_id: dict, color: bool) -> str:
     if t.id in alarm_by_id:
         elapsed, threshold = alarm_by_id[t.id]
         row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
+    if t.id in landed_ids:
+        row += "  [ALREADY-LANDED? frob:ticket %s marker found in scope]" % t.id
     return row
 
 
 # frob:ticket T-0976
+# frob:ticket T-1822
 # frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping.test_parent_id_not_in_queue_falls_back_to_no_parent_bucket  # noqa: E501
 # frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping.test_parent_id_present_in_queue_uses_its_title  # noqa: E501
 def _render_doable_dispatchable(
-    ordered: list, alarm_by_id: dict, queue: "TicketQueue", cfg: AppConfig
+    ordered: list,
+    alarm_by_id: dict,
+    queue: "TicketQueue",
+    cfg: AppConfig,
+    *,
+    landed_ids: frozenset[str] = frozenset(),
 ) -> None:
     """Print the dispatchable section of `frob ticket doable`: a flat
     priority/age/alarm-ordered list, or (`--by-parent`, T-0715) the same
     rows grouped by `parent` so a story's remaining leaves display
-    together instead of scattered across one flat list."""
+    together instead of scattered across one flat list. T-1822: `landed_ids`
+    (`_render_already_landed_markers`'s return value) is threaded through
+    to `_doable_row` unchanged so a flagged row is marked in EITHER render
+    shape, not just the flat one."""
     from frob.app.ticket_runner import _stdout_color
 
     color = _stdout_color()
 
     if not cfg.ticket_doable_by_parent:
         for t in ordered:
-            _log.info(_doable_row(t, alarm_by_id, color))
+            _log.info(_doable_row(t, alarm_by_id, color, landed_ids=landed_ids))
         return
 
     # A row with no `parent` (or a parent id `queue` cannot resolve) falls
@@ -482,7 +508,7 @@ def _render_doable_dispatchable(
             else header,
         )
         for t in rows:
-            _log.info("  %s", _doable_row(t, alarm_by_id, color))
+            _log.info("  %s", _doable_row(t, alarm_by_id, color, landed_ids=landed_ids))
 
 
 # frob:ticket T-0976
@@ -683,6 +709,53 @@ def _render_scope_breadth_summary(
         "see 'frob check --only tickets' (TICK009) for detail",
         len(warnings),
     )
+
+
+# frob:ticket T-1822
+# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers.test_no_markers_prints_nothing_and_returns_empty  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers.test_flagged_ticket_prints_one_summary_line_and_is_returned  # noqa: E501
+def _render_already_landed_markers(
+    root: Path,
+    queue: "TicketQueue",
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> frozenset[str]:
+    """`frob ticket doable`'s T-1822 wiring of `frob.tickets._doable.
+    already_landed_markers` (T-1744 case 1, left deliberately unwired at
+    the library level -- that function's own WIRE001 waiver named this
+    ticket as the wiring follow-up, now discharged by this call site
+    existing): a WARN-severity summary line naming every doable
+    candidate whose own `frob:ticket <id>` directive already
+    appears in a file its declared scope names, despite the ledger still
+    calling it queued/planned. This is the "visible to a coordinator
+    BEFORE dispatch" half of this ticket's plan -- the returned id set is
+    also threaded into `_render_doable_dispatchable`/`_doable_row` so the
+    SAME candidates are individually marked inline in the dispatchable
+    listing itself, the "alarm" half.
+
+    Same shape as `_render_scope_breadth_summary` immediately above: a
+    single count line rather than one line per finding, so repeated
+    `doable` calls do not flood the console -- the per-ticket detail is
+    the return value itself (consumed by the caller) plus `frob ticket
+    show <id>`'s own scope, which any flagged id's operator would check
+    next anyway. Returns the flagged id set (possibly empty) rather than
+    `None`, so a caller with no interest in the summary line can still
+    get the alarm data without a second `already_landed_markers` call
+    (mirrors `breadth` itself: computed once, threaded everywhere)."""
+    from frob.tickets._doable import already_landed_markers
+
+    flagged = already_landed_markers(queue, root, breadth=breadth)
+    if not flagged:
+        return frozenset()
+    ids = frozenset(t.id for t in flagged)
+    _log.info(
+        "%d doable candidate(s) already carry their own landed marker "
+        "despite the ledger still calling them queued/planned -- verify "
+        "before dispatching: %s",
+        len(ids),
+        sorted(ids),
+    )
+    return ids
 
 
 # frob:ticket T-0453
