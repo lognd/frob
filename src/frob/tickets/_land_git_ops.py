@@ -29,7 +29,11 @@ here.
 (`_commit_message`), plus its re-export of `splice_ledger` for
 `frob.tickets.__init__`'s stable public import path.
 """
-# frob:waive LARGE001 reason="T-1251 verbatim extraction seam: 1063 lines is the moved git-plumbing family intact, one seam per land; the follow-on split of this family (and _land_finalize.py's) is the T-1251-residue draft ticket filed at close -- waived rather than force-split in the same diff to preserve the byte-identical-move review guarantee"  # noqa: E501
+# frob:waive LARGE001 reason="T-1251 verbatim extraction seam: 1063 lines is the moved \
+# git-plumbing family intact, one seam per land; the follow-on split of this family \
+# (and _land_finalize.py's) is the T-1251-residue draft ticket filed at close -- \
+# waived rather than force-split in the same diff to preserve the byte-identical-move \
+# review guarantee"
 
 from __future__ import annotations
 
@@ -322,8 +326,9 @@ def _porcelain_dirty_paths_staged(root: Path) -> tuple[str, ...]:
     return tuple(staged)
 
 
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_truncation_declares_itself  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_truncation_declares_itself
 # frob:ticket T-1698
 def _render_dirty_paths(paths: tuple[str, ...]) -> str:
     """`paths` rendered for a refusal message, capped at
@@ -1566,12 +1571,56 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
     return bool(paths) and all(p in _SWEEP_OWNED_DIRTY_PATHS for p in paths)
 
 
+# frob:ticket T-1795
+def _staged_rapid_debt_ticket(root: Path) -> str | None:
+    """The ticket id actually named in `rapid-debt.jsonl`'s STAGED diff,
+    read SYMBOLICALLY (parsing the real added content, T-1795) rather
+    than guessed from the file's usual owner. T-1755's original
+    `_likely_sweep_authored` named a STATIC ticket pair (T-1699/T-1755,
+    the tickets that BUILT the sweep) whenever this file happened to be
+    the dirty one -- confidently wrong every time, since those are never
+    the ticket that actually wrote the line (a real 2026-08-07 incident:
+    T-1222's sweep child staged this exact file, and the message named
+    T-1699/T-1755 instead, sending three separate agents to debug the
+    wrong ticket). Every `rapid-debt.jsonl` line already carries its own
+    `"ticket": "..."` field (`record_rapid_debt`'s own write shape) --
+    this reads the LAST added line's ticket field directly from `git diff
+    --cached` output, so the name is a fact read off the actual content,
+    never a guess. `None` (never a wrong ticket id) if the diff cannot be
+    read, has no staged addition, or the added text does not parse as the
+    expected shape -- degrading to "unattributed" is always safer than
+    naming a plausible-but-wrong ticket."""
+    spawned = run_argv(
+        ["git", "-C", str(root), "diff", "--cached", "--", "rapid-debt.jsonl"]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    added_lines = [
+        line[1:]
+        for line in spawned.danger_ok.stdout.splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    ]
+    for line in reversed(added_lines):
+        try:
+            record = json.loads(line)
+        except (ValueError, TypeError):
+            continue
+        ticket = record.get("ticket") if isinstance(record, dict) else None
+        if isinstance(ticket, str) and ticket:
+            return ticket
+    return None
+
+
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unavailable_status_is_not_reported_as_clean  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-1755
+# frob:ticket T-1795
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
 def describe_root_dirt(root: Path) -> str:
     """What is making `root` dirty, rendered for a `DirtyMain` refusal.
 
@@ -1596,18 +1645,41 @@ def describe_root_dirt(root: Path) -> str:
     agent seeing this refusal is, per T-1755's own incident, structurally
     isolated from root and cannot investigate WHO left it dirty; naming
     the likely author turns "report and wait" into "report the specific,
-    actionable cause" without the agent needing to guess."""
+    actionable cause" without the agent needing to guess.
+
+    T-1795: the sweep-authorship hint is now SYMBOLIC, not a static
+    guess. A real incident: this hint used to unconditionally name
+    T-1699/T-1755 (the tickets that BUILT the sweep) whenever `rapid-
+    debt.jsonl` was the dirty file, regardless of which ticket's sweep
+    child actually staged the line -- three separate agents debugged the
+    wrong ticket off that message. `_staged_rapid_debt_ticket` reads the
+    REAL ticket id off the staged diff's own content (every line already
+    carries its own `"ticket"` field) when the sweep-owned path is
+    exactly `rapid-debt.jsonl`; when it cannot determine the true author
+    (a different sweep-owned path, an unreadable diff, unparseable
+    content), the hint says "unattributed" rather than naming a
+    plausible-but-wrong ticket -- the same "cannot verify is never
+    verified" rule this module's own liveness probes already follow."""
     all_paths = _porcelain_dirty_paths(root)
     staged_paths = _porcelain_dirty_paths_staged(root)
     rendered = _render_dirty_paths(all_paths)
-    sweep_hint = (
-        " (all paths match the detached post-land sweep's own known "
-        "writes -- rapid-debt.jsonl/tickets.md, T-1699/T-1755 -- likely "
-        "author: a sweep child that filed something and did not commit "
-        "it)"
-        if _likely_sweep_authored(all_paths)
-        else ""
-    )
+    if _likely_sweep_authored(all_paths):
+        attributed_ticket = (
+            _staged_rapid_debt_ticket(root)
+            if all_paths == ("rapid-debt.jsonl",)
+            else None
+        )
+        author = (
+            f"likely author: {attributed_ticket}'s sweep child"
+            if attributed_ticket
+            else "unattributed"
+        )
+        sweep_hint = (
+            " (all paths match the detached post-land sweep's own known "
+            f"writes -- rapid-debt.jsonl/tickets.md, T-1699/T-1755 -- {author})"
+        )
+    else:
+        sweep_hint = ""
     if not staged_paths:
         return rendered + sweep_hint
     return (

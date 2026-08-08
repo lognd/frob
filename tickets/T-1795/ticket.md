@@ -1,7 +1,7 @@
 ---
 id: T-1795
 title: Advisory-visible land lock (retire pgrep polling; fix DirtyMain misattribution)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -13,8 +13,77 @@ runs_last: false
 scope:
 - src/frob/tickets/_leases.py
 - src/frob/doctor.py
+- src/frob/tickets/_land_git_ops.py
+- tests/unit/test_rapid_sweep.py
+- tests/system/test_cli_doctor.py
+- src/frob/app/ticket_runner/__init__.py
+- tickets/T-1795/ticket.md
+- tickets/T-1801/done-report.md
+- tickets/T-1801/ticket.md
+- tickets/T-1806/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: describe_root_dirt/_likely_sweep_authored (the DirtyMain misattribution
+    fix) live in _land_git_ops.py, not _leases.py; their existing test coverage lives
+    in test_rapid_sweep.py
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: describe_root_dirt/_likely_sweep_authored (the DirtyMain misattribution
+    fix) live in _land_git_ops.py, not _leases.py; their existing test coverage lives
+    in test_rapid_sweep.py
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/system/test_cli_doctor.py
+  reason: TestDoctorLiveLandProcess in this file holds scan_live_land_processes/LiveLandProcess's
+    own test coverage; the new ticket_id field needs a test there
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: carried on this same branch from T-1801's own land and this worktree's earlier
+    ticket-management ops (not touched by T-1795's own code); tickets/T-1795/ticket.md
+    is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1795/ticket.md
+  reason: carried on this same branch from T-1801's own land and this worktree's earlier
+    ticket-management ops (not touched by T-1795's own code); tickets/T-1795/ticket.md
+    is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1801/done-report.md
+  reason: carried on this same branch from T-1801's own land and this worktree's earlier
+    ticket-management ops (not touched by T-1795's own code); tickets/T-1795/ticket.md
+    is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1801/ticket.md
+  reason: carried on this same branch from T-1801's own land and this worktree's earlier
+    ticket-management ops (not touched by T-1795's own code); tickets/T-1795/ticket.md
+    is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1806/ticket.md
+  reason: carried on this same branch from T-1801's own land and this worktree's earlier
+    ticket-management ops (not touched by T-1795's own code); tickets/T-1795/ticket.md
+    is this ticket's own v2 ledger file
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ticket_id_is_reported_when_present
+- tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ticket_id_is_none_for_a_pre_t1795_lock_file
 designated_repro_test: null
 threat: null
 component: null

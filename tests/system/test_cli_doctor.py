@@ -431,7 +431,9 @@ class TestDoctorMalformedTicketEdges:
     anything itself."""
 
     # frob:tests src/frob/doctor.py
-    # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it exercises; repository self-check machinery, no person-related data anywhere in the test"  # noqa: E501
+    # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it \
+    # exercises; repository self-check machinery, no person-related data anywhere in \
+    # the test"
     def test_run_diagnosis_healthy_with_no_malformed_edges(
         self, tmp_path: Path
     ) -> None:
@@ -547,7 +549,9 @@ class TestDoctorStaleTicketLeases:
         subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=str(root), check=True)
 
     # frob:tests src/frob/doctor.py
-    # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it exercises; repository self-check machinery, no person-related data anywhere in the test"  # noqa: E501
+    # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it \
+    # exercises; repository self-check machinery, no person-related data anywhere in \
+    # the test"
     def test_run_diagnosis_healthy_with_no_stale_leases(self, tmp_path: Path) -> None:
         """A fresh checkout with no tickets.md at all reports an empty
         `stale_ticket_leases` list."""
@@ -847,6 +851,64 @@ class TestDoctorLiveLandProcess:
         assert report.live_land_process is not None
         assert report.live_land_process.alive is True
         assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py::scan_live_land_processes
+    # frob:ticket T-1795
+    def test_ticket_id_is_reported_when_present(self, tmp_path: Path) -> None:
+        """T-1795: the exact requirement -- a coordinator checking `frob
+        doctor` must be told WHICH TICKET is landing, not just that some
+        pid holds the lock (this is what retires the `pgrep -f "frob
+        ticket land T-XXXX"` polling recipe, which can match its own
+        argv)."""
+        import json
+        import os
+
+        from frob.doctor import scan_live_land_processes
+
+        lock_dir = tmp_path / ".frob"
+        lock_dir.mkdir(parents=True)
+        (lock_dir / "land.lock").write_text(
+            json.dumps(
+                {
+                    "pid": os.getpid(),
+                    "session_id": "test-session",
+                    "started_at": "2026-08-04T00:00:00+00:00",
+                    "ticket_id": "T-1795",
+                }
+            )
+            + "\n"
+        )
+
+        proc = scan_live_land_processes(tmp_path)
+        assert proc is not None
+        assert proc.ticket_id == "T-1795"
+
+    # frob:tests src/frob/doctor.py::scan_live_land_processes
+    # frob:ticket T-1795
+    def test_ticket_id_is_none_for_a_pre_t1795_lock_file(self, tmp_path: Path) -> None:
+        """A lock file written before T-1795 has no `ticket_id` key at
+        all -- must degrade to `None`, never raise or misreport."""
+        import json
+        import os
+
+        from frob.doctor import scan_live_land_processes
+
+        lock_dir = tmp_path / ".frob"
+        lock_dir.mkdir(parents=True)
+        (lock_dir / "land.lock").write_text(
+            json.dumps(
+                {
+                    "pid": os.getpid(),
+                    "session_id": "test-session",
+                    "started_at": "2026-08-04T00:00:00+00:00",
+                }
+            )
+            + "\n"
+        )
+
+        proc = scan_live_land_processes(tmp_path)
+        assert proc is not None
+        assert proc.ticket_id is None
 
     # frob:tests src/frob/doctor.py::scan_live_land_processes
     # frob:ticket T-1515

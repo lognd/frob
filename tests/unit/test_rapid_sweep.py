@@ -289,6 +289,42 @@ class TestDescribeRootDirt:
         rendered = describe_root_dirt(repo)
         assert "detached post-land sweep" not in rendered
 
+    # frob:ticket T-1795
+    def test_names_the_real_ticket_from_a_staged_rapid_debt_line(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
+        # Real incident: T-1222's sweep child staged rapid-debt.jsonl, and
+        # the old static hint named T-1699/T-1755 (the tickets that BUILT
+        # the sweep) instead of T-1222 -- symbolic attribution must read
+        # the actual staged line's own ticket field.
+        from frob.tickets._land_git_ops import describe_root_dirt
+
+        repo = _seed_repo(tmp_path)
+        (repo / "rapid-debt.jsonl").write_text(
+            '{"commit": "abc123", "skipped": "post-land-unscoped-sweep-deferred", '
+            '"ticket": "T-1222"}\n',
+            encoding="utf-8",
+        )
+        _git(repo, "add", "rapid-debt.jsonl")
+        rendered = describe_root_dirt(repo)
+        assert "T-1222" in rendered
+        assert "T-1699/T-1755" in rendered  # still names the mechanism
+        assert "T-1699's sweep child" not in rendered  # never the wrong ticket
+
+    # frob:ticket T-1795
+    def test_unattributed_when_the_true_author_cannot_be_determined(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
+        from frob.tickets._land_git_ops import describe_root_dirt
+
+        repo = _seed_repo(tmp_path)
+        (repo / "tickets.md").write_text("dirty\n", encoding="utf-8")
+        _git(repo, "add", "tickets.md")
+        rendered = describe_root_dirt(repo)
+        assert "unattributed" in rendered
+
 
 class TestCommitRegressionTicket:
     """T-1755: the filed regression ticket's `tickets.md` write must be

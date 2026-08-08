@@ -294,6 +294,7 @@ def scan_stale_ticket_leases(root: Path) -> tuple[str, ...]:
 # frob:doc docs/guides/install.md#live-land-process-report-t-1515
 # frob:ticket T-1515
 # frob:ticket T-1634
+# frob:ticket T-1795
 class LiveLandProcess(BaseModel):
     """One holder observed in `root`'s `.frob/land.lock` content (T-1515):
     who is (or, if `alive` is `False`, WAS -- an orphaned/crashed holder
@@ -307,7 +308,19 @@ class LiveLandProcess(BaseModel):
     computation. The dead holder's `flock` was already released by the
     kernel the instant that process exited, so nothing is actually
     blocked; the next real `_land_lock` acquisition self-heals the file's
-    stale content and logs its own WARNING reclaim line (T-1634)."""
+    stale content and logs its own WARNING reclaim line (T-1634).
+
+    `ticket_id` (T-1795): the ticket the holder is landing, read
+    verbatim from the SAME lock-holder JSON `_land_lock` writes on
+    acquisition (`_land_lock_holder_metadata`'s `ticket_id` key) --
+    `None` for a lock file written before T-1795 (no key present) or an
+    unparseable one, never a guess. This is what makes `frob doctor` a
+    real substitute for `pgrep -f "frob ticket land T-XXXX"`: a coordinator
+    checking "is MY ticket's land still running" no longer needs a
+    process-table grep that can match its own polling loop's argv (the
+    T-1795 incident: a `until ! pgrep -f "frob ticket land T-XXXX"` loop
+    matched itself and hung 19 minutes past the land's actual exit) --
+    one `frob doctor` read names the ticket directly."""
 
     model_config = {}
 
@@ -315,6 +328,7 @@ class LiveLandProcess(BaseModel):
     session_id: str
     started_at: str
     alive: bool | None
+    ticket_id: str | None = None
 
 
 # frob:doc docs/guides/install.md#live-land-process-report-t-1515
@@ -355,9 +369,16 @@ def scan_live_land_processes(root: Path) -> LiveLandProcess | None:
         or not isinstance(started_at, str)
     ):
         return None
+    # frob:ticket T-1795
+    raw_ticket_id = holder.get("ticket_id")
+    ticket_id = raw_ticket_id if isinstance(raw_ticket_id, str) else None
     alive = _probe_land_lock_pid_liveness(pid)
     return LiveLandProcess(
-        pid=pid, session_id=session_id, started_at=started_at, alive=alive
+        pid=pid,
+        session_id=session_id,
+        started_at=started_at,
+        alive=alive,
+        ticket_id=ticket_id,
     )
 
 
@@ -373,18 +394,21 @@ def _live_land_process_remediation(proc: LiveLandProcess) -> str:
     `healthy` exactly like before, per `_assemble_doctor_report`'s own
     confirmed_absent/ambiguous split). Never called for `alive is True`
     -- that is a normal, informational, in-flight land, not a finding."""
+    # frob:ticket T-1795
+    ticket_note = f" for {proc.ticket_id}" if proc.ticket_id else ""
     if proc.alive is False:
         return (
             f"land.lock names pid {proc.pid} (session {proc.session_id}, "
-            f"started {proc.started_at}) which is NOT running -- an orphaned "
-            "lock file from a crashed/killed land; harmless (the OS already "
-            "released the underlying lock) and self-healing: the next `frob "
-            "ticket land` reclaims and overwrites it automatically, or run "
-            "`rm .frob/land.lock` by hand to clear it immediately"
+            f"started {proc.started_at}{ticket_note}) which is NOT running -- "
+            "an orphaned lock file from a crashed/killed land; harmless (the "
+            "OS already released the underlying lock) and self-healing: the "
+            "next `frob ticket land` reclaims and overwrites it "
+            "automatically, or run `rm .frob/land.lock` by hand to clear it "
+            "immediately"
         )
     return (
         f"land.lock is held by pid {proc.pid} (session {proc.session_id}, "
-        f"started {proc.started_at}), "
+        f"started {proc.started_at}{ticket_note}), "
         f"{'alive' if proc.alive else 'liveness unknown'} -- a `frob ticket "
         "land` is (or may be) mid-run against this repo right now"
     )
@@ -423,7 +447,8 @@ class VenvShimDrift(BaseModel):
 
 # frob:ticket T-1161
 # frob:doc docs/guides/install.md#venv-shim-shebang-scan-t-1161
-# frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_flags_shebang_outside_venv  # noqa: E501
+# frob:tests \
+# tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_flags_shebang_outside_venv
 # frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_clean_shebang_reports_nothing  # noqa: E501
 # frob:tests tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_no_venv_directory_reports_nothing  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
