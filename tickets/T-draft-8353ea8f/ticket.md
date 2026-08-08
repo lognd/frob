@@ -16,6 +16,19 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'GIVEN T-1868 landed and closed the `scope --add` door (a ticket can no longer
+    widen its own scope into a path another in-progress ticket''s live cross-worktree
+    lease already covers) WHEN a ticket instead declares a colliding path in its ORIGINAL
+    FILED scope and simply runs `frob ticket start` THEN nothing refuses it today
+    -- `start`''s own guard chain (`_refuse_if_terminal`, `_refuse_if_foreign_live_lease`,
+    T-1866''s `_refuse_over_broad_scope_on_start`) never checks the ticket''s declared
+    scope against any OTHER in-progress ticket''s live lease. This is the door every
+    real dispatch goes through, not an edge case: the T-1851/T-1870 collision on `src/frob/app/config.py`
+    proves it was granted exactly this way, live, on this repo''s own main, in the
+    same session T-1868 landed. Anyone reading "T-1868 fixed lease conflicts" should
+    not assume the class is closed -- it is one of two doors, and only one is shut.'
+  evidence: []
 threat: null
 component: null
 anchor: false
