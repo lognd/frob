@@ -14,6 +14,7 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_query.py
 - src/frob/tickets/_renumber_v2.py
+- src/frob/tickets/_new_renumber.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -24,6 +25,11 @@ scope_changes:
   at: '2026-08-08'
 - op: add
   glob: src/frob/tickets/_renumber_v2.py
+  reason: 'T-1882: renumber implementation and its CLI dispatch'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
   reason: 'T-1882: renumber implementation and its CLI dispatch'
   actor: logan
   at: '2026-08-08'
