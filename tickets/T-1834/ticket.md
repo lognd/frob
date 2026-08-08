@@ -2,7 +2,7 @@
 id: T-1834
 title: frob sys export bypasses check_cross_file_references, can build a KernelModel
   with a dangling flow endpoint
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,8 +13,17 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/sys_runner.py
+- tests/unit/test_app_runners_batch7.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: add regression test for the dangling flow endpoint fix
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestSysExport::test_dangling_flow_endpoint_fails_closed
 designated_repro_test: null
 threat: null
 component: null

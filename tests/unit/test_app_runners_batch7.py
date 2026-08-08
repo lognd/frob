@@ -1471,6 +1471,29 @@ class TestSysExport:
         out = capsys.readouterr().out
         assert out.strip() != ""
 
+    def test_dangling_flow_endpoint_fails_closed(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests src/frob/app/sys_runner.py::_load_export_model kind="unit"
+        # T-1834: a flow naming a node id declared nowhere in the file must
+        # fail closed via elaborate_merged's check_cross_file_references,
+        # the same way a design loaded under design/ would -- not silently
+        # build a KernelModel with a dangling flow endpoint.
+        bad = tmp_path / "dangling.strata"
+        bad.write_text(
+            "module m\n"
+            "node api : trusted\n"
+            "flow f1 : ghost -> api { rate 5 req/s; attr timeout; }\n"
+        )
+        cfg = AppConfig(
+            sys_command="export", sys_export_format="k8s", sys_export_path=bad
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            sys_run(cfg)
+        assert exc.value.code == 1
+        assert "elaborate failed" in caplog.text
+        assert "ghost" in caplog.text
+
 
 class TestSysAudit:
     def test_no_design_models(self, tmp_path: Path, caplog) -> None:

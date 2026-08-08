@@ -81,7 +81,7 @@ from frob.strata import (
     render_audit_matrix,
     sync_interface_report,
 )
-from frob.strata._elaborate import elaborate
+from frob.strata._multifile import elaborate_merged
 from frob.strata._parse import parse_module
 from frob.tickets import load_all, new_ticket
 from frob.tickets._models import Origin, TicketSpec
@@ -332,7 +332,13 @@ def _run_plan(cfg: AppConfig) -> None:
 
 def _load_export_model(design_path: Path) -> KernelModel | None:
     """Parse+elaborate the single `.strata` file at `design_path` into a
-    `KernelModel`, or None with an error already logged."""
+    `KernelModel`, or None with an error already logged. Routes through
+    `elaborate_merged` (T-1834) rather than calling `elaborate()` directly
+    so a flow naming an unknown node fails closed via
+    `check_cross_file_references` the same way a design loaded under
+    `design/` does, instead of silently producing a `KernelModel` with a
+    dangling flow endpoint -- `elaborate()`'s own permissive contract is
+    unchanged, only this single-file export path is re-routed."""
     text = design_path.read_text()
     # Parsing/elaborating a design logs at INFO on every construct (LOG
     # EVERYTHING convention); `frob sys export` prints a machine-readable
@@ -344,9 +350,14 @@ def _load_export_model(design_path: Path) -> KernelModel | None:
         if parsed.is_err:
             _log.error("frob sys export: parse failed: %s", parsed.danger_err)
             return None
-        elaborated = elaborate(parsed.danger_ok)
+        elaborated = elaborate_merged(((str(design_path), parsed.danger_ok),))
         if elaborated.is_err:
-            _log.error("frob sys export: elaborate failed: %s", elaborated.danger_err)
+            for cross_error in elaborated.danger_err:
+                _log.error(
+                    "frob sys export: elaborate failed: %s: %s",
+                    cross_error.path,
+                    cross_error.message,
+                )
             return None
         return elaborated.danger_ok
 
