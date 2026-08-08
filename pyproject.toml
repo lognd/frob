@@ -53,7 +53,25 @@ serve = ["mcp>=1.28.1"]
 # ships native binaries and is only needed for `probe_smt_equivalence`;
 # every other frob.dup rung works without it. Install with:
 # uv pip install "frob[smt]"
-smt = ["z3-solver>=4.13"]
+#
+# T-1508: upper-bounded at <4.15.5 -- this fleet's worktree hosts are
+# aarch64 glibc 2.35. z3-solver>=4.15.8 (and 5.0.0.0) only ships a
+# manylinux_2_38 aarch64 wheel (needs glibc>=2.38, newer than this host
+# has); z3-solver 4.15.5.0-4.15.7.0 ship NO aarch64 wheel at all. Either
+# case forces a source build, which genuinely fails here: 5.0.0.0's CMake
+# build needs a C++20 <format> header GCC 11.4 (this host's system
+# compiler) does not have, and z3-solver<=4.9.1.0's build needs pre-3.5
+# CMake support this host's CMake 3.22 has removed -- verified directly,
+# not a version nobody tried (T-1508's own Done report). 4.13.0.0 through
+# 4.15.4.0 all ship a manylinux_2_34 (or older) aarch64 wheel, which
+# installs from a prebuilt wheel with no compiler involved at all on
+# THIS host's glibc 2.35. Raise this bound again once a newer z3-solver
+# release ships a glibc<=2.35-compatible aarch64 wheel, or once this
+# fleet's hosts move to glibc>=2.38. (T-1814: re-landed after T-1508's
+# own land silently dropped this exact edit while keeping uv.lock's
+# derived fix, then re-dropped it again -- see T-1814's Done report for
+# the land-time fix that closes this class of loss.)
+smt = ["z3-solver>=4.13,<4.15.5"]
 
 [project.scripts]
 frob = "frob.__main__:main"
