@@ -5,7 +5,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-05'
-priority: medium
+priority: critical
 blocked_by:
 - T-1631
 parent: null
@@ -24,6 +24,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 ## Description
 
