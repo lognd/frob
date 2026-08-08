@@ -11,8 +11,65 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_new.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/gates/_waive_lease.py
+- docs/design/cli-hygiene.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: 'Four criteria, four concrete real anchors: scope-closure warning collapse
+    (the observed flood site) in _new.py/_mutate.py, check --ticket lease enforcement
+    in _waive_lease.py, close-porcelain next-command hints in _close_cmd.py (already
+    carries _close_failure_hint), and a new cli-hygiene principles doc. No glob; the
+    implementer will scope-add narrowly further once each piece is open, same as every
+    other narrowed ticket this session.'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: 'Four criteria, four concrete real anchors: scope-closure warning collapse
+    (the observed flood site) in _new.py/_mutate.py, check --ticket lease enforcement
+    in _waive_lease.py, close-porcelain next-command hints in _close_cmd.py (already
+    carries _close_failure_hint), and a new cli-hygiene principles doc. No glob; the
+    implementer will scope-add narrowly further once each piece is open, same as every
+    other narrowed ticket this session.'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: 'Four criteria, four concrete real anchors: scope-closure warning collapse
+    (the observed flood site) in _new.py/_mutate.py, check --ticket lease enforcement
+    in _waive_lease.py, close-porcelain next-command hints in _close_cmd.py (already
+    carries _close_failure_hint), and a new cli-hygiene principles doc. No glob; the
+    implementer will scope-add narrowly further once each piece is open, same as every
+    other narrowed ticket this session.'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/gates/_waive_lease.py
+  reason: 'Four criteria, four concrete real anchors: scope-closure warning collapse
+    (the observed flood site) in _new.py/_mutate.py, check --ticket lease enforcement
+    in _waive_lease.py, close-porcelain next-command hints in _close_cmd.py (already
+    carries _close_failure_hint), and a new cli-hygiene principles doc. No glob; the
+    implementer will scope-add narrowly further once each piece is open, same as every
+    other narrowed ticket this session.'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/design/cli-hygiene.md
+  reason: 'Four criteria, four concrete real anchors: scope-closure warning collapse
+    (the observed flood site) in _new.py/_mutate.py, check --ticket lease enforcement
+    in _waive_lease.py, close-porcelain next-command hints in _close_cmd.py (already
+    carries _close_failure_hint), and a new cli-hygiene principles doc. No glob; the
+    implementer will scope-add narrowly further once each piece is open, same as every
+    other narrowed ticket this session.'
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a command emits repeated advisory warnings (scope-closure on ticket
@@ -34,5 +91,7 @@ acceptance:
   evidence: []
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Split from T-1271: its dispatch delivered criterion 0 (enum-valued flag errors list every valid value inline) with bound evidence; these four criteria were not implemented in that worktree and were drafted there as T-1557, which cannot survive a land preview (land-splice draft-loss class). Filed as a real main-side ticket so T-1271 can land its delivered portion with an honest acceptance trail.
