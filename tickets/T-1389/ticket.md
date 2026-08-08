@@ -2,7 +2,7 @@
 id: T-1389
 title: 'TEST011: extend deflation detection to catch per-symbol false-0.0% coverage
   under xdist worker loss'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-01'
@@ -72,3 +72,6 @@ handful of symbols are affected but the overall join fraction is fine).
 That is a genuine new detector design, not a small fix-in-place; filing
 it as its own ticket rather than forcing a half-designed version into
 this investigation ticket's close.
+
+## Drop reason
+- 2026-08-08: Direct controlled xdist repro (-n4, real branch/parallel/relative_files/sigterm settings) against the originally-cited symbol did not reproduce a 0% false-negative; root cause is T-1353's already-fixed node-down worker-crash class, not a distinct merge defect in scope (_coverage.py/Makefile). Actionable follow-up (a per-symbol deflation heuristic, distinct from the aggregate module_join_fraction check) filed separately since it is new detector design, not a fix-in-place. (absorbed by T-1824)
