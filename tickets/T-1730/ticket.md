@@ -2,7 +2,7 @@
 id: T-1730
 title: frob ticket land should auto-rebase the worktree onto main after a successful
   land
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -108,3 +108,6 @@ upstream" commits per rebase:
   rebased before starting T-1706.
 
 Six for six. This ticket exists so the seventh time is automatic.
+
+## Drop reason
+- 2026-08-07: Exact duplicate of T-1720 (identical title). Keeping the lower id. Part of the same batch re-filing as T-1728/T-1729. (absorbed by T-1720)
