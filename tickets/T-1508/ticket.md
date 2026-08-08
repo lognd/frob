@@ -2,7 +2,7 @@
 id: T-1508
 title: z3-solver fails to build in worktrees, blocking dup._pipeline._smt TEST005
   burn-down
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-03'
@@ -15,8 +15,21 @@ scope:
 - src/frob/dup/_pipeline/_smt.py
 - tests/unit/test_dup_smt.py
 - pyproject.toml
+- docs/modules/dup.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/dup.md
+  reason: already-existing SCOPE002 debt on _probe_smt_equivalence's doc edges, pre-existing
+    broad-glob overlap surfaced by --only scope; not touched by this fix, no doc change
+    needed for a pyproject.toml version-bound pin
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/unit/test_dup_smt.py::test_proves_equivalent_bounded_functions
+- tests/unit/test_dup_smt.py::test_finds_counterexample_for_non_equivalent_functions
+- tests/unit/test_dup_smt.py::test_degrades_to_smt_unavailable_without_z3
 designated_repro_test: null
 threat: null
 component: null
