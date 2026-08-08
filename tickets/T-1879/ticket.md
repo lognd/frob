@@ -1,7 +1,7 @@
 ---
 id: T-1879
 title: 'post-land sweep regression from T-1873: 1 new error(s) (TICK002)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-08'
