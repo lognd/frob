@@ -37,3 +37,6 @@ latent gap.
 Fix: `LEDGER_PATH`/`scope_matches` (`src/frob/tickets/_models.py`) should
 recognize a ticket's own `tickets/<ticket.id>/**` path as always-in-scope,
 the same way it already does for the legacy `tickets.md` aggregator file.
+
+## Failure log
+- 2026-08-08 attempt 1: Already fixed by T-1817 (_b9_exempt_file exempts tickets/<id>/* in gates/__init__.py) and T-1819 (scope_matches gained ticket_id param, treats tickets/<id>/** implicitly in scope; wired at _scope_gate_check_file, gates/__init__.py:3521). Verified: frob check --only scope --ticket T-1836 reports 0 SCOPE001 errors on src/frob/tickets/_models.py; tests/test_tickets.py::TestScopeMatching::test_own_shard_always_in_scope already covers this. Duplicate T-1827 dropped, absorbed-by this ticket. No code change needed.
