@@ -878,6 +878,16 @@ _KNOWN_GATE_RULES = frozenset(
         # T-1451: SYS107 via-less-may-on-a-large-node advisory
         # (src/frob/strata/_selfconform.py).
         "SYS107",
+        # T-1800: SYS108 (duplicate interface symbol declared more than
+        # once on the same node, src/frob/strata/_selfconform.py:1421) --
+        # landed via T-1624 (2026-08-06) after this literal's own split
+        # from src/frob/gates/__init__.py (T-1072, 2026-07-28), and missed
+        # here because `frob.app.ticket_runner._land_cmd._sync_gate_rules_
+        # for_land`'s auto-sync only diffs src/frob/gates/__init__.py for
+        # `_KNOWN_GATE_RULES` -- stale since the T-1072 split moved the
+        # literal to this file; that mechanism gap is filed separately
+        # (out of this ticket's own scope), not fixed here.
+        "SYS108",
         "SYS200",
         "SYS201",
         "SYS202",
