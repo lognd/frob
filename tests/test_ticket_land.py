@@ -6542,6 +6542,11 @@ class TestLiveTrackerCitationPrecheck:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck.test_citations_found_blocks  # noqa: E501
+        # T-1853: the check now only fires for a land moving the ticket to
+        # a TERMINAL state (an in-progress land threatens no citation --
+        # see TestLandCheckSkipsNonTerminalAnchor in
+        # tests/test_tickets_live_tracker.py) -- use DONE here so this
+        # test keeps exercising the still-blocking case.
         import frob.tickets._live_tracker as _live_tracker_mod
 
         monkeypatch.setattr(
@@ -6549,9 +6554,8 @@ class TestLiveTrackerCitationPrecheck:
             "live_tracker_citations",
             lambda *a, **k: ("docs/design/registry/patterns.yaml:3: deferred:T-0900",),
         )
-        result = _land_mod._check_live_tracker_citations(
-            tmp_path, self._ticket_t0900(), "main"
-        )
+        ticket = self._ticket_t0900().model_copy(update={"state": TicketState.DONE})
+        result = _land_mod._check_live_tracker_citations(tmp_path, ticket, "main")
         assert result.is_err
         assert result.danger_err == LandError.LiveTrackerCited
 

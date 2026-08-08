@@ -2425,21 +2425,44 @@ def _check_live_tracker_citations(
     citation this same diff freshly introduces (never present at
     `base_ref`) is not reported -- see the T-0854 rework note in
     `frob.tickets._live_tracker`'s module docstring for why a scope-based
-    exemption was rejected as gameable in favor of this diff-aware one."""
+    exemption was rejected as gameable in favor of this diff-aware one.
+
+    T-1853: only fires when `ticket.state` is TERMINAL (`done`/`dropped`).
+    An anchor ticket -- one whose entire purpose is to sit open forever so
+    a permanent-by-design `frob:waive ... follow_up="<id>"` has a valid,
+    non-orphaning target (WIRE002 disqualifies `done`/`dropped` follow_up
+    targets, the T-1490/T-1488 16-waiver-orphan incident) -- is cited by
+    design and never stops being cited. Refusing EVERY land of such a
+    ticket, including a `queued`/`in-progress`/`blocked` land that
+    threatens no citation at all, made its own ledger record (a `fail`
+    attempt log, a scope change, an evidence binding) permanently
+    unlandable -- a silent data-loss path of the same shape T-1818 closed
+    for fail records generally. A land that leaves the ticket
+    non-terminal cannot orphan the citation it is refusing over, so this
+    check is skipped for it; a land that WOULD move the ticket to
+    `done`/`dropped` still needs the citations resolved first."""
     from frob.tickets._live_tracker import live_tracker_citations
+    from frob.tickets._models import TicketState
+
+    if ticket.state not in (TicketState.DONE, TicketState.DROPPED):
+        return Ok(None)
 
     citations = live_tracker_citations(worktree, ticket.id, base_ref=base_ref)
     if not citations:
         return Ok(None)
     _log.error(
-        "land: %s cannot land -- %d site(s) still cite it as their live "
-        "tracker (registry deferred:/tracked_by: disposition or a waiver "
-        "ticket= attribute): %s -- file a successor ticket and re-point "
-        "these rows, or re-point them in this same change, then retry "
-        "`frob ticket land %s`",
+        "land: %s cannot land as %s -- %d site(s) still cite it as their "
+        "live tracker (registry deferred:/tracked_by: disposition or a "
+        "waiver ticket= attribute): %s -- if this ticket is meant to stay "
+        "open forever as a permanent waiver anchor, land it as "
+        "queued/in-progress/blocked instead of %s; otherwise file a "
+        "successor ticket and re-point these rows, or re-point them in "
+        "this same change, then retry `frob ticket land %s`",
         ticket.id,
+        ticket.state,
         len(citations),
         list(citations),
+        ticket.state,
         ticket.id,
     )
     return Err(LandError.LiveTrackerCited)

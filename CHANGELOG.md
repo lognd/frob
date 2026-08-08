@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.407.0] - unreleased
+
+- T-1853: An anchor ticket cited by a permanent waiver can never land ANY ledger record, not just close
+
 ## [0.406.0] - unreleased
 
 - T-1838: frob:waive comments in .claude/hooks/** never take effect (BUILTIN_SKIP_DIRS prunes .claude from frob.graph's walk)

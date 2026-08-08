@@ -2,7 +2,7 @@
 id: T-1853
 title: An anchor ticket cited by a permanent waiver can never land ANY ledger record,
   not just close
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,9 +13,21 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- tests/test_tickets_live_tracker.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_live_tracker.py
+  reason: add T-1853 terminal-state-only repro test near live_tracker_citations coverage
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor::test_in_progress_land_not_blocked_by_citation
+- tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor::test_done_land_still_blocked_by_citation
+- tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_citations_found_blocks
+- tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_no_citations_is_ok
+designated_repro_test: tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor::test_in_progress_land_not_blocked_by_citation
 threat: null
 component: null
 ---

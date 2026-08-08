@@ -379,3 +379,45 @@ class TestTransitionRefusesOnLiveTrackerCitation:
         _commit_all(tmp_path, "add ticket")
         result = transition(tmp_path, "T-0605", TicketState.DONE)
         assert result.is_ok
+
+
+# frob:ticket T-1853
+class TestLandCheckSkipsNonTerminalAnchor:
+    """T-1853: `frob.tickets._land._check_live_tracker_citations` -- the
+    LAND-time precheck, distinct from `transition`'s close-time refusal
+    above -- must only fire when the land would move the ticket to a
+    TERMINAL state (`done`/`dropped`). An anchor ticket cited by a
+    permanent `frob:waive ... follow_up="<id>"` is cited by design and
+    never stops being cited; before this fix, landing ANY ledger record
+    for it (a scope change, a fail attempt, evidence) was permanently
+    refused. This test is written to FAIL against the pre-T-1853
+    behavior (which refused regardless of state) and PASS after it."""
+
+    def test_in_progress_land_not_blocked_by_citation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor.test_in_progress_land_not_blocked_by_citation  # noqa: E501
+        from frob.tickets import _land as land_mod
+
+        _init_repo(tmp_path)
+        anchor = _ticket(ticket_id="T-1820", state=TicketState.IN_PROGRESS)
+        (tmp_path / "mod.py").write_text(
+            '# frob:waive WIRE001 reason="permanent" follow_up="T-1820"\nx = 1\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "add permanent anchor waiver")
+        result = land_mod._check_live_tracker_citations(tmp_path, anchor, "main")
+        assert result.is_ok
+
+    def test_done_land_still_blocked_by_citation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor.test_done_land_still_blocked_by_citation  # noqa: E501
+        from frob.tickets import _land as land_mod
+
+        _init_repo(tmp_path)
+        anchor = _ticket(ticket_id="T-1820", state=TicketState.DONE)
+        (tmp_path / "mod.py").write_text(
+            '# frob:waive WIRE001 reason="permanent" follow_up="T-1820"\nx = 1\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "add permanent anchor waiver")
+        result = land_mod._check_live_tracker_citations(tmp_path, anchor, "main")
+        assert result.is_err
+        assert result.danger_err == land_mod.LandError.LiveTrackerCited
