@@ -2,7 +2,7 @@
 id: T-1551
 title: unify duplicated committed-lock-reading test helpers (test_coverage_attribution_lock_t1395.py
   + test_makefile_coverage.py)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-05'
@@ -14,8 +14,34 @@ runs_last: false
 scope:
 - tests/unit/test_coverage_attribution_lock_t1395.py
 - tests/unit/test_makefile_coverage.py
+- tests/unit/conftest.py
+- tickets/T-1551/**
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/conftest.py
+  reason: 'T-1551: shared home for the duplicated _load_committed_lock helper is tests/unit/conftest.py
+    (existing T-1511 precedent for shared test-support helpers)'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1551/**
+  reason: 'T-1551: shared home for the duplicated _load_committed_lock helper is tests/unit/conftest.py
+    (existing T-1511 precedent for shared test-support helpers)'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-1551: promoting _load_committed_lock''s fs.read to a shared tests/unit/conftest.py
+    helper requires declaring that capability on the new call site (SELFAUDIT001)'
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_t1395_named_modules_are_nonzero_in_committed_lock
+- tests/unit/test_coverage_attribution_lock_t1395.py::TestCoverageAttributionLockStaysNonZero::test_no_module_reads_exactly_zero_in_committed_lock
+- tests/unit/test_makefile_coverage.py::TestPreviouslyZeroModulesNowAttributeInTheCommittedLock::test_named_module_groups_are_nonzero_in_the_committed_lock
 designated_repro_test: null
 threat: null
 component: null

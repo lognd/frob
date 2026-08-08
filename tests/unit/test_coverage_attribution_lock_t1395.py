@@ -19,12 +19,7 @@ lock by hand.
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
-#: T-1395: repo root, two levels up from this test file
-#: (tests/unit/test_coverage_attribution_lock_t1395.py -> repo root).
-_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+from tests.unit.conftest import _load_committed_coverage_lock
 
 #: T-1395's own named acceptance-criteria modules -- serve/** (daemon) and
 #: __main__.py (CLI entry) -- plus serve/_leases.py, named at 0.0% in the
@@ -36,32 +31,13 @@ _T1395_NAMED_MODULES = (
 )
 
 
-# frob:waive WIRE001 reason="a private per-file fixture helper used only by this same \
-# file's own two test methods below (test_t1395_named_modules_are_ \
-# nonzero_in_committed_lock, test_no_module_reads_exactly_zero_in_committed_lock) -- \
-# there is no production caller to wire it to by design, it exists solely to read the \
-# committed frob-coverage.lock.json for a regression lock" permanent="true"
-def _load_committed_lock() -> dict[str, float]:
-    """`module_line` mapping from the committed `frob-coverage.lock.json`.
-
-    Reads the repo-root lock directly (the same file `write_coverage_lock`/
-    `load_coverage_lock` in `frob.gates._coverage` produce and consume) --
-    a small, self-contained fixture-free check that this specific ticket's
-    named modules stay attributed, without depending on a fresh
-    `coverage.xml` this repo does not keep around (playbook section 6d).
-    """
-    lock_path = _REPO_ROOT / "frob-coverage.lock.json"
-    data = json.loads(lock_path.read_text())
-    return data["module_line"]
-
-
 # frob:ticket T-1395
 class TestCoverageAttributionLockStaysNonZero:
     """Regression lock: T-1395's named daemon/CLI-entry modules stay attributed."""
 
     def test_t1395_named_modules_are_nonzero_in_committed_lock(self) -> None:
         """serve/_socketd.py, serve/_leases.py, __main__.py must not regress to 0.0%."""
-        module_line = _load_committed_lock()
+        module_line = _load_committed_coverage_lock()
         for module in _T1395_NAMED_MODULES:
             assert module in module_line, f"{module} missing from committed lock"
             assert module_line[module] > 0.0, (
@@ -78,7 +54,7 @@ class TestCoverageAttributionLockStaysNonZero:
         size and would normally be excluded or dead-code-flagged rather
         than silently sitting at zero in a committed full-run lock.
         """
-        module_line = _load_committed_lock()
+        module_line = _load_committed_coverage_lock()
         zero_modules = sorted(m for m, pct in module_line.items() if pct == 0.0)
         assert zero_modules == [], (
             f"{len(zero_modules)} module(s) read exactly 0.0% in the "

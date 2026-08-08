@@ -5,11 +5,12 @@ combined-data entry pointing at a torn-down source path."""
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import subprocess
 from pathlib import Path
+
+from tests.unit.conftest import _load_committed_coverage_lock
 
 
 # frob:ticket T-1373
@@ -865,12 +866,6 @@ class TestPreviouslyZeroModulesNowAttributeInTheCommittedLock:
         "src/frob/__main__.py",
     )
 
-    def _load_committed_lock(self) -> dict[str, float]:
-        """`module_line` mapping read from the repo-root committed lock."""
-        lock_path = _REPO_ROOT / "frob-coverage.lock.json"
-        data = json.loads(lock_path.read_text())
-        return data["module_line"]
-
     def test_named_module_groups_are_nonzero_in_the_committed_lock(self) -> None:
         """excludes.py/doctor.py/serve/_socketd.py/__main__.py must not be 0.0%.
 
@@ -883,7 +878,7 @@ class TestPreviouslyZeroModulesNowAttributeInTheCommittedLock:
         versus the 0.0% each read before T-1235's fix (T-0969's 2026-07-29
         diagnosis).
         """
-        module_line = self._load_committed_lock()
+        module_line = _load_committed_coverage_lock()
         for module in self._NAMED_MODULES:
             assert module in module_line, f"{module} missing from committed lock"
             assert module_line[module] > 0.0, (
