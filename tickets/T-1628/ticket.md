@@ -5,7 +5,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-08-05'
-priority: medium
+priority: high
 blocked_by:
 - T-1627
 parent: T-1623
