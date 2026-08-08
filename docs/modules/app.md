@@ -280,7 +280,11 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 - `cycle_runner.run` -- runs `frob.cycle.graph.find_cycles` over
   `cfg.cycle_path` (docs/commands/cycle.md).
 - `map_runner.run` -- runs `frob.map.map_project` over `cfg.map_path`
-  (docs/commands/map.md).
+  (docs/commands/map.md). T-1479: `--json` against the daemon's own root
+  (`cfg.map_path` unset or `.`) tries the daemon proxy (`frob_map`,
+  docs/modules/serve.md#frob-map---json-t-1479) first via
+  `_try_map_via_daemon`, falling through to the in-process call above on
+  any miss or a non-root target.
 - `agent_runner.run` -- `frob agent env [path]` (T-0574): prints
   `FROB_WORKTREE`/`FROB_AGENT` export lines for a worktree so dispatch
   tooling can inject the guard env mechanically; parses its own argv

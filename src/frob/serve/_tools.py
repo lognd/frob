@@ -57,6 +57,8 @@ class ServeError(ErrorSet):
     # T-1127
     ExportsFailed = "exports listing could not be built"
     StatsFailed = "delivery stats could not be collected"
+    # T-1479
+    MapFailed = "project map could not be built"
 
 
 def _load_snapshot(root: Path):  # noqa: ANN202
@@ -170,6 +172,35 @@ def _dangling_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
         }
         for d in report.dangling
     ]
+
+
+# frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_matches_in_process kind="unit"  # noqa: E501
+# frob:waive WIRE001 reason="genuinely wired via _TOOL_DISPATCH['frob_map'] = \
+# _tools.frob_map in src/frob/serve/_socketd.py, then dispatched dynamically by \
+# JSON-RPC method name (dispatch_request) -- WIRE001's dict-table reach pattern only \
+# matches a BARE name immediately after the colon, never a module-qualified value \
+# (_tools.frob_map), so every _TOOL_DISPATCH entry has this same false-positive shape; \
+# the rest are grandfathered only because WIRE001 is diff-scoped" follow_up="T-1807"
+def frob_map(root: Path, *, depth: int | None = None) -> Result[dict, ServeError]:
+    """`MapResult.model_dump(mode="json")` for `root` -- the same payload
+    `frob map --json`'s `result.as_json()` serializes (`frob.app.
+    map_runner.run`), field-for-field identical since both sides dump the
+    identical `MapResult` pydantic model (T-1479, same shape as T-1127's
+    `frob_stats`/`frob_exports`). `map_project` itself never returns a
+    `Result` -- an `OSError` from a filesystem race (a file/dir removed
+    between `_collect_paths`'s walk and its own per-file read) is the one
+    documented way it can fail, caught here rather than left to crash the
+    daemon's request-handling thread."""
+    from frob.map import map_project
+
+    try:
+        result = map_project(root, depth=depth)
+    except OSError as exc:
+        _log.error("serve: frob_map: %s: %s", root, exc)
+        return Err(ServeError.MapFailed)
+    _log.info("serve: frob_map: %s: %d file(s)", root, result.total_files)
+    return Ok(result.model_dump(mode="json"))
 
 
 # frob:doc docs/modules/serve.md#tools
@@ -319,8 +350,10 @@ def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
 
 # frob:doc docs/modules/graph.md#affects
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_serve.py::TestAffects.test_direct_symbol_no_dependents kind="unit"  # noqa: E501
-# frob:tests tests/test_serve.py::TestAffects.test_transitive_dependent_docs_included kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestAffects.test_direct_symbol_no_dependents \
+# kind="unit"
+# frob:tests tests/test_serve.py::TestAffects.test_transitive_dependent_docs_included \
+# kind="unit"
 # frob:tests tests/test_serve.py::TestAffects.test_unknown_symbol_is_err kind="unit"
 def frob_affects(
     root: Path,
@@ -418,14 +451,20 @@ def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:doc docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602  # noqa: E501
+# frob:doc \
+# docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:doc docs/modules/serve.md#proxied-commands
 # frob:ticket T-0602
 # frob:ticket T-1147
-# frob:tests tests/test_serve.py::TestCheckDelta.test_delta_against_fresh_baseline_is_empty kind="unit"  # noqa: E501
-# frob:tests tests/test_serve.py::TestCheckDelta.test_delta_reports_new_violation kind="unit"  # noqa: E501
-# frob:tests tests/test_serve.py::TestCheckDelta.test_missing_baseline_is_full_set kind="unit"  # noqa: E501
-# frob:tests tests/test_serve.py::TestCheckDelta.test_verify_true_matches_when_no_drift kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve.py::TestCheckDelta.test_delta_against_fresh_baseline_is_empty \
+# kind="unit"
+# frob:tests tests/test_serve.py::TestCheckDelta.test_delta_reports_new_violation \
+# kind="unit"
+# frob:tests tests/test_serve.py::TestCheckDelta.test_missing_baseline_is_full_set \
+# kind="unit"
+# frob:tests \
+# tests/test_serve.py::TestCheckDelta.test_verify_true_matches_when_no_drift kind="unit"
 # frob:tests tests/test_serve.py::TestCheckDelta.test_check_result_matches_only_gates_delta_cli_shape kind="unit"  # noqa: E501
 def frob_check_delta(
     root: Path,
@@ -521,8 +560,10 @@ def frob_check_delta(
 
 
 # frob:doc docs/modules/serve.md#tools
-# frob:tests tests/test_serve.py::TestRunTouchedTests.test_no_diff_selects_nothing kind="unit"  # noqa: E501
-# frob:tests tests/test_serve.py::TestRunTouchedTests.test_bad_base_is_git_failed kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestRunTouchedTests.test_no_diff_selects_nothing \
+# kind="unit"
+# frob:tests tests/test_serve.py::TestRunTouchedTests.test_bad_base_is_git_failed \
+# kind="unit"
 def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, ServeError]:
     """Select AND run the touched-set tests for `base` (`frob.testing.
     select_tests` + `run_selected`, the MCP-exposed counterpart of `frob
@@ -611,7 +652,8 @@ def frob_perf_hot(
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status kind="unit"
 def frob_daemon_status(root: Path) -> Result[dict, ServeError]:
     """(T-0733) The background daemon's latest post-land verdict and
     outstanding rebase warnings for `root`, as JSON-able dicts -- a pure

@@ -171,4 +171,7 @@ plain-forced outputs share the same ANSI-stripped shape -- proving color only
 paints and never restructures the plain form. T-1238 regrouped `frob map`
 under `frob explore map` too (`explore_runner.run` dispatches straight into
 this same `map_runner.run`) -- the `Renderer` wiring described here is
-unaffected either way.
+unaffected either way. T-1479's `--json` daemon-proxy attempt
+(`_try_map_via_daemon`) runs and returns BEFORE `run` ever reaches this
+`Renderer` codepath -- `Renderer` is exercised only by the plain-text
+branch and by a daemon-miss `--json` fallthrough, unaffected either way.

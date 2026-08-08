@@ -1,7 +1,7 @@
 ---
 id: T-1479
 title: wire remaining daemon-proxy subcommands named by T-0321's integration map
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-03'
@@ -11,10 +11,78 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/serve/**
 - docs/modules/serve.md
+- src/frob/serve/_tools.py
+- src/frob/serve/_socketd.py
+- src/frob/app/map_runner.py
+- tests/test_app_daemon_proxy.py
+- tickets/T-1479/**
+- tickets/T-1807/**
+- docs/modules/app.md
+- docs/modules/render.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/serve/**
+  reason: 'T-1479: narrow the mega-glob to the actual files -- server-side RPC handler+dispatch
+    table plus the one CLI runner (frob map) chosen for this pass, matching the existing
+    frob_stats/frob_graph_query precedent'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/serve/_tools.py
+  reason: 'T-1479: narrow the mega-glob to the actual files -- server-side RPC handler+dispatch
+    table plus the one CLI runner (frob map) chosen for this pass, matching the existing
+    frob_stats/frob_graph_query precedent'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/serve/_socketd.py
+  reason: 'T-1479: narrow the mega-glob to the actual files -- server-side RPC handler+dispatch
+    table plus the one CLI runner (frob map) chosen for this pass, matching the existing
+    frob_stats/frob_graph_query precedent'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/app/map_runner.py
+  reason: 'T-1479: narrow the mega-glob to the actual files -- server-side RPC handler+dispatch
+    table plus the one CLI runner (frob map) chosen for this pass, matching the existing
+    frob_stats/frob_graph_query precedent'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: 'T-1479: narrow the mega-glob to the actual files -- server-side RPC handler+dispatch
+    table plus the one CLI runner (frob map) chosen for this pass, matching the existing
+    frob_stats/frob_graph_query precedent'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1479/**
+  reason: 'T-1479: own ticket dir + the WIRE001-false-positive follow-up ticket filed
+    during this ticket''s own work'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1807/**
+  reason: 'T-1479: own ticket dir + the WIRE001-false-positive follow-up ticket filed
+    during this ticket''s own work'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'T-1479: AFFECT001 requires the affects()-closure doc for map_runner.run
+    to be touched alongside the code change'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/render.md
+  reason: 'T-1479: AFFECT001 also requires this second affects()-closure doc for map_runner.run'
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_map_json_daemon_matches_in_process
 designated_repro_test: null
 threat: null
 component: null

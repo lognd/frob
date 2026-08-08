@@ -149,7 +149,9 @@ def socket_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
-# frob:tests tests/test_serve_socket.py::TestAcquireSingletonLock.test_first_caller_wins kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_socket.py::TestAcquireSingletonLock.test_first_caller_wins \
+# kind="unit"
 # frob:tests tests/test_serve_socket.py::TestAcquireSingletonLock.test_second_caller_loses_while_first_holds kind="unit"  # noqa: E501
 # frob:tests tests/test_serve_socket.py::TestAcquireSingletonLock.test_lock_released_on_close_allows_next_caller kind="unit"  # noqa: E501
 def acquire_singleton_lock(root: Path) -> Result[IO[Any], DaemonError]:
@@ -208,6 +210,7 @@ _TOOL_DISPATCH: dict[str, Callable[..., Result[Any, _tools.ServeError]]] = {
     "frob_daemon_status": _tools.frob_daemon_status,
     "frob_exports": _tools.frob_exports,
     "frob_stats": _tools.frob_stats,
+    "frob_map": _tools.frob_map,
 }
 
 
@@ -224,8 +227,11 @@ class _JsonRpcRequest(BaseModel):
 
 
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
-# frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_known_method_ok kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_unknown_method_is_error kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_known_method_ok \
+# kind="unit"
+# frob:tests \
+# tests/test_serve_socket.py::TestDispatchRequest.test_unknown_method_is_error \
+# kind="unit"
 def dispatch_request(root: Path, request: _JsonRpcRequest) -> dict[str, Any]:
     """Look `request.method` up in `_TOOL_DISPATCH` and call it with `root`
     plus `request.params` as keyword arguments, returning a JSON-RPC-shaped
@@ -620,11 +626,17 @@ def _idle_monitor(
 
 
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
-# frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_known_method_ok kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_unknown_method_is_error kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_socket.py::TestDispatchRequest.test_known_method_ok \
+# kind="unit"
+# frob:tests \
+# tests/test_serve_socket.py::TestDispatchRequest.test_unknown_method_is_error \
+# kind="unit"
 # frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_contended_lock_is_err kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_replaced kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_socket.py::TestRunSocketDaemon.test_contended_lock_is_err kind="unit"
+# frob:tests \
+# tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_replaced \
+# kind="unit"
 def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
     """The standalone daemon process entry point (T-1092): acquire the
     single-instance lock (`Err(DaemonError.AlreadyRunning)` if another
@@ -708,7 +720,9 @@ def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
 
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
 # frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_replaced kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_replaced \
+# kind="unit"
 # frob:waive ARCH103 reason="T-1092: a minimal synchronous JSON-RPC client -- connect, \
 # send one line, read one line back, unwrap into a Result -- is the entire, inherently \
 # sequential job of this function; splitting the connect/send/recv/unwrap steps into \

@@ -677,14 +677,16 @@ layer uses to talk to the T-1092 socket daemon above, transparently: a
 runner calls `query(root, method, params)` instead of computing a proxyable
 answer itself, and always gets back a `Result` -- `Ok(result)` on a daemon
 hit (render it exactly as the in-process path would have) or `Err(reason)`
-meaning "fall back to in-process, nothing user-visible happened". Five CLI
+meaning "fall back to in-process, nothing user-visible happened". Nine CLI
 commands are wired through it today: `frob perf hot --json`
 (`frob_perf_hot`), `frob graph query` (`frob_graph_query`), `frob graph
-affects` (`frob_affects`), `frob stats` (`frob_stats`), and `frob test`'s
-touched-set path (`frob_run_touched_tests`) (see "Proxied commands"
-below); every other query-shaped subcommand this ticket's epic (T-0321)
-names is a disclosed residual, not yet wired -- see "Scope cut" below.
-<!-- frob:until T-1479 -->
+affects` (`frob_affects`), `frob stats` (`frob_stats`), `frob test`'s
+touched-set path (`frob_run_touched_tests`), `frob check --only gates
+--delta --json` (`frob_check_delta`), `frob ticket doable --json`
+(`frob_doable_tickets`), `frob exports <path> --json` (`frob_exports`),
+and `frob map --json` (`frob_map`, T-1479) (see "Proxied commands"
+below); `outline`/`xref` remain the disclosed residual from T-0321's
+integration map, genuinely unwired -- see "Scope cut" below.
 
 
 ### Decision tree
@@ -898,11 +900,16 @@ that wave (a sibling ticket's own scope), and T-1106's own scope was deliberatel
 narrowed to files with no such collision (`_daemon_proxy.py`,
 `graph_runner.py`, their tests) rather than risk a merge collision over
 a single additional wired command.
-- `outline`/`map`/`xref` are scheduled for REMOVAL by T-0802's 2026-10-01
-  navigation-command sunset -- no RPC was built for these three; building
-  one for a command already scheduled to disappear would be waste.
-  `exports`/`stats` got real RPCs (T-1127, just below) since they are not
-  part of that sunset.
+- `outline`/`map`/`xref` were, for a time, scheduled for REMOVAL by
+  T-0802's 2026-10-01 navigation-command sunset; T-0802 was DROPPED
+  2026-07-29 (superseded -- the user chose regrouping over sunset, T-1238:
+  all three move under `frob explore` and are un-deprecated, staying as
+  permanent top-level aliases) before this note was ever corrected here,
+  so it stayed stale citing a decision no longer in force. `map` got a
+  real RPC (T-1479, `frob_map`, below) once the sunset concern was
+  confirmed void. `outline`/`xref` remain genuinely unwired -- a disclosed
+  subset choice this ticket made (see its own Done report for why `map`
+  specifically), not evidence either is still scheduled to disappear.
 
 ### `frob exports <path> --json` / `frob stats --json` (T-1127)
 
@@ -943,6 +950,26 @@ through to the in-process path on any `Err`. Proven by real
 subprocess-vs-subprocess diffs: `tests/test_app_daemon_proxy.py::
 TestDifferentialParity::test_stats_json_daemon_matches_in_process` /
 `::test_exports_json_daemon_matches_in_process`.
+
+### `frob map --json` (T-1479)
+
+`frob_map(root, *, depth=None)` returns `MapResult.model_dump(mode=
+"json")` verbatim -- field-for-field identical to `frob map --json`'s own
+`result.as_json()`, same "dump the identical pydantic model" shape as
+`frob_stats` above, `map_project` itself never returning a `Result` (an
+`OSError` from a filesystem race between the walk and a per-file read is
+the one documented failure mode, caught server-side and reported as
+`ServeError.MapFailed`).
+
+Narrower than `frob_exports`'s subdirectory-echo convention: `frob_map`
+only ever answers for `root` itself (the daemon's own served root), not
+an arbitrary client-supplied subdirectory -- `_try_map_via_daemon`
+(`frob.app.map_runner`) proxies only when `cfg.map_path` is unset or
+exactly `.`, falling through to the in-process path for any other target
+(`frob map <subdir>`) rather than replicating `frob_exports`'s dedicated
+cwd-relative resolution convention for this first pass. Proven by
+`tests/test_app_daemon_proxy.py::TestDifferentialParity::
+test_map_json_daemon_matches_in_process`.
 
 ## CLI
 
