@@ -16,11 +16,60 @@ runs_last: false
 scope:
 - design/frob.strata
 - src/frob/strata/**
-- src/frob/gates/**
-- docs/**
-- tests/**
+- tests/unit/strata/test_selfconform.py
+- docs/strata/surface.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: tests/**, docs/** and src/frob/gates/** are mega-globs and scope IS the
+    lease; as written this ticket would lock the fleet out of the entire docs and
+    tests trees. Narrowed to the interface-surface doc and the selfconform test it
+    actually touches.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: docs/**
+  reason: tests/**, docs/** and src/frob/gates/** are mega-globs and scope IS the
+    lease; as written this ticket would lock the fleet out of the entire docs and
+    tests trees. Narrowed to the interface-surface doc and the selfconform test it
+    actually touches.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/gates/**
+  reason: tests/**, docs/** and src/frob/gates/** are mega-globs and scope IS the
+    lease; as written this ticket would lock the fleet out of the entire docs and
+    tests trees. Narrowed to the interface-surface doc and the selfconform test it
+    actually touches.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: tests/**, docs/** and src/frob/gates/** are mega-globs and scope IS the
+    lease; as written this ticket would lock the fleet out of the entire docs and
+    tests trees. Narrowed to the interface-surface doc and the selfconform test it
+    actually touches.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/strata/surface.md
+  reason: tests/**, docs/** and src/frob/gates/** are mega-globs and scope IS the
+    lease; as written this ticket would lock the fleet out of the entire docs and
+    tests trees. Narrowed to the interface-surface doc and the selfconform test it
+    actually touches.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: tests/**, docs/** and src/frob/gates/** are mega-globs and scope IS the
+    lease; as written this ticket would lock the fleet out of the entire docs and
+    tests trees. Narrowed to the interface-surface doc and the selfconform test it
+    actually touches.
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
