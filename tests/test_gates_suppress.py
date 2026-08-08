@@ -259,3 +259,27 @@ class TestSuppress001Gate:
         monkeypatch.setattr("frob.gates._suppress.suppression_dialects", _no_oracles)
         violations = suppress001_gate(tmp_path, _SNAPSHOT)
         assert violations == ()
+
+
+# frob:ticket T-1342
+class TestSuppress001RepoWideLock:
+    """T-1342: main is currently at zero real SUPPRESS001 findings (the
+    23-suppression-line population this ticket's own text names was
+    driven down to 0 findings by the evidence-driven correlation itself
+    -- only lines where the OTHER dialect's oracle genuinely reports
+    fire at all; the remaining unpaired lines are legitimately fine).
+    This is the lock test the ticket asks for: run the REAL gate against
+    THIS repo's own real tree, not a fixture, so a future suppression
+    added without its dialect pair reds main immediately instead of
+    silently joining the population."""
+
+    def test_repo_is_currently_clean(self) -> None:
+        # frob:tests tests/test_gates_suppress.py::TestSuppress001RepoWideLock.test_repo_is_currently_clean  # noqa: E501
+        root = Path(__file__).resolve().parent.parent
+        violations = suppress001_gate(root, _SNAPSHOT)
+        assert violations == (), (
+            "SUPPRESS001 found unpaired suppression(s) on main -- add the "
+            "missing dialect pair or file a ticket, do not silently widen "
+            "this population: "
+            f"{[(v.file, v.line, v.message) for v in violations]}"
+        )

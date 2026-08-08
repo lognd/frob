@@ -1,7 +1,7 @@
 ---
 id: T-1342
 title: Backfill the 23 unpaired suppression lines and lock main at zero SUPPRESS001
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-31'
@@ -11,8 +11,9 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/_waive.py
-- tests/test_gates_waive.py
+- src/frob/gates/_suppress.py
+- tests/test_gates_suppress.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -44,11 +45,49 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: remove
+  glob: src/frob/gates/_waive.py
+  reason: T-1342's scope predates the T-1340 refactor that split SUPPRESS001/_suppress.py
+    out of _waive.py; the lock test and doc anchors this ticket needs live in _suppress.py/test_gates_suppress.py/gates.md,
+    not _waive.py
+  actor: logan
+  at: '2026-08-07'
+- op: remove
+  glob: tests/test_gates_waive.py
+  reason: T-1342's scope predates the T-1340 refactor that split SUPPRESS001/_suppress.py
+    out of _waive.py; the lock test and doc anchors this ticket needs live in _suppress.py/test_gates_suppress.py/gates.md,
+    not _waive.py
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/gates/_suppress.py
+  reason: T-1342's scope predates the T-1340 refactor that split SUPPRESS001/_suppress.py
+    out of _waive.py; the lock test and doc anchors this ticket needs live in _suppress.py/test_gates_suppress.py/gates.md,
+    not _waive.py
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates_suppress.py
+  reason: T-1342's scope predates the T-1340 refactor that split SUPPRESS001/_suppress.py
+    out of _waive.py; the lock test and doc anchors this ticket needs live in _suppress.py/test_gates_suppress.py/gates.md,
+    not _waive.py
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-1342's scope predates the T-1340 refactor that split SUPPRESS001/_suppress.py
+    out of _waive.py; the lock test and doc anchors this ticket needs live in _suppress.py/test_gates_suppress.py/gates.md,
+    not _waive.py
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_gates_suppress.py::TestSuppress001RepoWideLock::test_repo_is_currently_clean
 designated_repro_test: null
 acceptance:
 - text: given frob check on main, when the suppress gate runs, then it reports 0 SUPPRESS001
     findings
-  evidence: []
+  evidence:
+  - tests/test_gates_suppress.py::TestSuppress001RepoWideLock::test_repo_is_currently_clean
 threat: null
 component: gates
 ---
