@@ -22,6 +22,8 @@ scope_changes:
     anchor
   actor: logan
   at: '2026-08-08'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease::test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease
 designated_repro_test: null
 threat: null
 component: null

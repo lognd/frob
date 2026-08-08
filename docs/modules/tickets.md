@@ -858,6 +858,26 @@ file (the common case: a ticket that never entered `IN_PROGRESS`, or
 whose lease was already released before the rename ran) is not an error,
 mirroring `release_lease`'s same tolerance.
 
+<!-- frob:describes src/frob/tickets/_scope.py::_scope_add_live_lease_conflict -->
+**`scope --add` now checks the LIVE lease too, not just the local queue
+(T-1868).** `_scope_add_conflicts`'s pre-existing check
+(`_scope_add_queue_conflict`) only ever consulted `queue` -- this
+worktree's own local ticket ledger, which reflects a sibling worktree's
+`start` only after THIS worktree merges that commit in. Two tickets in
+different, unconverged worktrees could hold the identical path
+simultaneously with neither's `scope --add` ever refusing (confirmed
+directly: T-1863/T-1822 both held `design/frob.strata` 36 seconds apart,
+neither refused). `_scope_add_live_lease_conflict` closes this the same
+way `frob ticket start`'s own foreign-lease refusal already does: it
+reads `read_all_leases` (this section's own side channel) instead of the
+local queue, so a sibling's lease is visible the instant it is recorded,
+with no merge required. TTL-expired leases are excluded, and T-1356's
+same-worktree exemption plus T-0561's new-file carve-out both apply
+identically to this check -- a live-lease conflict is never STRICTER
+than the existing queue-based one for the same holder, only able to
+catch a real conflict the queue-based check's merge-dependent staleness
+missed.
+
 ## Start-transition auto-commit (T-1054)
 
 `frob.tickets.transition` writes `tickets.md` straight to `root`'s working
@@ -4730,6 +4750,23 @@ it". A MIXED dirty set (a sweep-owned path plus something else) is
 deliberately NOT attributed to the sweep -- misattributing a genuinely
 unknown second cause would send the next agent looking in the wrong
 place just as surely as no attribution at all.
+
+<!-- frob:describes src/frob/tickets/_land_git_ops.py::_staged_rapid_debt_ticket -->
+**Symbolic attribution names the real ticket, not just "the sweep"
+(T-1821).** `_staged_rapid_debt_ticket` reads the STAGED
+`rapid-debt.jsonl` blob directly (`git show :rapid-debt.jsonl`), parses
+its last line, and returns that line's own `"ticket"` field --
+`record_rapid_debt` always writes one, so this is read straight off the
+content the sweep itself staged, never inferred or guessed. When every
+dirty path is sweep-owned and this lookup succeeds, `describe_root_dirt`
+names the actual ticket: "the sweep child working T-XXXX" instead of the
+generic "a sweep child that filed something and did not commit it"
+T-1755 introduced. If the blob is unreadable, empty, or its last line
+does not parse as JSON with a string `"ticket"` value, the function
+returns `None` and the refusal falls back to "unattributed (cannot be
+determined from staged content)" -- a deliberate refusal to report a
+plausible-but-wrong ticket id (the T-1795/T-1799 incident this guards
+against was exactly a confident wrong guess).
 
 ## Git merge driver
 

@@ -1,7 +1,7 @@
 ---
 id: T-1832
 title: Document T-1821's symbolic DirtyMain attribution in docs/modules/tickets.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-08'
@@ -12,8 +12,19 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets.md
+- src/frob/tickets/_land_git_ops.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: plan requires removing the AFFECT001 waiver this ticket's doc paragraph
+    resolves
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined
 designated_repro_test: null
 threat: null
 component: null

@@ -1687,9 +1687,6 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
 # frob:ticket T-1698
 # frob:ticket T-1755
 # frob:ticket T-1821
-# frob:waive AFFECT001 reason="doc anchor update belongs in docs/modules/tickets.md, \
-# out of T-1821's declared scope and held by another concurrent agent per dispatch; \
-# follow-up filed to land the doc paragraph once that hold clears" follow_up="T-1832"
 def describe_root_dirt(root: Path) -> str:
     """What is making `root` dirty, rendered for a `DirtyMain` refusal.
 
