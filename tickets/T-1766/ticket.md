@@ -2,7 +2,7 @@
 id: T-1766
 title: 'Cull the CLI surface against the mission test: 38 verbs, 9 never invoked,
   39 ticket subverbs'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -17,6 +17,8 @@ scope:
 - docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
