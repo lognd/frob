@@ -3680,6 +3680,11 @@ its read/write primitives, verified in isolation
 <!-- frob:describes src/frob/verify/_worker.py::run_coalesced_verification -->
 <!-- frob:describes src/frob/verify/_worker.py::CoalescingWorker -->
 <!-- frob:describes src/frob/serve/_daemon.py::_poll_verify_worker -->
+<!-- frob:describes src/frob/verify/_worker.py::_write_in_flight_marker -->
+<!-- frob:describes src/frob/verify/_worker.py::_clear_in_flight_marker -->
+<!-- frob:describes src/frob/verify/_worker.py::_reconcile_stale_in_flight_marker -->
+<!-- frob:describes src/frob/verify/_worker.py::_in_flight_marker_path -->
+<!-- frob:describes src/frob/verify/_worker.py::_IN_FLIGHT_MARKER_REL -->
 
 The trailing-edge-debounce half of the T-1686 epic, and where the
 wall-clock saving actually comes from: `frob.verify._worker.
@@ -3762,6 +3767,49 @@ cache keyed by `str(root.resolve())`. A watch tick observing a real
 on-disk change now resets the debounce window immediately, an earlier
 trigger for the identical decision `tick()` already makes -- not a third,
 independent wake condition with its own state.
+
+**Crash safety: a dead worker can never advance the watermark on a batch
+it did not finish verifying (T-1694).** The watermark is a claim that
+work was done; every way it can advance without that work having actually
+completed is a correctness hole exactly as serious as a ticket reading
+`done` with its code absent. `run_coalesced_verification` closes this
+with a single in-flight marker (`.frob/verify-in-flight.json`), reusing
+the T-0907/T-1523 write-marker-before/clear-marker-after pattern rather
+than inventing a second one:
+
+- `_reconcile_stale_in_flight_marker` runs FIRST, before this call reads
+  the queue or writes its own marker, so a marker left by a PRIOR dead
+  run is always reconciled before any new work starts.
+- `_write_in_flight_marker` records the tip commit BEFORE `verify_fn` is
+  even called -- the moment this run starts making a claim about that
+  commit. Written write-temp-then-`os.replace` (atomic rename) so a crash
+  mid-write can never leave a torn, half-written marker behind for the
+  next reconciliation to misread.
+- `_clear_in_flight_marker` runs unconditionally (a `finally` block) once
+  this call reaches ANY stable outcome -- green, red, baseline-
+  established, unmeasurable, or a raised exception -- covering every
+  named kill point in one guard: death between the queue read and
+  verification start (no marker was ever written -- nothing durable was
+  claimed, so the next run just starts clean), death between a green
+  result and the watermark write, and death between the watermark write
+  and `compact_queue` (both leave the marker present at the next
+  startup).
+- Reconciliation never assumes green from the marker's mere presence. If
+  the marker's commit already equals the CURRENT watermark's commit, the
+  prior run's `advance_watermark`+`compact_queue` sequence evidently
+  completed and only the marker's own clear was lost -- logged as
+  recovered, nothing re-verified. In every other case (no watermark, a
+  different commit, or an unreadable marker file) the batch is logged
+  UNVERIFIED; nothing needs to be explicitly re-queued, since
+  `compact_queue` only ever drops entries the watermark actually reached
+  -- if that never happened, the queue still holds them, and the next
+  `run_coalesced_verification` call verifies them again exactly as if no
+  prior attempt had ever started.
+- Two workers must never verify concurrently for one root: this reuses
+  the daemon's existing `frob.serve._socketd.acquire_singleton_lock` (at
+  most one daemon process per root) rather than adding a second exclusion
+  mechanism -- `CoalescingWorker.tick()` only ever runs from that single
+  daemon's own poll loop.
 
 **Trailing-edge debounce, concretely.** Each `notify()` call pushes the
 deadline to `now + debounce_window_s` (default 90s) -- a steady trickle

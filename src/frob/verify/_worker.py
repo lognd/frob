@@ -52,6 +52,8 @@ queue", which `_rapid_sweep` has no reason to know about.
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import threading
 import time
 import uuid
@@ -67,10 +69,154 @@ from frob.verify._watermark import (
     VerifyQueueEntry,
     advance_watermark,
     compact_queue,
+    load_watermark,
     queue_status,
 )
 
 _log = get_logger(__name__)
+
+# T-1694 incident this closes: a dead worker (killed between the queue
+# read and the watermark write, or anywhere in between) must never leave
+# main looking verified past a batch that was never actually confirmed
+# green. This marker names the batch (its tip commit) and is written
+# BEFORE `verify_fn` is even called -- the moment this run starts making a
+# claim about `tip.commit_sha` -- and cleared unconditionally once this
+# run reaches ANY stable outcome (green, red, baseline-established,
+# unmeasurable, or a raised exception), via a `finally` block mirroring
+# `_clear_land_repair_marker`'s/`_clear_post_land_verify_marker`'s own
+# unconditional-cleanup shape (T-0907/T-1523 precedent). A marker still
+# present at the START of the next `run_coalesced_verification` call means
+# a prior run died somewhere inside that window -- `_reconcile_stale_
+# in_flight_marker` treats that batch as UNVERIFIED unless the watermark
+# it finds on disk already independently confirms the same commit (the
+# rare case where the crash landed after `advance_watermark`/
+# `compact_queue` both actually completed and only the marker clear
+# itself was lost) -- it never assumes green from the marker's mere
+# presence.
+# frob:ticket T-1694
+_IN_FLIGHT_MARKER_REL = Path(".frob") / "verify-in-flight.json"
+
+
+# frob:ticket T-1694
+def _in_flight_marker_path(root: Path) -> Path:
+    """The single (root is one `CoalescingWorker` per repo, guarded by the
+    daemon's own `acquire_singleton_lock` -- T-1694's own scope note: reuse
+    that exclusion, never add a second one) in-flight verification marker
+    path for `root`."""
+    return root / _IN_FLIGHT_MARKER_REL
+
+
+# frob:ticket T-1694
+def _write_in_flight_marker(root: Path, commit_sha: str, run_id: str) -> None:
+    """Record that a coalesced verification pass against `tip.commit_sha`
+    is now in flight (T-1694), BEFORE `verify_fn` is called. Written
+    write-temp-then-`os.replace` so a crash mid-write can never leave a
+    torn, half-written marker for `_reconcile_stale_in_flight_marker` to
+    misread -- `os.replace` is atomic on every platform this repo targets
+    (POSIX rename semantics). Best-effort like `_write_land_repair_marker`/
+    `_write_post_land_verify_marker`: a write failure is logged but never
+    stops verification, since a MISSING marker just means this run's own
+    crash window loses its recovery aid, not that anything is mutated
+    incorrectly -- the watermark is still never advanced without a real
+    green result either way."""
+    path = _in_flight_marker_path(root)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = path.with_suffix(f".{run_id}.tmp")
+        tmp_path.write_text(
+            json.dumps({"commit_sha": commit_sha, "run_id": run_id}) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, path)
+    except OSError as exc:
+        _log.warning(
+            "verify worker: could not write in-flight marker for %s (%s) -- "
+            "proceeding without the T-1694 crash-recovery aid for this run",
+            commit_sha[:12],
+            exc,
+        )
+
+
+# frob:ticket T-1694
+def _clear_in_flight_marker(root: Path) -> None:
+    """Remove the in-flight verification marker, if any (T-1694) -- called
+    unconditionally (a `finally` block) once `run_coalesced_verification`
+    has reached ANY stable outcome for this run, mirroring `_clear_land_
+    repair_marker`'s/`_clear_post_land_verify_marker`'s own shape."""
+    path = _in_flight_marker_path(root)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning("verify worker: could not clear in-flight marker: %s", exc)
+
+
+# frob:ticket T-1694
+# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_no_marker_is_a_silent_noop  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_stale_marker_with_no_matching_watermark_is_reported_unverified  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_stale_marker_matching_current_watermark_is_reported_recovered  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker.test_unreadable_marker_is_reported_unverified_and_cleared  # noqa: E501
+def _reconcile_stale_in_flight_marker(root: Path) -> None:
+    """Reconcile a leftover T-1694 in-flight marker under `root`, if any --
+    called at the very START of `run_coalesced_verification`, before this
+    run reads the queue or writes its own marker. Read-only with respect
+    to the queue and watermark (never mutates either): the marker's mere
+    PRESENCE never implies a green result. If the marker's `commit_sha`
+    already equals the CURRENT watermark's `commit_sha`, the prior run's
+    `advance_watermark`+`compact_queue` sequence evidently completed and
+    only the marker's own clear was lost -- logged as recovered. In every
+    other case (no watermark, a different commit, or an unreadable/corrupt
+    marker file) the prior run's batch is UNVERIFIED: nothing here needs
+    to explicitly "re-queue" it, since `compact_queue` only ever drops
+    entries at-or-before a commit the watermark actually reached -- if
+    that never happened, the queue still holds them, and the next
+    `run_coalesced_verification` call verifies them again exactly as if
+    no prior attempt had ever started. Either way the marker is cleared at
+    the end so a stale reconciliation is not repeated forever."""
+    path = _in_flight_marker_path(root)
+    if not path.exists():
+        return
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        marker_commit = str(raw["commit_sha"])
+    except (OSError, ValueError, KeyError) as exc:
+        _log.error(
+            "verify worker: found an unreadable T-1694 in-flight marker at "
+            "%s (%s) -- a prior verification run died and left an "
+            "unparsable marker; treating its batch as UNVERIFIED (it will "
+            "be re-verified on the next wake if still queued)",
+            path,
+            exc,
+        )
+        _clear_in_flight_marker(root)
+        return
+
+    watermark = load_watermark(root)
+    current_commit = (
+        watermark.danger_ok.commit_sha
+        if watermark.is_ok and watermark.danger_ok is not None
+        else None
+    )
+    if current_commit == marker_commit:
+        _log.warning(
+            "verify worker: recovered a T-1694 in-flight marker for %s -- "
+            "the watermark already names this exact commit, so the prior "
+            "run's advance completed and only its marker clear was lost; "
+            "no re-verification needed",
+            marker_commit[:12],
+        )
+    else:
+        _log.error(
+            "verify worker: recovered a T-1694 in-flight marker for %s "
+            "with no matching current watermark (watermark=%s) -- a prior "
+            "verification run died mid-flight; this batch is UNVERIFIED, "
+            "never assumed green, and will be re-verified on the next "
+            "wake if it is still queued",
+            marker_commit[:12],
+            current_commit[:12] if current_commit else None,
+        )
+    _clear_in_flight_marker(root)
+
 
 # frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
 #: Trailing-edge debounce window (T-1686: "a burst of five lands in ninety
@@ -162,6 +308,7 @@ def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:
 
 
 # frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:ticket T-1694
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_empty_queue_is_a_noop  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_five_queued_entries_call_verify_exactly_once  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_unmeasurable_never_advances_watermark  # noqa: E501
@@ -182,7 +329,17 @@ def run_coalesced_verification(
     for why that is the one invariant this function may never break.
     Delegates the post-verify baseline-compare/file/advance decision to
     `_resolve_verification_outcome` (ARCH001 split -- this function's own
-    job stops at "read the queue and call verify exactly once")."""
+    job stops at "read the queue and call verify exactly once").
+
+    T-1694 crash safety: reconciles any leftover in-flight marker from a
+    prior, dead run FIRST, then writes a fresh marker naming this run's own
+    tip commit BEFORE `verify_fn` runs, and clears it unconditionally
+    (`finally`) once this call reaches any stable outcome -- see this
+    module's own docstring above `_write_in_flight_marker` for the full
+    contract. A dead worker can therefore never leave the watermark
+    advanced past a batch whose verification did not actually complete."""
+    _reconcile_stale_in_flight_marker(root)
+
     loaded = queue_status(root)
     if loaded.is_err:
         _log.error(
@@ -203,24 +360,32 @@ def run_coalesced_verification(
         tip.commit_sha[:12],
         tip.ticket_id,
     )
-    fresh = (
-        verify_fn(root, tip.commit_sha)
-        if verify_fn is not None
-        else _default_verify_fn(root, tip.commit_sha)
-    )
-    if fresh is None:
-        # T-1703/T-1688: unmeasurable is never zero, never green, and this
-        # early return is the ONLY thing standing between this branch and
-        # the rest of the function -- advance_watermark is not even
-        # reachable from here.
-        _log.error(
-            "verify worker: unmeasurable verification at %s -- watermark and "
-            "queue left untouched, will retry on the next wake",
-            tip.commit_sha[:12],
+    run_id = uuid.uuid4().hex
+    _write_in_flight_marker(root, tip.commit_sha, run_id)
+    try:
+        fresh = (
+            verify_fn(root, tip.commit_sha)
+            if verify_fn is not None
+            else _default_verify_fn(root, tip.commit_sha)
         )
-        return Err(WorkerError.Unmeasurable)
+        if fresh is None:
+            # T-1703/T-1688: unmeasurable is never zero, never green, and
+            # this early return is the ONLY thing standing between this
+            # branch and the rest of the function -- advance_watermark is
+            # not even reachable from here.
+            _log.error(
+                "verify worker: unmeasurable verification at %s -- "
+                "watermark and queue left untouched, will retry on the "
+                "next wake",
+                tip.commit_sha[:12],
+            )
+            return Err(WorkerError.Unmeasurable)
 
-    return _resolve_verification_outcome(root, tip, fresh)
+        return _resolve_verification_outcome(root, tip, fresh)
+    finally:
+        # T-1694: unconditional -- a raised exception, an early return, or
+        # a normal green/red/baseline-established outcome all reach here.
+        _clear_in_flight_marker(root)
 
 
 def _resolve_verification_outcome(

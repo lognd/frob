@@ -285,6 +285,7 @@ node security : trusted {
 // frob:ticket T-1687
 // frob:ticket T-1688
 // frob:ticket T-1693
+// frob:ticket T-1694
 // frob:doc \
 // docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
 node verify : trusted {
@@ -297,8 +298,8 @@ node verify : trusted {
     ];
     clearance Internal;
     code "src/frob/verify/**";
-    may "fs.write" via "src/frob/verify/_backpressure.py", "src/frob/verify/_watermark.py", "src/frob/verify/_quarantine.py";
-    may "fs.read" via "src/frob/verify/_watermark.py", "src/frob/verify/_quarantine.py";
+    may "fs.write" via "src/frob/verify/_backpressure.py", "src/frob/verify/_watermark.py", "src/frob/verify/_quarantine.py", "src/frob/verify/_worker.py";
+    may "fs.read" via "src/frob/verify/_watermark.py", "src/frob/verify/_quarantine.py", "src/frob/verify/_worker.py";
 }
 
 // frob:ticket T-0956

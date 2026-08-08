@@ -1,7 +1,7 @@
 ---
 id: T-1694
 title: 'Crash safety: a dead verify worker must never advance the watermark'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-06'
@@ -16,8 +16,50 @@ scope:
 - src/frob/verify/_worker.py
 - src/frob/tickets/_land.py
 - docs/modules/tickets.md
+- tests/unit/verify/test_worker.py
+- tickets/T-1694/ticket.md
+- tickets/T-1694/done-report.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: T-1694's own acceptance requires kill-point tests per named crash window;
+    the declared scope omitted the test file the ticket itself demands
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1694/ticket.md
+  reason: SCOPE001 requires the ticket's own directory files be in its declared scope,
+    matching the established T-1768/T-1220 precedent
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1694/done-report.md
+  reason: SCOPE001 requires the ticket's own directory files be in its declared scope,
+    matching the established T-1768/T-1220 precedent
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires the verify node's declared fs.read/fs.write capability
+    list in design/frob.strata to include src/frob/verify/_worker.py now that it performs
+    its own marker file I/O
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker::test_no_marker_is_a_silent_noop
+- tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker::test_stale_marker_with_no_matching_watermark_is_reported_unverified
+- tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker::test_stale_marker_matching_current_watermark_is_reported_recovered
+- tests/unit/verify/test_worker.py::TestReconcileStaleInFlightMarker::test_unreadable_marker_is_reported_unverified_and_cleared
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_marker_absent_after_a_normal_green_run
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_marker_absent_after_an_unmeasurable_run
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_marker_cleared_even_when_verify_fn_raises
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_death_between_queue_read_and_verification_start_leaves_no_trace
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_death_between_green_result_and_watermark_write_is_never_assumed_green
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_death_between_watermark_write_and_compaction_is_recovered_not_reverified
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_torn_marker_write_is_never_partially_observable
 designated_repro_test: null
 threat: null
 component: verification
