@@ -1,7 +1,7 @@
 ---
 id: T-1788
 title: 'post-land sweep regression from T-1222: 2 new error(s) (PRE001, SCOPE001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -26,3 +26,6 @@ New (rule, file) pairs filed here:
 - SCOPE001  rapid-debt.jsonl
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-07: Spurious: an artifact of how the deferred sweep invokes frob check, not a defect in the ticket it names. The sweep runs UNSCOPED, so PRE001/SCOPE001 fire with 'diff touches N file(s) but no active ticket is derivable' -- a condition an unscoped run guarantees by construction. Reproduced directly: a bare 'frob check' on clean main emits exactly these two and nothing else. Systemic, not per-ticket; the sweep must pass --ticket or exclude the two rules that require one.
