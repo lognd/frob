@@ -603,21 +603,89 @@ def _skip_close_for_legitimate_fail(
     return Ok(final_id)
 
 
+# frob:ticket T-1874
+def _skip_close_for_anchor_no_close_requested(
+    current: Ticket, final_id: str
+) -> Result[str, LandError] | None:
+    """`Ok(final_id)` if `current` is an `anchor=True` ticket sitting in a
+    non-terminal, NOT-actively-mid-work state (`queued`/`blocked`) --
+    the third skip-close shape, alongside `_skip_close_for_legitimate_
+    drop`/`_skip_close_for_legitimate_fail` -- that `_close_finalized_
+    ticket` must publish AS-IS rather than force through the DONE
+    transition, else `None`.
+
+    T-1856 added the `anchor` marker plus a land-time refusal
+    (`_refuse_anchor_terminal_land`) that stops an anchor ticket from
+    landing to a TERMINAL state, but left no path for landing a
+    non-terminal anchor ticket's OWN record at all: `_close_finalized_
+    ticket` always attempted a DONE transition, and an anchor ticket
+    requeued (or blocked) after `set_anchor(..., anchor=True, ...)` has
+    no legal `queued -> done` / `blocked -> done` edge for a land to force
+    -- the exact `InvalidTransition: queued -> done` observed landing
+    T-1778 (this ticket's own body). An anchor's whole purpose is to stay
+    open forever as a valid `follow_up` waiver target, so publishing its
+    ledger entry exactly as-is (same state, same body) is correct, not a
+    workaround.
+
+    Gated on `current.state is not TicketState.IN_PROGRESS`, mirroring
+    the "not actively mid-work" signal this ticket's own body specifies:
+    an anchor ticket still IN_PROGRESS has not yet had its lease released
+    by a deliberate `requeue`/`block` step, so it falls through to the
+    ordinary close-precondition path below rather than being silently
+    published mid-work.
+
+    Lease note (the failure mode that cost this fleet five hours on
+    T-1820, held from a dead worktree): this skip path does NOT itself
+    touch the cross-worktree lease side-channel (`frob.tickets._leases`),
+    and it must not need to -- `transition()`'s own `_sync_cross_
+    worktree_lease` (`frob.tickets._evidence`) already releases the lease
+    the moment a ticket leaves IN_PROGRESS, which happens at the earlier
+    `frob ticket requeue`/`frob ticket block` step this skip path assumes
+    already ran (T-1778's own body: "plus `frob ticket requeue` (to
+    release the lease, no more active work)"). Because this function is
+    only reachable once `current.state` is already non-IN_PROGRESS, the
+    lease for `final_id` is, by construction, already released by the
+    time land ever reaches here -- `frob.tickets._land.land` does not
+    call `transition()` again on this path, so there is no second
+    lease-release opportunity to miss."""
+    if not current.anchor:
+        return None
+    if current.state is TicketState.IN_PROGRESS:
+        return None
+    if current.state in (TicketState.DONE, TicketState.DROPPED):
+        return None
+    _log.warning(
+        "land: %s is anchor=True (%s) and %s -- publishing the ledger "
+        "record as-is, no done transition attempted; its lease (if any) "
+        "was already released by the earlier requeue/block step",
+        final_id,
+        current.anchor_reason,
+        current.state,
+    )
+    return Ok(final_id)
+
+
 # frob:ticket T-1818
+# frob:ticket T-1874
 def _skip_close_for_terminal_shortcut(
     current: Ticket, final_id: str
 ) -> Result[str, LandError] | None:
-    """`Ok(final_id)` if `current` is DROPPED-with-reason or QUEUED-with-
-    a-failure-log -- the two states `_close_finalized_ticket` must
-    publish AS-IS rather than force through the DONE transition -- else
-    `None`. T-1818: folds `_skip_close_for_legitimate_drop`/`_skip_close_
-    for_legitimate_fail` behind one call so `_close_finalized_ticket`
-    itself stays under ARCH001's 60-line threshold; each helper keeps its
-    own full rationale in its own docstring, this is pure composition."""
+    """`Ok(final_id)` if `current` is DROPPED-with-reason, QUEUED-with-
+    a-failure-log, or a non-terminal, not-mid-work anchor ticket -- the
+    three states `_close_finalized_ticket` must publish AS-IS rather than
+    force through the DONE transition -- else `None`. T-1818: folds
+    `_skip_close_for_legitimate_drop`/`_skip_close_for_legitimate_fail`
+    behind one call so `_close_finalized_ticket` itself stays under
+    ARCH001's 60-line threshold; T-1874 adds `_skip_close_for_anchor_no_
+    close_requested` to the same chain. Each helper keeps its own full
+    rationale in its own docstring, this is pure composition."""
     skip = _skip_close_for_legitimate_drop(current, final_id)
     if skip is not None:
         return skip
-    return _skip_close_for_legitimate_fail(current, final_id)
+    skip = _skip_close_for_legitimate_fail(current, final_id)
+    if skip is not None:
+        return skip
+    return _skip_close_for_anchor_no_close_requested(current, final_id)
 
 
 def _close_finalized_ticket(

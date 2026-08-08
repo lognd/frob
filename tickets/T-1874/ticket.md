@@ -1,7 +1,7 @@
 ---
 id: T-1874
 title: land() has no skip-close path for a non-terminal anchor ticket's own record
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -12,8 +12,24 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land_finalize.py
+- tests/unit/test_land_finalize_anchor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_finalize_anchor.py
+  reason: new unit test file for the anchor skip-close path this ticket adds
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_non_anchor_ticket_is_unaffected
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_in_progress_anchor_falls_through
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_done_anchor_falls_through
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_dropped_anchor_falls_through
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_queued_anchor_skips_close
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_blocked_anchor_skips_close
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_queued_anchor_reaches_the_composed_entry_point
+- tests/unit/test_land_finalize_anchor.py::TestLandAnchorTicketReleasesLease::test_requeued_anchor_ticket_lands_and_releases_its_lease
 designated_repro_test: null
 threat: null
 component: null
