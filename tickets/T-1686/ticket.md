@@ -15,7 +15,6 @@ runs_last: false
 scope:
 - src/frob/tickets/_land_queue.py
 - src/frob/serve/_daemon.py
-- src/frob/app/ticket_runner/_rapid_sweep.py
 - docs/modules/tickets.md
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
@@ -59,6 +58,15 @@ scope_changes:
 - op: remove
   glob: tickets/T-1835/ticket.md
   reason: draft dropped as an exact duplicate of the pre-existing T-1696 descendant
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'T-1686 declares this file but has written nothing to it: its verify-cluster
+    worktree is clean with zero divergence from main on this path. The enqueue-side
+    work the epic needed landed under T-1736 in _land.py instead. Releasing the stale
+    declaration so T-1841 can land, rather than overriding the CrossTicketLeakage
+    guard. The guard is correct; the declaration was not.'
   actor: logan
   at: '2026-08-08'
 evidence:
