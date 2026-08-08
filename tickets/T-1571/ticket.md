@@ -1,7 +1,7 @@
 ---
 id: T-1571
 title: 'cli regrouping: help-surface rework -- group verbs in frob --help output'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -15,8 +15,38 @@ parent: T-1238
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/__main__.py
+- docs/design/cli-regrouping.md
+- tests/unit/test_main_entry.py
+- tickets/T-1571/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__main__.py
+  reason: narrow mega-glob to the exact files T-1571 (help-surface rework) touches
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/design/cli-regrouping.md
+  reason: narrow mega-glob to the exact files T-1571 (help-surface rework) touches
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: narrow mega-glob to the exact files T-1571 (help-surface rework) touches
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1571/**
+  reason: narrow mega-glob to the exact files T-1571 (help-surface rework) touches
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_verb_groups_listed_before_also_available_directly_section
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_non_group_verb_listed_after_also_available_directly
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_nested_subparser_help_is_unaffected
 designated_repro_test: null
 threat: null
 component: null

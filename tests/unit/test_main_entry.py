@@ -238,3 +238,54 @@ class TestLazyLogHandlers:
         handler.emit(record)  # must resolve `live`, never the closed `stale`
 
         assert "msg" in live.getvalue()
+
+
+# frob:ticket T-1571
+class TestGroupedHelpFormatter:
+    """`frob --help` (T-1571, acceptance[0] on T-1238): the root parser's
+    subcommand listing presents verb groups first, then every other
+    top-level command under a separate heading."""
+
+    def test_verb_groups_listed_before_also_available_directly_section(self) -> None:
+        """Every `_VERB_GROUP_NAMES` member appears under the "verb
+        groups" heading, strictly before the "also available directly"
+        heading, in the rendered `--help` text."""
+        parser = main_module._build_parser()
+        help_text = parser.format_help()
+
+        groups_idx = help_text.index("verb groups (each also usable standalone):")
+        rest_idx = help_text.index("also available directly:")
+        assert groups_idx < rest_idx
+
+        # Slice once instead of re-`.index()`ing per name in a loop (PERF002).
+        groups_section = help_text[groups_idx:rest_idx]
+        for name in main_module._VERB_GROUP_NAMES:
+            assert f"\n  {name} " in groups_section, (
+                f"{name!r} expected between the two headings"
+            )
+
+    def test_non_group_verb_listed_after_also_available_directly(self) -> None:
+        """A representative non-group top-level command (`scaffold`) is
+        listed under the "also available directly" heading, not the
+        "verb groups" one."""
+        parser = main_module._build_parser()
+        help_text = parser.format_help()
+
+        rest_idx = help_text.index("also available directly:")
+        scaffold_idx = help_text.index("\n  scaffold ")
+        assert scaffold_idx > rest_idx
+
+    def test_nested_subparser_help_is_unaffected(self) -> None:
+        """`frob quality --help` keeps the ordinary flat argparse listing
+        -- `formatter_class` is not inherited by `add_parser()`-created
+        nested subparsers."""
+        import argparse as _argparse
+
+        parser = main_module._build_parser()
+        subparsers_action = next(
+            a for a in parser._actions if isinstance(a, _argparse._SubParsersAction)
+        )
+        quality_parser = subparsers_action.choices["quality"]
+        help_text = quality_parser.format_help()
+        assert "verb groups" not in help_text
+        assert "also available directly" not in help_text

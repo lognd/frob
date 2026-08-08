@@ -142,20 +142,25 @@ every later group in this taxonomy should follow:
    (`frob docs --sync-commands .`) and update this doc's own prose
    pointers in the same change.
 
-## Help-surface rework (acceptance[0], not yet implemented)
+## Help-surface rework (T-1571, IMPLEMENTED)
 
 Acceptance[0] on T-1238 wants the top-level `frob --help` output itself
 to present the small set of verb groups first, with the still-supported
 flat top-level commands demoted to a "also available directly" style
-listing rather than intermixed alphabetically. That is a `_build_parser`/
-`argparse` formatting change (custom `HelpFormatter` or grouped
-`add_argument_group`-equivalent for subparsers -- argparse's own
-subparsers action does not natively support named groups, so this needs
-either a custom formatter or restructuring the subparser registration
-order with section-header pseudo-entries) -- left to its own
-implementation ticket rather than folded into `explore`'s launch, per
-this epic's own instruction to do the design phase for the FULL taxonomy
-before implementing anything beyond `explore`.
+listing rather than intermixed alphabetically. Implemented as a custom
+`argparse.HelpFormatter` subclass (`_GroupedHelpFormatter`, `frob.
+__main__`): argparse's own subparsers action does not natively support
+named groups, so this overrides `_format_action` to intercept only the
+root parser's `_SubParsersAction` and render its choice pseudo-actions in
+two labeled sections (`_VERB_GROUP_NAMES` first, everything else after)
+instead of one flat block. Only the ROOT parser is built with this
+formatter -- `add_parser()`-created nested subparsers (`frob quality
+--help`, ...) do not inherit `formatter_class`, so every subgroup's own
+`--help` stays the ordinary flat argparse listing, correctly scoped to
+just the top-level surface this acceptance criterion is actually about.
+`_VERB_GROUP_NAMES` is `explore`/`quality`/`design`/`ops` (T-1238/T-1567/
+T-1568/T-1569) plus the pre-existing "already atomic" verb groups this
+doc names elsewhere (`ticket`/`vet`/`serve`).
 
 ## Ticket breakdown
 

@@ -164,6 +164,79 @@ def _frob_version() -> str:
         return "unknown"
 
 
+# frob:ticket T-1571
+# The small set of intent-named verb groups (explore/quality/design/ops,
+# T-1238/T-1567/T-1568/T-1569) plus the pre-existing "already atomic, no
+# regrouping needed" verbs docs/design/cli-regrouping.md names alongside
+# them (ticket/vet/serve) -- presented FIRST in `frob --help`'s top-level
+# listing, ahead of every other still-supported flat command.
+_VERB_GROUP_NAMES = frozenset(
+    {"explore", "quality", "design", "ops", "ticket", "vet", "serve"}
+)
+
+
+# frob:ticket T-1571
+# frob:doc docs/design/cli-regrouping.md#help-surface-rework-t-1571-implemented
+# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_verb_groups_listed_before_also_available_directly_section  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_non_group_verb_listed_after_also_available_directly  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_nested_subparser_help_is_unaffected  # noqa: E501
+# frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- passed as \
+# formatter_class=_GroupedHelpFormatter to the root argparse parser (_build_parser) \
+# and invoked internally by argparse's own help-rendering machinery -- but the \
+# best-effort callgraph cannot trace a class passed as a constructor kwarg as a \
+# caller, same class of gap as this repo's cross-package DEAD001 waivers (T-1024 \
+# precedent)"
+class _GroupedHelpFormatter(argparse.HelpFormatter):
+    """Root `frob --help` formatter (T-1571, acceptance[0] on T-1238):
+    presents `_VERB_GROUP_NAMES` first under a "verb groups" heading, then
+    every other still-supported top-level command under an "also
+    available directly" heading, instead of one flat alphabetical list --
+    docs/design/cli-regrouping.md's help-surface-rework section. Only the
+    ROOT parser is built with this formatter (see `_build_parser`) --
+    `add_parser()`-created nested subparsers (`frob quality --help`, ...)
+    do NOT inherit `formatter_class`, so their own `--help` stays the
+    ordinary flat argparse listing, unaffected."""
+
+    # frob:ticket T-1571
+    # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- \
+    # invoked internally by argparse's own help-rendering machinery via \
+    # formatter_class=_GroupedHelpFormatter, but the best-effort callgraph cannot \
+    # trace a class-constructor-kwarg-then-internal-callback chain, same class of gap \
+    # as this repo's cross-package DEAD001 waivers (T-1024 precedent)"
+    def _format_action(self, action: argparse.Action) -> str:
+        """Intercept only the ROOT subparsers pseudo-action; every other
+        action (flags, the positional itself) renders exactly as the
+        base `HelpFormatter` would."""
+        if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+            return self._format_grouped_subparsers(action)
+        return super()._format_action(action)
+
+    # frob:ticket T-1571
+    # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- \
+    # called by this class's own _format_action, itself invoked internally by \
+    # argparse's help-rendering machinery via formatter_class=_GroupedHelpFormatter -- \
+    # the best-effort callgraph cannot trace that chain, same class of gap as this \
+    # repo's cross-package DEAD001 waivers (T-1024 precedent)"
+    def _format_grouped_subparsers(self, action: argparse._SubParsersAction) -> str:  # noqa: SLF001
+        """Render `action`'s choice pseudo-actions in two labeled
+        sections instead of argparse's default single flat block."""
+        # T-1571: zero-arg `super()` cannot be used inside a generator/
+        # comprehension (it loses the compiler-injected `__class__` cell) --
+        # bind the bound method once in this frame instead.
+        base_format_action = argparse.HelpFormatter._format_action
+        subactions = list(action._get_subactions())  # noqa: SLF001
+        group_acts = [a for a in subactions if a.dest in _VERB_GROUP_NAMES]
+        rest_acts = [a for a in subactions if a.dest not in _VERB_GROUP_NAMES]
+        parts: list[str] = []
+        if group_acts:
+            parts.append("  verb groups (each also usable standalone):\n")
+            parts.extend(base_format_action(self, a) for a in group_acts)
+        if rest_acts:
+            parts.append("  also available directly:\n")
+            parts.extend(base_format_action(self, a) for a in rest_acts)
+        return "".join(parts)
+
+
 # frob:ticket T-0578
 def _build_parser() -> argparse.ArgumentParser:
     # frob:ticket T-0021
@@ -172,6 +245,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p = _SuggestingArgumentParser(
         prog="frob",
         description="Developer workflow tools -- optimized for agentic use",
+        # frob:ticket T-1571
+        formatter_class=_GroupedHelpFormatter,
     )
     p.add_argument(
         "--version",
