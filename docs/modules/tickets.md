@@ -147,6 +147,10 @@ attachments:
 <!-- frob:describes src/frob/tickets/_doable.py::undispatched_stale -->
 <!-- frob:describes src/frob/tickets/_models.py::is_valid_ticket_ref -->
 <!-- frob:describes src/frob/tickets/_doable.py::already_landed_markers -->
+<!-- frob:describes src/frob/tickets/_doable.py::wave -->
+<!-- frob:describes src/frob/tickets/_doable.py::WaveGroup -->
+<!-- frob:describes src/frob/tickets/_doable.py::WaveResult -->
+<!-- frob:describes src/frob/tickets/_doable.py::WaveRemainderReason -->
 
 ```python
 # frob/tickets/__init__.py
@@ -175,6 +179,33 @@ def new_ticket(root: Path, spec: TicketSpec,
 def doable(queue: TicketQueue) -> tuple[Ticket, ...]
     # state in {queued, planned} and no open blockers, ordered by priority
     # (highest PRIORITY_RANK first, T-0411) then oldest-first within a tier.
+def wave(queue: TicketQueue, root: Path | None = None, *, agents: int,
+          ignore_lease: bool = False,
+          breadth: tuple[int, tuple[str, ...]] | None = None) -> WaveResult
+    # T-1738: partitions doable() into up to `agents` mutually scope-
+    # DISJOINT WaveGroups -- the parallel analogue of doable's sequential
+    # "what can ONE agent start right now" answer. Two tickets in the
+    # SAME group may share scope (one agent works them in order, an
+    # intra-group collision is not a race); two tickets in DIFFERENT
+    # groups may never share scope, which is the property parallel
+    # dispatch actually needs and that grouping by theme alone cannot
+    # guarantee (the T-1699/T-1705, T-1679/T-1637 incidents this ticket's
+    # own body cites). Packs doable()'s priority/age-ordered candidates
+    # greedily, one at a time, into the first existing group whose scope
+    # the candidate does not collide with (scope_overlap, the same
+    # substrate doable's own lease filter uses); opens a fresh group (up
+    # to `agents` total) only when no existing group can take it. A
+    # candidate colliding with two or more ALREADY-separate groups is
+    # unplaceable as scoped -- recorded in WaveResult.remainder (a
+    # WaveRemainderReason naming the ticket, the first blocking group
+    # index, the colliding ticket id, and the specific glob), never
+    # dropped silently. `agents` is a hint, not a guarantee: returns
+    # fewer, larger groups when the queue does not partition further
+    # (a real, reportable finding in a repo where one doc path dominates
+    # most tickets' scope), never pads a group with colliding work to hit
+    # the requested count. Deterministic for a fixed queue state, since
+    # doable()'s own ordering is deterministic and wave performs no
+    # further reordering.
 def set_priority(root: Path, ticket_id: str, priority: Priority) -> Result[Ticket, TicketError]
     # T-0411: `frob ticket priority <id> <level>` -- the accountable,
     # single-writer way to reprioritize a ticket instead of hand-editing
@@ -3630,6 +3661,67 @@ scoped-out remainder.
   closure captured. This module does not print anything itself (no CLI
   surface in this scope), so the contract is preserved by construction:
   nothing here bypasses or reimplements `land()`'s own reporting.
+
+## T-1686 epic status: landing independent of verifying
+
+T-1686's own stated design intent: a check stays on the land critical
+path only if its failure damages someone OTHER than the author (ledger
+integrity, LAND-PROOF, lease/lock discipline); everything else defers to
+a batch verification pass behind a durable watermark. The CONNECT-WHAT-
+EXISTS mechanism this rests on is complete, end to end, as of T-1736:
+
+1. **Durable record** (T-1687) -- `.frob/verify-queue.json` (append-only
+   intent log) and `.frob/verify-watermark.json` (single current
+   watermark), independent of any worker.
+2. **Enqueue side** (T-1736) -- `frob.tickets._land._land_locked` calls
+   `record_intent` once, right after every real land's squash-apply
+   commit, with that commit's own touched-symbol set.
+3. **Drain side** (T-1688) -- the daemon's coalescing worker
+   (`frob.serve._daemon._poll_verify_worker`, already wired into the
+   daemon's own poll loop) reads the queue to its tip, verifies once, and
+   advances the watermark past the whole batch on green.
+4. **Attribution** (T-1690) -- a red batch's findings resolve to the
+   specific land commit whose touched symbols reach them, via graph
+   reachability, never a lexical file-touched-it guess.
+5. **Circuit breaker** (T-1693, wired T-1791) -- a red batch raises
+   quarantine (`frob.verify._quarantine.raise_quarantine`, called from
+   `_file_regression_ticket`, the seam both the per-land sweep and the
+   coalescing worker share) and suspends deferred landing until every
+   finding is filed or dismissed -- never auto-cleared by a later green
+   run.
+6. **Crash safety** (T-1694) -- an in-flight marker means a worker killed
+   mid-verification can never leave the watermark advanced past a batch
+   it did not finish confirming.
+
+**What remains, disclosed and filed separately, not silently folded into
+this epic's "done":**
+
+- **The profile dial itself** (T-1696, queued, blocked_by T-1692/T-1693
+  -- both already landed) -- `fortress`/`standard`/`rapid` are still
+  three separate code paths in `src/frob/app/ticket_runner/_land_cmd.py`
+  (`rapid_land = effective is ProfileName.RAPID` and its downstream
+  branches) rather than one depth-parameterized settings record; the
+  machinery above benefits `rapid` today, T-1696 is the deliberately-
+  last leaf that collapses `fortress`/`standard` onto the same
+  watermark-backed mechanism (`_land_cmd.py` was never in T-1686's own
+  declared scope: `_land_queue.py`, `_daemon.py`, `_rapid_sweep.py`,
+  `_land.py`, this doc).
+- **CLI visibility** (T-1697, queued, not yet built) -- `frob verify
+  status`/`now`/`explain` for a human or CI step to see the unverified
+  window (depth, age, quarantine, attribution) without reading
+  `.frob/*.json` by hand. Deferred verification with an invisible
+  backlog is indistinguishable from no verification; this leaf is what
+  keeps the mechanism above honest.
+- **Batch test selection** (T-1689, queued) and **bisecting
+  unattributable residue** (T-1691, queued) -- the two remaining tier-3
+  refinements T-1686's own body names (running a batch's union
+  touched-set in one pytest process; bisecting the findings tier-2
+  attribution cannot resolve to exactly one commit).
+
+This epic ticket itself cannot close while T-1689/T-1691/T-1695/T-1696/
+T-1697 remain open (tier=epic, `frob ticket close`'s own
+`OpenDescendant` refusal) -- it stays `in-progress`, carrying this
+status summary, until its last descendant lands.
 
 ## Verification watermark (T-1687, foundation of the T-1686 epic)
 

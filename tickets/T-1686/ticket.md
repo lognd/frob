@@ -17,8 +17,55 @@ scope:
 - src/frob/serve/_daemon.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - docs/modules/tickets.md
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+- tickets/T-1686/ticket.md
+- tickets/T-1686/done-report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: T-1736 (now landed) built the enqueue-side wiring in _land.py that this
+    ticket's own plan required; reopening with that file in scope for whatever thin
+    follow-up remains, per coordinator direction
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: T-1736 (now landed) built the enqueue-side wiring in _land.py that this
+    ticket's own plan required; reopening with that file in scope for whatever thin
+    follow-up remains, per coordinator direction
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1686/ticket.md
+  reason: 'SCOPE001: ticket''s own directory files (precedent) and the disclosed follow-up
+    draft filed from this ticket''s own Done report'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1686/done-report.md
+  reason: 'SCOPE001: ticket''s own directory files (precedent) and the disclosed follow-up
+    draft filed from this ticket''s own Done report'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1835/ticket.md
+  reason: 'SCOPE001: ticket''s own directory files (precedent) and the disclosed follow-up
+    draft filed from this ticket''s own Done report'
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: tickets/T-1835/ticket.md
+  reason: draft dropped as an exact duplicate of the pre-existing T-1696 descendant
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_clean_run_advances_watermark_and_compacts_queue
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
+- tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_death_between_green_result_and_watermark_write_is_never_assumed_green
 designated_repro_test: null
 threat: null
 component: verification

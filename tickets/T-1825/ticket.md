@@ -1,7 +1,7 @@
 ---
 id: T-1825
 title: Document frob ticket wave in docs/modules/tickets.md once the lease frees
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-08'
@@ -13,8 +13,49 @@ runs_last: false
 scope:
 - docs/modules/tickets.md
 - src/frob/tickets/_doable.py
+- src/frob/app/ticket_runner/_query.py
+- tickets/T-1825/ticket.md
+- tickets/T-1825/done-report.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'coordinator directed: T-1738''s same land left ARCH001/ARCH103 debris in
+    _query.py alongside the COV001 gap this ticket''s own plan covers; fixing both
+    in one pass rather than filing a third ticket'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1825/ticket.md
+  reason: 'coordinator directed: T-1738''s same land left ARCH001/ARCH103 debris in
+    _query.py alongside the COV001 gap this ticket''s own plan covers; fixing both
+    in one pass rather than filing a third ticket'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1825/done-report.md
+  reason: 'coordinator directed: T-1738''s same land left ARCH001/ARCH103 debris in
+    _query.py alongside the COV001 gap this ticket''s own plan covers; fixing both
+    in one pass rather than filing a third ticket'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: 'SCOPE002: T-1825''s scope includes a docs/modules/tickets.md anchor that
+    design/frob.strata::frob.verify also describes; closing the scope-closure gap'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_tickets_wave.py::TestWave::test_disjoint_scopes_pack_into_separate_groups
+- tests/test_tickets_wave.py::TestWave::test_colliding_scopes_share_one_group
+- tests/test_tickets_wave.py::TestWave::test_unplaceable_ticket_lands_in_remainder_with_reason
+- tests/test_tickets_wave.py::TestWave::test_deterministic_for_repeated_calls
+- tests/test_tickets_wave.py::TestWave::test_fewer_groups_than_agents_is_not_an_error
+- tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand::test_json_render_shape
+- tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand::test_plain_render_lists_groups_and_remainder
+- tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand::test_missing_agents_flag_is_a_clean_error
 designated_repro_test: null
 threat: null
 component: null

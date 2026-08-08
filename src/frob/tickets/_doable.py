@@ -661,6 +661,7 @@ def doable(
 
 
 # frob:ticket T-1738
+# frob:doc docs/modules/tickets.md#public-api
 class WaveGroup:
     """One dispatchable group from `wave()`: a sequence of tickets one
     agent works IN ORDER (T-1738) -- members may share scope with each
@@ -679,6 +680,7 @@ class WaveGroup:
 
 
 # frob:ticket T-1738
+# frob:doc docs/modules/tickets.md#public-api
 class WaveRemainderReason:
     """Why one doable ticket could not be placed into any of the N groups
     `wave()` produced (T-1738) -- names the group index and the specific
@@ -704,6 +706,7 @@ class WaveRemainderReason:
 
 
 # frob:ticket T-1738
+# frob:doc docs/modules/tickets.md#public-api
 class WaveResult:
     """The full `wave()` answer (T-1738): up to `agents` mutually
     scope-disjoint `WaveGroup`s, plus an explicit `remainder` for any
@@ -724,11 +727,8 @@ class WaveResult:
 
 
 # frob:ticket T-1738
-# frob:todo T-1825
-# (T-1825: add docs/modules/tickets.md#public-api's `wave`
-# section and the frob:doc edge back onto this function -- that page is
-# under a T-1686/T-1736 lease for the whole span T-1738 was worked, so
-# the doc addition is filed as a real follow-up instead of a silent gap.)
+# frob:ticket T-1825
+# frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
 # tests/test_tickets_wave.py::TestWave.test_disjoint_scopes_pack_into_separate_groups
 # frob:tests tests/test_tickets_wave.py::TestWave.test_colliding_scopes_share_one_group
@@ -787,50 +787,7 @@ def wave(
     remainder: list[WaveRemainderReason] = []
 
     for ticket in candidates:
-        # Groups this candidate directly collides with (a genuine "must
-        # share an agent" relationship, not a packing choice). Zero direct
-        # collisions means the candidate is free to open its own fresh
-        # group -- the common case, and the one that actually spreads work
-        # across agents instead of piling everything into group 0.
-        direct = [
-            idx
-            for idx, scope in enumerate(group_scope)
-            if scope_overlap(ticket.scope, scope)
-        ]
-        if not direct:
-            if len(group_tickets) < agents:
-                group_tickets.append([ticket])
-                group_scope.append(list(dict.fromkeys(ticket.scope)))
-                continue
-            # No collision with any group, but no capacity to open a new
-            # one either -- any existing group is a safe, non-colliding
-            # home; group 0 is as good as any (first-fit).
-            group_tickets[0].append(ticket)
-            _extend_unique(group_scope[0], ticket.scope)
-            continue
-        if len(direct) == 1:
-            idx = direct[0]
-            group_tickets[idx].append(ticket)
-            _extend_unique(group_scope[idx], ticket.scope)
-            continue
-        # Colliding with two or more ALREADY-separate groups: there is no
-        # group this candidate can join without becoming a cross-group
-        # collision against whichever direct-collision group it is NOT
-        # placed in. Unplaceable as scoped -- report it, naming the first
-        # colliding group/ticket/glob, rather than merging groups behind
-        # the caller's back or silently dropping the candidate.
-        first_idx = direct[0]
-        colliding_id, glob = _first_collision_against_group(
-            ticket, group_tickets[first_idx]
-        )
-        remainder.append(
-            WaveRemainderReason(
-                ticket=ticket,
-                colliding_group_index=first_idx,
-                colliding_ticket_id=colliding_id,
-                glob=glob,
-            )
-        )
+        _place_wave_candidate(ticket, agents, group_tickets, group_scope, remainder)
 
     from frob.tickets import _doable_sort_key
 
@@ -842,6 +799,67 @@ def wave(
         for members, scope in zip(group_tickets, group_scope, strict=True)
     )
     return WaveResult(groups=groups, remainder=tuple(remainder))
+
+
+# frob:ticket T-1825
+def _place_wave_candidate(
+    ticket: Ticket,
+    agents: int,
+    group_tickets: list[list[Ticket]],
+    group_scope: list[list[str]],
+    remainder: list[WaveRemainderReason],
+) -> None:
+    """`wave()`'s own per-candidate packing step (ARCH001 split): place
+    `ticket` into an existing group, open a fresh one, or record it in
+    `remainder` -- mutates `group_tickets`/`group_scope`/`remainder` in
+    place, matching `wave()`'s own accumulator shape rather than
+    returning a new tuple per candidate (a candidate-at-a-time reduce
+    over shared mutable state, the same shape the caller's loop already
+    had before this split)."""
+    # Groups this candidate directly collides with (a genuine "must
+    # share an agent" relationship, not a packing choice). Zero direct
+    # collisions means the candidate is free to open its own fresh
+    # group -- the common case, and the one that actually spreads work
+    # across agents instead of piling everything into group 0.
+    direct = [
+        idx
+        for idx, scope in enumerate(group_scope)
+        if scope_overlap(ticket.scope, scope)
+    ]
+    if not direct:
+        if len(group_tickets) < agents:
+            group_tickets.append([ticket])
+            group_scope.append(list(dict.fromkeys(ticket.scope)))
+            return
+        # No collision with any group, but no capacity to open a new
+        # one either -- any existing group is a safe, non-colliding
+        # home; group 0 is as good as any (first-fit).
+        group_tickets[0].append(ticket)
+        _extend_unique(group_scope[0], ticket.scope)
+        return
+    if len(direct) == 1:
+        idx = direct[0]
+        group_tickets[idx].append(ticket)
+        _extend_unique(group_scope[idx], ticket.scope)
+        return
+    # Colliding with two or more ALREADY-separate groups: there is no
+    # group this candidate can join without becoming a cross-group
+    # collision against whichever direct-collision group it is NOT
+    # placed in. Unplaceable as scoped -- report it, naming the first
+    # colliding group/ticket/glob, rather than merging groups behind
+    # the caller's back or silently dropping the candidate.
+    first_idx = direct[0]
+    colliding_id, glob = _first_collision_against_group(
+        ticket, group_tickets[first_idx]
+    )
+    remainder.append(
+        WaveRemainderReason(
+            ticket=ticket,
+            colliding_group_index=first_idx,
+            colliding_ticket_id=colliding_id,
+            glob=glob,
+        )
+    )
 
 
 def _first_collision_against_group(

@@ -474,6 +474,7 @@ def _render_doable_in_flight(in_flight: list) -> None:
 
 
 # frob:ticket T-1738
+# frob:ticket T-1825
 # frob:tests \
 # tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_json_render_shape
 # frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_plain_render_lists_groups_and_remainder  # noqa: E501
@@ -503,25 +504,42 @@ def _wave(root: Path, cfg: AppConfig) -> None:
     outcome = wave(queue, root, agents=agents, ignore_lease=cfg.ticket_ignore_lease)
 
     if cfg.ticket_json:
-        import json
-
-        payload = {
-            "groups": [
-                [t.model_dump(mode="json") for t in g.tickets] for g in outcome.groups
-            ],
-            "remainder": [
-                {
-                    "ticket": r.ticket.model_dump(mode="json"),
-                    "colliding_group_index": r.colliding_group_index,
-                    "colliding_ticket_id": r.colliding_ticket_id,
-                    "glob": r.glob,
-                }
-                for r in outcome.remainder
-            ],
-        }
-        _log.info(json.dumps(payload, indent=2))
+        _render_wave_json(outcome)
         return
+    _render_wave_plain(outcome, agents)
 
+
+# frob:ticket T-1825
+def _render_wave_json(outcome) -> None:  # noqa: ANN001 -- WaveResult, deferred-import type
+    """`_wave`'s own `--json` render (ARCH001 split): `{"groups": [...],
+    "remainder": [...]}`, each group a plain list of ticket dicts
+    (`model_dump`, matching `doable --json`'s per-row shape) and each
+    remainder entry naming the ticket plus the colliding group/ticket/
+    glob that blocked its placement."""
+    import json
+
+    payload = {
+        "groups": [
+            [t.model_dump(mode="json") for t in g.tickets] for g in outcome.groups
+        ],
+        "remainder": [
+            {
+                "ticket": r.ticket.model_dump(mode="json"),
+                "colliding_group_index": r.colliding_group_index,
+                "colliding_ticket_id": r.colliding_ticket_id,
+                "glob": r.glob,
+            }
+            for r in outcome.remainder
+        ],
+    }
+    _log.info(json.dumps(payload, indent=2))
+
+
+# frob:ticket T-1825
+def _render_wave_plain(outcome, agents: int) -> None:  # noqa: ANN001 -- WaveResult, deferred-import type
+    """`_wave`'s own human-readable render (ARCH001 split): one line per
+    group's tickets, then a "Remainder" section (if any) naming why each
+    unplaced ticket could not join an existing group."""
     if not outcome.groups:
         _log.info("zero doable tickets to partition")
         return
