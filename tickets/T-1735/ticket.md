@@ -1,7 +1,7 @@
 ---
 id: T-1735
 title: SYS108 missing from _KNOWN_GATE_RULES, self-model node count drift (23 vs 22)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -15,8 +15,32 @@ scope:
 - tests/test_gates.py
 - src/frob/strata/_selfconform.py
 - tests/system/test_frob_self_model.py
+- tickets/T-1735/ticket.md
+- tickets/T-1773/ticket.md
+- tickets/T-1735/done-report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-1735/ticket.md
+  reason: v2 ledger per-ticket files; T-1773 dropped as absorbed-by T-1800 from this
+    same worktree session
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1773/ticket.md
+  reason: v2 ledger per-ticket files; T-1773 dropped as absorbed-by T-1800 from this
+    same worktree session
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1735/done-report.md
+  reason: v2 ledger per-ticket done-report file
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 threat: null
 component: null

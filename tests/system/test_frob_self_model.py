@@ -157,7 +157,15 @@ class TestFrobSelfModel:
         # logic with no `may` capabilities or flows of its own, so only
         # the node count moves; T-1589 already re-derived the k8s/seccomp
         # export goldens for this same addition but missed this counter).
-        assert len(_model.nodes) == 22
+        # T-1735 (found live, T-1687 pre-existing debt this docstring never
+        # re-measured until this pass surfaced it -- same "landed a node,
+        # missed the self-model counter" shape as T-1591/T-1329 above):
+        # +1 node = `verify` (T-1687's durable commit-keyed verify queue,
+        # `node verify : trusted` in design/frob.strata) -- declares no
+        # `may` capability and is not on the cli-dispatch/component-import
+        # graph the `f_*` flows model, so flows/boundaries/claims counts
+        # below are unaffected; only the node count moves, 22 -> 23.
+        assert len(_model.nodes) == 23
         assert len(_model.flows) == 44
         assert len(_model.boundaries) == 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume

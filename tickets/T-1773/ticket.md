@@ -2,7 +2,7 @@
 id: T-1773
 title: 'TestKnownGateRuleIds: SYS108 missing from _KNOWN_GATE_RULES (T-1624 landed
   without registering it)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -20,3 +20,6 @@ threat: null
 component: null
 ---
 tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known fails on a clean main checkout: generated_gate_rule_ids() reports SYS108 (src/frob/strata/_selfconform.py:1421, constructed by T-1624's land) but it is absent from _KNOWN_GATE_RULES in src/frob/gates/_waive.py. Confirmed via git log that SYS108 was introduced by 70879571 fix(tickets): land T-1624 -- pre-existing drift, not caused by T-1763. Add SYS108 to _KNOWN_GATE_RULES.
+
+## Drop reason
+- 2026-08-08: SYS108 missing from _KNOWN_GATE_RULES already fixed and landed by T-1800 (commit 4883f36a7, 'fix(tickets): land T-1800 SYS108 missing from _KNOWN_GATE_RULES') before this worktree reached it; confirmed clean via tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known passing on merged main. T-1735 (the sibling ticket with the same title) still has a live second finding (self-model node count drift) landed separately. (absorbed by T-1800)
