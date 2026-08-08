@@ -2,7 +2,7 @@
 id: T-1863
 title: Reusable coordinator scripts under scripts/ (check summary, fleet status, land
   verification)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -18,6 +18,7 @@ scope:
 - docs/guides/coordinator-scripts.md
 - design/frob.strata
 - tests/system/test_frob_self_model.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -25,6 +26,16 @@ scope_changes:
   glob: tests/system/test_frob_self_model.py
   reason: 'scope closure: the strata self-model''s frob:tests target lives here; editing
     design/frob.strata without it leaves the edge unclosed'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: 'TEST001 needs real pytest coverage for scripts/{check_summary,fleet_status,verify_lands}.py''s
+    pure functions (report traversal, lease/worktree parsing, sha resolution) -- the
+    .claude/hooks/ path-class exemption''s rationale (harness-only invocation, no
+    real pytest assurance possible) does not apply here: these scripts'' core logic
+    is ordinary importable Python testable with tmp_path/monkeypatch, same as any
+    src/frob module'
   actor: logan
   at: '2026-08-08'
 designated_repro_test: null
