@@ -4096,14 +4096,33 @@ quarantined` reads it fresh every call, never an in-memory flag a daemon
 restart could lose. A quarantine that evaporates on restart is worse
 than none, because it is trusted (this ticket's own words).
 
-Wiring `raise_quarantine` into the batch-verification driver itself
-(T-1688's coalescing worker actually calling it on a red result) is
-disclosed as NOT done in this pass -- `src/frob/app/ticket_runner/
-_rapid_sweep.py` (T-1690's own declared scope) was leased by a concurrent
-in-progress ticket for the whole duration of this one, so this ticket's
-own declared scope (`_quarantine.py`, `_land_cmd.py`, this doc) covers
-the durable primitive and the land-path enforcement half only; the raise
-call site is a disclosed follow-up.
+**Wired into the batch-verification driver (T-1791).** `frob.app.
+ticket_runner._rapid_sweep._raise_quarantine_for_red_batch` calls
+`raise_quarantine` from inside `_file_regression_ticket` -- the shared
+"a red batch verification came back" seam BOTH T-1684's per-land
+deferred sweep and T-1688's coalescing worker call through
+(`_file_regression_ticket` is `run_coalesced_verification`'s own filer
+too, T-1688's docstring names it directly), so wiring the raise at this
+one call site covers both drivers without a second integration point.
+`batch_commit_shas` comes from the CURRENT verify queue
+(`frob.verify.queue_status`) -- the exact set of lands the red result
+could have been caused by, the same batch `_attribute_new_findings`
+itself reads for the ticket body's attribution trail; an empty or
+unreadable queue skips the raise (logged) rather than naming a
+fabricated batch. Each `QuarantinedFinding` reuses the SAME `Attribution`
+mapping `_file_regression_ticket` already computed for its own ticket
+body (`_attribute_new_findings`, called once, threaded into both this and
+`_partition_findings_by_attribution` rather than a second graph build).
+Quarantine raises even when every pair in the batch already attributes
+to a still-open ticket and no NEW regression ticket gets filed -- the
+breaker's question is "did the tree go red", not "did filing produce a
+new ticket", and conflating the two would let an all-already-tracked red
+batch slip past the breaker with deferred landing still enabled. A
+`raise_quarantine` failure is logged at ERROR and swallowed: the
+regression ticket this function files either way is still the durable
+record, and a caller filing a real regression must never be blocked by
+the quarantine flag failing to persist.
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_raise_quarantine_for_red_batch -->  
 
 ## Development profiles (`frob.toml [profile]`, T-1575)
 

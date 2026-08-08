@@ -475,6 +475,7 @@ class TestAttributeNewFindings:
         assert result[("RULE2", "nowhere.py")].status == "unattributed"
 
 
+# frob:ticket T-1791
 class TestFileRegressionTicket:
     """T-1690: attributed findings owned by a still-open ticket are not
     re-filed; everything else is filed with a full attribution trail."""
@@ -490,9 +491,8 @@ class TestFileRegressionTicket:
             lambda root: (snapshot, call_graph),
         )
 
-    def test_no_attribution_files_everything_as_before(
-        self, tmp_path: Path
-    ) -> None:
+    # frob:ticket T-1791
+    def test_no_attribution_files_everything_as_before(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
         # No verify queue at all -- attribution unavailable, falls back to
         # the pre-T-1690 behavior of filing every pair.
@@ -637,3 +637,137 @@ class TestFileRegressionTicket:
             frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
         )
         assert filed is None
+
+
+# frob:ticket T-1791
+class TestRaiseQuarantineForRedBatch:
+    """T-1791: wiring `raise_quarantine` into the shared "a red batch
+    verification came back" seam both drivers (`_file_regression_ticket`)
+    call through."""
+
+    # frob:ticket T-1791
+    def test_raises_with_attributed_and_unattributed_findings(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raises_with_attributed_and_unattributed_findings  # noqa: E501
+        from frob.verify import record_intent
+        from frob.verify._quarantine import is_quarantined, load_quarantine
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-9000",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        # No graph patched -- attribution degrades to "unavailable",
+        # exactly the pre-T-1690 fallback `_file_regression_ticket`'s own
+        # docstring already documents; every pair is filed, and every
+        # QuarantinedFinding here carries no commit_sha/ticket_id.
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
+        )
+        assert filed is not None
+
+        assert is_quarantined(tmp_path).danger_ok is True
+        record = load_quarantine(tmp_path)
+        assert record.is_ok
+        assert record.danger_ok is not None
+        assert record.danger_ok.batch_commit_shas == ("commitA",)
+        assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
+            ("RULE1", "a.py"),
+            ("RULE2", "b.py"),
+        }
+
+    # frob:ticket T-1791
+    def test_empty_queue_logs_and_skips_the_raise(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise  # noqa: E501
+        from frob.verify._quarantine import is_quarantined
+
+        # No verify queue at all -- nothing to name as the raising batch.
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-1791
+    def test_raised_even_when_every_pair_already_has_an_open_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raised_even_when_every_pair_already_has_an_open_ticket  # noqa: E501
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import record_intent
+        from frob.verify._quarantine import is_quarantined
+
+        owner = _seed_ticket(tmp_path)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        import frob.verify._attribution as attribution_mod
+
+        monkeypatch.setattr(
+            attribution_mod,
+            "_load_snapshot_and_call_graph",
+            lambda root: (snapshot, CallGraph(calls={})),
+        )
+        # Every pair attributes to an already-open ticket -- no NEW
+        # regression ticket is filed, but the batch was still red, so
+        # quarantine must still be raised.
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is None
+        assert is_quarantined(tmp_path).danger_ok is True
+
+    # frob:ticket T-1791
+    def test_raise_failure_is_logged_not_raised(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raise_failure_is_logged_not_raised  # noqa: E501
+        from typani.result import Err
+
+        from frob.verify import _quarantine as quarantine_mod
+        from frob.verify import record_intent
+        from frob.verify._quarantine import QuarantineError
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-9000",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        monkeypatch.setattr(
+            quarantine_mod,
+            "raise_quarantine",
+            lambda root, **kw: Err(QuarantineError.StoreCorrupt),
+        )
+        # Must not raise or otherwise fail the caller -- the regression
+        # ticket filing is the durable record; a quarantine write failure
+        # is logged and swallowed.
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None

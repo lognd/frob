@@ -353,11 +353,15 @@ def _ticket_is_open(root: Path, ticket_id: str) -> bool:
 
 # frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
+# frob:ticket T-1791
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
 def _partition_findings_by_attribution(
-    root: Path, final_id: str, pairs: list[tuple[str, str]]
+    root: Path,
+    final_id: str,
+    pairs: list[tuple[str, str]],
+    attributions: dict,  # noqa: ANN401 -- dict[tuple[str, str], Attribution], deferred-import type
 ) -> tuple[list[tuple[str, str]], list[str]]:
     """T-1690: split `pairs` into `(unfiled_pairs, attribution_lines)`
     (ARCH001 split of `_file_regression_ticket`, which was previously one
@@ -369,9 +373,14 @@ def _partition_findings_by_attribution(
     human-readable audit trail for EVERY pair with attribution
     information (including the already-open ones, so a caller that wants
     the full picture -- not just what got filed -- still has it), in the
-    same order `pairs` was given."""
-    attributions = _attribute_new_findings(root, pairs)
+    same order `pairs` was given.
 
+    `attributions` is computed ONCE by the caller (`_file_regression_
+    ticket`, via `_attribute_new_findings`) and passed in here rather than
+    recomputed -- T-1791 needs that same mapping a second time (to raise
+    quarantine over the whole red batch), and a second `attribute_batch`
+    call would mean a second reference-graph build for no new
+    information."""
     unfiled_pairs: list[tuple[str, str]] = []
     attribution_lines: list[str] = []
     already_open: dict[str, int] = {}
@@ -412,8 +421,100 @@ def _partition_findings_by_attribution(
     return unfiled_pairs, attribution_lines
 
 
+# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:ticket T-1791
+# frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raises_with_attributed_and_unattributed_findings  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raise_failure_is_logged_not_raised  # noqa: E501
+def _raise_quarantine_for_red_batch(
+    root: Path,
+    final_id: str,
+    pairs: list[tuple[str, str]],
+    attributions: dict,  # noqa: ANN401 -- dict[tuple[str, str], Attribution], deferred-import type
+) -> None:
+    """T-1791: the batch-verification driver's missing half -- `frob.
+    verify._quarantine.raise_quarantine` existed (T-1693) and the land
+    path already enforces it (T-1693's own `_land_cmd._quarantine_
+    override_ceilings`), but nothing ever CALLED it. `_file_regression_
+    ticket` is the shared "a red batch verification came back" seam both
+    T-1684's per-land sweep and T-1688's coalescing worker call through,
+    so wiring the raise here covers both drivers from one call site.
+
+    `batch_commit_shas` comes from the CURRENT verify queue (`frob.
+    verify.queue_status`) -- the exact set of lands this red result could
+    have been caused by, same batch `_attribute_new_findings` itself
+    reads. An empty or unreadable queue means there is nothing to name as
+    the raising batch (a red result with no queued lands to blame is not
+    this ticket's scope to invent an answer for) -- logged and skipped,
+    never a raise with a fabricated batch. A `raise_quarantine` failure
+    (`QuarantineError.EmptyFindings`, structurally unreachable here since
+    `pairs` is always non-empty by the caller's own contract, or a write
+    failure) is logged at ERROR and swallowed: the regression ticket
+    filing this function's caller does next must never be blocked by the
+    quarantine flag failing to persist -- the filed ticket is still the
+    primary, durable record of what went wrong."""
+    from frob.verify import queue_status
+    from frob.verify._quarantine import raise_quarantine
+
+    queue = queue_status(root)
+    if queue.is_err or not queue.danger_ok:
+        _log.warning(
+            "rapid sweep: %s: red batch at %s but the verify queue is "
+            "empty/unreadable -- no batch to name, quarantine NOT raised",
+            final_id,
+            pairs,
+        )
+        return
+
+    batch_commit_shas = tuple(e.commit_sha for e in queue.danger_ok)
+    findings = _quarantined_findings_from_attributions(pairs, attributions)
+    raised = raise_quarantine(
+        root, batch_commit_shas=batch_commit_shas, findings=findings
+    )
+    if raised.is_err:
+        _log.error(
+            "rapid sweep: %s: raise_quarantine failed (%s) for batch %s -- "
+            "the regression ticket this red result files is still the "
+            "durable record; quarantine flag may be stale until the next "
+            "red batch retries the raise",
+            final_id,
+            raised.danger_err,
+            batch_commit_shas,
+        )
+
+
+# frob:ticket T-1791
+def _quarantined_findings_from_attributions(
+    pairs: list[tuple[str, str]],
+    attributions: dict,  # noqa: ANN401 -- dict[tuple[str, str], Attribution], deferred-import type
+) -> tuple:  # noqa: ANN401 -- tuple[QuarantinedFinding, ...], deferred-import type
+    """Build one `QuarantinedFinding` per `pairs` entry from `attributions`
+    (`_raise_quarantine_for_red_batch`'s own ARCH001 split) -- `commit_sha`/
+    `ticket_id` are set only for a pair whose `Attribution.status ==
+    "attributed"`; an unattributed or unmapped pair gets `None` for both
+    (never a guess), matching `QuarantinedFinding`'s own "both `None` for
+    an unattributed finding" contract."""
+    from frob.verify._quarantine import QuarantinedFinding
+
+    findings = []
+    for rule, file in pairs:
+        attr = attributions.get((rule, file))
+        attributed = attr is not None and attr.status == "attributed"
+        findings.append(
+            QuarantinedFinding(
+                rule_id=rule,
+                file=file,
+                line=attr.line if attr is not None else None,
+                commit_sha=attr.commit_sha if attributed else None,
+                ticket_id=attr.ticket_id if attributed else None,
+            )
+        )
+    return tuple(findings)
+
+
 # frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
+# frob:ticket T-1791
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_closed_ticket_is_refiled  # noqa: E501
@@ -444,14 +545,29 @@ def _file_regression_ticket(
     unavailability (empty mapping from `_attribute_new_findings`)
     degrades to the pre-T-1690 behavior: every pair filed, no attribution
     lines -- "cannot attribute" must never suppress a real regression's
-    own ticket."""
+    own ticket.
+
+    T-1791: EVERY call here is, by definition, a red batch verification
+    (the caller only reaches this function when `new_findings` is
+    non-empty) -- so this also raises `frob.verify._quarantine.
+    raise_quarantine` over the whole batch, using the SAME attributions
+    this function already computed for the ticket body, before deciding
+    whether a fresh regression ticket is needed. Quarantine is raised
+    even when every pair already has an open ticket (the `not
+    unfiled_pairs` early return below): the circuit breaker's job is
+    "did the tree go red", not "did filing produce a NEW ticket" -- those
+    are different questions, and conflating them would let a red batch
+    whose findings all happen to already be tracked slip past the
+    breaker with deferred landing still enabled."""
     from frob.tickets import TicketSpec, new_ticket
     from frob.tickets._models import Origin, Priority, TicketKind
 
     pairs = sorted(new_findings)
+    attributions = _attribute_new_findings(root, pairs)
     unfiled_pairs, attribution_lines = _partition_findings_by_attribution(
-        root, final_id, pairs
+        root, final_id, pairs, attributions
     )
+    _raise_quarantine_for_red_batch(root, final_id, pairs, attributions)
 
     if not unfiled_pairs:
         _log.info(
@@ -520,6 +636,7 @@ def _file_regression_ticket(
 
 
 # frob:ticket T-1755
+# frob:ticket T-1791
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commits_the_ledger_write  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commit_failure_logs_at_error_and_does_not_raise  # noqa: E501
 def _commit_regression_ticket(root: Path, regression_id: str, final_id: str) -> None:
@@ -566,7 +683,7 @@ def _commit_regression_ticket(root: Path, regression_id: str, final_id: str) -> 
             "rapid sweep: %s: committing the filed regression ticket %s "
             "failed (%s) -- the ledger is now DIRTY and every subsequent "
             "`frob ticket land` in %s will refuse with DirtyMain until a "
-            'human commits it by hand: git -C %s add %s && git -C %s '
+            "human commits it by hand: git -C %s add %s && git -C %s "
             "commit -m %r -- %s",
             final_id,
             regression_id,
