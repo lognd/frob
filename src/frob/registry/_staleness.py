@@ -27,12 +27,10 @@ not a claim requiring later human/code-aware review.
 """
 
 from __future__ import annotations
-
+import re
 from pathlib import Path
-
 from typani import Err, Ok
 from typani.result import Result
-
 from frob.logging import get_logger
 from frob.registry._corpus import (
     CorpusError,
@@ -44,27 +42,23 @@ from frob.registry._corpus import (
 from frob.tickets._store import atomic_write
 
 _log = get_logger(__name__)
-
 _GATE_RULE_KEY = "gate_rule_entries"
 _GATE_RULE_ID_PREFIX = "CHK-GATE-"
+_GATE_RULE_ID_LINE_RE = re.compile(
+    '^(\\s*)-\\s*id:\\s*"' + re.escape(_GATE_RULE_ID_PREFIX) + '([A-Za-z0-9_-]+)"\\s*$'
+)
+_FIXABILITY_LINE_RE = re.compile("^\\s*fixability:\\s*")
 
 
-def _gate_rule_block(rule: str) -> str:
+def _gate_rule_block(rule: str, fixability: str) -> str:
     """One `gate_rule_entries` item for `rule`, self-referentially
     `handled_by:<rule>` -- matches the hand-authored shape every existing
-    `CHK-GATE-*` entry already uses."""
+    `CHK-GATE-*` entry already uses, plus T-1264's `fixability:` field
+    (`generated_fixability`'s own generated-verified value for `rule`)."""
     entry_id = f"{_GATE_RULE_ID_PREFIX}{rule}"
-    return (
-        f"  - id: {_yaml_scalar(entry_id)}\n"
-        f"    name: {_yaml_scalar(f'{rule} is a live, enforced gate rule')}\n"
-        f"    disposition: {_yaml_scalar(f'handled_by:{rule}')}\n"
-        f"    cross_refs: []\n"
-    )
+    return f"  - id: {_yaml_scalar(entry_id)}\n    name: {_yaml_scalar(f'{rule} is a live, enforced gate rule')}\n    disposition: {_yaml_scalar(f'handled_by:{rule}')}\n    fixability: {_yaml_scalar(fixability)}\n    cross_refs: []\n"
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
-# frob:ticket T-0560
-# frob:tests tests/test_registry_staleness.py::TestMissingGateRuleIds.test_finds_rules_with_no_entry kind="unit"  # noqa: E501
 def missing_gate_rule_ids(
     registry_path: Path, known_rules: frozenset[str]
 ) -> frozenset[str]:
@@ -87,10 +81,6 @@ def missing_gate_rule_ids(
     return frozenset(known_rules - covered)
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
-# frob:ticket T-0560
-# frob:ticket T-1359
-# frob:tests tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_missing_rule kind="unit"  # noqa: E501
 def sync_gate_rule_entries(
     registry_path: Path, known_rules: frozenset[str]
 ) -> Result[tuple[str, ...], CorpusError]:
@@ -117,12 +107,16 @@ def sync_gate_rule_entries(
     if not registry_path.is_file():
         _log.warning("sync_gate_rule_entries: %s does not exist", registry_path)
         return Err(CorpusError.FileNotFound)
-
     missing = sorted(missing_gate_rule_ids(registry_path, known_rules))
     if not missing:
         _log.info("sync_gate_rule_entries: %s already in sync", registry_path)
+        fixability_synced = sync_gate_rule_fixability(registry_path, known_rules)
+        if fixability_synced.is_err:
+            return fixability_synced
         return Ok(())
+    from frob.gates._fixability_scan import generated_fixability
 
+    fixability = generated_fixability(known_rules)
     text = registry_path.read_text(encoding="utf-8")
     lines = text.splitlines(keepends=True)
     bounds = _key_block_bounds(lines, _GATE_RULE_KEY)
@@ -134,12 +128,12 @@ def sync_gate_rule_entries(
         )
         return Err(CorpusError.KeyNotFound)
     _, end = bounds
-
-    blocks = [_gate_rule_block(rule) for rule in missing]
+    blocks = [
+        _gate_rule_block(rule, fixability.get(rule, "manual")) for rule in missing
+    ]
     lines[end:end] = blocks
     for _ in missing:
         lines = _bump_total(lines, _GATE_RULE_KEY)
-
     written = atomic_write(registry_path, "".join(lines))
     if written.is_err:
         _log.error(
@@ -157,4 +151,92 @@ def sync_gate_rule_entries(
     return Ok(tuple(missing))
 
 
-__all__ = ["missing_gate_rule_ids", "sync_gate_rule_entries"]
+def _backfill_fixability_lines(
+    lines: list[str], fixability: dict[str, str]
+) -> list[str]:
+    """One pass over `lines` (a `check-coverage.yaml`-shaped file already
+    split via `splitlines(keepends=True)`) inserting a `fixability:` field
+    (4-space indent, matching `_gate_rule_block`'s own hardcoded shape)
+    right after any `CHK-GATE-<rule>` entry's `- id:` line that does not
+    already carry one -- mutates `lines` in place and returns the sorted
+    list of rule ids actually backfilled."""
+    backfilled: list[str] = []
+    i = 0
+    while i < len(lines):
+        match = _GATE_RULE_ID_LINE_RE.match(lines[i])
+        if match is None:
+            i += 1
+            continue
+        indent, rule = (match.group(1), match.group(2))
+        block_end = i + 1
+        has_field = False
+        while block_end < len(lines):
+            line = lines[block_end]
+            if _GATE_RULE_ID_LINE_RE.match(line) or (
+                line.strip() and (not line.startswith(indent + "  "))
+            ):
+                break
+            if _FIXABILITY_LINE_RE.match(line):
+                has_field = True
+            block_end += 1
+        if not has_field and rule in fixability:
+            insertion = f"    fixability: {_yaml_scalar(fixability[rule])}\n"
+            lines.insert(i + 1, insertion)
+            backfilled.append(rule)
+            block_end += 1
+        i = block_end
+    backfilled.sort()
+    return backfilled
+
+
+def sync_gate_rule_fixability(
+    registry_path: Path, known_rules: frozenset[str]
+) -> Result[tuple[str, ...], CorpusError]:
+    """Backfill a `fixability:` field onto every EXISTING `CHK-GATE-<rule>`
+    entry that does not carry one yet -- the same idempotent
+    "already-covered ids are silently skipped, never duplicated" shape
+    `sync_gate_rule_entries` uses for missing entries, applied to a field
+    within an entry instead of a whole entry. `generated_fixability` is
+    the sole source of truth for the value written, same as
+    `sync_gate_rule_entries`'s own write path -- a hand-edited fixability
+    field this function overwrites is expected: the checked-in registry
+    value is a GENERATED artifact, not something a maintainer authors by
+    hand (this is the concrete mechanism behind acceptance criterion 3:
+    "each carries a fixability: field kept in sync the same idempotent way
+    gate_rule_entries already is"). Returns the sorted tuple of rule ids
+    actually backfilled (`()` if every existing entry already carries the
+    field)."""
+    if not registry_path.is_file():
+        _log.warning("sync_gate_rule_fixability: %s does not exist", registry_path)
+        return Err(CorpusError.FileNotFound)
+    from frob.gates._fixability_scan import generated_fixability
+
+    fixability = generated_fixability(known_rules)
+    text = registry_path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    backfilled = _backfill_fixability_lines(lines, fixability)
+    if not backfilled:
+        _log.info("sync_gate_rule_fixability: %s already in sync", registry_path)
+        return Ok(())
+    written = atomic_write(registry_path, "".join(lines))
+    if written.is_err:
+        _log.error(
+            "sync_gate_rule_fixability: atomic write to %s failed: %s",
+            registry_path,
+            written.danger_err,
+        )
+        return Err(CorpusError.WriteFailed)
+    _log.info(
+        "sync_gate_rule_fixability: %s <- %d field(s): %s",
+        registry_path,
+        len(backfilled),
+        ", ".join(backfilled),
+    )
+    return Ok(tuple(backfilled))
+
+
+__all__ = [
+    "missing_gate_rule_ids",
+    "sync_gate_rule_entries",
+    "sync_gate_rule_fixability",
+]

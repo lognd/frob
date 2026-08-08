@@ -111,6 +111,10 @@ from frob.gates._fix_engine import (  # noqa: F401 -- T-1138's public --fix API 
     fix_doc007_dotted_form,
     fix_tick002_renumber,
 )
+from frob.gates._fixability_scan import (  # noqa: F401 -- T-1264's public generated-verified fixability API, consumed by tests/test_gates.py and registry sync
+    FixabilityConflict,
+    generated_fixability,
+)  # frob:ticket T-1264
 from frob.gates._fmt_directives import (
     FmtChange,
     FmtReport,
@@ -276,6 +280,34 @@ _log = get_logger(__name__)
 _OPEN_STATES = frozenset(
     s for s in TicketState if s not in (TicketState.DONE, TicketState.DROPPED)
 )
+
+# frob:ticket T-1264
+# T-1264: the checked-in GENERATED artifact -- `frob.gates._fixability_scan.
+# generated_fixability(known_gate_rule_ids())`'s output, pasted here exactly
+# as `_KNOWN_GATE_RULES` (`frob.gates._waive`) already works for rule-id
+# scanning. Re-verified against a fresh scan every test run by
+# `tests/test_gates.py::TestRuleFixability` -- a maintainer who wires a new
+# Tier A/B/C handler and forgets to update this literal fails loud
+# immediately rather than shipping an unwired fixability claim. Any rule id
+# not listed here is `"manual"` by construction (the honest default, not an
+# omission) -- only non-"manual" tiers are worth hand-tracking in the diff.
+_KNOWN_RULE_FIXABILITY: dict[str, str] = {
+    "COV002": "auto",
+    "DEAD001": "verified",
+    "DOC002": "auto",
+    "DOC007": "auto",
+    "E501": "auto",
+    "FMT001": "auto",
+    "REG010": "auto",
+    "REL002": "auto",
+    "SUPPRESS001": "auto",
+    "SYS100": "auto",
+    "SYS104": "auto",
+    "TICK002": "auto",
+    "TICK006": "auto",
+    "TODO001": "assisted",
+    "WAIVE004": "auto",
+}
 
 
 # ---------------------------------------------------------------------------

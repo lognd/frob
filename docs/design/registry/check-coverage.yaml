@@ -22,1167 +22,1458 @@ schema_version: 1
 gate_rule_total: 291
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
+    fixability: "manual"
     name: "COV001 is a live, enforced gate rule"
     disposition: "handled_by:COV001"
     cross_refs: []
   - id: "CHK-GATE-COV002"
+    fixability: "auto"
     name: "COV002 is a live, enforced gate rule"
     disposition: "handled_by:COV002"
     cross_refs: []
   - id: "CHK-GATE-COV003"
+    fixability: "manual"
     name: "COV003 is a live, enforced gate rule"
     disposition: "handled_by:COV003"
     cross_refs: []
   - id: "CHK-GATE-COV004"
+    fixability: "manual"
     name: "COV004 is a live, enforced gate rule"
     disposition: "handled_by:COV004"
     cross_refs: []
   - id: "CHK-GATE-COV005"
+    fixability: "manual"
     name: "COV005 is a live, enforced gate rule"
     disposition: "handled_by:COV005"
     cross_refs: []
   - id: "CHK-GATE-COV006"
+    fixability: "manual"
     name: "COV006 is a live, enforced gate rule"
     disposition: "handled_by:COV006"
     cross_refs: []
   - id: "CHK-GATE-COV007"
+    fixability: "manual"
     name: "COV007 is a live, enforced gate rule"
     disposition: "handled_by:COV007"
     cross_refs: []
   - id: "CHK-GATE-PLACE001"
+    fixability: "manual"
     name: "PLACE001 is a live, enforced gate rule"
     disposition: "handled_by:PLACE001"
     cross_refs: []
   - id: "CHK-GATE-DRIFT001"
+    fixability: "manual"
     name: "DRIFT001 is a live, enforced gate rule"
     disposition: "handled_by:DRIFT001"
     cross_refs: []
   - id: "CHK-GATE-DRIFT002"
+    fixability: "manual"
     name: "DRIFT002 is a live, enforced gate rule"
     disposition: "handled_by:DRIFT002"
     cross_refs: []
   - id: "CHK-GATE-SCOPE001"
+    fixability: "manual"
     name: "SCOPE001 is a live, enforced gate rule"
     disposition: "handled_by:SCOPE001"
     cross_refs: []
   - id: "CHK-GATE-PRE001"
+    fixability: "manual"
     name: "PRE001 is a live, enforced gate rule"
     disposition: "handled_by:PRE001"
     cross_refs: []
   - id: "CHK-GATE-INV001"
+    fixability: "manual"
     name: "INV001 is a live, enforced gate rule"
     disposition: "handled_by:INV001"
     cross_refs: []
   - id: "CHK-GATE-INV002"
+    fixability: "manual"
     name: "INV002 is a live, enforced gate rule"
     disposition: "handled_by:INV002"
     cross_refs: []
   - id: "CHK-GATE-INV003"
+    fixability: "manual"
     name: "INV003 is a live, enforced gate rule"
     disposition: "handled_by:INV003"
     cross_refs: []
   - id: "CHK-GATE-INV004"
+    fixability: "manual"
     name: "INV004 is a live, enforced gate rule"
     disposition: "handled_by:INV004"
     cross_refs: []
   - id: "CHK-GATE-TEST001"
+    fixability: "manual"
     name: "TEST001 is a live, enforced gate rule"
     disposition: "handled_by:TEST001"
     cross_refs: []
   - id: "CHK-GATE-TEST002"
+    fixability: "manual"
     name: "TEST002 is a live, enforced gate rule"
     disposition: "handled_by:TEST002"
     cross_refs: []
   - id: "CHK-GATE-TEST003"
+    fixability: "manual"
     name: "TEST003 is a live, enforced gate rule"
     disposition: "handled_by:TEST003"
     cross_refs: []
   - id: "CHK-GATE-TEST004"
+    fixability: "manual"
     name: "TEST004 is a live, enforced gate rule"
     disposition: "handled_by:TEST004"
     cross_refs: []
   - id: "CHK-GATE-TEST005"
+    fixability: "manual"
     name: "TEST005 is a live, enforced gate rule"
     disposition: "handled_by:TEST005"
     cross_refs: []
   - id: "CHK-GATE-TEST006"
+    fixability: "manual"
     name: "TEST006 is a live, enforced gate rule"
     disposition: "handled_by:TEST006"
     cross_refs: []
   - id: "CHK-GATE-TEST007"
+    fixability: "manual"
     name: "TEST007 is a live, enforced gate rule"
     disposition: "handled_by:TEST007"
     cross_refs: []
   - id: "CHK-GATE-TEST008"
+    fixability: "manual"
     name: "TEST008 is a live, enforced gate rule"
     disposition: "handled_by:TEST008"
     cross_refs: []
   - id: "CHK-GATE-TEST009"
+    fixability: "manual"
     name: "TEST009 is a live, enforced gate rule"
     disposition: "handled_by:TEST009"
     cross_refs: []
   - id: "CHK-GATE-TEST010"
+    fixability: "manual"
     name: "TEST010 is a live, enforced gate rule"
     disposition: "handled_by:TEST010"
     cross_refs: []
   - id: "CHK-GATE-TEST011"
+    fixability: "manual"
     name: "TEST011 is a live, enforced gate rule"
     disposition: "handled_by:TEST011"
     cross_refs: []
   - id: "CHK-GATE-TEST017"
+    fixability: "manual"
     name: "TEST017 is a live, enforced gate rule"
     disposition: "handled_by:TEST017"
     cross_refs: []
   - id: "CHK-GATE-TODO001"
+    fixability: "assisted"
     name: "TODO001 is a live, enforced gate rule"
     disposition: "handled_by:TODO001"
     cross_refs: []
   - id: "CHK-GATE-TODO002"
+    fixability: "manual"
     name: "TODO002 is a live, enforced gate rule"
     disposition: "handled_by:TODO002"
     cross_refs: []
   - id: "CHK-GATE-DEBT001"
+    fixability: "manual"
     name: "DEBT001 is a live, enforced gate rule"
     disposition: "handled_by:DEBT001"
     cross_refs: []
   - id: "CHK-GATE-DEBT002"
+    fixability: "manual"
     name: "DEBT002 is a live, enforced gate rule"
     disposition: "handled_by:DEBT002"
     cross_refs: []
   - id: "CHK-GATE-DEBT003"
+    fixability: "manual"
     name: "DEBT003 is a live, enforced gate rule"
     disposition: "handled_by:DEBT003"
     cross_refs: []
   - id: "CHK-GATE-DSL001"
+    fixability: "manual"
     name: "DSL001 is a live, enforced gate rule"
     disposition: "handled_by:DSL001"
     cross_refs: []
   - id: "CHK-GATE-WAIVE001"
+    fixability: "manual"
     name: "WAIVE001 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE001"
     cross_refs: []
   - id: "CHK-GATE-WAIVE002"
+    fixability: "manual"
     name: "WAIVE002 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE002"
     cross_refs: []
   - id: "CHK-GATE-WAIVE003"
+    fixability: "manual"
     name: "WAIVE003 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE003"
     cross_refs: []
   - id: "CHK-GATE-DEC001"
+    fixability: "manual"
     name: "DEC001 is a live, enforced gate rule"
     disposition: "handled_by:DEC001"
     cross_refs: []
   - id: "CHK-GATE-DEC002"
+    fixability: "manual"
     name: "DEC002 is a live, enforced gate rule"
     disposition: "handled_by:DEC002"
     cross_refs: []
   - id: "CHK-GATE-REL001"
+    fixability: "manual"
     name: "REL001 is a live, enforced gate rule"
     disposition: "handled_by:REL001"
     cross_refs: []
   - id: "CHK-GATE-DOC001"
+    fixability: "manual"
     name: "DOC001 is a live, enforced gate rule"
     disposition: "handled_by:DOC001"
     cross_refs: []
   - id: "CHK-GATE-DOC002"
+    fixability: "auto"
     name: "DOC002 is a live, enforced gate rule"
     disposition: "handled_by:DOC002"
     cross_refs: []
   - id: "CHK-GATE-DOC003"
+    fixability: "manual"
     name: "DOC003 is a live, enforced gate rule"
     disposition: "handled_by:DOC003"
     cross_refs: []
   - id: "CHK-GATE-DUP001"
+    fixability: "manual"
     name: "DUP001 is a live, enforced gate rule"
     disposition: "handled_by:DUP001"
     cross_refs: []
   - id: "CHK-GATE-DUP002"
+    fixability: "manual"
     name: "DUP002 is a live, enforced gate rule"
     disposition: "handled_by:DUP002"
     cross_refs: []
   - id: "CHK-GATE-FUZZ001"
+    fixability: "manual"
     name: "FUZZ001 is a live, enforced gate rule"
     disposition: "handled_by:FUZZ001"
     cross_refs: []
   - id: "CHK-GATE-FUZZ002"
+    fixability: "manual"
     name: "FUZZ002 is a live, enforced gate rule"
     disposition: "handled_by:FUZZ002"
     cross_refs: []
   - id: "CHK-GATE-FUZZ003"
+    fixability: "manual"
     name: "FUZZ003 is a live, enforced gate rule"
     disposition: "handled_by:FUZZ003"
     cross_refs: []
   - id: "CHK-GATE-PERF001"
+    fixability: "manual"
     name: "PERF001 is a live, enforced gate rule"
     disposition: "handled_by:PERF001"
     cross_refs: []
   - id: "CHK-GATE-PERF002"
+    fixability: "manual"
     name: "PERF002 is a live, enforced gate rule"
     disposition: "handled_by:PERF002"
     cross_refs: []
   - id: "CHK-GATE-PERF003"
+    fixability: "manual"
     name: "PERF003 is a live, enforced gate rule"
     disposition: "handled_by:PERF003"
     cross_refs: []
   - id: "CHK-GATE-PERF004"
+    fixability: "manual"
     name: "PERF004 is a live, enforced gate rule"
     disposition: "handled_by:PERF004"
     cross_refs: []
   - id: "CHK-GATE-PERF005"
+    fixability: "manual"
     name: "PERF005 is a live, enforced gate rule"
     disposition: "handled_by:PERF005"
     cross_refs: []
   - id: "CHK-GATE-PERF006"
+    fixability: "manual"
     name: "PERF006 is a live, enforced gate rule"
     disposition: "handled_by:PERF006"
     cross_refs: []
   - id: "CHK-GATE-PERF007"
+    fixability: "manual"
     name: "PERF007 is a live, enforced gate rule"
     disposition: "handled_by:PERF007"
     cross_refs: []
   - id: "CHK-GATE-PERF010"
+    fixability: "manual"
     name: "PERF010 is a live, enforced gate rule"
     disposition: "handled_by:PERF010"
     cross_refs: []
   - id: "CHK-GATE-PERF011"
+    fixability: "manual"
     name: "PERF011 is a live, enforced gate rule"
     disposition: "handled_by:PERF011"
     cross_refs: []
   - id: "CHK-GATE-PERF012"
+    fixability: "manual"
     name: "PERF012 is a live, enforced gate rule"
     disposition: "handled_by:PERF012"
     cross_refs: []
   - id: "CHK-GATE-PERF013"
+    fixability: "manual"
     name: "PERF013 is a live, enforced gate rule"
     disposition: "handled_by:PERF013"
     cross_refs: []
   - id: "CHK-GATE-PERF014"
+    fixability: "manual"
     name: "PERF014 is a live, enforced gate rule"
     disposition: "handled_by:PERF014"
     cross_refs: []
   - id: "CHK-GATE-SYS001"
+    fixability: "manual"
     name: "SYS001 is a live, enforced gate rule"
     disposition: "handled_by:SYS001"
     cross_refs: []
   - id: "CHK-GATE-SYS002"
+    fixability: "manual"
     name: "SYS002 is a live, enforced gate rule"
     disposition: "handled_by:SYS002"
     cross_refs: []
   - id: "CHK-GATE-SYS003"
+    fixability: "manual"
     name: "SYS003 is a live, enforced gate rule"
     disposition: "handled_by:SYS003"
     cross_refs: []
   - id: "CHK-GATE-SYS004"
+    fixability: "manual"
     name: "SYS004 is a live, enforced gate rule"
     disposition: "handled_by:SYS004"
     cross_refs: []
   - id: "CHK-GATE-SEC001"
+    fixability: "manual"
     name: "SEC001 is a live, enforced gate rule"
     disposition: "handled_by:SEC001"
     cross_refs: []
   - id: "CHK-GATE-SEC002"
+    fixability: "manual"
     name: "SEC002 is a live, enforced gate rule"
     disposition: "handled_by:SEC002"
     cross_refs: []
   - id: "CHK-GATE-SEC003"
+    fixability: "manual"
     name: "SEC003 is a live, enforced gate rule"
     disposition: "handled_by:SEC003"
     cross_refs: []
   - id: "CHK-GATE-SEC004"
+    fixability: "manual"
     name: "SEC004 is a live, enforced gate rule"
     disposition: "handled_by:SEC004"
     cross_refs: []
   - id: "CHK-GATE-TICK001"
+    fixability: "manual"
     name: "TICK001 is a live, enforced gate rule"
     disposition: "handled_by:TICK001"
     cross_refs: []
   - id: "CHK-GATE-TICK002"
+    fixability: "auto"
     name: "TICK002 is a live, enforced gate rule"
     disposition: "handled_by:TICK002"
     cross_refs: []
   - id: "CHK-GATE-TICK003"
+    fixability: "manual"
     name: "TICK003 is a live, enforced gate rule"
     disposition: "handled_by:TICK003"
     cross_refs: []
   - id: "CHK-GATE-TICK004"
+    fixability: "manual"
     name: "TICK004 is a live, enforced gate rule"
     disposition: "handled_by:TICK004"
     cross_refs: []
   - id: "CHK-GATE-PII010"
+    fixability: "manual"
     name: "PII010 is a live, enforced gate rule"
     disposition: "handled_by:PII010"
     cross_refs: []
   - id: "CHK-GATE-SEC110"
+    fixability: "manual"
     name: "SEC110 is a live, enforced gate rule"
     disposition: "handled_by:SEC110"
     cross_refs: []
   - id: "CHK-GATE-OPAQUE001"
+    fixability: "manual"
     name: "OPAQUE001 is a live, enforced gate rule"
     disposition: "handled_by:OPAQUE001"
     cross_refs: []
   - id: "CHK-GATE-ARCH001"
+    fixability: "manual"
     name: "ARCH001 is a live, enforced gate rule"
     disposition: "handled_by:ARCH001"
     cross_refs: []
   - id: "CHK-GATE-REF001"
+    fixability: "manual"
     name: "REF001 is a live, enforced gate rule"
     disposition: "handled_by:REF001"
     cross_refs: []
   - id: "CHK-GATE-REF002"
+    fixability: "manual"
     name: "REF002 is a live, enforced gate rule"
     disposition: "handled_by:REF002"
     cross_refs: []
   - id: "CHK-GATE-REF003"
+    fixability: "manual"
     name: "REF003 is a live, enforced gate rule"
     disposition: "handled_by:REF003"
     cross_refs: []
   - id: "CHK-GATE-REG001"
+    fixability: "manual"
     name: "REG001 is a live, enforced gate rule"
     disposition: "handled_by:REG001"
     cross_refs: []
   - id: "CHK-GATE-REG002"
+    fixability: "manual"
     name: "REG002 is a live, enforced gate rule"
     disposition: "handled_by:REG002"
     cross_refs: []
   - id: "CHK-GATE-REG003"
+    fixability: "manual"
     name: "REG003 is a live, enforced gate rule"
     disposition: "handled_by:REG003"
     cross_refs: []
   - id: "CHK-GATE-REG004"
+    fixability: "manual"
     name: "REG004 is a live, enforced gate rule"
     disposition: "handled_by:REG004"
     cross_refs: []
   - id: "CHK-GATE-REG005"
+    fixability: "manual"
     name: "REG005 is a live, enforced gate rule"
     disposition: "handled_by:REG005"
     cross_refs: []
   - id: "CHK-GATE-REG006"
+    fixability: "manual"
     name: "REG006 is a live, enforced gate rule"
     disposition: "handled_by:REG006"
     cross_refs: []
   - id: "CHK-GATE-REG007"
+    fixability: "manual"
     name: "REG007 is a live, enforced gate rule"
     disposition: "handled_by:REG007"
     cross_refs: []
   - id: "CHK-GATE-REG008"
+    fixability: "manual"
     name: "REG008 is a live, enforced gate rule"
     disposition: "handled_by:REG008"
     cross_refs: []
   - id: "CHK-GATE-REG009"
+    fixability: "manual"
     name: "REG009 is a live, enforced gate rule"
     disposition: "handled_by:REG009"
     cross_refs: []
   - id: "CHK-GATE-REG010"
+    fixability: "auto"
     name: "REG010 is a live, enforced gate rule"
     disposition: "handled_by:REG010"
     cross_refs: []
   - id: "CHK-GATE-DOC004"
+    fixability: "manual"
     name: "DOC004 is a live, enforced gate rule"
     disposition: "handled_by:DOC004"
     cross_refs: []
   - id: "CHK-GATE-WALK001"
+    fixability: "manual"
     name: "WALK001 is a live, enforced gate rule"
     disposition: "handled_by:WALK001"
     cross_refs: []
   - id: "CHK-GATE-EXCL001"
+    fixability: "manual"
     name: "EXCL001 is a live, enforced gate rule"
     disposition: "handled_by:EXCL001"
     cross_refs: []
   - id: "CHK-GATE-SEC-CVE-FINGERPRINT-001"
+    fixability: "manual"
     name: "SEC-CVE-FINGERPRINT-001 is a live, enforced gate rule"
     disposition: "handled_by:SEC-CVE-FINGERPRINT-001"
     cross_refs: []
 
   - id: "CHK-GATE-INV005"
+    fixability: "manual"
     name: "INV005 is a live, enforced gate rule"
     disposition: "handled_by:INV005"
     cross_refs: []
   - id: "CHK-GATE-LANG001"
+    fixability: "manual"
     name: "LANG001 is a live, enforced gate rule"
     disposition: "handled_by:LANG001"
     cross_refs: []
   - id: "CHK-GATE-LANG002"
+    fixability: "manual"
     name: "LANG002 is a live, enforced gate rule"
     disposition: "handled_by:LANG002"
     cross_refs: []
   - id: "CHK-GATE-LANG003"
+    fixability: "manual"
     name: "LANG003 is a live, enforced gate rule"
     disposition: "handled_by:LANG003"
     cross_refs: []
   - id: "CHK-GATE-RENDER001"
+    fixability: "manual"
     name: "RENDER001 is a live, enforced gate rule"
     disposition: "handled_by:RENDER001"
     cross_refs: []
   - id: "CHK-GATE-TEST012"
+    fixability: "manual"
     name: "TEST012 is a live, enforced gate rule"
     disposition: "handled_by:TEST012"
     cross_refs: []
   - id: "CHK-GATE-TEST013"
+    fixability: "manual"
     name: "TEST013 is a live, enforced gate rule"
     disposition: "handled_by:TEST013"
     cross_refs: []
   - id: "CHK-GATE-TEST014"
+    fixability: "manual"
     name: "TEST014 is a live, enforced gate rule"
     disposition: "handled_by:TEST014"
     cross_refs: []
   - id: "CHK-GATE-TEST015"
+    fixability: "manual"
     name: "TEST015 is a live, enforced gate rule"
     disposition: "handled_by:TEST015"
     cross_refs: []
   - id: "CHK-GATE-TEST016"
+    fixability: "manual"
     name: "TEST016 is a live, enforced gate rule"
     disposition: "handled_by:TEST016"
     cross_refs: []
   - id: "CHK-GATE-DEPR001"
+    fixability: "manual"
     name: "DEPR001 is a live, enforced gate rule (malformed frob:deprecated directive: missing/invalid sunset= or ticket=, T-0576)"
     disposition: "handled_by:DEPR001"
     cross_refs: []
   - id: "CHK-GATE-DEPR002"
+    fixability: "manual"
     name: "DEPR002 is a live, enforced gate rule (frob:deprecated ticket= names a ticket that is not open, T-0576)"
     disposition: "handled_by:DEPR002"
     cross_refs: []
   - id: "CHK-GATE-DEPR003"
+    fixability: "manual"
     name: "DEPR003 is a live, enforced gate rule (frob:deprecated still inside its warning window ahead of sunset, WARN, T-0576)"
     disposition: "handled_by:DEPR003"
     cross_refs: []
   - id: "CHK-GATE-DEPR004"
+    fixability: "manual"
     name: "DEPR004 is a live, enforced gate rule (frob:deprecated whose sunset date has passed, escalates to ERROR, T-0576)"
     disposition: "handled_by:DEPR004"
     cross_refs: []
   - id: "CHK-GATE-DOC005"
+    fixability: "manual"
     name: "DOC005 is a live, enforced gate rule (README.md command-table + checkable-count drift-lock against the live subparser tree, T-0435)"
     disposition: "handled_by:DOC005"
     cross_refs: []
   - id: "CHK-GATE-DOC006"
+    fixability: "manual"
     name: "DOC006 is a live, enforced gate rule (doc-pointer resolution over a closed set of recognized shapes: file/path, cli invocation, config reference, code symbol, doc-anchor link, plus frob:tests target-form hardening, T-0437)"
     disposition: "handled_by:DOC006"
     cross_refs: []
   - id: "CHK-GATE-DEAD001"
+    fixability: "verified"
     name: "DEAD001 is a live, enforced gate rule"
     disposition: "handled_by:DEAD001"
     cross_refs: []
   - id: "CHK-GATE-TICK006"
+    fixability: "auto"
     name: "TICK006 is a live, enforced gate rule"
     disposition: "handled_by:TICK006"
     cross_refs: []
   - id: "CHK-GATE-TICK007"
+    fixability: "manual"
     name: "TICK007 is a live, enforced gate rule"
     disposition: "handled_by:TICK007"
     cross_refs: []
   - id: "CHK-GATE-COMPLIANCE005"
+    fixability: "manual"
     name: "COMPLIANCE005 is a live, enforced gate rule"
     disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CHK-GATE-FMT001"
+    fixability: "auto"
     name: "FMT001 is a live, enforced gate rule"
     disposition: "handled_by:FMT001"
     cross_refs: []
   - id: "CHK-GATE-ARCH101"
+    fixability: "manual"
     name: "ARCH101 is a live, enforced gate rule"
     disposition: "handled_by:ARCH101"
     cross_refs: []
   - id: "CHK-GATE-ARCH102"
+    fixability: "manual"
     name: "ARCH102 is a live, enforced gate rule"
     disposition: "handled_by:ARCH102"
     cross_refs: []
   - id: "CHK-GATE-ARCH103"
+    fixability: "manual"
     name: "ARCH103 is a live, enforced gate rule"
     disposition: "handled_by:ARCH103"
     cross_refs: []
   - id: "CHK-GATE-PROTO002"
+    fixability: "manual"
     name: "PROTO002 is a live, enforced gate rule"
     disposition: "handled_by:PROTO002"
     cross_refs: []
   - id: "CHK-GATE-PROTO003"
+    fixability: "manual"
     name: "PROTO003 is a live, enforced gate rule"
     disposition: "handled_by:PROTO003"
     cross_refs: []
   - id: "CHK-GATE-TICK008"
+    fixability: "manual"
     name: "TICK008 is a live, enforced gate rule"
     disposition: "handled_by:TICK008"
     cross_refs: []
   - id: "CHK-GATE-WAIVE004"
+    fixability: "auto"
     name: "WAIVE004 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE004"
     cross_refs: []
   - id: "CHK-GATE-WAIVE005"
+    fixability: "manual"
     name: "WAIVE005 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE005"
     cross_refs: []
   - id: "CHK-GATE-WAIVE006"
+    fixability: "manual"
     name: "WAIVE006 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE006"
     cross_refs: []
   - id: "CHK-GATE-WAIVE007"
+    fixability: "manual"
     name: "WAIVE007 is a live, enforced gate rule (dangling BINDING ticket ref in a waiver, T-0808)"
     disposition: "handled_by:WAIVE007"
     cross_refs: []
   - id: "CHK-GATE-PROTO001"
+    fixability: "manual"
     name: "PROTO001 is a live, enforced gate rule (frob:requires/frob:transition-tagged symbol's protocol summary poisoned by an unresolved callee, T-0813)"
     disposition: "handled_by:PROTO001"
     cross_refs: []
   - id: "CHK-GATE-WIRE001"
+    fixability: "manual"
     name: "WIRE001 is a live, enforced gate rule (a ticket's own diff adds a function/rule-id/CLI-dest nothing outside its own tests can reach, T-1428)"
     disposition: "handled_by:WIRE001"
     cross_refs: []
   - id: "CHK-GATE-WIRE002"
+    fixability: "manual"
     name: "WIRE002 is a live, enforced gate rule (a frob:waive WIRE001 missing a follow_up naming a real, open ticket, T-1428)"
     disposition: "handled_by:WIRE002"
     cross_refs: []
   - id: "CHK-GATE-TODO003"
+    fixability: "manual"
     name: "TODO003 is a live, enforced gate rule"
     disposition: "handled_by:TODO003"
     cross_refs: []
   - id: "CHK-GATE-AFFECT001"
+    fixability: "manual"
     name: "AFFECT001 is a live, enforced gate rule"
     disposition: "handled_by:AFFECT001"
     cross_refs: []
   - id: "CHK-GATE-AFFECT002"
+    fixability: "manual"
     name: "AFFECT002 is a live, enforced gate rule"
     disposition: "handled_by:AFFECT002"
     cross_refs: []
   - id: "CHK-GATE-COMPLIANCE001"
+    fixability: "manual"
     name: "COMPLIANCE001 is a live, enforced gate rule"
     disposition: "handled_by:COMPLIANCE001"
     cross_refs: []
   - id: "CHK-GATE-COMPLIANCE002"
+    fixability: "manual"
     name: "COMPLIANCE002 is a live, enforced gate rule"
     disposition: "handled_by:COMPLIANCE002"
     cross_refs: []
   - id: "CHK-GATE-COMPLIANCE003"
+    fixability: "manual"
     name: "COMPLIANCE003 is a live, enforced gate rule"
     disposition: "handled_by:COMPLIANCE003"
     cross_refs: []
   - id: "CHK-GATE-COMPLIANCE004"
+    fixability: "manual"
     name: "COMPLIANCE004 is a live, enforced gate rule"
     disposition: "handled_by:COMPLIANCE004"
     cross_refs: []
   - id: "CHK-GATE-DEC000"
+    fixability: "manual"
     name: "DEC000 is a live, enforced gate rule"
     disposition: "handled_by:DEC000"
     cross_refs: []
   - id: "CHK-GATE-EXHAUST001"
+    fixability: "manual"
     name: "EXHAUST001 is a live, enforced gate rule"
     disposition: "handled_by:EXHAUST001"
     cross_refs: []
   - id: "CHK-GATE-EXHAUST002"
+    fixability: "manual"
     name: "EXHAUST002 is a live, enforced gate rule"
     disposition: "handled_by:EXHAUST002"
     cross_refs: []
   - id: "CHK-GATE-EXHAUST003"
+    fixability: "manual"
     name: "EXHAUST003 is a live, enforced gate rule"
     disposition: "handled_by:EXHAUST003"
     cross_refs: []
   - id: "CHK-GATE-HOST-BLAST"
+    fixability: "manual"
     name: "HOST-BLAST is a live, enforced gate rule"
     disposition: "handled_by:HOST-BLAST"
     cross_refs: []
   - id: "CHK-GATE-HOST001"
+    fixability: "manual"
     name: "HOST001 is a live, enforced gate rule"
     disposition: "handled_by:HOST001"
     cross_refs: []
   - id: "CHK-GATE-HOST002"
+    fixability: "manual"
     name: "HOST002 is a live, enforced gate rule"
     disposition: "handled_by:HOST002"
     cross_refs: []
   - id: "CHK-GATE-KRB001"
+    fixability: "manual"
     name: "KRB001 is a live, enforced gate rule"
     disposition: "handled_by:KRB001"
     cross_refs: []
   - id: "CHK-GATE-KRB002"
+    fixability: "manual"
     name: "KRB002 is a live, enforced gate rule"
     disposition: "handled_by:KRB002"
     cross_refs: []
   - id: "CHK-GATE-KRB003"
+    fixability: "manual"
     name: "KRB003 is a live, enforced gate rule"
     disposition: "handled_by:KRB003"
     cross_refs: []
   - id: "CHK-GATE-KRB004"
+    fixability: "manual"
     name: "KRB004 is a live, enforced gate rule"
     disposition: "handled_by:KRB004"
     cross_refs: []
   - id: "CHK-GATE-LINT001"
+    fixability: "manual"
     name: "LINT001 is a live, enforced gate rule"
     disposition: "handled_by:LINT001"
     cross_refs: []
   - id: "CHK-GATE-LINT002"
+    fixability: "manual"
     name: "LINT002 is a live, enforced gate rule"
     disposition: "handled_by:LINT002"
     cross_refs: []
   - id: "CHK-GATE-LINT003"
+    fixability: "manual"
     name: "LINT003 is a live, enforced gate rule"
     disposition: "handled_by:LINT003"
     cross_refs: []
   - id: "CHK-GATE-LINT004"
+    fixability: "manual"
     name: "LINT004 is a live, enforced gate rule"
     disposition: "handled_by:LINT004"
     cross_refs: []
   - id: "CHK-GATE-LINT005"
+    fixability: "manual"
     name: "LINT005 is a live, enforced gate rule"
     disposition: "handled_by:LINT005"
     cross_refs: []
   - id: "CHK-GATE-PARSE001"
+    fixability: "manual"
     name: "PARSE001 is a live, enforced gate rule"
     disposition: "handled_by:PARSE001"
     cross_refs: []
   - id: "CHK-GATE-PARSE002"
+    fixability: "manual"
     name: "PARSE002 is a live, enforced gate rule"
     disposition: "handled_by:PARSE002"
     cross_refs: []
   - id: "CHK-GATE-PERF008"
+    fixability: "manual"
     name: "PERF008 is a live, enforced gate rule"
     disposition: "handled_by:PERF008"
     cross_refs: []
   - id: "CHK-GATE-PERF009"
+    fixability: "manual"
     name: "PERF009 is a live, enforced gate rule"
     disposition: "handled_by:PERF009"
     cross_refs: []
   - id: "CHK-GATE-PII001"
+    fixability: "manual"
     name: "PII001 is a live, enforced gate rule"
     disposition: "handled_by:PII001"
     cross_refs: []
   - id: "CHK-GATE-PII002"
+    fixability: "manual"
     name: "PII002 is a live, enforced gate rule"
     disposition: "handled_by:PII002"
     cross_refs: []
   - id: "CHK-GATE-PII003"
+    fixability: "manual"
     name: "PII003 is a live, enforced gate rule"
     disposition: "handled_by:PII003"
     cross_refs: []
   - id: "CHK-GATE-PII004"
+    fixability: "manual"
     name: "PII004 is a live, enforced gate rule"
     disposition: "handled_by:PII004"
     cross_refs: []
   - id: "CHK-GATE-PII011"
+    fixability: "manual"
     name: "PII011 is a live, enforced gate rule"
     disposition: "handled_by:PII011"
     cross_refs: []
   - id: "CHK-GATE-PII012"
+    fixability: "manual"
     name: "PII012 is a live, enforced gate rule"
     disposition: "handled_by:PII012"
     cross_refs: []
   - id: "CHK-GATE-PROTO004"
+    fixability: "manual"
     name: "PROTO004 is a live, enforced gate rule"
     disposition: "handled_by:PROTO004"
     cross_refs: []
   - id: "CHK-GATE-PROTO005"
+    fixability: "manual"
     name: "PROTO005 is a live, enforced gate rule"
     disposition: "handled_by:PROTO005"
     cross_refs: []
   - id: "CHK-GATE-REG011"
+    fixability: "manual"
     name: "REG011 is a live, enforced gate rule"
     disposition: "handled_by:REG011"
     cross_refs: []
   - id: "CHK-GATE-REL200"
+    fixability: "manual"
     name: "REL200 is a live, enforced gate rule"
     disposition: "handled_by:REL200"
     cross_refs: []
   - id: "CHK-GATE-REL201"
+    fixability: "manual"
     name: "REL201 is a live, enforced gate rule"
     disposition: "handled_by:REL201"
     cross_refs: []
   - id: "CHK-GATE-REL210"
+    fixability: "manual"
     name: "REL210 is a live, enforced gate rule"
     disposition: "handled_by:REL210"
     cross_refs: []
   - id: "CHK-GATE-REL211"
+    fixability: "manual"
     name: "REL211 is a live, enforced gate rule"
     disposition: "handled_by:REL211"
     cross_refs: []
   - id: "CHK-GATE-REL220"
+    fixability: "manual"
     name: "REL220 is a live, enforced gate rule"
     disposition: "handled_by:REL220"
     cross_refs: []
   - id: "CHK-GATE-REL221"
+    fixability: "manual"
     name: "REL221 is a live, enforced gate rule"
     disposition: "handled_by:REL221"
     cross_refs: []
   - id: "CHK-GATE-REL222"
+    fixability: "manual"
     name: "REL222 is a live, enforced gate rule"
     disposition: "handled_by:REL222"
     cross_refs: []
   - id: "CHK-GATE-REL230"
+    fixability: "manual"
     name: "REL230 is a live, enforced gate rule"
     disposition: "handled_by:REL230"
     cross_refs: []
   - id: "CHK-GATE-REL231"
+    fixability: "manual"
     name: "REL231 is a live, enforced gate rule"
     disposition: "handled_by:REL231"
     cross_refs: []
   - id: "CHK-GATE-REL240"
+    fixability: "manual"
     name: "REL240 is a live, enforced gate rule"
     disposition: "handled_by:REL240"
     cross_refs: []
   - id: "CHK-GATE-REL241"
+    fixability: "manual"
     name: "REL241 is a live, enforced gate rule"
     disposition: "handled_by:REL241"
     cross_refs: []
   - id: "CHK-GATE-REL250"
+    fixability: "manual"
     name: "REL250 is a live, enforced gate rule"
     disposition: "handled_by:REL250"
     cross_refs: []
   - id: "CHK-GATE-REL260"
+    fixability: "manual"
     name: "REL260 is a live, enforced gate rule"
     disposition: "handled_by:REL260"
     cross_refs: []
   - id: "CHK-GATE-REL261"
+    fixability: "manual"
     name: "REL261 is a live, enforced gate rule"
     disposition: "handled_by:REL261"
     cross_refs: []
   - id: "CHK-GATE-REL270"
+    fixability: "manual"
     name: "REL270 is a live, enforced gate rule"
     disposition: "handled_by:REL270"
     cross_refs: []
   - id: "CHK-GATE-REL271"
+    fixability: "manual"
     name: "REL271 is a live, enforced gate rule"
     disposition: "handled_by:REL271"
     cross_refs: []
   - id: "CHK-GATE-REL272"
+    fixability: "manual"
     name: "REL272 is a live, enforced gate rule"
     disposition: "handled_by:REL272"
     cross_refs: []
   - id: "CHK-GATE-REL280"
+    fixability: "manual"
     name: "REL280 is a live, enforced gate rule"
     disposition: "handled_by:REL280"
     cross_refs: []
   - id: "CHK-GATE-REL281"
+    fixability: "manual"
     name: "REL281 is a live, enforced gate rule"
     disposition: "handled_by:REL281"
     cross_refs: []
   - id: "CHK-GATE-REL290"
+    fixability: "manual"
     name: "REL290 is a live, enforced gate rule"
     disposition: "handled_by:REL290"
     cross_refs: []
   - id: "CHK-GATE-REL291"
+    fixability: "manual"
     name: "REL291 is a live, enforced gate rule"
     disposition: "handled_by:REL291"
     cross_refs: []
   - id: "CHK-GATE-REL300"
+    fixability: "manual"
     name: "REL300 is a live, enforced gate rule"
     disposition: "handled_by:REL300"
     cross_refs: []
   - id: "CHK-GATE-REL301"
+    fixability: "manual"
     name: "REL301 is a live, enforced gate rule"
     disposition: "handled_by:REL301"
     cross_refs: []
   - id: "CHK-GATE-REL310"
+    fixability: "manual"
     name: "REL310 is a live, enforced gate rule"
     disposition: "handled_by:REL310"
     cross_refs: []
   - id: "CHK-GATE-REL311"
+    fixability: "manual"
     name: "REL311 is a live, enforced gate rule"
     disposition: "handled_by:REL311"
     cross_refs: []
   - id: "CHK-GATE-REL320"
+    fixability: "manual"
     name: "REL320 is a live, enforced gate rule"
     disposition: "handled_by:REL320"
     cross_refs: []
   - id: "CHK-GATE-REL321"
+    fixability: "manual"
     name: "REL321 is a live, enforced gate rule"
     disposition: "handled_by:REL321"
     cross_refs: []
   - id: "CHK-GATE-REL330"
+    fixability: "manual"
     name: "REL330 is a live, enforced gate rule"
     disposition: "handled_by:REL330"
     cross_refs: []
   - id: "CHK-GATE-REL331"
+    fixability: "manual"
     name: "REL331 is a live, enforced gate rule"
     disposition: "handled_by:REL331"
     cross_refs: []
   - id: "CHK-GATE-REL340"
+    fixability: "manual"
     name: "REL340 is a live, enforced gate rule"
     disposition: "handled_by:REL340"
     cross_refs: []
   - id: "CHK-GATE-REL350"
+    fixability: "manual"
     name: "REL350 is a live, enforced gate rule"
     disposition: "handled_by:REL350"
     cross_refs: []
   - id: "CHK-GATE-REL351"
+    fixability: "manual"
     name: "REL351 is a live, enforced gate rule"
     disposition: "handled_by:REL351"
     cross_refs: []
   - id: "CHK-GATE-REL360"
+    fixability: "manual"
     name: "REL360 is a live, enforced gate rule"
     disposition: "handled_by:REL360"
     cross_refs: []
   - id: "CHK-GATE-REL370"
+    fixability: "manual"
     name: "REL370 is a live, enforced gate rule"
     disposition: "handled_by:REL370"
     cross_refs: []
   - id: "CHK-GATE-REL371"
+    fixability: "manual"
     name: "REL371 is a live, enforced gate rule"
     disposition: "handled_by:REL371"
     cross_refs: []
   - id: "CHK-GATE-REL372"
+    fixability: "manual"
     name: "REL372 is a live, enforced gate rule"
     disposition: "handled_by:REL372"
     cross_refs: []
   - id: "CHK-GATE-REL380"
+    fixability: "manual"
     name: "REL380 is a live, enforced gate rule"
     disposition: "handled_by:REL380"
     cross_refs: []
   - id: "CHK-GATE-REL381"
+    fixability: "manual"
     name: "REL381 is a live, enforced gate rule"
     disposition: "handled_by:REL381"
     cross_refs: []
   - id: "CHK-GATE-REL382"
+    fixability: "manual"
     name: "REL382 is a live, enforced gate rule"
     disposition: "handled_by:REL382"
     cross_refs: []
   - id: "CHK-GATE-REL383"
+    fixability: "manual"
     name: "REL383 is a live, enforced gate rule"
     disposition: "handled_by:REL383"
     cross_refs: []
   - id: "CHK-GATE-RELWAIVE002"
+    fixability: "manual"
     name: "RELWAIVE002 is a live, enforced gate rule"
     disposition: "handled_by:RELWAIVE002"
     cross_refs: []
   - id: "CHK-GATE-SELFAUDIT001"
+    fixability: "manual"
     name: "SELFAUDIT001 is a live, enforced gate rule"
     disposition: "handled_by:SELFAUDIT001"
     cross_refs: []
   - id: "CHK-GATE-SYS204"
+    fixability: "manual"
     name: "SYS204 is a live, enforced gate rule"
     disposition: "handled_by:SYS204"
     cross_refs: []
   - id: "CHK-GATE-SYSWAIVE002"
+    fixability: "manual"
     name: "SYSWAIVE002 is a live, enforced gate rule"
     disposition: "handled_by:SYSWAIVE002"
     cross_refs: []
   - id: "CHK-GATE-THREAT001"
+    fixability: "manual"
     name: "THREAT001 is a live, enforced gate rule"
     disposition: "handled_by:THREAT001"
     cross_refs: []
   - id: "CHK-GATE-THREAT002"
+    fixability: "manual"
     name: "THREAT002 is a live, enforced gate rule"
     disposition: "handled_by:THREAT002"
     cross_refs: []
   - id: "CHK-GATE-THREAT003"
+    fixability: "manual"
     name: "THREAT003 is a live, enforced gate rule"
     disposition: "handled_by:THREAT003"
     cross_refs: []
   - id: "CHK-GATE-THREAT004"
+    fixability: "manual"
     name: "THREAT004 is a live, enforced gate rule"
     disposition: "handled_by:THREAT004"
     cross_refs: []
   - id: "CHK-GATE-THREAT005"
+    fixability: "manual"
     name: "THREAT005 is a live, enforced gate rule"
     disposition: "handled_by:THREAT005"
     cross_refs: []
   - id: "CHK-GATE-THREAT006"
+    fixability: "manual"
     name: "THREAT006 is a live, enforced gate rule"
     disposition: "handled_by:THREAT006"
     cross_refs: []
   - id: "CHK-GATE-TICK005"
+    fixability: "manual"
     name: "TICK005 is a live, enforced gate rule"
     disposition: "handled_by:TICK005"
     cross_refs: []
   - id: "CHK-GATE-REL390"
+    fixability: "manual"
     name: "REL390 is a live, enforced gate rule"
     disposition: "handled_by:REL390"
     cross_refs: []
   - id: "CHK-GATE-REL391"
+    fixability: "manual"
     name: "REL391 is a live, enforced gate rule"
     disposition: "handled_by:REL391"
     cross_refs: []
   - id: "CHK-GATE-REL392"
+    fixability: "manual"
     name: "REL392 is a live, enforced gate rule"
     disposition: "handled_by:REL392"
     cross_refs: []
   - id: "CHK-GATE-REL393"
+    fixability: "manual"
     name: "REL393 is a live, enforced gate rule"
     disposition: "handled_by:REL393"
     cross_refs: []
   - id: "CHK-GATE-REL394"
+    fixability: "manual"
     name: "REL394 is a live, enforced gate rule"
     disposition: "handled_by:REL394"
     cross_refs: []
   - id: "CHK-GATE-REL395"
+    fixability: "manual"
     name: "REL395 is a live, enforced gate rule"
     disposition: "handled_by:REL395"
     cross_refs: []
   - id: "CHK-GATE-REL396"
+    fixability: "manual"
     name: "REL396 is a live, enforced gate rule"
     disposition: "handled_by:REL396"
     cross_refs: []
   - id: "CHK-GATE-REL397"
+    fixability: "manual"
     name: "REL397 is a live, enforced gate rule"
     disposition: "handled_by:REL397"
     cross_refs: []
   - id: "CHK-GATE-DUP003"
+    fixability: "manual"
     name: "DUP003 is a live, enforced gate rule"
     disposition: "handled_by:DUP003"
     cross_refs: []
   - id: "CHK-GATE-SYS100"
+    fixability: "auto"
     name: "SYS100 is a live, enforced gate rule"
     disposition: "handled_by:SYS100"
     cross_refs: ["SLH-SYS-EVA-02-UNDER-DECLARED-CAPABILITY"]
   - id: "CHK-GATE-SYS101"
+    fixability: "manual"
     name: "SYS101 is a live, enforced gate rule"
     disposition: "handled_by:SYS101"
     cross_refs: []
   - id: "CHK-GATE-SYS102"
+    fixability: "manual"
     name: "SYS102 is a live, enforced gate rule"
     disposition: "handled_by:SYS102"
     cross_refs: []
   - id: "CHK-GATE-SYS200"
+    fixability: "manual"
     name: "SYS200 is a live, enforced gate rule"
     disposition: "handled_by:SYS200"
     cross_refs: []
   - id: "CHK-GATE-SYS201"
+    fixability: "manual"
     name: "SYS201 is a live, enforced gate rule"
     disposition: "handled_by:SYS201"
     cross_refs: []
   - id: "CHK-GATE-SYS202"
+    fixability: "manual"
     name: "SYS202 is a live, enforced gate rule"
     disposition: "handled_by:SYS202"
     cross_refs: []
   - id: "CHK-GATE-SYS203"
+    fixability: "manual"
     name: "SYS203 is a live, enforced gate rule"
     disposition: "handled_by:SYS203"
     cross_refs: []
   - id: "CHK-GATE-COMPLIANCE006"
+    fixability: "manual"
     name: "COMPLIANCE006 is a live, enforced gate rule"
     disposition: "handled_by:COMPLIANCE006"
     cross_refs: []
   - id: "CHK-GATE-DEC003"
+    fixability: "manual"
     name: "DEC003 is a live, enforced gate rule"
     disposition: "handled_by:DEC003"
     cross_refs: []
   - id: "CHK-GATE-DOC007"
+    fixability: "auto"
     name: "DOC007 is a live, enforced gate rule"
     disposition: "handled_by:DOC007"
     cross_refs: []
   - id: "CHK-GATE-DOC008"
+    fixability: "manual"
     name: "DOC008 is a live, enforced gate rule (T-1231: an obligated doc's own inline markdown link target or #fragment does not resolve)"
     disposition: "handled_by:DOC008"
     cross_refs: []
   - id: "CHK-GATE-DOC009"
+    fixability: "manual"
     name: "DOC009 is a live, enforced gate rule (T-1232: a docs/audits/*.md file has no dated status/superseded-by header)"
     disposition: "handled_by:DOC009"
     cross_refs: []
   - id: "CHK-GATE-DOC010"
+    fixability: "manual"
     name: "DOC010 is a live, enforced gate rule (T-1230: a `make <target>` prose citation is not a real Makefile recipe)"
     disposition: "handled_by:DOC010"
     cross_refs: []
   - id: "CHK-GATE-DOC011"
+    fixability: "manual"
     name: "DOC011 is a live, enforced gate rule (T-1486: a T-####/T-draft-<hex> doc-prose mention does not resolve to any active or archived ticket; WARN pending a follow-up cleanup ticket, see docs/audits/docs-staleness-2026-07-29.md)"
     disposition: "handled_by:DOC011"
     cross_refs: []
   - id: "CHK-GATE-REG012"
+    fixability: "manual"
     name: "REG012 is a live, enforced gate rule"
     disposition: "handled_by:REG012"
     cross_refs: []
   - id: "CHK-GATE-REL002"
+    fixability: "auto"
     name: "REL002 is a live, enforced gate rule"
     disposition: "handled_by:REL002"
     cross_refs: []
   - id: "CHK-GATE-SCOPE002"
+    fixability: "manual"
     name: "SCOPE002 is a live, enforced gate rule"
     disposition: "handled_by:SCOPE002"
     cross_refs: []
   - id: "CHK-GATE-SUPPRESS001"
+    fixability: "auto"
     name: "SUPPRESS001 is a live, enforced gate rule"
     disposition: "handled_by:SUPPRESS001"
     cross_refs: []
   - id: "CHK-GATE-FFI001"
+    fixability: "manual"
     name: "FFI001 is a live, enforced gate rule"
     disposition: "handled_by:FFI001"
     cross_refs: []
   - id: "CHK-GATE-FFI002"
+    fixability: "manual"
     name: "FFI002 is a live, enforced gate rule"
     disposition: "handled_by:FFI002"
     cross_refs: []
   - id: "CHK-GATE-INV007"
+    fixability: "manual"
     name: "INV007 is a live, enforced gate rule"
     disposition: "handled_by:INV007"
     cross_refs: []
   - id: "CHK-GATE-INV008"
+    fixability: "manual"
     name: "INV008 is a live, enforced gate rule"
     disposition: "handled_by:INV008"
     cross_refs: []
   - id: "CHK-GATE-DEPR005"
+    fixability: "manual"
     name: "DEPR005 is a live, enforced gate rule"
     disposition: "handled_by:DEPR005"
     cross_refs: []
   - id: "CHK-GATE-TICK009"
+    fixability: "manual"
     name: "TICK009 is a live, enforced gate rule"
     disposition: "handled_by:TICK009"
     cross_refs: []
   - id: "CHK-GATE-TICK010"
+    fixability: "manual"
     name: "TICK010 is a live, enforced gate rule"
     disposition: "handled_by:TICK010"
     cross_refs: []
   - id: "CHK-GATE-CPPTHROW001"
+    fixability: "manual"
     name: "CPPTHROW001 is a live, enforced gate rule"
     disposition: "handled_by:CPPTHROW001"
     cross_refs: []
   - id: "CHK-GATE-LARGE001"
+    fixability: "manual"
     name: "LARGE001 is a live, enforced gate rule"
     disposition: "handled_by:LARGE001"
     cross_refs: []
   - id: "CHK-GATE-SYS103"
+    fixability: "manual"
     name: "SYS103 is a live, enforced gate rule"
     disposition: "handled_by:SYS103"
     cross_refs: ["SLH-SYS-EVA-01-UNMODELED-MODULE"]
   - id: "CHK-GATE-SYS104"
+    fixability: "auto"
     name: "SYS104 is a live, enforced gate rule"
     disposition: "handled_by:SYS104"
     cross_refs: []
   - id: "CHK-GATE-SYS105"
+    fixability: "manual"
     name: "SYS105 is a live, enforced gate rule"
     disposition: "handled_by:SYS105"
     cross_refs: []
   - id: "CHK-GATE-SYS106"
+    fixability: "manual"
     name: "SYS106 is a live, enforced gate rule"
     disposition: "handled_by:SYS106"
     cross_refs: []
   - id: "CHK-GATE-SYS107"
+    fixability: "manual"
     name: "SYS107 is a live, enforced gate rule"
     disposition: "handled_by:SYS107"
     cross_refs: []
   - id: "CHK-GATE-SYS205"
+    fixability: "manual"
     name: "SYS205 is a live, enforced gate rule"
     disposition: "handled_by:SYS205"
     cross_refs: []
   - id: "CHK-GATE-SEC005"
+    fixability: "manual"
     name: "SEC005 is a live, enforced gate rule"
     disposition: "handled_by:SEC005"
     cross_refs: []
   - id: "CHK-GATE-VET001"
+    fixability: "manual"
     name: "VET001 is a live, enforced gate rule"
     disposition: "handled_by:VET001"
     cross_refs: []
   - id: "CHK-GATE-VET002"
+    fixability: "manual"
     name: "VET002 is a live, enforced gate rule"
     disposition: "handled_by:VET002"
     cross_refs: []
   - id: "CHK-GATE-VET003"
+    fixability: "manual"
     name: "VET003 is a live, enforced gate rule"
     disposition: "handled_by:VET003"
     cross_refs: []
   - id: "CHK-GATE-VET004"
+    fixability: "manual"
     name: "VET004 is a live, enforced gate rule"
     disposition: "handled_by:VET004"
     cross_refs: []
   - id: "CHK-GATE-VET005"
+    fixability: "manual"
     name: "VET005 is a live, enforced gate rule"
     disposition: "handled_by:VET005"
     cross_refs: []
   - id: "CHK-GATE-VET006"
+    fixability: "manual"
     name: "VET006 is a live, enforced gate rule"
     disposition: "handled_by:VET006"
     cross_refs: []
   - id: "CHK-GATE-VET007"
+    fixability: "manual"
     name: "VET007 is a live, enforced gate rule"
     disposition: "handled_by:VET007"
     cross_refs: []
   - id: "CHK-GATE-VET008"
+    fixability: "manual"
     name: "VET008 is a live, enforced gate rule"
     disposition: "handled_by:VET008"
     cross_refs: []
   - id: "CHK-GATE-VET009"
+    fixability: "manual"
     name: "VET009 is a live, enforced gate rule"
     disposition: "handled_by:VET009"
     cross_refs: []
   - id: "CHK-GATE-VET010"
+    fixability: "manual"
     name: "VET010 is a live, enforced gate rule"
     disposition: "handled_by:VET010"
     cross_refs: []
   - id: "CHK-GATE-VET011"
+    fixability: "manual"
     name: "VET011 is a live, enforced gate rule"
     disposition: "handled_by:VET011"
     cross_refs: []
   - id: "CHK-GATE-VET-JS"
+    fixability: "manual"
     name: "VET-JS is a live, enforced gate rule"
     disposition: "handled_by:VET-JS"
     cross_refs: []
   - id: "CHK-GATE-VET-JS003"
+    fixability: "manual"
     name: "VET-JS003 is a live, enforced gate rule"
     disposition: "handled_by:VET-JS003"
     cross_refs: []
   - id: "CHK-GATE-VET-SOURCE-UNAVAILABLE"
+    fixability: "manual"
     name: "VET-SOURCE-UNAVAILABLE is a live, enforced gate rule"
     disposition: "handled_by:VET-SOURCE-UNAVAILABLE"
     cross_refs: []
   - id: "CHK-GATE-VET-TIMEOUT"
+    fixability: "manual"
     name: "VET-TIMEOUT is a live, enforced gate rule"
     disposition: "handled_by:VET-TIMEOUT"
     cross_refs: []
   - id: "CHK-GATE-SYSWAIVE003"
+    fixability: "manual"
     name: "SYSWAIVE003 is a live, enforced gate rule"
     disposition: "handled_by:SYSWAIVE003"
     cross_refs: []
   - id: "CHK-GATE-VET-JS004"
+    fixability: "manual"
     name: "VET-JS004 is a live, enforced gate rule"
     disposition: "handled_by:VET-JS004"
     cross_refs: []
   - id: "CHK-GATE-VET-PY001"
+    fixability: "manual"
     name: "VET-PY001 is a live, enforced gate rule"
     disposition: "handled_by:VET-PY001"
     cross_refs: []
   - id: "CHK-GATE-VET-PY002"
+    fixability: "manual"
     name: "VET-PY002 is a live, enforced gate rule"
     disposition: "handled_by:VET-PY002"
     cross_refs: []
   - id: "CHK-GATE-VET-PY003"
+    fixability: "manual"
     name: "VET-PY003 is a live, enforced gate rule"
     disposition: "handled_by:VET-PY003"
     cross_refs: []
   - id: "CHK-GATE-VET-RS001"
+    fixability: "manual"
     name: "VET-RS001 is a live, enforced gate rule"
     disposition: "handled_by:VET-RS001"
     cross_refs: []
   - id: "CHK-GATE-VET-RS002"
+    fixability: "manual"
     name: "VET-RS002 is a live, enforced gate rule"
     disposition: "handled_by:VET-RS002"
     cross_refs: []
   - id: "CHK-GATE-NATIVE001"
+    fixability: "manual"
     name: "NATIVE001 is a live, enforced gate rule"
     disposition: "handled_by:NATIVE001"
     cross_refs: []
   - id: "CHK-GATE-TICK011"
+    fixability: "manual"
     name: "TICK011 is a live, enforced gate rule"
     disposition: "handled_by:TICK011"
     cross_refs: []
   - id: "CHK-GATE-COMPLIANCE007"
+    fixability: "manual"
     name: "COMPLIANCE007 is a live, enforced gate rule"
     disposition: "handled_by:COMPLIANCE007"
     cross_refs: []
   - id: "CHK-GATE-DOCENUM001"
+    fixability: "manual"
     name: "DOCENUM001 is a live, enforced gate rule"
     disposition: "handled_by:DOCENUM001"
     cross_refs: []
   - id: "CHK-GATE-BUG002"
+    fixability: "manual"
     name: "BUG002 is a live, enforced gate rule"
     disposition: "handled_by:BUG002"
     cross_refs: []
   - id: "CHK-GATE-NEGEXIST001"
+    fixability: "manual"
     name: "NEGEXIST001 is a live, enforced gate rule"
     disposition: "handled_by:NEGEXIST001"
     cross_refs: []
   - id: "CHK-GATE-LEDGERV1001"
+    fixability: "manual"
     name: "LEDGERV1001 is a live, enforced gate rule"
     disposition: "handled_by:LEDGERV1001"
     cross_refs: []
   - id: "CHK-GATE-CACHE001"
+    fixability: "manual"
     name: "CACHE001 is a live, enforced gate rule"
     disposition: "handled_by:CACHE001"
     cross_refs: []
   - id: "CHK-GATE-E501"
+    fixability: "auto"
     name: "E501 is a live, enforced gate rule"
     disposition: "handled_by:E501"
     cross_refs: []
   - id: "CHK-GATE-TEST018"
+    fixability: "manual"
     name: "TEST018 is a live, enforced gate rule"
     disposition: "handled_by:TEST018"
     cross_refs: []
   - id: "CHK-GATE-SYS108"
+    fixability: "manual"
     name: "SYS108 is a live, enforced gate rule"
     disposition: "handled_by:SYS108"
     cross_refs: []
   - id: "CHK-GATE-WIRE003"
+    fixability: "manual"
     name: "WIRE003 is a live, enforced gate rule"
     disposition: "handled_by:WIRE003"
     cross_refs: []

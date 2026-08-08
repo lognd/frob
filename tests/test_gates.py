@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from frob.gates import (
+    _KNOWN_RULE_FIXABILITY,
     GateConfig,
     GateError,
     PreworkSweep,
@@ -36,6 +37,7 @@ from frob.gates import (
     drift_gate,
     exclude_hazard_gate,
     fmt_gate,
+    generated_fixability,
     inv003_gate,
     inv004_gate,
     invariant_gate,
@@ -64,6 +66,7 @@ from frob.gates._deprecated_baseline import (
     save_deprecated_baseline,
 )
 from frob.gates._docblocks import doc004_gate
+from frob.gates._fixability_scan import FixabilityConflict
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._rule_id_scan import (
     generated_gate_rule_ids,
@@ -13995,6 +13998,103 @@ class TestKnownGateRuleIds:
         generated = generated_gate_rule_ids(tmp_path, retired=frozenset({"ZZZTEST003"}))
 
         assert "ZZZTEST003" not in generated
+
+
+# frob:ticket T-1264
+class TestRuleFixability:
+    """T-1264: `generated_fixability()` is the AUTHORITY for which tier
+    (auto/verified/assisted/manual) each known gate rule id belongs to,
+    derived from the actual `TIER_A_HANDLERS`/`TIER_B_HANDLERS`/
+    `TIER_C_EMITTERS` dispatch tables -- `_KNOWN_RULE_FIXABILITY` is the
+    checked-in GENERATED artifact kept in sync with it, same
+    generated-verified shape `TestKnownGateRuleIds` already exercises for
+    rule-id scanning itself."""
+
+    # frob:ticket T-1264
+    def test_every_known_rule_id_maps_to_exactly_one_tier(self) -> None:
+        """GIVEN every known gate rule id THEN `generated_fixability()`
+        maps it to exactly one of auto/verified/assisted/manual, with
+        `manual` the correct default for a rule with no handler in any
+        table."""
+        mapping = generated_fixability(known_gate_rule_ids())
+        assert set(mapping) == set(known_gate_rule_ids())
+        assert all(
+            tier in {"auto", "verified", "assisted", "manual"}
+            for tier in mapping.values()
+        )
+        # A rule genuinely absent from every Tier A/B/C table is manual --
+        # not silently omitted from the mapping.
+        assert mapping["SEC001"] == "manual"
+
+    # frob:ticket T-1264
+    def test_conflicting_registration_raises_fixabilityconflict(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """GIVEN a rule id registered in more than one of
+        TIER_A_HANDLERS/TIER_B_HANDLERS/TIER_C_EMITTERS WHEN
+        `generated_fixability()` runs THEN it raises `FixabilityConflict`
+        rather than silently picking one."""
+        import frob.gates._fix_engine_tier_b as tier_b_module
+
+        monkeypatch.setattr(
+            tier_b_module,
+            "TIER_B_HANDLERS",
+            {"DOC007": lambda *a, **k: []},
+        )
+        with pytest.raises(FixabilityConflict):
+            generated_fixability(frozenset({"DOC007"}))
+
+    # frob:ticket T-1264
+    def test_checked_in_literal_matches_a_fresh_scan(self) -> None:
+        """GIVEN the checked-in `_KNOWN_RULE_FIXABILITY` literal WHEN it
+        drifts from a fresh `generated_fixability()` scan (a handler added
+        without updating the literal) THEN this test fails loud -- the
+        same drift-lock shape `TestKnownGateRuleIds`'s own scan-vs-literal
+        test already applies to rule ids, applied here to tiers. Only the
+        non-"manual" entries are checked-in (manual is the honest default
+        for everything else), so the comparison expands the fresh scan
+        down to non-manual entries before comparing."""
+        fresh = generated_fixability(known_gate_rule_ids())
+        fresh_non_manual = {k: v for k, v in fresh.items() if v != "manual"}
+        assert fresh_non_manual == _KNOWN_RULE_FIXABILITY
+
+    # frob:ticket T-1264
+    def test_sync_gate_rule_fixability_backfills_missing_field(
+        self, tmp_path: Path
+    ) -> None:
+        """GIVEN check-coverage.yaml's CHK-GATE-<rule> entries THEN each
+        carries a fixability: field kept in sync the same idempotent way
+        gate_rule_entries already is: a fresh entry with no field gets one
+        backfilled from `generated_fixability`, and a second run is a
+        no-op (idempotent, matching `sync_gate_rule_entries`'s own
+        contract)."""
+        from frob.registry._staleness import sync_gate_rule_fixability
+
+        registry = tmp_path / "check-coverage.yaml"
+        registry.write_text(
+            "schema_version: 1\n"
+            "gate_rule_entries:\n"
+            '  - id: "CHK-GATE-DOC007"\n'
+            '    name: "DOC007 is a live, enforced gate rule"\n'
+            '    disposition: "handled_by:DOC007"\n'
+            "    cross_refs: []\n"
+            "gate_rule_total: 1\n"
+        )
+        result = sync_gate_rule_fixability(registry, frozenset({"DOC007"}))
+        assert result.is_ok
+        assert result.danger_ok == ("DOC007",)
+        written = registry.read_text()
+        assert 'fixability: "auto"' in written
+        import yaml
+
+        parsed = yaml.safe_load(written)  # must stay valid YAML after backfill
+        entry = parsed["gate_rule_entries"][0]
+        assert entry["fixability"] == "auto"
+        assert entry["disposition"] == "handled_by:DOC007"
+
+        second = sync_gate_rule_fixability(registry, frozenset({"DOC007"}))
+        assert second.is_ok
+        assert second.danger_ok == ()
 
 
 # frob:ticket T-0459

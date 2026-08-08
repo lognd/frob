@@ -116,6 +116,13 @@ happen) `atomic_write` I/O failure path, `sync_gate_rule_entries` now
 returns the dedicated `CorpusError.WriteFailed` (T-1533) rather than
 reusing `FileNotFound` as an inaccurate stand-in.
 
+T-1264: every `CHK-GATE-<rule>` entry `sync_gate_rule_entries` appends now
+also carries a `fixability:` field (`generated_fixability`'s value for
+that rule -- see "Fixability registry field" in `docs/design/
+check-fix-engine.md`), and `sync_gate_rule_fixability` (same module)
+backfills that field onto any EXISTING entry that predates T-1264 and
+does not carry one yet, idempotently.
+
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_sync_gate_rules_for_land -->
 
 T-1011: `frob ticket land` now runs this same sync AUTOMATICALLY, not just

@@ -83,7 +83,11 @@ class TestSyncGateRuleEntries:
 
         assert result.is_ok
         assert result.danger_ok == ()
-        assert path.read_text() == _FIXTURE
+        # T-1264: no NEW entry was appended (still "in sync" for that
+        # half), but the existing entry's own `fixability:` field gets
+        # backfilled as part of the same blessed sync call -- the fixture
+        # predates that field, so it is no longer byte-identical.
+        assert 'fixability: "manual"' in path.read_text()
 
     # frob:ticket T-0560
     def test_missing_file_rejected(self, tmp_path: Path) -> None:
