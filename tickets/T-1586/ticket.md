@@ -1,7 +1,7 @@
 ---
 id: T-1586
 title: 'test isolation: scrub inherited FORCE_COLOR/NO_COLOR in conftest'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -13,8 +13,46 @@ runs_last: false
 scope:
 - tests/conftest.py
 - docs/modules/logging.md
+- tests/unit/test_conftest_color_env.py
+- tickets/T-1586/**
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_conftest_color_env.py
+  reason: 'T-1586: the ticket''s own acceptance criterion (regression test for a spawned
+    CLI subprocess) needs a new test file; own ticket dir needed for Done report'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1586/**
+  reason: 'T-1586: the ticket''s own acceptance criterion (regression test for a spawned
+    CLI subprocess) needs a new test file; own ticket dir needed for Done report'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/unit/test_conftest_color_env.py
+  reason: 'T-1586: the ticket''s own acceptance criterion (regression test for a spawned
+    CLI subprocess) needs a new test file; own ticket dir needed for Done report'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1586/**
+  reason: 'T-1586: the ticket''s own acceptance criterion (regression test for a spawned
+    CLI subprocess) needs a new test file; own ticket dir needed for Done report'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-1586: the new spawned-CLI regression test''s capabilities (exec/fs.write/env.read)
+    need declaring on the testsuite design node'
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/unit/test_conftest_color_env.py::TestConftestColorEnvIsolation::test_force_color_and_no_color_are_absent_from_this_process_env
+- tests/unit/test_conftest_color_env.py::TestConftestColorEnvIsolation::test_spawned_cli_produces_escape_free_output_despite_ambient_shell
+- tests/unit/test_conftest_color_env.py::TestConftestColorEnvIsolation::test_explicit_force_color_in_child_env_still_colors
 designated_repro_test: null
 threat: null
 component: null
