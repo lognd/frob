@@ -106,37 +106,138 @@ def _scope_add_conflicts(
     refused. This is a narrow, additive-file-only carve-out: it never
     exempts a wildcard-bearing `glob` (that could still claim an existing
     file the holder is mid-edit on) and never touches the `own_scope`
-    subset check above."""
+    subset check above.
+
+    T-1868: `queue` alone is NOT sufficient -- it reflects a sibling
+    worktree's `start` only once THIS worktree has merged that commit in,
+    which let two in-progress tickets in different worktrees hold the
+    identical path simultaneously (the confirmed T-1868 incident). When
+    `root` is given, `_scope_add_live_lease_conflict` (see its own
+    docstring for the full mechanism) additionally checks every other
+    ticket's LIVE cross-worktree lease, which needs no merge to be
+    current."""
     if any(_glob_is_subset(glob, existing) for existing in own_scope):
         return None
     new_file = root is not None and _is_new_concrete_file_glob(glob, root)
+    queue_conflict = _scope_add_queue_conflict(
+        glob, ticket_id, queue, root=root, new_file=new_file
+    )
+    if queue_conflict is not None:
+        return queue_conflict
+    if root is not None:
+        return _scope_add_live_lease_conflict(glob, ticket_id, root, new_file=new_file)
+    return None
+
+
+# frob:ticket T-1868
+def _scope_add_queue_conflict(
+    glob: str,
+    ticket_id: str,
+    queue: dict[str, Ticket],
+    *,
+    root: Path | None,
+    new_file: bool,
+) -> tuple[str, str] | None:
+    """`_scope_add_conflicts`'s pre-T-1868 queue-based loop (T-0455/T-0561/
+    T-1356), split out unchanged (ARCH001: `_scope_add_conflicts` grew past
+    the line threshold once the T-1868 live-lease half was added) -- every
+    OTHER in-progress ticket in `queue` whose declared scope overlaps
+    `glob`, with T-1356's same-worktree exemption and T-0561's new-file
+    carve-out both applied exactly as before."""
     for holder in sorted(queue.values(), key=lambda t: t.id):
         if holder.id == ticket_id or holder.state is not TicketState.IN_PROGRESS:
             continue
         collision = scope_overlap_globs((glob,), holder.scope)
-        if collision is not None:
-            if root is not None and _same_worktree_lease(root, ticket_id, holder.id):
-                _log.info(
-                    "tickets: %s --add %r exempted from %s's lease on %r "
-                    "(T-1356: both tickets are leased to the same worktree "
-                    "-- one agent, not a real cross-agent collision)",
-                    ticket_id,
-                    glob,
-                    holder.id,
-                    collision[1],
-                )
-                continue
-            if new_file and collision[1] != glob:
-                _log.info(
-                    "tickets: %s --add %r exempted from %s's lease on %r "
-                    "(T-0561: new file, holder glob is not an exact match)",
-                    ticket_id,
-                    glob,
-                    holder.id,
-                    collision[1],
-                )
-                continue
-            return (holder.id, collision[1])
+        if collision is None:
+            continue
+        if root is not None and _same_worktree_lease(root, ticket_id, holder.id):
+            _log.info(
+                "tickets: %s --add %r exempted from %s's lease on %r "
+                "(T-1356: both tickets are leased to the same worktree "
+                "-- one agent, not a real cross-agent collision)",
+                ticket_id,
+                glob,
+                holder.id,
+                collision[1],
+            )
+            continue
+        if new_file and collision[1] != glob:
+            _log.info(
+                "tickets: %s --add %r exempted from %s's lease on %r "
+                "(T-0561: new file, holder glob is not an exact match)",
+                ticket_id,
+                glob,
+                holder.id,
+                collision[1],
+            )
+            continue
+        return (holder.id, collision[1])
+    return None
+
+
+# frob:ticket T-1868
+# frob:todo T-1878
+# (a docs/modules/tickets.md section for this fix is deferred: the file
+# was leased by in-progress T-1873 when T-1868 landed)
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
+def _scope_add_live_lease_conflict(
+    glob: str, ticket_id: str, root: Path, *, new_file: bool
+) -> tuple[str, str] | None:
+    """T-1868: the cross-worktree-lease-side-channel half of
+    `_scope_add_conflicts` -- checks `glob` against every OTHER ticket's
+    LIVE lease (`read_all_leases`), not just what this worktree's local
+    ticket ledger happens to already know about. Dead-worktree leases are
+    already excluded by `read_all_leases` itself (`_probe_worktree_
+    liveness`); expired-TTL leases are filtered here explicitly
+    (`is_lease_ttl_expired`), the same way `_refuse_if_foreign_live_lease`
+    checks it -- `read_all_leases` only prunes a lease whose WORKTREE has
+    vanished, not one whose TTL has simply lapsed. Matches `_refuse_if_
+    foreign_live_lease`'s own posture: a lease with no live holder behind
+    it is not a real collision. `_same_worktree_lease`'s T-1356 exemption
+    and T-0561's new-file carve-out both still apply here, mirroring the
+    queue-based check exactly so a live-lease conflict is never STRICTER
+    than a queue-based one for the same underlying holder -- only able to
+    catch a REAL conflict the queue-based check's merge-dependent
+    staleness missed."""
+    from frob.tickets._leases import is_lease_ttl_expired, read_all_leases
+
+    for lease in read_all_leases(root):
+        if lease.ticket_id == ticket_id or is_lease_ttl_expired(lease):
+            continue
+        collision = scope_overlap_globs((glob,), lease.scope)
+        if collision is None:
+            continue
+        if _same_worktree_lease(root, ticket_id, lease.ticket_id):
+            _log.info(
+                "tickets: %s --add %r exempted from %s's live lease on %r "
+                "(T-1356: both tickets are leased to the same worktree)",
+                ticket_id,
+                glob,
+                lease.ticket_id,
+                collision[1],
+            )
+            continue
+        if new_file and collision[1] != glob:
+            _log.info(
+                "tickets: %s --add %r exempted from %s's live lease on %r "
+                "(T-0561: new file, holder glob is not an exact match)",
+                ticket_id,
+                glob,
+                lease.ticket_id,
+                collision[1],
+            )
+            continue
+        _log.warning(
+            "tickets: %s --add %r caught by %s's LIVE cross-worktree lease "
+            "on %r -- this worktree's local ticket ledger has not merged "
+            "that start/scope-add yet (T-1868)",
+            ticket_id,
+            glob,
+            lease.ticket_id,
+            collision[1],
+        )
+        return (lease.ticket_id, collision[1])
     return None
 
 
@@ -368,7 +469,8 @@ def _scope_change_entries(
 # frob:ticket T-0561
 # frob:ticket T-0422
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted  # noqa: E501
+# frob:tests \
+# tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted
 # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_leased_path_rejected_names_holder  # noqa: E501
 # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_frees_path_for_other_doable  # noqa: E501
 def mutate_scope(

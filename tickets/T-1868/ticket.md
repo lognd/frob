@@ -2,7 +2,7 @@
 id: T-1868
 title: 'Two in-progress tickets held the same path: scope --add bypasses the lease-conflict
   check that start enforces'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -14,8 +14,47 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_mutate.py
 - src/frob/tickets/_leases.py
+- src/frob/tickets/_scope.py
+- tests/test_tickets_scope_mutation.py
+- tests/test_ticket_leases_cross_worktree.py
+- tickets/T-1878/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_scope.py
+  reason: The actual conflict-check code (_scope_add_conflicts, _validate_scope_mutation,
+    mutate_scope) lives in src/frob/tickets/_scope.py, not in _mutate.py (the thin
+    CLI wrapper) or _leases.py alone -- both were already declared. This is the real
+    fix site for requirement 1 (scope --add must run the same lease-conflict check
+    start runs) and needs to be in scope to touch it.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: Existing scope-mutation-conflict tests live here; T-1868 extends this file
+    with the cross-worktree lease-side-channel regression test (the ticket explicitly
+    requires a reproduction of the double-hold, not just a unit test of the check
+    function).
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_ticket_leases_cross_worktree.py
+  reason: The T-1868 explicit acceptance test (a scope --add reproducing the double-hold,
+    refused, not merely the check function tested in isolation) needs the real two-git-worktree
+    fixture pattern this file already establishes for T-0473 cross-worktree lease
+    visibility -- reusing it, not duplicating it.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1878/ticket.md
+  reason: tickets/T-1878/ticket.md is the follow-up ticket T-1868 files
+    (deferred docs/modules/tickets.md addition, since that file is currently leased
+    by in-progress T-1873) -- filing it is part of this tickets own diff.
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease::test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease
 designated_repro_test: null
 threat: null
 component: null

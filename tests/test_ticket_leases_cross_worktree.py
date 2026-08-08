@@ -17,6 +17,7 @@ import pytest
 
 from frob.tickets import (
     Origin,
+    TicketError,
     TicketKind,
     TicketQueue,
     TicketSpec,
@@ -284,3 +285,67 @@ class TestForceReleaseLease:
         released = force_release_lease(repo, "T-9999")
         assert released.is_ok
         assert released.danger_ok is False
+
+
+# frob:ticket T-1868
+class TestScopeAddRefusesLiveCrossWorktreeLease:
+    """T-1868: reproduces the confirmed double-hold incident directly --
+    two REAL, separate git worktrees of the same repository, each with its
+    OWN unmerged local ticket ledger, one ticket in-progress in each. A
+    `scope --add` in the SECOND worktree for a path the FIRST worktree's
+    ticket already holds must be refused, even though the second
+    worktree's own local ledger has never seen the first ticket's `start`
+    (no merge between the two worktrees anywhere in this test) -- exactly
+    the T-1863/T-1822 shape (`design/frob.strata`, thirty-six seconds
+    apart, neither refused) and the T-1648 land-time reproduction
+    (`frob ticket scope T-1648 --add design/frob.strata` succeeded against
+    T-1863's live, unmerged lease on the same path)."""
+
+    def test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorkt\
+        # reeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease
+        # Ticket A: created and started IN `repo`, leasing src/feature.py.
+        # `second_worktree` never merges this commit -- its own local
+        # ticket ledger has no record of ticket A at all.
+        created_a = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(repo, tid_a, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        # Ticket B: created and started independently IN second_worktree,
+        # with a scope that does NOT collide at filing time.
+        created_b = new_ticket(
+            second_worktree, _spec("Feature B", scope=("src/unrelated.py",))
+        )
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        assert transition(second_worktree, tid_b, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_b, TicketState.IN_PROGRESS).is_ok
+
+        # Confirm the premise: second_worktree's own LOCAL ledger has never
+        # heard of ticket A (no merge happened), so a queue-only check
+        # would see no conflict at all.
+        local_queue = load_all(second_worktree)
+        assert local_queue.is_ok
+        assert tid_a not in local_queue.danger_ok
+
+        # The refusal this ticket adds: `mutate_scope` must catch the
+        # collision via the LIVE cross-worktree lease side-channel even
+        # though the local ledger cannot see it.
+        mutated = mutate_scope(
+            second_worktree,
+            tid_b,
+            add=("src/feature.py",),
+            reason="T-1868 regression: must be refused",
+        )
+        assert mutated.is_err
+        assert mutated.danger_err == TicketError.ScopeLeaseConflict
+
+        # The refusal must be a true refusal, not a partial write.
+        reloaded = load_all(second_worktree)
+        assert reloaded.is_ok
+        assert "src/feature.py" not in reloaded.danger_ok[tid_b].scope
