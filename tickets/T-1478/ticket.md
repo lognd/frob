@@ -51,3 +51,6 @@ but no T-1440 child ticket was ever actually filed. File it for real
 (this ticket) and build argument-level may scoping. Found while draining
 NEGEXIST001 (T-1477): the doc's absence-claim had no
 frob:until binding.
+
+## Failure log
+- 2026-08-08 attempt 1: Undoable as scoped: declared scope (surface.md, _mutation_audit.py, _native_staleness.py) excludes the grammar/AST/models/effects files argument-level may scoping actually needs (strata-core grammar, _ast.py, _models.py, _effects.py); needs a re-scoped follow-up, not a silent scope expansion
