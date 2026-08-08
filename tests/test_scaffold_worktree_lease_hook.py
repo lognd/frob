@@ -326,6 +326,117 @@ class TestInstallWorktreeLeaseHook:
         )
         assert commit.returncode == 0, commit.stdout + commit.stderr
 
+    # frob:ticket T-1742
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_merge_commit_matching_main_is_allowed(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_merge_commit_matching_main_is_allowed  # noqa: E501
+        """A `git merge main` merge commit that carries forward main's own
+        land-generated CHANGELOG.md content -- byte-identical, no local
+        divergence -- must not be refused by the land-owned-file guard."""
+        _init_repo(tmp_path)
+        (tmp_path / "CHANGELOG.md").write_text("## [0.1.0]\n\n- init\n")
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        # A sibling branch, forked before main advanced, simulating a
+        # worktree that has not yet merged main's own later land.
+        _git("branch", "-q", "feature", cwd=tmp_path)
+
+        # main advances (as `frob ticket land` would) with a land-owned
+        # CHANGELOG.md write, using the escape hatch land itself uses.
+        env = dict(os.environ, FROB_LAND_INTERNAL="1")
+        env.pop("FROB_AGENT", None)
+        (tmp_path / "CHANGELOG.md").write_text("## [0.2.0]\n\n- landed thing\n")
+        _git("add", "-A", cwd=tmp_path)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "land T-9999"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr
+
+        # The worktree checks out its own branch and merges main forward --
+        # the merge commit's staged CHANGELOG.md is byte-identical to
+        # main's tip (fast-forward-able content, no local divergence).
+        _git("checkout", "-q", "feature", cwd=tmp_path)
+        merge_env = dict(os.environ)
+        merge_env.pop("FROB_AGENT", None)
+        merge_env.pop("FROB_LAND_INTERNAL", None)
+        merge = subprocess.run(
+            ["git", "merge", "--no-ff", "-q", "-m", "merge main", "main"],
+            cwd=tmp_path,
+            env=merge_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert merge.returncode == 0, merge.stdout + merge.stderr
+
+    # frob:ticket T-1742
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_merge_commit_diverging_from_main_still_refused(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_merge_commit_diverging_from_main_still_refused  # noqa: E501
+        """A merge commit whose resolved CHANGELOG.md content DIFFERS from
+        main's own tip (a hand-edit smuggled in via conflict resolution)
+        is still refused -- the guard's real hazard is unweakened."""
+        _init_repo(tmp_path)
+        (tmp_path / "CHANGELOG.md").write_text("## [0.1.0]\n\n- init\n")
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        _git("branch", "-q", "feature", cwd=tmp_path)
+
+        env = dict(os.environ, FROB_LAND_INTERNAL="1")
+        env.pop("FROB_AGENT", None)
+        (tmp_path / "CHANGELOG.md").write_text("## [0.2.0]\n\n- landed thing\n")
+        _git("add", "-A", cwd=tmp_path)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "land T-9999"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr
+
+        # feature branch resolves the merge with its OWN hand-edited
+        # content instead of taking main's -- this must still be refused.
+        _git("checkout", "-q", "feature", cwd=tmp_path)
+        merge_env = dict(os.environ)
+        merge_env.pop("FROB_AGENT", None)
+        merge_env.pop("FROB_LAND_INTERNAL", None)
+        subprocess.run(
+            ["git", "merge", "--no-ff", "--no-commit", "main"],
+            cwd=tmp_path,
+            env=merge_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        (tmp_path / "CHANGELOG.md").write_text("## [0.2.0]\n\n- hand-edited\n")
+        _git("add", "-A", cwd=tmp_path)
+        merge_commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "merge main (hand-edited)"],
+            cwd=tmp_path,
+            env=merge_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert merge_commit.returncode != 0
+        assert "CHANGELOG.md" in (merge_commit.stdout + merge_commit.stderr)
+        assert "land-owned" in (merge_commit.stdout + merge_commit.stderr)
+
     # frob:ticket T-0731
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_tickets_md_change_warns_but_does_not_refuse(self, tmp_path: Path) -> None:
