@@ -13,11 +13,96 @@ runs_last: false
 scope:
 - design/frob.strata
 - src/frob/strata/**
-- src/frob/vet/**
-- docs/**
-- tests/**
+- docs/strata/kernel.md
+- docs/strata/selfconform.md
+- src/frob/vet/_capability.py
+- src/frob/vet/_capability_core.py
+- src/frob/vet/_capability_scan.py
+- src/frob/vet/_capability_modes.py
+- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: tests/**
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/vet/**
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/strata/kernel.md
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/strata/selfconform.md
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/vet/_capability.py
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/vet/_capability_core.py
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/vet/_capability_scan.py
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/vet/_capability_modes.py
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: T-1623 carried docs/** and tests/** mega-globs; scope IS the lease, so starting
+    it as written would lock the whole fleet out of the docs and tests trees. Narrowed
+    to the capability-enforcement surface it actually touches so it can be dispatched
+    alongside other agents.
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
