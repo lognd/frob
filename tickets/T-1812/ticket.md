@@ -2,7 +2,7 @@
 id: T-1812
 title: 'post-land sweep regression from T-1735: 2 new error(s) (invalid-assignment,
   unresolved-attribute)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-08'
@@ -28,3 +28,6 @@ New (rule, file) pairs filed here:
 - unresolved-attribute  tests/test_tickets.py
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-08: False premise: verified against current main -- ty check on tests/test_ticket_land.py and tests/test_tickets.py both pass clean (0 diagnostics), and a full frob check --ticket T-1812 shows zero invalid-assignment/unresolved-attribute findings. The _fake_scan monkeypatch at test_ticket_land.py's TestSyncGateRulesForLandDiffTarget already has the correct signature (repo_root: Path, retired: frozenset[str] | None = None) matching generated_gate_rule_ids -- this was fixed by other in-flight work (test_waive_gate.py / gates/_waive.py / gates/_wire.py landed on main) between the T-1735 sweep that filed this ticket and now. Nothing left to fix.
