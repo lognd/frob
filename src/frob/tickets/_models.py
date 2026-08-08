@@ -1521,6 +1521,25 @@ class Ticket(BaseModel):
     # "perf", "security", "flaky") -- `frob ticket board`/`doable` can
     # filter on either axis independently.
     labels: tuple[str, ...] = ()
+    # frob:ticket T-1856
+    # first-class marker for a ticket that must NEVER reach a terminal
+    # state (done/dropped) -- the T-1820/T-1831 "waiver home" shape
+    # (docs/modules/gates.md's T-1558 precedent): a `follow_up="T-####"`
+    # target for a PERMANENT `frob:waive`, which WIRE002 (unwaivable)
+    # disqualifies the moment its target goes terminal. Before this field
+    # existed, intent was inferred only from body prose, which nothing
+    # enforced -- T-1853's body records the near-miss: an agent was
+    # instructed to close T-1820 "to drain the queue" and it was caught
+    # only by a different agent noticing, not by the tool. Set via
+    # `set_anchor` (`frob.tickets._land`, T-1856); land-time enforcement
+    # lives in `_refuse_anchor_terminal_land` in the same module.
+    anchor: bool = False
+    # frob:ticket T-1856
+    # required human-readable justification for `anchor=True`, same
+    # "no silent flag flip" discipline `scope_breadth_ack_reason` already
+    # established for `scope_breadth_ack` -- `None` when `anchor` is
+    # False, set together by `set_anchor`, never independently.
+    anchor_reason: str | None = None
     body: str = ""
 
     @field_validator("scope", mode="before")
@@ -1748,6 +1767,8 @@ class TicketError(ErrorSet):
     ScopeChangeReasonMissing = "scope change requires a non-empty --reason"
     # frob:ticket T-1484
     ScopeBreadthAckReasonMissing = "scope-ack requires a non-empty --reason"
+    # frob:ticket T-1856
+    AnchorReasonMissing = "anchor set/clear requires a non-empty --reason"
     ScopeLeaseConflict = (
         "requested --add glob overlaps a path leased by another in-progress ticket"
     )
@@ -2096,6 +2117,15 @@ class LandError(ErrorSet):
         "both main and the worktree since their common base, in ways that "
         "do not converge -- resolve the conflicting sibling ticket's "
         "section by hand (or land it on its own first), then retry"
+    )
+    # frob:ticket T-1856
+    AnchorTerminalLand = (
+        "this ticket is marked anchor=True (a permanent frob:waive "
+        "follow_up target that must never go terminal, T-1856) and this "
+        "land would move it to done/dropped -- clear the marker first "
+        "(frob.tickets._land.set_anchor(root, id, anchor=False, "
+        "reason=...)) if it genuinely no longer needs to anchor a "
+        "waiver, or land it as queued/in-progress/blocked instead"
     )
 
 

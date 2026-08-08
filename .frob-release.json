@@ -1879,6 +1879,7 @@
     "src/frob/tickets/_land.py::LandLockTimeout": "36767c23a1765c7fcf63a04a08341d5189835687573a40d737ee3338c4967534",
     "src/frob/tickets/_land.py::land": "fea0db23bb9c37608e4d92393c788a39311ee5de0704205d5cf56bed1ca29f04",
     "src/frob/tickets/_land.py::land_plan": "1efd40c6ee9c060a5c5a0a726464e988fad0a6b6cc1d06dfb309cf62347e1217",
+    "src/frob/tickets/_land.py::set_anchor": "c28923bb084329ff7b2e9595c9f1657b2dbfbb31e798a614d8dd3622b828672c",
     "src/frob/tickets/_land_git_ops.py::describe_root_dirt": "ed38327bc3a59742b8e17e4e1bbf0341f8a84da1bdc6b45a62dc7d74b63d5332",
     "src/frob/tickets/_land_ledger_merge.py::splice_ledger": "e2d903a8d8049db7a1732853c334ed4e4029511926df136cffffc0a68f71175c",
     "src/frob/tickets/_land_queue.py::QueueEntry": "b57c492343391571459630c8488801ac16a2d4f4be22b87f9b5eebe47a514714",
@@ -2194,5 +2195,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.412.0"
+  "version": "0.413.0"
 }

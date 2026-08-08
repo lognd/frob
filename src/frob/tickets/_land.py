@@ -79,6 +79,7 @@ from frob.tickets._models import (
     LandPlanReport,
     LandReport,
     Ticket,
+    TicketError,
 )
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _store_mode
@@ -2412,6 +2413,93 @@ def _mutation_evidence_synchronous(
     return Ok(None)
 
 
+# frob:ticket T-1856
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_tickets_live_tracker.py::TestAnchorMarker.test_terminal_land_refused
+def _refuse_anchor_terminal_land(ticket: Ticket) -> Result[None, LandError]:
+    """T-1856: refuse a land that would move an `anchor=True` ticket to a
+    TERMINAL state (`done`/`dropped`), unconditionally -- the first-class
+    twin of `_check_live_tracker_citations`'s inferred-from-a-live-grep
+    check. An anchor ticket's entire purpose is to sit open forever as a
+    valid `follow_up="<id>"` target for a PERMANENT `frob:waive`
+    (WIRE002 disqualifies terminal targets, T-1490/T-1488's 16-waiver-
+    orphan incident, `docs/modules/gates.md`'s T-1558 "waiver home"
+    precedent) -- T-1853's body records the near-miss this closes: an
+    agent was instructed to close T-1820 "to drain the queue," and it was
+    caught only by a different agent noticing prose in the body, not by
+    the tool. A land that leaves the ticket non-terminal
+    (`queued`/`in-progress`/`blocked`) is unaffected, same posture
+    `_check_live_tracker_citations` already established for the citation
+    check it complements."""
+    from frob.tickets._models import TicketState
+
+    if not ticket.anchor:
+        return Ok(None)
+    if ticket.state not in (TicketState.DONE, TicketState.DROPPED):
+        return Ok(None)
+    _log.error(
+        "land: %s cannot land as %s -- it is marked anchor=True (%s) and "
+        "must never reach a terminal state; clear the marker first via "
+        "set_anchor(root, %s, anchor=False, reason=...) if it genuinely "
+        "no longer needs to anchor a waiver, or land it as "
+        "queued/in-progress/blocked instead",
+        ticket.id,
+        ticket.state,
+        ticket.anchor_reason,
+        ticket.id,
+    )
+    return Err(LandError.AnchorTerminalLand)
+
+
+# frob:ticket T-1856
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_requires_reason
+# frob:tests \
+# tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_round_trips
+def set_anchor(
+    root: Path, ticket_id: str, *, anchor: bool, reason: str
+) -> Result[Ticket, TicketError]:
+    """`frob ticket anchor <id> --set/--clear --reason TEXT` (CLI wiring
+    is a follow-up, see T-1856's Done report): set or clear the `anchor`
+    marker in one ledger-locked write, mirroring `set_scope_breadth_ack`'s
+    (T-1484) "no silent flag flip" shape -- a blank/whitespace-only
+    `reason` is rejected the same way. Declaring intent explicitly here is
+    the whole point of T-1856: before this existed, nothing stopped a
+    well-meaning agent from closing a permanent-waiver-anchor ticket in
+    the name of draining the queue (the T-1820 near-miss T-1853's body
+    documents)."""
+    from frob.tickets import _load_ticket_and_queue
+    from frob.tickets._store import ledger_lock, write_ticket
+    from frob.tickets._worktree_guard import enforce_worktree_lease
+
+    if not reason.strip():
+        return Err(TicketError.AnchorReasonMissing)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(
+            update={
+                "anchor": anchor,
+                "anchor_reason": reason if anchor else None,
+            }
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s anchor set to %s (reason=%s)", ticket_id, anchor, reason
+    )
+    return Ok(updated)
+
+
 def _check_live_tracker_citations(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
@@ -3346,6 +3434,7 @@ def _land_precheck(
 
 
 # frob:ticket T-1355
+# frob:ticket T-1856
 def _land_precheck_remaining_checks(
     root: Path,
     worktree: Path,
@@ -3359,7 +3448,18 @@ def _land_precheck_remaining_checks(
     out to keep the parent under ARCH001's line threshold, zero behavior
     change) -- live-tracker citations, T-1355's cross-ticket leakage
     preflight, then the diff-scoped mutation-evidence obligation, in that
-    order, exactly as they ran inline before this split."""
+    order, exactly as they ran inline before this split.
+
+    T-1856: `_refuse_anchor_terminal_land` runs FIRST, ahead of even the
+    live-tracker check -- it is the first-class, structural twin of what
+    `_check_live_tracker_citations` can only infer from a live grep: an
+    anchor ticket refuses a terminal land unconditionally, whether or not
+    any citation currently resolves, closing the T-1853-documented gap
+    where a well-meaning agent could still be instructed to close one."""
+    anchor_check = _refuse_anchor_terminal_land(ticket)
+    if anchor_check.is_err:
+        return Err(anchor_check.danger_err)
+
     live_tracker_check = _check_live_tracker_citations(
         worktree, ticket, main_branch_name
     )

@@ -421,3 +421,95 @@ class TestLandCheckSkipsNonTerminalAnchor:
         result = land_mod._check_live_tracker_citations(tmp_path, anchor, "main")
         assert result.is_err
         assert result.danger_err == land_mod.LandError.LiveTrackerCited
+
+
+# frob:ticket T-1856
+class TestAnchorMarker:
+    """T-1856: the first-class `anchor` marker -- `set_anchor` (library)
+    and `_refuse_anchor_terminal_land` (the land-time guard). Closes the
+    gap T-1853's body documents: an anchor ticket's intent was inferred
+    only from body prose, which nothing enforced, and an agent was
+    nearly instructed to close one (T-1820) in the name of draining the
+    queue."""
+
+    def test_terminal_land_refused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_terminal_land_refus\
+        # ed
+        from frob.tickets._land import LandError, _refuse_anchor_terminal_land
+
+        anchor = _ticket(ticket_id="T-1820", state=TicketState.DONE)
+        anchor = anchor.model_copy(
+            update={"anchor": True, "anchor_reason": "permanent WIRE001 waiver home"}
+        )
+        result = _refuse_anchor_terminal_land(anchor)
+        assert result.is_err
+        assert result.danger_err == LandError.AnchorTerminalLand
+
+    def test_non_terminal_land_not_refused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_non_terminal_land_n\
+        # ot_refused
+        from frob.tickets._land import _refuse_anchor_terminal_land
+
+        anchor = _ticket(ticket_id="T-1820", state=TicketState.IN_PROGRESS)
+        anchor = anchor.model_copy(
+            update={"anchor": True, "anchor_reason": "permanent WIRE001 waiver home"}
+        )
+        result = _refuse_anchor_terminal_land(anchor)
+        assert result.is_ok
+
+    def test_non_anchor_terminal_land_not_refused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_non_anchor_terminal\
+        # _land_not_refused
+        from frob.tickets._land import _refuse_anchor_terminal_land
+
+        ordinary = _ticket(ticket_id="T-0001", state=TicketState.DONE)
+        assert ordinary.anchor is False
+        result = _refuse_anchor_terminal_land(ordinary)
+        assert result.is_ok
+
+    def test_set_anchor_requires_reason(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_requires\
+        # _reason
+        from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
+        from frob.tickets._land import set_anchor
+        from frob.tickets._models import TicketError
+
+        spec = TicketSpec(title="waiver home", kind=TicketKind.DOCS, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok, created
+        ticket = created.danger_ok
+        result = set_anchor(tmp_path, ticket.id, anchor=True, reason="   ")
+        assert result.is_err
+        assert result.danger_err == TicketError.AnchorReasonMissing
+
+    def test_set_anchor_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_live_tracker.py::TestAnchorMarker.test_set_anchor_round_tr\
+        # ips
+        from frob.tickets import Origin, TicketKind, TicketSpec, load_queue, new_ticket
+        from frob.tickets._land import set_anchor
+
+        spec = TicketSpec(title="waiver home", kind=TicketKind.DOCS, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok, created
+        ticket = created.danger_ok
+
+        set_result = set_anchor(
+            tmp_path, ticket.id, anchor=True, reason="permanent WIRE001 waiver home"
+        )
+        assert set_result.is_ok, set_result
+        assert set_result.danger_ok.anchor is True
+        assert set_result.danger_ok.anchor_reason == "permanent WIRE001 waiver home"
+        reloaded = load_queue(tmp_path).danger_ok.tickets[ticket.id]
+        assert reloaded.anchor is True
+
+        clear_result = set_anchor(
+            tmp_path, ticket.id, anchor=False, reason="no longer needed"
+        )
+        assert clear_result.is_ok, clear_result
+        assert clear_result.danger_ok.anchor is False
+        assert clear_result.danger_ok.anchor_reason is None

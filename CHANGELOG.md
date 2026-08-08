@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.413.0] - unreleased
+
+- T-1856: First-class anchor marker for permanent-waiver-target tickets
+
 ## [0.412.0] - unreleased
 
 - T-1689: Batch test selection: run a batch's union touched-set in one pytest process
