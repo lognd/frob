@@ -563,6 +563,63 @@ def _skip_close_for_legitimate_drop(
     return Ok(final_id)
 
 
+# frob:ticket T-1818
+def _skip_close_for_legitimate_fail(
+    current: Ticket, final_id: str
+) -> Result[str, LandError] | None:
+    """`Ok(final_id)` if `current` is a legitimately FAILED ticket (`frob
+    ticket fail`, QUEUED with a recorded `## Failure log` entry) that
+    should skip `_close_finalized_ticket`'s DONE transition entirely, else
+    `None` (caller falls through to the ordinary transition attempt).
+
+    T-1818: the QUEUED-side twin of `_skip_close_for_legitimate_drop`
+    above, same shape, same reason to exist -- `frob ticket fail` records
+    the ONE artifact a dead end produces (the failure log) and returns
+    the ticket to QUEUED, which `_TRANSITIONS` has no `queued -> done`
+    edge for. Before this, that made the failure log unlandable: `land`
+    always attempted the DONE transition regardless of state, so a
+    correctly-failed ticket's `InvalidTransition: queued -> done` refusal
+    stranded its record on the worktree branch -- the incentive-inverting
+    bug this ticket exists to close (an agent that honestly fails a
+    ticket lost its work; one that forced a partial build got a land).
+    Gated on `_has_failure_log`, not merely `state == QUEUED`, for the
+    same reason `_skip_close_for_legitimate_drop` gates on
+    `_has_drop_reason`: a ticket can be QUEUED for reasons that are NOT a
+    recorded fail (never started, `frob ticket requeue`) and those must
+    still fall through to the ordinary DONE-precondition path below and
+    refuse loudly if land is forced against them."""
+    if current.state != TicketState.QUEUED:
+        return None
+    from frob.tickets._land_merge import _has_failure_log
+
+    if not _has_failure_log(current.body):
+        return None
+    _log.warning(
+        "land: %s is QUEUED with a recorded failure log, not landing a "
+        "done ticket -- publishing the failure log to main as-is, no "
+        "done transition attempted",
+        final_id,
+    )
+    return Ok(final_id)
+
+
+# frob:ticket T-1818
+def _skip_close_for_terminal_shortcut(
+    current: Ticket, final_id: str
+) -> Result[str, LandError] | None:
+    """`Ok(final_id)` if `current` is DROPPED-with-reason or QUEUED-with-
+    a-failure-log -- the two states `_close_finalized_ticket` must
+    publish AS-IS rather than force through the DONE transition -- else
+    `None`. T-1818: folds `_skip_close_for_legitimate_drop`/`_skip_close_
+    for_legitimate_fail` behind one call so `_close_finalized_ticket`
+    itself stays under ARCH001's 60-line threshold; each helper keeps its
+    own full rationale in its own docstring, this is pure composition."""
+    skip = _skip_close_for_legitimate_drop(current, final_id)
+    if skip is not None:
+        return skip
+    return _skip_close_for_legitimate_fail(current, final_id)
+
+
 def _close_finalized_ticket(
     worktree: Path,
     ticket_id: str,
@@ -617,7 +674,7 @@ def _close_finalized_ticket(
         )
         return Ok(final_id)
 
-    skip = _skip_close_for_legitimate_drop(current, final_id)
+    skip = _skip_close_for_terminal_shortcut(current, final_id)
     if skip is not None:
         return skip
 

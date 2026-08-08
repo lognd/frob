@@ -38,6 +38,7 @@ from frob.tickets._land_ledger_merge import _has_done_report, splice_ledger
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     DROP_REASON_HEADING,
+    FAILURE_LOG_HEADING,
     LandError,
     Ticket,
     TicketState,
@@ -53,6 +54,7 @@ __all__ = [
     "_validate_acceptance_bound",
     "_validate_evidence_kind_consistency",
     "_commit_message",
+    "_has_failure_log",
 ]
 
 _log = get_logger(__name__)
@@ -75,6 +77,41 @@ def _has_drop_reason(body: str) -> bool:
     try:
         start = next(
             i for i, ln in enumerate(lines) if ln.strip() == DROP_REASON_HEADING
+        )
+    except StopIteration:
+        return False
+    for line in lines[start + 1 :]:
+        if line.startswith("## "):
+            break
+        if line.strip():
+            return True
+    return False
+
+
+# frob:ticket T-1818
+def _has_failure_log(body: str) -> bool:
+    """Whether `body` carries a `## Failure log` heading with at least one
+    real (non-blank) line under it -- the FAILED/QUEUED-side twin of
+    `_has_drop_reason` above. `frob.tickets._reporting.record_failure`
+    (called by `frob ticket fail`, before `transition` returns the ticket
+    to QUEUED) always writes a dated `attempt N: <summary>` bullet line
+    here first, so this should never see a heading with nothing under it
+    in practice -- checked anyway, matching the same "heading alone is
+    not enough" posture `_has_drop_reason`/`_has_done_report` both take.
+
+    T-1818: before this existed, `frob ticket land` had no way to tell a
+    ticket honestly returned to QUEUED by `frob ticket fail` apart from
+    any OTHER QUEUED ticket (never started, requeued, etc) -- so an
+    honest dead-end log could never reach main; only a DONE or DROPPED
+    ticket's ledger change could land. `_skip_close_for_legitimate_fail`
+    (`frob.tickets._land_finalize`) uses this exact signal the same way
+    `_skip_close_for_legitimate_drop` already uses `_has_drop_reason`."""
+    if FAILURE_LOG_HEADING not in body:
+        return False
+    lines = body.splitlines()
+    try:
+        start = next(
+            i for i, ln in enumerate(lines) if ln.strip() == FAILURE_LOG_HEADING
         )
     except StopIteration:
         return False
@@ -122,7 +159,24 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
     forced every dropped ticket around `frob ticket land` entirely --
     the exact defect this ticket closes (an agent bypassing worktree
     isolation to `frob ticket drop` directly against the root checkout,
-    since land had no other path for a legitimate DROPPED outcome)."""
+    since land had no other path for a legitimate DROPPED outcome).
+
+    T-1818: a ticket `frob ticket fail` returned to QUEUED is the same
+    shape of problem as T-1701's DROPPED case, one state over -- `fail`
+    is the honest "attempted, does not work as scoped" outcome, and a
+    `## Failure log` entry is the whole artifact it records (mirroring
+    `_has_drop_reason`'s own `_has_failure_log` twin, above). Before this,
+    `land` had no path for QUEUED at all: it fell through to the DONE
+    preconditions below, which a failed ticket legitimately never has
+    (no evidence, no Done report), so the honest failure log could never
+    reach main -- exactly the incentive inversion T-1818 was filed to
+    close (an agent that forces a partial build lands; one that honestly
+    fails loses its work). Gated on `_has_failure_log`, not merely
+    `state == QUEUED`, for the same reason T-1701 gates on
+    `_has_drop_reason`: a ticket can be QUEUED for other reasons (never
+    started, requeued with no failure recorded) that must still fall
+    through to the ordinary DONE-precondition path and fail loudly if
+    forced."""
     if ticket.state == TicketState.DROPPED:
         if not _has_drop_reason(ticket.body):
             _log.error(
@@ -135,6 +189,8 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
                 ticket.id,
             )
             return Err(LandError.NotCloseable)
+        return Ok(None)
+    if ticket.state == TicketState.QUEUED and _has_failure_log(ticket.body):
         return Ok(None)
     if not ticket.evidence or not _has_done_report(ticket.body):
         _log.error(

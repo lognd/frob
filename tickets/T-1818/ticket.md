@@ -2,7 +2,7 @@
 id: T-1818
 title: frob ticket land cannot carry a fail-transition record to main, stranding every
   honest dead-end log
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,8 +13,44 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land_state.py
+- src/frob/tickets/_land_finalize.py
+- src/frob/tickets/_land_merge.py
+- tests/test_ticket_land.py
+- tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_finalize.py
+  reason: declared scope src/frob/tickets/_land_state.py does not exist; the queued->done
+    InvalidTransition refusal this ticket must fix lives in _land_finalize.py::_close_finalized_ticket,
+    mirroring the T-1701 _skip_close_for_legitimate_drop precedent in _land_merge.py
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/tickets/_land_merge.py
+  reason: declared scope src/frob/tickets/_land_state.py does not exist; the queued->done
+    InvalidTransition refusal this ticket must fix lives in _land_finalize.py::_close_finalized_ticket,
+    mirroring the T-1701 _skip_close_for_legitimate_drop precedent in _land_merge.py
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: regression test for _skip_close_for_legitimate_fail belongs beside the existing
+    _skip_close_for_legitimate_drop (T-1701) sibling tests in this file
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/**
+  reason: ticket-ledger bookkeeping shards (frob ticket start/sweep auto-commits for
+    T-1818 itself, plus whatever sibling shard the branch's merge-base diff against
+    main happens to carry) are the sharded-ledger equivalent of tickets.md, already
+    implicitly in scope for every ticket -- same precedent as T-1817
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_ticket_land.py::TestLandFailedTicket::test_failed_ticket_with_a_failure_log_lands_cleanly
+- tests/test_ticket_land.py::TestLandFailedTicket::test_queued_ticket_with_no_failure_log_still_refuses
 designated_repro_test: null
 threat: null
 component: null

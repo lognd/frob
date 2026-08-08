@@ -5453,6 +5453,73 @@ class TestLandDroppedTicket:
         assert result.danger_err == LandError.NotCloseable
 
 
+# frob:ticket T-1818
+class TestLandFailedTicket:
+    """T-1818: `frob ticket land` must be able to publish a QUEUED ticket's
+    `frob ticket fail` record to main -- before this fix, a ticket `fail`
+    correctly returned to QUEUED had no path through `land` at all: the
+    DONE preconditions below (evidence + Done report) never apply to a
+    failed attempt, so the ONE artifact a dead end produces (the failure
+    log) was stranded on the worktree branch, invisible to every later
+    agent (the incident this ticket was filed from: T-1478)."""
+
+    def test_failed_ticket_with_a_failure_log_lands_cleanly(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandFailedTicket.test_failed_ticket_with_a_failure_log_lands_cleanly  # noqa: E501
+        # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_has_failure_log kind="unit"
+        # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
+        # kind="unit"
+        from frob.tickets import FailureEntry, record_failure
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-failed", str(wt)], repo)
+        created = new_ticket(wt, _spec("Undoable as scoped"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        recorded = record_failure(
+            wt,
+            tid,
+            FailureEntry(
+                date=date.today(),
+                attempt=1,
+                summary="needs a new grammar production not in scope",
+            ),
+        )
+        assert recorded.is_ok, recorded.err
+        assert transition(wt, tid, TicketState.QUEUED).is_ok
+        _commit_all(wt, "fail-log the ticket")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        on_main = load_all(repo).danger_ok[result.danger_ok.final_id]
+        assert on_main.state == TicketState.QUEUED
+        assert "needs a new grammar production" in on_main.body
+
+    def test_queued_ticket_with_no_failure_log_still_refuses(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandFailedTicket.test_queued_ticket_with_no_failure_log_still_refuses  # noqa: E501
+        # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
+        """A ticket that is merely QUEUED (never started, or requeued with
+        no fail-log recorded) must NOT skip the DONE preconditions -- only
+        a genuine `frob ticket fail` record (a `## Failure log` entry)
+        earns the pass-through this ticket adds."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-queued-blank", str(wt)], repo)
+        created = new_ticket(wt, _spec("Never started"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_err
+        assert result.danger_err == LandError.NotCloseable
+
+
 # frob:ticket T-0795
 class TestLandRefusesWhenRootIsWorktree:
     """T-0795: `land()` invoked with `--worktree` resolving to the SAME
