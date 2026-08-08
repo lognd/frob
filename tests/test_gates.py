@@ -10214,11 +10214,25 @@ class TestFixEngineTierA:
     # -- acceptance: SYS104 interface= union (T-1531) -----------------------
 
     # frob:ticket T-1531
+    # frob:ticket T-1774
     def test_sys104_interface_union_applies_via_apply_tier_a_fixes(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union \
         # kind="unit"
+        # T-1774: T-1625 narrowed SYS104's REQUIRED interface surface to
+        # `real AND cross-node-referenced` (`_selfconform.
+        # _cross_node_referenced_symbols` -- a node's own real public
+        # surface no longer suffices on its own; some file owned by a
+        # DIFFERENT node must import the symbol BY NAME). This fixture
+        # used to have only the `widget` node, so `public_fn` was real but
+        # never cross-referenced, `required` was empty, and no fix ever
+        # applied -- 0 == 1, a stale-test false alarm, not a production
+        # regression (confirmed against `tests/unit/strata/
+        # test_sync_interface.py`'s own T-1625 fixtures, which already use
+        # exactly this `consumer`-node pattern). Adding a `consumer` node
+        # whose file imports `public_fn` by name restores the pre-T-1625
+        # fixture's intent under the current, narrower semantics.
         from frob.gates import apply_tier_a_fixes
         from frob.tickets import TicketQueue
 
@@ -10227,9 +10241,15 @@ class TestFixEngineTierA:
         (root / "src" / "widget" / "_io.py").write_text(
             "def public_fn():\n    pass\n", encoding="utf-8"
         )
+        (root / "src" / "consumer").mkdir(parents=True)
+        (root / "src" / "consumer" / "_use.py").write_text(
+            "from widget._io import public_fn\n", encoding="utf-8"
+        )
         (root / "design").mkdir()
         (root / "design" / "widget.strata").write_text(
-            'module widget\nnode widget : trusted {\n    code "src/widget/**";\n}\n',
+            'module widget\n'
+            'node widget : trusted {\n    code "src/widget/**";\n}\n'
+            'node consumer : trusted {\n    code "src/consumer/**";\n}\n',
             encoding="utf-8",
         )
         snapshot = self._snap(root)

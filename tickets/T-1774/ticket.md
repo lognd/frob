@@ -2,7 +2,7 @@
 id: T-1774
 title: TestFixEngineTierA::test_sys104_interface_union_applies_via_apply_tier_a_fixes
   fails on clean main
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -14,8 +14,25 @@ runs_last: false
 scope:
 - src/frob/gates/_fix_engine_sync.py
 - src/frob/strata/_sync_interface.py
+- tests/test_gates.py
+- tickets/T-1774/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: fix a stale-fixture test assertion (T-1625's cross-node-reference narrowing
+    changed what SYS104 requires; no production code changed)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1774/ticket.md
+  reason: v2 ledger per-ticket file; LEDGER_PATH's implicit-scope rule only covers
+    legacy tickets.md
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_sys104_interface_union_applies_via_apply_tier_a_fixes
 designated_repro_test: null
 threat: null
 component: null
