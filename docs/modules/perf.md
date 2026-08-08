@@ -1091,22 +1091,41 @@ staleness -- a stale-but-loadable `frob_core` can silently resolve
 DIFFERENT call edges than the current source would, without the gate
 run ever failing loudly.
 
+**T-1620 widened the signal beyond `frob_core`.** The original marker
+checked ONLY `frob_core` staleness, on the theory that `perf_gate`'s own
+natively-independent rules (PERF001-004) "need no native at all and stay
+fully trustworthy" regardless. That theory missed that every perf rule's
+PARSED INPUT -- not just PERF008/012's reach analysis -- goes through
+`frob.lang.parse_file` (called from `_perf_gate_parse_files` before
+`perf_rules` ever runs), which is `strata_core`'s tree-sitter grammar, a
+DIFFERENT native than the one this marker originally watched. Measured
+2026-08-05: a worktree with a stale `strata_core` read ZERO PERF004
+findings repo-wide while the frob_core-only marker reported healthy, and
+the resulting land deleted 55 live waivers T-1323's own mass-
+invalidation guard should have caught. `_perf_reach_degraded_marker` now
+checks `frob.strata.stale_natives` against BOTH declared natives
+(`_PERF_REACH_NATIVE_NAMES = {"frob_core", "strata_core"}`, no longer
+the singular `_PERF_REACH_NATIVE_NAME`) -- either one stale trips the
+same `PERF_REACH_DEGRADED_SKIP_MARKER` signal. See `docs/modules/
+gates.md`'s own T-1578 section for the full two-layer fix writeup
+(this signal plus the land-preflight half).
+
 `_perf_reach_degraded_marker` closes that specific gap: `_build_jobs`
 (the gate-job registry `run_gates` assembles from) calls it whenever
 `perf` is among the selected gates, AFTER `run_gates`'s own
 `_maybe_autorebuild_natives` already had its chance to fix a stale
-`frob_core` in place (T-1213) -- so this only fires when that rebuild
-was disabled (`FROB_NO_NATIVE_AUTOREBUILD`/`natives_auto_rebuild =
-false`) or genuinely failed (no toolchain). When it fires, the marker
-name `PERF_REACH_DEGRADED_SKIP_MARKER`
-(`"perf_reach_native_stale"`) is appended to the run's `GateStats.
-skipped` -- perf_gate ITSELF still runs unchanged (PERF001-004 need no
-native at all and stay fully trustworthy), but any caller that treats
-an unexpected `skipped` entry as a whole-run degradation signal
-(`frob.gates._fix_engine_sync._degraded_verification_reason`, T-1323's
-WAIVE004 self-run guard) now catches this case too, instead of only
-ever observing "0 findings" from the reach-dependent rules with
-nothing to explain why.
+native in place (T-1213) -- so this only fires when that rebuild was
+disabled (`FROB_NO_NATIVE_AUTOREBUILD`/`natives_auto_rebuild = false`)
+or genuinely failed (no toolchain). When it fires, the marker name
+`PERF_REACH_DEGRADED_SKIP_MARKER` (`"perf_reach_native_stale"`) is
+appended to the run's `GateStats.skipped` -- perf_gate ITSELF still runs
+unchanged, but any caller that treats an unexpected `skipped` entry as a
+whole-run degradation signal (`frob.gates._fix_engine_sync._degraded_
+verification_reason`, T-1323's WAIVE004 self-run guard) now catches
+this case too, instead of only ever observing "0 findings" from the
+reach-dependent rules with nothing to explain why -- and, since T-1620,
+this also covers PERF001-004's parse-input dependency on `strata_core`,
+which the pre-T-1620 marker could not see at all.
 
 See also `docs/modules/gates.md`'s WAIVE004/NATIVE001 sections and
 `docs/design/check-fix-engine.md` for how this marker feeds the

@@ -1,7 +1,7 @@
 ---
 id: T-1793
 title: Update docs/modules/perf.md's T-1578 section for T-1620's strata_core widening
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-07'
@@ -14,6 +14,8 @@ scope:
 - docs/modules/perf.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
