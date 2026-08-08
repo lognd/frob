@@ -9,6 +9,7 @@ created: '2026-08-05'
 priority: high
 blocked_by:
 - T-1625
+- T-1870
 parent: T-1623
 tier: ticket
 sprint: null
@@ -73,6 +74,8 @@ scope_changes:
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 `interface=` is currently a GENERATED MIRROR of each node's entire public surface, maintained by `frob sys sync-interface` and enforced by SYS104 ("public symbol exported by code but not declared in interface=").
 
