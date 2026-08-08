@@ -8,6 +8,7 @@ dispatch, tests that monkeypatch these names) keeps working."""
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -1165,6 +1166,179 @@ def _report_stale_post_land_verify_markers(root: Path) -> None:
         _clear_post_land_verify_marker(root, ticket_id)
 
 
+#: T-1845 (T-1554 design doc follow-up): the one remaining unmarked
+#: `--finish`/`--retire-on-proof` sub-step per that doc's audit -- the two
+#: git mutations (`_finish_worktree`'s `git worktree remove`, and
+#: `--retire-on-proof`'s additional `_delete_worktree_branch`'s `git
+#: branch -D`) run AFTER the land's own commit is already durable and
+#: AFTER T-1523's own post-land-verify-pending marker has already been
+#: cleared (`_finish_land_after_success` only reaches this point once
+#: `_print_land_proof` returned `verified=True`) -- so a SIGTERM in this
+#: specific window leaves nothing durable recording that finish/retire
+#: was still in flight. Mirrors `_land_verify_pending_marker_path`'s own
+#: shape (`frob.tickets._land`, T-1523) one-for-one: a small per-ticket
+#: JSON file under `.frob/`, written right before the first mutation,
+#: cleared once every mutation this invocation actually attempted has
+#: completed (successfully or not -- a `_finish_worktree`/`_delete_
+#: worktree_branch` failure already logs its own ERROR and is not this
+#: marker's job to re-report), reconciled read-only at the top of the
+#: NEXT `frob ticket land` invocation the same way `_report_stale_post_
+#: land_verify_markers` reconciles T-1523's marker.
+# frob:ticket T-1845
+_LAND_FINISH_PENDING_DIRNAME = "land-finish-pending"
+
+
+# frob:ticket T-1845
+def _land_finish_pending_dir(root: Path) -> Path:
+    """`<root>/.frob/land-finish-pending`, where a `--finish`/`--retire-
+    on-proof` invocation still mid-flight records its per-ticket marker
+    (T-1845)."""
+    return root / ".frob" / _LAND_FINISH_PENDING_DIRNAME
+
+
+# frob:ticket T-1845
+def _land_finish_pending_marker_path(root: Path, ticket_id: str) -> Path:
+    """The per-ticket land-finish-pending marker path under `root`
+    (T-1845)."""
+    return _land_finish_pending_dir(root) / f"{ticket_id}.json"
+
+
+# frob:ticket T-1845
+# frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_write_then_clear_round_trips  # noqa: E501
+def _write_land_finish_pending_marker(
+    root: Path, ticket_id: str, commit_sha: str, *, retire_on_proof: bool
+) -> None:
+    """Record that `ticket_id`'s `--finish`/`--retire-on-proof` mutations
+    (worktree removal, and branch deletion when `retire_on_proof`) are
+    about to start (T-1845) -- called by `_finish_land_after_success`
+    immediately BEFORE `_finish_worktree` runs, mirroring `_write_post_
+    land_verify_marker`'s own "write before the risky window, clear after
+    it" shape. `commit_sha` is the already-landed, already-verified
+    commit this finish is cleaning up after -- purely informational for
+    whoever reads a leftover marker, never re-verified by the writer.
+    Best-effort like its T-1523 sibling: a write failure is logged but
+    never blocks `--finish` itself, since this marker is a recovery AID
+    over an already-successful land, not a mutation gate."""
+    path = _land_finish_pending_marker_path(root, ticket_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "ticket_id": ticket_id,
+                    "commit_sha": commit_sha,
+                    "retire_on_proof": retire_on_proof,
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not write land-finish-pending marker (%s) -- "
+            "proceeding without the T-1845 crash-recovery aid for this "
+            "--finish/--retire-on-proof run",
+            ticket_id,
+            exc,
+        )
+
+
+# frob:ticket T-1845
+# frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_write_then_clear_round_trips  # noqa: E501
+def _clear_land_finish_pending_marker(root: Path, ticket_id: str) -> None:
+    """Remove `ticket_id`'s land-finish-pending marker, if any (T-1845) --
+    called once `_finish_land_after_success` has run every mutation this
+    invocation attempted (`_finish_worktree`, and `_delete_worktree_branch`
+    when `--retire-on-proof`), mirroring `_clear_post_land_verify_marker`'s
+    unconditional-cleanup shape: cleared regardless of whether the
+    mutation(s) themselves succeeded, since a mutation failure already logs
+    its own ERROR with its own recovery instructions -- this marker's only
+    job is telling a SIGTERM-killed run apart from a normally-completed
+    one, not re-reporting a mutation outcome the caller already reported."""
+    path = _land_finish_pending_marker_path(root, ticket_id)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not clear land-finish-pending marker: %s",
+            ticket_id,
+            exc,
+        )
+
+
+# frob:ticket T-1845
+# frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
+# frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_stale_marker_is_reported  # noqa: E501
+def _stale_land_finish_pending_markers(root: Path) -> tuple[tuple[str, str, bool], ...]:
+    """`(ticket_id, commit_sha, retire_on_proof)` for every leftover T-1845
+    land-finish-pending marker under `root`, read-only (never mutates
+    `root` or the marker files -- reconciling/clearing is the caller's own
+    job, mirroring `_stale_post_land_verify_markers`'s own contract
+    exactly). Called at the very start of `_land_core`, alongside its
+    T-1523 sibling, so a prior run's SIGTERM-interrupted finish/retire is
+    surfaced before this invocation does any work of its own. A marker
+    whose JSON fails to parse is skipped with a WARNING (never raises) --
+    a corrupt marker must not block every future land against `root`.
+    No markers at all -- the overwhelmingly common case -- returns an
+    empty tuple."""
+    marker_dir = _land_finish_pending_dir(root)
+    if not marker_dir.is_dir():
+        return ()
+    found: list[tuple[str, str, bool]] = []
+    for entry in sorted(marker_dir.glob("*.json")):
+        try:
+            payload = json.loads(entry.read_text(encoding="utf-8"))
+            found.append(
+                (
+                    payload["ticket_id"],
+                    payload["commit_sha"],
+                    bool(payload.get("retire_on_proof", False)),
+                )
+            )
+        except (OSError, ValueError, KeyError) as exc:
+            _log.warning(
+                "land: could not parse land-finish-pending marker %s (%s) "
+                "-- skipping, left in place for manual inspection",
+                entry,
+                exc,
+            )
+    return tuple(found)
+
+
+# frob:ticket T-1845
+# frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_reconcile_reports_and_clears_a_stale_marker  # noqa: E501
+def _report_stale_land_finish_pending_markers(root: Path) -> None:
+    """Reconcile every leftover T-1845 land-finish-pending marker under
+    `root` -- called at the very START of `_land_core`, right alongside
+    `_report_stale_post_land_verify_markers` (T-1523): a prior `frob
+    ticket land --finish`/`--retire-on-proof` SIGTERM-killed between the
+    marker write and the mutation(s) completing leaves one of these
+    behind. READ-ONLY over `root`'s git state -- the worktree/branch this
+    marker names may or may not have actually been removed before the
+    kill; this function does not attempt to determine which (git itself
+    is idempotent for both `worktree remove` on an already-gone path and
+    `branch -D` on an already-gone branch, so a human/the next `--finish`
+    retry naturally converges either way). It logs a
+    `LAND-FINISH-RECOVERED:` line naming what was pending, then clears the
+    marker -- surfacing exactly what an interrupted run left ambiguous,
+    never blocking the NEW ticket this invocation is actually landing."""
+    for ticket_id, commit_sha, retire_on_proof in _stale_land_finish_pending_markers(
+        root
+    ):
+        _log.warning(
+            "LAND-FINISH-RECOVERED: a prior `frob ticket land %s "
+            "--finish%s` was interrupted after its commit (%s) landed and "
+            "verified but before the finish/retire mutation(s) completed "
+            "(T-1845) -- worktree removal (and branch deletion, if "
+            "retire-on-proof) may or may not have completed; both git "
+            "operations are safe to retry/no-op either way",
+            ticket_id,
+            "/--retire-on-proof" if retire_on_proof else "",
+            commit_sha,
+        )
+        _clear_land_finish_pending_marker(root, ticket_id)
+
+
 # frob:ticket T-1715
 def _refuse_finish_if_worktree_in_use(
     root: Path, worktree: Path, ticket_id: str
@@ -1335,6 +1509,7 @@ def _resolve_land_root(root: Path, worktree: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-1175
 # frob:ticket T-1715
+# frob:ticket T-1845
 def _finish_land_after_success(
     root: Path, worktree: Path, report, cfg: AppConfig
 ) -> None:  # noqa: ANN001
@@ -1381,16 +1556,32 @@ def _finish_land_after_success(
         if cfg.ticket_land_retire_on_proof
         else None
     )
-    _finish_worktree(
+    # T-1845: write the land-finish-pending marker BEFORE either git
+    # mutation below runs -- both are already gated on `verified=True`
+    # above, so a SIGTERM anywhere from here through the end of this
+    # function is exactly the unmarked window T-1554's design doc audit
+    # named. Cleared unconditionally once every mutation this invocation
+    # attempted has returned, regardless of their own individual outcome
+    # (a mutation failure already logs its own ERROR separately).
+    _write_land_finish_pending_marker(
         root,
-        worktree,
         cfg.ticket_id,
-        force=cfg.ticket_force,
-        force_reason=cfg.ticket_force_reason,
-        force_reason_file=cfg.ticket_force_reason_file,
+        report.commit_sha,
+        retire_on_proof=cfg.ticket_land_retire_on_proof,
     )
-    if cfg.ticket_land_retire_on_proof:
-        _delete_worktree_branch(root, branch, cfg.ticket_id)
+    try:
+        _finish_worktree(
+            root,
+            worktree,
+            cfg.ticket_id,
+            force=cfg.ticket_force,
+            force_reason=cfg.ticket_force_reason,
+            force_reason_file=cfg.ticket_force_reason_file,
+        )
+        if cfg.ticket_land_retire_on_proof:
+            _delete_worktree_branch(root, branch, cfg.ticket_id)
+    finally:
+        _clear_land_finish_pending_marker(root, cfg.ticket_id)
 
 
 # frob:ticket T-1619
@@ -2296,6 +2487,7 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
 
 # frob:ticket T-1593
 # frob:ticket T-1692
+# frob:ticket T-1845
 def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path, bool]:
     """Pre-merge setup seam of `_land_core` (T-1593 split): T-1175 auto-fix
     absorption, root resolution, T-1523 stale-marker reconciliation, T-1575
@@ -2320,6 +2512,13 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # run against the RESOLVED root (the real primary checkout, not a
     # possibly-still-worktree-pointed cfg default).
     _report_stale_post_land_verify_markers(root)
+
+    # T-1845: reconcile any leftover land-finish-pending marker from a
+    # PRIOR invocation's `--finish`/`--retire-on-proof` being SIGTERM-
+    # killed between the marker write and the mutation(s) finishing --
+    # same "reconcile before this invocation touches anything new" timing
+    # as its T-1523 sibling immediately above.
+    _report_stale_land_finish_pending_markers(root)
 
     _warn_land_override_flags(cfg)
 

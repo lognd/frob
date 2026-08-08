@@ -21,7 +21,9 @@ parsing all the way to `AppConfig.ticket_force`."""
 from __future__ import annotations
 
 import argparse
+import multiprocessing
 import os
+import signal
 import subprocess
 import time
 from datetime import UTC, datetime, timedelta
@@ -302,7 +304,8 @@ def _parse(argv: list[str]) -> argparse.Namespace:
 
 
 class TestForceFlagParsing:
-    # frob:tests src/frob/_cli_parsers/_ticket/_progress.py::_add_ticket_land_parser kind="unit"  # noqa: E501
+    # frob:tests src/frob/_cli_parsers/_ticket/_progress.py::_add_ticket_land_parser \
+    # kind="unit"
     def test_force_flag_sets_the_namespace_dest(self) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestForceFlagParsing.test_force_flag_sets_the_namespace_dest  # noqa: E501
         args = _parse(
@@ -314,3 +317,197 @@ class TestForceFlagParsing:
         # frob:tests tests/unit/test_land_finish_guard.py::TestForceFlagParsing.test_force_defaults_false  # noqa: E501
         args = _parse(["land", "T-1715", "--worktree", "/tmp/wt", "--finish"])
         assert args.ticket_force is False
+
+
+# frob:ticket T-1845
+class TestLandFinishPendingMarker:
+    """T-1845: the `--finish`/`--retire-on-proof` twin of T-1523's own
+    post-land-verify-pending marker -- covers the plain write/clear/
+    reconcile round trip; `TestLandFinishPendingMarkerSigterm` below
+    covers the real process-kill shape."""
+
+    # frob:ticket T-1845
+    def test_write_then_clear_round_trips(self, repo: Path) -> None:
+        # frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_write_then_clear_round_trips  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _clear_land_finish_pending_marker,
+            _land_finish_pending_marker_path,
+            _write_land_finish_pending_marker,
+        )
+
+        sha = _git_head(repo)
+        _write_land_finish_pending_marker(repo, "T-9001", sha, retire_on_proof=False)
+        path = _land_finish_pending_marker_path(repo, "T-9001")
+        assert path.exists()
+        _clear_land_finish_pending_marker(repo, "T-9001")
+        assert not path.exists()
+
+    # frob:ticket T-1845
+    def test_no_marker_is_a_silent_empty_result(self, repo: Path) -> None:
+        # frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _stale_land_finish_pending_markers,
+        )
+
+        assert _stale_land_finish_pending_markers(repo) == ()
+
+    # frob:ticket T-1845
+    def test_stale_marker_is_reported(self, repo: Path) -> None:
+        # frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_stale_marker_is_reported  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _stale_land_finish_pending_markers,
+            _write_land_finish_pending_marker,
+        )
+
+        sha = _git_head(repo)
+        _write_land_finish_pending_marker(repo, "T-9002", sha, retire_on_proof=True)
+        found = _stale_land_finish_pending_markers(repo)
+        assert found == (("T-9002", sha, True),)
+
+    # frob:ticket T-1845
+    def test_reconcile_reports_and_clears_a_stale_marker(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarker.test_reconcile_reports_and_clears_a_stale_marker  # noqa: E501
+        import logging
+
+        from frob.app.ticket_runner._land_cmd import (
+            _land_finish_pending_marker_path,
+            _report_stale_land_finish_pending_markers,
+            _write_land_finish_pending_marker,
+        )
+
+        sha = _git_head(repo)
+        _write_land_finish_pending_marker(repo, "T-9003", sha, retire_on_proof=False)
+        path = _land_finish_pending_marker_path(repo, "T-9003")
+        assert path.exists()
+
+        with caplog.at_level(logging.WARNING, logger="frob.app.ticket_runner"):
+            _report_stale_land_finish_pending_markers(repo)
+
+        assert not path.exists()
+        message = _sole_matching_log_message(caplog, "LAND-FINISH-RECOVERED")
+        assert "T-9003" in message
+
+
+# frob:ticket T-1845
+# frob:waive WIRE001 reason="test-only helper used by TestLandFinishPendingMarker and \
+# TestLandFinishPendingMarkerSigterm's own test methods below, in this same file -- no \
+# production caller to wire it to by design" permanent="true"
+def _sole_matching_log_message(caplog: pytest.LogCaptureFixture, needle: str) -> str:
+    """The single captured log record whose message contains `needle`
+    (T-1845 test helper, shared by `TestLandFinishPendingMarker` and
+    `TestLandFinishPendingMarkerSigterm` below) -- fails loudly if zero or
+    more than one record matches, rather than silently taking the first.
+    A single, explicit `for` loop (not a comprehension over `caplog.
+    records`) sidesteps a PERF001/PERF003 false-positive this exact shape
+    tripped when written as a comprehension: the perf scanner's
+    membership-test/nested-loop heuristics misread a filtered-list-then-
+    index pattern here as a real hot-path smell, even though this is
+    test-only code that runs over at most a handful of records."""
+    matches = []
+    for record in caplog.records:
+        if needle in record.getMessage():
+            matches.append(record)
+    assert len(matches) == 1, matches
+    return matches[0].getMessage()
+
+
+# frob:ticket T-1845
+def _git_head(repo: Path) -> str:
+    """The repo's current `HEAD` sha (test-only helper, T-1845)."""
+    return subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+# frob:ticket T-1845
+# frob:waive WIRE001 reason="multiprocessing.Process target, invoked only via \
+# ctx.Process(target=_t1845_child_finish, ...) below -- the static call-graph does not \
+# trace a callable passed as a multiprocessing target argument (same class of gap \
+# tests/test_ticket_land.py::_t0907_child_land's own equivalent target function has, \
+# that one simply predates the WIRE001 gate so it was never caught fresh); no \
+# production caller to wire it to by design" permanent="true"
+def _t1845_child_finish(
+    repo: Path, ticket_id: str, commit_sha: str, worktree: Path, ready_path: Path
+) -> None:
+    """Multiprocessing target (module-level so `fork` can spawn it, same
+    T-0907 shape `_t0907_child_land` in tests/test_ticket_land.py uses):
+    replicates `_finish_land_after_success`'s own marker-write / mutation
+    / marker-clear `try`/`finally` sequence directly (not a mock of it),
+    with `_finish_worktree` monkeypatched in THIS forked child's own
+    module copy to signal readiness and then sleep well past however long
+    the parent needs to deliver a real `SIGTERM` -- reproducing "killed
+    between the marker write and the mutation completing" deterministically."""
+    import frob.app.ticket_runner._land_cmd as land_cmd_mod
+
+    def _slow_finish_worktree(*args: object, **kwargs: object) -> None:
+        ready_path.write_text("ready\n")
+        time.sleep(30)
+
+    setattr(land_cmd_mod, "_finish_worktree", _slow_finish_worktree)  # noqa: B010
+
+    land_cmd_mod._write_land_finish_pending_marker(
+        repo, ticket_id, commit_sha, retire_on_proof=False
+    )
+    try:
+        land_cmd_mod._finish_worktree(repo, worktree, ticket_id)
+    finally:
+        land_cmd_mod._clear_land_finish_pending_marker(repo, ticket_id)
+
+
+# frob:ticket T-1845
+class TestLandFinishPendingMarkerSigterm:
+    """T-1845's own load-bearing regression lock (mirroring T-0907's
+    SIGKILL-mid-squash precedent, `tests/test_ticket_land.py::
+    TestSigkillMidStaging`): a real `SIGTERM` delivered to a process that
+    has written the land-finish-pending marker but not yet finished its
+    mutation must leave the marker on disk, and the NEXT reconciliation
+    pass must find, report, and clear it."""
+
+    # frob:ticket T-1845
+    def test_sigterm_between_marker_write_and_mutation_leaves_marker_for_reconcile(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarkerSigterm.test_sigterm_between_marker_write_and_mutation_leaves_marker_for_reconcile  # noqa: E501
+        import logging
+
+        from frob.app.ticket_runner._land_cmd import (
+            _land_finish_pending_marker_path,
+            _report_stale_land_finish_pending_markers,
+        )
+
+        wt = _add_worktree(repo, "wt1")
+        sha = _git_head(repo)
+        ready_path = repo.parent / "finish-ready.flag"
+
+        ctx = multiprocessing.get_context("fork")
+        proc = ctx.Process(
+            target=_t1845_child_finish, args=(repo, "T-9010", sha, wt, ready_path)
+        )
+        proc.start()
+        deadline = time.monotonic() + 20
+        while not ready_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert ready_path.exists(), "child never reached the finish-worktree step"
+        assert proc.pid is not None
+        os.kill(proc.pid, signal.SIGTERM)
+        proc.join(timeout=15)
+        assert not proc.is_alive()
+
+        # The marker must have survived the kill -- the child died inside
+        # the mutation, before its own `finally` clear ever ran.
+        marker_path = _land_finish_pending_marker_path(repo, "T-9010")
+        assert marker_path.exists()
+
+        # The next invocation's reconciliation pass finds it, logs
+        # LAND-FINISH-RECOVERED, and clears it -- never blocking whatever
+        # NEW ticket that invocation is actually landing.
+        with caplog.at_level(logging.WARNING, logger="frob.app.ticket_runner"):
+            _report_stale_land_finish_pending_markers(repo)
+        assert not marker_path.exists()
+        message = _sole_matching_log_message(caplog, "LAND-FINISH-RECOVERED")
+        assert "T-9010" in message
