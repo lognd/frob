@@ -2,7 +2,7 @@
 id: T-1792
 title: 'post-land sweep regression from T-1693: 3 new error(s) (DRIFT002, PARSE001,
   SYS004)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -29,3 +29,6 @@ New (rule, file) pairs filed here:
 - SYS004  design/frob.strata
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-07: Resolved. The DRIFT002/PARSE001/SYS004 errors this sweep filed against T-1693 came from an unterminated string literal in design/frob.strata -- the same malformed token twice, in both the fs.write and fs.read testsuite may-lists. Fixed on main at aaa469df; verified by 'frob check --only sys' (0 errors) and a full unscoped 'frob check --json' (0 errors). The sweep worked correctly: it detected real breakage and filed against the right commit. The residual gap -- land's Tier-A step warns-and-skips on a ParseFailed design file, letting the corruption land at all -- is tracked as T-1796.
