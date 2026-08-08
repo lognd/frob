@@ -1277,6 +1277,56 @@ class TestLand:
         assert landed.is_ok
         assert landed.danger_ok[report.final_id].state == TicketState.DONE
 
+    # frob:ticket T-1805
+    def test_non_version_pyproject_edit_survives_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLand.test_non_version_pyproject_edit_survives_land  # noqa: E501
+        """T-1805 regression, end to end through the real `land()` entry
+        point: a ticket whose ONLY change is a non-version
+        `pyproject.toml` field (an optional-dependencies pin -- the exact
+        shape T-1508's real, four-times-dropped z3-solver pin took) must
+        still be on main after landing. Before the fix,
+        `_reset_release_artifacts_to_pre_land`'s whole-file `git checkout`
+        discarded this edit unconditionally, and `land()` still reported
+        `Ok`/`verified=True` -- silent data loss with a green result."""
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.1.0"\n\n'
+            "[project.optional-dependencies]\n"
+            'smt = ["z3-solver>=4.13"]\n',
+            encoding="utf-8",
+        )
+        _commit_all(repo, "seed pyproject.toml")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-pin", str(wt)], repo)
+        created = new_ticket(wt, _spec("Pin z3-solver", scope=("pyproject.toml",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.1.0"\n\n'
+            "[project.optional-dependencies]\n"
+            'smt = ["z3-solver>=4.13,<4.15.5"]\n',
+            encoding="utf-8",
+        )
+        _commit_all(wt, "pin z3-solver upper bound")
+
+        # `bump_version` supplied (Ok(None): no new version needed) so the
+        # reset path actually runs, same as a real `frob ticket land`
+        # invocation always supplying its REL001 callback.
+        def _no_bump_needed(
+            _root: Path, _ticket: Any, _final_id: str
+        ) -> Result[str | None, LandError]:
+            return Ok(None)
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=_no_bump_needed)
+        assert result.is_ok, result.err
+
+        landed_pyproject = (repo / "pyproject.toml").read_text(encoding="utf-8")
+        assert "z3-solver>=4.13,<4.15.5" in landed_pyproject
+        # the version field itself is untouched -- this is a field-scoped
+        # reset, not a bypass of T-1760's own reset entirely.
+        assert 'version = "0.1.0"' in landed_pyproject
+
     # frob:ticket T-1721
     def test_sibling_evidence_rebind_carried_forward_end_to_end(
         self, repo: Path
@@ -7650,7 +7700,9 @@ class TestSyncGateRulesForLandDiffTarget:
     the auto-sync silently no-oped on every real change -- confirmed root
     cause of PERF012/SYS108 landing unregistered."""
 
-    def test_edit_to_waive_py_is_detected(self, repo: Path) -> None:
+    def test_edit_to_waive_py_is_detected(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget.test_edit_to_waive_py_is_detected  # noqa: E501
         from frob.app.ticket_runner import _sync_gate_rules_for_land
 
@@ -7667,7 +7719,9 @@ class TestSyncGateRulesForLandDiffTarget:
 
         called: list[str] = []
 
-        def _fake_scan(_root: Path):  # noqa: ANN202
+        def _fake_scan(
+            repo_root: Path, retired: frozenset[str] | None = None
+        ) -> frozenset[str]:
             called.append("scanned")
             return frozenset({"SOME001"})
 
@@ -7677,12 +7731,10 @@ class TestSyncGateRulesForLandDiffTarget:
         # actually re-resolves against.
         import frob.gates._rule_id_scan as _rule_id_scan_mod
 
-        old_real = _rule_id_scan_mod.generated_gate_rule_ids
-        _rule_id_scan_mod.generated_gate_rule_ids = _fake_scan
-        try:
-            result = _sync_gate_rules_for_land(repo, pre_land_tip)
-        finally:
-            _rule_id_scan_mod.generated_gate_rule_ids = old_real
+        monkeypatch.setattr(
+            _rule_id_scan_mod, "generated_gate_rule_ids", _fake_scan
+        )
+        result = _sync_gate_rules_for_land(repo, pre_land_tip)
 
         assert result.is_ok
         # the scanner must actually have been invoked -- proof the diff

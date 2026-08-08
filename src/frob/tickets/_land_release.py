@@ -445,75 +445,165 @@ def _resync_release_manifest(
 #: silently regress).
 _LAND_OWNED_RELEASE_FILES = ("pyproject.toml", "CHANGELOG.md", ".frob-release.json")
 
+#: T-1805 (the land-composition-hole ticket): `CHANGELOG.md` and
+#: `.frob-release.json` are reset WHOLE-FILE (below) because both are
+#: genuinely, entirely land-owned in practice -- the scaffolded
+#: pre-commit hook (`src/frob/scaffold/project.py`'s worktree-lease
+#: install) refuses ANY worktree commit touching `CHANGELOG.md` at all,
+#: and `.frob-release.json` is a wholly land-derived manifest no ticket
+#: has a legitimate reason to hand-edit. `pyproject.toml` is different:
+#: that same hook only refuses a commit that changes the `version = `
+#: line specifically (`playbook.md#4b`) -- every OTHER field
+#: (`[project.optional-dependencies]`, `[tool.*]`, `[build-system]`,
+#: entry points, ...) is explicit, legitimate worktree-agent territory.
+#: A whole-file reset therefore silently discarded real ticket work
+#: whenever a landing ticket's only change happened to be a non-version
+#: `pyproject.toml` edit (confirmed: T-1508's one-line dependency pin,
+#: dropped four consecutive times). `_RESET_FIELD_LEVEL` names the one
+#: file that gets a field-scoped reset instead of a whole-file one.
+#:
+#: T-1760 ROOT CAUSE this whole reset exists to close: none of these
+#: three files is protected by `ticket.scope`
+#: (`_auto_resolve_out_of_scope_conflicts` only fires on a genuine git
+#: CONFLICT, keep="ours"), and `git merge --squash` performs an ordinary
+#: clean 3-way merge on any file that does NOT conflict. A worktree
+#: branched before a sibling's land already advanced these files carries
+#: its own (older) copies at whatever content they held at the
+#: worktree's OWN merge-base -- when that differs from root's current
+#: HEAD, the squash's per-file 3-way merge can resolve CLEANLY (no
+#: conflict object at all) by taking the worktree's side, silently
+#: regressing root's working tree to a version/manifest OLDER than what
+#: root's last real commit already declared. Measured on main across
+#: four consecutive lands (T-1692/T-1754/T-1755/T-1756): the version
+#: oscillated 0.366.0 -> 0.365.0 -> 0.366.0 -> 0.365.0, each backward
+#: step exactly this shape. Resetting FIRST, unconditionally, on every
+#: land (not just when a regression is detected) is the fix T-1760 asked
+#: for directly: the bump is a function of (root's manifest, the landing
+#: API) and should be evaluated from root's own state at squash time,
+#: never from whatever a worktree happened to carry.
+_RESET_FIELD_LEVEL = frozenset({"pyproject.toml"})
+
 
 # frob:ticket T-1760
+# frob:ticket T-1805
 def _reset_release_artifacts_to_pre_land(root: Path, pre_land_tip: str) -> None:
-    """RECOMPUTE, DO NOT CARRY (T-1760): discard whatever `git merge
-    --squash` staged for `pyproject.toml`/`CHANGELOG.md`/
-    `.frob-release.json` in `root`'s working tree and INDEX, resetting all
-    three back to `pre_land_tip` -- root's own true, last-committed state
-    -- before `bump_version` (or anything else in this module) ever reads
-    or writes them.
-
-    ROOT CAUSE this closes: none of these three files is protected by
-    `ticket.scope` (`_auto_resolve_out_of_scope_conflicts` only fires on a
-    genuine git CONFLICT, keep="ours"), and `git merge --squash` performs
-    an ordinary clean 3-way merge on any file that does NOT conflict. A
-    worktree branched before a sibling's land already advanced these
-    files carries its own (older) copies of them at whatever content they
-    held at the worktree's OWN merge-base -- when that content differs
-    from root's current HEAD, the squash's per-file 3-way merge can
-    resolve CLEANLY (no conflict object at all) by taking the worktree's
-    side, silently regressing `root`'s working tree to a version/manifest
-    OLDER than what `root`'s last real commit already declared. The
-    existing T-0992 monotonicity guard (`_release_bump_is_monotonic`)
-    only ever validates a bump `bump_version` itself REPORTS computing
-    (the `bumped.danger_ok is not None` branch below) -- when this
-    ticket's own diff needs no NEW bump (`Ok(None)`, e.g. no public-API
-    change), that branch never runs, so a regression already sitting on
-    disk from the squash's clean merge sailed straight into the final
-    commit uncontested: `_ensure_release_quartet_coherent`'s own check
-    only compares the working tree's pyproject.toml against the working
-    tree's manifest to EACH OTHER, which a wholly-regressed-but-internally
-    -matched pair passes trivially. Measured on main across four
-    consecutive lands (T-1692/T-1754/T-1755/T-1756): the version
-    oscillated 0.366.0 -> 0.365.0 -> 0.366.0 -> 0.365.0, each backward
-    step exactly this shape.
-
-    Resetting FIRST, unconditionally, on every land (not just when a
-    regression is detected) is the fix the ticket asks for directly: the
-    bump is a function of (root's manifest, the landing API) and should be
-    evaluated from root's own state at squash time, never from whatever a
-    worktree happened to carry -- so there is nothing to detect, only a
-    baseline to always start from. A file missing at `pre_land_tip` (a
-    fresh repo with no manifest yet) or already identical to it is a
-    harmless no-op `git checkout`; failures are logged, not fatal --
-    absence of these files is a legitimate repo state this module already
-    treats as "nothing to compare" throughout (`_read_root_pyproject_
+    """RECOMPUTE, DO NOT CARRY (T-1760, narrowed to field granularity by
+    T-1805): discard whatever `git merge --squash` staged for the
+    LAND-OWNED portion of `pyproject.toml`/`CHANGELOG.md`/
+    `.frob-release.json` in `root`'s working tree and INDEX, resetting it
+    back to `pre_land_tip` -- root's own true, last-committed state --
+    before `bump_version` (or anything else in this module) ever reads or
+    writes it. See the module-level "T-1760/T-1805 reset rationale"
+    comment above `_LAND_OWNED_RELEASE_FILES` for the full root-cause
+    history (why this exists, and why T-1805 narrowed pyproject.toml's
+    reset from whole-file to field-scoped). Per-file work is delegated to
+    `_reset_one_land_owned_file` so this loop itself stays short; a
+    reset failure for any one file is logged and treated as a no-op,
+    never fatal -- consistent with every other absence case this module
+    already treats as "nothing to compare" (`_read_root_pyproject_
     version`/`_read_root_manifest_version` both return `None` the same
-    way), so a checkout failure here degrades to the pre-T-1760 behavior
-    for that one file rather than aborting the whole land."""
+    way)."""
     for rel in _LAND_OWNED_RELEASE_FILES:
-        checkout = run_argv(
-            ["git", "-C", str(root), "checkout", pre_land_tip, "--", rel]
-        )
-        if checkout.is_err or checkout.danger_ok.returncode != 0:
+        _reset_one_land_owned_file(root, pre_land_tip, rel)
+
+
+# frob:ticket T-1760
+# frob:ticket T-1805
+def _reset_one_land_owned_file(root: Path, pre_land_tip: str, rel: str) -> None:
+    """One file's worth of `_reset_release_artifacts_to_pre_land`'s work
+    (split out purely to keep that loop under ARCH001's line threshold,
+    no behavior change from inlining): `pyproject.toml` gets the T-1805
+    FIELD-scoped reset (`_reset_pyproject_version_field_only`, only its
+    `version = "..."` line is rewound); every other `_LAND_OWNED_RELEASE_
+    FILES` entry gets the original T-1760 whole-file `git checkout`
+    reset. Both branches degrade to a logged no-op on failure, never
+    raise."""
+    if rel in _RESET_FIELD_LEVEL:
+        ok = _reset_pyproject_version_field_only(root, pre_land_tip)
+        if not ok:
             _log.debug(
-                "land: %s reset of %s to pre-land %s skipped (not present at "
-                "that commit, or nothing to reset) -- treated as a no-op",
+                "land: %s field-level version reset of %s to pre-land "
+                "%s skipped (not present at that commit, unparsable, "
+                "or nothing to reset) -- treated as a no-op",
                 root,
                 rel,
                 pre_land_tip,
             )
-            continue
-        staged = run_argv(["git", "-C", str(root), "add", "--", rel])
-        if staged.is_err or staged.danger_ok.returncode != 0:
-            _log.warning(
-                "land: %s could not stage the pre-land reset of %s -- a stale "
-                "squash-carried copy may still be in the index",
-                root,
-                rel,
-            )
+        return
+    checkout = run_argv(["git", "-C", str(root), "checkout", pre_land_tip, "--", rel])
+    if checkout.is_err or checkout.danger_ok.returncode != 0:
+        _log.debug(
+            "land: %s reset of %s to pre-land %s skipped (not present at "
+            "that commit, or nothing to reset) -- treated as a no-op",
+            root,
+            rel,
+            pre_land_tip,
+        )
+        return
+    staged = run_argv(["git", "-C", str(root), "add", "--", rel])
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.warning(
+            "land: %s could not stage the pre-land reset of %s -- a stale "
+            "squash-carried copy may still be in the index",
+            root,
+            rel,
+        )
+
+
+# frob:ticket T-1805
+def _reset_pyproject_version_field_only(root: Path, pre_land_tip: str) -> bool:
+    """T-1805: rewind ONLY `pyproject.toml`'s `version = "..."` line to
+    its `pre_land_tip` value, leaving every other line -- and therefore
+    every other field a landing ticket legitimately touched
+    (`[project.optional-dependencies]`, `[tool.*]`, `[build-system]`,
+    entry points, ...) -- exactly as the squash staged it. Returns
+    `True` if a rewrite (or a confirmed no-op, e.g. the line already
+    matches) happened, `False` if there was nothing safe to do (no
+    `pre_land_tip` version, no on-disk file, or the on-disk file has no
+    version line to rewrite) -- callers treat `False` as a no-op, never a
+    fatal condition, matching every other absence case in this module.
+
+    Reads `pre_land_tip`'s version via `_read_root_pyproject_version`
+    (the same git-object read `_apply_release_bump`'s own monotonicity
+    check already trusts as ground truth), then substitutes it into the
+    WORKING TREE's current `pyproject.toml` text via
+    `_LAND_PYPROJECT_VERSION_RE` -- never a whole-file overwrite, so a
+    squash-staged edit to any other field survives untouched."""
+    pre_version = _read_root_pyproject_version(root, pre_land_tip)
+    if pre_version is None:
+        return False
+    pyproject_path = root / "pyproject.toml"
+    try:
+        current_text = pyproject_path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    if not _LAND_PYPROJECT_VERSION_RE.search(current_text):
+        return False
+    new_text = _LAND_PYPROJECT_VERSION_RE.sub(
+        f'version = "{pre_version}"', current_text, count=1
+    )
+    if new_text == current_text:
+        return True
+    try:
+        pyproject_path.write_text(new_text, encoding="utf-8")
+    except OSError:
+        _log.warning(
+            "land: %s could not rewrite pyproject.toml's version field back "
+            "to pre-land %s -- a stale squash-carried version may still be "
+            "on disk",
+            root,
+            pre_land_tip,
+        )
+        return False
+    staged = run_argv(["git", "-C", str(root), "add", "--", "pyproject.toml"])
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.warning(
+            "land: %s could not stage the pre-land version-field reset of "
+            "pyproject.toml -- a stale squash-carried copy may still be in "
+            "the index",
+            root,
+        )
+    return True
 
 
 def _apply_release_bump(
