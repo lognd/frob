@@ -2117,17 +2117,31 @@ def _check_committed_waive_deletions(
     if found.is_err:
         return Err(found.danger_err)
     if found.danger_ok:
+        from frob.tickets._land_git_ops import _commits_touching_path
+
+        # frob:ticket T-1799
+        # Name the ACTUAL commit(s) that touched each offending file --
+        # not a guess at who wrote them -- so "revert the offending
+        # commit" names something concrete instead of sending an agent to
+        # reconstruct it by hand.
+        attribution = {
+            file: _commits_touching_path(worktree, main_branch, file)
+            for file, _rule in found.danger_ok
+        }
         _log.error(
             "land: %s refused -- branch history (commits since merge-base "
             "%s) contains frob:waive deletion(s) outside scope %s and "
-            "undeclared by the Done report: %s. If intentional, add the "
-            "file to the ticket's scope or name it/the rule in the Done "
-            "report; if accidental, revert the offending commit on this "
-            "branch before retrying `frob ticket land %s --worktree %s`",
+            "undeclared by the Done report: %s (real commits touching "
+            "each file since %s: %s). If intentional, add the file to "
+            "the ticket's scope or name it/the rule in the Done report; "
+            "if accidental, revert the offending commit on this branch "
+            "before retrying `frob ticket land %s --worktree %s`",
             ticket_id,
             merge_base.danger_ok,
             list(ticket.scope),
             [f"{file}:{rule}" for file, rule in found.danger_ok],
+            main_branch,
+            attribution,
             ticket_id,
             worktree,
         )

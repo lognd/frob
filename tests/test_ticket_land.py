@@ -2187,6 +2187,43 @@ class TestCommittedWaiveDeletionRefusal:
         assert result_b.is_ok, result_b.err
 
 
+# frob:ticket T-1799
+class TestCommitsTouchingPath:
+    """T-1799: an `OutOfScopeWaiveDeletion` refusal used to say only
+    "revert the offending commit" with no commit actually named --
+    `_commits_touching_path` reads the REAL commit(s) off `git log`
+    instead of leaving an agent to reconstruct which one by hand."""
+
+    def test_names_the_real_commit_that_touched_the_file(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestCommitsTouchingPath.test_names_the_real_commit\
+        # _that_touched_the_file
+        # frob:ticket T-1799
+        from frob.tickets._land_git_ops import _commits_touching_path
+
+        base = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        (repo / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(repo, "a very specific commit subject for T-1799")
+
+        found = _commits_touching_path(repo, base, "src/other.py")
+
+        assert len(found) == 1
+        assert "a very specific commit subject for T-1799" in found[0]
+
+    def test_empty_when_the_path_was_never_touched(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestCommitsTouchingPath.test_empty_when_the_path_w\
+        # as_never_touched
+        # frob:ticket T-1799
+        from frob.tickets._land_git_ops import _commits_touching_path
+
+        base = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        (repo / "src" / "unrelated.py").write_text("def h():\n    pass\n")
+        _commit_all(repo, "touches a different file entirely")
+
+        assert _commits_touching_path(repo, base, "src/other.py") == ()
+
+
 # frob:ticket T-1332
 class TestRenameAwareWaiveDeletionAttribution:
     """T-1332 acceptance [1]: `_waive_deletions_in_diff` reads the

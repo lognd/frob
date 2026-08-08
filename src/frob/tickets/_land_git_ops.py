@@ -1329,6 +1329,38 @@ def _committed_waive_deletions(
     return _waive_deletions_in_diff(worktree, (f"{base_ref}..HEAD",))
 
 
+# frob:ticket T-1799
+def _commits_touching_path(worktree: Path, base_ref: str, file: str) -> tuple[str, ...]:
+    """The REAL commit(s) in `base_ref..HEAD` that touched `file` --
+    `git log --format=%h %s -- file`, one `"<sha7> <subject>"` string per
+    commit, oldest first (git's default `git log` order is newest-first;
+    reversed here so a refusal reads as a timeline).
+
+    T-1799: `_check_committed_waive_deletions`'s refusal used to say only
+    "revert the offending commit" with no commit named -- an agent
+    reading it had to reconstruct which commit that was by hand, exactly
+    the same "which one?" gap DirtyMain's T-1795 fix already closed for
+    the deferred-sweep case. This is a fact read from `git log` on the
+    actual path, never a guess at authorship -- empty on any git failure
+    (best-effort, never turns "cannot tell" into a fabricated commit)."""
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(worktree),
+            "log",
+            "--format=%h %s",
+            f"{base_ref}..HEAD",
+            "--",
+            file,
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return ()
+    lines = [line for line in spawned.danger_ok.stdout.splitlines() if line.strip()]
+    return tuple(reversed(lines))
+
+
 def _waive_deletion_declared_in_done_report(body: str, file: str, rule: str) -> bool:
     """Whether `body`'s `## Done report` section (`_done_report_section_
     lines`, the same section-boundary parser `_evidence.py`'s claim-
@@ -1657,8 +1689,7 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
 # frob:ticket T-1821
 # frob:waive AFFECT001 reason="doc anchor update belongs in docs/modules/tickets.md, \
 # out of T-1821's declared scope and held by another concurrent agent per dispatch; \
-# follow-up filed to land the doc paragraph once that hold clears" \
-# follow_up="T-1832"
+# follow-up filed to land the doc paragraph once that hold clears" follow_up="T-1832"
 def describe_root_dirt(root: Path) -> str:
     """What is making `root` dirty, rendered for a `DirtyMain` refusal.
 

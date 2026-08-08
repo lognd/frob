@@ -2,7 +2,7 @@
 id: T-1799
 title: DirtyMain/OutOfScopeWaiveDeletion refusals misattribute the writer -- surface
   actual identity, not a file-history guess
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -14,8 +14,20 @@ runs_last: false
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_git_ops.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: unit tests for _commits_touching_path and the OutOfScopeWaiveDeletion refusal
+    message it feeds
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_ticket_land.py::TestCommitsTouchingPath::test_names_the_real_commit_that_touched_the_file
+- tests/test_ticket_land.py::TestCommitsTouchingPath::test_empty_when_the_path_was_never_touched
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
 designated_repro_test: null
 threat: null
 component: null
