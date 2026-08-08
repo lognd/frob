@@ -695,7 +695,9 @@
     "src/frob/gates/_tickets_gate.py::tickets_gate": "151a5c8106999e9e13e65e15aef2837187687aa7310a7762ce24aaf82af05844",
     "src/frob/gates/_todo_fmt.py::fmt_gate": "aec42d9d7eee011aa4c46caf371d6ab09dcbbb6aac70815a9b7c7722c1878ca3",
     "src/frob/gates/_tracked_files.py::tracked_files": "a841d05ec934e8ad48b91c71faaaf5aa844d3c77c8db282e25969ec5b5d928a3",
+    "src/frob/gates/_waive.py::RuleCensusEntry": "f30e2b034420b2ce4923da7c4713249fdb0d0034a57bbe3c9c16a6cc2f75cf01",
     "src/frob/gates/_waive.py::SCOPED_RUN_FLAKY_RULE_IDS": "eccec9442287c94baf320554cbed12c317246e8b8907dea1ab52876f8f606c97",
+    "src/frob/gates/_waive.py::census_gate_rules": "eb6801f7f0c98feb7e7875bf3630ea4ba5eb3a12ef750a71f599fa74d28b6a8a",
     "src/frob/gates/_waive.py::known_gate_rule_ids": "42f8d0e0fce2c36e6d63ac8a4ef7d47b03825d5fe90f41cb75474f71fac17491",
     "src/frob/gates/_waive_comments.py::waive006_gate": "6c3a6f2aca83dbda0c48f75695a94faec32a9fa9fcbdb667d293cf92ff507bbb",
     "src/frob/gates/_waive_comments.py::waive007_gate": "6263da88b1449aecc1c42e2bafd90827fdb82707f0a200c291b07dc5a2c77384",
@@ -2143,5 +2145,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.388.0"
+  "version": "0.389.0"
 }

@@ -260,6 +260,12 @@ class AppConfig(BaseModel):
     #: the coordinator ever lands. `False` (default) leaves normal
     #: full/`--only`/`--budget` behavior untouched.
     check_land_parity: bool = False
+    # frob:ticket T-1764
+    #: `frob check --census`: print the per-rule waive-rate table (fired,
+    #: waived, waive-rate, dead-waiver count) from a full unscoped gate
+    #: run and exit, instead of the normal full/`--only`/`--budget`
+    #: dispatch. `False` (default) leaves existing behavior untouched.
+    check_census: bool = False
     check_delta: bool = False
     # frob:ticket T-1260
     #: `frob check --fix`: apply every registered Tier-A deterministic

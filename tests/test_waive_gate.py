@@ -13,11 +13,16 @@ not fire on that mention).
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from frob.gates import (
     GateConfig,
+    Severity,
+    Violation,
     _waive006_binding_ticket_refs,
     _waive006_comment_violations,
     _waive006_strata_violations,
@@ -29,6 +34,7 @@ from frob.gates import (
     waive006_gate,
     waive007_gate,
 )
+from frob.gates._waive import _waive004_dead_count_by_rule, census_gate_rules
 from frob.graph import build_graph
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
 
@@ -558,3 +564,168 @@ class TestWaive007RealRepo:
             "WAIVE007 fired on the real repo -- either a genuinely dangling "
             f"binding ref needs fixing, or the heuristic over-fired: {offending}"
         )
+
+
+class TestRuleCensus:
+    """T-1764: `census_gate_rules` classifies corpus-wide vs diff-scoped
+    rules BEFORE computing any waive-rate -- the T-1763 methodological
+    correction this ticket's acceptance criteria require, made
+    structural rather than a discipline someone has to remember."""
+
+    def test_corpus_wide_rule_gets_a_rate(self) -> None:
+        # frob:tests src/frob/gates/_waive.py::census_gate_rules
+        """A corpus-wide rule (not in
+        `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES`, e.g. `COV007`) gets a
+        real `waive_rate = waived / (waived + fired)`."""
+        kept = (
+            Violation(
+                rule="COV007", severity=Severity.WARN, file="a.py", line=1, message="x"
+            ),
+            Violation(
+                rule="COV007", severity=Severity.WARN, file="b.py", line=1, message="x"
+            ),
+            Violation(
+                rule="COV007", severity=Severity.WARN, file="c.py", line=1, message="x"
+            ),
+        )
+        waived = (
+            Violation(
+                rule="COV007", severity=Severity.WARN, file="d.py", line=1, message="x"
+            ),
+        )
+        rows = census_gate_rules(kept, waived)
+        cov007 = next(r for r in rows if r.rule == "COV007")
+        assert cov007.corpus_wide is True
+        assert cov007.fired == 3
+        assert cov007.waived == 1
+        assert cov007.waive_rate == 0.25
+
+    def test_diff_scoped_rule_gets_no_rate(self) -> None:
+        # frob:tests src/frob/gates/_waive.py::census_gate_rules
+        """A diff-scoped rule (`AFFECT001`, in
+        `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES`) with 0 live findings
+        on this snapshot gets `waive_rate=None`, never `100%` or `0%` --
+        the exact number that would have recommended deleting a working
+        detector (the T-1763 incident this ticket exists to prevent)."""
+        kept: tuple[Violation, ...] = ()
+        waived = (
+            Violation(
+                rule="AFFECT001",
+                severity=Severity.WARN,
+                file="a.py",
+                line=1,
+                message="x",
+            ),
+        )
+        rows = census_gate_rules(kept, waived)
+        affect001 = next(r for r in rows if r.rule == "AFFECT001")
+        assert affect001.corpus_wide is False
+        assert affect001.waived == 1
+        assert affect001.fired == 0
+        assert affect001.waive_rate is None
+
+    def test_dead_waiver_count_is_folded_in(self) -> None:
+        # frob:tests src/frob/gates/_waive.py::census_gate_rules
+        """A `WAIVE004` finding naming `COV007` (a waiver matching zero
+        live findings this run) is counted into `COV007`'s
+        `dead_waivers`, not left as an unrelated top-level warning."""
+        kept = (
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.WARN,
+                file="a.py",
+                line=1,
+                message="WAIVE004: a.py:1 frob:waive COV007 matches 0 findings this run",
+            ),
+        )
+        waived = (
+            Violation(
+                rule="COV007", severity=Severity.WARN, file="a.py", line=1, message="x"
+            ),
+        )
+        rows = census_gate_rules(kept, waived)
+        cov007 = next(r for r in rows if r.rule == "COV007")
+        assert cov007.dead_waivers == 1
+
+
+class TestCensusCli:
+    """`frob check --census` (T-1764) -- the CLI entry point, with
+    `run_gates` monkeypatched so this stays a fast, isolated test rather
+    than a full-repo gate run."""
+
+    def test_census_prints_a_table_and_exits_zero(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests src/frob/app/check_runner.py::_run_census
+        from typani import Ok
+
+        from frob.app import check_runner
+        from frob.app.config import AppConfig, Subcommand
+        from frob.gates._models import GateReport, GateStats
+
+        kept = (
+            Violation(
+                rule="COV007", severity=Severity.WARN, file="a.py", line=1, message="x"
+            ),
+        )
+        waived = (
+            Violation(
+                rule="COV007", severity=Severity.WARN, file="b.py", line=1, message="x"
+            ),
+        )
+        report = GateReport(
+            violations=kept,
+            waived=waived,
+            stats=GateStats(counts={}, timing_s={}, skipped=()),
+        )
+        # `_run_census` imports `run_gates as _raw_run_gates` locally at
+        # call time, so patch the real module attribute it resolves.
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg: Ok(report))
+
+        cfg = AppConfig(
+            subcommand=Subcommand.check, check_census=True, check_json=False
+        )
+        with caplog.at_level(logging.INFO), pytest.raises(SystemExit) as exc_info:
+            check_runner._run_census(tmp_path, cfg)
+        assert exc_info.value.code == 0
+        assert any("COV007" in rec.message for rec in caplog.records)
+
+
+class TestWaive004DeadCount:
+    """`_waive004_dead_count_by_rule` (T-1764): parses a WAIVE004 finding's
+    own message text to recover which rule the dead waiver was about."""
+
+    def test_counts_per_rule_from_message(self) -> None:
+        # frob:tests src/frob/gates/_waive.py::_waive004_dead_count_by_rule
+        violations = (
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.WARN,
+                file="a.py",
+                line=1,
+                message="WAIVE004: a.py:1 frob:waive COV007 matches 0 findings this run",
+            ),
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.WARN,
+                file="b.py",
+                line=2,
+                message="WAIVE004: b.py:2 frob:waive COV007 matches 0 findings this run",
+            ),
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.WARN,
+                file="c.py",
+                line=3,
+                message="WAIVE004: c.py:3 frob:waive ARCH001 matches 0 findings this run",
+            ),
+        )
+        counts = _waive004_dead_count_by_rule(violations)
+        assert counts == {"COV007": 2, "ARCH001": 1}
+
+    def test_empty_input_yields_empty_dict(self) -> None:
+        # frob:tests src/frob/gates/_waive.py::_waive004_dead_count_by_rule
+        assert _waive004_dead_count_by_rule(()) == {}

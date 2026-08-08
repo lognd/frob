@@ -2760,6 +2760,7 @@ class TestDeadSymbolGate:
 
 # frob:ticket T-1428
 # frob:ticket T-1502
+# frob:ticket T-1746
 class TestWireGate:
     """T-1428: refuse a ticket's own diff when it adds a function with no
     non-test caller, a gate rule id absent from `_KNOWN_GATE_RULES`, or a
@@ -2833,17 +2834,17 @@ class TestWireGate:
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert not any(v.rule == "WIRE001" for v in violations)
 
-    # frob:ticket T-1558
-    def test_test_helper_called_only_from_its_own_defining_file_is_still_flagged(
+    # frob:ticket T-1746
+    def test_test_helper_called_from_a_real_test_in_the_same_file_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
-        """T-1558's cross-test-file recognition must NOT swallow the
-        genuinely-unwired case: a helper only ever called from its OWN
-        defining file (no other test file, no production code) still
-        trips WIRE001 -- same-file usage never counts as "reached",
-        matching T-1592's permanent-waiver precedent for exactly this
-        shape."""
+        """T-1746: a helper called directly from a genuine `test_*`
+        function in its OWN defining file now counts as reached -- the
+        same-file test-fixture-reuse false positive this ticket exists
+        for (T-1727's motivating case: a shared fixture two test classes
+        in one file both call from real `test_*` methods). Superseded the
+        pre-T-1746 assertion that same-file usage never counts."""
         from frob.gates._wire import wire_gate
 
         _write(
@@ -2851,6 +2852,35 @@ class TestWireGate:
             "tests/test_only_self.py",
             "def _make_thing() -> bool:\n    return True\n\n"
             "def test_it() -> None:\n    assert _make_thing()\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "_make_thing" in r.symref)
+        diff = Diff(
+            base="x", hunks=(Hunk(file="tests/test_only_self.py", span=record.span),)
+        )
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE001")
+        assert v is None
+
+    # frob:ticket T-1746
+    def test_test_helper_called_only_from_a_non_test_helper_is_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """T-1746's narrower allowance does NOT swallow the genuinely-
+        unwired case: a helper called only from ANOTHER non-`test_*`
+        helper in the same file (never from a real test function, never
+        from a different file, never from production code) still trips
+        WIRE001 -- T-1746 only recognizes a call sitting inside an actual
+        `test_*` function/method, not same-file text in general."""
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "tests/test_only_self.py",
+            "def _make_thing() -> bool:\n    return True\n\n"
+            "def _other_helper() -> bool:\n    return _make_thing()\n",
         )
         snap = _snapshot(tmp_path)
         record = next(r for r in snap.symbols.values() if "_make_thing" in r.symref)

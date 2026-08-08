@@ -929,6 +929,9 @@ def _handle_early_exit_modes(root: Path, cfg: AppConfig) -> bool:
     if cfg.check_land_parity:
         _run_land_parity(root, cfg)
         return True
+    if cfg.check_census:
+        _run_census(root, cfg)
+        return True
     return False
 
 
@@ -977,6 +980,80 @@ def _run_land_parity(root: Path, cfg: AppConfig) -> None:
         for rule, file in sorted(findings):
             _log.error("  %s %s", rule, file)
     sys.exit(1 if rows else 0)
+
+
+# frob:ticket T-1764
+# frob:doc docs/modules/app.md#frob-check---census-t-1764
+# frob:tests \
+# tests/test_waive_gate.py::TestCensusCli.test_census_prints_a_table_and_exits_zero
+# frob:waive ARCH103 reason="T-1764: same early-exit-mode orchestrator shape as \
+# _run_land_parity right above it (run gates, log an error and exit on failure, else \
+# print and exit) -- the log call and the sys.exit ARE the orchestration job; the pure \
+# computation already lives in census_gate_rules/_census_gate_config/_print_census"
+def _run_census(root: Path, cfg: AppConfig) -> None:
+    """`frob check --census` (T-1764): run every gate, unscoped, over the
+    whole tree, then print `frob.gates._waive.census_gate_rules`'s
+    per-rule waive-rate table and exit. A `corpus_wide=False` rule (a
+    diff-scoped detector, e.g. AFFECT001/DUP001) prints `n/a (diff-
+    scoped)` for its rate rather than a number computed from this single
+    clean-tree snapshot -- the exact T-1763 methodological correction
+    this ticket's acceptance criteria require: a diff-scoped rule's 0
+    live findings on a clean tree is its EXPECTED healthy signature, not
+    evidence it is dead. Exits 1 only when the gate run itself could
+    not be evaluated (never on a "bad" census number -- this is a
+    report, not a gate, per the ticket's explicit "not blocking yet"
+    acceptance criterion)."""
+    from frob.gates import run_gates as _raw_run_gates
+    from frob.gates._waive import census_gate_rules
+
+    raw = _raw_run_gates(_census_gate_config(root, cfg))
+    if raw.is_err:
+        _log.error("frob check --census: could not run gates: %s", raw.danger_err)
+        sys.exit(1)
+    report = raw.danger_ok
+    rows = census_gate_rules(report.violations, report.waived)
+    _print_census(rows, as_json=cfg.check_json)
+    sys.exit(0)
+
+
+def _census_gate_config(root: Path, cfg: AppConfig):  # noqa: ANN201
+    """The full, unscoped `GateConfig` `_run_census` runs against (T-1764,
+    split out so `_run_census` itself stays a plain orchestration body):
+    no `--only`/`--ticket` narrowing, since a scoped run would make a
+    diff-scoped rule's live count meaningless for this snapshot."""
+    from frob.gates import GateConfig
+
+    base = cfg.check_base if cfg.check_base else "main"
+    return GateConfig(root=str(root), base=base)
+
+
+def _print_census(rows: tuple, *, as_json: bool) -> None:
+    """Pure printing half of `_run_census` (T-1764, split out to keep
+    `_run_census` itself under ARCH103's per-body decision-point
+    threshold): `--json` emits `rows` as a JSON array of
+    `RuleCensusEntry.model_dump()`s, otherwise a fixed-width text table
+    with `n/a` in place of a diff-scoped rule's (never-computed)
+    waive-rate."""
+    import json
+
+    if as_json:
+        _log.info(json.dumps([r.model_dump() for r in rows], indent=2))
+        return
+    _log.info(
+        "%-14s %6s %8s %10s %6s %s", "RULE", "FIRED", "WAIVED", "RATE", "DEAD", "SCOPE"
+    )
+    for r in rows:
+        rate_str = f"{r.waive_rate:.0%}" if r.waive_rate is not None else "n/a"
+        scope_str = "corpus" if r.corpus_wide else "diff-scoped"
+        _log.info(
+            "%-14s %6d %8d %10s %6d %s",
+            r.rule,
+            r.fired,
+            r.waived,
+            rate_str,
+            r.dead_waivers,
+            scope_str,
+        )
 
 
 def _handle_stamp_modes(root: Path, cfg: AppConfig) -> bool:

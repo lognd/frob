@@ -174,13 +174,7 @@ class TestTouchedPythonFiles:
 
 
 # frob:ticket T-1727
-# frob:waive WIRE001 reason="a shared test-fixture helper used only within this one \
-# test file (both TestCheckTicketMutationEvidence and \
-# TestWarnBindTimeMutationSweepCost call it directly from real test_* methods, in the \
-# SAME file) -- WIRE001's same-file exclusion (T-1592's precedent) exists for \
-# genuinely-unwired code, not for a fixture DUP001 already required be extracted out \
-# of two near-identical per-class copies; every call site is a real test method, \
-# verifiable by reading this file directly" follow_up="T-1746"
+# frob:ticket T-1746
 def _repo_with_add_change(tmp_path: Path) -> Path:
     """A minimal repo whose `m.py::add` has one uncommitted changed line
     (`+ 0`) against `main` -- the shared fixture `TestCheckTicketMutation

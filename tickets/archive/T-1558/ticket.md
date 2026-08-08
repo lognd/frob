@@ -102,7 +102,7 @@ scope_changes:
   at: '2026-08-06'
 evidence:
 - tests/test_gates.py::TestWireGate::test_shared_test_fixture_called_from_a_sibling_test_file_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_its_own_defining_file_is_still_flagged
+- tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_a_non_test_helper_is_still_flagged
 designated_repro_test: null
 acceptance:
 - text: GIVEN a module-local pytest helper (fixture factory, git-init scaffold, parametrized-data
@@ -111,7 +111,7 @@ acceptance:
     the 16 waivers currently binding here are deleted
   evidence:
   - tests/test_gates.py::TestWireGate::test_shared_test_fixture_called_from_a_sibling_test_file_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_its_own_defining_file_is_still_flagged
+  - tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_a_non_test_helper_is_still_flagged
 threat: null
 component: null
 ---

@@ -49,6 +49,8 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from frob.gates._models import Severity, Violation, WaiverRef
 from frob.graph import Edge, EdgeKind, GraphSnapshot
 from frob.logging import get_logger
@@ -1332,6 +1334,130 @@ def _waive004_violations(
             )
         )
     return tuple(out)
+
+
+# frob:ticket T-1764
+# frob:doc docs/modules/app.md#frob-check---census-t-1764
+class RuleCensusEntry(BaseModel):
+    """One registered rule's waive-rate census row (T-1764): how often it
+    fires versus how often it is waived away, and whether it is even
+    LEGITIMATE to compute that ratio from a single clean-tree snapshot.
+
+    `corpus_wide` is False exactly for rules in
+    `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES` -- those rules only ever
+    fire against a DIFF, so `live=0` on a clean tree is their expected
+    healthy signature, not evidence the rule is dead (the T-1763
+    methodological correction this census exists to make structural: a
+    census that treats a diff-scoped rule's clean-tree silence as a
+    waive-rate would recommend deleting a working detector). `waive_rate`
+    is `None` for a non-corpus-wide rule for exactly that reason -- this
+    census does not compute a diff-scoped rate at all (that needs
+    historical diff data this single-snapshot pass does not have), it
+    only refuses to print a misleading one.
+
+    `dead_waivers` is the WAIVE004 count for this rule (a directive
+    matching zero live findings THIS run) -- meaningful for a corpus-wide
+    rule, and explicitly NOT meaningful for a non-corpus-wide one (a
+    diff-scoped rule's waivers read as WAIVE004-exempt already, so this is
+    always 0 there; see `_waive004_dead_count_by_rule`'s docstring)."""
+
+    model_config = {}
+
+    rule: str
+    corpus_wide: bool
+    fired: int
+    waived: int
+    waive_rate: float | None
+    dead_waivers: int
+
+
+# frob:ticket T-1764
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive004DeadCount.test_counts_per_rule_from_message
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive004DeadCount.test_empty_input_yields_empty_dict
+def _waive004_dead_count_by_rule(
+    waive004_violations: tuple[Violation, ...],
+) -> dict[str, int]:
+    """How many WAIVE004 findings (a `frob:waive` matching zero live
+    findings this run, T-1764) name each rule -- parsed out of
+    `_waive004_violations`'s own message text (`{site} frob:waive {rule}
+    matches 0 findings...`) since `Violation` carries no structured
+    "which rule was this ABOUT" field for a WAIVE00* meta-finding. Callers
+    pass exactly the `WAIVE004`-rule subset of a `GateReport.violations`
+    (or `.waived`, though a WAIVE004 finding is never itself waived in
+    practice) -- an empty input yields an empty dict, never an error."""
+    counts: dict[str, int] = {}
+    for violation in waive004_violations:
+        if violation.rule != "WAIVE004":
+            continue
+        # message shape: "WAIVE004: {edge.src} frob:waive {rule} matches ..."
+        marker = " frob:waive "
+        idx = violation.message.find(marker)
+        if idx == -1:
+            continue
+        rest = violation.message[idx + len(marker) :]
+        rule = rest.split(" ", 1)[0].strip()
+        if rule:
+            counts[rule] = counts.get(rule, 0) + 1
+    return counts
+
+
+# frob:ticket T-1764
+# frob:doc docs/modules/app.md#frob-check---census-t-1764
+# frob:tests tests/test_waive_gate.py::TestRuleCensus.test_corpus_wide_rule_gets_a_rate
+# frob:tests tests/test_waive_gate.py::TestRuleCensus.test_diff_scoped_rule_gets_no_rate
+# frob:tests \
+# tests/test_waive_gate.py::TestRuleCensus.test_dead_waiver_count_is_folded_in
+def census_gate_rules(
+    kept: tuple[Violation, ...], waived: tuple[Violation, ...]
+) -> tuple[RuleCensusEntry, ...]:
+    """Build the T-1764 per-rule waive-rate census from one full, unscoped
+    `run_gates` result's `(kept, waived)` violation sets (`GateReport.
+    violations`/`.waived`) -- pure computation, no I/O of its own, so a
+    caller (`frob check --census`) owns loading the snapshot and running
+    the gates.
+
+    For each rule id appearing in EITHER set: `fired` is the count still
+    surfacing (`kept`, what a reader without waivers would see), `waived`
+    is the count suppressed, and `waive_rate = waived / (waived + fired)`
+    -- but ONLY for a `corpus_wide` rule (not in
+    `_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES`); a diff-scoped rule's
+    `waive_rate` is always `None` (see `RuleCensusEntry`'s docstring for
+    why computing one from a clean-tree snapshot would be actively
+    misleading, the exact T-1763 methodological correction this ticket's
+    acceptance criteria require). Sorted by `waive_rate` descending (worst
+    offenders first), `None` rates last, ties broken by rule id for a
+    stable, diffable table."""
+    dead_by_rule = _waive004_dead_count_by_rule(kept)
+    rule_ids = {v.rule for v in kept} | {v.rule for v in waived}
+    rule_ids -= {"WAIVE001", "WAIVE002", "WAIVE003", "WAIVE004", "WAIVE005", "DSL001"}
+    fired_by_rule: dict[str, int] = {}
+    for v in kept:
+        fired_by_rule[v.rule] = fired_by_rule.get(v.rule, 0) + 1
+    waived_by_rule: dict[str, int] = {}
+    for v in waived:
+        waived_by_rule[v.rule] = waived_by_rule.get(v.rule, 0) + 1
+
+    entries: list[RuleCensusEntry] = []
+    for rule in rule_ids:
+        fired = fired_by_rule.get(rule, 0)
+        n_waived = waived_by_rule.get(rule, 0)
+        corpus_wide = rule not in _WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES
+        total = fired + n_waived
+        rate = (n_waived / total) if (corpus_wide and total > 0) else None
+        entries.append(
+            RuleCensusEntry(
+                rule=rule,
+                corpus_wide=corpus_wide,
+                fired=fired,
+                waived=n_waived,
+                waive_rate=rate,
+                dead_waivers=dead_by_rule.get(rule, 0),
+            )
+        )
+    entries.sort(key=lambda e: (e.waive_rate is None, -(e.waive_rate or 0.0), e.rule))
+    return tuple(entries)
 
 
 # frob:ticket T-0850

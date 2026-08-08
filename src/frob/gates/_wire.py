@@ -224,6 +224,7 @@ def _wire_reach_patterns(
 # dict/list subscripting that can raise KeyError; a false positive from the gate's \
 # syntactic scan"
 # frob:ticket T-1558
+# frob:ticket T-1746
 def _wire_test_path_excluded(candidate_path: str, record_path: str) -> bool:
     """True if `candidate_path` must NOT count as a "reached" caller for a
     symbol defined at `record_path` -- a production symbol (`record_path`
@@ -232,7 +233,16 @@ def _wire_test_path_excluded(candidate_path: str, record_path: str) -> bool:
     defining file (same-file usage stays genuinely unwired, T-1592's
     precedent), so a call from a DIFFERENT test file now counts as
     reached (T-1558: the module-local test-fixture false-positive class,
-    16 waivers accumulated against this exact gap before this landed)."""
+    16 waivers accumulated against this exact gap before this landed).
+
+    T-1746: this same-file exclusion is no longer absolute -- see
+    `_is_reached_outside_diff_tests`'s own same-file handling, which
+    calls this function to decide whether same-file reuse is even IN
+    PLAY, then separately requires the reusing call site to sit inside a
+    real `test_*`-prefixed function/method before counting it as
+    "reached". This function's OWN answer (True/False) is unchanged; the
+    caller now treats a True same-file answer as "check harder", not
+    "skip entirely"."""
     from frob.gates import _is_test_path
 
     if not _is_test_path(candidate_path):
@@ -242,7 +252,47 @@ def _wire_test_path_excluded(candidate_path: str, record_path: str) -> bool:
     return candidate_path == record_path
 
 
+# frob:ticket T-1746
+_TEST_FUNC_DEF_RE = re.compile(r"^\s*(?:async\s+)?def\s+(test_\w+)\b")
+# frob:ticket T-1746
+_ANY_FUNC_DEF_RE = re.compile(r"^\s*(?:async\s+)?def\s+(\w+)\b")
+
+
+# frob:ticket T-1746
+def _enclosing_def_is_test_function(lines: list[str], lineno: int) -> bool:
+    """True if the nearest enclosing `def`/`async def` around 1-indexed
+    `lines[lineno - 1]` (found by walking upward to the first line whose
+    indentation is strictly less than the call site's own, a lightweight
+    text-based scope resolver -- this module already uses the same
+    indentation-climbing shape nowhere else, so this is a fresh, narrow
+    helper rather than a generalized AST walk) is a `test_`-prefixed
+    function or method. T-1746: this is the "genuine test call site, not
+    just same-file text" half of the same-file test-fixture-reuse fix --
+    a fixture HELPER's own body (e.g. `def _repo_with_add_change(...):`)
+    calling itself recursively, or a module-level constant referencing the
+    symbol's name in a comment-adjacent string, must not count; only a
+    call sitting inside an actual `test_*` method's body should."""
+    if lineno < 1 or lineno > len(lines):
+        return False
+    call_line = lines[lineno - 1]
+    call_indent = len(call_line) - len(call_line.lstrip())
+    for i in range(lineno - 2, -1, -1):
+        line = lines[i]
+        if not line.strip():
+            continue
+        indent = len(line) - len(line.lstrip())
+        if indent >= call_indent:
+            continue
+        match = _ANY_FUNC_DEF_RE.match(line)
+        if match is None:
+            call_indent = indent
+            continue
+        return _TEST_FUNC_DEF_RE.match(line) is not None
+    return False
+
+
 # frob:ticket T-1502
+# frob:ticket T-1746
 def _is_reached_outside_diff_tests(
     root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int]
 ) -> bool:
@@ -273,35 +323,90 @@ def _is_reached_outside_diff_tests(
     since an ErrorSet is never instantiated by calling the class). See
     that helper's own docstring for the full rationale of each shape.
 
-    T-1558: a symbol DEFINED under `tests/` is reachable from ANOTHER test
-    file, not just from non-test code -- a shared test-fixture helper
-    (`tests/_cache_transparency.py::git_init`) is genuinely wired, just
-    entirely within the test tree (see `_wire_test_path_excluded` below
-    for the exact rule)."""
+    T-1558/T-1746: a symbol DEFINED under `tests/` is reachable from
+    ANOTHER test file (a shared fixture used across files), and -- as of
+    T-1746 -- from a genuine `test_*` caller in its OWN file too (a
+    fixture two test classes in ONE file both call directly); see
+    `_wire_test_path_excluded`/`_reached_in_file` for the exact rules."""
     short = _short_name(record.id.qualname)
     call_pattern, wrapper_pattern, member_access_pattern = _wire_reach_patterns(
         short, record.kind
     )
     def_pattern = re.compile(rf"^\s*(async\s+def|def|class)\s+{re.escape(short)}\b")
+
     for path in snapshot.file_hashes:
         if not path.endswith(".py"):
             continue
-        if _wire_test_path_excluded(path, record.id.path):
+        scan, require_test_caller = _wire_scan_decision(path, record.id.path)
+        if not scan:
             continue
-        try:
-            lines = (root / path).read_text(encoding="utf-8").splitlines()
-        except (OSError, UnicodeDecodeError):
+        if _reached_in_file(
+            root=root,
+            path=path,
+            own_def_lines=def_lines if path == record.id.path else frozenset(),
+            def_pattern=def_pattern,
+            call_pattern=call_pattern,
+            wrapper_pattern=wrapper_pattern,
+            member_access_pattern=member_access_pattern,
+            require_test_caller=require_test_caller,
+        ):
+            return True
+    return False
+
+
+# frob:ticket T-1746
+def _wire_scan_decision(candidate_path: str, record_path: str) -> tuple[bool, bool]:
+    """`(scan, require_test_caller)` for `candidate_path` against a symbol
+    defined at `record_path` -- split out of `_is_reached_outside_diff_
+    tests` (T-1746, ARCH001) to keep that function's own body short.
+    `scan=False` means skip this path outright (the ordinary
+    `_wire_test_path_excluded` case); `require_test_caller=True` is the
+    T-1746 same-file allowance -- scan the symbol's own file, but only a
+    call inside a genuine `test_*` function counts as reached there."""
+    from frob.gates import _is_test_path
+
+    excluded = _wire_test_path_excluded(candidate_path, record_path)
+    same_file_test_symbol = (
+        excluded and candidate_path == record_path and _is_test_path(candidate_path)
+    )
+    return (not excluded or same_file_test_symbol), same_file_test_symbol
+
+
+# frob:ticket T-1746
+def _reached_in_file(
+    *,
+    root: Path,
+    path: str,
+    own_def_lines: frozenset[int],
+    def_pattern: re.Pattern[str],
+    call_pattern: re.Pattern[str],
+    wrapper_pattern: re.Pattern[str],
+    member_access_pattern: re.Pattern[str] | None,
+    require_test_caller: bool,
+) -> bool:
+    """The per-file line scan half of `_is_reached_outside_diff_tests`
+    (T-1746, split out to keep that function under ARCH001's line
+    threshold): True if `path`'s text shows a call/wrapper/member-access
+    match for the record's short name, outside its own definition
+    line(s), that (when `require_test_caller` is set -- the T-1746
+    same-file allowance) also sits inside a genuine `test_*` function."""
+    try:
+        lines = (root / path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    for lineno, text in enumerate(lines, 1):
+        if lineno in own_def_lines:
             continue
-        own_def_lines = def_lines if path == record.id.path else frozenset()
-        for lineno, text in enumerate(lines, 1):
-            if lineno in own_def_lines:
-                continue
-            if def_pattern.match(text):
-                continue
-            if call_pattern.search(text) or wrapper_pattern.search(text):
-                return True
-            if member_access_pattern is not None and member_access_pattern.search(text):
-                return True
+        if def_pattern.match(text):
+            continue
+        reached_here = call_pattern.search(text) or wrapper_pattern.search(text)
+        if not reached_here and member_access_pattern is not None:
+            reached_here = member_access_pattern.search(text)
+        if not reached_here:
+            continue
+        if require_test_caller and not _enclosing_def_is_test_function(lines, lineno):
+            continue
+        return True
     return False
 
 

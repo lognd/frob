@@ -521,3 +521,31 @@ level. True as stated (`_style` itself is a pure function either way,
 so a caller passing the wrong stream produces a rendering bug, not an
 `_style` bug), but not mechanically provable at this granularity; INV-005
 above covers the one claim in this file that a gate does check.
+
+## `frob check --census` (T-1764)
+
+`frob check --census` (`src/frob/app/check_runner.py::_run_census`) runs
+every gate, unscoped, over the whole tree, then prints one row per rule
+id (`frob.gates._waive.RuleCensusEntry`, built by `census_gate_rules`):
+how many findings still surface (`fired`), how many a `frob:waive`
+suppresses (`waived`), the resulting waive-rate, and how many of those
+waivers are DEAD (`WAIVE004` -- a directive matching zero live findings
+this run, pure decay).
+
+The methodological correction T-1763 forced: a rule only ever evaluated
+against a DIFF (`frob.gates._waive._WAIVE004_STRUCTURALLY_UNVERIFIABLE_
+RULES` -- currently `DUP001`/`DUP002`/`AFFECT001`/`AFFECT002`/`WIRE001`/
+`SCOPE001`) reads `fired=0` on a clean-tree snapshot as its EXPECTED
+healthy signature, not evidence it is dead. `--census` classifies every
+rule `corpus_wide` vs not FIRST, and prints `n/a (diff-scoped)` for a
+non-corpus-wide rule's rate instead of computing one from this single
+snapshot -- the exact number that would have recommended deleting two
+working detectors (INV006 was correctly deleted at 338 waivers/0
+findings only because it IS corpus-wide; AFFECT001/DUP001 sit at the
+same 0-findings shape but are diff-scoped, and T-1763 kept them).
+
+This is deliberately a REPORT, not a gate: a high waive-rate is not
+itself a `frob check` failure today (the ticket's own acceptance
+criteria: start advisory, do not make it blocking until the top
+offenders are dealt with, or day one produces a waiver ON the
+waive-rate warning). `--json` emits the same rows as a JSON array.

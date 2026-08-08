@@ -2,7 +2,7 @@
 id: T-1764
 title: 'Make the per-rule waive-rate a first-class number: 997 waivers against 276
   rules was measured by hand'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -16,10 +16,73 @@ runs_last: false
 scope:
 - src/frob/gates/_waive.py
 - src/frob/app/check_runner.py
-- docs/modules/gates.md
 - tests/test_waive_gate.py
+- src/frob/app/config.py
+- src/frob/_cli_parsers/_check.py
+- docs/modules/app.md
+- src/frob/app/_config_external.py
+- design/frob.strata
+- tickets/T-1764/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md is held by a concurrent agent (T-1773/T-1735/T-1781
+    on _KNOWN_GATE_RULES); document --census in docs/modules/app.md instead. CLI wiring
+    for a new --census flag needs config.py's AppConfig field and _cli_parsers/_check.py's
+    argparse registration, neither of which was in the original scope.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/app/config.py
+  reason: docs/modules/gates.md is held by a concurrent agent (T-1773/T-1735/T-1781
+    on _KNOWN_GATE_RULES); document --census in docs/modules/app.md instead. CLI wiring
+    for a new --census flag needs config.py's AppConfig field and _cli_parsers/_check.py's
+    argparse registration, neither of which was in the original scope.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/_cli_parsers/_check.py
+  reason: docs/modules/gates.md is held by a concurrent agent (T-1773/T-1735/T-1781
+    on _KNOWN_GATE_RULES); document --census in docs/modules/app.md instead. CLI wiring
+    for a new --census flag needs config.py's AppConfig field and _cli_parsers/_check.py's
+    argparse registration, neither of which was in the original scope.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: docs/modules/gates.md is held by a concurrent agent (T-1773/T-1735/T-1781
+    on _KNOWN_GATE_RULES); document --census in docs/modules/app.md instead. CLI wiring
+    for a new --census flag needs config.py's AppConfig field and _cli_parsers/_check.py's
+    argparse registration, neither of which was in the original scope.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'WIRE001: --census''s check_census CLI dest must be wired into AppConfig.from_external''s
+    field-name tuple or it is silently dropped'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: frob sys sync-interface auto-registered census_gate_rules in the gates node's
+    interface list (SELFAUDIT001)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1764/**
+  reason: SCOPE001 flags the ticket's own ticket.md/done-report.md under v2 storage
+    (same fix T-1719 needed)
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_waive_gate.py::TestRuleCensus::test_corpus_wide_rule_gets_a_rate
+- tests/test_waive_gate.py::TestRuleCensus::test_diff_scoped_rule_gets_no_rate
+- tests/test_waive_gate.py::TestRuleCensus::test_dead_waiver_count_is_folded_in
+- tests/test_waive_gate.py::TestWaive004DeadCount::test_counts_per_rule_from_message
+- tests/test_waive_gate.py::TestWaive004DeadCount::test_empty_input_yields_empty_dict
+- tests/test_waive_gate.py::TestCensusCli::test_census_prints_a_table_and_exits_zero
 designated_repro_test: null
 acceptance:
 - text: 'METHODOLOGICAL CORRECTION (2026-08-07): the coordinator''s original waive-rate
@@ -28,16 +91,19 @@ acceptance:
     gate (AFFECT001, DUP001, and others) only ever fires on a diff, so 0 findings
     on a clean tree is its EXPECTED signature when the backlog is clean, not evidence
     it is broken. Acting on the raw number would have deleted two working detectors.'
-  evidence: []
+  evidence:
+  - tests/test_waive_gate.py::TestRuleCensus::test_diff_scoped_rule_gets_no_rate
 - text: 'Therefore: the census MUST classify each rule as corpus-wide or diff-scoped
     BEFORE computing a waive-rate, and must compute the diff-scoped rules'' rate over
     diffs where they actually ran -- never over a clean-tree snapshot. A single undifferentiated
     waive-rate column is a metric that produces confidently wrong deletions.'
-  evidence: []
+  evidence:
+  - tests/test_waive_gate.py::TestRuleCensus::test_diff_scoped_rule_gets_no_rate
 - text: _WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES already documents which rules are
     diff-scoped; read that classification rather than re-deriving it, and report any
     rule it does not cover.
-  evidence: []
+  evidence:
+  - tests/test_waive_gate.py::TestRuleCensus::test_diff_scoped_rule_gets_no_rate
 threat: null
 component: null
 ---

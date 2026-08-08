@@ -324,6 +324,8 @@ _BOOL_FLAGS = (
     "check_no_cache",
     # frob:ticket T-1535
     "check_land_parity",
+    # frob:ticket T-1764
+    "check_census",
     "graph_json",
     "registry_sync_gate_rules",
     "debt_json",

@@ -119,6 +119,20 @@ def _add_check_selection_args(check_p) -> None:
             "the coordinator ever lands"
         ),
     )
+    # frob:ticket T-1764
+    check_p.add_argument(
+        "--census",
+        dest="check_census",
+        action="store_true",
+        help=(
+            "print the per-rule waive-rate table (fired, waived, "
+            "waive-rate, dead-waiver count) from a full unscoped gate run "
+            "and exit -- classifies each rule corpus-wide vs diff-scoped "
+            "first (frob.gates._waive._WAIVE004_STRUCTURALLY_UNVERIFIABLE_"
+            "RULES) and reports no rate at all for a diff-scoped rule, "
+            "rather than a misleading clean-tree one"
+        ),
+    )
     _add_check_delta_and_verbose_args(check_p)
 
 

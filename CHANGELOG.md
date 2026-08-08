@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.389.0] - unreleased
+
+- T-1746: Implement real fix for WIRE001 same-file test-fixture reuse false positive
+
 ## [0.388.0] - unreleased
 
 - T-1328: strata: build an independent second detector for app-level capability kinds (eval/env/ffi/install-hook/sql/deserialize/fetch_url)
