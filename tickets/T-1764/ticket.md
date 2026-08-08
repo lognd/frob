@@ -2,7 +2,7 @@
 id: T-1764
 title: 'Make the per-rule waive-rate a first-class number: 997 waivers against 276
   rules was measured by hand'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-07'

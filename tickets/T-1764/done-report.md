@@ -76,6 +76,6 @@ errors).
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 6 passed (from 6 evidence id(s))
 - gates: 0 error(s), 881 warning(s), 734 waived
 - error-findings: none (measured, zero errors)
