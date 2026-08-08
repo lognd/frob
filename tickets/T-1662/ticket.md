@@ -11,13 +11,64 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
-- src/frob/vet/**
-- src/frob/strata/**
-- docs/**
-- tests/**
+- docs/design/semantic-not-lexical.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: T-1662 is tier=epic and does not itself implement -- its descendants do.
+    Today an epic left holding four hot paths blocked roughly 25 tickets (T-1686).
+    Stripping the five mega-globs so this epic can be prioritised without leasing
+    the entire gates, vet, strata, docs and tests trees; implementation scope belongs
+    to each descendant.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/vet/**
+  reason: T-1662 is tier=epic and does not itself implement -- its descendants do.
+    Today an epic left holding four hot paths blocked roughly 25 tickets (T-1686).
+    Stripping the five mega-globs so this epic can be prioritised without leasing
+    the entire gates, vet, strata, docs and tests trees; implementation scope belongs
+    to each descendant.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/strata/**
+  reason: T-1662 is tier=epic and does not itself implement -- its descendants do.
+    Today an epic left holding four hot paths blocked roughly 25 tickets (T-1686).
+    Stripping the five mega-globs so this epic can be prioritised without leasing
+    the entire gates, vet, strata, docs and tests trees; implementation scope belongs
+    to each descendant.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: docs/**
+  reason: T-1662 is tier=epic and does not itself implement -- its descendants do.
+    Today an epic left holding four hot paths blocked roughly 25 tickets (T-1686).
+    Stripping the five mega-globs so this epic can be prioritised without leasing
+    the entire gates, vet, strata, docs and tests trees; implementation scope belongs
+    to each descendant.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: tests/**
+  reason: T-1662 is tier=epic and does not itself implement -- its descendants do.
+    Today an epic left holding four hot paths blocked roughly 25 tickets (T-1686).
+    Stripping the five mega-globs so this epic can be prioritised without leasing
+    the entire gates, vet, strata, docs and tests trees; implementation scope belongs
+    to each descendant.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/design/semantic-not-lexical.md
+  reason: T-1662 is tier=epic and does not itself implement -- its descendants do.
+    Today an epic left holding four hot paths blocked roughly 25 tickets (T-1686).
+    Stripping the five mega-globs so this epic can be prioritised without leasing
+    the entire gates, vet, strata, docs and tests trees; implementation scope belongs
+    to each descendant.
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
