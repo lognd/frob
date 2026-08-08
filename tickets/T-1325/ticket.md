@@ -2,7 +2,7 @@
 id: T-1325
 title: 'strata: attr grammar cannot express colon-vocabulary (exposure:/subject:/jurisdiction:)
   needed by std.compliance'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-29'
@@ -15,8 +15,41 @@ scope:
 - strata-core/src/parse/grammar_core.rs
 - strata-core/src/parse/grammar_node.rs
 - strata-core/src/parse/grammar_flow.rs
+- tests/unit/strata/test_parse.py
+- tickets/T-1325/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_parse.py
+  reason: test coverage for the new STRING-quoted attrval surface, plus mod.rs::err()
+    the already-scoped grammar_node/grammar_flow parsers call (SCOPE002 under-capture,
+    pre-existing dependency not introduced by this change)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: strata-core/src/parse/mod.rs
+  reason: test coverage for the new STRING-quoted attrval surface, plus mod.rs::err()
+    the already-scoped grammar_node/grammar_flow parsers call (SCOPE002 under-capture,
+    pre-existing dependency not introduced by this change)
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: strata-core/src/parse/mod.rs
+  reason: 'revert: pulls in a large closure (lib.rs/docs) unrelated to this narrow
+    grammar fix; SCOPE002 here is pre-existing (grammar_node.rs/grammar_flow.rs already
+    called mod.rs::err before this ticket touched anything) -- not something this
+    ticket should absorb'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1325/ticket.md
+  reason: per-ticket state file the CLI itself writes at start/close; always in scope
+    for its own ticket, same as tickets.md
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/strata/test_parse.py::TestParseModule::test_attr_accepts_string_quoted_colon_vocabulary
 designated_repro_test: null
 threat: null
 component: null

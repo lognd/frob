@@ -240,7 +240,7 @@ impl Parser {
         Ok(json!({"value": value, "unit": unit}))
     }
 
-    /// ATTRVAL := IDENT ['=' (IDENT | '[' IDENT (',' IDENT)* ','? ']')].
+    /// ATTRVAL := (IDENT | STRING) ['=' ((IDENT | STRING) | '[' (IDENT | STRING) (',' (IDENT | STRING))* ','? ']')].
     ///
     /// T-1198: the bracket-list form (`attr interface=[Foo, Bar, Baz];`) is
     /// pure surface-syntax sugar for N individual `key=value` attrs written
@@ -253,8 +253,19 @@ impl Parser {
     /// model is byte-for-byte identical either way, which is exactly the
     /// property that let this ship as a pure parser change (design/T-1198
     /// note, docs/strata/surface.md#compact-interface-attrs-t-1198).
+    ///
+    /// T-1325: `std.compliance`'s opaque-string vocabulary
+    /// (`exposure:public-web`, `subject:*`, `jurisdiction:*`) needs `:` and
+    /// `-`, which bare IDENT cannot lex (same gap `expect_ident_or_string`
+    /// already documents for claim ids, T-0138). Both the attribute NAME
+    /// and its VALUE(s) now accept a STRING-quoted alternate surface via
+    /// `expect_ident_or_string`, mirroring that precedent exactly -- a
+    /// STRING key/value elaborates to the identical `"key=value"` string an
+    /// IDENT one would, so no downstream consumer needs to know which
+    /// surface form was written. Existing bare-IDENT `.strata` source is
+    /// unaffected: `expect_ident_or_string` still accepts IDENT first.
     fn parse_attrval(&mut self) -> Result<Vec<String>, ParseError> {
-        let key = self.expect_ident("attribute name")?;
+        let key = self.expect_ident_or_string("attribute name")?;
         if !self.at_symbol('=') {
             return Ok(vec![key]);
         }
@@ -266,7 +277,7 @@ impl Parser {
                 if self.at_symbol(']') {
                     break;
                 }
-                let val = self.expect_ident("attribute value inside [..]")?;
+                let val = self.expect_ident_or_string("attribute value inside [..]")?;
                 values.push(format!("{}={}", key, val));
                 if self.at_symbol(',') {
                     self.advance();
@@ -277,7 +288,7 @@ impl Parser {
             self.expect_symbol(']')?;
             Ok(values)
         } else {
-            let val = self.expect_ident("attribute value after =")?;
+            let val = self.expect_ident_or_string("attribute value after =")?;
             Ok(vec![format!("{}={}", key, val)])
         }
     }

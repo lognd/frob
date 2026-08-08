@@ -64,6 +64,30 @@ class TestParseModule:
         assert node.may == ("net.out:stripe.com", "fs.read:/etc/tls")
 
     # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
+    def test_attr_accepts_string_quoted_colon_vocabulary(self):
+        # T-1325: std.compliance's opaque-string vocabulary
+        # (exposure:public-web, subject:*, jurisdiction:*) needs ':' and
+        # '-', which bare IDENT cannot lex. A STRING-quoted attr name
+        # and/or value is now the alternate surface, mirroring the T-0138
+        # claim-id precedent -- elaborates to the identical "key=value"
+        # (or bare-key) string an IDENT form would produce.
+        text = """
+        module m
+        node api : trusted {
+            attr "exposure:public-web";
+            attr "subject:child" = "true";
+            attr "privacy-policy";
+        }
+        """
+        module = parse_module(text).danger_ok
+        node = module.nodes[0]
+        assert node.attrs == (
+            "exposure:public-web",
+            "subject:child=true",
+            "privacy-policy",
+        )
+
+    # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
     def test_node_without_code_or_may_defaults_empty(self):
         # T-0132: pre-existing sources without code/may statements parse
         # identically to before -- both fields default to an empty tuple.
