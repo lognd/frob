@@ -289,6 +289,30 @@ def _stdout_color() -> bool:
     return should_color(sys.stdout)
 
 
+# frob:ticket T-1570
+def _debt(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket debt` (T-1570): delegates straight into
+    `debt_runner.run`, the same code the standalone `frob debt` runs --
+    `root` is unused (the standalone runner reads `cfg.debt_path`
+    directly), accepted only to match this table's uniform `(root, cfg)`
+    handler shape."""
+    from frob.app.debt_runner import run as debt_run
+
+    debt_run(cfg)
+
+
+# frob:ticket T-1570
+def _deprecated(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket deprecated` (T-1570): delegates straight into
+    `deprecated_runner.run`, the same code the standalone `frob
+    deprecated` runs -- `root` is unused (the standalone runner reads
+    `cfg.deprecated_path` directly), accepted only to match this table's
+    uniform `(root, cfg)` handler shape."""
+    from frob.app.deprecated_runner import run as deprecated_run
+
+    deprecated_run(cfg)
+
+
 def _ticket_dispatch_table() -> dict:
     """Map each `frob ticket` subcommand name to its `(root, cfg)` handler."""
     return {
@@ -349,6 +373,9 @@ def _ticket_dispatch_table() -> dict:
             force_reason=cfg.ticket_force_reason,
             force_reason_file=cfg.ticket_force_reason_file,
         ),
+        # frob:ticket T-1570
+        "debt": _debt,
+        "deprecated": _deprecated,
     }
 
 
@@ -394,7 +421,19 @@ _LEDGER_TRANSACTIONAL_VERBS = frozenset(
 # default; forgetting to add itself here instead just makes it briefly
 # less convenient during a land, never unsafe).
 _LAND_SAFE_READ_ONLY_VERBS = frozenset(
-    {"list", "show", "doable", "wave", "board", "epic", "brief", "flow"}
+    {
+        "list",
+        "show",
+        "doable",
+        "wave",
+        "board",
+        "epic",
+        "brief",
+        "flow",
+        # frob:ticket T-1570
+        "debt",
+        "deprecated",
+    }
 )
 
 # frob:ticket T-1779
@@ -580,6 +619,7 @@ def _resolve_ticket_root(cfg: AppConfig) -> Path:
 # frob:ticket T-1100
 # frob:ticket T-1615
 # frob:ticket T-1779
+# frob:ticket T-1570
 # frob:waive AFFECT001 reason="T-1029 added a new SUBCOMMAND (accept) to the dispatch \
 # table -- REG010-gate-rule-staleness-t-0560 is about a live GATE RULE id drifting out \
 # of the registry's own count, an orthogonal concern this change never touches; \
@@ -600,7 +640,8 @@ def run(cfg: AppConfig) -> None:
             "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
             "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
             "close|fail|drop|evidence|done-report|scope|priority|kind|"
-            "component|label|accept|flow|archive|review|sprint|tier> ..."
+            "component|label|accept|flow|archive|review|sprint|tier|debt|"
+            "deprecated> ..."
         )
         sys.exit(1)
     _refuse_if_land_in_progress_for_dispatch(root, cfg.ticket_command)

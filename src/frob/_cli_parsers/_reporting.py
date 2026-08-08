@@ -177,6 +177,14 @@ def _add_debt_parser(sub) -> None:
     debt_p = sub.add_parser(
         "debt", help="list outstanding frob:debt entries (rule, site, ticket, until)"
     )
+    _populate_debt_args(debt_p)
+
+
+# frob:ticket T-1570
+def _populate_debt_args(debt_p) -> None:
+    """Add `frob debt`'s arguments onto `debt_p` -- shared by the
+    standalone top-level parser and `frob ticket debt` (T-1570) so
+    neither duplicates the flag list."""
     debt_p.add_argument("--path", dest="debt_path", metavar="DIR", default=".")
     debt_p.add_argument("--json", dest="debt_json", action="store_true")
 
@@ -194,6 +202,14 @@ def _add_deprecated_parser(sub) -> None:
         help="list outstanding frob:deprecated entries (symref, since, "
         "sunset, ticket, status)",
     )
+    _populate_deprecated_args(deprecated_p)
+
+
+# frob:ticket T-1570
+def _populate_deprecated_args(deprecated_p) -> None:
+    """Add `frob deprecated`'s arguments onto `deprecated_p` -- shared by
+    the standalone top-level parser and `frob ticket deprecated` (T-1570)
+    so neither duplicates the flag list."""
     deprecated_p.add_argument(
         "--path", dest="deprecated_path", metavar="DIR", default="."
     )

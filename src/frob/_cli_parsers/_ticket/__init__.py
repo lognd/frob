@@ -10,6 +10,11 @@ pre-split single-file module.
 
 from __future__ import annotations
 
+from frob._cli_parsers._reporting import (
+    _populate_debt_args,
+    _populate_deprecated_args,
+)
+
 from ._closeout import (
     _add_ticket_attach_and_lifecycle_end_parsers,
     _add_ticket_close_parser,
@@ -142,3 +147,21 @@ def _add_ticket_parser(sub) -> None:
     path_parsers += _add_ticket_lifecycle_parsers(ticket_sub)
     for _tp in path_parsers:
         _tp.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
+
+    # T-1570: `debt`/`deprecated` are ticket-adjacent (disclosed-and-
+    # tracked deferred work, same shape as the ticket queue without the
+    # lifecycle) -- resolved as `frob ticket debt`/`frob ticket
+    # deprecated` siblings of every other subcommand here, NOT a new
+    # top-level `frob tickets` (plural) parent that would just contain
+    # this existing singular verb group. Standalone `frob debt`/`frob
+    # deprecated` stay permanent aliases (docs/design/cli-regrouping.md).
+    ticket_debt_p = ticket_sub.add_parser(
+        "debt", help="list outstanding frob:debt entries (rule, site, ticket, until)"
+    )
+    _populate_debt_args(ticket_debt_p)
+    ticket_deprecated_p = ticket_sub.add_parser(
+        "deprecated",
+        help="list outstanding frob:deprecated entries (symref, since, "
+        "sunset, ticket, status)",
+    )
+    _populate_deprecated_args(ticket_deprecated_p)

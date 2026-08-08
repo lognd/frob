@@ -63,6 +63,40 @@ class TestTicketRunnerDispatch:
         assert exc.value.code == 1
         assert "usage: frob ticket" in caplog.text
 
+    # frob:ticket T-1570
+    def test_debt_subcommand_delegates_to_debt_runner(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`frob ticket debt` (T-1570) delegates straight into
+        `debt_runner.run` with the SAME cfg, ignoring `root`."""
+        import frob.app.debt_runner as debt_mod
+
+        called = {}
+        monkeypatch.setattr(
+            debt_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
+        )
+        cfg = AppConfig(ticket_command="debt", ticket_path=tmp_path, debt_path=tmp_path)
+        ticket_run(cfg)
+        assert called["cfg"] is cfg
+
+    # frob:ticket T-1570
+    def test_deprecated_subcommand_delegates_to_deprecated_runner(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`frob ticket deprecated` (T-1570) delegates straight into
+        `deprecated_runner.run` with the SAME cfg, ignoring `root`."""
+        import frob.app.deprecated_runner as deprecated_mod
+
+        called = {}
+        monkeypatch.setattr(
+            deprecated_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
+        )
+        cfg = AppConfig(
+            ticket_command="deprecated", ticket_path=tmp_path, deprecated_path=tmp_path
+        )
+        ticket_run(cfg)
+        assert called["cfg"] is cfg
+
 
 # frob:ticket T-1674
 class TestTicketRunnerRootResolution:

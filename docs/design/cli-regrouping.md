@@ -43,21 +43,25 @@ directly by `frob.__main__._dispatch` (mirroring top-level `bind`'s own
 special case, T-0355) rather than through `quality_runner.run`, since
 `bind_runner.run` takes raw argv, not an `AppConfig`.
 
-<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
-### `frob tickets` -- the ticket queue
+### `frob ticket` -- the ticket queue, plus `debt`/`deprecated` (T-1570, RESOLVED/IMPLEMENTED)
 
 `ticket` already IS a verb group (`frob ticket new/start/close/...`) --
 no top-level regrouping needed, it is the existing precedent this whole
 epic generalizes from. `debt`, `deprecated` are ticket-adjacent
 (disclosed-and-tracked deferred work, same shape as a ticket queue
-<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-decided 'frob tickets' regrouping" -->
-without the lifecycle) -- candidates for `frob tickets debt` / `frob
-tickets deprecated` as siblings of `frob ticket`, pending a decision on
-whether folding them under the existing `ticket` verb (`frob ticket
-<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-decided 'frob tickets' regrouping" -->
-debt`) or a new parent `tickets` (plural) that CONTAINS `ticket` reads
-better; this doc does not resolve that naming question, a later
-implementation ticket does.
+without the lifecycle) and are now `frob ticket debt` / `frob ticket
+deprecated`, siblings of every other `frob ticket` subcommand.
+
+DECISION (T-1570): fold under the EXISTING singular `ticket` verb, not a
+new plural `tickets` parent. A `frob tickets` (plural) top-level command
+whose only job is containing the existing singular `frob ticket` verb
+group would read as confusing near-duplication right next to it (`frob
+tickets ticket new`?) for zero benefit over just adding two more
+subcommands to the verb group that already exists -- worse than the
+status quo by this epic's own "delete or simplify, never add a
+mechanism to manage sprawl" standing directive. Standalone `frob debt`/
+`frob deprecated` stay permanent aliases, same migration policy as every
+other regrouped member in this doc.
 
 ### `frob design` -- design-knowledge surfaces (T-1568, IMPLEMENTED)
 
