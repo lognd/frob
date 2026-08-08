@@ -165,17 +165,49 @@ def _show(root: Path, cfg: AppConfig) -> None:
 
     color = _stdout_color()
     _log.info(
-        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s%s%s\n\n%s",
+        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s%s%s%s\n\n%s",
         style_ticket_id(ticket.id, color),
         style_state(display_state(ticket, root), color),
         ticket.title,
         ticket.kind.value,
         list(ticket.blocked_by),
         list(ticket.scope),
+        _render_implicit_scope(ticket),
         _render_designated_repro(ticket),
         _render_acceptance(ticket),
         _render_evidence_changes(ticket),
         ticket.body,
+    )
+
+
+# frob:ticket T-1855
+def _render_implicit_scope(ticket) -> str:  # noqa: ANN001
+    """The `\\nimplicit_scope: [...]` line `frob ticket show` appends
+    after `scope=` (T-1855) -- the FEATURE-kind CLI-wiring files
+    (`CLI_WIRING_FILES`, T-0446/T-1848) this ticket effectively holds
+    that are NOT part of its own declared `scope` list. Today the
+    declared list is all `frob ticket show` prints, so an agent (or a
+    coordinator running `scope --remove`) cannot see that the ticket
+    holds more than it declared -- this is the disclosure half of the
+    T-1848 incident writeup (T-1855 item 2). Empty string (no extra line)
+    for a non-FEATURE ticket or a FEATURE ticket whose declared scope
+    already covers every CLI-wiring file, matching every sibling
+    `_render_*` helper's "nothing to add" posture."""
+    from frob.tickets._models import CLI_WIRING_FILES, TicketKind, scope_matches
+
+    if ticket.kind is not TicketKind.FEATURE:
+        return ""
+    implicit = sorted(
+        path
+        for path in CLI_WIRING_FILES
+        if not scope_matches(path, ticket.scope, ticket_id=ticket.id)
+    )
+    if not implicit:
+        return ""
+    return (
+        f"\nimplicit_scope: {implicit}  "
+        "(FEATURE-kind CLI-wiring grant, T-0446/T-1848 -- not in declared "
+        "scope; 'scope --remove' cannot free these)"
     )
 
 

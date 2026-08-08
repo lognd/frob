@@ -747,6 +747,53 @@ class TestAcceptanceAmendmentsSurfaced:
         assert "was mis-specified" in rendered
         assert "corrected criterion" in rendered
 
+    # frob:ticket T-1855
+    def test_show_renders_implicit_cli_wiring_scope(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced.test_show_renders_implicit_cli_wiring_scope  # noqa: E501
+        """`frob ticket show` discloses the FEATURE-kind CLI-wiring files a
+        ticket effectively holds but never declared (T-1855 item 2) -- the
+        disclosure half of the T-1848 incident: today the declared list is
+        all `show` prints, so a coordinator running `scope --remove`
+        cannot see it holds more than it declared."""
+        from frob.app.ticket_runner._query import _render_implicit_scope
+        from frob.tickets import TicketKind
+        from frob.tickets import Origin, TicketSpec, new_ticket
+
+        spec = TicketSpec(
+            title="new subcommand",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            scope=("src/frob/other/**",),
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok, created
+        ticket = created.danger_ok
+        rendered = _render_implicit_scope(ticket)
+        assert "implicit_scope:" in rendered
+        assert "src/frob/__main__.py" in rendered
+
+    # frob:ticket T-1855
+    def test_show_omits_implicit_scope_when_fully_declared(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced.test_show_omits_implicit_scope_when_fully_declared  # noqa: E501
+        """No `implicit_scope:` line for a non-FEATURE ticket -- matches
+        every sibling `_render_*` helper's "nothing to add" posture."""
+        from frob.app.ticket_runner._query import _render_implicit_scope
+        from frob.tickets import TicketKind
+        from frob.tickets import Origin, TicketSpec, new_ticket
+
+        spec = TicketSpec(
+            title="a bug fix",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/frob/other/**",),
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok, created
+        ticket = created.danger_ok
+        assert _render_implicit_scope(ticket) == ""
+
     def test_done_report_renders_amendment_section(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_acceptance.py::TestAcceptanceAmendmentsSurfaced.test_done_report_renders_amendment_section  # noqa: E501
         from frob.tickets import compose_done_report

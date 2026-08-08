@@ -2538,7 +2538,56 @@ def _ledger_ticket_at_merge_base(
     return _ledger_ticket_at_ref(worktree, sha, ticket_id)
 
 
+# frob:ticket T-1855
+def _scope_claim_reason(path: str, ticket: Ticket) -> str:
+    """Classify WHY `path` is in `ticket`'s effective scope: `"declared"`
+    (an explicit glob in `ticket.scope`, including the always-on
+    ledger/own-shard rules), `"implicit-cli-wiring"` (matches ONLY via the
+    FEATURE-kind `CLI_WIRING_FILES` grant, T-0446/T-1848), or
+    `"unclaimed"` (matches neither -- callers should not normally reach
+    this branch, since they only call this on a known hit).
+
+    T-1855: "declared" and "implicit-cli-wiring" are different problems
+    with different remedies -- a declared-scope hit is fixable by
+    `frob ticket scope --remove`; an implicit-cli-wiring hit is not (the
+    grant is a function of `ticket.kind`, not the declared glob list), so
+    a refusal or `frob ticket show` that collapses both into one
+    undifferentiated `scope=[...]` list sends an agent to fix the wrong
+    thing. Ledger/own-shard always-on rules are folded into "declared"
+    here (they are unconditional, not kind-gated, so there is nothing an
+    agent could narrow to lose them -- the CLI-wiring/declared split is
+    the one that matters for a fixable remedy)."""
+    from frob.tickets._models import scope_matches
+
+    if scope_matches(path, ticket.scope, ticket_id=ticket.id):
+        return "declared"
+    if scope_matches(path, ticket.scope, kind=ticket.kind, ticket_id=ticket.id):
+        return "implicit-cli-wiring"
+    return "unclaimed"
+
+
+# frob:ticket T-1855
+def _explicitly_used_wiring_path(other: Ticket, path: str) -> bool:
+    """T-1855 grant-on-use: whether `other` has actually put `path` to use
+    -- either via an explicit `frob ticket scope --add` audited in
+    `other.scope_changes` (a `ScopeChangeOp.ADD` entry whose glob overlaps
+    `path`), or because `path` is already part of `other`'s OWN declared
+    scope (checked by the caller via `_scope_claim_reason` before this is
+    ever consulted). Used to downgrade an implicit-CLI-wiring-only hit
+    from "leaked" to "never actually used" in `_leaked_hits_for_candidate`
+    -- the FEATURE-kind grant exists so a ticket CAN reach a wiring file
+    without ceremony, not so every open FEATURE ticket permanently reserves
+    it against every sibling's land whether or not it ever touched it."""
+    from frob.tickets._models import _globs_intersect
+
+    for entry in other.scope_changes:
+        if entry.op.value == "add" and _globs_intersect(entry.glob, path):
+            return True
+    return False
+
+
 # frob:ticket T-1390
+# frob:ticket T-1855
 def _leaked_hits_for_candidate(
     worktree: Path,
     landing_id: str,
@@ -2553,11 +2602,19 @@ def _leaked_hits_for_candidate(
     logic readable and under ARCH001's line threshold, zero behavior
     change to any exemption's own semantics) -- exempts a sibling leased
     to the SAME worktree as `landing_id` (T-1370), then requires BOTH a
-    declared-`scope` hit against `changed_paths` AND `other`'s own ledger
-    record to have actually changed since this branch forked from
-    `base_ref` (T-1390, via `_ledger_ticket_at_merge_base`) -- a scope hit
-    alone is never enough; see `_find_leaked_tickets`'s own docstring for
-    the false-positive class this second requirement closes."""
+    scope hit against `changed_paths` AND `other`'s own ledger record to
+    have actually changed since this branch forked from `base_ref`
+    (T-1390, via `_ledger_ticket_at_merge_base`) -- a scope hit alone is
+    never enough; see `_find_leaked_tickets`'s own docstring for the
+    false-positive class this second requirement closes.
+
+    T-1855 grant-on-use: a hit that matches ONLY via the implicit
+    FEATURE-kind CLI-wiring grant (`_scope_claim_reason` returns
+    `"implicit-cli-wiring"`) is dropped UNLESS `other` has actually put
+    that path to use (`_explicitly_used_wiring_path`) -- the blanket
+    grant-on-kind used to let any open FEATURE ticket permanently reserve
+    `__main__.py`/`config.py`/`ticket_runner/__init__.py` against every
+    sibling's land whether or not it had ever touched them."""
     from frob.tickets._models import scope_matches
     from frob.tickets._scope import _same_worktree_lease
 
@@ -2576,6 +2633,25 @@ def _leaked_hits_for_candidate(
         for path in changed_paths
         if scope_matches(path, other.scope, kind=other.kind)
     ]
+    kept: list[str] = []
+    for path in hits:
+        if _scope_claim_reason(path, other) != "implicit-cli-wiring":
+            kept.append(path)
+            continue
+        if _explicitly_used_wiring_path(other, path):
+            kept.append(path)
+            continue
+        _log.info(
+            "land: %s cross-ticket leakage check exempting %s's claim on "
+            "%s (T-1855 grant-on-use: only the implicit FEATURE-kind "
+            "CLI-wiring grant covers this path, and %s has never actually "
+            "used it -- an unused implicit grant is not a real claim)",
+            landing_id,
+            other_id,
+            path,
+            other_id,
+        )
+    hits = kept
     if not hits:
         return None
     base_ticket = _ledger_ticket_at_merge_base(worktree, base_ref, other_id)
@@ -2952,9 +3028,14 @@ def _check_already_landed(
 
 # frob:ticket T-1355
 # frob:ticket T-1639
+# frob:ticket T-1855
 # frob:doc \
 # docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t\
 # -1639
+# frob:waive AFFECT001 reason="T-1855 added per-path reason disclosure (declared vs \
+# implicit-cli-wiring) to this function's refusal; docs/modules/tickets.md was leased \
+# to in-progress T-1686 and could not be edited here -- follow-up draft filed to \
+# update the anchor once free"
 def _check_cross_ticket_leakage(
     root: Path,
     worktree: Path,
@@ -3030,7 +3111,7 @@ def _check_cross_ticket_leakage(
         return Ok(None)
 
     return _report_leaked_tickets(
-        ticket.id, leaked, allow_cross_ticket=allow_cross_ticket
+        ticket.id, leaked, worktree_tickets, allow_cross_ticket=allow_cross_ticket
     )
 
 
@@ -3063,9 +3144,11 @@ def _load_leakage_ledgers(
 
 
 # frob:ticket T-1355
+# frob:ticket T-1855
 def _report_leaked_tickets(
     landing_id: str,
     leaked: dict[str, list[str]],
+    worktree_tickets: dict[str, Ticket],
     *,
     allow_cross_ticket: bool,
 ) -> Result[None, LandError]:
@@ -3073,18 +3156,31 @@ def _report_leaked_tickets(
     (`allow_cross_ticket=True`, with a WARNING trail) or `Err
     (LandError.CrossTicketLeakage)` (T-1355: split out of `_check_cross_
     ticket_leakage` to keep it under ARCH001's line threshold, zero
-    behavior change)."""
+    behavior change).
+
+    T-1855: each path is logged with its `_scope_claim_reason` against
+    `worktree_tickets[other_id]` -- "declared" (narrow `other`'s own
+    scope) vs "implicit-cli-wiring" (a FEATURE-kind grant, not fixable by
+    narrowing `other`'s scope at all) are different problems with
+    different remedies, and a refusal that names only the file used to
+    send an agent to fix the wrong one."""
     for other_id, paths in sorted(leaked.items()):
+        other = worktree_tickets.get(other_id)
+        annotated = (
+            [f"{p} ({_scope_claim_reason(p, other)})" for p in paths]
+            if other is not None
+            else paths
+        )
         _log.error(
             "land: %s branch carries %d file(s) covered by %s's own "
-            "declared scope, and %s is still open on main -- landing "
-            "would silently ship %s's work ahead of its own close: %s",
+            "scope, and %s is still open on main -- landing would "
+            "silently ship %s's work ahead of its own close: %s",
             landing_id,
             len(paths),
             other_id,
             other_id,
             other_id,
-            paths,
+            annotated,
         )
     if allow_cross_ticket:
         _log.warning(

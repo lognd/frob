@@ -391,6 +391,57 @@ class TestScopeCli:
             _scope(tmp_path, cfg)
         assert exc_info.value.code == 1
 
+    # frob:ticket T-1855
+    def test_cli_remove_still_implicit_warns(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """`frob ticket scope --remove` on a path still covered by the
+        FEATURE-kind CLI-wiring grant reports success (T-1855: removal
+        itself is a legitimate, honest action) but WARNS that the
+        effective scope did not actually change -- the concrete incident
+        this ticket exists to fix: a coordinator ran `--remove` on exactly
+        this shape, saw SUCCESS, and was told a path was free that was
+        not."""
+        ticket = _make_ticket(
+            tmp_path, scope=("src/frob/__main__.py", "src/frob/other/**")
+        )
+        cfg = AppConfig(
+            ticket_command="scope",
+            ticket_id=ticket.id,
+            ticket_path=tmp_path,
+            ticket_scope_remove=["src/frob/__main__.py"],
+            ticket_scope_reason="narrowing",
+        )
+        with caplog.at_level("WARNING"):
+            _scope(tmp_path, cfg)
+        assert any(
+            "still covered implicitly" in r.message
+            and "src/frob/__main__.py" in r.message
+            for r in caplog.records
+        )
+
+    # frob:ticket T-1855
+    def test_cli_remove_genuinely_free_no_warning(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """The T-1855 remove-still-covered warning does NOT fire for a
+        removal that genuinely frees the path (not part of any implicit
+        grant) -- the happy path stays silent, matching pre-T-1855
+        behavior exactly."""
+        ticket = _make_ticket(
+            tmp_path, scope=("src/frob/other/**", "src/frob/another/**")
+        )
+        cfg = AppConfig(
+            ticket_command="scope",
+            ticket_id=ticket.id,
+            ticket_path=tmp_path,
+            ticket_scope_remove=["src/frob/another/**"],
+            ticket_scope_reason="narrowing",
+        )
+        with caplog.at_level("WARNING"):
+            _scope(tmp_path, cfg)
+        assert not any("still covered implicitly" in r.message for r in caplog.records)
+
     def test_cli_requires_add_or_remove(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_add_or_r\
@@ -465,3 +516,60 @@ class TestSetScopeBreadthAck:
         with pytest.raises(SystemExit) as exc_info:
             _scope_ack(tmp_path, cfg)
         assert exc_info.value.code == 1
+
+
+# frob:ticket T-1855
+class TestScopeClaimReasonAndGrantOnUse:
+    """`frob.tickets._land._scope_claim_reason`/`_explicitly_used_wiring_path`
+    (T-1855): classifying WHY a path is in a ticket's effective scope, and
+    downgrading an unused implicit CLI-wiring grant so it does not count
+    as a cross-ticket leak."""
+
+    def test_declared_path_is_declared(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
+        # declared_path_is_declared
+        from frob.tickets._land import _scope_claim_reason
+
+        ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        assert _scope_claim_reason("src/frob/other/foo.py", ticket) == "declared"
+
+    def test_implicit_cli_wiring_path_is_flagged(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
+        # implicit_cli_wiring_path_is_flagged
+        from frob.tickets._land import _scope_claim_reason
+
+        ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        assert ticket.kind is TicketKind.FEATURE
+        assert (
+            _scope_claim_reason("src/frob/__main__.py", ticket)
+            == "implicit-cli-wiring"
+        )
+
+    def test_unused_implicit_grant_not_explicitly_used(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
+        # unused_implicit_grant_not_explicitly_used
+        from frob.tickets._land import _explicitly_used_wiring_path
+
+        ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        assert _explicitly_used_wiring_path(ticket, "src/frob/__main__.py") is False
+
+    def test_explicit_add_counts_as_used(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeClaimReasonAndGrantOnUse.test_\
+        # explicit_add_counts_as_used
+        from frob.tickets import mutate_scope
+        from frob.tickets._land import _explicitly_used_wiring_path
+
+        ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        result = mutate_scope(
+            tmp_path,
+            ticket.id,
+            add=("src/frob/__main__.py",),
+            reason="actually wiring a new subcommand",
+        )
+        assert result.is_ok, result
+        updated = result.danger_ok
+        assert _explicitly_used_wiring_path(updated, "src/frob/__main__.py") is True

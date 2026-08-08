@@ -104,13 +104,63 @@ def _scope(root: Path, cfg: AppConfig) -> None:
         len(cfg.ticket_scope_add),
         len(cfg.ticket_scope_remove),
     )
+    # frob:ticket T-1855
+    for glob in cfg.ticket_scope_remove:
+        still_covered = _still_implicitly_covered(glob, ticket)
+        if still_covered is not None:
+            _log.warning(
+                "ticket scope %s: --remove %r reported success, but the "
+                "effective scope did NOT change -- %r is still covered "
+                "implicitly (%s); only an explicit scope change is "
+                "observable here, this removal was not",
+                ticket.id,
+                glob,
+                glob,
+                still_covered,
+            )
     # frob:ticket T-0998
     for warning in _scope_closure_warnings(root, ticket.scope):
         _log.warning("ticket scope %s: scope closure: %s", ticket.id, warning)
 
 
+# frob:ticket T-1855
+def _still_implicitly_covered(glob: str, ticket) -> str | None:  # noqa: ANN001
+    """Whether a just-`--remove`d `glob` is STILL covered by one of
+    `ticket`'s implicit (kind-based or always-on) scope grants -- the
+    reason string naming which rule, or `None` if the removal genuinely
+    freed the path (T-1855 item 4). This is the concrete incident this
+    ticket exists to fix: a coordinator ran `scope --remove` on a path
+    still covered by the FEATURE-kind CLI-wiring grant
+    (`CLI_WIRING_FILES`, T-0446/T-1848), the command reported SUCCESS,
+    and the effective scope had not actually changed -- an agent was then
+    told the path was free when it was not. `_globs_intersect` (T-0453)
+    is the existing sound glob-vs-glob overlap test; reused here rather
+    than re-derived, since a removed entry can itself be a glob, not just
+    a literal path."""
+    from frob.tickets._models import (
+        CLI_WIRING_FILES,
+        LEDGER_PATH,
+        TicketKind,
+        _globs_intersect,
+    )
+
+    if _globs_intersect(glob, LEDGER_PATH):
+        return "the ledger is always in scope, T-0241"
+    if _globs_intersect(glob, f"tickets/{ticket.id}/**"):
+        return "a ticket's own tickets/<id>/ shard is always in scope, T-1819"
+    if ticket.kind is TicketKind.FEATURE:
+        for wiring_path in CLI_WIRING_FILES:
+            if _globs_intersect(glob, wiring_path):
+                return (
+                    f"the FEATURE-kind CLI-wiring grant still covers "
+                    f"{wiring_path!r}, T-0446/T-1848"
+                )
+    return None
+
+
 # frob:ticket T-1484
-# frob:tests tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields  # noqa: E501
+# frob:tests \
+# tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields
 def _scope_ack(root: Path, cfg: AppConfig) -> None:
     """`frob ticket scope-ack <id> (--reason TEXT | --reason-file PATH)`:
     the honest TICK009 acknowledged-broad channel (WAVE14-B) -- forwards to
