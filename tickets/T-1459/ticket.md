@@ -1,7 +1,7 @@
 ---
 id: T-1459
 title: vet _capability split design
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-02'
@@ -145,3 +145,6 @@ scratch.
 - [ ] Implementation, if undertaken, follows the verbatim-relocation +
       frob:waive-carry + same-commit doc/test-edge-repoint discipline
       every other T-1420 split in this ticket's history used.
+
+## Drop reason
+- 2026-08-08: superseded: the split this ticket designed already landed under T-1462/T-1465/T-1476 and siblings -- _capability.py is now 465 lines split across _capability_core/_python/_typescript/_rust/_c/_kotlin/_scan/_modes.py, matching this design closely
