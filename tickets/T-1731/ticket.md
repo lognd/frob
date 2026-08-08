@@ -2,7 +2,7 @@
 id: T-1731
 title: 'frob ticket evidence node-id shape validation: investigate the malformed-id
   gap without breaking pytest-form binding'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -89,3 +89,6 @@ What's still plausibly a real, addressable gap:
 - Do NOT implement "reject the pytest `::`-separated form" as literally
   worded in T-1670's original text -- see the investigation above for why
   that breaks the primary, correct way to bind evidence.
+
+## Drop reason
+- 2026-08-07: Exact duplicate of T-1718 (identical title). Keeping the lower id. Part of the same batch re-filing as T-1728/T-1729. (absorbed by T-1718)
