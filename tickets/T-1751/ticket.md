@@ -1,7 +1,7 @@
 ---
 id: T-1751
 title: revisit WIRE001 waiver follow_up citation orphaned by T-1487's close
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-07'
@@ -12,8 +12,25 @@ sprint: null
 runs_last: false
 scope:
 - tests/test_tickets_lease.py
+- tickets/T-1751/**
+- rapid-debt.jsonl
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-1751/**
+  reason: SCOPE001 flags the ticket's own ticket.md and the rapid-debt log this land
+    profile writes
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: SCOPE001 flags the ticket's own ticket.md and the rapid-debt log this land
+    profile writes
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_tickets_lease.py::TestClusterScopeConflict::test_refuses_when_union_scope_collides_with_a_foreign_lease
 designated_repro_test: null
 threat: null
 component: null
