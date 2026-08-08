@@ -29,3 +29,6 @@ permanently unwired by design and there is nothing to implement. Left
 open only because WIRE002 requires a real ticket id outside tests/ trees
 (docs/modules/gates.md#wire001wire002-t-1428's permanent=true escape
 hatch is test-tree-only).
+
+## Failure log
+- 2026-08-08 attempt 1: Scope (src/frob/_cli_parsers/_quality.py) was, at the time of this attempt, explicitly held by another concurrent agent per this session's dispatch instructions (forbidden glob src/frob/_cli_parsers/**). Coordinator later corrected: this ticket is a permanent-by-design WIRE001 waiver anchor (T-1558 precedent) that must stay open/queued indefinitely -- the three frob:waive WIRE001 follow_up="T-1820" directives in that file are already correct as-is; there is no code to write and this ticket should never be closed.

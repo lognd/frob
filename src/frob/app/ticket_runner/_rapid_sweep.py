@@ -42,8 +42,10 @@ then on.
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
+import time
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -635,11 +637,87 @@ def _file_regression_ticket(
     return regression_id
 
 
+#: T-1841: `_commit_regression_ticket`'s retry budget for a commit that
+#: fails because a CONCURRENT `frob ticket land` holds root's exclusive
+#: lock (`LeaseError.LandInProgress`) or loses a transient `git add`/
+#: `git commit` race against one. The sweep runs DETACHED after every
+#: rapid land, so a land from some OTHER agent still in flight is the
+#: NORMAL operating condition here (T-1841's own evidence: four same-day
+#: incidents, all under five concurrent agents), not an edge case worth
+#: giving up on after one attempt.
+_REGRESSION_TICKET_COMMIT_MAX_ATTEMPTS = 5
+
+#: T-1841: seconds between retry attempts. This repo's own land-lock wait
+#: (`_land.py`'s `LAND_LOCK_POLL_S`) polls far faster because a live human/
+#: agent is blocked on it; a detached sweep has no such urgency, so a
+#: coarser interval trades a few extra seconds of sweep latency for far
+#: fewer wasted attempts against a land that commonly runs for tens of
+#: seconds.
+_REGRESSION_TICKET_COMMIT_RETRY_DELAY_S = 3.0
+
+
+def _discard_uncommitted_regression_ticket(root: Path, regression_id: str) -> None:
+    """T-1841: remove `regression_id`'s just-written, never-committed
+    ledger content from `root` so a fully-exhausted commit retry leaves
+    root CLEAN rather than DirtyMain-blocking every concurrent land --
+    the exact tradeoff this ticket's own body mandates ("a half-completed
+    bookkeeping step that stalls the fleet is worse than a skipped one it
+    can retry").
+
+    v2 (sharded) stores keep one ticket entirely under its own `tickets/
+    <id>/` directory (`ticket.md`, `done-report.md`, `attachments/`) that
+    this call is the ONLY writer of at this point -- `no_commit=True`
+    guarantees nothing has touched git's index yet, so a plain `rmtree`
+    cannot destroy anyone else's work. v1 (monofile `tickets.md`) writes
+    the SAME shared file every other ledger op reads/writes -- rolling
+    back a still-uncommitted append there risks discarding a concurrent
+    writer's own in-flight edit to that file, so this deliberately does
+    NOT attempt it for v1; the existing best-effort "dirty root, logged
+    loudly" posture stands for that (legacy, no longer the default)
+    store shape."""
+    from frob.tickets._store import _store_mode
+
+    if _store_mode(root) != "v2":
+        _log.error(
+            "rapid sweep: %s: regression ticket %s could not be committed "
+            "after %d attempt(s) and this is a v1 (monofile) store -- "
+            "cannot safely auto-discard a shared tickets.md append, root "
+            "stays DIRTY; a human must resolve tickets.md by hand",
+            root,
+            regression_id,
+            _REGRESSION_TICKET_COMMIT_MAX_ATTEMPTS,
+        )
+        return
+    ticket_dir = root / "tickets" / regression_id
+    shutil.rmtree(ticket_dir, ignore_errors=True)
+    _log.error(
+        "rapid sweep: regression ticket %s could not be committed to %s "
+        "after %d attempt(s) (each spaced %.0fs apart) -- DISCARDED rather "
+        "than left as untracked dirt (T-1841); this specific regression is "
+        "unfiled for now and will resurface on a future sweep's diff "
+        "against the rolling baseline if it is still present",
+        regression_id,
+        root,
+        _REGRESSION_TICKET_COMMIT_MAX_ATTEMPTS,
+        _REGRESSION_TICKET_COMMIT_RETRY_DELAY_S,
+    )
+
+
 # frob:ticket T-1755
 # frob:ticket T-1791
+# frob:ticket T-1841
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commits_the_ledger_write  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commit_failure_logs_at_error_and_does_not_raise  # noqa: E501
-def _commit_regression_ticket(root: Path, regression_id: str, final_id: str) -> None:
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_retries_then_succeeds_on_a_transient_land_in_progress  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty  # noqa: E501
+def _commit_regression_ticket(
+    root: Path,
+    regression_id: str,
+    final_id: str,
+    *,
+    max_attempts: int = _REGRESSION_TICKET_COMMIT_MAX_ATTEMPTS,
+    retry_delay_s: float = _REGRESSION_TICKET_COMMIT_RETRY_DELAY_S,
+) -> None:
     """T-1755: `_file_regression_ticket`'s `new_ticket(root, spec)` call
     (the whole point of the deferred sweep) writes `tickets.md` through
     `frob.tickets._new_renumber.new_ticket` DIRECTLY -- the LIBRARY
@@ -661,40 +739,53 @@ def _commit_regression_ticket(root: Path, regression_id: str, final_id: str) -> 
     funnel through, never a bare `git commit` or `git add -A` (T-1740's
     own incident: a blanket add on a root checkout concurrent lands are
     racing against published 1416 lines of another agent's in-flight work
-    under an unrelated commit message). A commit failure is logged at
-    ERROR naming `regression_id` and warning explicitly that the NEXT
-    land will refuse with `DirtyMain` -- never swallowed, never silent;
-    this function's own return type is `None` (best-effort, matching
-    `_commit_rapid_debt`'s identical "must never fail an already-
-    succeeded sweep" posture immediately below it in this module) --
-    the regression ticket itself is already durably filed by the time
-    this runs, so a commit failure here degrades to "dirty root, logged
-    loudly", never to "the ticket silently vanishes"."""
-    from frob.tickets._leases import _ledger_pathspecs, commit_ticket_ledger_change
+    under an unrelated commit message).
+
+    T-1841: retries up to `max_attempts` times, `retry_delay_s` apart,
+    before giving up -- the sweep runs DETACHED after a land, so a
+    DIFFERENT concurrent land holding root's exclusive lock
+    (`LeaseError.LandInProgress`) is the routine case, not a rare fluke
+    worth surfacing on the very first attempt (T-1841's evidence: four
+    same-day incidents, each a coordinator hand-committing a file the
+    sweep gave up on after one try). If every attempt still fails, this
+    now calls `_discard_uncommitted_regression_ticket` instead of leaving
+    the file behind -- T-1841's own requirement: "if the commit cannot
+    succeed ... the sweep must NOT leave the file behind. Either
+    write-then-commit atomically or do not write." This function's own
+    return type stays `None` (best-effort, matching `_commit_rapid_debt`'s
+    identical "must never fail an already-succeeded sweep" posture
+    immediately below it in this module) -- a land it degraded is already
+    published either way; only whether ROOT stays clean is at stake."""
+    from frob.tickets._leases import commit_ticket_ledger_change
 
     message = (
         f"chore(tickets): file {regression_id} "
         f"(post-land sweep regression from {final_id})"
     )
-    committed = commit_ticket_ledger_change(root, regression_id, message)
-    if committed.is_err:
-        pathspecs = " ".join(_ledger_pathspecs(root, regression_id))
-        _log.error(
-            "rapid sweep: %s: committing the filed regression ticket %s "
-            "failed (%s) -- the ledger is now DIRTY and every subsequent "
-            "`frob ticket land` in %s will refuse with DirtyMain until a "
-            "human commits it by hand: git -C %s add %s && git -C %s "
-            "commit -m %r -- %s",
-            final_id,
-            regression_id,
-            committed.danger_err,
-            root,
-            root,
-            pathspecs,
-            root,
-            message,
-            pathspecs,
-        )
+    for attempt in range(1, max_attempts + 1):
+        # frob:waive PERF008 reason="deliberate retry with identical arguments, not an \
+        # accidental loop-invariant call -- root's exclusive land lock held by a \
+        # DIFFERENT concurrent agent is the routine case for a detached sweep \
+        # (T-1841), so freshness under concurrency (does the lock still block?) is \
+        # exactly the reason this must re-run every iteration rather than being \
+        # hoisted or memoized"
+        committed = commit_ticket_ledger_change(root, regression_id, message)
+        if committed.is_ok:
+            return
+        if attempt < max_attempts:
+            _log.warning(
+                "rapid sweep: %s: committing regression ticket %s failed "
+                "(%s) on attempt %d/%d -- retrying in %.0fs (a concurrent "
+                "land holding root's lock is the routine case, T-1841)",
+                final_id,
+                regression_id,
+                committed.danger_err,
+                attempt,
+                max_attempts,
+                retry_delay_s,
+            )
+            time.sleep(retry_delay_s)
+    _discard_uncommitted_regression_ticket(root, regression_id)
 
 
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684

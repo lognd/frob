@@ -360,9 +360,10 @@ class TestCommitRegressionTicket:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commit_failure_logs_at_error_and_does_not_raise  # noqa: E501
+        from typani.result import Err
+
         import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
         from frob.tickets._leases import LeaseError
-        from typani.result import Err
 
         monkeypatch.setattr(
             "frob.tickets._leases.commit_ticket_ledger_change",
@@ -372,11 +373,118 @@ class TestCommitRegressionTicket:
         monkeypatch.setattr(
             rapid_sweep_mod._log, "error", lambda msg, *a: errors.append(msg % a)
         )
-        # Must not raise even though the commit "fails".
-        rapid_sweep_mod._commit_regression_ticket(tmp_path, "T-1234", "T-9000")
+        # Must not raise even though the commit "fails". max_attempts=1,
+        # retry_delay_s=0: this test is about the exhausted-retries
+        # discard path itself, not the retry loop's own timing (T-1841).
+        rapid_sweep_mod._commit_regression_ticket(
+            tmp_path, "T-1234", "T-9000", max_attempts=1, retry_delay_s=0
+        )
         assert len(errors) == 1
         assert "T-1234" in errors[0]
-        assert "DirtyMain" in errors[0]
+        # A fresh tmp_path defaults to a v2 store (T-1553) -- the discard
+        # branch fires (T-1841: nothing was ever written here, so the
+        # rmtree is a no-op, but the log still fires).
+        assert "DISCARDED" in errors[0]
+
+    # frob:ticket T-1841
+    def test_retries_then_succeeds_on_a_transient_land_in_progress(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1841: a concurrent `frob ticket land` holding root's lock is
+        the ROUTINE case for a detached sweep, not a rare fluke -- the
+        commit must be retried, not given up on after one attempt."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_retries_then_succeeds_on_a_transient_land_in_progress  # noqa: E501
+        from typani.result import Err, Ok
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+
+        attempts: list[int] = []
+
+        def _flaky(root, ticket_id, message):
+            attempts.append(1)
+            if len(attempts) < 3:
+                return Err(LeaseError.LandInProgress)
+            return Ok(None)
+
+        monkeypatch.setattr("frob.tickets._leases.commit_ticket_ledger_change", _flaky)
+        monkeypatch.setattr(rapid_sweep_mod.time, "sleep", lambda _s: None)
+        errors: list[str] = []
+        monkeypatch.setattr(
+            rapid_sweep_mod._log, "error", lambda msg, *a: errors.append(msg % a)
+        )
+
+        rapid_sweep_mod._commit_regression_ticket(
+            tmp_path, "T-1234", "T-9000", max_attempts=5, retry_delay_s=0
+        )
+
+        assert len(attempts) == 3
+        assert errors == []  # succeeded before exhausting retries
+
+    # frob:ticket T-1841
+    def test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1841's own requirement: "if the commit cannot succeed ... the
+        sweep must NOT leave the file behind." A v2 store's just-written,
+        never-committed `tickets/<id>/` directory must be REMOVED, not
+        left as untracked dirt DirtyMain-blocking every concurrent land."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty  # noqa: E501
+        from typani.result import Err
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+
+        ticket_dir = tmp_path / "tickets" / "T-1234"
+        ticket_dir.mkdir(parents=True)
+        (ticket_dir / "ticket.md").write_text("id: T-1234\n", encoding="utf-8")
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda root, ticket_id, message: Err(LeaseError.LandInProgress),
+        )
+        monkeypatch.setattr("frob.tickets._store._store_mode", lambda root: "v2")
+        monkeypatch.setattr(rapid_sweep_mod.time, "sleep", lambda _s: None)
+
+        rapid_sweep_mod._commit_regression_ticket(
+            tmp_path, "T-1234", "T-9000", max_attempts=2, retry_delay_s=0
+        )
+
+        assert not ticket_dir.exists()
+
+    # frob:ticket T-1841
+    def test_exhausted_retries_leave_a_v1_store_dirty_rather_than_guess(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1841: a v1 (monofile) store's `tickets.md` is shared by every
+        ledger op -- auto-discarding an uncommitted append there risks
+        destroying a concurrent writer's own in-flight edit, so this
+        deliberately leaves it dirty and loudly logged rather than
+        guessing at a safe rollback."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_exhausted_retries_leave_a_v1_store_dirty_rather_than_guess  # noqa: E501
+        from typani.result import Err
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda root, ticket_id, message: Err(LeaseError.LandInProgress),
+        )
+        monkeypatch.setattr("frob.tickets._store._store_mode", lambda root: "v1")
+        monkeypatch.setattr(rapid_sweep_mod.time, "sleep", lambda _s: None)
+        errors: list[str] = []
+        monkeypatch.setattr(
+            rapid_sweep_mod._log, "error", lambda msg, *a: errors.append(msg % a)
+        )
+
+        rapid_sweep_mod._commit_regression_ticket(
+            tmp_path, "T-1234", "T-9000", max_attempts=2, retry_delay_s=0
+        )
+
+        assert len(errors) == 1
+        assert "v1" in errors[0]
+        assert "DIRTY" in errors[0]
 
 
 def _seed_ticket(tmp_path: Path, *, state=None) -> str:
