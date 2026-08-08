@@ -308,6 +308,7 @@ def _close_gate_claims_for_ticket(root: Path, ticket) -> bool | None:  # noqa: A
 
 
 # frob:ticket T-1387
+# frob:ticket T-1705
 def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
     """The REL001 half of `_close_own_obligations_for_ticket` (ARCH001
     split): `True` if a version bump is still outstanding against
@@ -315,7 +316,29 @@ def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
     (T-0338's existing read-only bump computation, the SAME one `frob
     ticket land` applies) directly -- no duplicated version-diffing
     logic. An unresolvable bump computation also counts as dirty
-    (fail-closed: "cannot verify" must never silently become "clean")."""
+    (fail-closed: "cannot verify" must never silently become "clean").
+
+    T-1705: skipped entirely under the `rapid` profile, at the same seam
+    every other rapid relaxation uses (`_land_is_rapid`'s own precedent,
+    `frob.tickets._land`) -- T-1575 already turns REL001 OFF under
+    `rapid` for `frob check`'s own REL gate and the land path; this
+    close-time preflight used to be the one place that relaxation did
+    NOT reach, demanding a bump `frob ticket land`'s own rapid path
+    never requires either. The skip is recorded via `record_rapid_debt`
+    like every other rapid relaxation, so it stays auditable."""
+    from frob.tickets._evidence import record_rapid_debt
+    from frob.tickets._profile import ProfileName, effective_profile
+
+    resolved_profile = effective_profile(root)
+    if resolved_profile.is_ok and resolved_profile.danger_ok is ProfileName.RAPID:
+        record_rapid_debt(root, ticket.id, "close-rel001-preflight-skipped")
+        _log.info(
+            "ticket close: %s REL001 preflight skipped under rapid profile "
+            "(T-1705, recorded as debt)",
+            ticket.id,
+        )
+        return False
+
     from frob.app import ticket_runner as _ticket_runner
 
     rel_result = _ticket_runner._required_release_bump(root, ticket.id)
@@ -348,12 +371,27 @@ def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
             declared,
         )
         return False
+    # T-1705: name the ACTUAL remedy. The bump is applied by
+    # `_apply_release_bump_for_land` during `frob ticket land`, using
+    # land's own internal commit channel -- `pyproject.toml`'s version
+    # line is land-owned, and the T-0731 pre-commit hook refuses any
+    # OTHER commit that touches it. Telling an agent "the bump is
+    # outstanding" with no further context reads as "go bump it", which
+    # the tooling then forbids -- two agents independently hit exactly
+    # this dead end before one discovered, undocumented, that `frob
+    # ticket land` performs its own close internally and IS the
+    # supported route.
     _log.warning(
         "ticket close: %s REL001 version bump outstanding (needs %s, "
-        "pyproject declares %s)",
+        "pyproject declares %s) -- do NOT bump pyproject.toml by hand, "
+        "that commit is land-owned and the T-0731 hook will refuse it; "
+        "the supported remedy is `frob ticket land %s`, which applies "
+        "the bump and closes this ticket itself -- a hand `frob ticket "
+        "close` is not the route for a ticket with a public-API change",
         ticket.id,
         needed,
         declared or "unreadable",
+        ticket.id,
     )
     return True
 
@@ -381,10 +419,12 @@ def _declared_pyproject_version(root: Path) -> str | None:
     return str(version) if version else None
 
 
-# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_equal_covers  # noqa: E501
-# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_higher_covers  # noqa: E501
-# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_lower_does_not_cover  # noqa: E501
-# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_non_numeric_never_covers  # noqa: E501
+# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_equal_covers
+# frob:tests tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_higher_covers
+# frob:tests \
+# tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_lower_does_not_cover
+# frob:tests \
+# tests/unit/test_close_rel001_bump.py::TestVersionCovers.test_non_numeric_never_covers
 # frob:ticket T-1684
 def _version_covers(declared: str, needed: str) -> bool:
     """Whether `declared` is at least `needed`, compared as numeric

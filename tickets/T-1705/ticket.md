@@ -2,7 +2,7 @@
 id: T-1705
 title: close-time REL001 preflight is not rapid-aware and names a remedy the agent
   is forbidden to perform
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-06'
@@ -18,6 +18,11 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyRapidSkip::test_rapid_skips_the_check_and_records_debt
+- tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyRapidSkip::test_standard_still_runs_the_check
+- tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyRapidSkip::test_outstanding_bump_under_standard_names_land_as_the_remedy
+- tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyRapidSkip::test_unresolvable_profile_falls_back_to_running_the_check
 designated_repro_test: null
 threat: null
 component: null
