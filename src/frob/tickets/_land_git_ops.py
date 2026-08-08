@@ -1607,6 +1607,33 @@ def _true_merge_base(worktree: Path, main_branch_name: str) -> Result[str, LandE
 _SWEEP_OWNED_DIRTY_PATHS = ("rapid-debt.jsonl", "tickets.md")
 
 
+# frob:ticket T-1821
+def _staged_rapid_debt_ticket(root: Path) -> str | None:
+    """The real ticket id the detached post-land sweep's own STAGED
+    `rapid-debt.jsonl` write names, read from the staged blob's own
+    content -- never a guess. `record_rapid_debt` (`frob.tickets._evidence`)
+    always writes a `"ticket"` field on every appended line, so the staged
+    index content itself carries this fact; reads the LAST JSON line in
+    the staged blob (the most recently appended debt entry) and returns
+    its `"ticket"` value. Returns `None` (never a plausible-but-wrong
+    ticket id) whenever the blob is unreadable, has no staged content, or
+    the last line does not parse -- the T-1795/T-1799 incident this exists
+    to prevent was exactly a confident wrong guess, so silence here beats
+    a fabricated answer."""
+    spawned = run_argv(["git", "-C", str(root), "show", ":rapid-debt.jsonl"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    lines = [line for line in spawned.danger_ok.stdout.splitlines() if line.strip()]
+    if not lines:
+        return None
+    try:
+        payload = json.loads(lines[-1])
+    except (json.JSONDecodeError, ValueError):
+        return None
+    ticket = payload.get("ticket")
+    return ticket if isinstance(ticket, str) and ticket else None
+
+
 # frob:ticket T-1755
 def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
     """Whether every one of `paths` is a file the detached post-land sweep
@@ -1623,8 +1650,15 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
 # tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unavailable_status_is_not_reported_as_clean  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-1755
+# frob:ticket T-1821
+# frob:waive AFFECT001 reason="doc anchor update belongs in docs/modules/tickets.md, \
+# out of T-1821's declared scope and held by another concurrent agent per dispatch; \
+# follow-up filed to land the doc paragraph once that hold clears" \
+# follow_up="T-1832"
 def describe_root_dirt(root: Path) -> str:
     """What is making `root` dirty, rendered for a `DirtyMain` refusal.
 
@@ -1653,14 +1687,22 @@ def describe_root_dirt(root: Path) -> str:
     all_paths = _porcelain_dirty_paths(root)
     staged_paths = _porcelain_dirty_paths_staged(root)
     rendered = _render_dirty_paths(all_paths)
-    sweep_hint = (
-        " (all paths match the detached post-land sweep's own known "
-        "writes -- rapid-debt.jsonl/tickets.md, T-1699/T-1755 -- likely "
-        "author: a sweep child that filed something and did not commit "
-        "it)"
-        if _likely_sweep_authored(all_paths)
-        else ""
-    )
+    if _likely_sweep_authored(all_paths):
+        real_ticket = _staged_rapid_debt_ticket(root)
+        author = (
+            f"the sweep child working {real_ticket}"
+            if real_ticket is not None
+            else "unattributed (cannot be determined from staged content)"
+        )
+        sweep_hint = (
+            " (all paths match the detached post-land sweep's own known "
+            "writes -- rapid-debt.jsonl/tickets.md, mechanism built by "
+            f"T-1699/T-1755 -- likely author: {author}, a sweep child "
+            "that filed something and did not commit it -- via detached "
+            "post-land sweep)"
+        )
+    else:
+        sweep_hint = ""
     if not staged_paths:
         return rendered + sweep_hint
     return (

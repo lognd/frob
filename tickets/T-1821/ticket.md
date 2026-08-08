@@ -2,7 +2,7 @@
 id: T-1821
 title: 'TestDescribeRootDirt: two tests fail against current describe_root_dirt output
   shape'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -16,6 +16,9 @@ scope:
 - tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined
 designated_repro_test: null
 threat: null
 component: null
