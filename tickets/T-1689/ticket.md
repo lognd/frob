@@ -1,7 +1,7 @@
 ---
 id: T-1689
 title: 'Batch test selection: run a batch''s union touched-set in one pytest process'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-06'
@@ -16,8 +16,40 @@ scope:
 - src/frob/verify/_selection.py
 - src/frob/app/graph_runner.py
 - docs/modules/tickets.md
+- tests/unit/verify/test_selection.py
+- docs/modules/app.md
+- tests/unit/verify/conftest.py
+- tests/unit/verify/test_attribution.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/verify/test_selection.py
+  reason: unit tests for the new batch selection module live in tests/unit/verify/
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: AFFECT001 requires docs/modules/app.md#runners touched alongside graph_runner.py::run's
+    changed dispatch table
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/verify/conftest.py
+  reason: shared _symbol/_entry test helper extracted here to avoid DUP001 with test_attribution.py
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/verify/test_attribution.py
+  reason: 'DUP001: dedupe _symbol/_entry against the new shared conftest.py helper'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/verify/test_selection.py::TestSelectBatchTests::test_union_of_two_entries_selects_once
+- tests/unit/verify/test_selection.py::TestSelectBatchTests::test_empty_batch_selects_nothing
+- tests/unit/verify/test_selection.py::TestSelectBatchTests::test_unresolvable_symbol_is_skipped_not_fatal
+- tests/unit/verify/test_selection.py::TestRunBatchSelectedTests::test_graph_unavailable_is_an_error
+- tests/unit/verify/test_selection.py::TestRunBatchSelectedTests::test_selects_and_runs_once
 designated_repro_test: null
 threat: null
 component: verification

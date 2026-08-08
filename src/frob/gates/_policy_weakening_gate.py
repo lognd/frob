@@ -98,7 +98,9 @@ def policy_weakening_gate(root: Path) -> tuple[Violation, ...]:
         _log.debug("policy_weakening_gate: no policy declarations, skipping")
         return ()
 
-    merged_module = Module(name="__policy_weakening_gate__", policies=design_ids.policies)
+    merged_module = Module(
+        name="__policy_weakening_gate__", policies=design_ids.policies
+    )
     compiled = compile_policies(merged_module, design_ids.models[0])
     if compiled.is_err:
         _log.warning(

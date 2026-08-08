@@ -299,10 +299,14 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 - `release_runner.run` -- dispatches to the release subcommand named by
   `cfg.release_command` (mechanical semver stamping/checking/`sync` --
   T-1009's single-source-of-truth regeneration, docs/modules/release.md).
-- `graph_runner.run` -- dispatches build/query/why/affects based on
-  `cfg.graph_command` (docs/modules/graph.md); `affects` (T-0628) reads
-  `cfg.graph_max_depth`/`cfg.graph_max_nodes` (both optional, default to
-  `frob.graph.affects.affects`'s own keyword defaults).
+- `graph_runner.run` -- dispatches build/query/why/affects/select-batch-
+  tests based on `cfg.graph_command` (docs/modules/graph.md); `affects`
+  (T-0628) reads `cfg.graph_max_depth`/`cfg.graph_max_nodes` (both
+  optional, default to `frob.graph.affects.affects`'s own keyword
+  defaults). `select-batch-tests` (T-1689) reads the current verify queue
+  and runs its union touched-set in ONE pytest process per language via
+  `frob.verify._selection.run_batch_selected_tests` -- see
+  docs/modules/tickets.md#batch-test-selection-t-1689.
 - `bind_runner.run` -- verifies BIND declarations against source signatures
   (docs/modules/bind.md); parses its own argv rather than taking `AppConfig`.
 - `cycle_runner.run` -- runs `frob.cycle.graph.find_cycles` over

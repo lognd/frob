@@ -2081,6 +2081,10 @@
     "src/frob/verify/_quarantine.py::is_quarantined": "1d82b4145f8a39265af7e625a6a6a68565973dc01a9227b2fcf0e993fe66e33d",
     "src/frob/verify/_quarantine.py::load_quarantine": "1780cb4b855f7c95eb797163cd68520619e45a860984da54aa235c6fb5237162",
     "src/frob/verify/_quarantine.py::raise_quarantine": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+    "src/frob/verify/_selection.py::BatchSelection": "86a8c0ff7368e485b37781c2b42fc56cc621ff94892ec32decf433ce35a475d3",
+    "src/frob/verify/_selection.py::BatchSelectionError": "8369cc368dbbd0d5a086fb102c0a062a9846edbd222bfd44b7705f5e62781a6c",
+    "src/frob/verify/_selection.py::run_batch_selected_tests": "e4437b3115f555d60dce82de7fec04916ba3c5f998506fa55ebe7d6adf5f4600",
+    "src/frob/verify/_selection.py::select_batch_tests": "c0570b514d26009f86b8575c73d6ec5f28804ae95028e5e933644b8687d06c5d",
     "src/frob/verify/_watermark.py::SCHEMA_VERSION": "63a7265e981da6a7ab16e6307dd0842c69622b4949130e7194782785d27b36de",
     "src/frob/verify/_watermark.py::VerifyQueueEntry": "8f2e3c564e0a0a1d5672797d10d45cb2492f04c6559925d457e24a5d32467bd2",
     "src/frob/verify/_watermark.py::Watermark": "7810697da265322eb8226dcaaea505f685e9af06bf928c550053a08ffc557150",
@@ -2190,5 +2194,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.411.0"
+  "version": "0.412.0"
 }

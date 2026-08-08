@@ -290,11 +290,11 @@ node security : trusted {
 // docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
 node verify : trusted {
     attr interface=[
-        AttributionError, BackpressureCeilings, BackpressureError, CoalescingWorker, QuarantineError, QuarantinedFinding,
-        VerifyQueueEntry, WatermarkError, WorkerError, WorkerOutcome, advance_watermark, attribute_batch,
-        block_until_watermark_advances, ceilings_for_profile, clear_quarantine, compact_queue, current_status,
-        is_quarantined, load_quarantine, load_watermark, queue_status, raise_quarantine, record_intent,
-        run_coalesced_verification,
+        AttributionError, BackpressureCeilings, BackpressureError, BatchSelectionError, CoalescingWorker, QuarantineError,
+        QuarantinedFinding, VerifyQueueEntry, WatermarkError, WorkerError, WorkerOutcome, advance_watermark,
+        attribute_batch, block_until_watermark_advances, ceilings_for_profile, clear_quarantine, compact_queue,
+        current_status, is_quarantined, load_quarantine, load_watermark, queue_status, raise_quarantine, record_intent,
+        run_batch_selected_tests, run_coalesced_verification, select_batch_tests,
     ];
     clearance Internal;
     code "src/frob/verify/**";

@@ -4044,10 +4044,65 @@ it must not compete for CPU/IO priority with foreground work.
 (idle) for this process -- applied at most ONCE per process (guarded by a
 module-level flag, since `os.nice` is cumulative and a second call would
 compound rather than idempotently reapply the same reduction), called
-right before the first `verify_fn` invocation. Every `frob check`
-subprocess a verification pass spawns after that point inherits both
-values automatically via ordinary POSIX fork/exec priority inheritance --
-no per-subprocess wiring needed anywhere else in this codebase.
+from `CoalescingWorker.tick()` right before its own `run_
+coalesced_verification` call -- deliberately NOT inside `run_
+coalesced_verification` itself, so `frob verify now`'s synchronous,
+human/agent-invoked call straight into that function (`src/frob/app/
+verify_runner.py`) stays unthrottled, since that command is foreground
+work by definition, not the permanent-background competitor this ticket
+is about. Every `frob check` subprocess a verification pass spawns after
+that point inherits both values automatically via ordinary POSIX
+fork/exec priority inheritance -- no per-subprocess wiring needed
+anywhere else in this codebase.
+
+## Batch test selection (T-1689)
+
+<!-- frob:describes src/frob/verify/_selection.py::BatchSelectionError -->
+<!-- frob:describes src/frob/verify/_selection.py::BatchSelection -->
+<!-- frob:describes src/frob/verify/_selection.py::select_batch_tests -->
+<!-- frob:describes src/frob/verify/_selection.py::run_batch_selected_tests -->
+<!-- frob:describes src/frob/app/graph_runner.py::_run_select_batch_tests -->
+
+The second, independent half of the T-1686 epic's wall-clock saving,
+alongside T-1688's coalescing gate pass: N separate `frob test`
+invocations over the queue's overlapping touched sets pay N cold pytest
+startups and re-run every test two tickets both touch once PER ticket;
+computing the batch's UNION touched set first and selecting once against
+it collapses this to one collection, one conftest evaluation, one set of
+session fixtures.
+
+**Reuse, not reinvention.** `frob.verify._selection` does not re-derive
+symbolic reachability -- `frob.testing._select.select_tests` (touched
+symbols -> the tests that reach them) and `frob.testing._runners.
+run_selected` (spawn each language's selection in ONE process) already
+exist and already have this shape; the one genuinely new piece is
+`_synthetic_diff_for_touched_symbols`, which bridges a batch's union
+`touched_symbols` (`VerifyQueueEntry`'s own durable record -- symrefs,
+never raw diff hunks) into `select_tests`'s hunk-based `Diff` input by
+building a `Hunk` spanning exactly each touched symbol's own definition
+span. `select_tests`'s own first step (`_touched_symbols`, span-overlap
+against the snapshot) re-derives that SAME symbol back out, so this is a
+faithful round-trip through the existing machinery, not an approximation
+of it.
+
+**Never a narrower fallback.** `run_batch_selected_tests` returns
+`Err(BatchSelectionError.GraphUnavailable)` (or `RunnersUnavailable`) the
+moment the graph or `test.runner` config cannot be loaded/built -- it
+never silently selects fewer tests than the touched set actually implies.
+The caller (`frob.app.graph_runner._run_select_batch_tests`, wired as
+`frob graph select-batch-tests`) is the one place that decision resolves:
+on `Err` it falls back to the FULL suite (every runner's `ALL_SENTINEL`
+selection, the same shape `frob test --all` already produces) with a
+loud WARNING naming why, never to running nothing or a partial set.
+
+**Reads the same durable queue T-1688 reads.** `_run_select_batch_tests`
+reads `.frob/verify-queue.json` via `frob.verify._watermark.
+queue_status` -- the identical `VerifyQueueEntry` records `run_
+coalesced_verification` reads for gate verification, so a batch's test
+selection and its gate verification are computed from the SAME notion of
+"what this batch touched", never two independently-drifting ones. An
+empty queue is a no-op (INFO, not an error) -- there is nothing to
+select.
 
 ## Symbolic attribution (T-1690)
 

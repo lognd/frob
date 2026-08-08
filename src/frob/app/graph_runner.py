@@ -15,7 +15,8 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
-# frob:tests tests/unit/test_app_runners_batch6.py::TestGraphRunner.test_build_success_logs_stats  # noqa: E501
+# frob:tests \
+# tests/unit/test_app_runners_batch6.py::TestGraphRunner.test_build_success_logs_stats
 def run(cfg: AppConfig) -> None:
     """Dispatch to build/query/why based on `cfg.graph_command`."""
     root = (cfg.graph_path or Path(".")).resolve()
@@ -29,9 +30,80 @@ def run(cfg: AppConfig) -> None:
         _run_why(root, cache, cfg)
     elif cfg.graph_command == "affects":
         _run_affects(root, cache, cfg)
+    elif cfg.graph_command == "select-batch-tests":
+        _run_select_batch_tests(root)
     else:
-        _log.error("usage: frob graph <build|query|why|affects> ...")
+        _log.error("usage: frob graph <build|query|why|affects|select-batch-tests> ...")
         sys.exit(1)
+
+
+# frob:doc docs/modules/tickets.md#batch-test-selection-t-1689
+# frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_graph_unavailable_is_an_error  # noqa: E501
+def _run_select_batch_tests(root: Path) -> None:
+    """`frob graph select-batch-tests` (T-1689): read the current verify
+    queue (`.frob/verify-queue.json`, the same durable batch T-1688's
+    coalescing worker reads) and run its union touched-set in ONE pytest
+    process per language via `frob.verify._selection.
+    run_batch_selected_tests`. An empty queue is a no-op, logged at INFO
+    -- not an error. A `GraphUnavailable`/`RunnersUnavailable` result is
+    this ticket's own acceptance requirement made explicit: falls back to
+    the FULL suite (every runner's `ALL_SENTINEL` selection, the same
+    all-suite shape `frob test --all` already produces) with a loud
+    WARNING naming why, never to a silently narrower run."""
+    from frob.testing._models import SelectionReport
+    from frob.testing._runners import load_runners, run_selected
+    from frob.testing._select import ALL_SENTINEL
+    from frob.verify._selection import run_batch_selected_tests
+    from frob.verify._watermark import queue_status
+
+    loaded = queue_status(root)
+    if loaded.is_err:
+        _log.error("select-batch-tests: verify queue unreadable: %s", loaded.danger_err)
+        sys.exit(1)
+    entries = loaded.danger_ok
+    if not entries:
+        _log.info("select-batch-tests: verify queue empty, nothing to select")
+        return
+
+    run = run_batch_selected_tests(root, entries)
+    if run.is_err:
+        _log.warning(
+            "select-batch-tests: batch selection unavailable (%s) -- falling "
+            "back to the FULL suite, never a narrower run",
+            run.danger_err,
+        )
+        runners_loaded = load_runners(root)
+        if runners_loaded.is_err:
+            _log.error(
+                "select-batch-tests: full-suite fallback also failed (test.runner "
+                "config unreadable: %s)",
+                runners_loaded.danger_err,
+            )
+            sys.exit(1)
+        runners = runners_loaded.danger_ok
+        all_selection = SelectionReport(
+            touched=(),
+            selected={spec.language: (ALL_SENTINEL,) for spec in runners},
+            ripple=(),
+            unbound=(),
+            fallback="all",
+        )
+        fallback = run_selected(all_selection, runners, root)
+        if fallback.is_err:
+            _log.error(
+                "select-batch-tests: full-suite fallback failed: %s",
+                fallback.danger_err,
+            )
+            sys.exit(1)
+        sys.exit(0 if fallback.danger_ok.ok else 1)
+
+    report = run.danger_ok
+    _log.info(
+        "select-batch-tests: ran %d language(s), ok=%s",
+        len(report.outcomes),
+        report.ok,
+    )
+    sys.exit(0 if report.ok else 1)
 
 
 def _run_build(root: Path, cache: Path) -> None:
@@ -342,7 +414,8 @@ def _try_affects_via_daemon(root: Path, cfg: AppConfig) -> bool:
 
 # frob:ticket T-0628
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_human_mode_reports_dependents_docs_tests  # noqa: E501
-# frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_json_mode_payload  # noqa: E501
+# frob:tests \
+# tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_json_mode_payload
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_truncated_closure_flagged  # noqa: E501
 # frob:waive ARCH103 reason="T-0977/T-1106: `frob graph affects` CLI entrypoint -- \
 # same runner shape as `_run_query`/`_run_why` in this module: try the daemon proxy, \

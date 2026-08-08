@@ -7,30 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
-from frob.lang import SymbolKind
+from frob.graph import CallGraph, GraphSnapshot
 from frob.verify._attribution import AttributionError, attribute_batch
-from frob.verify._watermark import VerifyQueueEntry
-
-
-def _symbol(path: str, qualname: str, start: int, end: int) -> SymbolRecord:
-    return SymbolRecord(
-        id=SymbolId(path=path, qualname=qualname),
-        kind=SymbolKind.FUNCTION,
-        public=True,
-        digests=Digests(sig="s", body="b", doc="d"),
-        span=(start, end),
-    )
-
-
-def _entry(commit: str, ticket: str, touched: tuple[str, ...]) -> VerifyQueueEntry:
-    return VerifyQueueEntry(
-        commit_sha=commit,
-        ticket_id=ticket,
-        touched_symbols=touched,
-        enqueued_at="2026-08-07T00:00:00+00:00",
-        profile="rapid",
-    )
+from tests.unit.verify.conftest import make_queue_entry, make_symbol
 
 
 class TestAttributeBatch:
@@ -38,9 +17,7 @@ class TestAttributeBatch:
     commit whose touched symbols REACH it, never a lexical file match or
     a newest-commit tiebreak."""
 
-    def test_caller_break_attributes_to_the_caller_commit(
-        self, tmp_path: Path
-    ) -> None:
+    def test_caller_break_attributes_to_the_caller_commit(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_caller_break_attributes_to_the_caller_commit  # noqa: E501
         # Commit A touches `caller`, which calls `callee` -- commit B
         # touched `callee` itself, unrelated to the finding. The finding
@@ -49,15 +26,15 @@ class TestAttributeBatch:
         snapshot = GraphSnapshot(
             root=str(tmp_path),
             symbols={
-                "a.py::caller": _symbol("a.py", "caller", 1, 5),
-                "b.py::callee": _symbol("b.py", "callee", 1, 5),
+                "a.py::caller": make_symbol("a.py", "caller", 1, 5),
+                "b.py::callee": make_symbol("b.py", "callee", 1, 5),
             },
             edges=(),
         )
         call_graph = CallGraph(calls={"a.py::caller": ("b.py::callee",)})
         batch = (
-            _entry("commitA", "T-0001", ("a.py::caller",)),
-            _entry("commitB", "T-0002", ("b.py::callee",)),
+            make_queue_entry("commitA", "T-0001", ("a.py::caller",)),
+            make_queue_entry("commitB", "T-0002", ("b.py::callee",)),
         )
         result = attribute_batch(
             tmp_path,
@@ -76,11 +53,11 @@ class TestAttributeBatch:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_direct_touch_attributes_at_depth_zero  # noqa: E501
         snapshot = GraphSnapshot(
             root=str(tmp_path),
-            symbols={"a.py::fn": _symbol("a.py", "fn", 1, 5)},
+            symbols={"a.py::fn": make_symbol("a.py", "fn", 1, 5)},
             edges=(),
         )
         call_graph = CallGraph(calls={})
-        batch = (_entry("commitA", "T-0001", ("a.py::fn",)),)
+        batch = (make_queue_entry("commitA", "T-0001", ("a.py::fn",)),)
         result = attribute_batch(
             tmp_path,
             [("RULE1", "a.py", 2)],
@@ -100,13 +77,13 @@ class TestAttributeBatch:
         # candidates named.
         snapshot = GraphSnapshot(
             root=str(tmp_path),
-            symbols={"shared.py::fn": _symbol("shared.py", "fn", 1, 5)},
+            symbols={"shared.py::fn": make_symbol("shared.py", "fn", 1, 5)},
             edges=(),
         )
         call_graph = CallGraph(calls={})
         batch = (
-            _entry("commitA", "T-0001", ("shared.py::fn",)),
-            _entry("commitB", "T-0002", ("shared.py::fn",)),
+            make_queue_entry("commitA", "T-0001", ("shared.py::fn",)),
+            make_queue_entry("commitB", "T-0002", ("shared.py::fn",)),
         )
         result = attribute_batch(
             tmp_path,
@@ -125,11 +102,11 @@ class TestAttributeBatch:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_zero_reaching_commits_is_unattributed  # noqa: E501
         snapshot = GraphSnapshot(
             root=str(tmp_path),
-            symbols={"orphan.py::fn": _symbol("orphan.py", "fn", 1, 5)},
+            symbols={"orphan.py::fn": make_symbol("orphan.py", "fn", 1, 5)},
             edges=(),
         )
         call_graph = CallGraph(calls={})
-        batch = (_entry("commitA", "T-0001", ("unrelated.py::other",)),)
+        batch = (make_queue_entry("commitA", "T-0001", ("unrelated.py::other",)),)
         result = attribute_batch(
             tmp_path,
             [("RULE1", "orphan.py", 2)],
@@ -151,13 +128,13 @@ class TestAttributeBatch:
         snapshot = GraphSnapshot(
             root=str(tmp_path),
             symbols={
-                "a.py::fn_one": _symbol("a.py", "fn_one", 1, 5),
-                "a.py::fn_two": _symbol("a.py", "fn_two", 6, 10),
+                "a.py::fn_one": make_symbol("a.py", "fn_one", 1, 5),
+                "a.py::fn_two": make_symbol("a.py", "fn_two", 6, 10),
             },
             edges=(),
         )
         call_graph = CallGraph(calls={"caller.py::caller": ("a.py::fn_two",)})
-        batch = (_entry("commitA", "T-0001", ("caller.py::caller",)),)
+        batch = (make_queue_entry("commitA", "T-0001", ("caller.py::caller",)),)
         result = attribute_batch(
             tmp_path,
             [("RULE1", "a.py")],
@@ -182,7 +159,7 @@ class TestAttributeBatch:
         result = attribute_batch(
             tmp_path,
             [("RULE1", "a.py", 1)],
-            (_entry("commitA", "T-0001", ("a.py::fn",)),),
+            (make_queue_entry("commitA", "T-0001", ("a.py::fn",)),),
         )
         assert result.is_err
         assert result.danger_err is AttributionError.GraphUnavailable
