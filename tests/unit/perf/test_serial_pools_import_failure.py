@@ -21,9 +21,6 @@ from frob.perf import _serial_pools
 from frob.perf._serial_pools import SerialExecutor, install_serial_pools
 
 
-# frob:waive WIRE001 reason="autouse pytest fixture for this module's own tests -- no \
-# production caller to wire it to by design (autouse fixtures doubly so, since nothing \
-# ever calls them by name at all)" permanent="true"
 @pytest.fixture(autouse=True)
 def _restore_pool_executors():
     """`install_serial_pools()` mutates `concurrent.futures` globally and
