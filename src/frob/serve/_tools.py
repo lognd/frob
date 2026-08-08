@@ -176,12 +176,6 @@ def _dangling_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
 
 # frob:doc docs/modules/serve.md#tools
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_matches_in_process kind="unit"  # noqa: E501
-# frob:waive WIRE001 reason="genuinely wired via _TOOL_DISPATCH['frob_map'] = \
-# _tools.frob_map in src/frob/serve/_socketd.py, then dispatched dynamically by \
-# JSON-RPC method name (dispatch_request) -- WIRE001's dict-table reach pattern only \
-# matches a BARE name immediately after the colon, never a module-qualified value \
-# (_tools.frob_map), so every _TOOL_DISPATCH entry has this same false-positive shape; \
-# the rest are grandfathered only because WIRE001 is diff-scoped" follow_up="T-1807"
 def frob_map(root: Path, *, depth: int | None = None) -> Result[dict, ServeError]:
     """`MapResult.model_dump(mode="json")` for `root` -- the same payload
     `frob map --json`'s `result.as_json()` serializes (`frob.app.

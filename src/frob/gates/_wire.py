@@ -198,9 +198,14 @@ def _wire_reach_patterns(
     # nothing else ever calls it by name. Without this, every new CLI
     # subcommand handler is a WIRE001 false positive whose only remedy is
     # a waiver, which is how a gate teaches people to waive it.
+    # T-1807: the dict-table value can also be MODULE-QUALIFIED
+    # (`"frob_map": _tools.frob_map,` -- every row of
+    # `_TOOL_DISPATCH` in src/frob/serve/_socketd.py uses this exact
+    # shape), so the value alternative also accepts an optional
+    # `name.`-prefixed qualifier ahead of `short`, not just a bare name.
     wrapper_pattern = re.compile(
         rf"(?<![A-Za-z0-9_.])(?:{marker_names})\s*\(\s*{re.escape(short)}\s*[,)]"
-        rf"|:\s*{re.escape(short)}\s*[,}}]"
+        rf"|:\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)?{re.escape(short)}\s*[,}}]"
     )
     member_access_pattern = None
     if kind == SymbolKind.CLASS:

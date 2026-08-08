@@ -2925,6 +2925,39 @@ class TestWireGate:
             v.rule == "WIRE001" and "_target" in v.message for v in violations
         )
 
+    # frob:ticket T-1807
+    def test_new_function_reached_via_module_qualified_dict_table_value_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # T-1807: `"frob_map": _tools.frob_map,` (the exact style every
+        # row of src/frob/serve/_socketd.py::_TOOL_DISPATCH uses) is a
+        # dict-table wiring shape same as a bare `"key": _target,` value
+        # -- WIRE001 must not flag it just because a module-qualifier
+        # sits between the colon and the short name.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def frob_map() -> bool:\n"
+            "    return True\n\n\n"
+            '_TOOL_DISPATCH = {"frob_map": _tools.frob_map}\n',
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_dispatch() -> None:\n    assert _TOOL_DISPATCH\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(r for r in snap.symbols.values() if "frob_map" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "frob_map" in v.message for v in violations
+        )
+
     # frob:ticket T-1502
     def test_new_function_named_like_a_wrapper_argument_but_never_passed_is_flagged(
         self, tmp_path: Path

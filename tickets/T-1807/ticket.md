@@ -2,7 +2,7 @@
 id: T-1807
 title: WIRE001 dict-table pattern misses module-qualified dict values (_tools.X in
   _TOOL_DISPATCH)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -13,8 +13,19 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_wire.py
+- src/frob/serve/_tools.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/serve/_tools.py
+  reason: the fix retires the WIRE001 waiver this file's own comment named T-1807
+    as follow_up for; land's LiveTrackerCited gate requires re-pointing/removing it
+    in this same change
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_gates.py::TestWireGate::test_new_function_reached_via_module_qualified_dict_table_value_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null
