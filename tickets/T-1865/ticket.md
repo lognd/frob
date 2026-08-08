@@ -1,7 +1,7 @@
 ---
 id: T-1865
 title: Document T-1847's warm-tree quarantine re-check in docs/modules/tickets.md
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-08'
@@ -12,11 +12,25 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets.md
+- src/frob/app/ticket_runner/_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: plan requires removing the two AFFECT001 waivers this ticket's doc paragraph
+    resolves
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_drops_cold_worktree_native_noise
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1847 added `_warm_tree_clears_unattributed_native_noise` to
 src/frob/app/ticket_runner/_rapid_sweep.py (the warm-tree re-check before

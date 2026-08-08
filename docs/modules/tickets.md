@@ -4404,6 +4404,35 @@ record, and a caller filing a real regression must never be blocked by
 the quarantine flag failing to persist.
 <!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_raise_quarantine_for_red_batch -->  
 
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_warm_tree_clears_unattributed_native_noise -->
+**A warm-tree re-check drops cold-worktree native-extension noise before
+raising (T-1847).** A fresh worktree's `ty check`/import resolution can
+fail on a declared native (`strata_core`, `frob_core`) simply because
+`frob natives build`/`make core` has not run yet -- an environment
+artifact, not a regression (`docs/guides/agent-playbook.md` section 1
+says the same about the identical symptom in a different context). Left
+unfiltered, that noise reaches `_raise_quarantine_for_red_batch` exactly
+like a real finding and can raise quarantine over nothing. Before naming
+a red batch, each `(rule, file)` pair is passed through
+`_warm_tree_clears_unattributed_native_noise`, which drops a pair ONLY
+when BOTH hold: the finding is UNATTRIBUTED (no real commit behind it
+yet -- an attributed finding is never overridden by this re-check,
+regardless of rule id) and its rule id is in
+`_NATIVE_EXTENSION_ADJACENT_RULE_IDS` (deliberately narrow --
+`unresolved-import` only, the one shape T-1847 actually observed). When
+both hold, it re-checks RIGHT NOW whether every declared native still
+fails to import (`frob.strata._native_staleness.unimportable_natives`);
+if none are broken anymore, the finding is dropped from the set that can
+raise quarantine (still filed as a regression ticket by the caller --
+this only changes whether it also reaches the quarantine dispose queue).
+If a native is STILL unimportable, the finding is kept and the raise
+proceeds unchanged -- this re-check only clears TRANSIENT cold-worktree
+staleness, never a durably broken environment. If dropping cold-worktree
+noise empties the batch entirely, the raise is skipped altogether and
+logged at INFO, the same "nothing to name" shape
+`_raise_quarantine_for_red_batch` already uses for an empty verify
+queue.
+
 ## `frob verify` CLI (T-1697)
 
 <!-- frob:describes src/frob/app/verify_runner.py::VerifyQuarantineFindingView -->

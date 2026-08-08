@@ -1,7 +1,7 @@
 ---
 id: T-1832
 title: Document T-1821's symbolic DirtyMain attribution in docs/modules/tickets.md
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-08'
@@ -17,6 +17,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1821 added symbolic DirtyMain attribution (`_staged_rapid_debt_ticket`,
 `describe_root_dirt`'s sweep_hint now names the real ticket id read off a

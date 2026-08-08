@@ -435,11 +435,6 @@ _NATIVE_EXTENSION_ADJACENT_RULE_IDS = frozenset({"unresolved-import"})
 
 # frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1847
-# frob:waive AFFECT001 reason="docs/modules/tickets.md is leased in-scope by the \
-# concurrently in-progress T-1686 (ScopeLeaseConflict on 'frob ticket scope T-1847 \
-# --add docs/modules/tickets.md') -- cannot extend this ticket's scope to it; the \
-# T-1847 doc addition is queued as T-1865, a follow-up once T-1686 releases \
-# the lease"
 def _warm_tree_clears_unattributed_native_noise(
     root: Path, rule: str, attr
 ) -> bool:  # noqa: ANN001 -- Attribution | None, deferred-import type
@@ -483,11 +478,6 @@ def _warm_tree_clears_unattributed_native_noise(
 # frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1791
 # frob:ticket T-1847
-# frob:waive AFFECT001 reason="docs/modules/tickets.md is leased in-scope by the \
-# concurrently in-progress T-1686 (ScopeLeaseConflict on 'frob ticket scope T-1847 \
-# --add docs/modules/tickets.md') -- cannot extend this ticket's scope to it; the \
-# T-1847 doc addition is queued as T-1865, a follow-up once T-1686 releases \
-# the lease"
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raises_with_attributed_and_unattributed_findings  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raise_failure_is_logged_not_raised  # noqa: E501

@@ -1,7 +1,7 @@
 ---
 id: T-1878
 title: Document T-1868's live cross-worktree lease check for scope --add in docs/modules/tickets.md
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-08'
@@ -12,8 +12,16 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets.md
+- src/frob/tickets/_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_scope.py
+  reason: plan requires swapping the interim frob:todo pointer for a real frob:doc
+    anchor
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null

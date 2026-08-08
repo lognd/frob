@@ -176,9 +176,7 @@ def _scope_add_queue_conflict(
 
 
 # frob:ticket T-1868
-# frob:todo T-1878
-# (a docs/modules/tickets.md section for this fix is deferred: the file
-# was leased by in-progress T-1873 when T-1868 landed)
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
 def _scope_add_live_lease_conflict(
