@@ -53,6 +53,11 @@ from frob.testing._runners import (
     run_selected,
 )
 from frob.testing._select import extension_language, select_tests
+from frob.testing._stackdump import (
+    STACKDUMP_ENV,
+    dump_all_thread_stacks,
+    install_stackdump_handler,
+)
 from frob.testing._stability import (
     DEFAULT_REGRESSION_TAIL_K,
     FlakeError,
@@ -84,6 +89,7 @@ __all__ = [
     "RunnerSpec",
     "SelectConfig",
     "SelectionReport",
+    "STACKDUMP_ENV",
     "SharedCoverageResult",
     "StabilityEntry",
     "TestRunReport",
@@ -95,11 +101,13 @@ __all__ = [
     "collect_ts_tests",
     "coverage_lock_path",
     "drop_collection_cache",
+    "dump_all_thread_stacks",
     "evaluate_gate",
     "extension_language",
     "fill_from_cache",
     "flaky_node_ids",
     "hard_regression_alarms",
+    "install_stackdump_handler",
     "is_flaky",
     "is_hard_regression",
     "lift_quarantine",

@@ -1039,6 +1039,41 @@ does not carry) is a known cost of this v1 wiring, not a hidden one --
 carry per-test results is a larger `_models.py`/`_runners.py` change left
 for a future ticket if the double-invocation cost becomes a real problem.
 
+## SIGUSR1 stack-dump handler (T-1433, T-1466)
+
+`frob.testing._stackdump.install_stackdump_handler` installs a `SIGUSR1`
+handler (gated on the opt-in `STACKDUMP_ENV`/`FROB_COVERAGE_STACKDUMP`
+env var) that dumps every live thread's stack of the receiving process to
+`.frob/stackdumps/pid-<pid>.txt` via `faulthandler.dump_traceback` --
+self-diagnosing a wedge instead of leaving only a bare
+`wchan=futex_wait_queue` with no indication of which lock, in which
+function.
+
+T-1433 built this and wired it ONLY into `tests/conftest.py`'s
+`pytest_configure` (the two `make coverage` phases -- the xdist run and
+the `-n 0` serial rerun -- that motivated it), which left `WIRE001`
+flagging both underlying helpers as unreached from any non-test path:
+`tests/conftest.py` is itself a test-path the gate's text scan skips, so
+a definition that lives only there looks structurally dead to anything
+outside its own tests. T-1466 moved the reusable core to
+`frob.testing._stackdump` (public via `frob.testing`'s own `__init__.py`
+re-export) so ANY frob process -- `frob serve`'s daemon, a `frob check`
+subprocess pool member, or `tests/conftest.py` itself -- can opt in with
+the same call; `tests/conftest.py` keeps its own thin
+`_install_stackdump_handler`/`_STACKDUMP_ENV` re-export purely for
+source-compat with its pre-existing pytest-specific wiring (the
+controller/every-worker install timing is still real, pytest-specific
+documentation this file owns).
+
+Wiring `install_stackdump_handler` into `frob serve`'s daemon startup or
+`frob check`'s subprocess-pool workers is left as a follow-up (needs
+`src/frob/serve/**`, outside T-1466's own declared scope) -- see T-1466's
+Done report for the filed ticket.
+
+<!-- frob:describes src/frob/testing/_stackdump.py::install_stackdump_handler -->
+<!-- frob:describes src/frob/testing/_stackdump.py::dump_all_thread_stacks -->
+<!-- frob:describes src/frob/testing/_stackdump.py::STACKDUMP_ENV -->
+
 ## Git worktrees
 
 The worktree workflow (one agent per worktree on its own branch) is a

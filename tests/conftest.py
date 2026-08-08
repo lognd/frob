@@ -1,6 +1,3 @@
-import faulthandler
-import os
-import signal
 from pathlib import Path
 
 import pytest
@@ -8,66 +5,18 @@ import pytest
 import frob.lang as lang_mod
 from frob.lang import PARSE_ARTIFACT_CACHE_ENV, reset_parse_cache
 from frob.mutate import restore_stale_journals
+from frob.testing._stackdump import STACKDUMP_ENV as _STACKDUMP_ENV  # noqa: F401
+from frob.testing._stackdump import install_stackdump_handler as _install_stackdump_handler
 
-# frob:ticket T-1433
-_STACKDUMP_ENV = "FROB_COVERAGE_STACKDUMP"
-"""Opt-in env var (T-1433): when set to a nonempty, non-`0`/`false` value,
-`pytest_configure` below installs a `SIGUSR1` handler that dumps every
-live thread's stack (via `faulthandler.dump_traceback`) of the process
-that receives it -- xdist controller AND every worker, since each is a
-separate process and only the worker(s) actually holding a wedged
-lock have anything interesting to dump. Off by default: the handler
-itself is near-zero-cost once installed, but installing a signal handler
-unconditionally in every ordinary test run (most of which never wedge)
-is unnecessary surface area for an ordinary `pytest`/`frob test`
-invocation that has no wedge-diagnosis need. The `coverage:` Makefile
-recipe sets this for exactly the two phases T-1433's incidents wedged in
-(the xdist phase and the `-n 0` serial rerun)."""
-
-
-# frob:ticket T-1433
-def _dump_all_thread_stacks(_signum: int, _frame: object) -> None:
-    """`SIGUSR1` handler (T-1433): write every live thread's stack in
-    THIS process to a per-pid file under `.frob/stackdumps/` so a wedge
-    self-diagnoses instead of leaving only a bare `wchan=futex_wait_queue`
-    with no indication of which lock, in which function, on which of the
-    controller/worker processes. Appends (`"a"`) rather than truncates --
-    a wedge investigated by sending `SIGUSR1` more than once (e.g. once
-    per suspect-narrowing probe) keeps every dump, timestamped by the
-    surrounding `faulthandler.dump_traceback` call's own thread-id/frame
-    text, not just the last one."""
-    dump_dir = Path(".frob") / "stackdumps"
-    dump_dir.mkdir(parents=True, exist_ok=True)
-    dump_path = dump_dir / f"pid-{os.getpid()}.txt"
-    with dump_path.open("a", encoding="utf-8") as fh:
-        fh.write(f"\n--- SIGUSR1 stack dump, pid={os.getpid()} ---\n")
-        faulthandler.dump_traceback(file=fh, all_threads=True)
-
-
-# frob:ticket T-1433
-# frob:tests tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
-# frob:tests tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
-def _install_stackdump_handler() -> None:
-    """Install `_dump_all_thread_stacks` as the `SIGUSR1` handler for THIS
-    process (T-1433), gated on `_STACKDUMP_ENV` -- called from
-    `pytest_configure` for BOTH the xdist controller and every worker
-    (unlike the T-0885 journal-restore call above, which is
-    controller-only): the wedge this exists to diagnose can live in
-    either, and only sending the signal to the actually-stuck process
-    produces a useful dump. `SIGUSR1` is POSIX-only (absent on Windows,
-    where `signal.SIGUSR1` does not exist); silently a no-op there since
-    the coverage recipe this serves is itself POSIX/Makefile-only."""
-    # frob:waive SEC110 reason="FROB_COVERAGE_STACKDUMP is a boolean opt-in feature \
-    # flag (same shape as the existing FROB_AGENT/FROB_NO_TELEMETRY precedent), gating \
-    # whether a SIGUSR1 stack-dump handler is installed; it carries no \
-    # secret/confidential value"
-    value = os.environ.get(_STACKDUMP_ENV, "")
-    if value.strip().lower() in ("", "0", "false"):
-        return
-    sigusr1 = getattr(signal, "SIGUSR1", None)
-    if sigusr1 is None:  # pragma: no cover - POSIX-only, not exercised on Windows CI
-        return
-    signal.signal(sigusr1, _dump_all_thread_stacks)
+"""T-1433/T-1466: the SIGUSR1 stack-dump handler itself now lives in
+`frob.testing._stackdump` (any frob process can opt in, not just pytest --
+see that module's docstring for the WIRE001/reachability motivation).
+`_STACKDUMP_ENV`/`_install_stackdump_handler` are re-exported here under
+their ORIGINAL private names purely for source-compat with this file's
+own pre-existing callers below and `tests/unit/test_conftest_stackdump.py`
+-- `pytest_configure`'s install timing (every xdist worker, unlike the
+controller-only journal restore) is still real, pytest-specific wiring
+this file owns."""
 
 
 # frob:ticket T-0885
@@ -153,7 +102,9 @@ def pytest_collection_modifyitems(
 
 # frob:ticket T-0885
 # frob:ticket T-1433
-# frob:tests tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal \
+# kind="unit"
 def pytest_configure(config: pytest.Config) -> None:
     """Restore any leftover mutation-journal backup at the START of the
     whole pytest session (T-0885), generalizing T-0857's `run_mutations`-
