@@ -5,7 +5,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-08-06'
-priority: high
+priority: critical
 parent: null
 tier: epic
 sprint: null
