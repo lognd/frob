@@ -7641,6 +7641,72 @@ class TestSyncGateRulesCallback:
         assert _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
 
 
+class TestSyncGateRulesForLandDiffTarget:
+    """T-1805 regression: `_sync_gate_rules_for_land`'s trigger diff must
+    watch `src/frob/gates/_waive.py`, where `_KNOWN_GATE_RULES` has lived
+    since T-1072 moved it out of `src/frob/gates/__init__.py`. Before the
+    fix, a commit that only edited `_waive.py` (the ordinary shape of
+    "add one rule id") never appeared in the old __init__.py-only diff, so
+    the auto-sync silently no-oped on every real change -- confirmed root
+    cause of PERF012/SYS108 landing unregistered."""
+
+    def test_edit_to_waive_py_is_detected(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget.test_edit_to_waive_py_is_detected  # noqa: E501
+        from frob.app.ticket_runner import _sync_gate_rules_for_land
+
+        pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
+        waive_path = repo / "src" / "frob" / "gates" / "_waive.py"
+        waive_path.parent.mkdir(parents=True, exist_ok=True)
+        waive_path.write_text(
+            "_KNOWN_GATE_RULES = frozenset({'SOME001'})\n", encoding="utf-8"
+        )
+        run_argv(["git", "-C", str(repo), "add", "-A"])
+        run_argv(
+            ["git", "-C", str(repo), "commit", "-m", "add rule id"]
+        )
+
+        called: list[str] = []
+
+        def _fake_scan(_root: Path):  # noqa: ANN202
+            called.append("scanned")
+            return frozenset({"SOME001"})
+
+        # `_sync_gate_rules_for_land` imports `generated_gate_rule_ids`
+        # locally at call time, so patching the source module's attribute
+        # (rather than any already-bound name) is what the local import
+        # actually re-resolves against.
+        import frob.gates._rule_id_scan as _rule_id_scan_mod
+
+        old_real = _rule_id_scan_mod.generated_gate_rule_ids
+        _rule_id_scan_mod.generated_gate_rule_ids = _fake_scan
+        try:
+            result = _sync_gate_rules_for_land(repo, pre_land_tip)
+        finally:
+            _rule_id_scan_mod.generated_gate_rule_ids = old_real
+
+        assert result.is_ok
+        # the scanner must actually have been invoked -- proof the diff
+        # against _waive.py was recognized as containing _KNOWN_GATE_RULES,
+        # not silently short-circuited to Ok(None) the way the pre-fix
+        # __init__.py-only diff target always did for this exact shape.
+        assert called == ["scanned"]
+
+    def test_unrelated_waive_py_edit_is_noop(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget.test_unrelated_waive_py_edit_is_noop  # noqa: E501
+        from frob.app.ticket_runner import _sync_gate_rules_for_land
+
+        pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
+        waive_path = repo / "src" / "frob" / "gates" / "_waive.py"
+        waive_path.parent.mkdir(parents=True, exist_ok=True)
+        waive_path.write_text("# no rule-id literal here\n", encoding="utf-8")
+        run_argv(["git", "-C", str(repo), "add", "-A"])
+        run_argv(["git", "-C", str(repo), "commit", "-m", "unrelated edit"])
+
+        result = _sync_gate_rules_for_land(repo, pre_land_tip)
+        assert result.is_ok
+        assert result.danger_ok is None
+
+
 # frob:ticket T-0757
 _RANKS = (0, 1, 2, 2, 3, 3)  # queued, planned, in-progress, blocked, dropped, done
 _STATE_BY_RANK: dict[int, tuple[TicketState, ...]] = {

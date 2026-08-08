@@ -1624,7 +1624,7 @@ def _land_bump_version_fn():  # noqa: ANN201
 def _land_sync_gate_rules_fn():  # noqa: ANN201
     """CLI closure (T-1011): `land()` calls this AFTER the REL001 bump is
     staged onto `root`, letting a landing that changes `_KNOWN_GATE_RULES`
-    (`src/frob/gates/__init__.py`) auto-file the matching `check-coverage.
+    (`src/frob/gates/_waive.py`, since T-1072) auto-file the matching `check-coverage.
     yaml` rows in the SAME commit -- ending the manual `frob registry audit
     --sync-gate-rules` re-sync docs/audits/coordination-churn.md's item 6
     disclosed drifting twice in one drive. `frob.gates`/`frob.registry`
@@ -1638,17 +1638,22 @@ def _land_sync_gate_rules_fn():  # noqa: ANN201
 
 
 # frob:ticket T-1011
+# frob:ticket T-1805
 def _sync_gate_rules_for_land(root: Path, pre_land_tip: str):  # noqa: ANN201
-    """The body of `_land_sync_gate_rules_fn`'s callback (T-1011): diffs
-    `root`'s just-squashed working tree against `pre_land_tip` for
-    `src/frob/gates/__init__.py`; if `_KNOWN_GATE_RULES` does not appear in
-    that diff, nothing needs syncing (`Ok(None)`, the common case). If it
-    does, scans `root`'s ON-DISK tree (`generated_gate_rule_ids`, the T-0964
-    scanner -- never a live `frob.gates` import, which would read THIS
-    process's own already-imported module, not root's freshly-squashed
-    source) for the live rule-id set and appends any `check-coverage.yaml`
-    row still missing one (`sync_gate_rule_entries`), staging the result.
-    A registry-level failure (missing/malformed `check-coverage.yaml`) is
+    """The body of `_land_sync_gate_rules_fn`'s callback (T-1011, fixed by
+    T-1805): diffs `root`'s just-squashed working tree against
+    `pre_land_tip` for `src/frob/gates/_waive.py` -- the file that has
+    actually held the `_KNOWN_GATE_RULES` frozenset literal since T-1072
+    moved it out of `src/frob/gates/__init__.py` (which now only imports
+    and consumes the name, never edits it when a rule id is appended); if
+    `_KNOWN_GATE_RULES` does not appear in that diff, nothing needs syncing
+    (`Ok(None)`, the common case). If it does, scans `root`'s ON-DISK tree
+    (`generated_gate_rule_ids`, the T-0964 scanner -- never a live
+    `frob.gates` import, which would read THIS process's own
+    already-imported module, not root's freshly-squashed source) for the
+    live rule-id set and appends any `check-coverage.yaml` row still
+    missing one (`sync_gate_rule_entries`), staging the result. A
+    registry-level failure (missing/malformed `check-coverage.yaml`) is
     logged and treated as `Ok(None)` -- best-effort, not a landing-critical
     guarantee the way a REL001 version bump is; only a git staging failure
     (a genuinely broken working tree) escalates to `Err(GitFailed)`, which
@@ -1666,7 +1671,7 @@ def _sync_gate_rules_for_land(root: Path, pre_land_tip: str):  # noqa: ANN201
             "diff",
             pre_land_tip,
             "--",
-            "src/frob/gates/__init__.py",
+            "src/frob/gates/_waive.py",
         ]
     )
     if diffed.is_err:

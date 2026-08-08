@@ -2,7 +2,7 @@
 id: T-1805
 title: land-time _KNOWN_GATE_RULES auto-sync watches the wrong file since the T-1072
   split
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -13,8 +13,18 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: add regression test for the _waive.py diff-target fix
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget::test_edit_to_waive_py_is_detected
+- tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget::test_unrelated_waive_py_edit_is_noop
 designated_repro_test: null
 threat: null
 component: null
