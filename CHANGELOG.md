@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.411.0] - unreleased
+
+- T-1843: wire find_policy_weakenings (INV-051) into a frob check gate over design/ policies
+
 ## [0.410.0] - unreleased
 
 - T-1695: Verify-worker resource budget: never starve foreground agents

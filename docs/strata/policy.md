@@ -59,6 +59,7 @@ refinement error).
 <!-- frob:invariant INV-051 -->
 <!-- frob:describes src/frob/strata/_policy.py::PolicyWeakening -->
 <!-- frob:describes src/frob/strata/_policy.py::find_policy_weakenings -->
+<!-- frob:describes src/frob/gates/_policy_weakening_gate.py::policy_weakening_gate -->
 
 `find_policy_weakenings` is the enforcing code: for every pair of
 `CompiledPolicy` whose `node_ids` sets are related by strict containment
@@ -92,11 +93,19 @@ Deliberately silent when the child never re-declares a given target at
 all -- TIER-2 conformance enforcement applies the UNION of every policy
 whose scope covers a node (docs/strata/policy.md#compilation), so an
 untouched target is inheritance, not weakening. This pass is TIER-1 only
-(a pure diff over already-compiled `CompiledPolicies`, no gate wiring
-yet) -- a `frob check` gate that calls it over the real `design/`
-policies is a disclosed follow-up, not part of this ticket's scope
-(`docs/strata/policy.md`, `src/frob/strata/_policy.py`,
-`tests/unit/strata/test_policy.py`).
+(a pure diff over already-compiled `CompiledPolicies`).
+
+**T-1843: wired into a real `frob check` gate.**
+`frob.gates._policy_weakening_gate.policy_weakening_gate` (rule
+`INV051`) loads+elaborates every `.strata` file under `design/` (or
+`[strata].design_dir`) the same way `frob.gates.sys_gate` does, compiles
+the merged `PolicyDecl`s it finds against the merged `KernelModel`
+(`compile_policies`), and runs `find_policy_weakenings` over the result --
+opt-in behind a `design/` directory existing, silent on any design load
+failure (SYS004 reports that separately) or when no policies are
+declared. `forbid_call`/`forbid_import` stay excluded per the bullet
+above; the gate surfaces whatever `find_policy_weakenings` itself
+returns and adds no filtering of its own.
 
 ## Compilation
 
@@ -104,6 +113,16 @@ policies is a disclosed follow-up, not part of this ticket's scope
 <!-- frob:describes src/frob/strata/_policy.py::CompiledPolicy -->
 <!-- frob:describes src/frob/strata/_policy.py::CompiledPolicies -->
 <!-- frob:describes src/frob/strata/_policy.py::CompiledPolicies.enabling -->
+<!-- frob:describes src/frob/strata/_design_load.py::DesignIds -->
+
+T-1843: `DesignIds.policies` (`frob.strata._design_load`) carries every
+loaded `.strata` file's parsed `Module.policies`, merged pre-elaboration
+across files -- the same "not a `KernelModel`-level fact, only the parsed
+`Module` has it" limitation `DesignIds.resources`/`store_ids` already
+document. A caller that needs `compile_policies(module, model)` builds a
+throwaway `Module(name=..., policies=design_ids.policies)` against
+`design_ids.models[0]`, exactly as `frob.gates._policy_weakening_gate`
+does.
 
 Surface patterns (`call`, `import`, `attribute`, `decorator`, `arg`,
 `string`) compile to per-language tree-sitter queries across all

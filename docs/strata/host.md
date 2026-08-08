@@ -832,6 +832,14 @@ build a throwaway `Module(name=..., resources=ids.resources)` to pass
 in, since `.resources` is the only field either check reads off a
 `Module` argument.
 
+T-1843 adds a sibling field the SAME way: `DesignIds.policies: tuple[
+PolicyDecl, ...]`, unrelated to resource contention itself but collected
+by the identical pre-elaboration merge this section documents for
+`.resources` -- `frob.gates._policy_weakening_gate.policy_weakening_gate`
+(INV051, docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482)
+builds its own throwaway `Module(name=..., policies=ids.policies)` the
+same way, against `ids.models[0]`.
+
 ## See also
 
 - `docs/commands/deploy.md` -- `frob deploy generate`, DEPLOY001, and the

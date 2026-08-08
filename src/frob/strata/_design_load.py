@@ -30,7 +30,7 @@ from frob.excludes import is_excluded, iter_files, load_exclude_globs
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 
-from ._ast import Module, ResourceDecl
+from ._ast import Module, PolicyDecl, ResourceDecl
 from ._errors import StrataError
 from ._models import KernelModel
 from ._multifile import FileModule, elaborate_merged
@@ -108,6 +108,17 @@ class DesignIds:
     #: throwaway `Module(name=..., resources=ids.resources)` to pass in,
     #: since neither check needs any OTHER `Module` field.
     resources: tuple[ResourceDecl, ...] = ()
+    #: T-1843: every `PolicyDecl` (`_ast.py::PolicyDecl`) any loaded `.strata`
+    #: file's parsed `Module.policies` declared, pre-elaboration, merged
+    #: across every file -- same "not a KernelModel-level fact" limitation
+    #: `resources`/`store_ids` above already document (a policy's scope
+    #: resolves against the elaborated model, but the decl itself lives
+    #: only in the parsed `Module`, which this dataclass otherwise
+    #: discards). This is what `frob.gates` INV-051 wiring needs to build
+    #: the throwaway `Module(name=..., policies=ids.policies)` that
+    #: `frob.strata.compile_policies` takes alongside `models[0]`.
+    # frob:doc docs/strata/policy.md#compilation
+    policies: tuple[PolicyDecl, ...] = ()
 
 
 def _strata_files(
@@ -142,6 +153,7 @@ def _load_all_design_files(
     list[ResourceDecl],
     list[DesignLoadError],
     list[KernelModel],
+    list[PolicyDecl],
 ]:
     """Load+merge every `.strata` file in `paths`. Parsing is per-file
     (a read/parse failure in one file is collected and every OTHER file
@@ -156,6 +168,7 @@ def _load_all_design_files(
     parsed_files: list[FileModule] = []
     store_ids: set[str] = set()
     resources: list[ResourceDecl] = []
+    policies: list[PolicyDecl] = []
     errors: list[DesignLoadError] = []
     for path in paths:
         rel, module, error = _parse_one_design_file(root, path)
@@ -166,6 +179,7 @@ def _load_all_design_files(
         parsed_files.append((rel, module))
         store_ids.update(store.id for store in module.stores)
         resources.extend(module.resources)
+        policies.extend(module.policies)
 
     channels: set[str] = set()
     boundaries: set[str] = set()
@@ -191,7 +205,7 @@ def _load_all_design_files(
             secrets.update(
                 node.id for node in model.nodes if node.clearance == "Secret"
             )
-    return channels, boundaries, secrets, store_ids, resources, errors, models
+    return channels, boundaries, secrets, store_ids, resources, errors, models, policies
 
 
 def _parse_one_design_file(
@@ -231,7 +245,7 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     root = Path(root)
     exclude_globs = load_exclude_globs(root)
     paths = _strata_files(root, root / design_dir, exclude_globs)
-    channels, boundaries, secrets, store_ids, resources, errors, models = (
+    channels, boundaries, secrets, store_ids, resources, errors, models, policies = (
         _load_all_design_files(root, paths)
     )
 
@@ -253,6 +267,7 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
         models=tuple(models),
         store_ids=frozenset(store_ids),
         resources=tuple(resources),
+        policies=tuple(policies),
     )
 
 
@@ -282,7 +297,8 @@ def unbound_constructs(
     }
     unbound: list[tuple[EdgeKind, str]] = []
     for kind in kinds:
-        # frob:waive PERF004 reason="ids_by_kind.get(kind, ...) is this loop's own per-kind distinct set, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="ids_by_kind.get(kind, ...) is this loop's own \
+        # per-kind distinct set, not a shared re-sort"
         for construct_id in sorted(ids_by_kind.get(kind, frozenset())):
             if construct_id not in bound[kind]:
                 unbound.append((kind, construct_id))

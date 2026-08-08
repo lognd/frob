@@ -314,9 +314,7 @@ def _pairwise_weakenings(
 # frob:invariant INV-051
 # invariant spec: [INV-051](invariants/INV-051.md)
 # frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
-# frob:waive WIRE001 reason="T-1482 built this as a pure TIER-1 diff pass proving \
-# INV-051; gate wiring over the real design/ policies is a separate, deliberately \
-# out-of-scope follow-up" follow_up="T-1843"
+# frob:ticket T-1843
 # frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_confine_use_broadened_home_detected  # noqa: E501
 # frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_at_call_require_dropped_arg_detected  # noqa: E501
 # frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_mediate_swapped_mediator_detected  # noqa: E501

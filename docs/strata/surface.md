@@ -909,6 +909,16 @@ contention`'s optional `module=` need to resolve a `lock`/
 `arbitrated_by` arbiter, without re-parsing every design file a second
 time (docs/strata/host.md#cli-dispatch--waiver-channel-t-1061).
 
+T-1843: `DesignIds` gained a `policies: tuple[PolicyDecl, ...]` field, the
+same pattern `resources` above already established -- off each file's
+parsed, pre-elaboration `Module.policies`, since `compile_policies`
+needs both the parsed `PolicyDecl`s and the elaborated `KernelModel`, and
+only the latter survives inside a bare `KernelModel`. This is what
+`frob.gates._policy_weakening_gate.policy_weakening_gate` (INV051,
+docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482) uses to run
+`find_policy_weakenings` over the real `design/` policies without
+re-parsing.
+
 `frob.gates.sys_gate` (opt-in: runs only when a `design/`, or
 `[strata].design_dir`, directory of `.strata` files exists, same posture
 as `decisions_gate`) loads every non-excluded file under that directory

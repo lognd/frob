@@ -89,6 +89,7 @@ from frob.gates._debt_deprecated import (
 )
 from frob.gates._decisions_compliance import compliance_gate, decisions_gate
 from frob.gates._design_invariants import inv007_violations, inv008_violations
+from frob.gates._policy_weakening_gate import policy_weakening_gate
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._docenum import docenum001_gate
 from frob.gates._doclink_docanchor import (
@@ -6261,6 +6262,9 @@ def _build_thread_jobs(
             # `frob.gates._design_invariants`.
             *inv007_violations(st.repo_root, st.snapshot),
             *inv008_violations(st.snapshot),
+            # T-1843: INV-051 refinement-monotonicity, run for real over
+            # design/ -- see `frob.gates._policy_weakening_gate`.
+            *policy_weakening_gate(st.repo_root),
         ),
         "test": lambda: test_gate(
             st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
@@ -7647,6 +7651,7 @@ __all__ = [
     "invalidate_gate_cache",
     "inv007_violations",
     "inv008_violations",
+    "policy_weakening_gate",
     "invariant_gate",
     "known_gate_rule_ids",
     "_UNWAIVABLE_RULES",

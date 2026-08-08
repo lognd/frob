@@ -174,6 +174,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1486
 # frob:ticket T-1733
 # frob:ticket T-1763
+# frob:ticket T-1843
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -220,6 +221,9 @@ _KNOWN_GATE_RULES = frozenset(
         # forms -- see `frob.gates._design_invariants`.
         "INV007",
         "INV008",
+        # T-1843: refinement-monotonicity over the real design/ policies --
+        # see `frob.gates._policy_weakening_gate`.
+        "INV051",
         "TEST001",
         "TEST002",
         "TEST003",
