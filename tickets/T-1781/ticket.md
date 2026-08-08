@@ -1,7 +1,7 @@
 ---
 id: T-1781
 title: Wire DOCENUM001 to the gates.md rule-catalog table via _KNOWN_GATE_RULES
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -12,8 +12,17 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/gates.md
+- tickets/T-1781/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-1781/ticket.md
+  reason: v2 ledger per-ticket file
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
