@@ -1,8 +1,8 @@
 ---
 id: T-1836
 title: SCOPE001 fires on every ticket's own tickets/T-XXXX/ticket.md (stale LEDGER_PATH)
-state: queued
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-08'
 priority: medium
@@ -14,6 +14,10 @@ scope:
 - src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_tickets.py::TestScopeMatching::test_own_shard_always_in_scope
+kind_history:
+- 2026-08-08 bug->docs evidence=1 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
