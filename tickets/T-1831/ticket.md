@@ -15,11 +15,16 @@ scope:
 - src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
-anchor: false
-anchor_reason: null
+anchor: true
+anchor_reason: permanent WIRE001 follow_up anchor -- _GroupedHelpFormatter and its
+  callback methods are genuinely wired via argparse formatter_class, which the best-effort
+  callgraph cannot trace; never any code to write; must never reach a terminal state
+  or WIRE002 orphans
 ---
 T-1571's _GroupedHelpFormatter (src/frob/__main__.py) and its two methods
 (_format_action, _format_grouped_subparsers) are genuinely wired -- passed
