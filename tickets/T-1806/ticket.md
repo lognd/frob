@@ -2,7 +2,7 @@
 id: T-1806
 title: 'Generalize lease staleness: path-gone, ticket-gone, and holder-dead are all
   the same check'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -14,8 +14,40 @@ runs_last: false
 scope:
 - src/frob/tickets/_leases.py
 - src/frob/app/worktree_runner.py
+- tests/test_ticket_leases.py
+- design/frob.strata
+- tickets/T-1806/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: add unit tests for the unified lease-staleness predicate
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/frob.strata
+  reason: sys sync-interface writes design/frob.strata for the new public symbol;
+    the v2 ledger's own ticket file needs to be in scope for SCOPE001 (LEDGER_PATH's
+    implicit-scope rule only covers legacy tickets.md, not v2 per-ticket files)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1806/ticket.md
+  reason: sys sync-interface writes design/frob.strata for the new public symbol;
+    the v2 ledger's own ticket file needs to be in scope for SCOPE001 (LEDGER_PATH's
+    implicit-scope rule only covers legacy tickets.md, not v2 per-ticket files)
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_path_gone
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_gone
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_holder_dead
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_live_lease_is_not_stale
+- tests/test_ticket_leases.py::TestOrphanedLeases::test_finds_a_ticket_gone_lease
+- tests/test_ticket_leases.py::TestOrphanedLeases::test_finds_a_holder_dead_lease
+- tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_ticket_gone_lease
+- tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_holder_dead_lease
 designated_repro_test: null
 threat: null
 component: null

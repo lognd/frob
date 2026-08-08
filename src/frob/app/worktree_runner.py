@@ -179,14 +179,17 @@ def _run_remove(path: str, *, dry_run: bool, force: bool) -> None:
 
 
 # frob:ticket T-1789
+# frob:ticket T-1806
 def _run_release_lease(ticket_id: str) -> None:
     """`frob worktree release-lease TICKET-ID` (T-1779 finding 7): the
     safe, scoped path a coordinator now has for exactly the recovery
     T-1766's ghost lease forced by hand (`rm .git/frob-leases/T-1766.json`)
     -- refuses (exit 1) unless `release_orphaned_lease` confirms the
-    lease's recorded worktree path is genuinely gone, so this can never
-    release a lease still pinned to a live worktree by mistake. `root` is
-    resolved from cwd, same convention as `frob worktree remove`."""
+    lease is genuinely stale, by any of `lease_staleness_reason`'s three
+    shapes (T-1806: path-gone, ticket-gone, or holder-dead -- not just
+    path-gone as before), so this can never release a lease still pinned
+    to a live, ticketed, occupied worktree by mistake. `root` is resolved
+    from cwd, same convention as `frob worktree remove`."""
     root = Path(".").resolve()
     result = release_orphaned_lease(root, ticket_id)
     if result.is_err:
@@ -197,9 +200,10 @@ def _run_release_lease(ticket_id: str) -> None:
             )
         elif err is LeaseError.LeaseWorktreeMismatch:
             _log.error(
-                "frob worktree release-lease: %s's lease is not orphaned -- "
-                "its worktree still exists; use `frob worktree remove` "
-                "(and the ordinary ticket-close path) instead",
+                "frob worktree release-lease: %s's lease is not stale -- "
+                "its worktree exists, its ticket is in the ledger, and a "
+                "process holds it; use `frob worktree remove` (and the "
+                "ordinary ticket-close path) instead",
                 ticket_id,
             )
         else:

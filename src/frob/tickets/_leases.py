@@ -552,18 +552,99 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     return Ok(None)
 
 
+# frob:ticket T-1806
+# frob:doc docs/modules/tickets.md#orphaned-lease-detection-and-release-t-1779-finding-7
+# frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_path_gone
+# frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_ticket_gone
+# frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_holder_dead
+# frob:tests \
+# tests/test_ticket_leases.py::TestLeaseStalenessReason.test_live_lease_is_not_stale
+def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
+    """Unifies the three independent orphaned-lease shapes T-1806 found
+    (the coordinator hit all three in one session, each refusing the
+    other's recovery verb): `"path-gone"` (the recorded worktree path no
+    longer exists on disk at all, T-1789's original and only check),
+    `"ticket-gone"` (the path still exists, but `record.ticket_id` is
+    absent from `root`'s own authoritative ledger -- a DRAFT that only
+    ever lived in a retired worktree's LOCAL ledger, never promoted to
+    main; this is the shape that hard-deadlocked the T-1806 incident,
+    since `frob ticket drop` cannot release a lease for a ticket it
+    cannot find), and `"holder-dead"` (path and ticket both exist, the
+    lease has gone past `is_lease_ttl_expired`'s horizon, AND no live
+    process is cwd'd into the worktree -- `scan_for_live_worktree_
+    process`, already built for T-1739's sweep gate, just never run
+    against a HELD lease before this). Returns `None` if none of the
+    three holds -- the lease is genuinely live, by every check this repo
+    can make.
+
+    Deliberately ONE predicate, not three special cases bolted together
+    (T-1806's own framing): every caller that needs to know "can this
+    lease be released" asks this single question, and adding a fourth
+    staleness shape later means widening this function once rather than
+    re-auditing every caller that currently only checks path-gone.
+
+    `"holder-dead"` is deliberately gated on `is_lease_ttl_expired` too,
+    not `scan_for_live_worktree_process` alone: a dispatched agent's own
+    worktree has NO persistent process sitting cwd'd into it between tool
+    calls -- only while a command is actually running there (T-1739's own
+    sweep treats a live-process finding as one signal layered UNDER the
+    lease/age gates for exactly this reason, never as the sole arbiter of
+    staleness by itself). An un-gated check would misjudge every
+    ordinary, actively-worked ticket as `"holder-dead"` the instant no
+    command happened to be executing in it at scan time. Requiring the
+    TTL to have ALSO elapsed (the same 6-hour horizon `read_all_leases`'s
+    own path-liveness pruning already uses to tell a crashed agent from a
+    slow-but-live one) keeps this check aligned with the rest of the
+    module's staleness posture instead of inventing a second, stricter
+    one just for this one shape.
+
+    Checks run cheapest-and-most-common-first, each short-circuiting the
+    rest: `Path.exists()` is far cheaper than a ledger load, which is in
+    turn cheaper than a `/proc` walk. Deferred ticket-ledger import
+    (`frob.tickets._archive.load_queue`) avoids the import cycle
+    `_archive.py` already has back onto this module (it imports `read_
+    all_leases` from here); an unreadable/malformed ledger degrades to
+    "cannot confirm ticket-gone" (never a false-positive release) and
+    falls through to the holder-dead check instead."""
+    if not Path(record.worktree).exists():
+        return "path-gone"
+
+    from frob.tickets._archive import load_queue
+
+    queue = load_queue(root)
+    if queue.is_ok and record.ticket_id not in queue.danger_ok.tickets:
+        return "ticket-gone"
+
+    if is_lease_ttl_expired(record) and scan_for_live_worktree_process(
+        Path(record.worktree)
+    ) is None:
+        return "holder-dead"
+
+    return None
+
+
 # frob:ticket T-1789
+# frob:ticket T-1806
 # frob:doc docs/modules/tickets.md#orphaned-lease-detection-and-release-t-1779-finding-7
 # frob:tests tests/test_ticket_leases.py::TestOrphanedLeases.test_finds_a_lease_pointing_at_a_gone_worktree  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestOrphanedLeases.test_live_worktree_lease_is_not_orphaned  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedLeases.test_finds_a_ticket_gone_lease
+# frob:tests \
+# tests/test_ticket_leases.py::TestOrphanedLeases.test_finds_a_holder_dead_lease
 def orphaned_leases(root: Path) -> tuple[_LeaseRecord, ...]:
-    """Every lease `read_all_leases(root)` reports whose recorded
-    `worktree` path no longer exists on disk at all (T-1779 finding 7):
-    T-1766 was held by a lease naming a NESTED worktree
+    """Every lease `read_all_leases(root)` reports that `lease_staleness_
+    reason` judges stale, by ANY of its three independent shapes (T-1806
+    generalization -- this used to check path-gone alone, T-1779 finding
+    7): T-1766 was held by a lease naming a NESTED worktree
     (`.../agent-X/.claude/worktrees/t-1766`) whose PARENT worktree had
     already been retired and removed, taking the nested one with it --
     `frob ticket doable` correctly refused to offer T-1766 forever, and
-    nothing in the system ever reported why.
+    nothing in the system ever reported why. A later incident (T-1806)
+    found two MORE shapes the path-only check could not see at all: a
+    lease naming a ticket id absent from the ledger (a promoted-nowhere
+    draft), and a lease whose path and ticket both still exist but whose
+    holder process is simply gone.
 
     Deliberately built on the RAW parse (`_parse_lease_files_cached`),
     NOT `read_all_leases` -- this is the exact bug T-1766 hit. `read_
@@ -577,13 +658,9 @@ def orphaned_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     included) and never unlinked either -- it persists on disk, invisible,
     forever. That is precisely "a gate that lies by omission": nothing
     ever reports it, and no amount of waiting clears it. This function
-    surfaces BOTH shapes (confirmed-absent-not-yet-unlinked-this-pass,
-    and ambiguous) via a cheaper, unambiguous question a REPORT actually
-    wants answered -- `Path(lease.worktree).exists()` -- deliberately
-    simpler than `_probe_worktree_liveness`'s three-way split, since a
-    report (never a destructive unlink) can afford to treat "cannot
-    confirm" the same as "looks gone" and let a human decide via
-    `release_orphaned_lease`'s own confirmation step."""
+    surfaces every shape via `lease_staleness_reason`'s own report-safe
+    (never destructive) checks, and lets a human decide via `release_
+    orphaned_lease`'s own confirmation step."""
     resolved = leases_dir(root)
     if resolved.is_err:
         return ()
@@ -592,35 +669,45 @@ def orphaned_leases(root: Path) -> tuple[_LeaseRecord, ...]:
         return ()
     current_paths = sorted(leases_root.glob("*.json"))
     parsed = _parse_lease_files_cached(leases_root, current_paths)
-    return tuple(record for record in parsed if not Path(record.worktree).exists())
+    return tuple(
+        record for record in parsed if lease_staleness_reason(root, record) is not None
+    )
 
 
 # frob:ticket T-1789
+# frob:ticket T-1806
 # frob:doc docs/modules/tickets.md#orphaned-lease-detection-and-release-t-1779-finding-7
 # frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_releases_a_genuinely_orphaned_lease  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_refuses_a_live_worktree_lease  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_refuses_an_unknown_ticket_id  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_releases_a_ticket_gone_lease  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_releases_a_holder_dead_lease  # noqa: E501
 def release_orphaned_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     """`frob worktree release-lease TICKET-ID` (T-1779 finding 7): the
     SAFE, scoped alternative to a coordinator deleting a lease file by
     hand (`rm .git/frob-leases/T-1766.json`, the actual recovery T-1779's
     sixth incident forced) -- releases exactly ONE ticket's lease, and
-    ONLY if `orphaned_leases` confirms its recorded worktree path is
-    genuinely gone. Unlike the unconditional `release_lease` (called
-    internally by `transition` on every exit from `IN_PROGRESS`, where
-    unconditional-safety is the correct contract), this refuses to touch
-    a lease still pointing at a real, existing worktree -- the whole
-    point of a TARGETED release verb is that a coordinator holding
-    several live agents can free one confirmed-dead lease without a
-    fleet-wide `frob worktree sweep` (unsafe with live agents) and
-    without a risk of releasing a live one by mistake.
+    ONLY if `lease_staleness_reason` confirms it is genuinely stale, by
+    ANY of its three shapes (T-1806 generalization: this used to check
+    only "worktree path gone"; a lease naming a ticket absent from the
+    ledger -- a promoted-nowhere draft -- used to hard-deadlock here with
+    `Err(NoLeaseForTicket)` from `frob ticket drop`'s own side, since
+    neither verb could resolve the id, exactly the T-1806 incident).
+    Unlike the unconditional `release_lease` (called internally by
+    `transition` on every exit from `IN_PROGRESS`, where unconditional-
+    safety is the correct contract), this refuses to touch a lease that
+    `lease_staleness_reason` judges still live -- the whole point of a
+    TARGETED release verb is that a coordinator holding several live
+    agents can free one confirmed-dead lease without a fleet-wide `frob
+    worktree sweep` (unsafe with live agents) and without a risk of
+    releasing a live one by mistake.
 
     `Err(NoLeaseForTicket)` if `ticket_id` has no lease at all.
-    `Err(LeaseWorktreeMismatch)` (repurposed here as "not orphaned" --
-    the lease's worktree path DOES exist) if the lease is not actually
-    orphaned; the caller wanting to release a live worktree's lease
-    anyway should use `frob worktree remove <path> --force` plus the
-    ordinary ticket-close path, not this verb.
+    `Err(LeaseWorktreeMismatch)` (repurposed here as "not stale" -- none
+    of `lease_staleness_reason`'s three checks fired) if the lease is not
+    actually orphaned; the caller wanting to release a live worktree's
+    lease anyway should use `frob worktree remove <path> --force` plus
+    the ordinary ticket-close path, not this verb.
 
     Looks the lease up via the SAME raw-parse path `orphaned_leases`
     uses (`_parse_lease_files_cached`), not `read_all_leases` -- a ghost
@@ -640,18 +727,20 @@ def release_orphaned_lease(root: Path, ticket_id: str) -> Result[None, LeaseErro
             )
     if lease is None:
         return Err(LeaseError.NoLeaseForTicket)
-    if Path(lease.worktree).exists():
+    reason = lease_staleness_reason(root, lease)
+    if reason is None:
         _log.warning(
-            "tickets: %s refused to release lease for %s -- its recorded "
-            "worktree %s still exists; not orphaned",
+            "tickets: %s refused to release lease for %s -- it is still "
+            "live (worktree exists, ticket is in the ledger, and a "
+            "process holds it); not orphaned",
             root,
             ticket_id,
-            lease.worktree,
         )
         return Err(LeaseError.LeaseWorktreeMismatch)
     _log.info(
-        "tickets: releasing orphaned lease for %s (worktree %s no longer exists)",
+        "tickets: releasing orphaned lease for %s (reason=%s, worktree %s)",
         ticket_id,
+        reason,
         lease.worktree,
     )
     return release_lease(root, ticket_id)

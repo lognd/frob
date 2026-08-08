@@ -1393,17 +1393,54 @@ class TestOrphanedLeases:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_leases kind="unit"
+        # T-0001 (a real ticket in `repo`'s ledger, per the fixture) is used
+        # here deliberately, not a fake id like T-9002 -- T-1806's
+        # ticket-gone check would otherwise flag a nonexistent ticket id as
+        # stale regardless of how live its worktree/process actually are,
+        # which is not what this test means to exercise.
         from frob.tickets._leases import orphaned_leases
 
         _write_lease(
             repo,
-            "T-9002",
+            "T-0001",
             second_worktree,
             recorded_at=datetime.now(UTC).isoformat(),
         )
 
         found = orphaned_leases(repo)
         assert found == ()
+
+    def test_finds_a_ticket_gone_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_leases kind="unit"
+        from frob.tickets._leases import orphaned_leases
+
+        _write_lease(
+            repo,
+            "T-draft-ghost",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+
+        found = orphaned_leases(repo)
+        assert [lease.ticket_id for lease in found] == ["T-draft-ghost"]
+
+    def test_finds_a_holder_dead_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_leases kind="unit"
+        from datetime import timedelta
+
+        from frob.tickets._leases import LEASE_TTL_SECONDS, orphaned_leases
+
+        stale_time = (
+            datetime.now(UTC) - timedelta(seconds=LEASE_TTL_SECONDS + 60)
+        ).isoformat()
+        _write_lease(repo, "T-0001", second_worktree, recorded_at=stale_time)
+
+        found = orphaned_leases(repo)
+        assert [lease.ticket_id for lease in found] == ["T-0001"]
 
 
 # frob:ticket T-1789
@@ -1432,6 +1469,9 @@ class TestReleaseOrphanedLease:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        # T-0001 (a real ticket, per the fixture), not a fake id -- see the
+        # sibling comment in TestOrphanedLeases.
+        # test_live_worktree_lease_is_not_orphaned for why.
         from frob.tickets._leases import (
             LeaseError,
             _lease_path,
@@ -1441,14 +1481,14 @@ class TestReleaseOrphanedLease:
 
         _write_lease(
             repo,
-            "T-9002",
+            "T-0001",
             second_worktree,
             recorded_at=datetime.now(UTC).isoformat(),
         )
         leases_root = leases_dir(repo).danger_ok
-        lease_file = _lease_path(leases_root, "T-9002")
+        lease_file = _lease_path(leases_root, "T-0001")
 
-        result = release_orphaned_lease(repo, "T-9002")
+        result = release_orphaned_lease(repo, "T-0001")
         assert result.is_err
         assert result.danger_err == LeaseError.LeaseWorktreeMismatch
         assert lease_file.exists()
@@ -1460,6 +1500,142 @@ class TestReleaseOrphanedLease:
         result = release_orphaned_lease(repo, "T-0000")
         assert result.is_err
         assert result.danger_err == LeaseError.NoLeaseForTicket
+
+    def test_releases_a_ticket_gone_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-1806: a lease naming a ticket id absent from `repo`'s ledger
+        (a draft that only ever lived in a retired worktree's own local
+        ledger) is released even though its worktree path still exists --
+        the exact incident this generalization fixes. Also demonstrates
+        the HARD DEADLOCK this closes: `frob ticket drop` cannot resolve a
+        ticket id that was never promoted to `repo`'s own ledger, so
+        `release_orphaned_lease` is the only path that can ever clear it."""
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from frob.tickets._leases import _lease_path, leases_dir, release_orphaned_lease
+
+        _write_lease(
+            repo,
+            "T-draft-ghost",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-draft-ghost")
+        assert lease_file.exists()
+
+        with pytest.raises(SystemExit):
+            ticket_run(
+                AppConfig(
+                    ticket_command="drop",
+                    ticket_path=repo,
+                    ticket_id="T-draft-ghost",
+                    ticket_reason="test: drop the same ticket-gone id, "
+                    "confirming `frob ticket drop` alone cannot resolve it",
+                )
+            )
+        assert lease_file.exists()
+
+        result = release_orphaned_lease(repo, "T-draft-ghost")
+        assert result.is_ok
+        assert not lease_file.exists()
+
+    def test_releases_a_holder_dead_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-1806: a lease whose worktree and ticket both still exist, but
+        whose TTL has elapsed and no live process occupies the worktree,
+        is released."""
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from datetime import timedelta
+
+        from frob.tickets._leases import (
+            LEASE_TTL_SECONDS,
+            _lease_path,
+            leases_dir,
+            release_orphaned_lease,
+        )
+
+        stale_time = (
+            datetime.now(UTC) - timedelta(seconds=LEASE_TTL_SECONDS + 60)
+        ).isoformat()
+        _write_lease(repo, "T-0001", second_worktree, recorded_at=stale_time)
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+        assert lease_file.exists()
+
+        result = release_orphaned_lease(repo, "T-0001")
+        assert result.is_ok
+        assert not lease_file.exists()
+
+
+# frob:ticket T-1806
+class TestLeaseStalenessReason:
+    """`lease_staleness_reason` -- the single predicate `orphaned_leases`/
+    `release_orphaned_lease` now both build on, unifying the three
+    independent orphaned-lease shapes T-1806 found in one session."""
+
+    def test_path_gone(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"
+        from frob.tickets._leases import _LeaseRecord, lease_staleness_reason
+
+        ghost = repo.parent / "nowhere" / "nested" / "gone"
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("src/feature.py",),
+            worktree=str(ghost),
+            branch="main",
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        assert lease_staleness_reason(repo, record) == "path-gone"
+
+    def test_ticket_gone(self, repo: Path, second_worktree: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"
+        from frob.tickets._leases import _LeaseRecord, lease_staleness_reason
+
+        record = _LeaseRecord(
+            ticket_id="T-draft-ghost",
+            scope=("src/feature.py",),
+            worktree=str(second_worktree),
+            branch="main",
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        assert lease_staleness_reason(repo, record) == "ticket-gone"
+
+    def test_holder_dead(self, repo: Path, second_worktree: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"
+        from datetime import timedelta
+
+        from frob.tickets._leases import (
+            LEASE_TTL_SECONDS,
+            _LeaseRecord,
+            lease_staleness_reason,
+        )
+
+        stale_time = (
+            datetime.now(UTC) - timedelta(seconds=LEASE_TTL_SECONDS + 60)
+        ).isoformat()
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("src/feature.py",),
+            worktree=str(second_worktree),
+            branch="main",
+            recorded_at=stale_time,
+        )
+        assert lease_staleness_reason(repo, record) == "holder-dead"
+
+    def test_live_lease_is_not_stale(self, repo: Path, second_worktree: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"
+        from frob.tickets._leases import _LeaseRecord, lease_staleness_reason
+
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("src/feature.py",),
+            worktree=str(second_worktree),
+            branch="main",
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        assert lease_staleness_reason(repo, record) is None
 
 
 # frob:ticket T-1789
@@ -1496,13 +1672,17 @@ class TestWorktreeReleaseLeaseCli:
         self, repo: Path, second_worktree: Path, capsys
     ) -> None:
         # frob:tests src/frob/app/worktree_runner.py::run kind="unit"
+        # T-0001 (a real ticket, per the fixture), not a fake id -- see the
+        # TestOrphanedLeases.test_live_worktree_lease_is_not_orphaned
+        # comment for why T-1806's ticket-gone check makes a fake id here
+        # falsely stale.
         import os as _os
 
         from frob.app.worktree_runner import run as worktree_run
 
         _write_lease(
             repo,
-            "T-9002",
+            "T-0001",
             second_worktree,
             recorded_at=datetime.now(UTC).isoformat(),
         )
@@ -1510,7 +1690,7 @@ class TestWorktreeReleaseLeaseCli:
         _os.chdir(repo)
         try:
             with pytest.raises(SystemExit) as exc_info:
-                worktree_run(["release-lease", "T-9002"])
+                worktree_run(["release-lease", "T-0001"])
         finally:
             _os.chdir(cwd)
         assert exc_info.value.code == 1
