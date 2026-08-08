@@ -124,11 +124,6 @@ _TIERBDEMO_MARKER_PREFIX = "# frob:tierbdemo "
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierB.test_clean_fix_commits_and_is_reported_fixed \
 # kind="unit"
-# frob:waive WIRE001 reason="synthetic reference handler, T-1262's own acceptance note \
-# explicitly permits a synthetic/test-fixture rule to prove the Tier-B rollback path \
-# end-to-end; 'TIERBDEMO001' is deliberately never a real frob check rule id (module \
-# docstring), so it is intentionally absent from _KNOWN_GATE_RULES -- adding it there \
-# would misrepresent it as something frob check itself can report" follow_up="T-1481"
 # frob:waive EXHAUST003 reason="T-1262: leaked Unknown traces to \
 # path.relative_to/iter_files, cross-module calls the resolver cannot see through; the \
 # one documented raise path (OSError on read_text/write_text) is caught above"
@@ -181,10 +176,6 @@ def fix_tierbdemo001_marker_rewrite(
             except OSError:
                 continue
             rel = path.relative_to(root).as_posix()
-            # frob:waive WIRE001 reason="'TIERBDEMO001' is a deliberately synthetic \
-            # reference-handler rule id (see this function's own docstring), never a \
-            # real frob check rule -- it must stay OUT of _KNOWN_GATE_RULES on \
-            # purpose, not be registered there" follow_up="T-1481"
             applied.append(
                 TierBFix(
                     rule="TIERBDEMO001",
@@ -217,10 +208,7 @@ TIER_B_HANDLERS: dict[str, TierBHandler] = {
 # ---------------------------------------------------------------------------
 
 
-# frob:waive WIRE001 reason="apply_tier_b_fixes's own default gate_runner argument -- \
-# only reachable once T-1481 wires a real --fix caller (or a test) that invokes \
-# apply_tier_b_fixes without overriding gate_runner; the whole engine is deliberately \
-# CLI-uncalled in this ticket's own scope" follow_up="T-1481"
+# frob:ticket T-1481
 def _real_gate_runner(root: Path, gates: frozenset[str]) -> "GateReport | None":
     """The production `gate_runner`: `run_gates` restricted to `gates`,
     or `None` if the run itself errored (a Tier-B commit can never trust
@@ -241,9 +229,7 @@ def _real_gate_runner(root: Path, gates: frozenset[str]) -> "GateReport | None":
     return result.danger_ok
 
 
-# frob:waive WIRE001 reason="apply_tier_b_fixes's own default test_runner argument -- \
-# same CLI-uncalled-until-T-1481 disposition as _real_gate_runner above" \
-# follow_up="T-1481"
+# frob:ticket T-1481
 def _real_test_runner(root: Path, bound_tests: tuple[str, ...]) -> tuple[bool, str]:
     """The production `test_runner`: a subprocess `pytest` invocation
     over exactly `bound_tests`' node ids -- `(True, "")` on an empty
@@ -426,11 +412,7 @@ def _verify_and_decide_one_fix(
 
 
 # frob:doc docs/design/check-fix-engine.md#transaction--rollback-model-tier-b
-# frob:waive WIRE001 reason="the Tier-B transaction engine's own public entry point -- \
-# T-1262's scope is the engine itself (src/frob/gates/_fix_engine_tier_b.py, \
-# tests/test_gates.py only), not the CLI wiring; T-1481 is the open follow-up ticket \
-# that wires a real --fix caller to invoke this, mirroring apply_tier_a_fixes's own \
-# T-1138/T-1260 split" follow_up="T-1481"
+# frob:ticket T-1481
 def apply_tier_b_fixes(
     root: Path,
     snapshot: GraphSnapshot,

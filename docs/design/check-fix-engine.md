@@ -17,13 +17,16 @@ threshold.
   verbatim-split waiver carry -- NOT a new waiver, see anti-goal
   enforcement below). All four are pure Tier-A: each either performs the
   ONE correct rewrite or is a no-op.
-- **`apply_tier_a_fixes` has no CLI entry point.** T-1138's own scope note
-  says so explicitly: `src/frob/app/check_runner.py` and
-  `src/frob/_cli_parsers/_check.py` were out of that ticket's scope.
-  Confirmed by grep: no `--fix`/`Fix` reference exists in either file
-  today. `frob check --fix` is not a runnable command yet -- this design
-  (and its child tickets) is what wires it in.
-  <!-- frob:until T-1481 -->
+- `frob check --fix` is a runnable command: `src/frob/_cli_parsers/
+  _check.py` registers the flag (T-1260), and `src/frob/app/
+  check_runner.py::_apply_tier_a_and_reverify` wires all three tiers into
+  it -- `apply_tier_a_fixes` (T-1138/T-1177, T-1260's own CLI call),
+  `apply_tier_b_fixes` (T-1262's engine, T-1481's CLI call), and
+  `apply_tier_c_fixits` (T-1263's engine, T-1481's CLI call) -- in that
+  order, re-running the gates stage once if Tier A/B fixed or committed
+  anything, then always computing Tier C's `fixits` over whatever the
+  gates stage reports post-fix. See the T-1260/T-1262/T-1263
+  implementation notes below for each engine's own detail.
 
 - `frob doctor` (`src/frob/doctor.py`) diagnoses and reports; it does not
   repair anything. Its two surfaces are native-extension importability
@@ -214,9 +217,13 @@ than a per-rule-id gate subset -- the union computed at this v1's
 granularity is "the whole gates stage", since Tier A rules span several
 different gate families and there is no cheaper reliable way yet to
 select just the affected ones) and folds the residual per-fixed-rule
-violation count into the `fix_report` it returns. Tier B/C are not wired
-here (T-1261+); `fix_report["rolled_back"]`/`["fixits"]` are always `[]`
-for now, never a missing key.
+violation count into the `fix_report` it returns. T-1481 additionally
+wires `apply_tier_b_fixes` (folded into the same `fixed`/`rolled_back`
+counts, since a committed Tier-B fix reports identically to Tier A) and
+`apply_tier_c_fixits` (always run over the post-fix gates state, into
+`fixits`) into the same function -- `fix_report["rolled_back"]`/
+`["fixits"]` carry real content now, never a missing key even when
+empty.
 
 `--fix`'s own exit code/summary line reports three counts every run:
 fixed (Tier A applied + Tier B committed), rolled-back (Tier B reverted,
@@ -247,12 +254,13 @@ reference handler (a `# frob:tierbdemo <replacement>` marker-comment
 rewrite, keyed to a placeholder `TIERBDEMO001` id that is deliberately
 never a real `frob check` rule) proving the full snapshot-apply-verify-
 commit-or-rollback path end-to-end without depending on any real gate
-rule's shape. A real Tier-B handler is a follow-up. Wiring `--fix` to
-call `apply_tier_b_fixes` at all is T-1481, alongside the same ticket's
-Tier-A CLI wiring -- `TIER_B_HANDLERS`/`apply_tier_b_fixes` are not yet
-reachable from any `frob check --fix` invocation, only from this
-module's own tests (`frob:waive WIRE001 ... follow_up="T-1481"` marks
-every such site).
+rule's shape. A real Tier-B handler is a follow-up. T-1481 wired `--fix`
+to call `apply_tier_b_fixes` for real (`_apply_tier_a_and_reverify`,
+above) -- `TIERBDEMO001`'s marker text never appears in this repo's own
+source, so this is an honest no-op on every real `frob check --fix` run
+today, exactly as `apply_tier_a_fixes`'s own T-1260 "no live finding, no
+fix" precedent already established, not a live production handler firing
+silently.
 
 ## `frob doctor` fold-vs-delegate decision
 
@@ -409,11 +417,11 @@ collects the results into the plain list that becomes `--fix --json`'s
 future `fixits` array. The one real emitter shipped: `emit_todo001_fixit`
 for TODO001 (a bare todo/fixme comment with no ticket to bind it to --
 the canonical Tier-C example `_fix_engine.py`'s own module docstring
-already names). Wiring `--fix --json`'s output to include `fixits` at
-all is T-1481, alongside the Tier-A/B CLI wiring -- `TIER_C_EMITTERS`/
-`apply_tier_c_fixits` are not yet reachable from any `frob check --fix`
-invocation, only from this module's own tests (`frob:waive WIRE001 ...
-follow_up="T-1481"` marks the site).
+already names). T-1481 wired `--fix --json`'s output to include real
+`fixits` content -- `_apply_tier_a_and_reverify` calls `apply_tier_c_
+fixits` over the post-Tier-A/B gates state on every `--fix` invocation
+(above), always, independent of whether Tier A/B fixed/rolled back
+anything (Tier C rule ids never overlap Tier A/B's by construction).
 
 ## The two anti-goals, as enforced invariants
 

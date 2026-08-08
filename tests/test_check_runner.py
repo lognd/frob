@@ -1,15 +1,18 @@
-"""`frob.app.check_runner`'s `--fix` CLI wiring (T-1260): `frob check
---fix`'s orchestration of `frob.gates._fix_engine.apply_tier_a_fixes` --
-fixes applied, the union of affected gates re-run once in the same
-invocation, and the fixed/rolled-back/fix-its summary shape `--fix
---json` reports (docs/design/check-fix-engine.md "Gate re-run
-semantics" and "Fix-it emission format")."""
+"""`frob.app.check_runner`'s `--fix` CLI wiring (T-1260/T-1481): `frob
+check --fix`'s orchestration of `frob.gates._fix_engine.
+apply_tier_a_fixes`, `frob.gates._fix_engine_tier_b.apply_tier_b_fixes`,
+and `frob.gates._fix_engine_tier_c.apply_tier_c_fixits` -- fixes applied,
+the union of affected gates re-run once in the same invocation, and the
+fixed/rolled-back/fix-its summary shape `--fix --json` reports
+(docs/design/check-fix-engine.md "Gate re-run semantics" and "Fix-it
+emission format")."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
+import frob.gates as gates_module
 from frob.app.check_runner import (
     _apply_tier_a_and_reverify,
     _fix_report_text,
@@ -17,6 +20,7 @@ from frob.app.check_runner import (
 )
 from frob.app.config import AppConfig
 from frob.check import CheckResult
+from frob.gates._models import GateReport, GateStats, Severity, Violation
 from frob.process.parsers.common import Diagnostic, ToolResult
 
 
@@ -43,7 +47,8 @@ class TestApplyTierAAndReverify:
     # -- acceptance [0]: a live finding is fixed and re-verified clean ------
 
     def test_doc007_finding_fixed_and_reverified_clean(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify kind="unit"  # noqa: E501
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
         root = _doc007_repo(tmp_path)
         cfg = AppConfig(check_fix=True)
         stale_gate_result = ToolResult(
@@ -85,7 +90,8 @@ class TestApplyTierAAndReverify:
     # -- acceptance [1]-adjacent: nothing to fix is an honest no-op ---------
 
     def test_no_tier_a_findings_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify kind="unit"  # noqa: E501
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
         root = tmp_path / "repo"
         (root / "src" / "pkg").mkdir(parents=True)
         (root / "src" / "pkg" / "mod.py").write_text(
@@ -110,7 +116,8 @@ class TestApplyTierAAndReverify:
         TODO001) is never rewritten or reported as fixed, even in the same
         run that fixes a genuine DOC007 finding alongside it -- `--fix`
         only ever touches what its registered handler table covers."""
-        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify kind="unit"  # noqa: E501
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
         root = _doc007_repo(tmp_path)
         other = root / "src" / "pkg" / "other.py"
         other_text = "# TODO: something undone\ndef g():\n    pass\n"
@@ -123,20 +130,103 @@ class TestApplyTierAAndReverify:
         assert all(f["rule"] != "TODO001" for f in fix_report["fixed"])
         assert other.read_text(encoding="utf-8") == other_text
 
+    # -- T-1481: Tier-B is now a real CLI caller, not test-only -------------
+
+    def test_tierbdemo_marker_is_committed_via_tier_b_and_reported_fixed(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1481's Tier-B wiring: a real `# frob:tierbdemo <replacement>`
+        marker (the synthetic reference handler's own trigger shape,
+        `frob.gates._fix_engine_tier_b.fix_tierbdemo001_marker_rewrite`)
+        gets rewritten and reported in `fix_report["fixed"]` -- proving
+        `apply_tier_b_fixes` is reachable from `--fix` for real now, not
+        only from that module's own tests. `affected_gates=("tierbdemo",)`
+        is a placeholder id no real gate ever reports, so the production
+        `_real_gate_runner` re-verification is trivially clean and the fix
+        commits rather than rolling back."""
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        (root / "src" / "pkg" / "mod.py").write_text(
+            "# frob:tierbdemo # replaced\ndef real():\n    pass\n",
+            encoding="utf-8",
+        )
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        cfg = AppConfig(check_fix=True)
+        result = CheckResult(path=str(root), results=[])
+
+        _updated, fix_report = _apply_tier_a_and_reverify(cfg, root, result)
+
+        tierbdemo_fixed = [
+            f for f in fix_report["fixed"] if f["rule"] == "TIERBDEMO001"
+        ]
+        assert len(tierbdemo_fixed) == 1
+        assert fix_report["rolled_back"] == []
+        rewritten = (root / "src" / "pkg" / "mod.py").read_text(encoding="utf-8")
+        assert rewritten.splitlines()[0] == "# replaced"
+
+    # -- T-1481: Tier-C is now a real CLI caller, not test-only -------------
+
+    def test_tier_c_fixit_from_a_todo001_violation_is_included(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-1481's Tier-C wiring: a TODO001 `Violation` reported by the
+        (here, stubbed) post-fix gates run gets a `FixIt` emitted via
+        `emit_todo001_fixit` and included in `fix_report["fixits"]` --
+        proving `apply_tier_c_fixits` is reachable from `--fix` for real
+        now. `frob.gates.run_gates` is stubbed rather than driving TODO001
+        for real (a diff-driven gate needing a git base ref) -- this test
+        is about the CLI wiring reaching Tier C's dispatch table, which
+        `tests/test_gates.py::TestFixEngineTierC` already covers directly
+        for `emit_todo001_fixit`'s own rewrite logic."""
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
+        root = tmp_path / "repo"
+        (root / "src" / "pkg").mkdir(parents=True)
+        (root / "src" / "pkg" / "mod.py").write_text("def real():\n    pass\n")
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        cfg = AppConfig(check_fix=True)
+        result = CheckResult(path=str(root), results=[])
+
+        todo_violation = Violation(
+            rule="TODO001",
+            severity=Severity.WARN,
+            file="src/pkg/mod.py",
+            line=1,
+            message="TODO001: bare TODO/FIXME at src/pkg/mod.py:1; bind it: ...",
+        )
+        stub_report = GateReport(
+            violations=(todo_violation,), waived=(), stats=GateStats()
+        )
+
+        def _fake_run_gates(cfg, use_cache=True):  # noqa: ANN001, ANN202
+            from typani import Ok
+
+            return Ok(stub_report)
+
+        monkeypatch.setattr(gates_module, "run_gates", _fake_run_gates)
+
+        _updated, fix_report = _apply_tier_a_and_reverify(cfg, root, result)
+
+        assert len(fix_report["fixits"]) == 1
+        assert fix_report["fixits"][0]["rule"] == "TODO001"
+        assert fix_report["fixits"][0]["proposed_patch"] is None
+
 
 class TestResultAsJsonWithFix:
     """`_result_as_json_with_fix`: `--fix`'s JSON shape is strictly
     additive over `CheckResult.as_json()` -- acceptance criteria 1/2."""
 
     def test_no_fix_report_is_byte_identical_to_plain_as_json(self) -> None:
-        # frob:tests src/frob/app/check_runner.py::_result_as_json_with_fix kind="unit"  # noqa: E501
+        # frob:tests src/frob/app/check_runner.py::_result_as_json_with_fix kind="unit"
         result = CheckResult(path=".", results=[])
         assert _result_as_json_with_fix(result, None) == result.as_json()
 
     def test_fix_report_adds_fix_key_with_fixits_and_rolled_back_present(
         self,
     ) -> None:
-        # frob:tests src/frob/app/check_runner.py::_result_as_json_with_fix kind="unit"  # noqa: E501
+        # frob:tests src/frob/app/check_runner.py::_result_as_json_with_fix kind="unit"
         result = CheckResult(path=".", results=[])
         fix_report = {"fixed": [], "rolled_back": [], "fixits": []}
 
@@ -149,7 +239,7 @@ class TestResultAsJsonWithFix:
     def test_underlying_result_fields_still_present_alongside_fix_key(
         self,
     ) -> None:
-        # frob:tests src/frob/app/check_runner.py::_result_as_json_with_fix kind="unit"  # noqa: E501
+        # frob:tests src/frob/app/check_runner.py::_result_as_json_with_fix kind="unit"
         result = CheckResult(path="/tmp/x", results=[])
         payload = json.loads(
             _result_as_json_with_fix(

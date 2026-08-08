@@ -350,7 +350,8 @@ def _unknown_project_type_result(root: Path, project_type: str) -> CheckResult:
 
 
 # frob:ticket T-0546
-# frob:tests tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches  # noqa: E501
+# frob:tests \
+# tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches
 def _dispatch_check(cfg: AppConfig, root: Path, project_type: str) -> CheckResult:
     """Run the language-appropriate check stack for `project_type`, or a
     loud CHECK001 error `CheckResult` when `project_type` has no
@@ -675,8 +676,8 @@ def _fix_report_text(fix_report: dict) -> str:
     """The `--fix` summary block appended to `frob check --fix`'s
     human-readable text output: how many fixes were applied, rolled back,
     and left as Tier-C fix-its (T-1260's three-count acceptance shape;
-    rolled-back/fix-its are always `0`/`[]` until T-1261/a later Tier-B/C
-    batch populates them)."""
+    T-1481 wires real Tier-B/C content into `rolled_back`/`fixits`,
+    previously always `[]` since neither engine had a CLI caller yet)."""
     fixed = fix_report.get("fixed", [])
     rolled_back = fix_report.get("rolled_back", [])
     fixits = fix_report.get("fixits", [])
@@ -686,6 +687,13 @@ def _fix_report_text(fix_report: dict) -> str:
     ]
     for f in fixed:
         lines.append(f"  fixed  [{f['rule']}] {f['file']}:{f['line']}  {f['detail']}")
+    for r in rolled_back:
+        lines.append(
+            f"  rolled back  [{r['rule']}] {r['file']}:{r['line']}  "
+            f"{r['regression_detail']}"
+        )
+    for fi in fixits:
+        lines.append(f"  fix-it  [{fi['rule']}] {fi['file']}:{fi['line']}")
     return "\n".join(lines)
 
 
@@ -837,7 +845,8 @@ def _stage_group_names() -> list[str]:
 
 
 # frob:ticket T-0627
-# frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names  # noqa: E501
+# frob:tests \
+# tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names
 def _print_stage_list(cfg: AppConfig) -> None:
     """`frob check --only list`: print every `--only` stage-group alias and
     exit without running any stage (T-0627) -- the discovery step the
@@ -1119,7 +1128,8 @@ def _run_all_stages(
 # frob:ticket T-0419
 # frob:tests tests/system/test_cli_check.py::TestCheckPolyglot.test_unpinned_polyglot_runs_python_stage  # noqa: E501
 # frob:tests tests/system/test_cli_check.py::TestCheckPolyglot.test_pinned_check_type_reports_skipped_line  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckCleanProject.test_clean_code_exits_zero  # noqa: E501
+# frob:tests \
+# tests/system/test_cli_check.py::TestCheckCleanProject.test_clean_code_exits_zero
 # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
@@ -1196,27 +1206,36 @@ def _run_stages_and_report(cfg: AppConfig, root: Path) -> None:
 
 
 # frob:ticket T-1260
+# frob:ticket T-1481
 def _apply_tier_a_and_reverify(
     cfg: AppConfig, root: Path, result: CheckResult
 ) -> tuple[CheckResult, dict]:
     """`frob check --fix`: apply every registered Tier-A auto-fix
-    (`frob.gates._fix_engine.apply_tier_a_fixes`, T-1138/T-1177), then
-    re-run the gates stage ONCE so `result` reflects the post-fix state --
-    T-1260's CLI wiring of that engine. Returns `(updated_result,
-    fix_report)`: `fix_report` always carries `"fixed"`/`"rolled_back"`/
-    `"fixits"` keys (the latter two empty until Tier B/C land, T-1261+),
-    never a missing key, so `--fix --json` output shape never depends on
-    whether anything was actually fixed this run.
+    (`frob.gates._fix_engine.apply_tier_a_fixes`, T-1138/T-1177) and every
+    Tier-B apply-verify-commit-or-rollback fix (`frob.gates.
+    _fix_engine_tier_b.apply_tier_b_fixes`, T-1262), then re-run the gates
+    stage ONCE so `result` reflects the post-fix state, then run every
+    registered Tier-C emitter (`frob.gates._fix_engine_tier_c.
+    apply_tier_c_fixits`, T-1263) over the POST-fix violation set --
+    T-1260/T-1481's CLI wiring of all three engines. Returns
+    `(updated_result, fix_report)`: `fix_report` always carries `"fixed"`/
+    `"rolled_back"`/`"fixits"` keys, never a missing key, so `--fix --json`
+    output shape never depends on whether anything was actually
+    fixed/rolled-back/fixit-emitted this run.
 
     Absolute design constraints (docs/design/check-fix-engine.md): this
     never writes a `frob:waive` directive, never touches `frob.toml` or
-    ratchet state, and applies nothing but the registered Tier-A handler
-    table `apply_tier_a_fixes` itself calls -- this function is a thin
+    ratchet state, and applies nothing but the registered Tier-A/B/C
+    tables those three engines themselves call -- this function is a thin
     CLI-facing wrapper, it does not add any fix logic of its own.
     """
     from frob.app._snapshot import load_or_build_snapshot
     from frob.check._python import _run_gates
+    from frob.gates import GateConfig
+    from frob.gates import run_gates as _raw_run_gates
     from frob.gates._fix_engine import apply_tier_a_fixes
+    from frob.gates._fix_engine_tier_b import apply_tier_b_fixes
+    from frob.gates._fix_engine_tier_c import apply_tier_c_fixits
     from frob.tickets import TicketQueue, load_queue
 
     snapshot = load_or_build_snapshot(root, log_context="check-fix")
@@ -1232,27 +1251,51 @@ def _apply_tier_a_and_reverify(
     else:
         queue = queue_result.danger_ok
 
-    applied = apply_tier_a_fixes(root, snapshot, queue)
+    applied_a = apply_tier_a_fixes(root, snapshot, queue)
+    committed_b, rolled_back_b = apply_tier_b_fixes(root, snapshot, queue)
+    applied = [*applied_a, *committed_b]
     fixed_rules = sorted({f.rule for f in applied})
     fix_report: dict = {
         "fixed": [f.model_dump() for f in applied],
-        "rolled_back": [],
+        "rolled_back": [r.model_dump() for r in rolled_back_b],
         "fixits": [],
     }
-    if not fixed_rules:
-        return result, fix_report
 
-    rerun = _run_gates(
-        root,
+    updated = result
+    if fixed_rules:
+        rerun = _run_gates(
+            root,
+            ticket=cfg.check_ticket,
+            base=cfg.check_base,
+            gates=frozenset(),
+            delta=cfg.check_delta,
+        )
+        rerun_results = rerun if isinstance(rerun, list) else [rerun]
+        kept = [r for r in result.results if not r.tool.startswith("gate")]
+        updated = CheckResult(path=result.path, results=[*kept, *rerun_results])
+        fix_report["residual_by_rule"] = _residual_rule_counts(
+            rerun_results, fixed_rules
+        )
+
+    # T-1481: Tier C never mutates, so it always runs over whatever the
+    # gates stage reports RIGHT NOW (post Tier-A/B, if either fixed
+    # anything) -- a fresh raw `run_gates` call for its `Violation` input,
+    # since `_run_gates`'s own `ToolResult`/`Diagnostic` shape (used for
+    # the rerun above) has no `Violation.rule`-keyed model `TIER_C_
+    # EMITTERS` can dispatch on. Tier-C rule ids never overlap Tier-A/B's
+    # by construction (T-1264's `FixabilityConflict` enforces this
+    # mechanically once it lands), so this is independent of what was
+    # fixed/rolled-back above.
+    gate_cfg = GateConfig(
+        root=str(root),
+        base=cfg.check_base or "main",
         ticket=cfg.check_ticket,
-        base=cfg.check_base,
         gates=frozenset(),
-        delta=cfg.check_delta,
     )
-    rerun_results = rerun if isinstance(rerun, list) else [rerun]
-    kept = [r for r in result.results if not r.tool.startswith("gate")]
-    updated = CheckResult(path=result.path, results=[*kept, *rerun_results])
-    fix_report["residual_by_rule"] = _residual_rule_counts(rerun_results, fixed_rules)
+    raw = _raw_run_gates(gate_cfg)
+    if raw.is_ok:
+        fixits = apply_tier_c_fixits(root, snapshot, raw.danger_ok.violations)
+        fix_report["fixits"] = [f.model_dump() for f in fixits]
     return updated, fix_report
 
 

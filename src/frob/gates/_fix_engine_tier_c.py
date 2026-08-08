@@ -86,10 +86,7 @@ _TODO001_PREFIX = "TODO001:"
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierC.test_todo001_emits_a_fixit_with_no_proposed_p\
 # atch kind="unit"
-# frob:waive WIRE001 reason="only reachable via TIER_C_EMITTERS/ apply_tier_c_fixits, \
-# both of which are themselves only called from this module's own tests until T-1481 \
-# wires a real --fix caller -- the whole Tier-C engine is deliberately CLI-uncalled in \
-# this ticket's own scope" follow_up="T-1481"
+# frob:ticket T-1481
 def emit_todo001_fixit(
     root: Path, snapshot: GraphSnapshot, violation: Violation
 ) -> FixIt | None:
@@ -130,12 +127,7 @@ TIER_C_EMITTERS: dict[str, TierCEmitter] = {
 
 
 # frob:doc docs/design/check-fix-engine.md#fix-it-emission-format-tier-c-for-agents
-# frob:waive WIRE001 reason="apply_tier_c_fixits's own public entry point -- T-1263's \
-# scope is the emitter table/model itself (src/frob/gates/_fix_engine_tier_c.py, \
-# tests/test_gates.py only), not the CLI wiring; T-1481 is the open follow-up ticket \
-# that wires --fix --json's fixits array to call this, mirroring \
-# apply_tier_a_fixes/apply_tier_b_fixes's own T-1138/T-1260/T-1262 split" \
-# follow_up="T-1481"
+# frob:ticket T-1481
 def apply_tier_c_fixits(
     root: Path, snapshot: GraphSnapshot, violations: tuple[Violation, ...]
 ) -> list[FixIt]:
