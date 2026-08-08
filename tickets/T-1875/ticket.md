@@ -2,7 +2,7 @@
 id: T-1875
 title: Orphaned lease outlives in-progress state and frob ticket show reports it over
   the ledger
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -80,3 +80,6 @@ RELATED: T-1868 (scope --add bypasses the lease-conflict check) is the
 same subsystem and the same class of failure -- the lease store and the
 ledger drifting apart with nothing reconciling them. Coordinate; these
 may share a fix site.
+
+## Drop reason
+- 2026-08-08: Filed on a wrong premise; refiled accurately as a successor. I claimed 'frob ticket show trusts the lease over the ledger' was a defect, generalising from one sample without checking the others. Verified since: an agent's in-progress state is committed on ITS OWN BRANCH (git show sweep-regress:tickets/T-1870/ticket.md = in-progress) while main stays queued until land, so on main the lease file is the ONLY authority for in-flight status and show reading it is correct design. The real defect is narrower and still real: no liveness reaping of a lease whose worktree agent has died.
