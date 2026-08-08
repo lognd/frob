@@ -403,6 +403,53 @@ def _restore_lock_version_only_drift(root: Path) -> bool:
     return restored.is_ok and restored.danger_ok.returncode == 0
 
 
+# frob:ticket T-1699
+def _commit_rapid_debt_only_drift(root: Path) -> bool:
+    """Auto-commit `root`'s `rapid-debt.jsonl` (T-1699) when it is the
+    SOLE dirty path -- the race `_commit_rapid_debt`
+    (`frob.app.ticket_runner._rapid_sweep`) leaves open: a rapid land
+    appends its debt line and commits it in two separate steps with no
+    lock held across them (T-1684 deliberately keeps the post-land phase
+    OUTSIDE the land lock), so a second agent's land can observe root
+    dirty with exactly that one line between the append and the commit.
+    Unlike `_restore_lock_version_only_drift`'s uv.lock precedent, this
+    content is real and wanted -- it is COMMITTED, never discarded, since
+    any land-owned `rapid-debt.jsonl` append is always safe and correct
+    to commit on its own (`_commit_rapid_debt`'s own contract: stages and
+    commits that one file, nothing else). Returns `True` (and commits)
+    only when `rapid-debt.jsonl` is the SOLE dirty path; any other drift
+    (a second dirty file, or `rapid-debt.jsonl` alongside anything else)
+    is left completely untouched and this returns `False` so the
+    ordinary DirtyMain refusal still fires unchanged."""
+    status = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if status.is_err or status.danger_ok.returncode != 0:
+        return False
+    dirty_lines = [
+        line
+        for line in status.danger_ok.stdout.splitlines()
+        if line.strip() and not line[3:].strip().startswith(".frob/")
+    ]
+    if len(dirty_lines) != 1 or dirty_lines[0][3:].strip() != "rapid-debt.jsonl":
+        return False
+    staged = run_argv(["git", "-C", str(root), "add", "--", "rapid-debt.jsonl"])
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        return False
+    committed = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "commit",
+            "-m",
+            "chore(rapid): commit a stray rapid-debt.jsonl append "
+            "(T-1699 DirtyMain auto-heal)",
+            "--",
+            "rapid-debt.jsonl",
+        ]
+    )
+    return committed.is_ok and committed.danger_ok.returncode == 0
+
+
 # T-1434: the literal path `frob.gates._coverage._LOCK_REL` names -- NOT
 # imported from there. `frob.gates` already imports FROM `frob.tickets`
 # (e.g. `frob.gates._coverage.enforce_worktree_lease`,
@@ -1571,46 +1618,6 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
     return bool(paths) and all(p in _SWEEP_OWNED_DIRTY_PATHS for p in paths)
 
 
-# frob:ticket T-1795
-def _staged_rapid_debt_ticket(root: Path) -> str | None:
-    """The ticket id actually named in `rapid-debt.jsonl`'s STAGED diff,
-    read SYMBOLICALLY (parsing the real added content, T-1795) rather
-    than guessed from the file's usual owner. T-1755's original
-    `_likely_sweep_authored` named a STATIC ticket pair (T-1699/T-1755,
-    the tickets that BUILT the sweep) whenever this file happened to be
-    the dirty one -- confidently wrong every time, since those are never
-    the ticket that actually wrote the line (a real 2026-08-07 incident:
-    T-1222's sweep child staged this exact file, and the message named
-    T-1699/T-1755 instead, sending three separate agents to debug the
-    wrong ticket). Every `rapid-debt.jsonl` line already carries its own
-    `"ticket": "..."` field (`record_rapid_debt`'s own write shape) --
-    this reads the LAST added line's ticket field directly from `git diff
-    --cached` output, so the name is a fact read off the actual content,
-    never a guess. `None` (never a wrong ticket id) if the diff cannot be
-    read, has no staged addition, or the added text does not parse as the
-    expected shape -- degrading to "unattributed" is always safer than
-    naming a plausible-but-wrong ticket."""
-    spawned = run_argv(
-        ["git", "-C", str(root), "diff", "--cached", "--", "rapid-debt.jsonl"]
-    )
-    if spawned.is_err or spawned.danger_ok.returncode != 0:
-        return None
-    added_lines = [
-        line[1:]
-        for line in spawned.danger_ok.stdout.splitlines()
-        if line.startswith("+") and not line.startswith("+++")
-    ]
-    for line in reversed(added_lines):
-        try:
-            record = json.loads(line)
-        except (ValueError, TypeError):
-            continue
-        ticket = record.get("ticket") if isinstance(record, dict) else None
-        if isinstance(ticket, str) and ticket:
-            return ticket
-    return None
-
-
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file
@@ -1618,9 +1625,6 @@ def _staged_rapid_debt_ticket(root: Path) -> str | None:
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-1755
-# frob:ticket T-1795
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
 def describe_root_dirt(root: Path) -> str:
     """What is making `root` dirty, rendered for a `DirtyMain` refusal.
 
@@ -1645,41 +1649,18 @@ def describe_root_dirt(root: Path) -> str:
     agent seeing this refusal is, per T-1755's own incident, structurally
     isolated from root and cannot investigate WHO left it dirty; naming
     the likely author turns "report and wait" into "report the specific,
-    actionable cause" without the agent needing to guess.
-
-    T-1795: the sweep-authorship hint is now SYMBOLIC, not a static
-    guess. A real incident: this hint used to unconditionally name
-    T-1699/T-1755 (the tickets that BUILT the sweep) whenever `rapid-
-    debt.jsonl` was the dirty file, regardless of which ticket's sweep
-    child actually staged the line -- three separate agents debugged the
-    wrong ticket off that message. `_staged_rapid_debt_ticket` reads the
-    REAL ticket id off the staged diff's own content (every line already
-    carries its own `"ticket"` field) when the sweep-owned path is
-    exactly `rapid-debt.jsonl`; when it cannot determine the true author
-    (a different sweep-owned path, an unreadable diff, unparseable
-    content), the hint says "unattributed" rather than naming a
-    plausible-but-wrong ticket -- the same "cannot verify is never
-    verified" rule this module's own liveness probes already follow."""
+    actionable cause" without the agent needing to guess."""
     all_paths = _porcelain_dirty_paths(root)
     staged_paths = _porcelain_dirty_paths_staged(root)
     rendered = _render_dirty_paths(all_paths)
-    if _likely_sweep_authored(all_paths):
-        attributed_ticket = (
-            _staged_rapid_debt_ticket(root)
-            if all_paths == ("rapid-debt.jsonl",)
-            else None
-        )
-        author = (
-            f"likely author: {attributed_ticket}'s sweep child"
-            if attributed_ticket
-            else "unattributed"
-        )
-        sweep_hint = (
-            " (all paths match the detached post-land sweep's own known "
-            f"writes -- rapid-debt.jsonl/tickets.md, T-1699/T-1755 -- {author})"
-        )
-    else:
-        sweep_hint = ""
+    sweep_hint = (
+        " (all paths match the detached post-land sweep's own known "
+        "writes -- rapid-debt.jsonl/tickets.md, T-1699/T-1755 -- likely "
+        "author: a sweep child that filed something and did not commit "
+        "it)"
+        if _likely_sweep_authored(all_paths)
+        else ""
+    )
     if not staged_paths:
         return rendered + sweep_hint
     return (

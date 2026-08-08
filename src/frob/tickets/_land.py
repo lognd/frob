@@ -49,6 +49,7 @@ from frob.tickets._land_finalize import _land_finalize_and_close
 from frob.tickets._land_git_ops import (
     _abort_merge,
     _auto_resolve_out_of_scope_conflicts,
+    _commit_rapid_debt_only_drift,
     _committed_out_of_scope_waive_deletions,
     _merge_main_into_worktree,
     _porcelain_dirty,
@@ -460,7 +461,8 @@ def _clear_land_repair_marker(root: Path, ticket_id: str) -> None:
 # frob:ticket T-0907
 # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+# frob:tests \
+# tests/test_ticket_land.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op
 def _repair_stale_land_marker(root: Path) -> Result[None, LandError]:
     """Reconcile every leftover T-0907 land-repair marker under `root`, if
     any exist -- called at the very start of `_land_locked`, under `root`'s
@@ -987,8 +989,9 @@ def land(
 # frob:ticket T-1269
 # frob:doc docs/modules/tickets.md#frob-ticket-land---plan-t-1269
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge
+# frob:tests \
+# tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge  # noqa: E501
 # frob:ticket T-1495
 def land_plan(
@@ -1645,18 +1648,64 @@ def _land_locked(
         _clear_intent(root, ticket_id)
 
 
+# frob:ticket T-1699
+_NON_TERMINAL_TICKET_STATES = frozenset(
+    {"queued", "planned", "in-progress", "blocked"}
+)
+
+
+# frob:ticket T-1699
+def _dirt_owned_by_no_open_ticket(root: Path, dirty_paths: tuple[str, ...]) -> bool:
+    """True when NONE of `dirty_paths` falls inside any currently open
+    (non-terminal) ticket's declared `scope` -- the signal
+    `_refuse_if_main_dirty` uses to tell a crashed land's residue (which
+    DOES belong to some ticket's scope, since a land only ever touches
+    files that ticket's own work declared) apart from dirt belonging to
+    NO ticket at all -- most often the coordinator working directly on
+    the shared root checkout outside the ticket workflow entirely (T-1699's
+    second, process-shaped finding: three agents in one session each
+    independently misdiagnosed exactly this shape as "a crashed land").
+
+    Best-effort and fail-CLOSED: if the ledger cannot be read at all,
+    returns `False` (do not claim "owned by no ticket" on missing data --
+    the ordinary, less specific refusal message is always safe to fall
+    back to)."""
+    from frob.tickets._models import scope_matches
+    from frob.tickets._store import load_all
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return False
+    for ticket in loaded.danger_ok.values():
+        if ticket.state not in _NON_TERMINAL_TICKET_STATES:
+            continue
+        if any(scope_matches(p, ticket.scope, kind=ticket.kind) for p in dirty_paths):
+            return False
+    return True
+
+
 def _refuse_if_main_dirty(
     root: Path, worktree: Path, ticket_id: str
 ) -> Result[None, LandError]:
     """`Err(DirtyMain)` if `root` has any uncommitted change.
 
-    Tolerates one specific shape of "dirty" without refusing (T-0793):
-    `uv.lock`'s frob-version line flapping on its own, with nothing else
-    in the tree touched, from a prior `uv run`/`uv lock` invocation
-    against a pyproject a sibling land already bumped. That case is
-    auto-restored (`git checkout -- uv.lock`) before the dirty check is
-    re-evaluated, rather than refusing the land -- any OTHER dirt (a real
-    lock change, any other file) is left alone and still refuses exactly
+    Tolerates two specific shapes of "dirty" without refusing:
+
+    - (T-0793) `uv.lock`'s frob-version line flapping on its own, with
+      nothing else in the tree touched, from a prior `uv run`/`uv lock`
+      invocation against a pyproject a sibling land already bumped.
+      Auto-restored (`git checkout -- uv.lock`, discarding the flap)
+      before the dirty check is re-evaluated.
+    - (T-1699) `rapid-debt.jsonl` alone, dirty because a DIFFERENT
+      concurrent land's own two-step append-then-commit
+      (`_commit_rapid_debt`, deliberately outside the land lock so the
+      detached post-land sweep phase never re-serializes -- T-1684) was
+      observed mid-window. Auto-COMMITTED (`_commit_rapid_debt_only_
+      drift`, never discarded -- unlike the uv.lock flap, this content
+      is real and land-owned) before the dirty check is re-evaluated.
+
+    Any OTHER dirt (a real lock change, any other file, either of these
+    two alongside anything else) is left alone and still refuses exactly
     as before."""
     main_dirty = _porcelain_dirty(root)
     if main_dirty.is_err:
@@ -1671,16 +1720,52 @@ def _refuse_if_main_dirty(
         main_dirty = _porcelain_dirty(root)
         if main_dirty.is_err:
             return Err(main_dirty.danger_err)
+    if main_dirty.danger_ok and _commit_rapid_debt_only_drift(root):
+        _log.info(
+            "land: %s auto-committed a stray rapid-debt.jsonl append in "
+            "%s before the DirtyMain check (T-1699)",
+            ticket_id,
+            root,
+        )
+        main_dirty = _porcelain_dirty(root)
+        if main_dirty.is_err:
+            return Err(main_dirty.danger_err)
     if main_dirty.danger_ok:
-        # T-1698: name the offending paths. A bare "has uncommitted
-        # changes" deadlocked a three-agent wave on ONE one-line file
-        # nobody could identify from the refusal alone.
-        from frob.tickets._land_git_ops import describe_root_dirt
+        _log_dirty_main_refusal(root, worktree, ticket_id)
+        return Err(LandError.DirtyMain)
+    return Ok(None)
 
+
+# frob:ticket T-1698
+# frob:ticket T-1699
+def _log_dirty_main_refusal(root: Path, worktree: Path, ticket_id: str) -> None:
+    """The `DirtyMain` refusal log line for `_refuse_if_main_dirty`, split
+    out to keep that function under ARCH001's line threshold.
+
+    T-1698: names the offending paths. A bare "has uncommitted changes"
+    deadlocked a three-agent wave on ONE one-line file nobody could
+    identify from the refusal alone.
+
+    T-1699: when NONE of the dirty paths falls inside any currently open
+    ticket's declared scope, this is NOT a crashed land's leftover -- a
+    land only ever touches files its own ticket's scope covers, so
+    orphaned dirt belongs to whoever is working the root checkout
+    directly outside the ticket workflow (a coordinator's own
+    in-progress edits, most often). Three agents this session each
+    misdiagnosed that exact shape as "a crashed land left dirt" and
+    burned their budget looking for one; naming the real cause
+    explicitly is the fix."""
+    from frob.tickets._land_git_ops import _porcelain_dirty_paths, describe_root_dirt
+
+    dirty_paths = _porcelain_dirty_paths(root)
+    if _dirt_owned_by_no_open_ticket(root, dirty_paths):
         _log.error(
-            "land: %s refused -- %s has uncommitted changes in: %s; commit or "
-            "stash them first (git -C %s status), then retry `frob ticket "
-            "land %s --worktree %s`",
+            "land: %s refused -- %s has uncommitted work belonging to "
+            "NO open ticket's scope: %s; this is NOT a crashed land -- "
+            "whoever owns the root checkout directly (most often the "
+            "coordinator) must commit or stash it, an agent cannot fix "
+            "this by retrying (git -C %s status), then retry `frob "
+            "ticket land %s --worktree %s`",
             ticket_id,
             root,
             describe_root_dirt(root),
@@ -1688,8 +1773,18 @@ def _refuse_if_main_dirty(
             ticket_id,
             worktree,
         )
-        return Err(LandError.DirtyMain)
-    return Ok(None)
+    else:
+        _log.error(
+            "land: %s refused -- %s has uncommitted changes in: %s; "
+            "commit or stash them first (git -C %s status), then "
+            "retry `frob ticket land %s --worktree %s`",
+            ticket_id,
+            root,
+            describe_root_dirt(root),
+            root,
+            ticket_id,
+            worktree,
+        )
 
 
 # frob:ticket T-0795
@@ -2863,8 +2958,10 @@ def _resolve_main_branch_for_land(
 
 
 # frob:ticket T-1616
-# frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_notice_logged_at_land  # noqa: E501
-# frob:tests tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_no_history_no_notice  # noqa: E501
+# frob:tests \
+# tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_notice_logged_at_land
+# frob:tests \
+# tests/test_ticket_evidence.py::TestKindHistoryLandNotice.test_no_history_no_notice
 def _warn_kind_history_at_land(ticket: Ticket) -> None:
     """T-1616: log a loud, un-missable notice at land time for every
     `kind_history` entry a ticket carries -- "this was kind X when the

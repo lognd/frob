@@ -2,7 +2,7 @@
 id: T-1699
 title: rapid-debt commit races DirtyMain outside the land lock; DirtyMain misreads
   coordinator-owned dirt as a crashed land
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-06'
@@ -14,10 +14,30 @@ runs_last: false
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_git_ops.py
-- tests/unit/test_rapid_sweep.py
 - docs/modules/tickets.md
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/test_rapid_sweep.py
+  reason: DirtyMain/_refuse_if_main_dirty tests already live in tests/test_ticket_land.py,
+    not tests/unit/test_rapid_sweep.py
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: DirtyMain/_refuse_if_main_dirty tests already live in tests/test_ticket_land.py,
+    not tests/unit/test_rapid_sweep.py
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_sole_rapid_debt_dirt_is_committed
+- tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_a_second_dirty_file_blocks_the_auto_commit
+- tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_no_dirt_at_all_is_a_noop
+- tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_path_inside_an_open_tickets_scope_is_not_orphaned
+- tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_path_outside_every_open_tickets_scope_is_orphaned
+- tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_a_done_tickets_scope_does_not_count
 designated_repro_test: null
 threat: null
 component: null

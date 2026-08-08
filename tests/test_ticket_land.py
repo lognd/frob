@@ -4770,6 +4770,117 @@ class TestUvLockSync:
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
 
 
+# frob:ticket T-1699
+class TestRapidDebtOnlyDriftAutoCommit:
+    """T-1699: `_commit_rapid_debt_only_drift` -- the second DirtyMain
+    auto-heal `_refuse_if_main_dirty` tries, alongside T-0793's uv.lock
+    precedent. Unlike that precedent (which DISCARDS a benign flap),
+    this one COMMITS: a `rapid-debt.jsonl` append is real, land-owned
+    content a concurrent land's own two-step append-then-commit
+    (deliberately outside the land lock, T-1684) can leave dirty for a
+    second agent's land to observe mid-window."""
+
+    def test_sole_rapid_debt_dirt_is_committed(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit.test_sole_rapid_d\
+        # ebt_dirt_is_committed
+        from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
+
+        (repo / "rapid-debt.jsonl").write_text(
+            '{"commit": "abc123", "skipped": "post-land-unscoped-sweep-deferred", '
+            '"ticket": "T-0001"}\n'
+        )
+        _run(["git", "add", "rapid-debt.jsonl"], repo)
+        _run(["git", "commit", "-q", "-m", "seed rapid-debt.jsonl"], repo)
+        (repo / "rapid-debt.jsonl").write_text(
+            '{"commit": "abc123", "skipped": "post-land-unscoped-sweep-deferred", '
+            '"ticket": "T-0001"}\n'
+            '{"commit": "def456", "skipped": "post-land-unscoped-sweep-deferred", '
+            '"ticket": "T-0002"}\n'
+        )
+
+        assert _commit_rapid_debt_only_drift(repo) is True
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+
+    def test_a_second_dirty_file_blocks_the_auto_commit(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit.test_a_second_dir\
+        # ty_file_blocks_the_auto_commit
+        from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
+
+        (repo / "rapid-debt.jsonl").write_text(
+            '{"commit": "abc123", "skipped": "x", "ticket": "T-0001"}\n'
+        )
+        (repo / "other.py").write_text("# unrelated dirt\n")
+
+        assert _commit_rapid_debt_only_drift(repo) is False
+        status = _run(["git", "status", "--porcelain"], repo).stdout
+        assert "rapid-debt.jsonl" in status
+        assert "other.py" in status
+
+    def test_no_dirt_at_all_is_a_noop(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit.test_no_dirt_at_a\
+        # ll_is_a_noop
+        from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
+
+        assert _commit_rapid_debt_only_drift(repo) is False
+
+
+# frob:ticket T-1699
+class TestDirtOwnedByNoOpenTicket:
+    """T-1699: `_dirt_owned_by_no_open_ticket` -- tells root dirt that
+    matches SOME open ticket's declared scope (plausibly a crashed
+    land's own leftover) apart from dirt no open ticket's scope covers
+    at all (most often a coordinator working directly on the shared root
+    outside the ticket workflow -- the shape three agents in one session
+    each independently misdiagnosed as "a crashed land")."""
+
+    def test_path_inside_an_open_tickets_scope_is_not_orphaned(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket.test_path_inside_an_op\
+        # en_tickets_scope_is_not_orphaned
+        from frob.tickets._land import _dirt_owned_by_no_open_ticket
+
+        created = new_ticket(repo, _spec("Open work", scope=("src/owned.py",)))
+        assert created.is_ok
+        assert transition(repo, created.danger_ok.id, TicketState.PLANNED).is_ok
+
+        assert _dirt_owned_by_no_open_ticket(repo, ("src/owned.py",)) is False
+
+    def test_path_outside_every_open_tickets_scope_is_orphaned(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket.test_path_outside_ever\
+        # y_open_tickets_scope_is_orphaned
+        from frob.tickets._land import _dirt_owned_by_no_open_ticket
+
+        created = new_ticket(repo, _spec("Open work", scope=("src/owned.py",)))
+        assert created.is_ok
+        assert transition(repo, created.danger_ok.id, TicketState.PLANNED).is_ok
+
+        assert _dirt_owned_by_no_open_ticket(repo, ("src/coordinator_edit.py",)) is True
+
+    def test_a_done_tickets_scope_does_not_count(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket.test_a_done_tickets_sc\
+        # ope_does_not_count
+        """A DONE ticket's scope must not exempt its old files forever --
+        only currently OPEN (non-terminal) tickets count."""
+        from frob.tickets._land import _dirt_owned_by_no_open_ticket
+
+        created = new_ticket(repo, _spec("Finished work", scope=("src/finished.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        assert transition(repo, tid, TicketState.DONE).is_ok
+
+        assert _dirt_owned_by_no_open_ticket(repo, ("src/finished.py",)) is True
+
+
 # frob:ticket T-0338
 class TestRebuildNatives:
     """T-0338: `land`'s optional `rebuild_natives` callback -- invoked only
