@@ -15,6 +15,14 @@ def _add_scaffold_parser(sub) -> None:
         "scaffold", help="scaffold a new project from a template"
     )
     scaffold_sub = scaffold_p.add_subparsers(dest="scaffold_command")
+    _populate_scaffold_actions(scaffold_sub)
+
+
+# frob:ticket T-1569
+def _populate_scaffold_actions(scaffold_sub) -> None:
+    """Add `frob scaffold`'s `list`/`apply`/`new`/`pool` actions onto
+    `scaffold_sub` -- shared by the standalone top-level parser and `frob
+    ops scaffold` (T-1569) so neither duplicates the flag list."""
     scaffold_sub.add_parser("list", help="list registered project types")
     # T-0736: idempotently install/update the managed boilerplate blocks
     # (Makefile core-shim, standard .gitignore entries, worktree-lease

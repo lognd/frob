@@ -262,6 +262,8 @@ regression to chase in application code.
 
 ## `frob doctor`: native-extension diagnosis (T-0319)
 
+Also available as `frob ops doctor` (T-1569) -- same flags, same code.
+
 To check natives are present without waiting to hit the `SYS004`/dup gate
 above, run:
 

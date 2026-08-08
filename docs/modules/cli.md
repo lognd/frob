@@ -277,6 +277,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob map` | show whole-project structural map (symbols + line counts) -- also available as `frob explore map` (T-1238) |
 | `frob mutate` | mutation testing: perturb a file, see which mutants survive |
 | `frob natives` | build declared [[native]] crates (T-0864: frob-owned maturin develop, shared CARGO_TARGET_DIR) |
+| `frob ops` | release/fleet/infra plumbing: release/natives/doctor/clean/fleet/deploy/scaffold/gitlog/stats grouped under one verb (T-1569) |
 | `frob outline` | show structural skeleton of a file (classes, functions, line numbers) -- also available as `frob explore outline` (T-1238) |
 | `frob parse` | parse tool output (pytest/ruff/ty/clang/junit) into compact summary |
 | `frob perf` | profile a command/test suite and inspect its heat-map |

@@ -31,6 +31,7 @@ from frob._cli_parsers import (
     _add_map_parser,
     _add_mutate_parser,
     _add_natives_parser,
+    _add_ops_parser,
     _add_outline_parser,
     _add_parse_parser,
     _add_perf_parser,
@@ -205,6 +206,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 # frob:ticket T-1567
 # frob:ticket T-1568
+# frob:ticket T-1569
 def _add_analysis_subparsers(sub) -> None:
     """Register the code-analysis subcommand group: scaffold through bind."""
     _add_scaffold_parser(sub)
@@ -212,6 +214,7 @@ def _add_analysis_subparsers(sub) -> None:
     _add_explore_parser(sub)
     _add_quality_parser(sub)
     _add_design_parser(sub)
+    _add_ops_parser(sub)
     _add_outline_parser(sub)
     _add_map_parser(sub)
     _add_xref_parser(sub)

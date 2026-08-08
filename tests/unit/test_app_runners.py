@@ -19,6 +19,7 @@ from frob.app.exports_runner import run as exports_run
 from frob.app.gitlog_runner import run as gitlog_run
 from frob.app.map_runner import run as map_run
 from frob.app.mutate_runner import run as mutate_run
+from frob.app.ops_runner import run as ops_run
 from frob.app.outline_runner import run as outline_run
 from frob.app.quality_runner import run as quality_run
 from frob.app.scaffold_runner import run as scaffold_run
@@ -675,4 +676,103 @@ class TestDesignRunner:
         cfg = AppConfig(design_command=None)
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             design_run(cfg)
+        assert exc.value.code == 1
+
+
+# frob:ticket T-1569
+class TestOpsRunner:
+    """`frob ops <release|natives|doctor|clean|fleet|deploy|scaffold|
+    gitlog|stats>`: T-1569's verb-group front door delegates straight into
+    the standalone runners."""
+
+    @staticmethod
+    def _delegation_target(ops_command: str):
+        """The standalone runner module a given `ops_command` delegates to
+        (T-1569) -- a closed if/elif chain of LITERAL imports, same
+        convention as `frob.app.app._import_runner_module`, so the target
+        stays statically visible instead of tripping OPAQUE001 on a
+        computed module name."""
+        if ops_command == "release":
+            import frob.app.release_runner as mod
+        elif ops_command == "natives":
+            import frob.app.natives_runner as mod
+        elif ops_command == "doctor":
+            import frob.app.doctor_runner as mod
+        elif ops_command == "clean":
+            import frob.app.clean_runner as mod
+        elif ops_command == "fleet":
+            import frob.app.fleet_runner as mod
+        elif ops_command == "deploy":
+            import frob.app.deploy_runner as mod
+        elif ops_command == "scaffold":
+            import frob.app.scaffold_runner as mod
+        elif ops_command == "gitlog":
+            import frob.app.gitlog_runner as mod
+        else:  # pragma: no cover -- unreachable: ops_command is parametrized above
+            raise AssertionError(ops_command)
+        return mod
+
+    @pytest.mark.parametrize(
+        "ops_command",
+        [
+            "release",
+            "natives",
+            "doctor",
+            "clean",
+            "fleet",
+            "deploy",
+            "scaffold",
+            "gitlog",
+        ],
+    )
+    def test_subcommand_delegates_to_matching_runner(self, monkeypatch, ops_command):
+        """Each simple pass-through subcommand calls its own standalone
+        runner's `run(cfg)` with the SAME cfg instance -- one parametrized
+        case per member instead of seven near-identical bodies (T-1569,
+        DUP002)."""
+        target_mod = self._delegation_target(ops_command)
+        called = {}
+        monkeypatch.setattr(
+            target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
+        )
+        cfg = AppConfig(ops_command=ops_command)
+        ops_run(cfg)
+        assert called["cfg"] is cfg
+
+    # frob:waive DUP001 reason="deliberately mirrors \
+    # TestQualityRunner's/TestDesignRunner's own real end-to-end delegation test (same \
+    # real-fixture-plus-capsys shape, T-1567/ T-1568 precedent) -- one member of this \
+    # verb group needs a real end-to-end check (not a monkeypatch) to prove the \
+    # delegation path actually works, and that necessarily reads like the sibling \
+    # groups' own version of the same proof"
+    def test_stats_subcommand_delegates_to_stats_runner(self, tmp_path, capsys):
+        """`ops_command="stats"` produces the same output as `frob stats`
+        (a real end-to-end check rather than a monkeypatch, to prove the
+        delegation path actually works end to end for at least one member)."""
+        import subprocess
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            # frob:secret-fake reason="fabricated git identity for a test fixture repo"
+            ["git", "config", "user.email", "a@b.c"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
+        (tmp_path / "f.txt").write_text("x")
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat: add f"], cwd=tmp_path, check=True
+        )
+        cfg = AppConfig(ops_command="stats", stats_path=tmp_path, stats_json=False)
+        ops_run(cfg)
+        out = capsys.readouterr().out
+        assert out.strip() != ""
+
+    def test_unknown_subcommand_exits_1(self, caplog):
+        """No `ops_command` at all (bare `frob ops`) errors cleanly instead
+        of silently no-op'ing."""
+        cfg = AppConfig(ops_command=None)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            ops_run(cfg)
         assert exc.value.code == 1

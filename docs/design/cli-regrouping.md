@@ -77,15 +77,18 @@ conformance, quarantine, typosquat, lifecycle scripts, osv advisories).
 No regrouping needed -- it is a single command with its own internal
 subcommand structure already, same precedent as `frob ticket`.
 
-<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
-### `frob ops` -- release/fleet/infra plumbing
+### `frob ops` -- release/fleet/infra plumbing (T-1569, IMPLEMENTED)
 
-`release`, `registry` (see design bucket note above -- could go either
-way), `natives`, `doctor`, `clean`, `fleet`, `deploy`, `scaffold`,
-<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob ops' group" -->
-`gitlog`, `stats`. Candidates: `frob ops release`, `frob ops natives`,
-`frob ops doctor`, `frob ops clean`, `frob ops fleet`, `frob ops deploy`,
-`frob ops scaffold`, `frob ops gitlog`, `frob ops stats`.
+`release`, `natives`, `doctor`, `clean`, `fleet`, `deploy`, `scaffold`,
+`gitlog`, `stats` -- `frob ops release`, `frob ops natives`, `frob ops
+doctor`, `frob ops clean`, `frob ops fleet`, `frob ops deploy`, `frob ops
+scaffold`, `frob ops gitlog`, `frob ops stats`. `registry` stayed under
+`frob design` (T-1568), not duplicated here -- the "could go either way"
+note above is resolved in favor of the design-knowledge bucket, since
+`frob registry` is a read-only design-knowledge inspection tool, not an
+operational/infra action. Follows the `frob explore`/`frob quality`/
+`frob design` migration policy below: every member's standalone
+top-level form stays a permanent alias.
 
 ### `frob serve` -- already a single verb
 

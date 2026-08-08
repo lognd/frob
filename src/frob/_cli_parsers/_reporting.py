@@ -41,6 +41,14 @@ def _add_gitlog_parser(sub) -> None:
         "gitlog",
         help="summarize git history by type/granularity (conventional commits)",
     )
+    _populate_gitlog_args(gitlog_p)
+
+
+# frob:ticket T-1569
+def _populate_gitlog_args(gitlog_p) -> None:
+    """Add `frob gitlog`'s arguments onto `gitlog_p` -- shared by the
+    standalone top-level parser and `frob ops gitlog` (T-1569) so neither
+    duplicates the flag list."""
     gitlog_p.add_argument(
         "gitlog_path",
         metavar="path",
@@ -304,7 +312,14 @@ def _add_fleet_parser(sub) -> None:
         "fleet.toml manifest of sibling repos (T-0573)",
     )
     fleet_sub = fleet_p.add_subparsers(dest="fleet_command")
+    _populate_fleet_actions(fleet_sub)
 
+
+# frob:ticket T-1569
+def _populate_fleet_actions(fleet_sub) -> None:
+    """Add `frob fleet`'s `status`/`route` actions onto `fleet_sub` --
+    shared by the standalone top-level parser and `frob ops fleet`
+    (T-1569) so neither duplicates the flag list."""
     status_p = fleet_sub.add_parser(
         "status", help="reddest-first status/gate rollup over every manifest repo"
     )

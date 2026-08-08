@@ -258,6 +258,14 @@ def _add_release_parser(sub) -> None:
         "release", help="mechanical semver from the public-API graph (REL001)"
     )
     release_sub = release_p.add_subparsers(dest="release_command")
+    _populate_release_actions(release_sub)
+
+
+# frob:ticket T-1569
+def _populate_release_actions(release_sub) -> None:
+    """Add `frob release`'s `stamp`/`check`/`sync` actions onto
+    `release_sub` -- shared by the standalone top-level parser and `frob
+    ops release` (T-1569) so neither duplicates the flag list."""
     release_stamp_p = release_sub.add_parser(
         "stamp", help="record the current public API + version to .frob-release.json"
     )
@@ -349,6 +357,14 @@ def _add_stats_parser(sub) -> None:
     stats_p = sub.add_parser(
         "stats", help="delivery measurement: queue health + commit cadence"
     )
+    _populate_stats_args(stats_p)
+
+
+# frob:ticket T-1569
+def _populate_stats_args(stats_p) -> None:
+    """Add `frob stats`'s arguments onto `stats_p` -- shared by the
+    standalone top-level parser and `frob ops stats` (T-1569) so neither
+    duplicates the flag list."""
     stats_p.add_argument("--path", dest="stats_path", metavar="DIR", default=".")
     stats_p.add_argument(
         "--days", dest="stats_days", type=int, metavar="N", help="commit window (30)"
@@ -365,6 +381,14 @@ def _add_doctor_parser(sub) -> None:
         "doctor",
         help="verify native extensions (frob_core, strata_core) are installed",
     )
+    _populate_doctor_args(doctor_p)
+
+
+# frob:ticket T-1569
+def _populate_doctor_args(doctor_p) -> None:
+    """Add `frob doctor`'s arguments onto `doctor_p` -- shared by the
+    standalone top-level parser and `frob ops doctor` (T-1569) so neither
+    duplicates the flag list."""
     doctor_p.add_argument("--json", dest="doctor_json", action="store_true")
     # frob:ticket T-1360
     doctor_p.add_argument(
@@ -389,6 +413,14 @@ def _add_clean_parser(sub) -> None:
         "clean",
         help="remove build/test/cache artifacts (tiered, dry-run by default)",
     )
+    _populate_clean_args(clean_p)
+
+
+# frob:ticket T-1569
+def _populate_clean_args(clean_p) -> None:
+    """Add `frob clean`'s arguments onto `clean_p` -- shared by the
+    standalone top-level parser and `frob ops clean` (T-1569) so neither
+    duplicates the flag list."""
     clean_p.add_argument("clean_path", metavar="path", nargs="?", default=".")
     clean_p.add_argument(
         "--all",
@@ -451,7 +483,14 @@ def _add_natives_parser(sub) -> None:
         "maturin develop, shared CARGO_TARGET_DIR)",
     )
     natives_sub = natives_p.add_subparsers(dest="natives_command")
+    _populate_natives_actions(natives_sub)
 
+
+# frob:ticket T-1569
+def _populate_natives_actions(natives_sub) -> None:
+    """Add `frob natives`'s `build` action onto `natives_sub` -- shared by
+    the standalone top-level parser and `frob ops natives` (T-1569) so
+    neither duplicates the flag list."""
     natives_build_p = natives_sub.add_parser(
         "build",
         help="maturin develop --release per declared rust [[native]] crate",

@@ -62,6 +62,7 @@ from ._misc import (
     _add_test_parser,
     _add_vet_parser,
 )
+from ._ops import _add_ops_parser
 from ._quality import _add_quality_parser
 from ._reporting import (
     _add_ack_parser,
@@ -130,6 +131,7 @@ __all__ = [
     "_add_dup_probe_argument",
     "_add_design_parser",
     "_add_explore_parser",
+    "_add_ops_parser",
     "_add_quality_parser",
     "_add_exports_parser",
     "_add_fleet_parser",

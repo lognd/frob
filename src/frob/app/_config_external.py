@@ -38,6 +38,8 @@ _STRING_FIELDS = (
     "quality_command",
     # frob:ticket T-1568
     "design_command",
+    # frob:ticket T-1569
+    "ops_command",
     "scaffold_command",
     "scaffold_type",
     "scaffold_name",

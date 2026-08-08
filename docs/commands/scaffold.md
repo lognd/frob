@@ -1,5 +1,7 @@
 # frob scaffold
 
+Also available as `frob ops scaffold` (T-1569) -- same flags, same code.
+
 Scaffold new projects from registered templates. Every type targets
 ABSOLUTELY MINIMAL boilerplate: `frob scaffold new <type> demo && cd demo
 && git init && make check` should go green immediately, with no manual

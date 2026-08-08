@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-40 total commands, statically bound to the live subcommand registry
+41 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -70,6 +70,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob vet` | Dependency capability vetting: source-resolved capability scan, CVE fingerprints, supply-chain/obfuscation checks |
 | `frob sys` | strata system-design audit: model-vs-code conformance, threat/CWE/compliance/PII, deploy proofs (`plan`/`doc`/`audit`/`export`) |
 | `frob deploy` | Auditable OS-layer deployment: compile a host manifest into idempotent install/status/uninstall + VM audit |
+| `frob ops` | Release/fleet/infra verb group: `release`/`natives`/`doctor`/`clean`/`fleet`/`deploy`/`scaffold`/`gitlog`/`stats` (T-1569); each also stays available as its own standalone command below |
 | `frob release` | Mechanical semver from the public-API graph and the REL001 release gate (`stamp`/`check`) |
 | `frob registry` | Unified design-knowledge registry: the REG001-010 exhaustiveness drift-lock over `docs/design/registry/*.yaml` (`audit`/`add`) |
 | `frob pool` | Ratchet-pool baseline management: freeze warn-rule findings as a tracked baseline so new findings error (`snapshot`/`clear`) |

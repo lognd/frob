@@ -94,6 +94,7 @@ __all__ = [
 # frob:doc docs/modules/app.md#config
 # frob:ticket T-1567
 # frob:ticket T-1568
+# frob:ticket T-1569
 class Subcommand(str, enum.Enum):
     # frob:ticket T-0021
     scaffold = "scaffold"
@@ -104,6 +105,9 @@ class Subcommand(str, enum.Enum):
     quality = "quality"
     # T-1568: `frob design` groups sys/registry/docs/graph/exports.
     design = "design"
+    # T-1569: `frob ops` groups release/natives/doctor/clean/fleet/deploy/
+    # scaffold/gitlog/stats.
+    ops = "ops"
     outline = "outline"
     map = "map"
     xref = "xref"
@@ -167,6 +171,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-1525
 # frob:ticket T-1567
 # frob:ticket T-1568
+# frob:ticket T-1569
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -206,6 +211,11 @@ class AppConfig(BaseModel):
     # sys/registry/docs/graph/exports_* dests its standalone counterparts
     # use.
     design_command: str | None = None
+
+    # ops (T-1569): dispatches by ops_command onto the same
+    # release/natives/doctor/clean/fleet/deploy/scaffold/gitlog/stats_*
+    # dests its standalone counterparts use.
+    ops_command: str | None = None
 
     # outline
     outline_file: Path | None = None

@@ -194,6 +194,7 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 <!-- frob:describes src/frob/app/explore_runner.py::run -->
 <!-- frob:describes src/frob/app/quality_runner.py::run -->
 <!-- frob:describes src/frob/app/design_runner.py::run -->
+<!-- frob:describes src/frob/app/ops_runner.py::run -->
 <!-- frob:describes src/frob/app/xref_runner.py::run -->
 <!-- frob:describes src/frob/app/parse_runner.py::run -->
 <!-- frob:describes src/frob/app/scaffold_runner.py::run -->
@@ -253,6 +254,12 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   `sys_runner`/`registry_runner`/`docs_runner`/`graph_runner`/
   `exports_runner`, the same code the standalone top-level commands run
   (docs/design/cli-regrouping.md, docs/modules/cli.md).
+- `ops_runner.run` -- dispatches `frob ops <release|natives|doctor|clean|
+  fleet|deploy|scaffold|gitlog|stats>` (T-1569, `cfg.ops_command`)
+  straight into `release_runner`/`natives_runner`/`doctor_runner`/
+  `clean_runner`/`fleet_runner`/`deploy_runner`/`scaffold_runner`/
+  `gitlog_runner`/`stats_runner`, the same code the standalone top-level
+  commands run (docs/design/cli-regrouping.md, docs/modules/cli.md).
 - `xref_runner.run` -- runs `frob.xref.xref` for `cfg.xref_symbol`
   (docs/commands/xref.md).
 - `parse_runner.run` -- reads a tool's raw output (pytest/ruff/ty/clang/...)
