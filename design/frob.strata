@@ -91,8 +91,8 @@ node cli : trusted {
         _apply_evidence, _block, _brief, _check_gates_summary_fn, _close, _close_failure_hint,
         _doable, _done_report, _drop, _evidence, _fail, _kind,
         _land, _land_collected_fn, _land_passed_fn, _list, _log_evidence_result, _merge_driver,
-        _new, _refuse_if_land_in_progress_for_dispatch, _render_acceptance, _reverify, _review, _run_pytest_directly,
-        _run_tests_count_fn,
+        _new, _refuse_if_land_in_progress_for_dispatch, _render_acceptance, _resolve_ticket_root, _reverify, _review,
+        _run_pytest_directly, _run_tests_count_fn,
         _scope, _scope_ack, _show, _start, _work, append_event,
         detect_footguns, ensure_daemon, estimate_tokens, fast_yaml_loader, is_disabled, is_excluded,
         is_skipped_dir, is_test_file, iso_now, iter_files, land_parity_findings, load_arch_config,
@@ -133,7 +133,7 @@ node cli : trusted {
     // narrower kind expands to a strict subset of what this bare
     // declaration already covers, so a standalone atom for it is never
     // mutation-audit load-bearing).
-    may "env" via "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/stats_runner.py", "src/frob/app/telemetry.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_verify.py";
+    may "env" via "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/stats_runner.py", "src/frob/app/telemetry.py", "src/frob/app/ticket_runner/__init__.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_verify.py";
     // T-0474: `frob ticket start` detaches its pre-work sweep as a
     // background `frob ticket sweep` child (subprocess.Popen of
     // sys.executable in app/ticket_runner.py::_spawn_background_sweep).

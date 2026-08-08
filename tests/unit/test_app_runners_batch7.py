@@ -64,6 +64,61 @@ class TestTicketRunnerDispatch:
         assert "usage: frob ticket" in caplog.text
 
 
+# frob:ticket T-1674
+class TestTicketRunnerRootResolution:
+    """T-1674: `_resolve_ticket_root` -- `FROB_ROOT` as a fallback for an
+    ambient-cwd-drift incident, explicit `--path` always winning over it,
+    and the resolved root logged unconditionally for a mutating verb."""
+
+    def test_frob_root_env_used_when_path_not_explicit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_frob_root_env_used_when_path_not_explicit  # noqa: E501
+        from frob.app.ticket_runner import _resolve_ticket_root
+
+        target = tmp_path / "pinned"
+        target.mkdir()
+        monkeypatch.setenv("FROB_ROOT", str(target))
+        cfg = AppConfig(ticket_command="new")
+        assert _resolve_ticket_root(cfg) == target.resolve()
+
+    def test_explicit_path_wins_over_frob_root(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_explicit_path_wins_over_frob_root  # noqa: E501
+        from frob.app.ticket_runner import _resolve_ticket_root
+
+        env_target = tmp_path / "env-pinned"
+        env_target.mkdir()
+        explicit_target = tmp_path / "explicit"
+        explicit_target.mkdir()
+        monkeypatch.setenv("FROB_ROOT", str(env_target))
+        cfg = AppConfig(ticket_command="new", ticket_path=explicit_target)
+        assert _resolve_ticket_root(cfg) == explicit_target.resolve()
+
+    def test_no_frob_root_falls_back_to_cwd_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_no_frob_root_falls_back_to_cwd_default  # noqa: E501
+        from frob.app.ticket_runner import _resolve_ticket_root
+
+        monkeypatch.delenv("FROB_ROOT", raising=False)
+        monkeypatch.chdir(tmp_path)
+        cfg = AppConfig(ticket_command="new")
+        assert _resolve_ticket_root(cfg) == tmp_path.resolve()
+
+    def test_resolved_root_is_logged_for_a_mutating_verb(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_root_is_logged_for_a_mutating_verb  # noqa: E501
+        cfg = AppConfig(
+            ticket_command="new", ticket_path=tmp_path, ticket_title="t", ticket_kind="bug"
+        )
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert f"resolved root {tmp_path.resolve()}" in caplog.text
+
+
 class TestTicketNewErrors:
     def test_missing_title_or_kind_exits_1(self, tmp_path: Path) -> None:
         cfg = AppConfig(ticket_command="new", ticket_path=tmp_path)

@@ -21,6 +21,7 @@ module is what they actually observe (same reasoning for
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -240,6 +241,7 @@ __all__ = [
     "_require_merge_driver_args",
     "_required_release_bump",
     "_resolve_done_report_why",
+    "_resolve_ticket_root",
     "_resolve_new_acceptance",
     "_resolve_new_body",
     "_resolve_scope_reason",
@@ -501,6 +503,40 @@ def _auto_commit_ledger_after_dispatch(
         sys.exit(1)
 
 
+# frob:ticket T-1674
+def _resolve_ticket_root(cfg: AppConfig) -> Path:
+    """The repository root `run()` dispatches every `frob ticket <verb>`
+    against (T-1674): `--path`/`cfg.ticket_path` when explicitly given
+    (never overridden -- an explicit CLI flag always wins), else the
+    `FROB_ROOT` environment variable when set, else `cwd` (the pre-T-1674
+    default, unchanged for the common case).
+
+    T-1674's own incident: a shell whose cwd had silently drifted into
+    `.claude/worktrees/w34-dispatch` ran `frob ticket new` -- the command
+    filed the ticket into that WORKTREE's ledger instead of main's,
+    printed a created id, and exited 0, identical to a correct run.
+    Nothing distinguished the wrong-tree run except the id shape
+    (`T-draft-*` instead of `T-####`), a tell that exists only for `new`;
+    `close`/`drop`/`evidence`/`done-report` would have written to the
+    wrong ledger with no distinguishing signal at all. `FROB_ROOT` gives
+    a caller (a coordinator's own dispatch wrapper, which already pins
+    its measurement root by hand for exactly this reason) a way to PIN
+    the tree independent of ambient cwd, instead of every invocation
+    trusting wherever the shell happens to be.
+
+    `--path`'s own CLI default is the literal string `"."` (not `None`)
+    -- argparse always supplies SOME value -- so `cfg.ticket_path == "."`
+    is treated as "not explicitly overridden" and still checks
+    `FROB_ROOT`; any OTHER value means the caller explicitly named a path
+    and wins outright, no environment fallback consulted."""
+    if cfg.ticket_path is not None and str(cfg.ticket_path) != ".":
+        return cfg.ticket_path.resolve()
+    env_root = os.environ.get("FROB_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
+    return (cfg.ticket_path or Path(".")).resolve()
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:doc docs/modules/tickets.md#frob-ticket-land
@@ -519,9 +555,13 @@ def _auto_commit_ledger_after_dispatch(
 # docs/modules/app.md#runners and #config (the docs this change IS actually about) \
 # were updated in the same diff"
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
+# frob:ticket T-1674
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_frob_root_env_used_when_path_not_explicit  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_explicit_path_wins_over_frob_root  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_root_is_logged_for_a_mutating_verb  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch to the ticket subcommand named by `cfg.ticket_command`."""
-    root = (cfg.ticket_path or Path(".")).resolve()
+    root = _resolve_ticket_root(cfg)
 
     handler = _ticket_dispatch_table().get(cfg.ticket_command)
     if handler is None:
@@ -534,6 +574,9 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
     _refuse_if_land_in_progress_for_dispatch(root, cfg.ticket_command)
     with _diagnostic_log_ctx(cfg):
+        # frob:ticket T-1674
+        if cfg.ticket_command not in _LAND_SAFE_READ_ONLY_VERBS:
+            _log.info("ticket %s: resolved root %s", cfg.ticket_command, root)
         try:
             handler(root, cfg)
         finally:
