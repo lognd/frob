@@ -13,6 +13,7 @@ import pytest
 
 from frob.app.arch_runner import run as arch_run
 from frob.app.config import AppConfig
+from frob.app.design_runner import run as design_run
 from frob.app.explore_runner import run as explore_run
 from frob.app.exports_runner import run as exports_run
 from frob.app.gitlog_runner import run as gitlog_run
@@ -608,4 +609,70 @@ class TestQualityRunner:
         cfg = AppConfig(quality_command=None)
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             quality_run(cfg)
+        assert exc.value.code == 1
+
+
+# frob:ticket T-1568
+class TestDesignRunner:
+    """`frob design <sys|registry|docs|graph|exports>`: T-1568's
+    verb-group front door delegates straight into the standalone runners."""
+
+    @staticmethod
+    def _delegation_target(design_command: str):
+        """The standalone runner module a given `design_command` delegates
+        to (T-1568) -- a closed if/elif chain of LITERAL imports, same
+        convention as `frob.app.app._import_runner_module`, so the target
+        stays statically visible instead of tripping OPAQUE001 on a
+        computed module name."""
+        if design_command == "sys":
+            import frob.app.sys_runner as mod
+        elif design_command == "registry":
+            import frob.app.registry_runner as mod
+        elif design_command == "docs":
+            import frob.app.docs_runner as mod
+        elif design_command == "graph":
+            import frob.app.graph_runner as mod
+        else:  # pragma: no cover -- unreachable: design_command is parametrized above
+            raise AssertionError(design_command)
+        return mod
+
+    @pytest.mark.parametrize("design_command", ["sys", "registry", "docs", "graph"])
+    def test_subcommand_delegates_to_matching_runner(self, monkeypatch, design_command):
+        """Each simple pass-through subcommand calls its own standalone
+        runner's `run(cfg)` with the SAME cfg instance -- one parametrized
+        case per member instead of four near-identical bodies (T-1568,
+        DUP002)."""
+        target_mod = self._delegation_target(design_command)
+        called = {}
+        monkeypatch.setattr(
+            target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
+        )
+        cfg = AppConfig(design_command=design_command)
+        design_run(cfg)
+        assert called["cfg"] is cfg
+
+    # frob:waive DUP001 reason="deliberately mirrors TestQualityRunner's own arch \
+    # end-to-end delegation test (same real-fixture-plus-caplog shape, T-1567 \
+    # precedent) -- one member of this verb group needs a real end-to-end check (not a \
+    # monkeypatch) to prove the delegation path actually works, and that necessarily \
+    # reads like the sibling group's own version of the same proof"
+    def test_exports_subcommand_delegates_to_exports_runner(self, tmp_path, capsys):
+        """`design_command="exports"` produces the same output as `frob
+        exports` (a real end-to-end check rather than a monkeypatch, to
+        prove the delegation path actually works end to end for at least
+        one member)."""
+        _make_py_project(tmp_path)
+        cfg = AppConfig(
+            design_command="exports", exports_path=tmp_path / "pkg", exports_json=True
+        )
+        design_run(cfg)
+        out = capsys.readouterr().out
+        assert "hello" in out
+
+    def test_unknown_subcommand_exits_1(self, caplog):
+        """No `design_command` at all (bare `frob design`) errors cleanly
+        instead of silently no-op'ing."""
+        cfg = AppConfig(design_command=None)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            design_run(cfg)
         assert exc.value.code == 1

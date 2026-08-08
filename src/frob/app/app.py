@@ -10,6 +10,7 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-1567
+# frob:ticket T-1568
 _RUNNER_MODULE_NAMES = (
     "ack_runner",
     "arch_runner",
@@ -20,6 +21,7 @@ _RUNNER_MODULE_NAMES = (
     "debt_runner",
     "deprecated_runner",
     "deploy_runner",
+    "design_runner",
     "doctor_runner",
     "docs_runner",
     "dup_runner",
@@ -56,6 +58,7 @@ subcommand actually needs)."""
 
 
 # frob:ticket T-1567
+# frob:ticket T-1568
 _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.scaffold: "scaffold_runner",
     Subcommand.cycle: "cycle_runner",
@@ -66,6 +69,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.dup: "dup_runner",
     Subcommand.explore: "explore_runner",
     Subcommand.quality: "quality_runner",
+    Subcommand.design: "design_runner",
     Subcommand.arch: "arch_runner",
     Subcommand.docs: "docs_runner",
     Subcommand.exports: "exports_runner",
@@ -102,6 +106,7 @@ separately."""
 
 # frob:ticket T-1337
 # frob:ticket T-1567
+# frob:ticket T-1568
 # frob:invariant INV-049
 # invariant spec: [INV-049](invariants/INV-049.md)
 # frob:waive DUP001 reason="deliberately mirrors src/frob/app/__init__.py:: \
@@ -143,6 +148,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.deprecated_runner as module
     elif name == "deploy_runner":
         import frob.app.deploy_runner as module
+    elif name == "design_runner":
+        import frob.app.design_runner as module
     elif name == "doctor_runner":
         import frob.app.doctor_runner as module
     elif name == "docs_runner":

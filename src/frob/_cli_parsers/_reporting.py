@@ -76,6 +76,14 @@ def _add_graph_parser(sub) -> None:
         "graph", help="obligation graph: build cache, query symbols, explain drift"
     )
     graph_sub = graph_p.add_subparsers(dest="graph_command")
+    _populate_graph_actions(graph_sub)
+
+
+# frob:ticket T-1568
+def _populate_graph_actions(graph_sub) -> None:
+    """Add `frob graph`'s `build`/`query`/`why`/`affects` actions onto
+    `graph_sub` -- shared by the standalone top-level parser and `frob
+    design graph` (T-1568) so neither duplicates the flag list."""
     graph_build_p = graph_sub.add_parser("build", help="(re)build the graph cache")
     graph_build_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
     graph_query_p = graph_sub.add_parser(
@@ -241,6 +249,14 @@ def _add_registry_parser(sub) -> None:
         "registry", help="unified design-knowledge registry (T-0407)"
     )
     registry_sub = registry_p.add_subparsers(dest="registry_command")
+    _populate_registry_actions(registry_sub)
+
+
+# frob:ticket T-1568
+def _populate_registry_actions(registry_sub) -> None:
+    """Add `frob registry`'s `audit`/`add` actions onto `registry_sub` --
+    shared by the standalone top-level parser and `frob design registry`
+    (T-1568) so neither duplicates the flag list."""
     registry_audit_p = registry_sub.add_parser(
         "audit",
         help="per-registry-file disposition accounting (handled/deferred/"

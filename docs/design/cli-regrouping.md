@@ -59,16 +59,16 @@ debt`) or a new parent `tickets` (plural) that CONTAINS `ticket` reads
 better; this doc does not resolve that naming question, a later
 implementation ticket does.
 
-<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
-### `frob design` -- design-knowledge surfaces
+### `frob design` -- design-knowledge surfaces (T-1568, IMPLEMENTED)
 
 `sys` (strata design-model applications), `registry` (unified
 design-knowledge registry), `docs` (bare extract/`--overview`, NOT
-`--search` which moved to `explore`), `graph` (obligation graph
-<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob design' group" -->
-queries), `exports`. Candidates: `frob design sys`, `frob design
-registry`, `frob design docs`, `frob design graph`, `frob design
-exports`.
+`--search`, which stays exclusive to `frob explore docs-search`),
+`graph` (obligation graph queries), `exports` -- `frob design sys`,
+`frob design registry`, `frob design docs`, `frob design graph`, `frob
+design exports`. Follows the `frob explore`/`frob quality` migration
+policy below: every member's standalone top-level form stays a
+permanent alias.
 
 ### `frob vet` -- supply-chain
 

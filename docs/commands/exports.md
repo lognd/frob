@@ -1,7 +1,8 @@
 # frob exports
 
 Generate a ready-to-paste `__init__.py` from all public symbols in a package
-directory. Also used by `frob check` to detect missing exports.
+directory. Also used by `frob check` to detect missing exports. Also
+available as `frob design exports` (T-1568) -- same flags, same code.
 
 ## Usage
 

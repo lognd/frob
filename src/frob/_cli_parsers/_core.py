@@ -322,6 +322,17 @@ def _add_docs_parser(sub) -> None:
         "docs",
         help="extract docstrings or search docs/ for a file/symbol",
     )
+    _populate_docs_args(docs_p, include_search=True)
+
+
+# frob:ticket T-1568
+def _populate_docs_args(docs_p, *, include_search: bool) -> None:
+    """Add `frob docs`'s arguments onto `docs_p` -- shared by the
+    standalone top-level parser and `frob design docs` (T-1568) so
+    neither duplicates the flag list. `include_search` is `False` for
+    `frob design docs` (docs/design/cli-regrouping.md: bare extract/
+    `--overview` only there, `--search` stays exclusive to `frob explore
+    docs-search`) and `True` everywhere else."""
     docs_p.add_argument(
         "docs_path",
         metavar="path",
@@ -342,15 +353,16 @@ def _add_docs_parser(sub) -> None:
         action="store_true",
         help="show relevant docs/ headings and summaries",
     )
-    docs_p.add_argument(
-        "--search",
-        dest="docs_search",
-        metavar="QUERY",
-        help=(
-            "full-text search through docs/ -- also available as "
-            "`frob explore docs-search` (T-1238)"
-        ),
-    )
+    if include_search:
+        docs_p.add_argument(
+            "--search",
+            dest="docs_search",
+            metavar="QUERY",
+            help=(
+                "full-text search through docs/ -- also available as "
+                "`frob explore docs-search` (T-1238)"
+            ),
+        )
     docs_p.add_argument("--json", dest="docs_json", action="store_true")
     docs_p.add_argument(
         "--sync-commands",
@@ -371,6 +383,14 @@ def _add_exports_parser(sub) -> None:
         "exports",
         help="generate __init__.py from public symbols in a package directory",
     )
+    _populate_exports_args(exports_p)
+
+
+# frob:ticket T-1568
+def _populate_exports_args(exports_p) -> None:
+    """Add `frob exports`'s arguments onto `exports_p` -- shared by the
+    standalone top-level parser and `frob design exports` (T-1568) so
+    neither duplicates the flag list."""
     exports_p.add_argument("exports_path", metavar="path")
     exports_p.add_argument(
         "--all",

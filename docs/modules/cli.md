@@ -264,6 +264,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob debt` | list outstanding frob:debt entries (rule, site, ticket, until) |
 | `frob deploy` | compile std.host manifests into install/status/uninstall bash |
 | `frob deprecated` | list outstanding frob:deprecated entries (symref, since, sunset, ticket, status) |
+| `frob design` | design-knowledge surfaces: sys/registry/docs/graph/exports grouped under one verb (T-1568) |
 | `frob docs` | extract docstrings or search docs/ for a file/symbol |
 | `frob doctor` | verify native extensions (frob_core, strata_core) are installed |
 | `frob dup` | detect duplicate/clone code segments (Type 1 exact, Type 2 renamed) |

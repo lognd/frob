@@ -193,6 +193,7 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 <!-- frob:describes src/frob/app/dup_runner.py::run -->
 <!-- frob:describes src/frob/app/explore_runner.py::run -->
 <!-- frob:describes src/frob/app/quality_runner.py::run -->
+<!-- frob:describes src/frob/app/design_runner.py::run -->
 <!-- frob:describes src/frob/app/xref_runner.py::run -->
 <!-- frob:describes src/frob/app/parse_runner.py::run -->
 <!-- frob:describes src/frob/app/scaffold_runner.py::run -->
@@ -247,6 +248,11 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   `bind` is the one exception: `frob quality bind` is dispatched by
   `frob.__main__._dispatch` directly, never through this runner, since
   `bind_runner.run` takes raw argv rather than an `AppConfig`.
+- `design_runner.run` -- dispatches `frob design <sys|registry|docs|
+  graph|exports>` (T-1568, `cfg.design_command`) straight into
+  `sys_runner`/`registry_runner`/`docs_runner`/`graph_runner`/
+  `exports_runner`, the same code the standalone top-level commands run
+  (docs/design/cli-regrouping.md, docs/modules/cli.md).
 - `xref_runner.run` -- runs `frob.xref.xref` for `cfg.xref_symbol`
   (docs/commands/xref.md).
 - `parse_runner.run` -- reads a tool's raw output (pytest/ruff/ty/clang/...)
