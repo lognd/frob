@@ -247,12 +247,104 @@ def _refuse_exact_duplicate(root: Path, spec: TicketSpec) -> Result[None, Ticket
     return Err(TicketError.DuplicateTicket)
 
 
+# frob:ticket T-1813
+def _validate_new_ticket_spec(
+    root: Path, spec: TicketSpec, collected: frozenset[str] | None
+) -> Result[tuple[str, ...], TicketError]:
+    """`new_ticket`'s pre-write validation gauntlet, split out to keep that
+    function under ARCH001's line threshold (T-1813): runs-last warning,
+    worktree-lease enforcement, exact-duplicate refusal, evidence schema
+    validation, and evidence resolution checking, in that order. Returns
+    the validated (and normalized) evidence tuple on success, or the
+    first stage's `Err` -- the caller passes this straight through to
+    `_ticket_from_spec`."""
+    from frob.tickets import _check_evidence_resolution, _validate_evidence_list
+
+    if not spec.runs_last:
+        _warn_if_runs_last_ticket_in_progress(root)
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    duplicate_check = _refuse_exact_duplicate(root, spec)
+    if duplicate_check.is_err:
+        return Err(duplicate_check.danger_err)
+    validated = _validate_evidence_list(spec.evidence)
+    if validated.is_err:
+        return Err(validated.danger_err)
+    resolution = _check_evidence_resolution(
+        "new_ticket", validated.danger_ok, collected
+    )
+    if resolution.is_err:
+        return Err(resolution.danger_err)
+    return Ok(validated.danger_ok)
+
+
+# frob:ticket T-1813
+def _allocate_and_write_new_ticket(
+    root: Path, spec: TicketSpec, validated_evidence: tuple[str, ...]
+) -> Result[Ticket, TicketError]:
+    """`new_ticket`'s id-allocation-and-write step, split out to keep that
+    function under ARCH001's line threshold (T-1813). Allocation (read
+    the current max id) and the write that claims it MUST happen under
+    one held lock -- two processes each reading the pre-write max id and
+    then writing, unlocked in between, is exactly the sequential-id race
+    that produced T-0465's duplicate T-0427. `write_ticket` re-acquires
+    the same lock internally (reentrant, see `ledger_lock`), so this
+    outer hold is what actually closes the gap. (T-0458 established this
+    invariant.)"""
+    with ledger_lock(root):
+        ticket_id_result = _allocate_and_check_ticket_id(root)
+        if ticket_id_result.is_err:
+            return Err(ticket_id_result.danger_err)
+        ticket_id = ticket_id_result.danger_ok
+        ticket = _ticket_from_spec(ticket_id, spec, validated_evidence)
+        write_result = write_ticket(root, ticket)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    return Ok(ticket)
+
+
+# frob:ticket T-1813
+def _commit_new_ticket(root: Path, ticket: Ticket, no_commit: bool) -> None:
+    """`new_ticket`'s post-write ledger-commit step, split out to keep
+    that function under ARCH001's line threshold (T-1813). A commit
+    failure here is logged but never turns a successful ticket creation
+    into an `Err` -- the ticket is already durably written by the time
+    this runs; degrading to "created, but the ledger is dirty and logged
+    as such" is strictly better than losing the created ticket over a
+    commit failure."""
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root,
+        ticket.id,
+        f"chore(tickets): file {ticket.id}",
+        no_commit=no_commit,
+    )
+    if committed.is_err:
+        _log.error(
+            "tickets: %s created but the ledger commit failed (%s) -- "
+            "root is now DIRTY and will DirtyMain-block a concurrent "
+            "`frob ticket land` until committed by hand",
+            ticket.id,
+            committed.danger_err,
+        )
+    _log.info("tickets: created %s", ticket.id)
+
+
 # frob:ticket T-0102
 # frob:ticket T-0140
 # frob:ticket T-0398
 # frob:ticket T-1613
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-1758
+# frob:ticket T-1813
+# frob:waive AFFECT001 reason="T-1813 only splits new_ticket's existing body into \
+# three private helpers (_validate_new_ticket_spec/_allocate_and_write_ \
+# new_ticket/_commit_new_ticket) to clear ARCH001 -- no observable behavior, \
+# signature, or contract change, so docs/modules/tickets.md#public-api needs no \
+# update; that file is also out of this ticket's scope (held by other in-flight agents)"
 def new_ticket(
     root: Path,
     spec: TicketSpec,
@@ -333,56 +425,20 @@ def new_ticket(
     invalidates its conclusions. Best-effort: a load failure here degrades
     to no warning (never blocks filing), matching this module's existing
     fail-open-on-read posture elsewhere.
+    T-1813: the validation gauntlet, the locked allocate-and-write, and
+    the post-write commit each moved to their own helper
+    (`_validate_new_ticket_spec`/`_allocate_and_write_new_ticket`/
+    `_commit_new_ticket`) to keep this function under ARCH001's line
+    threshold -- this body is now just the three-step pipeline.
     """
-    from frob.tickets import _check_evidence_resolution, _validate_evidence_list
-
-    if not spec.runs_last:
-        _warn_if_runs_last_ticket_in_progress(root)
-
-    leased = enforce_worktree_lease(root)
-    if leased.is_err:
-        return Err(leased.danger_err)
-    duplicate_check = _refuse_exact_duplicate(root, spec)
-    if duplicate_check.is_err:
-        return duplicate_check
-    validated = _validate_evidence_list(spec.evidence)
-    if validated.is_err:
-        return Err(validated.danger_err)
-    resolution = _check_evidence_resolution(
-        "new_ticket", validated.danger_ok, collected
-    )
-    if resolution.is_err:
-        return Err(resolution.danger_err)
-    # frob:ticket T-0458
-    # Allocation (read the current max id) and the write that claims it
-    # MUST happen under one held lock -- two processes each reading the
-    # pre-write max id and then writing, unlocked in between, is exactly
-    # the sequential-id race that produced T-0465's duplicate T-0427.
-    # `write_ticket` re-acquires the same lock internally (reentrant, see
-    # `ledger_lock`), so this outer hold is what actually closes the gap.
-    with ledger_lock(root):
-        ticket_id_result = _allocate_and_check_ticket_id(root)
-        if ticket_id_result.is_err:
-            return Err(ticket_id_result.danger_err)
-        ticket_id = ticket_id_result.danger_ok
-        ticket = _ticket_from_spec(ticket_id, spec, validated.danger_ok)
-        write_result = write_ticket(root, ticket)
-        if write_result.is_err:
-            return Err(write_result.danger_err)
-    from frob.tickets._leases import commit_ticket_ledger_change
-
-    committed = commit_ticket_ledger_change(
-        root, ticket_id, f"chore(tickets): file {ticket_id}", no_commit=no_commit
-    )
-    if committed.is_err:
-        _log.error(
-            "tickets: %s created but the ledger commit failed (%s) -- "
-            "root is now DIRTY and will DirtyMain-block a concurrent "
-            "`frob ticket land` until committed by hand",
-            ticket_id,
-            committed.danger_err,
-        )
-    _log.info("tickets: created %s", ticket_id)
+    validation = _validate_new_ticket_spec(root, spec, collected)
+    if validation.is_err:
+        return Err(validation.danger_err)
+    written = _allocate_and_write_new_ticket(root, spec, validation.danger_ok)
+    if written.is_err:
+        return Err(written.danger_err)
+    ticket = written.danger_ok
+    _commit_new_ticket(root, ticket, no_commit)
     return Ok(ticket)
 
 
