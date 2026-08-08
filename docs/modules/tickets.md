@@ -4813,6 +4813,64 @@ the authoritative main checkout being read FROM, not the branch being
 merged, so its own disk state was never stale to begin with) or either
 ref's archive content fails to parse.
 
+## rapid-debt.jsonl merge rule (T-1873)
+
+<!-- frob:describes src/frob/tickets/_evidence.py::record_rapid_debt -->
+
+`rapid-debt.jsonl` is a tracked, append-only ledger at the repo root --
+every rapid-profile land appends one JSON-lines record to its tail
+(`frob ticket land`'s own T-1681 relaxation trail). With several agents
+landing concurrently, two worktrees routinely append different records
+near the same line, which -- BEFORE this fix -- git's default line-level
+merge reported as a textual conflict, and nothing told an agent how to
+resolve it: each one improvised by hand, on a file whose whole value is
+that no debt record is ever lost. Hand-editing an append-only ledger
+during conflict resolution is exactly how a record silently disappears,
+and a dropped record is indistinguishable afterward from debt that was
+never incurred.
+
+**This IS handled -- do not hand-edit a conflict here.** `.gitattributes`
+routes both `rapid-debt.jsonl` and `force-overrides.jsonl` (the sibling
+tracked append-only ledger, `frob.tickets._force_override`, T-1762 --
+covered proactively even though no `--force` override has happened yet
+in this repo) through git's BUILT-IN `merge=union` driver:
+
+```
+/rapid-debt.jsonl merge=union
+/force-overrides.jsonl merge=union
+```
+
+Deliberately git's built-in `union` driver, not a new frob driver (the
+shape `merge=frob-ledger` above uses for `tickets.md`): union concatenates
+both sides' lines, which is exactly the append-only "keep both sides"
+semantics wanted, and -- unlike `merge=frob-ledger` -- it needs NO local
+`git config` registration at all. That distinction matters specifically
+here: the frob-ledger driver needs a one-time per-clone setup (see
+"Git merge driver" above), so any worktree or fresh clone that skipped it
+silently falls back to the default (conflicting) driver -- exactly the
+failure mode this ticket exists to close, and a mechanism this repo does
+not need to build when git already ships it. The pattern is anchored with
+a leading slash for the same reason `/tickets.md` is (the anchoring
+precedent this file's own historical `.gitattributes` comment records) --
+unanchored, it would also match any other file named `rapid-debt.jsonl`
+anywhere in the tree.
+
+Verified by REPRODUCTION, not by inspecting `.gitattributes`
+(`tests/unit/test_gitattributes_merge.py`): two branches each append a
+different record to `rapid-debt.jsonl`, a real `git merge` between them
+reports a clean merge (exit 0, empty `git status --porcelain`), and both
+records survive with zero conflict markers.
+
+**Exact-duplicate lines deduplicate, they do not double up.** Measured
+directly (`test_identical_line_appended_on_both_sides_deduplicates`):
+when both sides append the byte-identical line, git's union driver keeps
+ONE copy, not two. Harmless for this file's shape -- every real record
+embeds a unique commit sha, so an exact duplicate can only arise from a
+retry re-emitting a byte-identical record for the same commit, and
+collapsing that to one entry is the correct outcome, not data loss. No
+dedup-on-read pass was added to the reader; this was a measured finding,
+not a speculative mitigation.
+
 ## Clipboard capture
 
 `frob ticket new` offers clipboard paste only when stdin is a TTY and

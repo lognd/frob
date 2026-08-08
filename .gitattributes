@@ -31,5 +31,30 @@
 # final-cutover step (design section 7.4), not this ticket's -- see
 # docs/design/ledger-v2.md#7-reversible-migration-plan-design-for-the-child-ticket-not-built-here.
 
+# T-1873: rapid-debt.jsonl is a tracked, append-only ledger -- every rapid
+# -profile land appends one record to its tail, and concurrent worktrees
+# appending near the same line hit git's default line-level merge, which
+# reports a false textual conflict on a file whose whole value is that no
+# record is ever lost (agents were hand-editing it to resolve this, which
+# is exactly how a record silently disappears). git's BUILT-IN `merge=
+# union` driver is preferred over a new frob driver here: union is
+# exactly append-only "keep both sides" semantics, and unlike `merge=
+# frob-ledger` above it needs NO per-clone `git config` registration --
+# a worktree that skipped that one-time setup silently falls back to the
+# default (conflicting) driver, which is exactly the failure mode this
+# ticket exists to close. Verified by reproduction (tests/unit/
+# test_gitattributes_merge.py): two branches each appending a different
+# record merge with both records surviving and zero conflict markers.
+# T-0480: anchored with a leading slash for the same reason `/tickets.md`
+# is above -- an unanchored pattern would also match any other file named
+# `rapid-debt.jsonl` (or `force-overrides.jsonl`) anywhere in the tree.
+# force-overrides.jsonl (frob.tickets._force_override, T-1762) is the
+# same tracked-root-append-only shape -- covered here even though no
+# `--force` override has happened yet in this repo (the file does not
+# exist on disk), so the FIRST concurrent append is already covered
+# rather than conflicting once, then getting a follow-up fix.
+/rapid-debt.jsonl merge=union
+/force-overrides.jsonl merge=union
+
 # T-1433 incident: attachment shas are byte-exact; CRLF conversion breaks COV004
 tickets/attachments/** -text

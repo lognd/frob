@@ -2,7 +2,7 @@
 id: T-1873
 title: 'rapid-debt.jsonl has no merge driver: concurrent appends conflict and agents
   hand-edit an append-only ledger'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -14,8 +14,27 @@ runs_last: false
 scope:
 - .gitattributes
 - docs/modules/tickets.md
+- tests/unit/test_gitattributes_merge.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_gitattributes_merge.py
+  reason: 'reproduction test required by the ticket body (item 3): two branches append
+    different rapid-debt.jsonl records, merge via real git, assert both survive with
+    no conflict markers'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: new tests/unit/test_gitattributes_merge.py exec/fs.write
+    capabilities need declaring in the testsuite node''s may lists'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge::test_two_branches_appending_different_records_both_survive
+- tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge::test_identical_line_appended_on_both_sides_deduplicates
 designated_repro_test: null
 threat: null
 component: null
