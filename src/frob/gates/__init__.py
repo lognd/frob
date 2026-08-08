@@ -6426,9 +6426,22 @@ def _substitute_cacheable_jobs(
 def _b9_exempt_file(file: str) -> bool:
     """Files a no-active-ticket diff may touch without tripping B9: the
     `tickets.md` ledger (archiving closed tickets is a legitimate no-ticket,
-    direct-to-main operation) and frob's own local `.frob/` state (never
-    real source, regardless of gitignore status)."""
-    return file == "tickets.md" or file.startswith(".frob/")
+    direct-to-main operation), the per-ticket `tickets/<id>/*` shard files
+    (T-1817: the same ledger bookkeeping as `tickets.md`, just sharded --
+    `frob ticket start`'s own auto-commit writes exactly one of these, so
+    an unscoped audit run from a worktree that has only ever advanced past
+    `main` via ticket-CLI bookkeeping commits saw a false PRE001/SCOPE001:
+    "diff touches 1 file(s)" naming a `tickets/T-####/ticket.md` shard on
+    an otherwise genuinely clean tree -- the exact by-construction firing
+    this rule exists to prevent, just reached through the newer sharded
+    ledger layout the original `tickets.md`-only exemption predates), and
+    frob's own local `.frob/` state (never real source, regardless of
+    gitignore status)."""
+    return (
+        file == "tickets.md"
+        or file.startswith(".frob/")
+        or file.startswith("tickets/")
+    )
 
 
 def _no_active_ticket_touches_source(diff: Diff) -> bool:
@@ -6444,7 +6457,13 @@ def _no_active_ticket_violation(rule: str, diff: Diff) -> tuple[Violation, ...]:
     derivable (no `--ticket` and no `T-####-` branch prefix). Previously
     this silently skipped both scope and pre-work enforcement entirely; now
     it is a loud blocking violation instead, since skipping is exactly the
-    escape an off-convention branch (or committing on `main`) could exploit."""
+    escape an off-convention branch (or committing on `main`) could exploit.
+
+    T-1817: the message now names what `diff` was actually computed
+    against (`diff.base`, the `git merge-base(HEAD, --base)` commit) --
+    from a clean root the "N file(s)" count is otherwise unexplainable,
+    and an unexplainable count in an error message is what makes a reader
+    stop reading it."""
     touched = sorted(f for f in _touched_files(diff) if not _b9_exempt_file(f))
     return (
         Violation(
@@ -6453,9 +6472,10 @@ def _no_active_ticket_violation(rule: str, diff: Diff) -> tuple[Violation, ...]:
             file=touched[0] if touched else "",
             line=0,
             message=(
-                f"{rule}: diff touches {len(touched)} file(s) but no active "
-                "ticket is derivable (pass --ticket or use a T-####-name "
-                "branch); scope/pre-work enforcement cannot be skipped"
+                f"{rule}: diff against merge-base {diff.base} touches "
+                f"{len(touched)} file(s) but no active ticket is derivable "
+                "(pass --ticket or use a T-####-name branch); scope/"
+                "pre-work enforcement cannot be skipped"
             ),
         ),
     )

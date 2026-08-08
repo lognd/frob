@@ -9319,6 +9319,45 @@ class TestRunGates:
         assert "scope" in report.stats.skipped
         assert "prework" in report.stats.skipped
 
+    # frob:tests src/frob/gates/__init__.py::_b9_exempt_file
+    # frob:ticket T-1817
+    def test_run_gates_still_skips_scope_and_prework_for_sharded_ticket_diff(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1817: the same ledger exemption as `tickets.md` must cover the
+        sharded `tickets/<id>/*` layout -- `frob ticket start`/`sweep`'s own
+        auto-commit writes exactly this shape, and it must not trip a false
+        PRE001/SCOPE001 on an otherwise clean, unscoped audit."""
+        _git_init(tmp_path)
+        _write(tmp_path, "tickets/T-0001/done-report.md", "## Done report\n")
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert "scope" in report.stats.skipped
+        assert "prework" in report.stats.skipped
+
+    # frob:tests src/frob/gates/__init__.py::_no_active_ticket_violation
+    # frob:ticket T-1817
+    def test_no_active_ticket_violation_names_the_diff_base(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1817: the B9 blocking message must name the merge-base `diff`
+        was computed against -- otherwise the reported "N file(s)" count is
+        unexplainable from a reader's clean `git status`."""
+        _git_init(tmp_path)
+        _write(tmp_path, "src/pkg/a.py", "def helper(x):\n    return x\n")
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        scope001 = next(v for v in report.violations if v.rule == "SCOPE001")
+        assert "merge-base" in scope001.message
+
     # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
     # frob:ticket T-0541
     def test_run_gates_blocks_prework_when_diff_load_fails_with_no_ticket(

@@ -2,7 +2,7 @@
 id: T-1817
 title: PRE001/SCOPE001 fire by construction on an unscoped check from a clean root,
   so the 0-error floor cannot be measured
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,8 +13,46 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_scope.py
+- src/frob/gates/__init__.py
+- tickets/T-1817/**
+- tickets/**
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: declared scope src/frob/gates/_scope.py does not exist; the PRE001/SCOPE001
+    logic (_no_active_ticket_violation, _build_ticket_scoped_jobs) lives in src/frob/gates/__init__.py
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1817/**
+  reason: frob ticket start/sweep auto-commit my own bookkeeping shard tickets/T-1817/ticket.md;
+    it must be implicitly in my own scope the same way tickets.md is, to land this
+    ticket's own change (filed T-1819 for the systemic scope_matches/LEDGER_PATH
+    fix)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/**
+  reason: ticket-ledger bookkeeping shards (frob ticket new/start/sweep auto-commits,
+    including the T-1819 follow-up filed from this same worktree) are the
+    sharded-ledger equivalent of tickets.md, which is already implicitly in scope
+    for every ticket; narrowing to just tickets/T-1817/** was insufficient since any
+    new draft filed from this branch also auto-commits its own shard
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_gates.py
+  reason: regression test for the _b9_exempt_file fix belongs beside the existing
+    B9 sibling tests (test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
+    etc) in this file
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_sharded_ticket_diff
+- tests/test_gates.py::TestRunGates::test_no_active_ticket_violation_names_the_diff_base
 designated_repro_test: null
 threat: null
 component: null
