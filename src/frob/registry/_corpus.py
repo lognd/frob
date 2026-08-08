@@ -54,6 +54,7 @@ class CorpusError(ErrorSet):
     FileNotFound = "the target registry file does not exist"
     KeyNotFound = "the named entries key does not appear in the file"
     DuplicateId = "an entry with this id already exists in the file"
+    WriteFailed = "the write to the target registry file failed"
 
 
 def _yaml_scalar(value: str) -> str:
@@ -65,7 +66,9 @@ def _yaml_scalar(value: str) -> str:
 
 # frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
 # frob:ticket T-0429
-# frob:tests tests/test_registry_corpus.py::TestFormatEntryBlock.test_pending_disposition_always kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_registry_corpus.py::TestFormatEntryBlock.test_pending_disposition_always \
+# kind="unit"
 def format_entry_block(
     entry_id: str,
     name: str,

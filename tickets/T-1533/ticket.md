@@ -1,7 +1,7 @@
 ---
 id: T-1533
 title: CorpusError needs a dedicated write-failure member
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-04'
@@ -13,9 +13,51 @@ runs_last: false
 scope:
 - src/frob/registry/_corpus.py
 - src/frob/app/registry_runner.py
-- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/registry/_staleness.py
+- tests/test_registry_staleness.py
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+- docs/guides/exhaustive-research.md
+- tickets/T-1533/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/registry/_staleness.py
+  reason: actual write-failure return site sync_gate_rule_entries lives here per ticket
+    description; was omitted from original scope
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_registry_staleness.py
+  reason: update assertion for the new WriteFailed member this ticket adds
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: no edit needed there -- _land_cmd.py only logs the CorpusError member, no
+    message dict to update
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
+  reason: AFFECT001 requires updating these frob:doc closure targets for CorpusError.WriteFailed
+    and sync_gate_rule_entries
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/guides/exhaustive-research.md
+  reason: AFFECT001 requires updating these frob:doc closure targets for CorpusError.WriteFailed
+    and sync_gate_rule_entries
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1533/ticket.md
+  reason: ticket lifecycle commits (start/scope changes) touch this file; scope must
+    cover it to satisfy SCOPE001
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_registry_staleness.py::TestSyncGateRuleEntriesCrashSafety::test_leaves_original_on_replace_failure
 designated_repro_test: null
 threat: null
 component: null

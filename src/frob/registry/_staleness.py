@@ -62,7 +62,7 @@ def _gate_rule_block(rule: str) -> str:
     )
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:ticket T-0560
 # frob:tests tests/test_registry_staleness.py::TestMissingGateRuleIds.test_finds_rules_with_no_entry kind="unit"  # noqa: E501
 def missing_gate_rule_ids(
@@ -87,7 +87,7 @@ def missing_gate_rule_ids(
     return frozenset(known_rules - covered)
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:ticket T-0560
 # frob:ticket T-1359
 # frob:tests tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_missing_rule kind="unit"  # noqa: E501
@@ -107,16 +107,13 @@ def sync_gate_rule_entries(
     T-1338 hazard class T-1348 closed for `frob.gates._fix_engine`)
     leaves `check-coverage.yaml` intact instead of half-rewritten. On the
     (should-never-happen) `atomic_write` I/O failure path, the real
-    OSError detail is logged here and this returns `Err(FileNotFound)` --
-    not a semantically precise fit, but deliberately reusing an existing
-    `CorpusError` member rather than widening this function's public
-    error type: `sync_gate_rule_entries`'s two other call sites
+    OSError detail is logged here and this returns `Err(WriteFailed)`
+    (T-1533): a dedicated member distinct from the file-absent case,
+    since `sync_gate_rule_entries`'s other call sites
     (`frob.app.registry_runner._run_sync_gate_rules`,
-    `frob.app.ticket_runner._land_cmd`) key a message dict on `CorpusError`
-    alone and sit outside this ticket's declared scope, so introducing a
-    new error variant here would need a companion fix there. See T-1359's
-    Done report for the follow-up ticket that gives write failures their
-    own precise `CorpusError` member."""
+    `frob.app.ticket_runner._land_cmd`) key a message dict on
+    `CorpusError` and must not confuse "file never existed" with
+    "write failed after the file was read"."""
     if not registry_path.is_file():
         _log.warning("sync_gate_rule_entries: %s does not exist", registry_path)
         return Err(CorpusError.FileNotFound)
@@ -150,7 +147,7 @@ def sync_gate_rule_entries(
             registry_path,
             written.danger_err,
         )
-        return Err(CorpusError.FileNotFound)
+        return Err(CorpusError.WriteFailed)
     _log.info(
         "sync_gate_rule_entries: %s <- %d rule(s): %s",
         registry_path,

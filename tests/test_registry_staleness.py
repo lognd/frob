@@ -155,7 +155,7 @@ class TestSyncGateRuleEntriesCrashSafety:
         result = sync_gate_rule_entries(path, frozenset({"REF001", "NEW001"}))
 
         assert result.is_err
-        assert result.danger_err == CorpusError.FileNotFound
+        assert result.danger_err == CorpusError.WriteFailed
         assert path.read_text(encoding="utf-8") == original
         leftovers = [p for p in tmp_path.iterdir() if p.name != "check-coverage.yaml"]
         assert leftovers == [], f"a partial/temp file leaked: {leftovers}"

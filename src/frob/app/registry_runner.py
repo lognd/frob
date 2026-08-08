@@ -31,6 +31,7 @@ _CORPUS_ERROR_MESSAGES: dict[CorpusError, str] = {
     CorpusError.FileNotFound: "registry file does not exist",
     CorpusError.KeyNotFound: "entries key does not appear in that file",
     CorpusError.DuplicateId: "an entry with this id already exists",
+    CorpusError.WriteFailed: "the write to the registry file failed",
 }
 
 
@@ -115,7 +116,7 @@ def _run_sync_gate_rules(registry_dir: Path) -> None:
 # frob:ticket T-0875
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.test_missing_registry_dir_logs_and_returns kind="unit"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob registry audit`: per-registry-file disposition counts under

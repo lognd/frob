@@ -111,7 +111,10 @@ finding with one command whenever it fires.
 + `fsync` + `os.replace`) instead of a bare `Path.write_text`, so a land
 killed mid-REG010-autofix leaves the previous `check-coverage.yaml`
 intact rather than half-written -- the same hazard class T-1348 already
-closed for `frob.gates._fix_engine`'s direct writes.
+closed for `frob.gates._fix_engine`'s direct writes. On the (should-never-
+happen) `atomic_write` I/O failure path, `sync_gate_rule_entries` now
+returns the dedicated `CorpusError.WriteFailed` (T-1533) rather than
+reusing `FileNotFound` as an inaccurate stand-in.
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_sync_gate_rules_for_land -->
 

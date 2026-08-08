@@ -124,6 +124,13 @@ A research pass that says "I enumerated 41" and appends 41 entries to a
 file declaring `total: 41` has a machine-verified denominator, not a
 self-report.
 
+**Failure modes.** `append_entry`'s `CorpusError` (`frob.registry._corpus`)
+covers file-absent (`FileNotFound`), key-absent (`KeyNotFound`),
+already-present (`DuplicateId`), and write-failed (`WriteFailed`, T-1533)
+-- the last one dedicated to an `atomic_write` I/O failure, distinct from
+the file simply not existing, so a caller keying a message dict on
+`CorpusError` never has to guess which case actually happened.
+
 **No dispositions at emit time.** Under the derived-registry model
 (T-0428: `handled_by` is cross-checked against code-declared
 `frob:enforces`, never authored by hand), the researcher's job stops at
