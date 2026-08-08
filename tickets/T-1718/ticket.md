@@ -2,7 +2,7 @@
 id: T-1718
 title: 'frob ticket evidence node-id shape validation: investigate the malformed-id
   gap without breaking pytest-form binding'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -89,3 +89,6 @@ What's still plausibly a real, addressable gap:
 - Do NOT implement "reject the pytest `::`-separated form" as literally
   worded in T-1670's original text -- see the investigation above for why
   that breaks the primary, correct way to bind evidence.
+
+## Drop reason
+- 2026-08-08: Duplicate: this ticket's title, description, and plan sketch are identical to T-1706 (frob ticket evidence node-id shape validation: investigate the malformed-id gap without breaking pytest-form binding), which already landed. src/frob/tickets/__init__.py::_has_excess_separator_segments + validate_evidence's T-1706 check implement exactly item (1) of this ticket's plan sketch (reject 3+-segment ::-separated ids at bind time, checked pre-normalize so a legitimate dotted or 2-segment pytest id is never touched). Item (2) (a frob:tests-directive-form hint on bind) was investigative/optional in both tickets' text and was not claimed as required. Verified live: tests/test_tickets.py's validate_evidence/excess-separator/MalformedEvidence tests (11 total) pass on the current worktree. False premise as currently scoped -- filed as a re-derivation of already-completed work. (absorbed by T-1706)
