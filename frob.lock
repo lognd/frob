@@ -17,6 +17,24 @@
       "old_digest": "fa7492b15b796f86b6627da79468d2fcfa6926d24fbf6083e2f044e1f30fad50",
       "reason": "T-1317: acknowledge now requires --reason and records the digest delta in ack_log; re-verified the new body against docs/modules/gates.md#ack-accountability-t-1317",
       "ref": "src/frob/graph/lock.py::acknowledge"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-08",
+      "facet": "body",
+      "new_digest": "79d01da23d6a8907eeda62251c528f4660c9506000c101fe422b3f5fd8bd3eb6",
+      "old_digest": "f2086f7c79f47feef8b60f71ef4178e2e86ec17e7ae071f9f3f2cf336886198f",
+      "reason": "T-1719: run_diagnosis body digest moved only because it now also computes/threads global_binary_skew through report assembly and logging; the doc it points at (docs/guides/install.md's doctor section) still describes the same overall contract accurately",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-08",
+      "facet": "sig",
+      "new_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "reason": "T-1719: run_diagnosis body digest moved only because it now also computes/threads global_binary_skew through report assembly and logging; the doc it points at (docs/guides/install.md's doctor section) still describes the same overall contract accurately",
+      "ref": "src/frob/doctor.py::run_diagnosis"
     }
   ],
   "entries": [
@@ -66,7 +84,7 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
-      "digest": "f2086f7c79f47feef8b60f71ef4178e2e86ec17e7ae071f9f3f2cf336886198f",
+      "digest": "79d01da23d6a8907eeda62251c528f4660c9506000c101fe422b3f5fd8bd3eb6",
       "facet": "body",
       "ref": "src/frob/doctor.py::run_diagnosis"
     },

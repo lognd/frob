@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.387.0] - unreleased
+
+- T-1719: Fold Claude-config sync into a frob verb, gate the drift, and report global-vs-local frob skew in doctor
+
 ## [0.386.0] - unreleased
 
 - T-1806: Generalize lease staleness: path-gone, ticket-gone, and holder-dead are all the same check

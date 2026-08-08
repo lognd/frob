@@ -409,12 +409,14 @@
     "src/frob/doctor.py::DERIVED_ARTIFACTS": "e676221f7220b28e11b645b847e77b406797a9e8a5658fcc9fcb15d1a8627fee",
     "src/frob/doctor.py::DerivedArtifactStatus": "46c01a6894e15e81ad12cfe2c722989599360b0e2d23e6c9c2f4d5046e811085",
     "src/frob/doctor.py::DoctorReport": "5124e9b4331bb1078dd52623f0fa817b69e56254ea620a808f11346044a10d07",
+    "src/frob/doctor.py::GlobalBinarySkew": "784b98847845e12e5acc73ce8821b119a147ee883e3439d56b61af3ea2ed4583",
     "src/frob/doctor.py::LiveLandProcess": "df45e85419a76c6e0bb5b53c256dfb6d5844f23147dd9b10757ad879ebf83ad0",
     "src/frob/doctor.py::MalformedTicketEdge": "5c75fb3bc838c9a87758cf2f81b063e1951819193ccf178b54bf81c4116d5c7e",
     "src/frob/doctor.py::NATIVE_EXTENSIONS": "ffd76f39a459f41fcc3c55ee7e0faab4bf1714b127b00f3cd9646e89578c5448",
     "src/frob/doctor.py::NativeExtensionStatus": "fe9d34aedff7c69b12dc90075cf5a866902cc64f7115071e2569f63b141420da",
     "src/frob/doctor.py::REMEDIATION_HINT": "72cba9976f5df20853ad28c1ce4d321119df5f4c0588b11ec7e117f23e0801b6",
     "src/frob/doctor.py::VenvShimDrift": "00f80ff840c7691bca333a85be8ed35bb00e1a456b6cc1e945c7b8f5f2f19c0c",
+    "src/frob/doctor.py::global_binary_skew": "ad54c9a5fe3c500455e1ae9e6d24e1fb8a8af01a027121aa6a79201dd133df24",
     "src/frob/doctor.py::run_diagnosis": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
     "src/frob/doctor.py::scan_live_land_processes": "5589543c45d7bc82aca463f84388bbd19810fa5acf81375b6a26b7478c0743b8",
     "src/frob/doctor.py::scan_malformed_ticket_edges": "6ce0127b57a6808dd573a11421e19d445c2b30a7df80cc5e6ead715ec2e15f19",
@@ -2139,5 +2141,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.386.0"
+  "version": "0.387.0"
 }

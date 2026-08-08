@@ -188,6 +188,39 @@ pipelines, `exports` powers the `exports` gate stage, `gitlog` powers
 `frob stats`/changelog generation, and `serve` (MCP) is valuable for
 no-shell contexts even though it goes unused when an agent has a shell.
 
+## `frob doctor`: global-vs-local frob binary skew (T-1719)
+
+`frob doctor` (`src/frob/doctor.py`) reports whether the on-PATH global
+`frob` binary agrees with this checkout's own `uv run frob` version. The
+motivating measurement: `frob` on PATH read 0.184.0 while this repo's
+`uv run frob` was 0.361.0 -- 177 versions apart -- with nothing surfacing
+the gap short of a human running both `--version` by hand. Every gate
+number and ledger splice the global binary produces against this tree is
+wrong while the two disagree; this is the same class of incident
+`stale_binary_warning` (`docs/modules/app.md#entry-point`, T-1218) already
+covers for a declared `min_frob_version` floor violation, but reports ANY
+disagreement, floor or no floor -- even a NEWER global binary reading an
+older checkout can disagree on gate logic.
+
+`DoctorReport.global_binary` (a `GlobalBinarySkew`) carries the raw
+`global_version`/`local_version` strings and a `skewed` bool; `skewed=True`
+makes the overall report `healthy=False` and folds a remediation line
+naming both versions and the exact fix (`uv run frob ...`, or `uv tool
+upgrade frob` to reconcile) into `DoctorReport.remediation`. An
+unmeasurable comparison (no global `frob` on PATH at all) reports
+`global_version=None, skewed=False` and never counts against `healthy` --
+absence of a comparison is not evidence of skew.
+
+This mirrors the measurement `.claude/hooks/frob-suggest.py`'s own
+`_frob_version_skew` already performs to nudge a raw `frob` invocation
+(same spawn-strip-compare shape) -- that hook is a standalone script with
+no `frob` package import available to it, so this is a parallel
+implementation of the identical check rather than a shared function call.
+Fully unifying the two surfaces (e.g. having the hook shell out to a
+`frob doctor --json` call and read this field back) is a larger change to
+the hook-loader boundary, out of this ticket's own scope -- see the
+Done report for the follow-up ticket filed for that.
+
 ## `frob ticket migrate --to v2` (T-1492)
 
 `frob ticket migrate` collapses legacy `tickets/*.md` into a single

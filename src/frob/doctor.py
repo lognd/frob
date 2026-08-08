@@ -72,6 +72,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import shutil
 from importlib.metadata import version
 from pathlib import Path
 
@@ -80,6 +81,7 @@ from pydantic import BaseModel
 from frob.app._config_meta import stale_binary_warning
 from frob.logging import get_logger
 from frob.mutate._journal import StaleJournal, list_stale_journals
+from frob.process._guard import guarded_subprocess_run
 from frob.process._lock import derived_state_lock
 from frob.scaffold._managed import ManagedBlockStatus, scaffold_conformance_status
 
@@ -532,6 +534,102 @@ def _venv_shim_remediation(drifted: tuple[VenvShimDrift, ...]) -> str:
     )
 
 
+# frob:ticket T-1719
+# frob:doc docs/modules/cli.md#frob-doctor-global-vs-local-frob-binary-skew-t-1719
+class GlobalBinarySkew(BaseModel):
+    """`frob doctor`'s report of the on-PATH global `frob` versus this
+    invocation's own version (T-1719): measured directly, `frob` on PATH
+    sat at 0.184.0 while this repo's own `uv run frob` was 0.361.0 -- 177
+    versions apart, with nothing surfacing the gap short of a human
+    running both by hand. Every gate number and ledger splice the global
+    binary produces against this tree is wrong while the two disagree
+    (the same class of incident `stale_binary_warning`/T-1218 already
+    covers for a `min_frob_version` floor violation -- this check instead
+    reports ANY disagreement, floor or no floor, since even a NEWER global
+    binary reading an older checkout can disagree on gate logic).
+
+    `global_version`/`local_version` are the raw `frob --version` strings
+    from each; `skewed` is True only when BOTH measured successfully and
+    differ -- an unmeasurable side (no global `frob` on PATH, a spawn
+    failure) is never itself read as evidence of skew. Mirrors
+    `.claude/hooks/frob-suggest.py`'s own `_frob_version_skew` measurement
+    (spawn, strip, compare) -- that hook is a standalone script with no
+    `frob` package import available to it, so this is a parallel
+    implementation of the same check rather than a shared function call;
+    see this ticket's Done report for why full code-sharing across the
+    two surfaces is a separate, larger change."""
+
+    model_config = {}
+
+    global_version: str | None
+    local_version: str
+    skewed: bool
+
+
+def _probe_global_frob_version() -> str | None:
+    """The on-PATH `frob --version` output, or `None` when no `frob`
+    binary is on PATH or the probe fails for any reason (never raises --
+    an unmeasurable global binary is a normal outcome this reports, not an
+    error)."""
+    frob_path = shutil.which("frob")
+    if frob_path is None:
+        return None
+    result = guarded_subprocess_run(
+        [frob_path, "--version"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if result.is_err:
+        _log.debug("doctor: global frob version probe refused: %s", result.danger_err)
+        return None
+    proc = result.danger_ok
+    if proc.returncode != 0:
+        _log.warning("doctor: global frob --version exited %d", proc.returncode)
+        return None
+    out = (proc.stdout or proc.stderr).strip()
+    return out or None
+
+
+# frob:ticket T-1719
+# frob:doc docs/modules/cli.md#frob-doctor-global-vs-local-frob-binary-skew-t-1719
+# frob:tests tests/test_doctor.py::test_global_binary_skew_reports_disagreement
+# frob:tests tests/test_doctor.py::test_global_binary_skew_none_when_no_global_frob
+# frob:tests \
+# tests/test_doctor.py::test_global_binary_skew_not_skewed_when_versions_agree
+def global_binary_skew(local_version: str) -> GlobalBinarySkew | None:
+    """Compare the on-PATH `frob`'s `--version` output against
+    `local_version` (this invocation's own `frob {_frob_version()}`
+    string, T-1719), or `None` when there is no global `frob` on PATH at
+    all to compare against -- nothing to reconcile in that case. Never
+    raises; an unmeasurable global binary reports as `global_version=None,
+    skewed=False`, not as a false skew."""
+    global_v = _probe_global_frob_version()
+    skewed = global_v is not None and global_v != local_version
+    if skewed:
+        _log.warning(
+            "doctor: global frob version skew: PATH frob=%r, uv run frob=%r",
+            global_v,
+            local_version,
+        )
+    return GlobalBinarySkew(
+        global_version=global_v, local_version=local_version, skewed=skewed
+    )
+
+
+def _global_binary_skew_remediation(skew: GlobalBinarySkew) -> str:
+    """Remediation hint naming both versions and the exact reconcile
+    command (T-1719) -- mirrors `frob-suggest.py`'s own nudge text so an
+    agent sees the same fix whether it hit the hook or ran `frob doctor`
+    directly."""
+    return (
+        f"global `frob` on PATH ({skew.global_version!r}) disagrees with this "
+        f"repo's own `uv run frob` ({skew.local_version!r}) -- use `uv run "
+        "frob ...` here, or reconcile the installs with `uv tool upgrade frob`"
+    )
+
+
 def _sqlite_validity(data: bytes) -> str | None:
     """`None` if `data` starts with the SQLite magic header, else a short
     corruption detail string -- never raises on garbage bytes."""
@@ -778,7 +876,14 @@ class DoctorReport(BaseModel):
     (T-1218) is the same class again: the invoked `frob` reading BELOW
     this repo's own `frob.toml` `min_frob_version` floor means every gate
     number and ledger splice this run produced may already be wrong --
-    see `stale_binary_warning`'s docstring for the motivating incident."""
+    see `stale_binary_warning`'s docstring for the motivating incident.
+    `global_binary` (T-1719) is a related but distinct check: it compares
+    the on-PATH global `frob` against THIS run's own version regardless of
+    any declared `min_frob_version` floor -- see `GlobalBinarySkew`'s
+    docstring. Only its `skewed=True` case makes `healthy` False; an
+    unmeasurable comparison (no global `frob` on PATH) reports
+    `global_binary` with `global_version=None, skewed=False` and never
+    counts against `healthy`."""
 
     model_config = {}
 
@@ -792,6 +897,7 @@ class DoctorReport(BaseModel):
     stale_ticket_leases: list[str] = []
     venv_shims: list[VenvShimDrift] = []
     stale_binary: str | None = None
+    global_binary: GlobalBinarySkew | None = None
     live_land_process: LiveLandProcess | None = None
     healthy: bool
     remediation: str | None = None
@@ -835,14 +941,16 @@ def _combined_remediation(
     stale_ticket_leases: tuple[str, ...] = (),
     venv_shims: tuple[VenvShimDrift, ...] = (),
     stale_binary: str | None = None,
+    global_binary: GlobalBinarySkew | None = None,
     live_land_process: LiveLandProcess | None = None,
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
     journal hint (T-0857), malformed-ticket-edge hint (T-1132), stale-
     ticket-lease hint (T-1131), venv-shim hint (T-1161), stale-binary-
-    floor hint (T-1218), live-land-process hint (T-1515), or all joined --
-    `None` only when every part is clean. T-1515: an ALIVE land process is
+    floor hint (T-1218), global-binary-skew hint (T-1719), live-land-process
+    hint (T-1515), or all joined -- `None` only when every part is clean.
+    T-1515: an ALIVE land process is
     informational, not unhealthy (a real, in-flight `land()` is normal).
     T-1634: a CONFIRMED-dead (orphaned) holder still contributes a
     disclosure line here (so it is never silently dropped from the
@@ -868,6 +976,8 @@ def _combined_remediation(
         parts.append(_venv_shim_remediation(venv_shims))
     if stale_binary:
         parts.append(stale_binary)
+    if global_binary is not None and global_binary.skewed:
+        parts.append(_global_binary_skew_remediation(global_binary))
     if live_land_process is not None and live_land_process.alive is not True:
         parts.append(_live_land_process_remediation(live_land_process))
     return " | ".join(parts) if parts else None
@@ -938,18 +1048,19 @@ def _log_doctor_diagnosis(
     venv_shims=(),
     stale_binary=None,
     live_land_process=None,
+    global_binary=None,
 ) -> None:
     """T-1162: pure I/O -- emit `run_diagnosis`'s single summary log line.
     Extracted verbatim so the report-building logic above it stays
     decision/formatting only. `venv_shims` (T-1161) defaults to `()` so
-    existing positional callers are unaffected. `stale_binary` (T-1218)
-    and `live_land_process` (T-1515) default to `None` for the same
-    reason."""
+    existing positional callers are unaffected. `stale_binary` (T-1218),
+    `live_land_process` (T-1515), and `global_binary` (T-1719) default to
+    `None` for the same reason."""
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
         "scaffold_needs_apply=%s stale_mutate_journals=%s "
         "malformed_ticket_edges=%s stale_ticket_leases=%s venv_shims=%s "
-        "stale_binary=%s live_land_process=%s",
+        "stale_binary=%s global_binary_skewed=%s live_land_process=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
@@ -960,6 +1071,7 @@ def _log_doctor_diagnosis(
         stale_ticket_leases,
         [d.script for d in venv_shims],
         bool(stale_binary),
+        global_binary.skewed if global_binary is not None else None,
         live_land_process.model_dump() if live_land_process is not None else None,
     )
 
@@ -981,15 +1093,16 @@ def _assemble_doctor_report(
     venv_shims,
     stale_binary,
     live_land_process=None,
+    global_binary=None,
 ) -> DoctorReport:
     """`run_diagnosis`'s own `healthy`/`DoctorReport` decision and build,
     extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
     60-line threshold now that its docstring has grown with each health
     check it documents. `healthy` is False if natives fail to import, the
     derived-state manifest is corrupt, or any of the scaffold/mutate-
-    journal/ticket-edge/ticket-lease/venv-shim/stale-binary scans found
-    something -- see `DoctorReport`'s own docstring for the per-field
-    contract each of those checks documents. `live_land_process` (T-1515)
+    journal/ticket-edge/ticket-lease/venv-shim/stale-binary/global-binary-
+    skew scans found something -- see `DoctorReport`'s own docstring for
+    the per-field contract each of those checks documents. `live_land_process` (T-1515)
     only affects `healthy` when its holder's liveness is AMBIGUOUS
     (`alive is None`) -- this repo genuinely cannot confirm the holder is
     gone, so it stays a human-actionable finding. T-1634: a CONFIRMED-dead
@@ -1009,6 +1122,7 @@ def _assemble_doctor_report(
         and not stale_ticket_leases
         and not venv_shims
         and not stale_binary
+        and not (global_binary is not None and global_binary.skewed)
         and not (live_land_process is not None and live_land_process.alive is None)
     )
     return DoctorReport(
@@ -1022,6 +1136,7 @@ def _assemble_doctor_report(
         stale_ticket_leases=list(stale_ticket_leases),
         venv_shims=list(venv_shims),
         stale_binary=stale_binary,
+        global_binary=global_binary,
         live_land_process=live_land_process,
         healthy=healthy,
         remediation=_combined_remediation(
@@ -1033,6 +1148,7 @@ def _assemble_doctor_report(
             stale_ticket_leases,
             venv_shims,
             stale_binary,
+            global_binary,
             live_land_process,
         ),
     )
@@ -1097,6 +1213,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         live_land_process,
     ) = _collect_doctor_scans(resolved_root)
     stale_binary = stale_binary_warning(resolved_root)
+    global_binary = global_binary_skew(f"frob {_frob_version()}")
 
     report = _assemble_doctor_report(
         resolved_root,
@@ -1113,6 +1230,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         venv_shims,
         stale_binary,
         live_land_process,
+        global_binary,
     )
     _log_doctor_diagnosis(
         report.healthy,
@@ -1126,5 +1244,6 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         venv_shims,
         stale_binary,
         live_land_process,
+        global_binary,
     )
     return report

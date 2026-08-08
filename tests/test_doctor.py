@@ -126,6 +126,87 @@ def test_run_diagnosis_stale_binary_none_when_no_floor(tmp_path: Path) -> None:
     assert report.stale_binary is None
 
 
+# frob:ticket T-1719
+def test_global_binary_skew_reports_disagreement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # frob:tests src/frob/doctor.py::global_binary_skew
+    """A PATH `frob` reporting a DIFFERENT version than `local_version`
+    reports `skewed=True` and folds a remediation hint naming both
+    versions -- the 177-versions-apart incident this check exists for."""
+    monkeypatch.setattr(doctor, "_probe_global_frob_version", lambda: "frob 0.184.0")
+
+    skew = doctor.global_binary_skew("frob 0.361.0")
+
+    assert skew is not None
+    assert skew.skewed is True
+    assert skew.global_version == "frob 0.184.0"
+    assert skew.local_version == "frob 0.361.0"
+    hint = doctor._global_binary_skew_remediation(skew)
+    assert "0.184.0" in hint
+    assert "0.361.0" in hint
+
+
+# frob:ticket T-1719
+def test_global_binary_skew_none_when_no_global_frob(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # frob:tests src/frob/doctor.py::global_binary_skew
+    """No `frob` on PATH at all reports `global_version=None,
+    skewed=False` -- an unmeasurable comparison is never itself read as
+    evidence of skew."""
+    monkeypatch.setattr(doctor, "_probe_global_frob_version", lambda: None)
+
+    skew = doctor.global_binary_skew("frob 0.361.0")
+
+    assert skew is not None
+    assert skew.global_version is None
+    assert skew.skewed is False
+
+
+# frob:ticket T-1719
+def test_global_binary_skew_not_skewed_when_versions_agree(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # frob:tests src/frob/doctor.py::global_binary_skew
+    """Matching versions report `skewed=False` and contribute no
+    remediation."""
+    monkeypatch.setattr(doctor, "_probe_global_frob_version", lambda: "frob 0.361.0")
+
+    skew = doctor.global_binary_skew("frob 0.361.0")
+
+    assert skew is not None
+    assert skew.skewed is False
+
+
+# frob:ticket T-1719
+# frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it \
+# exercises; repository self-check machinery, no person-related data anywhere in the \
+# test"
+def test_run_diagnosis_unhealthy_on_global_binary_skew(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # frob:tests src/frob/doctor.py::run_diagnosis
+    """`run_diagnosis` folds a skewed `global_binary` into `healthy=False`
+    and `remediation`, mirroring `stale_binary`'s own contract."""
+
+    class _Fake:
+        __version__ = "9.9.9"
+
+    monkeypatch.setattr(importlib, "import_module", lambda name: _Fake())
+    monkeypatch.setattr(doctor, "_probe_global_frob_version", lambda: "frob 0.184.0")
+    monkeypatch.setattr(doctor, "_frob_version", lambda: "0.361.0")
+
+    report = doctor.run_diagnosis(root=tmp_path)
+
+    assert report.global_binary is not None
+    assert report.global_binary.skewed is True
+    assert report.healthy is False
+    assert report.remediation is not None
+    assert "0.184.0" in report.remediation
+    assert "0.361.0" in report.remediation
+
+
 @pytest.mark.parametrize("name", list(doctor.NATIVE_EXTENSIONS))
 def test_native_extensions_are_the_expected_set(name):
     # frob:tests src/frob/doctor.py::NATIVE_EXTENSIONS
