@@ -2,7 +2,7 @@
 id: T-1728
 title: close's own-obligations REL001 check is not rapid-aware, deadlocks a worktree
   that legitimately needs a version bump
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -72,3 +72,6 @@ state, then reverted the edit (`git checkout -- pyproject.toml`) before
 landing, so `frob ticket land`'s own bump computation was untouched and
 wrote the real bump itself. This is not a fix, just what let T-1675 land
 without violating the land-owned-files rule or waiving a real gate.
+
+## Drop reason
+- 2026-08-07: Exact duplicate of T-1702 (identical title). Keeping the lower id. Part of a batch re-filing: T-1728..T-1731 duplicate T-1702/T-1711/T-1718/T-1720, and T-1702/T-1711 each had a third copy. Nothing at file time compares a new ticket against open ones with the same title and scope; that belongs with T-1744's false-queue-signal detector. (absorbed by T-1702)
