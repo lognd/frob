@@ -11,8 +11,16 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_query.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'T-1882: renumber implementation and its CLI dispatch'
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
