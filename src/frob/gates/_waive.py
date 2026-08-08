@@ -100,7 +100,8 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 # frob:ticket T-0404
 # frob:tests tests/test_gates.py::TestDsl001.test_malformed_frob_doc_directive_flagged
-# frob:tests tests/test_gates.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged
 # frob:enforces CHK-GATE-DSL001
 def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DSL001: a malformed `frob:` directive not already claimed by a
@@ -163,7 +164,8 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # perf`) are NOT covered by that scan (disclosed residual, see
 # `_rule_id_scan`'s module docstring) and stay purely hand-maintained here
 # as before this ticket.
-# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
 # frob-zone-start known-gate-rules T-1002
 # frob:ticket T-1520
 # frob:ticket T-1225
@@ -344,6 +346,12 @@ _KNOWN_GATE_RULES = frozenset(
         # basis class as PERF001-009 above.
         "PERF010",
         "PERF011",
+        # T-0919: PERF012 (frob.perf._dup_spawn), same hand-maintained-
+        # outside-scan-basis class as PERF001-011/013-014 -- was missing
+        # here, which is why REG010's live-rule-vs-registry check never
+        # caught its missing docs/design/registry/check-coverage.yaml row
+        # (T-1539).
+        "PERF012",
         "PERF013",
         "PERF014",
         # T-1087: `frob vet`'s own rule ids (src/frob/vet/**) -- a
@@ -1086,7 +1094,8 @@ def _waive003_violations(
             continue
         file, _, line_text = origin.rpartition(":")
         line = int(line_text) if line_text.isdigit() else 0
-        # frob:waive PERF004 reason="own distinct files set per (rule, origin) reach entry, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="own distinct files set per (rule, origin) reach \
+        # entry, not a shared re-sort"
         packages = ", ".join(sorted(files))
         _log.warning(
             "WAIVE003: %s frob:waive %s reaches %d packages: %s",
@@ -1452,7 +1461,8 @@ _PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
 
 
 # frob:invariant INV-006
-# frob:tests tests/test_arch_gate.py::TestArchGateWaivers.test_ceiling_refires_when_grown_past_it  # noqa: E501
+# frob:tests \
+# tests/test_arch_gate.py::TestArchGateWaivers.test_ceiling_refires_when_grown_past_it
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
 # (the demoted case). T-1056: leaked Unknown traces to waiver.attrs.get (plain dict \
