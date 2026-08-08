@@ -434,7 +434,7 @@ requires-dist = [
     { name = "tree-sitter-python", specifier = ">=0.25.0" },
     { name = "ty", specifier = ">=0.0.1a8" },
     { name = "typani", specifier = ">=0.0.3" },
-    { name = "z3-solver", marker = "extra == 'smt'", specifier = ">=4.13" },
+    { name = "z3-solver", marker = "extra == 'smt'", specifier = ">=4.13,<4.15.5" },
 ]
 provides-extras = ["serve", "smt"]
 
