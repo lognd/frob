@@ -15,9 +15,15 @@ scope:
 - src/frob/_cli_parsers/_quality.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
+anchor: true
+anchor_reason: permanent WIRE001 follow_up anchor -- frob quality bind CLI dests are
+  unwired by design (T-1567), never any code to write; must never reach a terminal
+  state or WIRE002 orphans
 ---
 T-1567's frob quality bind subparser registers --list-bindings/--list-sources/--json
 purely for --help discovery -- frob.__main__._dispatch special-cases

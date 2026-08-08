@@ -89,28 +89,37 @@ def _add_quality_parser(sub) -> None:
         "mirroring bind's own top-level precedent",
     )
     bind_p.add_argument("bind_path", metavar="path", help="project root to scan")
-    # frob:waive WIRE001 follow_up="T-1820" reason="dispatch bypasses \
-    # AppConfig entirely (frob.__main__._dispatch special-cases 'quality bind' before \
-    # the parser tree is even consulted, T-1567), same as this file's top-level bind_p \
-    # precedent in _core.py -- these dests exist for --help discovery only and are \
-    # never read from a built AppConfig; the follow_up ticket records this as a \
-    # permanent, by-design gap (WIRE002 requires a real ticket id outside tests/ trees)"
+    # frob:waive WIRE001 follow_up="T-1820" reason="dispatch bypasses AppConfig \
+    # entirely (frob.__main__._dispatch special-cases 'quality bind' before the parser \
+    # tree is even consulted, T-1567), same as this file's top-level bind_p precedent \
+    # in _core.py -- these dests exist for --help discovery only and are never read \
+    # from a built AppConfig; the follow_up ticket records this as a permanent, \
+    # by-design gap (WIRE002 requires a real ticket id outside tests/ trees). T-1820 \
+    # carries the T-1856 anchor=True marker: it is a WIRE001 follow_up ANCHOR, not \
+    # deferred work -- it stays queued/open forever on purpose so WIRE002's \
+    # follow_up-must-be-open check keeps passing, and it must never be closed."
     bind_p.add_argument(
         "--list-bindings", dest="bind_list_bindings", action="store_true"
     )
-    # frob:waive WIRE001 follow_up="T-1820" reason="dispatch bypasses \
-    # AppConfig entirely (frob.__main__._dispatch special-cases 'quality bind' before \
-    # the parser tree is even consulted, T-1567), same as this file's top-level bind_p \
-    # precedent in _core.py -- these dests exist for --help discovery only and are \
-    # never read from a built AppConfig; the follow_up ticket records this as a \
-    # permanent, by-design gap (WIRE002 requires a real ticket id outside tests/ trees)"
+    # frob:waive WIRE001 follow_up="T-1820" reason="dispatch bypasses AppConfig \
+    # entirely (frob.__main__._dispatch special-cases 'quality bind' before the parser \
+    # tree is even consulted, T-1567), same as this file's top-level bind_p precedent \
+    # in _core.py -- these dests exist for --help discovery only and are never read \
+    # from a built AppConfig; the follow_up ticket records this as a permanent, \
+    # by-design gap (WIRE002 requires a real ticket id outside tests/ trees). T-1820 \
+    # carries the T-1856 anchor=True marker: it is a WIRE001 follow_up ANCHOR, not \
+    # deferred work -- it stays queued/open forever on purpose so WIRE002's \
+    # follow_up-must-be-open check keeps passing, and it must never be closed."
     bind_p.add_argument("--list-sources", dest="bind_list_sources", action="store_true")
-    # frob:waive WIRE001 follow_up="T-1820" reason="dispatch bypasses \
-    # AppConfig entirely (frob.__main__._dispatch special-cases 'quality bind' before \
-    # the parser tree is even consulted, T-1567), same as this file's top-level bind_p \
-    # precedent in _core.py -- these dests exist for --help discovery only and are \
-    # never read from a built AppConfig; the follow_up ticket records this as a \
-    # permanent, by-design gap (WIRE002 requires a real ticket id outside tests/ trees)"
+    # frob:waive WIRE001 follow_up="T-1820" reason="dispatch bypasses AppConfig \
+    # entirely (frob.__main__._dispatch special-cases 'quality bind' before the parser \
+    # tree is even consulted, T-1567), same as this file's top-level bind_p precedent \
+    # in _core.py -- these dests exist for --help discovery only and are never read \
+    # from a built AppConfig; the follow_up ticket records this as a permanent, \
+    # by-design gap (WIRE002 requires a real ticket id outside tests/ trees). T-1820 \
+    # carries the T-1856 anchor=True marker: it is a WIRE001 follow_up ANCHOR, not \
+    # deferred work -- it stays queued/open forever on purpose so WIRE002's \
+    # follow_up-must-be-open check keeps passing, and it must never be closed."
     bind_p.add_argument("--json", dest="bind_json", action="store_true")
 
     cycle_p = quality_sub.add_parser("cycle", help="detect dependency cycles")
