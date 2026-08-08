@@ -2,7 +2,7 @@
 id: T-1702
 title: close's own-obligations REL001 check is not rapid-aware, deadlocks a worktree
   that legitimately needs a version bump
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -72,3 +72,6 @@ state, then reverted the edit (`git checkout -- pyproject.toml`) before
 landing, so `frob ticket land`'s own bump computation was untouched and
 wrote the real bump itself. This is not a fix, just what let T-1675 land
 without violating the land-owned-files rule or waiving a real gate.
+
+## Drop reason
+- 2026-08-08: Investigated: this exact defect (close's own-obligations REL001 preflight not rapid-aware, deadlocking a worktree forbidden from touching pyproject.toml's version) is already fixed by T-1705, which lands after this ticket was filed. _own_obligations_rel_bump_dirty in src/frob/app/ticket_runner/_close_cmd.py now checks effective_profile(root) is ProfileName.RAPID and skips the REL001 check entirely, recording the relaxation via record_rapid_debt (close-rel001-preflight-skipped), exactly matching this ticket's own plan sketch. Verified live: tests/unit/test_close_rel001_bump.py (11 tests, including the rapid-skip case and the T-1705 remedy-naming case) passes on the current worktree. False premise as currently scoped. (absorbed by T-1705)
