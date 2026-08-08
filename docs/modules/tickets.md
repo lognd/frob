@@ -5942,3 +5942,38 @@ provisional-id mechanism is designed around that reality, not against it:
   see "Why TICK001/TICK002 are unwaivable" above. Treat a TICK002 failure
   the same way as any other unwaivable gate failure: fix the root cause
   (finalize the draft), never suppress it.
+
+## Disclosed-remainder-requires-follow-up guard at close (T-1648)
+
+`frob ticket close` (and `frob ticket reverify`) refuses to close a ticket
+whose Done report discloses unfinished work but names no real, open
+follow-up ticket. This closes the "closed with disclosed unfinished work,
+silently dropped" incident class: T-1420 split 1 file and disclosed 52
+more still over the LARGE001 threshold, closed clean, and the 54 warnings
+had no owner until a coordinator noticed by hand and filed T-1646; T-1204
+did the same for 5 undone PERF rule families (T-1647).
+
+- `frob.tickets._reporting.disclosure_shaped_language(text)` is a
+  deliberately generous phrase match over a Done report's own narrative
+  (`"not attempted"`, `"still outstanding"`, `"out of scope for this
+  pass"`, and similar) -- not an English parser. A false positive costs
+  one extra `Filed:` line; a false negative is the incident this exists
+  to prevent, so the heuristic errs toward firing.
+- `frob.tickets._reporting.filed_followup_tickets(body)` parses every
+  `T-####` id named on a `Filed:` line -- the existing playbook Done-report
+  convention (`docs/guides/agent-playbook.md` section 8), now made
+  checkable rather than free text.
+- `frob.app.ticket_runner._close_cmd._undisclosed_remainder_reason(root,
+  ticket)` combines the two: if disclosure-shaped language is found and
+  NONE of the `Filed:` ids resolve to a real, still-open ticket (reusing
+  `frob.gates._OPEN_STATES`, the same "open" definition WIRE002's
+  `follow_up=` check already uses), `_close`/`_reverify` refuse with a
+  message naming the matched phrase and the remedy (file a follow-up,
+  add a `Filed: T-####` line, retry).
+
+This deliberately reuses WIRE002's own precedent (an escape hatch must
+bind to a real, open ticket, not free-text prose) rather than inventing a
+second obligation-tracking mechanism. It does not attempt to verify that
+the filed ticket's own content actually describes the disclosed
+remainder -- only that SOMETHING checkable was recorded, keeping the
+ceremony cheap enough that honest disclosure is not punished.

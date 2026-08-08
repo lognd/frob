@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.415.0] - unreleased
+
+- T-1648: A ticket can close with disclosed unfinished work and no follow-up, silently dropping it
+
 ## [0.414.0] - unreleased
 
 - T-1850: post-land sweep regression from T-1545: 2 new error(s) (invalid-argument-type, invalid-type-form)

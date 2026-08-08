@@ -2,7 +2,7 @@
 id: T-1648
 title: A ticket can close with disclosed unfinished work and no follow-up, silently
   dropping it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -14,13 +14,55 @@ runs_last: false
 scope:
 - src/frob/tickets/_reporting.py
 - src/frob/app/ticket_runner/_close_cmd.py
-- tests/**
 - docs/modules/tickets.md
+- tests/unit/test_reporting_t1648_remainder.py
+- tests/unit/test_close_t1648_remainder.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: Narrowing tests/** to the two new T-1648 test files this ticket adds; the
+    mega-glob would lock every other agent out of the whole tests tree.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_reporting_t1648_remainder.py
+  reason: Narrowing tests/** to the two new T-1648 test files this ticket adds; the
+    mega-glob would lock every other agent out of the whole tests tree.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_close_t1648_remainder.py
+  reason: Narrowing tests/** to the two new T-1648 test files this ticket adds; the
+    mega-glob would lock every other agent out of the whole tests tree.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: frob sys sync-interface auto-rewrote design/frob.strata to add the two new
+    tickets_ledger interface symbols and the two new testsuite capability declarations
+    this ticket introduces (COV/SELFAUDIT obligations) -- this file must be in scope
+    to commit that machine-written fix.
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_detects_known_phrase
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_case_insensitive
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_clean_narrative_is_not_flagged
+- tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets::test_parses_ids_from_filed_line
+- tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets::test_no_filed_line_returns_empty
+- tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets::test_filed_none_returns_empty
+- tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard::test_clean_narrative_is_unaffected
+- tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard::test_refuses_when_disclosure_language_has_no_filed_ticket
+- tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard::test_allows_when_filed_ticket_is_open
+- tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard::test_refuses_when_filed_ticket_is_already_closed
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Twice in one wave, a ticket closed while its own Done report disclosed substantial unfinished work, and that work became untracked the moment the ticket left the queue:
 

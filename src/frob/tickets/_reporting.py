@@ -100,7 +100,8 @@ _DROP_REASON_HEADING = DROP_REASON_HEADING
 
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_organization.py::TestMutateLabels.test_add_and_remove_labels  # noqa: E501
+# frob:tests \
+# tests/test_tickets_organization.py::TestMutateLabels.test_add_and_remove_labels
 def mutate_labels(
     root: Path,
     ticket_id: str,
@@ -416,8 +417,10 @@ def _store_done_report(
 # frob:ticket T-0832
 # frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_composes_and_writes_atomically  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestSetDoneReport.test_composes_and_writes_atomically
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown
 # frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
@@ -598,8 +601,10 @@ def record_failure(
 # _resolve_review_commit by name (T-0529 precedent: a deliberate architecture-doc \
 # callout of the never-store-abbreviated-SHA security behavior, not accidental drift \
 # onto a private helper)"
-# frob:tests tests/test_tickets_review.py::TestRecordReview.test_unresolvable_commit_rejected  # noqa: E501
-# frob:tests tests/test_tickets_review.py::TestRecordReview.test_short_sha_normalized_to_full_sha  # noqa: E501
+# frob:tests \
+# tests/test_tickets_review.py::TestRecordReview.test_unresolvable_commit_rejected
+# frob:tests \
+# tests/test_tickets_review.py::TestRecordReview.test_short_sha_normalized_to_full_sha
 def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:
     """Resolve `commit` (a short SHA, ref name, `HEAD`, ...) to its full
     40-char SHA via `git rev-parse` under `root` (T-0571 review round 2):
@@ -628,9 +633,10 @@ def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:
 
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
-# frob:tests tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry  # noqa: E501
-# frob:tests tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected  # noqa: E501
-# frob:tests tests/test_tickets_review.py::TestRecordReview.test_multiple_reviews_append_only  # noqa: E501
+# frob:tests tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry
+# frob:tests tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected
+# frob:tests \
+# tests/test_tickets_review.py::TestRecordReview.test_multiple_reviews_append_only
 def record_review(
     root: Path,
     ticket_id: str,
@@ -760,6 +766,76 @@ def drop_ticket(
         return Err(transitioned.danger_err)
     _log.info("tickets: %s dropped: %s", ticket_id, reason.strip())
     return transitioned
+
+
+# frob:ticket T-1648
+# T-1648: heuristic phrases marking a Done-report narrative as disclosing
+# unfinished/cut work -- not a parser, a deliberately generous trigger list
+# (see `disclosure_shaped_language`'s docstring for why false positives are
+# the acceptable failure mode here, never false negatives).
+_DISCLOSURE_PHRASES: tuple[str, ...] = (
+    "not attempted",
+    "not implemented",
+    "not done",
+    "disclosed cut",
+    "out of scope for this pass",
+    "still outstanding",
+    "left unfinished",
+    "did not fix",
+    "did not attempt",
+    "remains unaddressed",
+    "no follow-up",
+    "not addressed",
+    "deferred to a follow",
+)
+
+# frob:ticket T-1648
+_FILED_LINE_RE = re.compile(r"(?im)^\s*filed:\s*(.+)$")
+_TICKET_ID_RE = re.compile(r"T-\d+")
+
+
+# frob:ticket T-1648
+# frob:doc \
+# docs/modules/tickets.md#disclosed-remainder-requires-follow-up-guard-at-close-t-1648
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_detects_known_phrase  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_clean_narrative_is_not_flagged  # noqa: E501
+def disclosure_shaped_language(text: str) -> str | None:
+    """The first `_DISCLOSURE_PHRASES` member found (case-insensitive) in
+    `text`, or `None` if none match -- a deliberately generous heuristic
+    over a Done report's own narrative, not a parser of English. T-1648:
+    the closing incident this exists to catch (a ticket closed while its
+    own Done report disclosed substantial unfinished work, with no
+    follow-up filed) was caught only by a coordinator re-reading long
+    prose by hand; this trades precision for a mechanical, always-run
+    first pass. False positives (a narrative that happens to use one of
+    these phrases while discussing something already resolved) are the
+    acceptable failure mode -- they cost an author one extra `Filed:`
+    line or a `--remainder-none` override, never a silently dropped
+    cut, which is the harm this guards against."""
+    lowered = text.lower()
+    for phrase in _DISCLOSURE_PHRASES:
+        if phrase in lowered:
+            return phrase
+    return None
+
+
+# frob:ticket T-1648
+# frob:doc \
+# docs/modules/tickets.md#disclosed-remainder-requires-follow-up-guard-at-close-t-1648
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_parses_ids_from_filed_line  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_no_filed_line_returns_empty  # noqa: E501
+def filed_followup_tickets(body: str) -> list[str]:
+    """Every `T-####` ticket id named on a `Filed:` line anywhere in
+    `body` (the Done-report convention this repo's own playbook already
+    documents -- `docs/guides/agent-playbook.md` section 8's "Filed: <any
+    new ticket ids...>" line). Returns `[]` if no `Filed:` line exists, or
+    if one exists but names no ticket id (e.g. the literal word "none") --
+    both are treated identically by the caller: no real follow-up was
+    recorded."""
+    ids: list[str] = []
+    for match in _FILED_LINE_RE.finditer(body):
+        ids.extend(_TICKET_ID_RE.findall(match.group(1)))
+    return ids
 
 
 def _append_to_section(body: str, heading: str, line: str) -> str:

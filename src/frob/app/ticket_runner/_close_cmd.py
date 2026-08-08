@@ -439,6 +439,77 @@ def _version_covers(declared: str, needed: str) -> bool:
     return left >= right
 
 
+# frob:ticket T-1648
+# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_refuses_when_disclosure_language_has_no_filed_ticket  # noqa: E501
+# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_allows_when_filed_ticket_is_open  # noqa: E501
+# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_refuses_when_filed_ticket_is_already_closed  # noqa: E501
+# frob:tests tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard.test_clean_narrative_is_unaffected  # noqa: E501
+def _undisclosed_remainder_reason(root: Path, ticket) -> str | None:  # noqa: ANN001
+    """T-1648: `None` if `ticket`'s Done report carries no disclosure-
+    shaped language (`disclosure_shaped_language`), OR if it does but a
+    `Filed:` line (`filed_followup_tickets`) names at least one real,
+    still-OPEN ticket id -- otherwise a human-readable reason string
+    naming the matched phrase, refusing the close.
+
+    This is the fix for the T-1420/T-1204 incident: a ticket closed while
+    its own Done report disclosed substantial unfinished work (52 files,
+    5 PERF rules) with no follow-up ticket anywhere, and the disclosure
+    -- being free text -- was invisible to the queue the moment the
+    ticket left it. WIRE002 already established the precedent this
+    reuses: an escape hatch must bind to a real, open follow-up ticket,
+    not free-text prose nobody has to act on.
+
+    Deliberately does NOT try to parse "I did X but not Y" precisely --
+    `disclosure_shaped_language` is a generous phrase match, and any
+    `Filed:` line naming an open ticket satisfies it, even if that
+    ticket does not itself describe the disclosed remainder. The goal
+    (per the ticket's own note) is to make the author pause and record
+    SOMETHING checkable, not to punish honest disclosure with ceremony
+    heavy enough that agents stop disclosing."""
+    from frob.gates import _OPEN_STATES
+    from frob.tickets import load_queue
+    from frob.tickets._reporting import (
+        disclosure_shaped_language,
+        filed_followup_tickets,
+    )
+
+    phrase = disclosure_shaped_language(ticket.body)
+    if phrase is None:
+        return None
+
+    filed_ids = filed_followup_tickets(ticket.body)
+    if not filed_ids:
+        return (
+            f"Done report contains disclosure-shaped language ({phrase!r}) "
+            "but no 'Filed:' line names a follow-up ticket"
+        )
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.warning(
+            "ticket close: %s could not load queue to verify Filed: "
+            "ticket(s) %s (%s) -- refusing to close on an unverifiable "
+            "remainder",
+            ticket.id,
+            filed_ids,
+            queue_result.danger_err,
+        )
+        return (
+            f"Done report discloses unfinished work ({phrase!r}) and its "
+            f"Filed: ticket(s) {filed_ids} could not be verified"
+        )
+    queue = queue_result.danger_ok
+    for filed_id in filed_ids:
+        followup = queue.tickets.get(filed_id)
+        if followup is not None and followup.state in _OPEN_STATES:
+            return None
+
+    return (
+        f"Done report discloses unfinished work ({phrase!r}) but none of "
+        f"its Filed: ticket(s) {filed_ids} resolve to a real, open ticket"
+    )
+
+
 # frob:ticket T-1387
 def _own_obligations_diff_findings(
     root: Path,
@@ -877,6 +948,22 @@ def _close(root: Path, cfg: AppConfig) -> None:
     # be computed against the ticket's CURRENT evidence, not the state
     # loaded before this call's own --evidence/--evidence-cmd applied.
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
+
+    # frob:ticket T-1648
+    remainder_reason = _undisclosed_remainder_reason(root, fresh_ticket)
+    if remainder_reason is not None:
+        _log.error(
+            "close failed: %s -- %s -- file a follow-up (`frob ticket new "
+            "...`) and add a 'Filed: T-####' line to the Done report "
+            "naming it, or run `frob ticket done-report %s --why-file "
+            "PATH` again with the disclosure removed if it does not "
+            "actually describe cut work",
+            cfg.ticket_id,
+            remainder_reason,
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+
     (
         covers_scope,
         reviewed,
@@ -985,6 +1072,19 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
     # evidence, not the state loaded before those flags applied (mirrors
     # `_close`'s own re-load-after-apply sequencing exactly).
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="reverify")
+
+    # frob:ticket T-1648
+    remainder_reason = _undisclosed_remainder_reason(root, fresh_ticket)
+    if remainder_reason is not None:
+        _log.error(
+            "reverify failed: %s -- %s -- file a follow-up (`frob ticket "
+            "new ...`) and add a 'Filed: T-####' line to the Done report "
+            "naming it",
+            cfg.ticket_id,
+            remainder_reason,
+        )
+        sys.exit(1)
+
     (
         covers_scope,
         reviewed,
