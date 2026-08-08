@@ -7,7 +7,23 @@ via `frob.vet._capability_core` for python only, identifiers via
 `frob.lang._common._leaf_tokens`). Typescript has no pre-existing Python
 identifier-walk contract (`_IDENTIFIER_TYPES` has no `"typescript"` entry)
 -- its identifier collection gets a standalone sanity check instead of a
-parity one; see `TestExtractTreeTypescriptParity`."""
+parity one; see `TestExtractTreeTypescriptParity`.
+
+T-1503 (WIRE001 on this file's golden-comparison helpers, closed won't-fix):
+every `_python_side`/`_rust_side`/`_rust_lang_python_side`/`_rust_kernel_side`
+/`_cpp_lang_python_side`/`_cpp_kernel_side` helper below is called only from
+this same file's own test methods. `frob.gates._wire._wire_test_path_
+excluded` DELIBERATELY (T-1592's precedent) never counts a test-tree
+symbol's own defining file as a "reached" caller for itself -- same-file
+test usage is treated as permanently unwired by design, regardless of call
+count, so a shared per-file comparison helper like these can never satisfy
+WIRE001's ordinary reached-outside-diff-tests check. Each carries
+`frob:waive WIRE001 ... permanent="true"` (`_wire002_is_permanent_test_
+helper_waiver`'s escape hatch, the same one `tests/unit/test_mutation_
+sweep_queue.py::_make_ticket` uses) rather than a `follow_up="T-####"` --
+a follow-up ticket for a condition that will never stop being true just
+re-orphans itself every time it closes (T-1592's own live incident), which
+is worse than no follow-up at all."""
 
 from __future__ import annotations
 
@@ -28,7 +44,7 @@ _PY_LANG = get_language("python")
 # production caller to wire it to by design, it exists solely to assemble the existing \
 # Python-side computation for comparison against the native kernel's output, mirroring \
 # the tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
-# follow_up="T-1503"
+# permanent="true"
 def _python_side(
     source: bytes,
 ) -> tuple[
@@ -63,7 +79,7 @@ def _python_side(
 # production caller to wire it to by design, it exists solely to normalize the native \
 # kernel's output for comparison against the Python-side computation, mirroring the \
 # tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
-# follow_up="T-1503"
+# permanent="true"
 def _rust_side(
     source: bytes,
 ) -> tuple[
@@ -148,7 +164,7 @@ _RUST_LANG = get_language("rust")
 # TestExtractTreeRustParity's own methods below, in this same file -- there is no \
 # production caller to wire it to by design, mirroring _python_side above and the \
 # tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
-# follow_up="T-1503"
+# permanent="true"
 def _rust_lang_python_side(
     source: bytes,
 ) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
@@ -170,7 +186,7 @@ def _rust_lang_python_side(
 # TestExtractTreeRustParity's own methods below, in this same file -- there is no \
 # production caller to wire it to by design, mirroring _rust_side above and the \
 # tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
-# follow_up="T-1503"
+# permanent="true"
 def _rust_kernel_side(
     source: bytes,
 ) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
@@ -230,7 +246,7 @@ _CPP_LANG = get_language("cpp")
 # TestExtractTreeCppParity's own methods below, in this same file -- there is no \
 # production caller to wire it to by design, mirroring _rust_lang_python_side above \
 # and the tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
-# follow_up="T-1503"
+# permanent="true"
 def _cpp_lang_python_side(
     source: bytes,
 ) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
@@ -252,7 +268,7 @@ def _cpp_lang_python_side(
 # TestExtractTreeCppParity's own methods below, in this same file -- there is no \
 # production caller to wire it to by design, mirroring _rust_kernel_side above and the \
 # tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
-# follow_up="T-1503"
+# permanent="true"
 def _cpp_kernel_side(
     source: bytes,
 ) -> tuple[list[tuple[int, int]], list[tuple[str, int]], list[str]]:
@@ -300,7 +316,7 @@ _TS_LANG = get_language("typescript")
 # TestExtractTreeTypescriptParity's own methods below, in this same file -- there is \
 # no production caller to wire it to by design, mirroring _rust_lang_python_side above \
 # and the tests/unit/test_conftest_stackdump.py ::_load_conftest precedent (T-1466)" \
-# follow_up="T-1503"
+# permanent="true"
 def _ts_lang_python_side_comments_and_tokens(
     source: bytes,
 ) -> tuple[list[tuple[int, int]], list[str]]:

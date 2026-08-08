@@ -21,7 +21,7 @@ from frob.lang import raw_tree
 # production caller to wire it to by design, it exists solely to assemble the existing \
 # Python-side computation for comparison against the native kernel's output, mirroring \
 # the T-1220/T-1221 _python_side/_rust_side precedent in \
-# tests/unit/test_extract_native.py" follow_up="T-1503"
+# tests/unit/test_extract_native.py" permanent="true"
 # frob:ticket T-1222
 def _python_side_metrics(source: bytes, tmp_path: Path) -> list[tuple]:
     """The existing Python-side computation for every function's (span,
