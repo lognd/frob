@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.384.0] - unreleased
+
+- T-1505: vet/resolvers: close remaining 3 structural points-to gaps (rust macro_rules, cpp ptr-to-member, kotlin operator-invoke) -- T-1063 residue
+
 ## [0.383.0] - unreleased
 
 - T-1544: Tier-A auto-fix: TICK006 phantom draft citation refile+renumber

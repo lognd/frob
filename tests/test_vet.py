@@ -731,7 +731,8 @@ class TestCapabilityScan:
     def test_docstring_query_does_not_treat_enum_value_as_docstring(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_core.py::_docstring_byte_spans_from_tree kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_core.py::_docstring_byte_spans_from_tree \
+        # kind="unit"
         # T-1223: `_docstring_byte_spans_from_tree`'s tree-sitter Query
         # source matches the `expression_statement` SUPERTYPE, which also
         # conforms `assignment` nodes -- an ErrorSet-style class whose first
@@ -752,7 +753,8 @@ class TestCapabilityScan:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_docstring_query_still_finds_real_docstrings(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_core.py::_docstring_byte_spans_from_tree kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_core.py::_docstring_byte_spans_from_tree \
+        # kind="unit"
         # T-1223 sibling of the enum-value regression test above: a genuine
         # module/class/function docstring containing the same needle must
         # still be excluded, exercising all three Query anchor patterns
@@ -2710,7 +2712,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not a mailing/contact address"  # noqa: E501
+    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not \
+    # a mailing/contact address"
     def test_assignment_address_of_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # Taxonomy row: `f = &do_exec; f(x);` -- plain assignment, not a
@@ -2901,7 +2904,8 @@ class TestCapabilityScanCAliasTablePredicates:
         assert _c_declared_name(abstract) is None
 
     def test_collect_declaration_names_bare_identifier(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names \
+        # kind="unit"
         # Kills `child.type in _C_DECLARATOR_CHILD_TYPES`'s membership
         # mutant for the bare `identifier` shape (`int x, y;`).
         from frob.lang import raw_tree
@@ -2917,7 +2921,8 @@ class TestCapabilityScanCAliasTablePredicates:
         assert bound == {"x": 0, "y": 0}
 
     def test_collect_declaration_names_init_declarator(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names \
+        # kind="unit"
         # Kills `child.type == "init_declarator"`'s Eq mutant.
         from frob.lang import raw_tree
         from frob.vet._capability_c import _c_collect_declaration_names
@@ -2934,7 +2939,8 @@ class TestCapabilityScanCAliasTablePredicates:
     def test_collect_declaration_names_uninitialized_fn_ptr(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_c_collect_declaration_names \
+        # kind="unit"
         # T-0662's own new shape: an uninitialized function-pointer
         # declaration (`void (*f)(const char*);`) has no `init_declarator`
         # wrapper -- only the extended `_C_DECLARATOR_CHILD_TYPES`
@@ -2951,7 +2957,8 @@ class TestCapabilityScanCAliasTablePredicates:
         _c_collect_declaration_names(decl, 3, bound)
         assert bound == {"f": 3}
 
-    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not a mailing/contact address"  # noqa: E501
+    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not \
+    # a mailing/contact address"
     def test_resolve_alias_source_unwraps_address_of(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability_c.py::_resolve_c_alias_source kind="unit"
         from frob.lang import raw_tree
@@ -2965,7 +2972,8 @@ class TestCapabilityScanCAliasTablePredicates:
         resolved = _resolve_c_alias_source(pointer_expr, {}, {}, {})
         assert resolved == "system"
 
-    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not a mailing/contact address"  # noqa: E501
+    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not \
+    # a mailing/contact address"
     def test_resolve_alias_source_rejects_non_identifier_address_of(
         self, tmp_path: Path
     ) -> None:
@@ -3302,7 +3310,8 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_structured_binding_alias_skips_non_initializer_list_rhs(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_c.py::_record_c_structured_binding_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_structured_binding_alias \
+        # kind="unit"
         from frob.lang import raw_tree
         from frob.vet._capability_c import _record_c_structured_binding_alias
 
@@ -3321,7 +3330,8 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_default_param_alias_skips_node_with_no_default_value_field(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_c.py::_record_c_default_param_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_default_param_alias \
+        # kind="unit"
         # A plain (non-default-valued) `parameter_declaration` has no
         # `default_value` field at all -- passing one through directly
         # must be a clean no-op (`.child_by_field_name("default_value")`
@@ -3341,7 +3351,8 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_default_param_alias_records_resolvable_default(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_c.py::_record_c_default_param_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_default_param_alias \
+        # kind="unit"
         from frob.lang import raw_tree
         from frob.vet._capability_c import _record_c_default_param_alias
 
@@ -3380,7 +3391,8 @@ class TestCapabilityScanCppAliasTablePredicates:
     def test_declaration_alias_dispatches_structured_binding_declarator(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_c.py::_record_c_declaration_alias kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_c.py::_record_c_declaration_alias \
+        # kind="unit"
         # Kills `declarator.type == "structured_binding_declarator"`'s Eq
         # mutant at the DISPATCH site in `_record_c_declaration_alias`
         # itself (as opposed to `_record_c_structured_binding_alias`'s own
@@ -3691,7 +3703,8 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_property_name_and_value_returns_none_none_without_variable_declaration(
         self,
     ) -> None:
-        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_property_name_and_value kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_property_name_and_value \
+        # kind="unit"
         # Kills `if name_node is None: return None, None`'s guard: a
         # `property_declaration` node itself passed with no `variable_
         # declaration` child at all (constructed here via a destructuring
@@ -3708,7 +3721,8 @@ class TestCapabilityScanKotlinAliasTablePredicates:
         assert value is None
 
     def test_property_name_and_value_extracts_name_and_value(self) -> None:
-        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_property_name_and_value kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_property_name_and_value \
+        # kind="unit"
         # Kills the `seen_eq`/`if c.type == "=":`'s Eq mutant: the VALUE
         # returned must be the child strictly AFTER the `=` token, not the
         # `=` token itself or an earlier child.
@@ -3726,7 +3740,8 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_resolve_callable_reference_rejects_non_identifier_member(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_kotlin.py::_kt_resolve_callable_reference kind="unit"
         from frob.lang._walk_kotlin import parse_kotlin
         from frob.vet._capability_kotlin import _kt_resolve_callable_reference
 
@@ -3738,7 +3753,8 @@ class TestCapabilityScanKotlinAliasTablePredicates:
     def test_resolve_callable_reference_typed_falls_back_to_literal_receiver(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_kotlin.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_kotlin.py::_kt_resolve_callable_reference kind="unit"
         # `tree-sitter-kotlin` only parses `X::Y` as `callable_reference`
         # (as opposed to a bare `navigation_expression`) once `X` is a
         # KNOWN type in the file -- a preceding `class` declaration for
@@ -3910,7 +3926,9 @@ class TestFingerprintScan:
     def test_yaml_load_with_explicit_loader_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="integration"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader \
+        # kind="integration"
         # T-1636: `_yaml_load_call_lacks_explicit_loader` is invoked only via
         # `_capability_scan.py`'s _FINGERPRINT_REFINEMENTS dispatch table (a function
         # reference stored by name, looked up and called indirectly), never a
@@ -3938,7 +3956,9 @@ class TestFingerprintScan:
     def test_one_bare_yaml_load_among_remediated_calls_still_flags(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader kind="integration"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_scan.py::_yaml_load_call_lacks_explicit_loader \
+        # kind="integration"
         # T-1636: `_yaml_load_call_lacks_explicit_loader` is invoked only via
         # `_capability_scan.py`'s _FINGERPRINT_REFINEMENTS dispatch table (a function
         # reference stored by name, looked up and called indirectly), never a
@@ -5890,6 +5910,7 @@ class TestClosedWorldAccounting:
         assert r.detail == ""
 
 
+# frob:ticket T-1505
 class TestOpaqueIndirectionGate:
     """T-0665: fail-closed runtime-resolved capability-indirection
     obligation -- `frob.vet._capability._opaque_indirection_findings` and
@@ -5897,7 +5918,8 @@ class TestOpaqueIndirectionGate:
     coordinator-signed category-1 boundary."""
 
     def test_python_getattr_non_literal_name_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -5906,7 +5928,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "getattr" for f in findings)
 
     def test_python_getattr_literal_name_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # Coordinator sign-off: "literal-key lookups that resolve
         # statically belong to the ordinary resolver path, not this gate."
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -5919,7 +5942,8 @@ class TestOpaqueIndirectionGate:
     def test_python_eval_always_fires_regardless_of_argument(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # eval/exec have literal_arg_index=None -- always opaque, no
         # literal split is possible for arbitrary evaluated source text.
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -5930,7 +5954,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "eval" for f in findings)
 
     def test_python_import_module_non_literal_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -5941,7 +5966,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_dynamic_import_non_literal_specifier_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
@@ -5952,7 +5978,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_dynamic_import_literal_specifier_does_not_fire(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.ts"
@@ -5961,7 +5988,8 @@ class TestOpaqueIndirectionGate:
         assert not any(f.construct_name == "dynamic import()" for f in findings)
 
     def test_c_dlsym_non_literal_symbol_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
@@ -5972,7 +6000,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "dlsym" for f in findings)
 
     def test_c_dlsym_literal_symbol_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.c"
@@ -5983,7 +6012,8 @@ class TestOpaqueIndirectionGate:
         assert not any(f.construct_name == "dlsym" for f in findings)
 
     def test_kotlin_class_forname_always_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.kt"
@@ -5996,7 +6026,8 @@ class TestOpaqueIndirectionGate:
     def test_rust_libloading_get_fires_only_when_file_uses_libloading(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # The bare `.get(` needle is deliberately broad -- gated to files
         # that actually import libloading, so an ordinary HashMap::get in
         # an unrelated rust file never trips this.
@@ -6022,7 +6053,8 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_finding_inside_comment_span_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -6031,7 +6063,9 @@ class TestOpaqueIndirectionGate:
         assert findings == ()
 
     def test_finding_inside_string_literal_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_byte_offset_inside_string_literal kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_scan.py::_byte_offset_inside_string_literal \
+        # kind="unit"
         # The single-largest false-positive class the T-0665 first-turn-on
         # measurement found: this module's OWN registry constants (e.g.
         # `needle="getattr("`) tripping their own obligation.
@@ -6054,7 +6088,7 @@ class TestOpaqueIndirectionGate:
         assert _arg_looks_literal(b"name") is False
 
     def test_split_top_level_args_balances_nested_parens(self) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_split_top_level_args kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_split_top_level_args kind="unit"
         from frob.vet._capability_scan import _split_top_level_args
 
         raw = b"getattr(foo(1, 2), name)) trailing"
@@ -6063,7 +6097,7 @@ class TestOpaqueIndirectionGate:
         assert args == [b"foo(1, 2)", b" name"]
 
     def test_split_top_level_args_returns_none_when_unterminated(self) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_split_top_level_args kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_split_top_level_args kind="unit"
         # Fail-closed: an unterminated call (truncated file / match found
         # inside an unhandled construct) returns None, which the caller
         # treats as "argument unknown" and fires rather than silently
@@ -6203,7 +6237,8 @@ class TestOpaqueIndirectionGate:
     # genuine bare call of each kind still fires.
 
     def test_dotted_setattr_call_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -6212,7 +6247,8 @@ class TestOpaqueIndirectionGate:
         assert findings == ()
 
     def test_dotted_eval_method_call_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -6223,7 +6259,8 @@ class TestOpaqueIndirectionGate:
     def test_identifier_ending_in_builtin_name_does_not_fire(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -6232,7 +6269,8 @@ class TestOpaqueIndirectionGate:
         assert findings == ()
 
     def test_bare_setattr_call_still_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -6241,7 +6279,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "setattr" for f in findings)
 
     def test_sys_modules_read_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -6250,7 +6289,8 @@ class TestOpaqueIndirectionGate:
         assert findings == ()
 
     def test_sys_modules_write_still_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         from frob.vet._capability_scan import _opaque_indirection_findings
 
         pkg = tmp_path / "pkg.py"
@@ -6273,7 +6313,8 @@ class TestOpaqueIndirectionGate:
     def test_python_exec_always_fires_regardless_of_argument(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "exec" row -- distinct construct_name from "eval" above;
         # RUNTIME_OPAQUE_CONSTRUCTS registers it separately (literal_arg_
         # index=None), so it should always fire, same shape as eval.
@@ -6285,7 +6326,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "exec" for f in findings)
 
     def test_python_dunder_import_computed_name_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`__import__` with computed module name" row.
         from frob.vet._capability_scan import _opaque_indirection_findings
 
@@ -6295,7 +6337,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "__import__" for f in findings)
 
     def test_python_setattr_monkeypatch_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "monkeypatch / module attribute mutation" row.
         from frob.vet._capability_scan import _opaque_indirection_findings
 
@@ -6305,7 +6348,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "setattr" for f in findings)
 
     def test_python_container_dynamic_key_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "callable in a container, dynamic key" row (also covers
         # the sibling "computed member access, non-constant key" row --
         # identical `container[expr](...)` shape): `handlers[key](x)`.
@@ -6324,7 +6368,8 @@ class TestOpaqueIndirectionGate:
     def test_python_container_literal_key_call_not_addressed_by_structural_gate(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_subscript_key_looks_literal kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_subscript_key_looks_literal \
+        # kind="unit"
         # No-regression guard for the new structural detector: a LITERAL-
         # keyed subscript call (`handlers["a"](x)`) is the ORDINARY
         # resolver's job per T-0665's literal/non-literal split, not this
@@ -6342,7 +6387,9 @@ class TestOpaqueIndirectionGate:
         # the best-effort callgraph only sees name( call tokens, not indexed-constant \
         # attribute mutation; same disposition as the evasion-taxonomy meta-test \
         # COV006 waivers"
-        # frob:tests src/frob/vet/_capability_registry/_schemas.py::_OpaqueStructuralConstruct kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_registry/_schemas.py::_OpaqueStructuralConstruct \
+        # kind="unit"
         # T-1051: `_OpaqueStructuralConstruct.model_config = ConfigDict(
         # frozen=True)` (same immutability posture as `_OpaqueConstruct`
         # above it) must actually reject a post-construction mutation --
@@ -6359,7 +6406,8 @@ class TestOpaqueIndirectionGate:
     def test_python_functools_partial_dynamic_target_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`functools.partial`/decorator indirection with dynamic
         # target" row -- closed by T-1047 (RUNTIME_OPAQUE_CONSTRUCTS now
         # registers a `functools.partial(` needle).
@@ -6373,7 +6421,8 @@ class TestOpaqueIndirectionGate:
     def test_python_dunder_getattr_class_interception_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "class `__getattr__`/`__getattribute__` interception"
         # row -- closed by T-1047 (a `def __getattr__(` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6388,7 +6437,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "__getattr__ interception" for f in findings)
 
     def test_python_sys_modules_replacement_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "direct `sys.modules` replacement" row (added in the
         # taxonomy doc's Phase 2 pass) -- closed by T-1047 (a
         # `sys.modules[` needle).
@@ -6405,7 +6455,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_computed_member_non_constant_key_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "computed member access, non-constant key" row -- closed
         # by T-1051's generalized `subscript_call` structural detector
         # (`_structural_opaque_findings`), the same shape T-1047 could not
@@ -6418,7 +6469,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "container dynamic-key call" for f in findings)
 
     def test_typescript_global_this_bracket_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`globalThis[name]`" row -- closed by T-1047 (a
         # `globalThis[` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6431,7 +6483,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_reflect_apply_dynamic_target_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`Reflect.get`/`Reflect.apply` with dynamic target" row
         # -- closed by T-1047 (`Reflect.get(`/`Reflect.apply(` needles).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6444,7 +6497,8 @@ class TestOpaqueIndirectionGate:
         assert "Reflect.apply" in names
 
     def test_typescript_proxy_interception_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`Proxy` interception (`get`/`apply` traps)" row --
         # closed by T-1047 (a `new Proxy(` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6457,7 +6511,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_container_dynamic_key_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "callable in container, dynamic key" row -- closed by
         # T-1051's generalized `subscript_call` structural detector.
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6470,7 +6525,8 @@ class TestOpaqueIndirectionGate:
     def test_typescript_monkeypatch_module_namespace_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "monkeypatch / property mutation on module namespace
         # object" row -- closed by T-1047 (a `require.cache[` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6481,7 +6537,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "monkeypatch module namespace" for f in findings)
 
     def test_c_array_nonconstant_index_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "function pointer read via array/struct with non-
         # constant index/selector" row. The ORDINARY resolver still proves
         # this stays UNDETECTED as a resolution
@@ -6506,7 +6563,8 @@ class TestOpaqueIndirectionGate:
     def test_c_integer_cast_to_function_pointer_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "function pointer cast from an integer/opaque value" row
         # -- closed by T-1051's `explicit_fnptr_cast_call` structural
         # detector (`((RET(*)(ARGS))expr)(...)`).
@@ -6520,7 +6578,8 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_c_void_star_backcast_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "function pointer through `void*` indirection and
         # back-cast" row -- closed by T-1051's `named_type_cast_call`
         # structural detector (`((TypeName)expr)(...)`).
@@ -6537,7 +6596,8 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_cpp_array_runtime_index_not_addressed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "function pointer through array/vector with runtime
         # index" row -- closed by T-1051's `subscript_call` structural
         # detector (same shape as the sibling C row above, `.cpp`
@@ -6557,10 +6617,35 @@ class TestOpaqueIndirectionGate:
             for f in findings
         )
 
+    def test_cpp_pointer_to_member_call_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
+        # frob:ticket T-1505
+        # T-1063/T-1505 residue: taxonomy "member-function pointer bound to
+        # a named member" row (`auto p = &Ops::run; (obj.*p)(x);`) --
+        # `test_member_function_pointer_bound_to_named_member_not_detected`
+        # (above, `TestCapabilityScanCppTaxonomyClosureResolution`) already
+        # locks the ORDINARY resolver's honest non-resolution; this fixture
+        # proves the fail-closed OBLIGATION gate now catches the same site
+        # via the new `cpp_pointer_to_member_call` structural detector.
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "struct Ops { static void run(const char*); };\n"
+            "void g() {\n"
+            "    auto p = &Ops::run;\n"
+            '    (Ops::*p)("sh");\n'
+            "}\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "pointer-to-member call" for f in findings)
+
     def test_cpp_reinterpret_cast_to_function_pointer_fires(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`reinterpret_cast` from an integer/opaque handle" row
         # -- closed by T-1047 (a `reinterpret_cast<` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6576,7 +6661,8 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_cpp_rtti_driven_dispatch_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "RTTI-driven dispatch (`typeid`/`dynamic_cast`)" row --
         # closed by T-1047 (a `typeid(` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6593,7 +6679,8 @@ class TestOpaqueIndirectionGate:
     def test_rust_trait_object_dynamic_dispatch_not_addressed(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "trait-object dynamic dispatch" row. Bounded-polymorphism
         # dispatch through a statically-enumerable impl set is explicitly
         # OUT of this gate's scope by design (`_opaque.py`'s own module
@@ -6616,7 +6703,9 @@ class TestOpaqueIndirectionGate:
     def test_rust_extern_ffi_symbol_excused_source_invisible(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE \
+        # kind="unit"
         # taxonomy "`extern` block FFI symbol binding resolved by the
         # dynamic linker" row. Same source-invisible shape as the C
         # weak-symbol row `OPAQUE_SOURCE_INVISIBLE` already excuses (T-0665)
@@ -6638,7 +6727,8 @@ class TestOpaqueIndirectionGate:
         assert any("extern" in e.reason for e in rust_excuses)
 
     def test_rust_function_pointer_in_container_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "function pointer stored in and read from a container"
         # row -- closed by T-1047 (a `Vec<fn(` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6654,7 +6744,8 @@ class TestOpaqueIndirectionGate:
         )
 
     def test_rust_boxed_dyn_fn_runtime_selected_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`Box<dyn Fn>` built from a runtime-selected source" row
         # -- closed by T-1047 (a `Box<dyn Fn` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6669,10 +6760,63 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert any(f.construct_name == "Box<dyn Fn> runtime-selected" for f in findings)
 
+    def test_rust_macro_rules_dangerous_body_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
+        # frob:ticket T-1505
+        # T-1063/T-1505 residue: taxonomy "`macro_rules!` expansion
+        # emitting a fixed call" row --
+        # `test_macro_rules_expansion_emitting_fixed_call_not_detected`
+        # (above, `TestCapabilityScanRustBindingResolution`) already locks
+        # the ORDINARY resolver's honest non-resolution; this fixture
+        # proves the fail-closed OBLIGATION gate now catches the same site
+        # via the new `rust_macro_invisible_call` structural detector,
+        # needle-gated on the macro's OWN body (through the `Command as C`
+        # alias) so an ordinary, harmless local macro never fires -- see
+        # `test_rust_macro_rules_benign_body_not_addressed` below.
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            'macro_rules! run { ($x:expr) => { C::new("sh").arg($x).spawn() } }\n'
+            'fn f() { run!("x"); }\n'
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert any(
+            f.construct_name == "macro_rules! expansion emitting a fixed call"
+            for f in findings
+        )
+
+    def test_rust_macro_rules_benign_body_not_addressed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
+        # frob:ticket T-1505
+        # The needle-gate's own negative case: a locally-defined macro
+        # whose body contains nothing registry-dangerous (ordinary parser/
+        # DSL boilerplate, the common real-world shape -- this repo's own
+        # `strata-core/src/parse/lexer.rs` defines dozens) must NOT fire,
+        # or every such macro in this repo's own corpus would falsely
+        # trip the fail-closed obligation on every `frob check` run.
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "macro_rules! double { ($x:expr) => { $x * 2 } }\n"
+            "fn f() { let y = double!(3); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert not any(
+            f.construct_name == "macro_rules! expansion emitting a fixed call"
+            for f in findings
+        )
+
     def test_rust_proc_macro_synthesized_call_excused_source_invisible(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE \
+        # kind="unit"
         # taxonomy "procedural / derive macros synthesizing a call from
         # external input" row -- mirrors the `macro_rules!` resolver gap
         # `test_macro_rules_expansion_emitting_fixed_call_not_detected`
@@ -6692,7 +6836,8 @@ class TestOpaqueIndirectionGate:
         assert any("proc" in e.reason or "macro" in e.reason for e in rust_excuses)
 
     def test_kotlin_function_value_in_container_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "function value stored in and read from a container" row
         # -- closed by T-1047 (a `]!!(` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6706,7 +6851,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "function value in container" for f in findings)
 
     def test_kotlin_delegated_property_by_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "delegated property / `by` indirection resolving at
         # runtime" row -- closed by T-1047 (a `by lazy {` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6720,7 +6866,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "delegated property by" for f in findings)
 
     def test_kotlin_dynamic_classloading_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "dynamic classloading (`URLClassLoader` etc.)" row --
         # closed by T-1047 (a `URLClassLoader(` needle).
         from frob.vet._capability_scan import _opaque_indirection_findings
@@ -6735,7 +6882,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "dynamic classloading" for f in findings)
 
     def test_kotlin_kcallable_call_always_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`KFunction`/`KCallable.call` obtained dynamically" row
         # -- RUNTIME_OPAQUE_CONSTRUCTS registers a separate "KCallable.call"
         # entry (deliberately broad `.call(` needle, literal_arg_index=
@@ -6752,10 +6900,38 @@ class TestOpaqueIndirectionGate:
         findings = _opaque_indirection_findings(pkg)
         assert any(f.construct_name == "KCallable.call" for f in findings)
 
+    def test_kotlin_operator_invoke_instance_call_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
+        # frob:ticket T-1505
+        # T-1063/T-1505 residue: taxonomy "`operator fun invoke` making an
+        # object directly callable" row --
+        # `test_operator_fun_invoke_making_object_directly_callable_not_detected`
+        # (above, `TestCapabilityScanKotlinTaxonomyClosureResolution`)
+        # already locks the ORDINARY resolver's honest non-resolution (no
+        # receiver-instance points-to); this fixture proves the fail-
+        # closed OBLIGATION gate now catches the SAME construct-then-call
+        # shape via the new `kotlin_operator_invoke_call` structural
+        # detector.
+        from frob.vet._capability_scan import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "import java.lang.Runtime\n"
+            "class Handler { operator fun invoke(x: String) { "
+            "Runtime.getRuntime() } }\n"
+            'fun g() { val h = Handler(); h("sh") }\n'
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert any(
+            f.construct_name == "operator fun invoke instance call" for f in findings
+        )
+
     def test_typescript_eval_always_fires_regardless_of_argument(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`eval`" row (TS/JS's own copy of the construct Python's
         # `eval` row above already locks a sibling fixture for) --
         # RUNTIME_OPAQUE_CONSTRUCTS registers a separate `language=
@@ -6769,7 +6945,8 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "eval" for f in findings)
 
     def test_typescript_function_constructor_always_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "`new Function(...)`" row.
         from frob.vet._capability_scan import _opaque_indirection_findings
 
@@ -6781,7 +6958,9 @@ class TestOpaqueIndirectionGate:
         assert any(f.construct_name == "Function constructor" for f in findings)
 
     def test_c_weak_symbol_override_excused_source_invisible(self) -> None:
-        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE \
+        # kind="unit"
         # taxonomy "weak-symbol override resolved by the linker/loader" row
         # (C). Unlike the other C runtime rows, this one is DELIBERATELY
         # not a fixture-with-a-finding: the T-0665 sign-off excuses it via
@@ -6797,7 +6976,9 @@ class TestOpaqueIndirectionGate:
         assert "weak-symbol" in c_cpp_excuses[0].reason
 
     def test_rust_runtime_vtable_patch_excused_source_invisible(self) -> None:
-        # frob:tests src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # frob:tests \
+        # src/frob/vet/_capability_registry/_opaque.py::OPAQUE_SOURCE_INVISIBLE \
+        # kind="unit"
         # Rust's own `OPAQUE_SOURCE_INVISIBLE` entries: a runtime vtable
         # patch (unsafe raw-pointer rewrite of a trait object's vtable
         # slot), plus, as of T-1047, a dedicated `extern` FFI symbol
@@ -6818,7 +6999,8 @@ class TestOpaqueIndirectionGate:
     def test_cpp_virtual_dispatch_bounded_polymorphism_no_finding(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # frob:tests src/frob/vet/_capability_scan.py::_opaque_indirection_findings \
+        # kind="unit"
         # taxonomy "virtual dispatch through a base pointer" row.
         # `_opaque.py`'s own module docstring carves BOUNDED POLYMORPHISM
         # (ordinary virtual dispatch whose implementation set is statically
@@ -6891,8 +7073,11 @@ class TestEvasionTaxonomyExhaustiveness:
         return counts
 
     def test_every_doc_heading_recognized(self) -> None:
-        # frob:tests src/frob/vet/_evasion_coverage.py::_DOC_HEADING_TO_LANGUAGE_KEY kind="unit"  # noqa: E501
-        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
+        # frob:tests src/frob/vet/_evasion_coverage.py::_DOC_HEADING_TO_LANGUAGE_KEY \
+        # kind="unit"
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict \
+        # subscript/iteration/membership, not a call), which frob.graph.callgraph's \
+        # best-effort reachability heuristic cannot see"
         # Dangling-heading check: every `## <Language>` heading actually
         # present in the taxonomy doc must be a key
         # `_DOC_HEADING_TO_LANGUAGE_KEY` recognizes -- a renamed heading
@@ -6918,7 +7103,9 @@ class TestEvasionTaxonomyExhaustiveness:
 
     def test_every_litmus_path_resolves_to_a_real_test(self) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
-        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict \
+        # subscript/iteration/membership, not a call), which frob.graph.callgraph's \
+        # best-effort reachability heuristic cannot see"
         # Dangling-ref check (direction 2): every "Class.method" string in
         # _EVASION_LITMUS_MAP must be a REAL class+method actually defined
         # in this file -- a typo'd or renamed-but-not-updated reference
@@ -6952,7 +7139,9 @@ class TestEvasionTaxonomyExhaustiveness:
         self,
     ) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
-        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict \
+        # subscript/iteration/membership, not a call), which frob.graph.callgraph's \
+        # best-effort reachability heuristic cannot see"
         # Acceptance [0]: "given the full evasion taxonomy denominator,
         # when the meta-test runs, then every entry maps to >=1 registered
         # litmus fixture." Acceptance [1]: "given a new taxonomy entry
@@ -6977,7 +7166,9 @@ class TestEvasionTaxonomyExhaustiveness:
 
     def test_map_has_no_orphaned_language_category_pairs(self) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
-        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict \
+        # subscript/iteration/membership, not a call), which frob.graph.callgraph's \
+        # best-effort reachability heuristic cannot see"
         # Reverse sanity: every (language, category) key in
         # _EVASION_LITMUS_MAP must correspond to a pair the doc actually has
         # at least one row for -- catches a typo'd language/category key
@@ -6993,7 +7184,9 @@ class TestEvasionTaxonomyExhaustiveness:
 
     def test_combined_registered_total_matches_112_entry_denominator(self) -> None:
         # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
-        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict subscript/iteration/membership, not a call), which frob.graph.callgraph's best-effort reachability heuristic cannot see"  # noqa: E501
+        # frob:waive COV006 reason="T-1024: genuinely read directly by this test (dict \
+        # subscript/iteration/membership, not a call), which frob.graph.callgraph's \
+        # best-effort reachability heuristic cannot see"
         # T-0339's own framing (and `docs/design/registry/evasion.yaml`'s
         # 112 EVA-<LANG>-<S|R><NN> ids, reconciled in
         # `docs/design/registry/RECONCILIATION.md`) name 112 as the

@@ -500,4 +500,51 @@ RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS: tuple[_OpaqueStructuralConstruct, ...] = (
         "immediately called), a disclosed over-approximation",
         taxonomy_row="c:runtime:void-star-backcast-to-function-pointer",
     ),
+    # frob:ticket T-1505
+    _OpaqueStructuralConstruct(
+        language="rust",
+        construct_name="macro_rules! expansion emitting a fixed call",
+        kind="rust_macro_invisible_call",
+        rationale="a locally-defined `macro_rules!` invoked via `name!(...)` "
+        "-- the resolver has no macro-expansion handling anywhere (no "
+        "`macro_rule`/`macro_invocation` node type is ever matched), so "
+        "whatever the macro body's own token tree contains (a dangerous "
+        "call inlined at every invocation site) is invisible to the "
+        "ordinary resolver; only invocations of a macro DEFINED in the "
+        "same file are flagged (an external/stdlib macro like `println!`/"
+        "`vec!`/`format!` is a closed, reviewed set with no arbitrary "
+        "expansion risk, so flagging every macro invocation in the file "
+        "would be noise, not signal)",
+        taxonomy_row="rust:runtime:macro-rules-expansion-emitting-fixed-call",
+    ),
+    # frob:ticket T-1505
+    _OpaqueStructuralConstruct(
+        language="c-cpp",
+        construct_name="pointer-to-member call",
+        kind="cpp_pointer_to_member_call",
+        rationale="a pointer-to-member dereferenced and immediately called "
+        "(`(obj.*p)(x)` / `(objPtr->*p)(x)`) -- no pointer-to-member alias "
+        "tracking exists in the C/C++ resolver AND the candidate collector "
+        "has no handling for a `.*`/`->*` dereference as a call target at "
+        "all, so the bound member function is invisible regardless of "
+        "whether `p` was assigned a provably-dangerous `&Class::method` "
+        "expression",
+        taxonomy_row="c:runtime:pointer-to-member-call",
+    ),
+    # frob:ticket T-1505
+    _OpaqueStructuralConstruct(
+        language="kotlin",
+        construct_name="operator fun invoke instance call",
+        kind="kotlin_operator_invoke_call",
+        rationale="a class defining `operator fun invoke` makes any instance "
+        "directly callable (`val h = Handler(); h(x)` desugars to `h."
+        "invoke(x)`) -- the kotlin resolver has no receiver-instance "
+        "points-to of any kind, so a bare `h(x)` call site never resolves "
+        "back to `Handler`'s own `invoke` body; this fires narrowly on the "
+        "SAME-FILE construct-then-call shape the taxonomy's own worked "
+        "example uses (a class defining the operator, a `val` bound "
+        "directly to its constructor call, and a later bare call through "
+        "that same name) rather than attempting general points-to",
+        taxonomy_row="kotlin:runtime:operator-invoke-instance-call",
+    ),
 )

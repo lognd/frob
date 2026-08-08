@@ -2,7 +2,7 @@
 id: T-1505
 title: 'vet/resolvers: close remaining 3 structural points-to gaps (rust macro_rules,
   cpp ptr-to-member, kotlin operator-invoke) -- T-1063 residue'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-03'
@@ -12,10 +12,49 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/vet/**
 - tests/test_vet.py
+- src/frob/vet/_capability_scan.py
+- src/frob/vet/_capability_registry/_opaque.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/vet/**
+  reason: narrowing the mega-glob src/frob/vet/** to the exact files this fix touches
+    -- the structural-opaque registry (_opaque.py), its matcher (_capability_scan.py),
+    and the litmus fixtures (test_vet.py) -- before starting, per the standing narrow-scope-before-start
+    rule
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/vet/_capability_scan.py
+  reason: narrowing the mega-glob src/frob/vet/** to the exact files this fix touches
+    -- the structural-opaque registry (_opaque.py), its matcher (_capability_scan.py),
+    and the litmus fixtures (test_vet.py) -- before starting, per the standing narrow-scope-before-start
+    rule
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/vet/_capability_registry/_opaque.py
+  reason: narrowing the mega-glob src/frob/vet/** to the exact files this fix touches
+    -- the structural-opaque registry (_opaque.py), its matcher (_capability_scan.py),
+    and the litmus fixtures (test_vet.py) -- before starting, per the standing narrow-scope-before-start
+    rule
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_vet.py
+  reason: narrowing the mega-glob src/frob/vet/** to the exact files this fix touches
+    -- the structural-opaque registry (_opaque.py), its matcher (_capability_scan.py),
+    and the litmus fixtures (test_vet.py) -- before starting, per the standing narrow-scope-before-start
+    rule
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_cpp_pointer_to_member_call_fires
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_macro_rules_dangerous_body_fires
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_macro_rules_benign_body_not_addressed
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires
 designated_repro_test: null
 threat: null
 component: null

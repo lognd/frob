@@ -29,6 +29,7 @@ from frob.logging import get_logger
 
 from ._capability_core import (
     _EXT_LANGUAGE,
+    _PATTERNS,
     ByteSpan,
     _fully_in_any_span,
     _needle_hits_outside_comments_ws,
@@ -38,6 +39,7 @@ from ._capability_core import (
 from ._capability_registry import (
     RUNTIME_OPAQUE_CONSTRUCTS,
     RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS,
+    _OpaqueStructuralConstruct,
 )
 
 if TYPE_CHECKING:
@@ -547,7 +549,11 @@ def _is_test_path(path: Path) -> bool:
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0201
 # frob:ticket T-0253
-# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling around path resolution to a broader 'cannot confirm, treat as not a self-pattern path' fallback -- no observable behavior change, so docs/modules/vet.md#public-api needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling around \
+# path resolution to a broader 'cannot confirm, treat as not a self-pattern path' \
+# fallback -- no observable behavior change, so docs/modules/vet.md#public-api needs \
+# no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this \
+# ticket's scope"
 def is_self_pattern_path(
     path: Path,
     root: Path | None = None,
@@ -723,7 +729,10 @@ class _OpaqueFinding(BaseModel):
     line: int
 
 
-# frob:waive PERF003 reason="single linear pass over the call's argument bytes; the inner while only skips one quoted-string span before the outer loop resumes at its end -- both loops advance the shared index i monotonically forward, never re-scanning, so this is O(n) total not a nested cross join"  # noqa: E501
+# frob:waive PERF003 reason="single linear pass over the call's argument bytes; the \
+# inner while only skips one quoted-string span before the outer loop resumes at its \
+# end -- both loops advance the shared index i monotonically forward, never \
+# re-scanning, so this is O(n) total not a nested cross join"
 def _split_top_level_args(raw: bytes, start: int) -> list[bytes] | None:
     """Split the comma-separated argument list beginning right after an
     already-matched call's opening `(` (T-0665) into top-level (paren/
@@ -842,6 +851,199 @@ _NAMED_TYPE_CAST_CALL_RE = re.compile(
     rb"\(\([A-Za-z_][A-Za-z0-9_]*\)\s*[A-Za-z_][A-Za-z0-9_]*\)\s*\("
 )
 
+# frob:ticket T-1505
+#: a `macro_rules!` definition's own name -- `_rust_macro_invisible_call_
+#: lines`'s first pass collects every name defined this way in the file.
+_RUST_MACRO_RULES_DEF_RE = re.compile(
+    rb"\bmacro_rules!\s*([A-Za-z_][A-Za-z0-9_]*)\s*\{"
+)
+
+# frob:ticket T-1505
+#: every rust registry needle, flattened once (T-0829-style module-level
+#: cache, mirrors `frob.vet._capability_python._PY_ALL_DANGEROUS_NEEDLES`)
+#: -- `_rust_macro_invisible_call_lines` needle-gates on this so a
+#: LOCALLY-defined macro whose own body contains no dangerous needle at
+#: all (the overwhelming common case: parser/DSL boilerplate macros like
+#: this repo's own `strata-core/src/parse/lexer.rs`) never fires. Only a
+#: macro body that ALREADY contains registry-dangerous text -- the
+#: ticket's own worked example, `C::new("sh").arg($x).spawn()` -- is
+#: opaque in the sense this construct means: the INVOCATION site's own
+#: text never repeats that needle, only the definition's does, so a plain
+#: substring scan over the invocation site alone still misses it.
+_RUST_ALL_DANGEROUS_NEEDLES: tuple[bytes, ...] = tuple(
+    needle.encode("utf-8")
+    for needles in _PATTERNS.get("rust", {}).values()
+    for needle in needles
+)
+
+
+def _rust_macro_body_span(raw: bytes, brace_start: int) -> int:
+    """The byte offset one PAST the matching closing `}` for a `{` at
+    `brace_start` (T-1505) -- balanced-brace scan, since a macro body can
+    itself contain nested `{...}` blocks (match arms, block expressions).
+    Returns `len(raw)` if the braces never balance (a malformed/truncated
+    file this module's own `raw_tree`-based parity fixtures never
+    produce, but a defensive floor rather than an index error regardless)."""
+    depth = 0
+    i = brace_start
+    n = len(raw)
+    while i < n:
+        if raw[i : i + 1] == b"{":
+            depth += 1
+        elif raw[i : i + 1] == b"}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    return n
+
+
+# frob:ticket T-1505
+#: `use some::path::Name as Alias;` -- `_rust_use_aliases`'s own matcher.
+_RUST_USE_AS_RE = re.compile(
+    rb"\buse\s+([A-Za-z_][A-Za-z0-9_:]*)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*;"
+)
+
+
+def _rust_use_aliases(raw: bytes) -> dict[bytes, bytes]:
+    """`{alias: full_path}` for every `use full::path::Name as alias;` in
+    `raw` (T-1505) -- a macro body written against a locally aliased
+    import (the ticket's own worked example: `use std::process::Command as
+    C;` then the macro body reads `C::new(...)`) would otherwise never
+    match a registry needle that only ever spells the UNALIASED name
+    (`Command::new(`), since needle-matching is a plain substring scan.
+    Deliberately narrow (only the simple `use X as Y;` shape, not
+    `use X::{A as B, C as D};` group-aliasing) -- matches this module's
+    existing python-side alias-table precedent's own scope discipline of
+    covering the common case first, documented rather than silently
+    assumed complete."""
+    return {m.group(2): m.group(1) for m in _RUST_USE_AS_RE.finditer(raw)}
+
+
+def _rust_body_contains_dangerous_needle(
+    body: bytes, aliases: dict[bytes, bytes]
+) -> bool:
+    """True if `body` contains a registry-dangerous needle directly, OR
+    contains an ALIASED call (`C::new(` where `use ... as C` maps `C` back
+    to `Command`) that resolves to one once the alias is substituted back
+    to its real path (T-1505) -- see `_rust_use_aliases`'s own docstring
+    for why this substitution is needed at all."""
+    if any(needle in body for needle in _RUST_ALL_DANGEROUS_NEEDLES):
+        return True
+    for alias, full_path in aliases.items():
+        if alias + b"::" not in body:
+            continue
+        substituted = body.replace(alias + b"::", full_path + b"::")
+        if any(needle in substituted for needle in _RUST_ALL_DANGEROUS_NEEDLES):
+            return True
+    return False
+
+# frob:ticket T-1505
+#: a pointer-to-member dereference (`.*`/`->*`/`::*` -- the fixture corpus
+#: uses all three spellings) immediately followed by a call, `(obj.*p)(x)`
+#: shaped -- see `_OpaqueStructuralConstruct`'s `kind="cpp_pointer_to_
+#: member_call"` registry entry for why this cannot resolve further.
+_CPP_POINTER_TO_MEMBER_CALL_RE = re.compile(
+    rb"(?:\.\*|->\*|::\*)\s*[A-Za-z_][A-Za-z0-9_]*\s*\)\s*\("
+)
+
+# frob:ticket T-1505
+#: a class defining `operator fun invoke` -- `_kotlin_operator_invoke_
+#: call_findings`'s first pass collects every such class name.
+_KOTLIN_OPERATOR_INVOKE_CLASS_RE = re.compile(
+    rb"\bclass\s+([A-Za-z_][A-Za-z0-9_]*)[^{]*\{[^}]*?\boperator\s+fun\s+invoke\b",
+    re.DOTALL,
+)
+
+# frob:ticket T-1505
+#: `val NAME = ClassName(...)` -- `_kotlin_operator_invoke_call_findings`'s
+#: second pass, matched against a class name found by the first pass.
+def _kotlin_val_construction_re(class_name: bytes) -> re.Pattern[bytes]:
+    """Compiled `val NAME = <class_name>(...)` matcher for one specific
+    `operator fun invoke`-bearing class name (T-1505) -- built per-name
+    rather than a single generic pattern so the SAME class name the first
+    pass found is the one the second pass's construction/call chase
+    requires, not an arbitrary identifier."""
+    return re.compile(
+        rb"\bval\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+        + re.escape(class_name)
+        + rb"\s*\("
+    )
+
+
+def _rust_macro_invisible_call_lines(raw: bytes) -> list[int]:
+    """1-based line numbers of every invocation site (`name!(`) of a
+    `macro_rules!`-defined macro whose OWN DEFINITION also lives in `raw`
+    AND whose own BODY contains at least one registry-dangerous needle
+    (T-1505) -- excludes the definition's own line (defining a macro is
+    not invoking it), excludes every stdlib/external macro (`println!`,
+    `vec!`, ...), which are never locally defined and therefore never
+    collected in the first pass, and -- the needle gate -- excludes the
+    overwhelming common case of a locally-defined macro that is ordinary
+    parser/DSL boilerplate with nothing dangerous in its body at all (this
+    repo's own `strata-core/src/parse/lexer.rs` defines and invokes
+    dozens of such macros; without this gate every one of them would
+    falsely fire). See `_RUST_ALL_DANGEROUS_NEEDLES`'s own comment for why
+    needle-gating the DEFINITION still catches the ticket's worked example
+    even though the INVOCATION site's own text never repeats the needle."""
+    def_matches = list(_RUST_MACRO_RULES_DEF_RE.finditer(raw))
+    if not def_matches:
+        return []
+    aliases = _rust_use_aliases(raw)
+    dangerous_names: set[bytes] = set()
+    def_lines: set[int] = set()
+    for m in def_matches:
+        def_lines.add(raw.count(b"\n", 0, m.start()) + 1)
+        brace_start = m.end() - 1  # the trailing "{" the def regex itself matched
+        body_end = _rust_macro_body_span(raw, brace_start)
+        body = raw[brace_start:body_end]
+        if _rust_body_contains_dangerous_needle(body, aliases):
+            dangerous_names.add(m.group(1))
+    if not dangerous_names:
+        return []
+    lines: list[int] = []
+    for name in dangerous_names:
+        invocation_re = re.compile(
+            rb"(?<![A-Za-z0-9_!])" + re.escape(name) + rb"\s*!\s*\("
+        )
+        for m in invocation_re.finditer(raw):
+            line = raw.count(b"\n", 0, m.start()) + 1
+            if line in def_lines:
+                continue
+            lines.append(line)
+    return lines
+
+
+def _kotlin_operator_invoke_call_lines(raw: bytes) -> list[int]:
+    """1-based line numbers of every bare call site (`h(...)`) of a `val`
+    directly constructed from an `operator fun invoke`-bearing class in
+    the SAME file (T-1505: `class Handler { operator fun invoke(...) };
+    val h = Handler(); h(x)`) -- narrower than general receiver-instance
+    points-to (see the `kotlin_operator_invoke_call` registry entry's
+    rationale), but closes the taxonomy's own worked example exactly."""
+    class_names = {
+        m.group(1) for m in _KOTLIN_OPERATOR_INVOKE_CLASS_RE.finditer(raw)
+    }
+    if not class_names:
+        return []
+    lines: list[int] = []
+    for class_name in class_names:
+        val_re = _kotlin_val_construction_re(class_name)
+        for construction in val_re.finditer(raw):
+            val_name = construction.group(1)
+            call_re = re.compile(
+                rb"(?<![A-Za-z0-9_.])" + re.escape(val_name) + rb"\s*\("
+            )
+            for call in call_re.finditer(raw):
+                # The construction site itself (`= Handler(`) is not a
+                # call of `val_name` -- only a LATER occurrence of
+                # `val_name(` is the instance-call this construct targets.
+                if call.start() <= construction.end():
+                    continue
+                line = raw.count(b"\n", 0, call.start()) + 1
+                lines.append(line)
+    return lines
+
 
 def _subscript_key_looks_literal(content: bytes) -> bool:
     """True if `content` (a `_SUBSCRIPT_CALL_RE` bracket-interior slice,
@@ -948,6 +1150,34 @@ def _python_sys_modules_write_ok(tree: Tree, start: int) -> bool | None:
     return left is not None and left.id == subscript.id
 
 
+# frob:ticket T-1505
+def _two_pass_structural_findings(
+    construct: _OpaqueStructuralConstruct, raw: bytes
+) -> list[_OpaqueFinding] | None:
+    """The T-1505 two-pass (name-collect, then chase) kinds' own findings,
+    or `None` when `construct.kind` is not one of them -- split out of
+    `_structural_opaque_findings` (ARCH001) since a single fixed regex
+    cannot express "this specific locally-defined macro/class's later
+    invocation/instance-call", so these two kinds compute a line list
+    directly instead of feeding the generic single-regex-match loop the
+    other four kinds share."""
+    if construct.kind == "rust_macro_invisible_call":
+        lines_found = _rust_macro_invisible_call_lines(raw)
+    elif construct.kind == "kotlin_operator_invoke_call":
+        lines_found = _kotlin_operator_invoke_call_lines(raw)
+    else:
+        return None
+    return [
+        _OpaqueFinding(
+            construct_name=construct.construct_name,
+            taxonomy_row=construct.taxonomy_row,
+            rationale=construct.rationale,
+            line=line,
+        )
+        for line in lines_found
+    ]
+
+
 # frob:ticket T-1051
 def _structural_opaque_findings(
     raw: bytes,
@@ -964,10 +1194,15 @@ def _structural_opaque_findings(
     additionally re-checks the bracket content against `_subscript_key_
     looks_literal` so a LITERAL-keyed subscript call (already the ordinary
     resolver's job, T-0665's own literal/non-literal split) does not
-    double-fire this obligation."""
+    double-fire this obligation. T-1505's two-pass kinds are delegated to
+    `_two_pass_structural_findings`."""
     findings: list[_OpaqueFinding] = []
     for construct in RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS:
         if construct.language != language:
+            continue
+        two_pass = _two_pass_structural_findings(construct, raw)
+        if two_pass is not None:
+            findings.extend(two_pass)
             continue
         if construct.kind == "subscript_call":
             pattern = _SUBSCRIPT_CALL_RE
@@ -975,6 +1210,8 @@ def _structural_opaque_findings(
             pattern = _EXPLICIT_FNPTR_CAST_CALL_RE
         elif construct.kind == "named_type_cast_call":
             pattern = _NAMED_TYPE_CAST_CALL_RE
+        elif construct.kind == "cpp_pointer_to_member_call":
+            pattern = _CPP_POINTER_TO_MEMBER_CALL_RE
         else:  # pragma: no cover -- registry invariant, never hit in practice
             continue
         for match in pattern.finditer(raw):
@@ -987,7 +1224,9 @@ def _structural_opaque_findings(
                 continue
             if _byte_offset_inside_string_literal(raw, start):
                 continue
-            # frob:waive PERF002 reason="each match's own (0, start) span needs its own byte-count query over a different sub-range; not a repeated identical count to hoist"  # noqa: E501
+            # frob:waive PERF002 reason="each match's own (0, start) span needs its \
+            # own byte-count query over a different sub-range; not a repeated \
+            # identical count to hoist"
             line = raw.count(b"\n", 0, start) + 1
             findings.append(
                 _OpaqueFinding(
@@ -1000,7 +1239,11 @@ def _structural_opaque_findings(
     return findings
 
 
-# frob:waive DEAD001 reason="T-1024: genuinely called from frob.gates._opaque.opaque_gate, a sibling package under src/frob/gates/ -- DEAD001's intra-package reference graph is built per-directory (dead_symbol_gate's docstring) so a cross-package caller in a different directory is invisible to it; directly unit-tested via the frob:tests directives in tests/test_vet.py"  # noqa: E501
+# frob:waive DEAD001 reason="T-1024: genuinely called from \
+# frob.gates._opaque.opaque_gate, a sibling package under src/frob/gates/ -- DEAD001's \
+# intra-package reference graph is built per-directory (dead_symbol_gate's docstring) \
+# so a cross-package caller in a different directory is invisible to it; directly \
+# unit-tested via the frob:tests directives in tests/test_vet.py"
 def _opaque_indirection_findings(path: Path) -> tuple[_OpaqueFinding, ...]:
     """`RUNTIME_OPAQUE_CONSTRUCTS` sites in `path` (T-0665, coordinator-
     signed category 1: "evasion-indicative dynamic lookup") -- the
@@ -1122,7 +1365,9 @@ def _needle_construct_findings(
             if args is not None and construct.literal_arg_index < len(args):
                 fires = not _arg_looks_literal(args[construct.literal_arg_index])
         if fires:
-            # frob:waive PERF002 reason="each match's own (0, idx) span needs its own byte-count query over a different sub-range; not a repeated identical count to hoist"  # noqa: E501
+            # frob:waive PERF002 reason="each match's own (0, idx) span needs its own \
+            # byte-count query over a different sub-range; not a repeated identical \
+            # count to hoist"
             line = raw.count(b"\n", 0, idx) + 1
             findings.append(
                 _OpaqueFinding(
