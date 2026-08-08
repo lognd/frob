@@ -1,7 +1,7 @@
 ---
 id: T-1878
 title: Document T-1868's live cross-worktree lease check for scope --add in docs/modules/tickets.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-08'
