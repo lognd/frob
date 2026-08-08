@@ -558,10 +558,10 @@ def _marginal_run_deltas(
 # frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_marginal_run_deltas_ordered_and_computed_per_worktree  # noqa: E501
 # frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_dispatches_ordered_by_start_ts_missing_last  # noqa: E501
 # frob:tests tests/test_stats_agentic.py::TestDispatchCostReport.test_malformed_lines_skipped_not_raised  # noqa: E501
-# frob:waive WIRE001 reason="no caller yet -- the CLI renderer \
-# (src/frob/app/stats_runner.py) is deliberately outside T-1724's own scope (schema + \
-# join, not the --agentic text-output wiring); --json output already surfaces this \
-# report via model_dump_json" follow_up="T-1787"
+# frob:ticket T-1787
+# frob:waive AFFECT001 reason="T-1787 adds a caller (stats_runner.py's --agentic text \
+# renderer) and a one-line docstring note; the DispatchCostReport schema itself and \
+# its docs/modules/stats.md#public-api anchor are unchanged"
 def dispatch_cost_report(root: Path) -> DispatchCostReport:
     """T-1724: join `kind="dispatch"` boundary events against `kind="tool"`
     (cost) and `kind="ticket"` (delivery) events in the same telemetry
@@ -571,9 +571,12 @@ def dispatch_cost_report(root: Path) -> DispatchCostReport:
     nothing.
 
     Never fails, same posture as `agentic_report`: an absent/empty stream,
-    or one with no `kind="dispatch"` events at all (no caller wires
-    `record_dispatch_event` yet), produces an all-empty/all-`None` report,
-    never an error and never a silently-zeroed cost."""
+    or one with no `kind="dispatch"` events at all (e.g. telemetry
+    disabled, or no Claude Code session recorded yet), produces an
+    all-empty/all-`None` report, never an error and never a
+    silently-zeroed cost. Called from `frob stats --agentic`'s plain-text
+    renderer (`src/frob/app/stats_runner.py`, T-1787) in addition to the
+    existing `--json` path."""
     events = _load_events(root)
     dispatch_events = [e for e in events if e.get("kind") == "dispatch"]
     tool_events = [e for e in events if e.get("kind") == "tool"]

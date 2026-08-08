@@ -214,12 +214,10 @@ def record_ticket_event(
 
 
 # frob:ticket T-1724
+# frob:ticket T-1787
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 # frob:tests tests/test_telemetry.py::TestRecordDispatchEvent.test_start_and_end_events_shaped_correctly  # noqa: E501
 # frob:tests tests/test_telemetry.py::TestRecordDispatchEvent.test_optional_fields_omitted_when_none  # noqa: E501
-# frob:waive WIRE001 reason="no caller yet -- the real call site is a Claude Code \
-# SessionStart/Stop hook (.claude/hooks/**), deliberately outside T-1724's own scope \
-# (schema + join, not the hook wiring)" follow_up="T-1787"
 def record_dispatch_event(
     root: Path,
     *,
@@ -246,10 +244,10 @@ def record_dispatch_event(
     tell) and must never be silently treated as either `True` or `False`
     downstream.
 
-    No caller wires this yet (T-1724's own scope is the schema and the
-    join, not the Claude Code hook that would call it at session
-    start/stop) -- that wiring is a `.claude/hooks/**` change, deliberately
-    out of this ticket's declared scope; see its Done report."""
+    Called by `.claude/hooks/dispatch-telemetry.py` (T-1787) at
+    `SessionStart` (`event="start"`) and `Stop` (`event="end"`) -- the
+    Claude Code hook wiring T-1724 deliberately left out of its own scope
+    (schema + join only)."""
     record: dict[str, Any] = {
         "iso_ts": iso_now(),
         "kind": "dispatch",

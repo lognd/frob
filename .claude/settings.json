@@ -37,6 +37,16 @@
             "statusMessage": "Checking Claude config drift"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/dispatch-telemetry.py",
+            "timeout": 15,
+            "statusMessage": "dispatch-telemetry"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -47,6 +57,16 @@
             "command": "python3 /home/logan/projects/frob/.claude/hooks/diagnosis-nudge.py",
             "timeout": 15,
             "statusMessage": "diagnosis-nudge"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/dispatch-telemetry.py",
+            "timeout": 15,
+            "statusMessage": "dispatch-telemetry"
           }
         ]
       }

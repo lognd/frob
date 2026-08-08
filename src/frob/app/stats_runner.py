@@ -76,10 +76,58 @@ def _agentic_ticket_and_token_lines(report) -> list[str]:  # noqa: ANN001
     return lines
 
 
+# frob:ticket T-1787
+def _dispatch_cost_lines(report) -> list[str]:  # noqa: ANN001
+    """The T-1724 dispatch-cost-report section of the `--agentic` text
+    output: tokens per landed ticket, the cold-start floor, per-worktree
+    marginal run deltas, and zero-delivery dispatch ids -- previously
+    reachable only via `--json`."""
+    lines = ["", "dispatch cost report (T-1724):"]
+    if not report.dispatches:
+        lines.append(
+            '  (no kind="dispatch" events recorded yet -- '
+            ".claude/hooks/dispatch-telemetry.py wires SessionStart/Stop)"
+        )
+        return lines
+    tpl = (
+        f"{report.tokens_per_landed_ticket:.1f}"
+        if report.tokens_per_landed_ticket is not None
+        else "n/a"
+    )
+    floor = (
+        f"{report.cold_start_floor_tokens:.1f}"
+        if report.cold_start_floor_tokens is not None
+        else "n/a"
+    )
+    lines.append(f"  tokens per landed ticket: {tpl}")
+    lines.append(f"  cold-start floor tokens: {floor}")
+    lines.append(f"  dispatches recorded: {len(report.dispatches)}")
+    lines += ["", "  zero-delivery dispatch ids:"]
+    if not report.zero_delivery_dispatch_ids:
+        lines.append("    (none)")
+    for dispatch_id in report.zero_delivery_dispatch_ids:
+        lines.append(f"    {dispatch_id}")
+    lines += ["", "  marginal run deltas (per worktree, run N vs run N-1):"]
+    if not report.marginal_run_deltas:
+        lines.append("    (none -- no dispatch names a worktree yet)")
+    for d in report.marginal_run_deltas:
+        delta = (
+            f"{d.marginal_tokens_delta:+d}"
+            if d.marginal_tokens_delta is not None
+            else "n/a"
+        )
+        tokens = d.output_tokens_delta if d.output_tokens_delta is not None else "n/a"
+        lines.append(
+            f"    {d.worktree} run {d.run_index} ({d.dispatch_id}): "
+            f"tokens={tokens} marginal={delta}"
+        )
+    return lines
+
+
 # frob:ticket T-0562
 def _run_agentic(cfg: AppConfig) -> None:
     """Render `frob stats`'s non-gated agentic time/token breakdown."""
-    from frob.stats import agentic_report
+    from frob.stats import agentic_report, dispatch_cost_report
 
     root = (cfg.stats_path or Path(".")).resolve()
     report = agentic_report(root)
@@ -100,6 +148,7 @@ def _run_agentic(cfg: AppConfig) -> None:
     lines += _agentic_time_lines(report)
     lines += _agentic_retread_lines(report)
     lines += _agentic_ticket_and_token_lines(report)
+    lines += _dispatch_cost_lines(dispatch_cost_report(root))
     Renderer.for_stream(sys.stdout).line("\n".join(lines))
 
 

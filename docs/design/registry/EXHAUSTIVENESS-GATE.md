@@ -123,6 +123,18 @@ check-fix-engine.md`), and `sync_gate_rule_fixability` (same module)
 backfills that field onto any EXISTING entry that predates T-1264 and
 does not carry one yet, idempotently.
 
+<!-- frob:describes src/frob/registry/_staleness.py::missing_gate_rule_ids -->
+<!-- frob:describes src/frob/registry/_staleness.py::sync_gate_rule_entries -->
+<!-- frob:describes src/frob/registry/_staleness.py::sync_gate_rule_fixability -->
+
+`missing_gate_rule_ids` is the read-only half `sync_gate_rule_entries`
+itself calls first: every rule in `known_rules` with no `CHK-GATE-<rule>`
+id anywhere in the registry file yet, `frozenset()` on an unreadable
+file (never raises) -- `registry_gate`'s own REG010 finding is built
+directly from this set, so its "which rules are missing" answer and
+`sync_gate_rule_entries`'s "which rules to append" answer can never
+diverge.
+
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_sync_gate_rules_for_land -->
 
 T-1011: `frob ticket land` now runs this same sync AUTOMATICALLY, not just

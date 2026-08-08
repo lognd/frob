@@ -150,6 +150,19 @@ wall-clock, fast-exit-1 count, and stuck-repeat streak count
 (`usage_report`) -- the "where does the time go" question this ticket's
 own corpus mining answered by hand, now a command.
 
+## Dispatch boundary telemetry (T-1724/T-1787)
+
+`.claude/hooks/dispatch-telemetry.py`, registered as both a `SessionStart`
+and a `Stop` hook (`.claude/settings.json`), is the real caller of
+`record_dispatch_event`: it records `event="start"` (worktree, branch, and
+`cold_start` -- `True` only for Claude Code's own `source="startup"`,
+`False` for `"resume"`/`"clear"`/`"compact"`, `None` for anything else) at
+session start and `event="end"` at stop, both under the session's own
+`session_id` as `dispatch_id`. `frob stats --agentic`'s plain-text output
+renders the resulting `frob.stats.dispatch_cost_report` join
+(`_dispatch_cost_lines`, `src/frob/app/stats_runner.py`) in addition to the
+existing `--json` path.
+
 ## Public API
 
 <!-- frob:describes src/frob/app/telemetry.py::TELEMETRY_REL -->

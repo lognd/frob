@@ -2,7 +2,7 @@
 id: T-1787
 title: 'Wire T-1724''s dispatch telemetry: hooks call record_dispatch_event, CLI renders
   dispatch_cost_report'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -14,8 +14,132 @@ runs_last: false
 scope:
 - .claude/hooks/**
 - src/frob/app/stats_runner.py
+- .claude/settings.json
+- tests/test_stats_agentic.py
+- docs/guides/agentic-time-profiling.md
+- docs/modules/stats.md
+- src/frob/app/telemetry.py
+- src/frob/stats/_agentic.py
+- tests/test_telemetry.py
+- tests/test_hook_dispatch_telemetry.py
+- design/frob.strata
+- tickets/T-1787/**
+- tickets/T-1836/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: .claude/settings.json
+  reason: hook registration is required to actually wire the SessionStart/Stop dispatch
+    hooks; the script alone under .claude/hooks/** is inert without this
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'closure: doc/test edges reachable from stats_runner.py touch + new hook
+    tests'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: 'closure: doc/test edges reachable from stats_runner.py touch + new hook
+    tests'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_app_style.py
+  reason: 'closure: doc/test edges reachable from stats_runner.py touch + new hook
+    tests'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_stats_agentic.py
+  reason: 'closure: doc/test edges reachable from stats_runner.py touch + new hook
+    tests'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/guides/agentic-time-profiling.md
+  reason: 'closure: doc/test edges reachable from stats_runner.py touch + new hook
+    tests'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/modules/stats.md
+  reason: 'closure: doc/test edges reachable from stats_runner.py touch + new hook
+    tests'
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: tests/test_app_daemon_proxy.py
+  reason: closure warnings there are pre-existing edges unrelated to this ticket's
+    actual changes; not touching those files
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: tests/unit/test_app_style.py
+  reason: closure warnings there are pre-existing edges unrelated to this ticket's
+    actual changes; not touching those files
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/app/telemetry.py
+  reason: must remove now-stale WIRE001 waivers claiming no caller exists, once this
+    ticket adds one
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/stats/_agentic.py
+  reason: must remove now-stale WIRE001 waivers claiming no caller exists, once this
+    ticket adds one
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_telemetry.py
+  reason: must remove now-stale WIRE001 waivers claiming no caller exists, once this
+    ticket adds one
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_hook_dispatch_telemetry.py
+  reason: new test file for the hook script
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: docs/modules/app.md
+  reason: not actually needed; only pulled in by an unrelated closure suggestion,
+    mega-glob explosion
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: declare testsuite capabilities (exec, fs.read) for the new hook test file,
+    SELFAUDIT001
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1787/**
+  reason: 'SCOPE001: this repo''s per-ticket ticket.md (tickets/T-1787/ticket.md)
+    is not covered by the stale LEDGER_PATH=tickets.md always-in-scope constant; scoping
+    this ticket''s own dir directly'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1836/**
+  reason: 'SCOPE001: the draft ticket filed from this ticket''s own work (documenting
+    the LEDGER_PATH gap) writes to its own dir'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_hook_dispatch_telemetry.py::test_session_start_records_dispatch_start_event
+- tests/test_hook_dispatch_telemetry.py::test_session_start_resume_is_not_cold_start
+- tests/test_hook_dispatch_telemetry.py::test_session_start_unrecognized_source_omits_cold_start
+- tests/test_hook_dispatch_telemetry.py::test_stop_records_dispatch_end_event
+- tests/test_hook_dispatch_telemetry.py::test_stop_skips_reentrant_stop_hook_active
+- tests/test_hook_dispatch_telemetry.py::test_start_and_end_share_dispatch_id_across_the_session
+- tests/test_hook_dispatch_telemetry.py::test_unrecognized_hook_event_name_is_a_silent_noop
+- tests/test_hook_dispatch_telemetry.py::test_never_blocks_on_malformed_stdin
+- tests/test_hook_dispatch_telemetry.py::test_no_git_repo_is_a_silent_noop
 designated_repro_test: null
 threat: null
 component: null

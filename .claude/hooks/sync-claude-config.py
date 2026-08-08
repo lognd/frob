@@ -40,6 +40,7 @@ _MANAGED: list[tuple[str, str]] = [
     (".claude/hooks/frob-suggest.py", "hooks/frob-suggest.py"),
     (".claude/hooks/frob-timeout-guard.py", "hooks/frob-timeout-guard.py"),
     (".claude/hooks/diagnosis-nudge.py", "hooks/diagnosis-nudge.py"),
+    (".claude/hooks/dispatch-telemetry.py", "hooks/dispatch-telemetry.py"),
     ("docs/guides/agent-playbook.md", "refs/agent-playbook.md"),
 ]
 

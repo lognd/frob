@@ -27,10 +27,13 @@ not a claim requiring later human/code-aware review.
 """
 
 from __future__ import annotations
+
 import re
 from pathlib import Path
+
 from typani import Err, Ok
 from typani.result import Result
+
 from frob.logging import get_logger
 from frob.registry._corpus import (
     CorpusError,
@@ -56,9 +59,25 @@ def _gate_rule_block(rule: str, fixability: str) -> str:
     `CHK-GATE-*` entry already uses, plus T-1264's `fixability:` field
     (`generated_fixability`'s own generated-verified value for `rule`)."""
     entry_id = f"{_GATE_RULE_ID_PREFIX}{rule}"
-    return f"  - id: {_yaml_scalar(entry_id)}\n    name: {_yaml_scalar(f'{rule} is a live, enforced gate rule')}\n    disposition: {_yaml_scalar(f'handled_by:{rule}')}\n    fixability: {_yaml_scalar(fixability)}\n    cross_refs: []\n"
+    name = _yaml_scalar(f"{rule} is a live, enforced gate rule")
+    disposition = _yaml_scalar(f"handled_by:{rule}")
+    return (
+        f"  - id: {_yaml_scalar(entry_id)}\n"
+        f"    name: {name}\n"
+        f"    disposition: {disposition}\n"
+        f"    fixability: {_yaml_scalar(fixability)}\n"
+        f"    cross_refs: []\n"
+    )
 
 
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
+# frob:tests \
+# tests/test_registry_staleness.py::TestMissingGateRuleIds.test_finds_rules_with_no_ent\
+# ry
+# frob:tests \
+# tests/test_registry_staleness.py::TestMissingGateRuleIds.test_fully_covered_is_empty
+# frob:tests \
+# tests/test_registry_staleness.py::TestMissingGateRuleIds.test_unreadable_file_is_empty
 def missing_gate_rule_ids(
     registry_path: Path, known_rules: frozenset[str]
 ) -> frozenset[str]:
@@ -81,6 +100,15 @@ def missing_gate_rule_ids(
     return frozenset(known_rules - covered)
 
 
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
+# frob:tests \
+# tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_missing_\
+# rule
+# frob:tests \
+# tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_already_in_sync_return\
+# s_empty_tuple
+# frob:tests \
+# tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_missing_file_rejected
 def sync_gate_rule_entries(
     registry_path: Path, known_rules: frozenset[str]
 ) -> Result[tuple[str, ...], CorpusError]:
@@ -189,6 +217,7 @@ def _backfill_fixability_lines(
     return backfilled
 
 
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 def sync_gate_rule_fixability(
     registry_path: Path, known_rules: frozenset[str]
 ) -> Result[tuple[str, ...], CorpusError]:
