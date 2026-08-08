@@ -575,15 +575,15 @@ class TestTicketStart:
             == TicketState.IN_PROGRESS
         )
 
-    # frob:ticket T-1645
-    def test_start_warns_on_over_broad_scope(self, tmp_path: Path, caplog) -> None:
+    # frob:ticket T-1866
+    def test_start_refuses_over_broad_scope(self, tmp_path: Path, caplog) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_warns_on_ov\
-        # er_broad_scope
-        """T-1645: `start` surfaces TICK009's over-broad-scope nudge
-        directly, right when the ticket enters `PLANNED`/`IN_PROGRESS` --
-        "narrow it now" is actionable in the moment, not a warning that
-        accumulates silently in a full-repo check nobody reads."""
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_ove\
+        # r_broad_scope
+        """T-1866: `start` REFUSES (exit 1) a mega-glob scope instead of
+        merely warning about it -- promotes T-1645's WARN-only nudge to a
+        hard refusal at the one point the information exists to narrow
+        correctly, before the whole-tree lease is taken."""
         cfg = AppConfig(
             ticket_command="new",
             ticket_path=tmp_path,
@@ -595,10 +595,42 @@ class TestTicketStart:
         cfg = AppConfig(
             ticket_command="start", ticket_path=tmp_path, ticket_id="T-0001"
         )
-        with caplog.at_level("WARNING"):
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             ticket_run(cfg)
+        assert exc.value.code == 1
         assert "T-0001" in caplog.text
         assert "chronically over-broad" in caplog.text or "narrow it" in caplog.text
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].state != TicketState.IN_PROGRESS
+
+    # frob:ticket T-1866
+    def test_start_over_broad_scope_ack_bypasses_refusal(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_\
+        # scope_ack_bypasses_refusal
+        """`frob ticket scope-ack` (T-1484's existing escape hatch) is
+        reused wholesale as T-1866's own escape -- an acknowledged mega-
+        glob scope starts cleanly, no new waiver mechanism invented."""
+        from frob.tickets import set_scope_breadth_ack
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="broad scope ticket",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/**"],
+        )
+        ticket_run(cfg)
+        acked = set_scope_breadth_ack(tmp_path, "T-0001", "genuine epic umbrella")
+        assert acked.is_ok, acked.err
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0001"
+        )
+        ticket_run(cfg)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].state == TicketState.IN_PROGRESS
 
     # frob:ticket T-1645
     def test_start_precise_scope_warns_nothing(self, tmp_path: Path, caplog) -> None:

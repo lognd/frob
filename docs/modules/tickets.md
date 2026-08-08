@@ -5977,3 +5977,45 @@ second obligation-tracking mechanism. It does not attempt to verify that
 the filed ticket's own content actually describes the disclosed
 remainder -- only that SOMETHING checkable was recorded, keeping the
 ceremony cheap enough that honest disclosure is not punished.
+
+## Mega-glob scope refused at start (T-1866)
+
+`frob ticket start` REFUSES (exit 1) a scope containing a mega-glob
+instead of merely warning about it -- promotes T-1645's WARN-only
+`_warn_scope_breadth_on_start` nudge to a hard refusal at
+`frob.app.ticket_runner._lifecycle._refuse_over_broad_scope_on_start`,
+called before the state transition to `IN_PROGRESS` (before the
+whole-tree lease is taken, not after).
+
+"Mega-glob" is decided by the SAME breadth measure TICK009 already
+computes -- `frob.tickets.large_glob_warnings`/`scope_breadth_context`
+(T-0453): a glob whose match set exceeds the configured threshold, or a
+chronically-broad literal (`OVER_BROAD_LITERAL_GLOBS`) -- never the bare
+presence of `**` in the glob's spelling. A scope of `docs/design/T-1866-
+notes.md` and a scope of `docs/**` differ by what they MATCH, not by how
+they are typed.
+
+This adds no new mechanism: `large_glob_warnings` itself is unchanged,
+and `frob ticket scope-ack` (T-1484's existing WAVE14-B escape hatch,
+`ticket.scope_breadth_ack`) is reused wholesale as T-1866's own bypass --
+a ticket whose honest scope really is a package glob (a genuine epic/
+umbrella) acknowledges it explicitly and starts cleanly; every other
+mega-glob scope is refused, naming the offending globs and the two
+remedies (narrow via `scope --remove/--add`, or `scope-ack`) in the
+refusal message.
+
+A `QUEUED` ticket is never checked by this refusal -- `start` always
+transitions OUT of queued/planned, so the check only ever runs at the
+one point T-1645 already identified as correct: the author has the code
+open and a broad scope has started actually costing other tickets. The
+"treat a queued scope as a prediction, not yet demandable" rule from
+T-1645 is preserved unchanged, by construction rather than by a separate
+state check.
+
+MEASURED, freshly re-run (see T-1866's own Done report for the exact
+command): 39 of 72 currently-queued tickets carry at least one mega-glob
+entry. The queue moves constantly under concurrent dispatch, so this
+number is a point-in-time measurement, not a static fact -- re-run the
+same query to get the current one rather than trusting either this
+figure or T-1866's own originally-filed census, which measured a
+slightly different, now-stale queue snapshot.

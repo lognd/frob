@@ -2,7 +2,7 @@
 id: T-1866
 title: 'frob ticket start must REFUSE a mega-glob scope, not merely warn: 39 of 72
   queued tickets lock a whole tree'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -13,13 +13,53 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
-- src/frob/tickets/_scope_breadth.py
 - docs/modules/tickets.md
+- src/frob/tickets/_doable.py
+- tests/unit/test_app_runners_batch7.py
+- tickets/archive/T-1645/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_scope_breadth.py
+  reason: src/frob/tickets/_scope_breadth.py does not exist -- the breadth-check machinery
+    (scope_breadth_context, large_glob_warnings, _over_broad_scope_entries) actually
+    lives in src/frob/tickets/_doable.py. Swap the stale filename for the real one;
+    no new module is being created for this fix per the ticket body (add no new mechanism).
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: src/frob/tickets/_scope_breadth.py does not exist -- the breadth-check machinery
+    (scope_breadth_context, large_glob_warnings, _over_broad_scope_entries) actually
+    lives in src/frob/tickets/_doable.py. Swap the stale filename for the real one;
+    no new module is being created for this fix per the ticket body (add no new mechanism).
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: tests/unit/test_app_runners_batch7.py is where T-1645 already put the start-time
+    scope-breadth tests this ticket promotes from warn to refuse; extending, not creating,
+    that file.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/archive/T-1645/ticket.md
+  reason: Renaming a test T-1645 evidence-cites (its behavior changed from warn to
+    refuse) required rebinding T-1645s own evidence via frob ticket evidence --replace;
+    that write touches tickets/archive/T-1645/ticket.md, so it must be in scope for
+    the commit that contains it.
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_over_broad_scope
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_over_broad_scope_ack_bypasses_refusal
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_precise_scope_warns_nothing
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Scope IS the lease. A ticket whose scope contains `tests/**` or
 `docs/**` locks every other agent out of that entire tree the moment it

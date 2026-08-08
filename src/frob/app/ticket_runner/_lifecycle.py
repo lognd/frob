@@ -669,6 +669,8 @@ def _start(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
+    _refuse_over_broad_scope_on_start(root, ticket)
+
     ticket = _auto_plan_if_queued(root, cfg.ticket_id, ticket)
 
     transitioned = transition(root, cfg.ticket_id, TicketState.IN_PROGRESS)
@@ -848,9 +850,59 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
         _log.info("reconcile: no orphaned land intents found")
 
 
+# frob:ticket T-1866
+# frob:doc docs/modules/tickets.md#mega-glob-scope-refused-at-start-t-1866
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_over_broad_scope  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
+def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN001
+    """T-1866: `sys.exit(1)` if `ticket`'s declared scope contains a
+    mega-glob (the SAME breadth measure TICK009/`large_glob_warnings`
+    already computes -- a glob whose match set exceeds `scope_breadth_
+    context`'s threshold, or a chronically-broad literal, never the bare
+    presence of `**` in the spelling) and the ticket has not opted out via
+    `frob ticket scope-ack` (`ticket.scope_breadth_ack`, T-1484).
+
+    Promotes T-1645's existing `_warn_scope_breadth_on_start` WARN-only
+    nudge to a hard refusal at the one point the information exists to
+    narrow correctly (the author has the code open) and before the
+    damage begins (a mega-glob lease locking out every other agent from
+    that tree the instant this ticket transitions to in-progress). This
+    ADDS NO NEW MECHANISM: `large_glob_warnings` is unchanged, and
+    `scope-ack` (already built for a genuinely broad epic) is the escape
+    hatch reused wholesale rather than inventing a second waiver family.
+    A `QUEUED` ticket is never checked here (start always transitions OUT
+    of queued/planned, so a queued ticket never reaches this call) --
+    T-1645's "a queued scope is a prediction, not yet demandable"
+    reasoning is preserved unchanged, just by construction rather than by
+    a separate state check."""
+    if ticket.scope_breadth_ack:
+        return
+    from frob.tickets import large_glob_warnings
+
+    warnings = large_glob_warnings(ticket, root)
+    if not warnings:
+        return
+    for warning in warnings:
+        _log.error("ticket start failed: %s", warning)
+    _log.error(
+        "ticket start failed: %s carries %d over-broad scope entr%s -- "
+        "narrow it (`frob ticket scope %s --remove '<glob>' --add "
+        "'<file>' --reason '...'`), or if this ticket's honest scope "
+        "really is a package glob (a genuine epic/umbrella), acknowledge "
+        "it explicitly: `frob ticket scope-ack %s --reason '...'`",
+        ticket.id,
+        len(warnings),
+        "y" if len(warnings) == 1 else "ies",
+        ticket.id,
+        ticket.id,
+    )
+    sys.exit(1)
+
+
 # frob:ticket T-1645
+# frob:ticket T-1866
 # frob:doc docs/modules/gates.md#tick009tick010-t-0714
-# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_warns_on_over_broad_scope  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_scope_warns_nothing  # noqa: E501
 def _warn_scope_breadth_on_start(root: Path, ticket) -> None:  # noqa: ANN001
     """T-1645: surface TICK009's over-broad-scope nudge directly at `frob
