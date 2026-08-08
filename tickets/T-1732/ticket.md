@@ -2,7 +2,7 @@
 id: T-1732
 title: frob ticket land structurally cannot carry a cross-ticket ledger edit forward
   (splice_ledger tiebreak drops it)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -84,3 +84,6 @@ work and should not be relied on again; it burned two ticket-cycles
 
 Filed while working T-1706 (the T-1670 part-2 split), after discovering
 T-1714's land had not actually fixed what it claimed to fix.
+
+## Drop reason
+- 2026-08-08: Investigated: this exact scenario (a sibling ticket's evidence-only ledger edit carried forward across an unrelated ticket's land) is already fixed by T-1721's base-text-aware _carry_forward_or_refuse_sibling_edits in _land_ledger_merge.py/_land_squash.py, which landed AFTER this ticket was filed. Verified live: tests/test_ticket_land.py::TestLand::test_sibling_evidence_rebind_carried_forward_end_to_end (the exact T-1637 reproduction this ticket describes) passes on current main-derived worktree, as does the full TestCarryForwardOrRefuseSiblingEdits suite and TestSquashSpliceLedgerChurn. No remaining structural gap found in _splice_only_ticket/_resolve_one_sibling_edit/_squash_and_splice_ledger's base_text threading. False premise as currently scoped -- filed concurrently with/just before T-1721's fix landed. (absorbed by T-1721)
