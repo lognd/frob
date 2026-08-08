@@ -1,7 +1,7 @@
 ---
 id: T-1849
 title: frob:waive comments under .claude/hooks/ never bind (graph prunes .claude entirely)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -46,3 +46,6 @@ Fix direction (either is plausible, pick one during triage):
 - teach pii_structural_gate to honor the same BUILTIN_SKIP_DIRS/[graph]
   exclude pruning the rest of the graph respects, so it never flags a
   file it structurally cannot let get waived.
+
+## Drop reason
+- 2026-08-08: duplicate of T-1838, same root cause (BUILTIN_SKIP_DIRS pruning .claude from frob.graph's walk) and same fix (removed .claude from BUILTIN_SKIP_DIRS, kept nested-worktree pruning via _is_nested_worktree); T-1838 lands the fix (absorbed by T-1838)

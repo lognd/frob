@@ -2,7 +2,7 @@
 id: T-1838
 title: frob:waive comments in .claude/hooks/** never take effect (BUILTIN_SKIP_DIRS
   prunes .claude from frob.graph's walk)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -14,9 +14,21 @@ runs_last: false
 scope:
 - src/frob/excludes.py
 - src/frob/graph/**
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: excludes.py fix un-prunes .claude/hooks/** from the graph walk; it now needs
+    a design node so SELFAUDIT001 does not regress
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_excludes.py::test_builtin_skip_dirs
+- tests/test_graph.py::TestExclude::test_nested_git_worktree_pruned_without_config
+- tests/test_graph.py::TestExclude::test_claude_hooks_are_walked_not_pruned
+designated_repro_test: tests/test_graph.py::TestExclude::test_claude_hooks_are_walked_not_pruned
 threat: null
 component: null
 ---

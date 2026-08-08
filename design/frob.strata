@@ -1377,6 +1377,32 @@ node scripts_ops : trusted {
     may "fs.read";
 }
 
+// Claude Code dispatch-harness hook scripts (`.claude/hooks/**`), run by
+// the harness outside the installed CLI -- same trust/purpose class as
+// `scripts_ops` immediately above (repo-maintenance automation, not a
+// production entrypoint). T-1838: this node did not exist before because
+// `frob.excludes.BUILTIN_SKIP_DIRS` pruned `.claude` from the graph's own
+// walk entirely, so `.claude/hooks/**` was invisible both to SELFAUDIT
+// (no capability observed, no drift possible) and to `frob:waive`
+// comments placed in those files (the waiver resolver reads waive/design
+// edges from the same pruned walk). Un-pruning `.claude` (keeping only
+// the narrower, `.git`-presence-based nested-worktree prune for
+// `.claude/worktrees/agent-*`) makes these files visible again, so they
+// need an honest `may` declaration here or SELFAUDIT001 fires on all
+// five. `may` measured directly via `frob check --only gates-security`:
+// `env.read`/`fs.read`/`fs.write` (config/state reads and writes) and
+// `exec` (dispatch-telemetry.py's git subprocess call).
+node claude_hooks : trusted {
+
+    attr interface=[];
+    clearance Internal;
+    code ".claude/hooks/**";
+    may "env.read";
+    may "exec";
+    may "fs.write";
+    may "fs.read";
+}
+
 // The `strata_core` native extension's Rust source (`strata-core/src/**`
 // -- `.strata` lexer/parser, PyO3 bindings `natives`/T-0175 loads). `may
 // "ffi"`: the crate's whole purpose is exposing Rust-parsed structures

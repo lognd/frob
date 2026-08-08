@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.406.0] - unreleased
+
+- T-1838: frob:waive comments in .claude/hooks/** never take effect (BUILTIN_SKIP_DIRS prunes .claude from frob.graph's walk)
+
 ## [0.405.0] - unreleased
 
 - T-1848: FEATURE-kind tickets implicitly lease all of ticket_runner/**, blocking unrelated agents; scope --remove cannot narrow it

@@ -971,6 +971,22 @@ class TestExclude:
         assert "src/a.py" in paths
         assert not any(".claude/worktrees" in p for p in paths)
 
+    def test_claude_hooks_are_walked_not_pruned(self, tmp_path: Path) -> None:
+        """T-1838: `.claude` used to be a `BUILTIN_SKIP_DIRS` name-match, so
+        `.claude/hooks/**` -- a real, non-nested-worktree source dir --
+        was pruned by name before `os.walk` ever descended into it, making
+        every `frob:waive` comment placed there permanently invisible to
+        the graph that resolves waivers. Nested `.claude/worktrees/agent-*`
+        checkouts must still prune (own `.git` dir, covered by the
+        preceding test); `.claude/hooks/**` must not."""
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        _write(tmp_path, ".claude/hooks/dispatch-telemetry.py", "def hook() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        paths = {rec.id.path for rec in snap.symbols.values()}
+        assert "src/a.py" in paths
+        assert ".claude/hooks/dispatch-telemetry.py" in paths
+
     def test_walk_source_files_prunes_before_descent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
