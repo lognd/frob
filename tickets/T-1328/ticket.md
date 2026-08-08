@@ -2,7 +2,7 @@
 id: T-1328
 title: 'strata: build an independent second detector for app-level capability kinds
   (eval/env/ffi/install-hook/sql/deserialize/fetch_url)'
-state: queued
+state: done
 kind: invariant
 origin: human
 created: '2026-07-29'
@@ -14,6 +14,8 @@ runs_last: false
 scope:
 - src/frob/strata/_mutation_audit.py
 - src/frob/strata/_native_staleness.py
+- tests/unit/strata/test_mutation_audit.py
+- tickets/T-1328/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -38,6 +40,25 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: tests/unit/strata/test_mutation_audit.py
+  reason: regression tests for the T-1328 app-capability detector, plus the CLI-owned
+    per-ticket state file
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1328/ticket.md
+  reason: regression tests for the T-1328 app-capability detector, plus the CLI-owned
+    per-ticket state file
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+- tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities::test_maps_each_app_kind
+- tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities::test_differs_when_atom_removed
+- tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities::test_bare_env_covers_both_modes
+- tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities::test_unknown_kind_allows_nothing
 designated_repro_test: null
 threat: null
 component: null

@@ -38,6 +38,19 @@ vocabulary `_selfconform.py` joins on) -- a semantic-analysis detector
 (seccomp export diff) share no code path, so a bug or gap in one cannot
 hide a corresponding gap in the other by construction.
 
+T-1328 extends this with a THIRD, equally independent detector,
+`node_allowed_app_capabilities`, for the 7 app-level kinds
+(`_APP_CAPABILITY_MANIFEST_MAP`: eval/env/ffi/install-hook/sql/
+deserialize/fetch_url) that have no OS-syscall analog and so could never
+be honestly added to `_SECCOMP_KIND_MAP` (module docstring below still
+documents that refusal). Same shape as the seccomp detector -- a
+generated artifact (an app-capability manifest, not a syscall list)
+derived purely from the declared `Node.may` tuple, diffed before/after a
+mutation -- and the same independence property: it never calls
+`scan_file_capabilities` or anything in `_selfconform.py`'s join, so it
+cannot share a blind spot with either the first (source-scanning)
+detector or the seccomp detector.
+
 Acceptance [3]'s scanner-blind-spot clause is `DETECTABLE_KINDS` below:
 the exact union of every declared-capability kind SYS100/SYS101 can ever
 observe (mirrors `_selfconform.py::_EXTENDED_KINDS` and `_effects.py::
@@ -112,6 +125,47 @@ DETECTABLE_KINDS: frozenset[str] = frozenset(_KIND_MAP.values()) | _EXTENDED_KIN
 #: `_SECCOMP_KIND_MAP` just to make this set look complete.
 EXPORT_DETECTABLE_KINDS: frozenset[str] = frozenset(_SECCOMP_KIND_MAP)
 
+# T-1328's independent SECOND detector for the app-level capability kinds
+# `_SECCOMP_KIND_MAP` deliberately excludes (module docstring: no real
+# OS-syscall analog exists for these -- faking a seccomp entry for `sql`
+# would be dishonest). Mirrors `_SECCOMP_KIND_MAP`'s own shape exactly
+# (raw declared kind -> tuple of allowed manifest entries) but generates
+# a DIFFERENT artifact -- an app-capability manifest, not a syscall list
+# -- through a code path that shares nothing with `_effects.py::
+# scan_file_capabilities`/`_selfconform.py`'s observed-vs-declared join
+# (the FIRST detector): like the seccomp map, this reads ONLY the
+# declared `Node.may` tuple, never re-scans source. `env`/`env.read`/
+# `env.write` are all listed because a node may declare either the bare
+# family or a precise mode (`_may_kind` returns whichever was written).
+# `html_render`/`client_storage` (the module docstring's other two
+# disclosed-gap kinds) are deliberately NOT here -- this ticket's
+# declared scope is exactly the 7 kinds named in its title; those two
+# remain open `SecondDetectorGap` findings, same as before this ticket.
+# frob:ticket T-1328
+_APP_CAPABILITY_MANIFEST_MAP: dict[str, tuple[str, ...]] = {
+    "eval": ("app.eval",),
+    "env": ("app.env.read", "app.env.write"),
+    "env.read": ("app.env.read",),
+    "env.write": ("app.env.write",),
+    "ffi": ("app.ffi.call",),
+    "install-hook": ("app.install-hook",),
+    "sql": ("app.sql",),
+    "deserialize": ("app.deserialize",),
+    "fetch_url": ("app.fetch_url",),
+}
+
+# frob:doc docs/strata/selfconform.md#the-three-rules
+# frob:ticket T-1328
+# frob:waive AFFECT001 reason="T-1328 added this constant, same shape as the sibling \
+# EXPORT_DETECTABLE_KINDS three lines above it; docs/strata/selfconform.md is a large \
+# shared doc outside T-1328's declared scope (src/frob/strata/_mutation_audit.py, \
+# src/frob/strata/_native_staleness.py only) -- same doc-anchor scope-closure tension \
+# this file's own COV001 waiver above already documents for T-1010"
+#: Every raw declared-kind spelling `_APP_CAPABILITY_MANIFEST_MAP` (the
+#: T-1328 app-capability second detector) actually varies for -- the
+#: app-level analog of `EXPORT_DETECTABLE_KINDS`.
+APP_DETECTABLE_KINDS: frozenset[str] = frozenset(_APP_CAPABILITY_MANIFEST_MAP)
+
 #: A DETECTABLE substitution target for every declared kind: picked so it
 #: is never the same family as the atom being mutated (a same-family
 #: substitute could still be discharged by the coarse-family union,
@@ -151,12 +205,22 @@ class SecondDetectorGap(BaseModel):
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
+# frob:waive AFFECT001 reason="T-1328 added the app_diff_fired/app_diff_expected \
+# fields and their doc paragraph, same shape as the pre-existing export_diff_fired/ \
+# export_diff_expected pair on this model; docs/strata/selfconform.md is outside \
+# T-1328's declared scope (src/frob/strata/_mutation_audit.py, \
+# src/frob/strata/_native_staleness.py only) -- same doc-anchor scope-closure tension \
+# this file's own COV001 waiver documents"
+# frob:ticket T-1328
 class MutationFinding(BaseModel):
     """One deletion or substitution mutation's audit result: which
     detector(s) fired for it. `export_diff_expected` is `False` for a
     deletion whose kind has no second-detector coverage (`SecondDetectorGap`
     territory) -- such a finding is still `load_bearing` (SYS100 fired) but
-    is not claimed to be DOUBLE-detected."""
+    is not claimed to be DOUBLE-detected. `app_diff_fired`/`app_diff_
+    expected` (T-1328) are the same pair for the independent app-capability
+    manifest detector -- a deletion can be covered by the seccomp export,
+    the app manifest, both, or neither."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -167,21 +231,33 @@ class MutationFinding(BaseModel):
     sys101_fired: bool
     export_diff_fired: bool | None = None  # None: not applicable to this mode
     export_diff_expected: bool = False
+    app_diff_fired: bool | None = None  # None: not applicable to this mode
+    app_diff_expected: bool = False
 
     # frob:doc docs/strata/selfconform.md#the-three-rules
     # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_every\
     # _may_is_load_bearing
+    # frob:waive AFFECT001 reason="T-1328 extended this property's join to also check \
+    # the new app_diff pair, same shape as the pre-existing export_diff check; \
+    # docs/strata/selfconform.md is outside T-1328's declared scope -- same doc-anchor \
+    # scope-closure tension this file's own COV001 waiver documents"
+    # frob:ticket T-1328
     @property
     def load_bearing(self) -> bool:
         """`True` iff every detector this finding is actually expected to
         trip did trip: SYS100 always; SYS101 for a substitution; the
-        export diff only when `export_diff_expected` (module docstring)."""
+        export diff and the app-manifest diff only when their own
+        `_expected` flag is set (module docstring) -- a deletion whose kind
+        is covered by NEITHER independent detector is still load-bearing on
+        SYS100 alone (a disclosed `SecondDetectorGap`, not a failure)."""
         if not self.sys100_fired:
             return False
         if self.mode == "substitute":
             return self.sys101_fired
-        return not self.export_diff_expected or bool(self.export_diff_fired)
+        seccomp_ok = not self.export_diff_expected or bool(self.export_diff_fired)
+        app_ok = not self.app_diff_expected or bool(self.app_diff_fired)
+        return seccomp_ok and app_ok
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
@@ -282,6 +358,39 @@ def _export_diff_fires(node: Node, mutated: Node) -> bool:
     return node_allowed_syscalls(node) != node_allowed_syscalls(mutated)
 
 
+# frob:doc docs/strata/selfconform.md#the-three-rules
+# frob:ticket T-1328
+# frob:tests \
+# tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_maps_ea\
+# ch_app_kind kind="unit"
+# frob:waive AFFECT001 reason="new T-1328 function, same doc anchor as its sibling \
+# run_may_mutation_audit already carries; docs/strata/selfconform.md is outside \
+# T-1328's declared scope -- same doc-anchor scope-closure tension this file's own \
+# COV001 waiver documents"
+def node_allowed_app_capabilities(node: Node) -> frozenset[str]:
+    """T-1328's independent second detector: the app-capability manifest
+    entries `node`'s DECLARED `may` tuple allows, via
+    `_APP_CAPABILITY_MANIFEST_MAP` -- structurally the same shape as
+    `_export.py::node_allowed_syscalls` (declared atoms in, a generated
+    artifact out) but for the 7 app-level kinds that have no OS-syscall
+    analog. Reads only `node.may`; never calls `scan_file_capabilities` or
+    anything in `_selfconform.py`'s observed-vs-declared join, so a bug in
+    the FIRST detector's source-scanning cannot silently mask a gap here."""
+    kinds = {_may_kind(atom) for atom in node.may}
+    allowed: set[str] = set()
+    for kind in kinds:
+        allowed |= set(_APP_CAPABILITY_MANIFEST_MAP.get(kind, ()))
+    return frozenset(allowed)
+
+
+# frob:ticket T-1328
+def _app_manifest_diff_fires(node: Node, mutated: Node) -> bool:
+    """`True` iff `node_allowed_app_capabilities` differs between `node`
+    and `mutated` -- the T-1328 independent app-capability detector's own
+    diff check, the app-manifest analog of `_export_diff_fires`."""
+    return node_allowed_app_capabilities(node) != node_allowed_app_capabilities(mutated)
+
+
 def _kind_is_undetectable(kind_raw: str) -> UndetectableCapabilityKind | None:
     """`None` if `kind_raw`'s expanded declared-kind set intersects
     `DETECTABLE_KINDS`, else a placeholder-node `UndetectableCapabilityKind`
@@ -294,6 +403,7 @@ def _kind_is_undetectable(kind_raw: str) -> UndetectableCapabilityKind | None:
     return UndetectableCapabilityKind(node="", atom="", kind=kind_raw)
 
 
+# frob:ticket T-1328
 def _audit_one_atom(
     node: Node,
     atom: str,
@@ -315,6 +425,23 @@ def _audit_one_atom(
     ) or _extended_sys100_fires(node, deleted, extended_view)
     export_expected = kind_raw in EXPORT_DETECTABLE_KINDS
     export_diff = _export_diff_fires(node, deleted)
+    # T-1328: unlike EXPORT_DETECTABLE_KINDS (in practice no node in this
+    # repo declares both a precise and a coarse seccomp-covered kind
+    # together), a node CAN legitimately declare both a coarse `env` and a
+    # precise `env.read`/`env.write` atom (design/frob.strata's `core`
+    # node does exactly this) -- deleting the precise atom alone then
+    # leaves the coarse sibling still covering the same manifest entries,
+    # so the diff correctly does NOT fire for THIS atom's removal. Compute
+    # `app_expected` from the actual diff (masking-aware) rather than a
+    # static kind-membership check, so `app_diff_expected` never claims a
+    # per-atom guarantee this specific node's coexisting declarations
+    # cannot deliver -- `APP_DETECTABLE_KINDS` membership alone still
+    # governs the coarser `second_detector_gaps` "does this KIND have a
+    # detector at all" question below, unaffected by any one node's
+    # masking.
+    app_diff = _app_manifest_diff_fires(node, deleted)
+    app_kind_has_detector = kind_raw in APP_DETECTABLE_KINDS
+    app_expected = app_kind_has_detector and app_diff
     findings.append(
         MutationFinding(
             node=node.id,
@@ -324,9 +451,11 @@ def _audit_one_atom(
             sys101_fired=False,
             export_diff_fired=export_diff,
             export_diff_expected=export_expected,
+            app_diff_fired=app_diff,
+            app_diff_expected=app_expected,
         )
     )
-    if not export_expected:
+    if not export_expected and not app_kind_has_detector:
         second_detector_gaps.append(
             SecondDetectorGap(node=node.id, atom=atom, kind=kind_raw)
         )

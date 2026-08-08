@@ -9,12 +9,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.strata import Node
 from frob.strata._mutation_audit import (
+    APP_DETECTABLE_KINDS,
     DETECTABLE_KINDS,
+    node_allowed_app_capabilities,
     run_may_mutation_audit,
 )
 
 
+# frob:ticket T-1328
+def _node(nid: str, trust: str = "trusted", **kw) -> Node:
+    return Node(id=nid, trust=trust, **kw)
+
+
+# frob:ticket T-1328
 class TestMayMutationAuditRealRepo:
     # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_basel\
@@ -59,47 +68,28 @@ class TestMayMutationAuditRealRepo:
     # frob:tests \
     # tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo.test_secon\
     # d_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+    # frob:ticket T-1328
     def test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds(
         self,
     ) -> None:
         """The seccomp/export detector (module docstring) has real
-        syscall coverage for `exec`/`net`/`fs.read`/`fs.write` only -- every
-        OTHER declared kind is a disclosed `second_detector_gap`, not a
-        silently-passing false claim of double detection.
-
-        T-1454: `env.read` joins the disclosed set alongside bare `env`.
-        The env-mode-explosion (T-1453's via migration) promoted `checker`
-        node's `may "env.read"` atom (design/frob.strata, T-1346's
-        FROB_NO_GATE_CACHE escape-hatch read) to the precise tier-2
-        spelling `_may_kind` returns -- but unlike `fs.read`/`fs.write`
-        (real `open`/`read` syscalls), reading an environment variable has
-        no OS syscall of its own (a libc lookup over the process's
-        already-mapped environment block), so `_SECCOMP_KIND_MAP`
-        correctly has no entry for it (`_export.py`'s own docstring). This
-        is a genuine, disclosed second-detector gap, not spurious drift.
-
-        T-1589: `process-control` joins the disclosed set. `testsuite`
+        syscall coverage for `exec`/`net`/`fs.read`/`fs.write` only. T-1328
+        adds a SECOND, independent detector (the app-capability manifest,
+        `node_allowed_app_capabilities`) for exactly the 7 kinds named in
+        its title -- `eval`/`env`/`ffi`/`install-hook`/`sql`/`deserialize`/
+        `fetch_url` (plus the precise `env.read`/`env.write` mode
+        spellings) -- so those kinds are no longer a disclosed gap: they
+        are double-detected by the app manifest instead of the seccomp
+        export. Only `process-control` remains an actual gap: `testsuite`
         node's `may "process-control"` (design/frob.strata, T-1439's
-        `signal.signal(` needle for the SIGUSR1/kill-escalation test
-        fixtures) has no syscall-level seccomp entry either -- signal
-        delivery to the CURRENT process is not one of the syscalls
-        `_SECCOMP_KIND_MAP` enumerates, the same "no dedicated syscall of
-        its own" shape as `env`/`env.read` above."""
+        `signal.signal(` needle) has neither a syscall-level seccomp entry
+        nor an app-manifest entry -- outside both this ticket's and
+        T-1203's declared scope, a real gap, not spurious drift."""
         repo_root = Path(__file__).resolve().parents[3]
         result = run_may_mutation_audit(repo_root)
         assert result.is_ok
         gap_kinds = {g.kind for g in result.danger_ok.second_detector_gaps}
-        assert gap_kinds == {
-            "eval",
-            "env",
-            "env.read",
-            "deserialize",
-            "fetch_url",
-            "ffi",
-            "install-hook",
-            "process-control",
-            "sql",
-        }
+        assert gap_kinds == {"process-control"}
 
 
 class TestDetectableKindsVocabulary:
@@ -122,3 +112,70 @@ class TestDetectableKindsVocabulary:
         not in `_EXTENDED_KINDS` -- confirms the acceptance [3] blind-spot
         path is reachable, not vacuously untested."""
         assert "proc" not in DETECTABLE_KINDS
+
+
+# frob:ticket T-1328
+class TestNodeAllowedAppCapabilities:
+    """T-1328: the independent app-capability manifest detector."""
+
+    # frob:tests \
+    # tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_map\
+    # s_each_app_kind
+    # frob:ticket T-1328
+    def test_maps_each_app_kind(self) -> None:
+        """Each of the 7 declared app-level kinds names its own node a
+        distinct, non-empty manifest entry set -- the manifest is not a
+        stub that maps everything to one bucket."""
+        for kind in (
+            "eval",
+            "env",
+            "ffi",
+            "install-hook",
+            "sql",
+            "deserialize",
+            "fetch_url",
+        ):
+            assert kind in APP_DETECTABLE_KINDS
+            node = _node("n", may=(f'{kind}:target',) if ":" not in kind else (kind,))
+            allowed = node_allowed_app_capabilities(node)
+            assert allowed, f"{kind} produced no manifest entries"
+
+    # frob:tests \
+    # tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_dif\
+    # fers_when_atom_removed
+    # frob:ticket T-1328
+    def test_differs_when_atom_removed(self) -> None:
+        """Removing the ONLY app-level `may` atom on a node changes the
+        computed manifest -- the diff this detector's mutation-audit
+        wiring depends on actually fires."""
+        with_sql = _node("n", may=("sql",))
+        without_sql = _node("n", may=())
+        assert node_allowed_app_capabilities(with_sql) != node_allowed_app_capabilities(
+            without_sql
+        )
+
+    # frob:tests \
+    # tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_bar\
+    # e_env_covers_both_modes
+    # frob:ticket T-1328
+    def test_bare_env_covers_both_modes(self) -> None:
+        """A bare `may "env"` declaration's manifest is a superset of what
+        the precise `env.read`/`env.write` spellings each produce alone --
+        mirrors `_SECCOMP_KIND_MAP`'s own coarse-declarer-covers-everything
+        convention."""
+        bare = node_allowed_app_capabilities(_node("n", may=("env",)))
+        read_only = node_allowed_app_capabilities(_node("n", may=("env.read",)))
+        write_only = node_allowed_app_capabilities(_node("n", may=("env.write",)))
+        assert read_only <= bare
+        assert write_only <= bare
+
+    # frob:tests \
+    # tests/unit/strata/test_mutation_audit.py::TestNodeAllowedAppCapabilities.test_unk\
+    # nown_kind_allows_nothing
+    # frob:ticket T-1328
+    def test_unknown_kind_allows_nothing(self) -> None:
+        """A kind outside `_APP_CAPABILITY_MANIFEST_MAP` (e.g. `exec`, a
+        seccomp-covered kind) contributes nothing to the app manifest --
+        this detector never silently claims coverage it does not have."""
+        node = _node("n", may=("exec",))
+        assert node_allowed_app_capabilities(node) == frozenset()
