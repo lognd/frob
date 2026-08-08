@@ -67,6 +67,7 @@ from frob.gates._baseline import (
 from frob.gates._cache_gate import cache_gate
 from frob.gates._coverage import (
     coverage_lock_diff,
+    is_stamp_stale,
     load_coverage,
     load_coverage_lock,
     load_stamp,
@@ -89,7 +90,6 @@ from frob.gates._debt_deprecated import (
 )
 from frob.gates._decisions_compliance import compliance_gate, decisions_gate
 from frob.gates._design_invariants import inv007_violations, inv008_violations
-from frob.gates._policy_weakening_gate import policy_weakening_gate
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._docenum import docenum001_gate
 from frob.gates._doclink_docanchor import (
@@ -163,6 +163,7 @@ from frob.gates._negexist import negexist001_gate
 from frob.gates._opaque import opaque_gate
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
+from frob.gates._policy_weakening_gate import policy_weakening_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
 from frob.gates._protocol_summary import protocol_summary_gate
 from frob.gates._ratchet import (
@@ -4723,7 +4724,7 @@ def _test006_missing() -> tuple[Violation, ...]:
     )
 
 
-# frob:ticket T-0403
+# frob:ticket T-1830
 # frob:tests \
 # tests/test_gates.py::TestTestGate.test_test006_stale_on_new_file_not_in_stamp
 def _test006_stale(
@@ -4733,8 +4734,14 @@ def _test006_stale(
     since stamping (T-0403 B15: a brand-new file has no entry in
     `stamped_hashes` at all, so it must be treated as stale too, not
     silently skipped -- its coverage is unmeasured by the existing stamp).
+    The "did anything change" half is delegated to `frob.gates._coverage.
+    is_stamp_stale` (T-1830: this loop used to hand-roll the identical
+    content-hash comparison `is_stamp_stale` already provides for CI's own
+    tamper/staleness check -- two copies of the same rule is a bug waiting
+    to desync, so only the "new file with no stamp entry at all" case,
+    which `is_stamp_stale` does not cover, stays a local loop here.
     """
-    for path, current_hash in snapshot.file_hashes.items():
+    for path in snapshot.file_hashes:
         if not path.endswith(_SOURCE_EXTS):
             # Coverage stamping only ever hashes _SOURCE_EXTS files
             # (_collect_file_hashes); a doc/.strata/other file the graph
@@ -4742,8 +4749,7 @@ def _test006_stale(
             # not a "new source file" in the coverage sense -- skip it so
             # it is not misreported as staleness.
             continue
-        stamped = stamped_hashes.get(path)
-        if stamped is None:
+        if path not in stamped_hashes:
             _log.debug("TEST006: coverage stamp missing new file %s", path)
             return (
                 Violation(
@@ -4757,20 +4763,20 @@ def _test006_stale(
                     ),
                 ),
             )
-        if stamped != current_hash:
-            _log.debug("TEST006: coverage stamp stale for %s", path)
-            return (
-                Violation(
-                    rule="TEST006",
-                    severity=Severity.ERROR,
-                    file=".frob/coverage-stamp",
-                    line=0,
-                    message=(
-                        f"TEST006: coverage stamp is stale ({path} changed since "
-                        f"stamping); run: make coverage"
-                    ),
+    if is_stamp_stale(Path(snapshot.root), {"file_hashes": stamped_hashes}):
+        _log.debug("TEST006: coverage stamp stale (content hash mismatch)")
+        return (
+            Violation(
+                rule="TEST006",
+                severity=Severity.ERROR,
+                file=".frob/coverage-stamp",
+                line=0,
+                message=(
+                    "TEST006: coverage stamp is stale (a stamped file's "
+                    "content changed since stamping); run: make coverage"
                 ),
-            )
+            ),
+        )
     return ()
 
 

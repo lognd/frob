@@ -1,7 +1,7 @@
 ---
 id: T-1830
 title: Dedupe TEST006's inline staleness loop to call frob.gates._coverage.is_stamp_stale
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -14,9 +14,15 @@ scope:
 - src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestTestGate::test_test006_missing_stamp
+- tests/test_gates.py::TestTestGate::test_test006_stale_stamp
+- tests/test_gates.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 `src/frob/gates/__init__.py`'s TEST006 check (`_test006_stale`, around
 line 4686) hand-rolls the exact same file-hash staleness comparison

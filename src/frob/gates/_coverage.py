@@ -1237,9 +1237,9 @@ def load_stamp(root: Path) -> dict | None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1366
-# frob:waive WIRE001 reason="new in this diff, real caller today is CI's inline python \
-# verification step, not traceable by the callgraph; TEST006 hand-rolls the identical \
-# loop and should call this instead, closing this waiver" follow_up="T-1830"
+# T-1830 (draft successor T-1869): WIRE001's waiver here was
+# removed -- frob.gates.__init__._test006_stale now calls this function
+# directly, giving it a real, callgraph-traceable caller.
 def is_stamp_stale(root: Path, stamp: dict) -> bool:
     """Whether any file hash `stamp` recorded no longer matches the live
     tree -- the coverage-stamp twin of `frob.gates._baseline.is_baseline_
