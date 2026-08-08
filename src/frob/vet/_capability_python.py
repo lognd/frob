@@ -8,8 +8,10 @@ module's public surface is unchanged."""
 # frob:ticket T-1420
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
+from frob.graph.callgraph import CallGraph, build_call_graph, closure
 from frob.lang import node_text, raw_tree
 
 from ._capability_core import (
@@ -17,6 +19,7 @@ from ._capability_core import (
     _compiled_capability_patterns,
     _fully_in_any_span,
     _needle_matches_resolved,
+    _non_executable_byte_spans,
     _string_content_bytes,
 )
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
@@ -440,13 +443,23 @@ def _resolve_py_expr(
     if node.type == "identifier":
         return _resolve_py_identifier(node, import_table, scope_cache, alias_table)
     if node.type == "attribute":
-        # frob:invariant terminates reason="mutually recurses with _resolve_py_attribute, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
+        # frob:invariant terminates reason="mutually recurses with \
+        # _resolve_py_attribute, which only calls back here with \
+        # node.child_by_field_name('object'), a proper descendant of node in the \
+        # finite tree-sitter parse tree" measure="node's subtree depth strictly \
+        # decreases"
         return _resolve_py_attribute(node, import_table, scope_cache, alias_table)
     if node.type == "subscript":
-        # frob:invariant terminates reason="_resolve_py_subscript performs one alias_table dict lookup and does not call back into _resolve_py_expr -- no recursion" measure="not applicable, non-recursive"  # noqa: E501
+        # frob:invariant terminates reason="_resolve_py_subscript performs one \
+        # alias_table dict lookup and does not call back into _resolve_py_expr -- no \
+        # recursion" measure="not applicable, non-recursive"
         return _resolve_py_subscript(node, alias_table)
     if node.type == "call":
-        # frob:invariant terminates reason="mutually recurses with _resolve_py_partial_call, which only calls back here with node's own 'function' field child or a child of node's own 'arguments' field, both proper descendants of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
+        # frob:invariant terminates reason="mutually recurses with \
+        # _resolve_py_partial_call, which only calls back here with node's own \
+        # 'function' field child or a child of node's own 'arguments' field, both \
+        # proper descendants of node in the finite tree-sitter parse tree" \
+        # measure="node's subtree depth strictly decreases"
         return _resolve_py_partial_call(node, import_table, scope_cache, alias_table)
     if node.type == "assignment":
         # T-0659: a CHAINED assignment's right-hand side (`a = b = target`)
@@ -460,7 +473,9 @@ def _resolve_py_expr(
         right = node.child_by_field_name("right")
         if right is None:
             return None
-        # frob:invariant terminates reason="right is node's own 'right' field child, a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
+        # frob:invariant terminates reason="right is node's own 'right' field child, a \
+        # proper descendant of node in the finite tree-sitter parse tree" \
+        # measure="node's subtree depth strictly decreases"
         return _resolve_py_expr(right, import_table, scope_cache, alias_table)
     return None
 
@@ -517,7 +532,10 @@ def _resolve_py_attribute(
     attr = node.child_by_field_name("attribute")
     if obj is None or attr is None:
         return None
-    # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_py_expr, which only descends into the 'attribute' branch by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
+    # frob:invariant terminates reason="obj is node's own 'object' field child, a \
+    # proper descendant of node in the finite tree-sitter parse tree; mutually \
+    # recurses with _resolve_py_expr, which only descends into the 'attribute' branch \
+    # by calling back here" measure="node's subtree depth strictly decreases"
     resolved_obj = _resolve_py_expr(obj, import_table, scope_cache, alias_table)
     if resolved_obj is not None:
         return f"{resolved_obj}.{node_text(attr)}"
@@ -554,7 +572,10 @@ def _resolve_py_partial_call(
     func = node.child_by_field_name("function")
     if func is None:
         return None
-    # frob:invariant terminates reason="func is node's own 'function' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_py_expr, which only descends into the 'call' branch by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
+    # frob:invariant terminates reason="func is node's own 'function' field child, a \
+    # proper descendant of node in the finite tree-sitter parse tree; mutually \
+    # recurses with _resolve_py_expr, which only descends into the 'call' branch by \
+    # calling back here" measure="node's subtree depth strictly decreases"
     resolved_func = _resolve_py_expr(func, import_table, scope_cache, alias_table)
     if resolved_func != "functools.partial":
         return None
@@ -564,7 +585,10 @@ def _resolve_py_partial_call(
     target = _first_py_positional_arg(arguments)
     if target is None:
         return None
-    # frob:invariant terminates reason="target is a child of node's own 'arguments' field, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_py_expr, which only descends into the 'call' branch by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
+    # frob:invariant terminates reason="target is a child of node's own 'arguments' \
+    # field, a proper descendant of node in the finite tree-sitter parse tree; \
+    # mutually recurses with _resolve_py_expr, which only descends into the 'call' \
+    # branch by calling back here" measure="node's subtree depth strictly decreases"
     return _resolve_py_expr(target, import_table, scope_cache, alias_table)
 
 
@@ -662,7 +686,10 @@ def _record_py_dict_container_alias(
         key_text = _py_literal_key_text(key_node)
         if key_text is None:
             continue
-        # frob:invariant terminates reason="value_node is one pair's own 'value' field child, a proper descendant of right which is a proper descendant of the assignment node -- no recursion back into this function" measure="not applicable, not recursive"  # noqa: E501
+        # frob:invariant terminates reason="value_node is one pair's own 'value' field \
+        # child, a proper descendant of right which is a proper descendant of the \
+        # assignment node -- no recursion back into this function" measure="not \
+        # applicable, not recursive"
         resolved = _resolve_py_expr(value_node, import_table, scope_cache, alias_table)
         if resolved is not None:
             scope_aliases.setdefault(f"{name}[{key_text}]", resolved)
@@ -688,7 +715,10 @@ def _record_py_list_container_alias(
     for element in right.children:
         if not element.is_named:
             continue
-        # frob:invariant terminates reason="element is one of right's own children, a proper descendant of right which is a proper descendant of the assignment node -- no recursion back into this function" measure="not applicable, not recursive"  # noqa: E501
+        # frob:invariant terminates reason="element is one of right's own children, a \
+        # proper descendant of right which is a proper descendant of the assignment \
+        # node -- no recursion back into this function" measure="not applicable, not \
+        # recursive"
         resolved = _resolve_py_expr(element, import_table, scope_cache, alias_table)
         if resolved is not None:
             scope_aliases.setdefault(f"{name}[{index}]", resolved)
@@ -735,9 +765,7 @@ def _resolve_py_subscript(
     key_text = _py_literal_key_text(key_node)
     if key_text is None:
         return None
-    return _py_scope_alias_lookup(
-        f"{node_text(value)}[{key_text}]", node, alias_table
-    )
+    return _py_scope_alias_lookup(f"{node_text(value)}[{key_text}]", node, alias_table)
 
 
 def _enclosing_py_scope(node):  # noqa: ANN001, ANN201
@@ -1049,14 +1077,14 @@ def _python_binding_capabilities(
         for capability, pattern in patterns:
             if capability in found:
                 continue
-            # frob:waive PERF008 reason="pattern is one of the pre-compiled \
-            # re.Pattern objects from _compiled_capability_patterns(table), built \
-            # once above this whole walk; .search(haystack) is a plain regex match \
-            # with no I/O. PERF008 resolves the bare method name 'search' by \
-            # name-only coincidence to an unrelated same-named function that \
-            # genuinely reaches walk_pruned elsewhere in the repo -- a resolver \
-            # ambiguity, not a real fs-walk on this call. Tracked as a resolver \
-            # precision follow-up (T-1041's Done report)"  # noqa: E501
+            # frob:waive PERF008 reason="pattern is one of the pre-compiled re.Pattern \
+            # objects from _compiled_capability_patterns(table), built once above this \
+            # whole walk; .search(haystack) is a plain regex match with no I/O. \
+            # PERF008 resolves the bare method name 'search' by name-only coincidence \
+            # to an unrelated same-named function that genuinely reaches walk_pruned \
+            # elsewhere in the repo -- a resolver ambiguity, not a real fs-walk on \
+            # this call. Tracked as a resolver precision follow-up (T-1041's Done \
+            # report)"
             if pattern.search(haystack):
                 found.add(capability)
         if len(found) == len(patterns):
@@ -1089,3 +1117,82 @@ def _python_binding_operations(
                 matched.append(entry)
                 break
     return tuple(matched)
+
+
+# frob:ticket T-1752
+# frob:tests \
+# tests/test_vet.py::TestCapabilityScan.test_wrapper_capabilities_resolve_cross_file_vi\
+# a_call_graph kind="unit"
+def _build_wrapper_call_graph(root: Path, python_paths: Sequence[str]) -> CallGraph:
+    """`frob.graph.callgraph.build_call_graph` over `python_paths` (repo-
+    root-relative POSIX paths), built ONCE per scanned source tree and
+    shared across every file `_python_wrapper_capabilities` resolves
+    (T-1752): rebuilding it per-file would make a whole-package scan
+    O(files^2), the exact cost concern this ticket's own design questions
+    raised for a `frob vet` hot path that runs per-lockfile, potentially
+    many packages. `mark_unresolved=False` (the default): a dangling call
+    that only LOOKS private is silently dropped here, matching this
+    module's existing fail-open-on-ambiguity posture (never a false
+    accusation, only a narrower catch) -- this scanner degrades to "no
+    wrapper found" the same way it already degrades on an unparseable or
+    non-python file, never raising. Private (T-1752): only `_capability_
+    scan.py`'s directory aggregation calls this today; a future external
+    caller should go through that same aggregation path rather than
+    building its own graph."""
+    return build_call_graph(root, python_paths)
+
+
+# frob:ticket T-1752
+def _python_wrapper_capabilities(
+    path: Path,
+    root: Path,
+    graph: CallGraph,
+    table: dict[str, tuple[str, ...]],
+) -> set[str]:
+    """Cross-file wrapper attribution (T-1752, the follow-up T-1626's Done
+    report deferred): if `path` calls a PRIVATE helper defined in ANOTHER
+    file under `root`, and that helper -- or anything IT transitively
+    calls, up to `frob.graph.callgraph.closure`'s bounded depth/node cap --
+    itself resolves to a dangerous target, attribute that capability to
+    `path` too. SYMBOLIC, never lexical: resolution walks real call-graph
+    edges (`graph`, built once by `build_wrapper_call_graph` over the
+    whole scanned tree), never matches a callee's NAME against a
+    "looks-like-a-wrapper" heuristic -- the same standing principle every
+    other resolver pass in this module (T-0328's import/binding table,
+    T-1626's partial/dispatch-table resolution) already follows.
+
+    Bounded by the callgraph's own private-callee-only resolution rule
+    (T-0841): a PUBLIC wrapper is not followed -- a call graph edge is
+    only ever recorded for a private/module-local callee, so this closes
+    the SAME class of wrapper T-0328's own binding resolver already
+    reaches within one file, just extended across file boundaries. A
+    public forwarding function (`def run_thing(cmd): return _do(cmd)`
+    where `_do` lives in another file and `run_thing` is itself called
+    from a third file) is a disclosed remaining gap, not a false
+    accusation -- consistent with this codebase's fail-open-on-ambiguity
+    posture elsewhere (e.g. `build_call_graph`'s own `mark_unresolved`
+    docstring). Same-file callees are skipped (`_python_binding_
+    capabilities`'s ordinary intra-file resolution already covers them);
+    only genuinely CROSS-FILE closure members contribute here."""
+    try:
+        rel_path = path.resolve().relative_to(root.resolve()).as_posix()
+    except (OSError, ValueError):
+        return set()
+    caller_prefix = f"{rel_path}::"
+    starts = [caller for caller in graph.calls if caller.startswith(caller_prefix)]
+    found: set[str] = set()
+    seen_files: set[str] = set()
+    for start in starts:
+        for callee in closure(graph, start):
+            callee_file = callee.split("::", 1)[0]
+            if callee_file == rel_path or callee_file in seen_files:
+                continue
+            seen_files.add(callee_file)
+            callee_path = root / callee_file
+            if not callee_path.is_file():
+                continue
+            callee_comment_spans = _non_executable_byte_spans(callee_path)
+            found |= _python_binding_capabilities(
+                callee_path, table, callee_comment_spans
+            )
+    return found

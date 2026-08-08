@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict
 
 from frob.excludes import iter_files
+from frob.graph.callgraph import CallGraph
 from frob.lang import parse_file, raw_tree
 from frob.logging import get_logger
 
@@ -622,15 +623,54 @@ def _files_by_ext(source_dir: Path) -> dict[str, list[Path]]:
     return by_ext
 
 
+def _wrapper_capabilities_for_file(
+    path: Path,
+    source_dir: Path,
+    python_paths: tuple[str, ...],
+    wrapper_graph: CallGraph | None,
+) -> tuple[set[str], CallGraph | None]:
+    """T-1752: `_aggregate_capabilities`'s cross-file wrapper-attribution
+    step, split out to keep that loop under ARCH001's threshold. Builds
+    `wrapper_graph` lazily (once per `source_dir`, memoized by the
+    caller passing it back in) and returns `(found, wrapper_graph)` so a
+    graph-build failure -- malformed source elsewhere in the tree, etc. --
+    degrades to an empty `CallGraph()` (no wrapper capabilities found)
+    rather than aborting the ordinary per-file scan this feeds into."""
+    from ._capability_python import (  # avoid a circular import
+        _build_wrapper_call_graph,
+        _python_wrapper_capabilities,
+    )
+
+    if wrapper_graph is None:
+        try:
+            wrapper_graph = _build_wrapper_call_graph(source_dir, python_paths)
+        except Exception:  # noqa: BLE001
+            wrapper_graph = CallGraph()
+    found = _python_wrapper_capabilities(
+        path, source_dir, wrapper_graph, _PATTERNS["python"]
+    )
+    return found, wrapper_graph
+
+
 def _aggregate_capabilities(
     source_dir: Path, max_files: int
 ) -> tuple[set[str], bool, int]:
     """Union capabilities plus a decode-to-exec hit across scannable files,
-    bounded by `max_files`. Returns `(capabilities, hit, files_scanned)`."""
+    bounded by `max_files`. Returns `(capabilities, hit, files_scanned)`.
+
+    T-1752: also unions each scanned python file's CROSS-FILE wrapper
+    capabilities (`_wrapper_capabilities_for_file`) -- a call into a
+    private helper defined in another file of the SAME scanned tree, that
+    helper itself resolving to a dangerous target. The call graph backing
+    this is built ONCE per `source_dir`, not per-file, so this stays a
+    single extra O(files) pass, not O(files^2)."""
     capabilities: set[str] = set()
     decode_to_exec_hit = False
     scanned = 0
     by_ext = _files_by_ext(source_dir)
+    python_paths = tuple(str(p.relative_to(source_dir)) for p in by_ext.get(".py", ()))
+    wrapper_graph: CallGraph | None = None
+
     for ext in _EXT_LANGUAGE:
         if scanned >= max_files:
             break
@@ -650,6 +690,11 @@ def _aggregate_capabilities(
             )
 
             capabilities |= scan_file_capabilities(path)
+            if ext == ".py" and python_paths:
+                wrapper_found, wrapper_graph = _wrapper_capabilities_for_file(
+                    path, source_dir, python_paths, wrapper_graph
+                )
+                capabilities |= wrapper_found
             if not decode_to_exec_hit:
                 decode_to_exec_hit = _decode_to_exec_signal(path)
             scanned += 1

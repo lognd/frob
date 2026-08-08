@@ -663,6 +663,56 @@ class TestCapabilityScan:
         assert "net-connect" in capabilities
         assert decode_to_exec_hit is False
 
+    def test_wrapper_capabilities_resolve_cross_file_via_call_graph(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_python.py::_python_wrapper_capabilities \
+        # kind="unit"
+        # T-1752: a private helper's dangerous call, reached only through a
+        # call graph edge INTO ANOTHER FILE, must resolve symbolically --
+        # never by matching the helper's name.
+        from frob.vet._capability_core import _PATTERNS
+        from frob.vet._capability_python import (
+            _python_wrapper_capabilities,
+            _build_wrapper_call_graph,
+        )
+
+        (tmp_path / "wrapper.py").write_text(
+            "import subprocess\n\n\ndef _run_it(cmd):\n    return subprocess.run(cmd)\n"
+        )
+        (tmp_path / "caller.py").write_text(
+            "from wrapper import _run_it\n\n\ndef do_thing(cmd):\n    return _run_it(cmd)\n"
+        )
+        graph = _build_wrapper_call_graph(tmp_path, ["caller.py", "wrapper.py"])
+        found = _python_wrapper_capabilities(
+            tmp_path / "caller.py", tmp_path, graph, _PATTERNS["python"]
+        )
+        assert "exec" in found
+
+    def test_wrapper_capabilities_ignore_unrelated_cross_file_calls(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_python.py::_python_wrapper_capabilities \
+        # kind="unit"
+        # T-1752: a caller that reaches into another file WITHOUT ever
+        # touching a dangerous target must not falsely attribute a
+        # capability -- symbolic resolution, not "any cross-file call".
+        from frob.vet._capability_core import _PATTERNS
+        from frob.vet._capability_python import (
+            _python_wrapper_capabilities,
+            _build_wrapper_call_graph,
+        )
+
+        (tmp_path / "helper.py").write_text("def _add(a, b):\n    return a + b\n")
+        (tmp_path / "caller.py").write_text(
+            "from helper import _add\n\n\ndef do_thing(a, b):\n    return _add(a, b)\n"
+        )
+        graph = _build_wrapper_call_graph(tmp_path, ["caller.py", "helper.py"])
+        found = _python_wrapper_capabilities(
+            tmp_path / "caller.py", tmp_path, graph, _PATTERNS["python"]
+        )
+        assert found == set()
+
     def test_re_compile_alone_does_not_report_eval(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0151: bare `compile(` used to match `re.compile(`/`ast.compile(`

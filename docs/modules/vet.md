@@ -888,11 +888,19 @@ own dispatch named explicitly -- left as documented future work).
   (`RUNTIME_OPAQUE_CONSTRUCTS`/`RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS`
   below) -- T-1626 closes the LITERAL-key gap that gate's own
   `_subscript_key_looks_literal` explicitly defers to "the ordinary
-  resolver's job", which had never actually implemented it. Cross-file
-  wrapper attribution (a helper defined in a DIFFERENT file forwarding to
-  a dangerous callable) is a documented, NOT-yet-attempted follow-up --
-  it needs `frob.graph.callgraph`-backed cross-file resolution, a larger
-  unit of work than this pass; see T-1626's Done report.
+  resolver's job", which had never actually implemented it. T-1752 closes
+  the cross-file wrapper-attribution follow-up T-1626 deferred: `frob
+  vet`'s directory aggregation (`_capability_scan._aggregate_capabilities`)
+  now builds one `frob.graph.callgraph` call graph per scanned source
+  tree and, for each python file, walks its PRIVATE-callee closure
+  (`_capability_python._python_wrapper_capabilities`) -- if a call
+  transitively reaches a private helper defined in ANOTHER file of the
+  same tree, and that helper itself resolves to a dangerous target, the
+  capability is attributed back to the calling file too. SYMBOLIC, never
+  lexical (real call-graph edges, never a helper-name heuristic), and
+  bounded by the callgraph's own private-callee-only resolution rule
+  (T-0841) -- a PUBLIC forwarding wrapper is a disclosed remaining gap,
+  not a false accusation.
 - `non_executable_line_numbers` -- T-0769: 1-indexed line numbers in a
   file that a comment or python docstring span touches -- the shared
   primitive `frob.strata._effects`'s line-level THREAT004 observation
