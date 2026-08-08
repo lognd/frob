@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.409.0] - unreleased
+
+- T-1842: post-land sweep regression from T-1787: 1 new error(s) (DOCENUM001)
+
 ## [0.408.0] - unreleased
 
 - T-1836: SCOPE001 fires on every ticket's own tickets/T-XXXX/ticket.md (stale LEDGER_PATH)

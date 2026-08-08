@@ -1,5 +1,15 @@
 {
   "api": {
+    ".claude/hooks/_shellscan.py::POS": "554e060bd0ad06ca0d60d6b9d9ba6588da3da3c7ea807565e8db24f0dbd31c90",
+    ".claude/hooks/_shellscan.py::strip_quoted": "3add19693e2b094297e9d624832ed0191da8351930413992a064e12df686d0ef",
+    ".claude/hooks/diagnosis-nudge.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
+    ".claude/hooks/dispatch-telemetry.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
+    ".claude/hooks/frob-suggest.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
+    ".claude/hooks/frob-timeout-guard.py::MIN_TIMEOUT_MS": "62ec47901b649b88f3bcb9b425ef2a5870e3fb82b0779fbd78c59cb26dced481",
+    ".claude/hooks/frob-timeout-guard.py::PATTERN": "7a8ba6d7e7c7d8dc195a51602d3c61d21b50f9d36006040ff0899f886161e02d",
+    ".claude/hooks/frob-timeout-guard.py::REASON": "458b18cdde055bc322e080f411f86eb5fb22e233b335fabebf6ac2c5e482899a",
+    ".claude/hooks/frob-timeout-guard.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
+    ".claude/hooks/sync-claude-config.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "design/frob.strata::frob": "82be203e1dff832da5164e2a125ecf1bbd6337bcd3d49f82ea37e9ebd4ac67ad",
     "design/frob.strata::frob.b_vet_endorse": "a4e4e121955d6c8b81cb5cb4697a1eed9e587bacdc8cecc1ca02c54fd18505b7",
     "design/frob.strata::frob.c_cache_derivable": "ea227d1f059e39f3f435735848edd6f72db912fd1675ab09feaa7db90a6c4385",
@@ -2177,5 +2187,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.408.0"
+  "version": "0.409.0"
 }

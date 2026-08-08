@@ -1,8 +1,8 @@
 ---
 id: T-1842
 title: 'post-land sweep regression from T-1787: 1 new error(s) (DOCENUM001)'
-state: queued
-kind: bug
+state: done
+kind: docs
 origin: agent
 created: '2026-08-08'
 priority: high
@@ -14,6 +14,10 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+kind_history:
+- 2026-08-08 bug->docs evidence=1 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
