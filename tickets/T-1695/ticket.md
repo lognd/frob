@@ -1,7 +1,7 @@
 ---
 id: T-1695
 title: 'Verify-worker resource budget: never starve foreground agents'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-06'
@@ -16,8 +16,30 @@ scope:
 - src/frob/verify/_worker.py
 - src/frob/serve/_daemon.py
 - docs/modules/tickets.md
+- tests/unit/verify/test_worker.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: unit tests for T-1695 backpressure/priority behavior live in the existing
+    worker test module
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires declaring the exec capability _ensure_reduced_priority's
+    ionice subprocess.run introduces
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/verify/test_worker.py::TestBackpressure::test_yields_at_lease_ceiling
+- tests/unit/verify/test_worker.py::TestBackpressure::test_resumes_below_lease_ceiling
+- tests/unit/verify/test_worker.py::TestBackpressure::test_yields_below_memory_floor
+- tests/unit/verify/test_worker.py::TestBackpressure::test_unmeasurable_memory_never_blocks_a_run
+- tests/unit/verify/test_worker.py::TestEnsureReducedPriority::test_applies_nice_and_ionice_exactly_once
+- tests/unit/verify/test_worker.py::TestEnsureReducedPriority::test_failed_nice_call_never_raises
 designated_repro_test: null
 threat: null
 component: verification

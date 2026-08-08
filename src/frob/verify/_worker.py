@@ -47,6 +47,23 @@ functions directly rather than re-deriving the same rolling-baseline
 comparison a second time -- the only genuinely NEW decision this leaf
 adds on top is "and if it's green, advance the watermark and compact the
 queue", which `_rapid_sweep` has no reason to know about.
+
+T-1695: A PERMANENT background verifier must never starve foreground
+agent work for CPU, I/O, or memory -- the 2026-07-29 session losses were
+OOM kills on this exact box, and the standing cap is 3-4 concurrent
+agents. `CoalescingWorker.tick()` therefore checks backpressure (cross-
+worktree lease count, reusing `frob.tickets._profile.
+_concurrent_lease_count` -- the SAME signal `frob worktree sweep` already
+reads, never a second "how busy is this repo" notion; and available
+memory, reusing T-1672's `/proc/meminfo` reader) AFTER the debounce/floor
+decision already says "ready to run" but BEFORE calling `run_
+coalesced_verification`, and yields (logs at INFO, leaves pending state
+untouched, retries next poll) rather than running while either ceiling is
+tripped. `_ensure_reduced_priority` additionally lowers this process's
+own CPU (`os.nice`) and, where available, I/O (`ionice`) scheduling
+priority the first time a verification pass actually runs -- POSIX
+fork/exec inheritance means every `frob check` subprocess `verify_fn`
+spawns inherits both automatically, no per-subprocess wiring needed.
 """
 
 from __future__ import annotations
@@ -54,6 +71,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
+import subprocess
 import threading
 import time
 import uuid
@@ -234,6 +253,169 @@ DEFAULT_DEBOUNCE_WINDOW_S = 90.0
 #: arrives at all and only the periodic tick itself is driving `notify`),
 #: force a run regardless of how recently the last notify was.
 DEFAULT_PERIODIC_FLOOR_S = 300.0
+
+# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+#: Foreground-agent lease ceiling (T-1695): `tick()` yields (skips this
+#: run, retries next poll) while at least this many cross-worktree ticket
+#: leases are currently recorded -- the same "3-4 concurrent agents"
+#: standing box constraint the T-1695 ticket body itself names, reusing
+#: `frob.tickets._profile._concurrent_lease_count`'s signal rather than
+#: inventing a second notion of "how busy is this repo".
+DEFAULT_LEASE_CEILING = 3
+
+# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+#: Minimum available memory, in MiB, required to start a verification
+#: pass (T-1695) -- below this floor `tick()` yields rather than risk the
+#: OOM killer choosing between this worker and a foreground agent.
+#: `None` (unmeasurable, e.g. non-Linux) never blocks a run -- see
+#: `_default_available_memory_mb`'s own docstring.
+DEFAULT_MIN_AVAILABLE_MEMORY_MB = 1024
+
+# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+#: `lease_count_fn(root)` -> the current cross-worktree lease count.
+#: Injectable so tests can assert the yield decision without a real
+#: multi-worktree lease file on disk.
+LeaseCountFn = Callable[[Path], int]
+
+# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+#: `available_memory_fn()` -> available memory in MiB, or `None` if it
+#: cannot be measured on this platform. Injectable for the same reason as
+#: `LeaseCountFn`.
+AvailableMemoryFn = Callable[[], "int | None"]
+
+
+def _default_lease_count_fn(root: Path) -> int:
+    """The production `LeaseCountFn` (T-1695): `frob.tickets._profile.
+    _concurrent_lease_count`, the SAME cross-worktree lease signal `frob
+    worktree sweep` already reads -- deferred import so `frob.verify`
+    does not pull in `frob.tickets` at module scope for callers that
+    never tick a worker."""
+    from frob.tickets._profile import _concurrent_lease_count
+
+    return _concurrent_lease_count(root)
+
+
+def _default_available_memory_mb() -> int | None:
+    """The production `AvailableMemoryFn` (T-1695): reuses `frob.testing.
+    _coverage_refresh._available_memory_mb` (T-1672's own `/proc/meminfo`
+    `MemAvailable` reader) rather than re-deriving a second memory probe.
+    `None` on any non-Linux platform or parse failure -- `tick()`'s
+    backpressure check treats that as "cannot measure, never block a run
+    on it", the same posture T-1672's own caller takes."""
+    from frob.testing._coverage_refresh import _available_memory_mb
+
+    return _available_memory_mb()
+
+
+# frob:doc docs/modules/tickets.md#resource-budget-never-starve-foreground-agents-t-1695
+# frob:tests \
+# tests/unit/verify/test_worker.py::TestBackpressure.test_yields_at_lease_ceiling
+# frob:tests \
+# tests/unit/verify/test_worker.py::TestBackpressure.test_resumes_below_lease_ceiling
+# frob:tests \
+# tests/unit/verify/test_worker.py::TestBackpressure.test_yields_below_memory_floor
+# frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_unmeasurable_memory_never_blocks_a_run  # noqa: E501
+def _worker_backpressure_reason(
+    root: Path,
+    *,
+    lease_ceiling: int,
+    min_available_memory_mb: int,
+    lease_count_fn: LeaseCountFn | None,
+    available_memory_fn: AvailableMemoryFn | None,
+) -> str | None:
+    """T-1695: the reason `CoalescingWorker.tick()` must yield instead of
+    running this cycle, or `None` if clear to proceed. Checked ONLY after
+    the debounce/floor decision already says "ready to run" -- a quiet
+    repo pays this probe's cost at most once per real run attempt, not
+    once per poll cycle. Lease count is checked before memory (T-1695's
+    own framing: "a concurrency budget so the worker never runs while
+    more than N foreground agents hold leases" is the primary signal;
+    memory is the secondary OOM-avoidance floor). A module-level function
+    (not a `CoalescingWorker` method) taking explicit arguments, matching
+    this file's own `_resolve_verification_outcome`/`_advance_on_green`
+    ARCH001-split precedent -- also the only shape `frob check`'s WIRE001
+    text-scan can recognize as "called" for a private helper (a bound
+    `self.foo(...)` call is always dot-prefixed, which its bare-name scan
+    structurally cannot match)."""
+    leases = (
+        lease_count_fn(root)
+        if lease_count_fn is not None
+        else _default_lease_count_fn(root)
+    )
+    if leases >= lease_ceiling:
+        return f"lease count {leases} >= ceiling {lease_ceiling}"
+    mem_mb = (
+        available_memory_fn()
+        if available_memory_fn is not None
+        else _default_available_memory_mb()
+    )
+    if mem_mb is not None and mem_mb < min_available_memory_mb:
+        return f"available memory {mem_mb}MB < floor {min_available_memory_mb}MB"
+    return None
+
+
+_PRIORITY_LOCK = threading.Lock()
+_PRIORITY_REDUCED = False
+
+
+# frob:doc docs/modules/tickets.md#resource-budget-never-starve-foreground-agents-t-1695
+# frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_applies_nice_and_ionice_exactly_once  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_failed_nice_call_never_raises  # noqa: E501
+def _ensure_reduced_priority() -> None:
+    """Lower this process's CPU (`os.nice`) and, where the `ionice`
+    binary exists, I/O scheduling priority (T-1695) -- applied AT MOST
+    ONCE per process, guarded by `_PRIORITY_REDUCED`: `os.nice` is
+    cumulative (each call adds to the current niceness), so calling this
+    twice would keep compounding rather than idempotently reapplying the
+    same reduction. Every verification pass this process ever runs after
+    the first, and every child it spawns (the `frob check` subprocess
+    `verify_fn` invokes -- POSIX fork/exec inherits both nice value and
+    ionice class), therefore runs at reduced priority relative to
+    foreground agent work with no per-subprocess wiring needed.
+    Best-effort on both axes: a platform with no `os.nice` (non-POSIX) or
+    no `ionice` binary just runs unthrottled on that one axis, logged,
+    never a crash."""
+    global _PRIORITY_REDUCED
+    with _PRIORITY_LOCK:
+        if _PRIORITY_REDUCED:
+            return
+        _PRIORITY_REDUCED = True
+    _lower_cpu_nice_priority()
+    _lower_io_priority()
+
+
+def _lower_cpu_nice_priority() -> None:
+    """The CPU-priority half of `_ensure_reduced_priority` (T-1695, ARCH103
+    split): `os.nice(10)`, best-effort -- a platform with no `os.nice`
+    (non-POSIX) just logs and continues, never a crash."""
+    try:
+        os.nice(10)
+        _log.info("verify worker: lowered CPU nice priority by 10")
+    except (AttributeError, OSError) as exc:
+        _log.warning("verify worker: could not lower CPU nice priority: %s", exc)
+
+
+def _lower_io_priority() -> None:
+    """The I/O-priority half of `_ensure_reduced_priority` (T-1695,
+    ARCH103 split): sets `ionice` class 3 (idle) for this process, if the
+    `ionice` binary exists -- best-effort, a missing binary or a failed
+    call just logs and continues."""
+    ionice = shutil.which("ionice")
+    if ionice is None:
+        _log.debug(
+            "verify worker: ionice binary not found on this platform, CPU nice only"
+        )
+        return
+    try:
+        subprocess.run(
+            [ionice, "-c3", "-p", str(os.getpid())],
+            check=False,
+            timeout=5,
+            capture_output=True,
+        )
+        _log.info("verify worker: set ionice class 3 (idle) for pid %d", os.getpid())
+    except (OSError, subprocess.SubprocessError) as exc:
+        _log.warning("verify worker: could not set ionice priority: %s", exc)
 
 
 # frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
@@ -530,16 +712,29 @@ class CoalescingWorker:
         *,
         debounce_window_s: float = DEFAULT_DEBOUNCE_WINDOW_S,
         periodic_floor_s: float = DEFAULT_PERIODIC_FLOOR_S,
+        lease_ceiling: int = DEFAULT_LEASE_CEILING,
+        min_available_memory_mb: int = DEFAULT_MIN_AVAILABLE_MEMORY_MB,
         verify_fn: VerifyFn | None = None,
+        lease_count_fn: LeaseCountFn | None = None,
+        available_memory_fn: AvailableMemoryFn | None = None,
         now_fn: Callable[[], float] = time.monotonic,
     ) -> None:
         """Build a worker for `root`. Does not start any thread or run any
         verification itself -- `notify()`/`tick()` are called by the
-        daemon's own existing poll loop (`frob.serve._daemon`)."""
+        daemon's own existing poll loop (`frob.serve._daemon`).
+        `lease_ceiling`/`min_available_memory_mb` are T-1695's backpressure
+        ceilings; `lease_count_fn`/`available_memory_fn` default to the
+        real production probes and exist only so tests can inject
+        deterministic values instead of reading actual lease files or
+        `/proc/meminfo`."""
         self._root = root
         self._debounce_window_s = debounce_window_s
         self._periodic_floor_s = periodic_floor_s
+        self._lease_ceiling = lease_ceiling
+        self._min_available_memory_mb = min_available_memory_mb
         self._verify_fn = verify_fn
+        self._lease_count_fn = lease_count_fn or _default_lease_count_fn
+        self._available_memory_fn = available_memory_fn or _default_available_memory_mb
         self._now_fn = now_fn
         self._lock = threading.Lock()
         self._pending_since: float | None = None
@@ -565,8 +760,15 @@ class CoalescingWorker:
         unless there is pending work AND either the debounce window has
         gone quiet since the last `notify()`, or the periodic floor has
         elapsed since the last real run while work was still pending --
-        in which case it runs exactly one
-        `run_coalesced_verification` pass and clears the pending state."""
+        in which case it checks T-1695's backpressure ceilings
+        (`_worker_backpressure_reason`) and, if clear, runs exactly one
+        `run_coalesced_verification` pass and clears the pending state.
+        If backpressure is tripped, this tick YIELDS instead: pending
+        state is left untouched (so the next tick re-evaluates fresh,
+        neither losing the pending work nor double-counting it) and the
+        cause is logged at INFO -- T-1695's own acceptance requirement
+        that a silent yield be indistinguishable from "keeping up" is
+        never allowed to happen here."""
         now = self._now_fn()
         with self._lock:
             if self._pending_since is None:
@@ -579,6 +781,29 @@ class CoalescingWorker:
             floor_elapsed = pending_for >= self._periodic_floor_s
             if quiet_for < self._debounce_window_s and not floor_elapsed:
                 return None
+
+        # T-1695: ready to run by debounce/floor -- but never at the
+        # expense of a foreground agent. Checked OUTSIDE the lock (both
+        # probes do I/O) and BEFORE consuming pending state, so a yield
+        # leaves notify()'s own bookkeeping untouched.
+        reason = _worker_backpressure_reason(
+            self._root,
+            lease_ceiling=self._lease_ceiling,
+            min_available_memory_mb=self._min_available_memory_mb,
+            lease_count_fn=self._lease_count_fn,
+            available_memory_fn=self._available_memory_fn,
+        )
+        if reason is not None:
+            _log.info(
+                "verify worker: yielding this tick for %s -- %s "
+                "(pending for %.0fs); will retry next poll",
+                self._root,
+                reason,
+                pending_for,
+            )
+            return None
+
+        with self._lock:
             self._pending_since = None
             self._last_notify_at = None
         _log.info(
@@ -587,6 +812,13 @@ class CoalescingWorker:
             self._root,
             floor_elapsed and quiet_for < self._debounce_window_s,
         )
+        # T-1695: only the background daemon's own tick() lowers this
+        # process's priority -- `frob verify now`'s synchronous, human/
+        # agent-invoked call straight into `run_coalesced_verification`
+        # (src/frob/app/verify_runner.py) is deliberately NOT throttled,
+        # since that command is foreground work by definition, not the
+        # permanent-background competitor this ticket is about.
+        _ensure_reduced_priority()
         result = run_coalesced_verification(self._root, verify_fn=self._verify_fn)
         with self._lock:
             self._last_run_at = self._now_fn()
@@ -595,8 +827,12 @@ class CoalescingWorker:
 
 __all__ = [
     "DEFAULT_DEBOUNCE_WINDOW_S",
+    "DEFAULT_LEASE_CEILING",
+    "DEFAULT_MIN_AVAILABLE_MEMORY_MB",
     "DEFAULT_PERIODIC_FLOOR_S",
+    "AvailableMemoryFn",
     "CoalescingWorker",
+    "LeaseCountFn",
     "VerifyFn",
     "WorkerError",
     "WorkerOutcome",

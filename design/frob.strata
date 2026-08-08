@@ -300,6 +300,9 @@ node verify : trusted {
     code "src/frob/verify/**";
     may "fs.write" via "src/frob/verify/_backpressure.py", "src/frob/verify/_watermark.py", "src/frob/verify/_quarantine.py", "src/frob/verify/_worker.py";
     may "fs.read" via "src/frob/verify/_watermark.py", "src/frob/verify/_quarantine.py", "src/frob/verify/_worker.py";
+    // T-1695: `_ensure_reduced_priority` shells out to the `ionice` binary
+    // (best-effort I/O scheduling class reduction) via `subprocess.run`.
+    may "exec" via "src/frob/verify/_worker.py";
 }
 
 // frob:ticket T-0956
@@ -1771,6 +1774,22 @@ assume "weakness:CWE-78:natives" noflow registry -> natives owner logan review "
 // 2026-07-23.
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:deploy" noflow registry -> deploy owner logan review "2026-10-15"
+
+// T-1695: `verify` newly declares `may "exec"` (`_ensure_reduced_priority`'s
+// best-effort `ionice -c3 -p <pid>` `subprocess.run` call, lowering this
+// process's own I/O scheduling class), dragging in the same CWE-78
+// discharge obligation as core/vet/tickets_ledger/fleet/mutate/natives/
+// deploy above. No flow exists from `registry` to `verify` at all --
+// `verify` has no inbound edge from `registry` in this graph -- so this
+// is the same graph-provable NoFlow case those nodes' comments already
+// document; `assume` used for the same uniformity reason. The ONLY argv
+// this node's exec call site ever builds is the hardcoded
+// `[ionice, "-c3", "-p", str(os.getpid())]` list -- `ionice`'s own
+// resolved path (`shutil.which`) and this process's own pid, never
+// registry response bytes or any other untrusted input. Reviewed
+// 2026-08-08.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:verify" noflow registry -> verify owner logan review "2026-10-15"
 
 // T-0401 (docs/audits/strata.md G3): `eval` used to be globally
 // `BenignCapability`-excused ("no CWE_CATALOG entry targets dynamic code

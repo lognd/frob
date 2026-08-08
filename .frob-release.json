@@ -2093,6 +2093,8 @@
     "src/frob/verify/_worker.py::CoalescingWorker.notify": "618ac437c8f51423ee796703af06b751a46304606f0a2117e10df18782e9a057",
     "src/frob/verify/_worker.py::CoalescingWorker.tick": "b6c37c48d3d4c0e07bba50f746f2a3a59377437cfa656dc49b2f82450fe08374",
     "src/frob/verify/_worker.py::DEFAULT_DEBOUNCE_WINDOW_S": "250abb37a0d2a2e473fce74feb0e019483c94ea77ed7ee616482f321446505b4",
+    "src/frob/verify/_worker.py::DEFAULT_LEASE_CEILING": "53b6d639ab15ee5edafa3143bf0e8840e74318db71058a8a7d3c58e72639070d",
+    "src/frob/verify/_worker.py::DEFAULT_MIN_AVAILABLE_MEMORY_MB": "8cb5e182d9356d219f89c77e4ec871714b0e9dd8ac8a3f3d40a78a03f674ca42",
     "src/frob/verify/_worker.py::DEFAULT_PERIODIC_FLOOR_S": "1a78cd38cbb63d3618e4bd2c82556ac053139714910e7eb6710612b486d8f494",
     "src/frob/verify/_worker.py::WorkerError": "142f6ecfea1b322831ddcd0cb7a6b54d368400b1fdaf676eba4476277da6054b",
     "src/frob/verify/_worker.py::WorkerOutcome": "9f47ddb8696c15b2882f39f46ad1f94fcdbc95c0abf9d9c5415fde4ab94d620a",
@@ -2187,5 +2189,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.409.0"
+  "version": "0.410.0"
 }

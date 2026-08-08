@@ -27,7 +27,21 @@ jobs alongside the stdio transport:
    tickets.md#coalescing-verify-worker-t-1688` documents. `tick()` decides
    whether enough quiet time (or floor time) has passed to actually run
    one coalesced `frob.verify._worker.run_coalesced_verification` pass --
-   most cycles it is a no-op.
+   most cycles it is a no-op. T-1695: even when debounce/floor say "ready",
+   `tick()` itself yields (no run, pending state kept, retry next cycle)
+   while foreground agent load is high (cross-worktree lease count at or
+   above `CoalescingWorker`'s configured ceiling) or available memory is
+   below its configured floor -- this daemon poll loop never needs to know
+   that decision happened, it just calls `tick()` every cycle regardless.
+
+Foreground agents never compete with this worker for CPU/IO priority
+either (T-1695): the first time a verification pass actually runs in this
+process, `frob.verify._worker._ensure_reduced_priority` lowers this
+process's own `os.nice` value and, where the `ionice` binary exists, its
+I/O scheduling class -- every `frob check` subprocess the pass spawns
+inherits both via ordinary POSIX fork/exec priority inheritance, so
+nothing in this daemon module has to wire priority into the subprocess
+call itself.
 
 All three jobs write into `_DaemonStatus`, a single in-process cache keyed
 by repo root (mirroring `frob.serve._warm._STATES`'s shape) that

@@ -269,6 +269,149 @@ class TestCoalescingWorker:
         assert len(calls) == 1
 
 
+# frob:ticket T-1695
+class TestBackpressure:
+    """T-1695: the worker must yield rather than run while foreground
+    agents hold too many leases, or too little memory is available --
+    never starve foreground work, never run silently unmeasured."""
+
+    def test_yields_at_lease_ceiling(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_yields_at_lease_ceiling  # noqa: E501
+        _enqueue_n(tmp_path, 1)
+        clock = [0.0]
+        calls: list[str] = []
+        worker = CoalescingWorker(
+            tmp_path,
+            debounce_window_s=90.0,
+            periodic_floor_s=10_000.0,
+            lease_ceiling=3,
+            now_fn=lambda: clock[0],
+            verify_fn=lambda root, sha: calls.append(sha) or frozenset(),
+            lease_count_fn=lambda root: 3,
+            available_memory_fn=lambda: None,
+        )
+        worker.notify()
+        clock[0] = 91.0
+        with caplog.at_level(logging.INFO, logger="frob.verify._worker"):
+            result = worker.tick()
+        assert result is None
+        assert calls == []
+        assert any("yielding" in rec.message for rec in caplog.records)
+        assert any("lease count" in rec.message for rec in caplog.records)
+
+    def test_resumes_below_lease_ceiling(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_resumes_below_lease_ceiling  # noqa: E501
+        _enqueue_n(tmp_path, 1)
+        clock = [0.0]
+        calls: list[str] = []
+        leases = [3]
+        worker = CoalescingWorker(
+            tmp_path,
+            debounce_window_s=90.0,
+            periodic_floor_s=10_000.0,
+            lease_ceiling=3,
+            now_fn=lambda: clock[0],
+            verify_fn=lambda root, sha: calls.append(sha) or frozenset(),
+            lease_count_fn=lambda root: leases[0],
+            available_memory_fn=lambda: None,
+        )
+        worker.notify()
+        clock[0] = 91.0
+        assert worker.tick() is None  # yields at the ceiling
+        assert calls == []
+
+        # Load drops below the ceiling -- pending work was never lost, the
+        # very next tick runs it.
+        leases[0] = 2
+        clock[0] = 92.0
+        result = worker.tick()
+        assert result is not None
+        assert result.is_ok
+        assert len(calls) == 1
+
+    def test_yields_below_memory_floor(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_yields_below_memory_floor  # noqa: E501
+        _enqueue_n(tmp_path, 1)
+        clock = [0.0]
+        calls: list[str] = []
+        worker = CoalescingWorker(
+            tmp_path,
+            debounce_window_s=90.0,
+            periodic_floor_s=10_000.0,
+            lease_ceiling=100,
+            min_available_memory_mb=1024,
+            now_fn=lambda: clock[0],
+            verify_fn=lambda root, sha: calls.append(sha) or frozenset(),
+            lease_count_fn=lambda root: 0,
+            available_memory_fn=lambda: 256,
+        )
+        worker.notify()
+        clock[0] = 91.0
+        with caplog.at_level(logging.INFO, logger="frob.verify._worker"):
+            result = worker.tick()
+        assert result is None
+        assert calls == []
+        assert any("available memory" in rec.message for rec in caplog.records)
+
+    def test_unmeasurable_memory_never_blocks_a_run(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_unmeasurable_memory_never_blocks_a_run  # noqa: E501
+        _enqueue_n(tmp_path, 1)
+        clock = [0.0]
+        calls: list[str] = []
+        worker = CoalescingWorker(
+            tmp_path,
+            debounce_window_s=90.0,
+            periodic_floor_s=10_000.0,
+            lease_ceiling=100,
+            min_available_memory_mb=1024,
+            now_fn=lambda: clock[0],
+            verify_fn=lambda root, sha: calls.append(sha) or frozenset(),
+            lease_count_fn=lambda root: 0,
+            available_memory_fn=lambda: None,
+        )
+        worker.notify()
+        clock[0] = 91.0
+        result = worker.tick()
+        assert result is not None
+        assert result.is_ok
+        assert len(calls) == 1
+
+
+# frob:ticket T-1695
+class TestEnsureReducedPriority:
+    """T-1695: CPU/IO priority reduction is applied at most once per
+    process, best-effort on both axes."""
+
+    def test_applies_nice_and_ionice_exactly_once(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_applies_nice_and_ionice_exactly_once  # noqa: E501
+        monkeypatch.setattr(_worker_mod, "_PRIORITY_REDUCED", False)
+        nice_calls: list[int] = []
+        monkeypatch.setattr(_worker_mod.os, "nice", nice_calls.append)
+        monkeypatch.setattr(_worker_mod.shutil, "which", lambda name: None)
+        _worker_mod._ensure_reduced_priority()
+        _worker_mod._ensure_reduced_priority()
+        assert nice_calls == [10]  # only the FIRST call actually ran os.nice
+
+    def test_failed_nice_call_never_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_failed_nice_call_never_raises  # noqa: E501
+        monkeypatch.setattr(_worker_mod, "_PRIORITY_REDUCED", False)
+
+        def failing_nice(n: int) -> int:
+            raise OSError("simulated: not permitted")
+
+        monkeypatch.setattr(_worker_mod.os, "nice", failing_nice)
+        monkeypatch.setattr(_worker_mod.shutil, "which", lambda name: None)
+        _worker_mod._ensure_reduced_priority()  # never raises
+
+
 # frob:ticket T-1694
 class TestReconcileStaleInFlightMarker:
     """`_reconcile_stale_in_flight_marker`'s own contract, tested directly

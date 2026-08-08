@@ -4002,6 +4002,53 @@ continuous stream of notifies that never lets the debounce window go
 quiet still forces a run once the floor elapses, so a busy repo cannot
 starve verification indefinitely.
 
+### Resource budget: never starve foreground agents (T-1695)
+
+<!-- frob:describes src/frob/verify/_worker.py::DEFAULT_LEASE_CEILING -->
+<!-- frob:describes src/frob/verify/_worker.py::DEFAULT_MIN_AVAILABLE_MEMORY_MB -->
+<!-- frob:describes src/frob/verify/_worker.py::_worker_backpressure_reason -->
+<!-- frob:describes src/frob/verify/_worker.py::_ensure_reduced_priority -->
+
+A permanent background verifier competing with foreground agent work for
+CPU/memory is not theoretical on this box: the 2026-07-29 session losses
+were OOM kills, and the standing cap is 3-4 concurrent agents. Two
+ceilings, both checked in `_worker_backpressure_reason` AFTER
+the debounce/floor decision already says "ready to run" but BEFORE
+`run_coalesced_verification` is actually called:
+
+- **Lease ceiling** (`DEFAULT_LEASE_CEILING`, default 3): the worker
+  yields while the cross-worktree ticket lease count is at or above this
+  value, reusing `frob.tickets._profile._concurrent_lease_count` -- the
+  SAME signal `frob worktree sweep` already reads to tell a live
+  multi-agent session from a solo one, never a second "how busy is this
+  repo" notion.
+- **Memory floor** (`DEFAULT_MIN_AVAILABLE_MEMORY_MB`, default 1024):
+  the worker yields while available memory (T-1672's `/proc/meminfo`
+  `MemAvailable` reader, reused via `frob.testing._coverage_refresh.
+  _available_memory_mb`) is below this floor. `None` (unmeasurable, e.g.
+  non-Linux) never blocks a run -- guessing wrong here would be worse
+  than not checking at all.
+
+A yield is never silent: `tick()` logs at INFO naming the exact cause
+("lease count N >= ceiling M" or "available memory XMB < floor YMB") and
+how long the work has been pending, and leaves the debounce/floor pending
+state completely untouched so the very next poll cycle re-evaluates
+fresh -- neither losing the pending work nor double-counting it. A worker
+that silently never runs would be indistinguishable from one that is
+keeping up; this is the mechanism that makes that impossible.
+
+**Priority reduction, not just deferral.** Even when the worker DOES run,
+it must not compete for CPU/IO priority with foreground work.
+`_ensure_reduced_priority` lowers this process's own `os.nice` value (by
+10) and, where the `ionice` binary exists, sets I/O scheduling class 3
+(idle) for this process -- applied at most ONCE per process (guarded by a
+module-level flag, since `os.nice` is cumulative and a second call would
+compound rather than idempotently reapply the same reduction), called
+right before the first `verify_fn` invocation. Every `frob check`
+subprocess a verification pass spawns after that point inherits both
+values automatically via ordinary POSIX fork/exec priority inheritance --
+no per-subprocess wiring needed anywhere else in this codebase.
+
 ## Symbolic attribution (T-1690)
 
 <!-- frob:describes src/frob/verify/_attribution.py::AttributionError -->
