@@ -111,12 +111,26 @@ class TestTicketArchiveForceCLI:
         _make_done_ticket(root)
         _write_live_lease(root, "T-0001", root)
 
-        cfg = AppConfig(ticket_command="archive", ticket_path=root, ticket_force=True)
+        # T-1762: --force now requires a --reason (or --reason-file) once
+        # it would actually override a live cross-worktree lease -- a
+        # bare `ticket_force=True` with neither is refused (T-1785, this
+        # test was written before T-1762 landed and never updated).
+        cfg = AppConfig(
+            ticket_command="archive",
+            ticket_path=root,
+            ticket_force=True,
+            ticket_force_reason="verified the lease is stale, archiving anyway",
+        )
         with caplog.at_level("INFO"):
             ticket_run(cfg)
 
         assert "archived 1 ticket(s)" in caplog.text
-        assert "overriding 1 live cross-worktree lease(s)" in caplog.text
+        # T-1762: the override is now logged via `record_force_override`'s
+        # own WARNING format (`frob.tickets._force_override`), not the
+        # pre-T-1762 "overriding N live cross-worktree lease(s)" phrasing
+        # this assertion originally checked.
+        assert "force override" in caplog.text
+        assert "live-cross-worktree-lease" in caplog.text
 
         active = load_active(root).danger_ok
         assert "T-0001" not in active.tickets
