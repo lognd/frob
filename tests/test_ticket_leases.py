@@ -1370,6 +1370,152 @@ class TestRemoveWorktree:
         assert result.danger_err == _WorktreeSweepError.NotARegisteredWorktree
 
 
+# frob:ticket T-1789
+class TestOrphanedLeases:
+    """T-1779 finding 7: `orphaned_leases` -- a lease whose recorded
+    `worktree` path no longer exists on disk at all (a nested worktree
+    whose PARENT was retired, taking it with it, is the real incident
+    this reproduces)."""
+
+    def test_finds_a_lease_pointing_at_a_gone_worktree(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_leases kind="unit"
+        from frob.tickets._leases import orphaned_leases
+
+        ghost = repo.parent / "nowhere" / "nested" / "gone"
+        _write_lease(
+            repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat()
+        )
+
+        found = orphaned_leases(repo)
+        assert [lease.ticket_id for lease in found] == ["T-9001"]
+
+    def test_live_worktree_lease_is_not_orphaned(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_leases.py::orphaned_leases kind="unit"
+        from frob.tickets._leases import orphaned_leases
+
+        _write_lease(
+            repo,
+            "T-9002",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+
+        found = orphaned_leases(repo)
+        assert found == ()
+
+
+# frob:ticket T-1789
+class TestReleaseOrphanedLease:
+    """T-1779 finding 7: `release_orphaned_lease` -- the SAFE, targeted
+    release primitive (`frob worktree release-lease TICKET-ID`) that
+    refuses to touch anything but a confirmed-orphaned lease."""
+
+    def test_releases_a_genuinely_orphaned_lease(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from frob.tickets._leases import _lease_path, leases_dir, release_orphaned_lease
+
+        ghost = repo.parent / "nowhere" / "nested" / "gone"
+        _write_lease(
+            repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat()
+        )
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-9001")
+        assert lease_file.exists()
+
+        result = release_orphaned_lease(repo, "T-9001")
+        assert result.is_ok
+        assert not lease_file.exists()
+
+    def test_refuses_a_live_worktree_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from frob.tickets._leases import (
+            LeaseError,
+            _lease_path,
+            leases_dir,
+            release_orphaned_lease,
+        )
+
+        _write_lease(
+            repo,
+            "T-9002",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-9002")
+
+        result = release_orphaned_lease(repo, "T-9002")
+        assert result.is_err
+        assert result.danger_err == LeaseError.LeaseWorktreeMismatch
+        assert lease_file.exists()
+
+    def test_refuses_an_unknown_ticket_id(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from frob.tickets._leases import LeaseError, release_orphaned_lease
+
+        result = release_orphaned_lease(repo, "T-0000")
+        assert result.is_err
+        assert result.danger_err == LeaseError.NoLeaseForTicket
+
+
+# frob:ticket T-1789
+class TestWorktreeReleaseLeaseCli:
+    """`frob worktree release-lease TICKET-ID`'s CLI entry point."""
+
+    def test_release_lease_cli_releases_an_orphaned_lease(
+        self, repo: Path, capsys
+    ) -> None:
+        # frob:tests src/frob/app/worktree_runner.py::run kind="unit"
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+        from frob.tickets._leases import _lease_path, leases_dir
+
+        ghost = repo.parent / "nowhere" / "nested" / "gone"
+        _write_lease(
+            repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat()
+        )
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-9001")
+
+        cwd = Path.cwd()
+        _os.chdir(repo)
+        try:
+            worktree_run(["release-lease", "T-9001"])
+        finally:
+            _os.chdir(cwd)
+        out = capsys.readouterr().out
+        assert "released orphaned lease for T-9001" in out
+        assert not lease_file.exists()
+
+    def test_release_lease_cli_exits_1_for_a_live_worktree(
+        self, repo: Path, second_worktree: Path, capsys
+    ) -> None:
+        # frob:tests src/frob/app/worktree_runner.py::run kind="unit"
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+
+        _write_lease(
+            repo,
+            "T-9002",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        cwd = Path.cwd()
+        _os.chdir(repo)
+        try:
+            with pytest.raises(SystemExit) as exc_info:
+                worktree_run(["release-lease", "T-9002"])
+        finally:
+            _os.chdir(cwd)
+        assert exc_info.value.code == 1
+
+
 # frob:ticket T-1130
 class TestNewDropFailAutoCommit:
     """T-1130: `frob ticket new`/`drop`/`fail` each auto-commit their own

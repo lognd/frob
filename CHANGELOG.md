@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.378.0] - unreleased
+
+- T-1789: Orphaned-lease detection gate + targeted lease-release verb (T-1779 finding 7)
+
 ## [0.377.0] - unreleased
 
 - T-1222: rust: arch python metrics single-pass walk export (extraction only, rules stay Python)

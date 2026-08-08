@@ -1852,11 +1852,13 @@
     "src/frob/tickets/_leases.py::lease_holder_worktree": "0b64827b2901a6d5cc7fea162f9d7e549a22ef0d73bc431e851e45b6e029c740",
     "src/frob/tickets/_leases.py::leases_dir": "112f399e603eeace7d9a023028111e26776fcc901fb4579016acfbcfb67c2ddf",
     "src/frob/tickets/_leases.py::load_positive_int_config": "8806ebdc06658be05a6642c72d159821dd1c48cf0fcf3ee913b96ac45104b688",
+    "src/frob/tickets/_leases.py::orphaned_leases": "f106d6ca48d122de31347ac73fd742e90f430109bdf8a84b61c51cf1a3a7e02b",
     "src/frob/tickets/_leases.py::read_all_leases": "7d42f71cb790f455badef955102ba29e05e1fdac78ee9cb29dd988d6fc11c313",
     "src/frob/tickets/_leases.py::record_lease": "ffe05f96a779191678cc371b71f334b5157d8423ec6385c1fa1ce307d211b89a",
     "src/frob/tickets/_leases.py::refuse_if_land_in_progress": "75471500390a89b7ca2e16bd0db5fbb9a646a3b226cd10988830f7644a696407",
     "src/frob/tickets/_leases.py::refuse_if_worktree_in_use": "c46af4802e96135e5d6e70a2c4251b0048e487bc96af86e9de1a9120c2a4640d",
     "src/frob/tickets/_leases.py::release_lease": "d67d35f4063182ea14399cf5bdbfb90449d04d593f0aa9f81fc36aca3377d7bb",
+    "src/frob/tickets/_leases.py::release_orphaned_lease": "1b8fe65ff153ec9734e7f8cf58c2f310c218d42053c0fdec50b11a765a798450",
     "src/frob/tickets/_leases.py::remove_worktree": "01c991eab75b314dd28abbd7318a303a962d99d09242d89b29f9842d4744f548",
     "src/frob/tickets/_leases.py::rename_lease": "1a4ae34a2ceb7bf50b23d6f953c65eccaf0d93fa4cd40e1bb6798a07caf4915b",
     "src/frob/tickets/_leases.py::resolve_lease": "70492f907e5ac544f189da3bace6c81c99a36400c94c96bfed19cd3e8e0c2d66",
@@ -2126,5 +2128,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.377.0"
+  "version": "0.378.0"
 }

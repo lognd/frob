@@ -552,6 +552,111 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     return Ok(None)
 
 
+# frob:ticket T-1789
+# frob:doc docs/modules/tickets.md#orphaned-lease-detection-and-release-t-1779-finding-7
+# frob:tests tests/test_ticket_leases.py::TestOrphanedLeases.test_finds_a_lease_pointing_at_a_gone_worktree  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestOrphanedLeases.test_live_worktree_lease_is_not_orphaned  # noqa: E501
+def orphaned_leases(root: Path) -> tuple[_LeaseRecord, ...]:
+    """Every lease `read_all_leases(root)` reports whose recorded
+    `worktree` path no longer exists on disk at all (T-1779 finding 7):
+    T-1766 was held by a lease naming a NESTED worktree
+    (`.../agent-X/.claude/worktrees/t-1766`) whose PARENT worktree had
+    already been retired and removed, taking the nested one with it --
+    `frob ticket doable` correctly refused to offer T-1766 forever, and
+    nothing in the system ever reported why.
+
+    Deliberately built on the RAW parse (`_parse_lease_files_cached`),
+    NOT `read_all_leases` -- this is the exact bug T-1766 hit. `read_
+    all_leases`'s own liveness filter (`_live_leases_pruning_stale`) is
+    tuned for SAFE UNLINKING, not reporting: a `"confirmed_absent"` lease
+    is unlinked and never appears in its return value at all, but an
+    `"ambiguous"` one (T-1766's actual shape -- the PARENT worktree was
+    ALSO removed, so `_probe_worktree_liveness`'s own parent-must-be-
+    reachable requirement for a trustworthy absence signal could not
+    confirm it) is SILENTLY DROPPED from every consumer's view (`doable`
+    included) and never unlinked either -- it persists on disk, invisible,
+    forever. That is precisely "a gate that lies by omission": nothing
+    ever reports it, and no amount of waiting clears it. This function
+    surfaces BOTH shapes (confirmed-absent-not-yet-unlinked-this-pass,
+    and ambiguous) via a cheaper, unambiguous question a REPORT actually
+    wants answered -- `Path(lease.worktree).exists()` -- deliberately
+    simpler than `_probe_worktree_liveness`'s three-way split, since a
+    report (never a destructive unlink) can afford to treat "cannot
+    confirm" the same as "looks gone" and let a human decide via
+    `release_orphaned_lease`'s own confirmation step."""
+    resolved = leases_dir(root)
+    if resolved.is_err:
+        return ()
+    leases_root = resolved.danger_ok
+    if not leases_root.is_dir():
+        return ()
+    current_paths = sorted(leases_root.glob("*.json"))
+    parsed = _parse_lease_files_cached(leases_root, current_paths)
+    return tuple(record for record in parsed if not Path(record.worktree).exists())
+
+
+# frob:ticket T-1789
+# frob:doc docs/modules/tickets.md#orphaned-lease-detection-and-release-t-1779-finding-7
+# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_releases_a_genuinely_orphaned_lease  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_refuses_a_live_worktree_lease  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestReleaseOrphanedLease.test_refuses_an_unknown_ticket_id  # noqa: E501
+def release_orphaned_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
+    """`frob worktree release-lease TICKET-ID` (T-1779 finding 7): the
+    SAFE, scoped alternative to a coordinator deleting a lease file by
+    hand (`rm .git/frob-leases/T-1766.json`, the actual recovery T-1779's
+    sixth incident forced) -- releases exactly ONE ticket's lease, and
+    ONLY if `orphaned_leases` confirms its recorded worktree path is
+    genuinely gone. Unlike the unconditional `release_lease` (called
+    internally by `transition` on every exit from `IN_PROGRESS`, where
+    unconditional-safety is the correct contract), this refuses to touch
+    a lease still pointing at a real, existing worktree -- the whole
+    point of a TARGETED release verb is that a coordinator holding
+    several live agents can free one confirmed-dead lease without a
+    fleet-wide `frob worktree sweep` (unsafe with live agents) and
+    without a risk of releasing a live one by mistake.
+
+    `Err(NoLeaseForTicket)` if `ticket_id` has no lease at all.
+    `Err(LeaseWorktreeMismatch)` (repurposed here as "not orphaned" --
+    the lease's worktree path DOES exist) if the lease is not actually
+    orphaned; the caller wanting to release a live worktree's lease
+    anyway should use `frob worktree remove <path> --force` plus the
+    ordinary ticket-close path, not this verb.
+
+    Looks the lease up via the SAME raw-parse path `orphaned_leases`
+    uses (`_parse_lease_files_cached`), not `read_all_leases` -- a ghost
+    lease whose liveness reads `"ambiguous"` (T-1766's actual shape) is
+    silently absent from `read_all_leases`'s own return value, which
+    would make this function wrongly report `NoLeaseForTicket` for the
+    exact lease it exists to release."""
+    resolved = leases_dir(root)
+    lease: _LeaseRecord | None = None
+    if resolved.is_ok:
+        leases_root = resolved.danger_ok
+        if leases_root.is_dir():
+            current_paths = sorted(leases_root.glob("*.json"))
+            parsed = _parse_lease_files_cached(leases_root, current_paths)
+            lease = next(
+                (entry for entry in parsed if entry.ticket_id == ticket_id), None
+            )
+    if lease is None:
+        return Err(LeaseError.NoLeaseForTicket)
+    if Path(lease.worktree).exists():
+        _log.warning(
+            "tickets: %s refused to release lease for %s -- its recorded "
+            "worktree %s still exists; not orphaned",
+            root,
+            ticket_id,
+            lease.worktree,
+        )
+        return Err(LeaseError.LeaseWorktreeMismatch)
+    _log.info(
+        "tickets: releasing orphaned lease for %s (worktree %s no longer exists)",
+        ticket_id,
+        lease.worktree,
+    )
+    return release_lease(root, ticket_id)
+
+
 # frob:ticket T-1743
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestLeaseAttributionProvenance.test_cross_worktree_holder_names_its_worktree kind="unit"  # noqa: E501

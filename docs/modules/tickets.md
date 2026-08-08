@@ -2890,6 +2890,73 @@ coordinator can check before touching root without a probe command that
 also has other side effects) is not built in this pass -- filed as a
 natural, small follow-up rather than half-built here.
 
+## Orphaned-lease detection and release (T-1779 finding 7)
+
+A seventh incident, found live during T-1779 itself: T-1766's lease
+(`.git/frob-leases/T-1766.json`) named a NESTED worktree (a `t-1766`
+worktree created UNDER another agent's own `.claude/worktrees/` entry)
+whose PARENT worktree had already been retired and removed, taking the
+nested one -- and its lease's target path -- with it. `frob ticket
+doable` correctly refused to offer T-1766 forever, held by a ghost, and
+nothing in the system ever reported why: the lease file survived,
+because nothing ties a lease's lifetime to the existence of the path it
+names.
+
+**Why `read_all_leases` itself could not have caught this.** Its own
+liveness filter (`_live_leases_pruning_stale`) exists to decide whether
+it is SAFE to opportunistically unlink a stale lease, and is tuned
+conservatively for that destructive operation: `_probe_worktree_
+liveness` classifies a worktree path as `"present"`, `"confirmed_
+absent"` (only a `FileNotFoundError` AND a still-reachable PARENT
+directory -- the parent-reachability check exists so a mount failure can
+never be misread as "just this one worktree is gone"), or `"ambiguous"`
+(any other `OSError`, treated conservatively as "cannot confirm"). A
+`"confirmed_absent"` lease is unlinked and never appears in `read_all_
+leases`'s return value at all; an `"ambiguous"` one is SILENTLY DROPPED
+from every consumer's view (`doable` included) and never unlinked
+either. T-1766's shape -- the PARENT worktree also gone -- reads as
+`"ambiguous"`, so it was invisible everywhere `read_all_leases` feeds
+(the CLI, `doable`, `frob worktree sweep`) while persisting on disk
+forever. That is a gate lying by omission, not a corner case.
+
+**`frob.tickets._leases.orphaned_leases(root) -> tuple[_LeaseRecord,
+...]`** answers a cheaper, different question, built on the RAW parse
+(`_parse_lease_files_cached`) rather than `read_all_leases`, so it never
+inherits the ambiguous-drop blind spot above: for every currently
+recorded lease, does `Path(lease.worktree).exists()`. No process scan,
+no three-way ambiguity split -- a REPORT (never a destructive unlink)
+can afford to treat "cannot confirm" the same as "looks gone" and let a
+human decide.
+
+**`frob.tickets._leases.release_orphaned_lease(root, ticket_id)`**
+(`frob worktree release-lease TICKET-ID`) is the targeted, SAFE release
+verb this incident needed and did not have: it releases exactly ONE
+ticket's lease, and ONLY after confirming (via the same raw-parse
+lookup) that the lease's recorded worktree path is genuinely gone --
+`Err(NoLeaseForTicket)` if there is no lease at all, `Err(
+LeaseWorktreeMismatch)` if the lease is not actually orphaned (its
+worktree still exists -- use `frob worktree remove`/the ordinary
+ticket-close path instead). This is the fix for the actual recovery
+T-1766 forced: the coordinator ran `rm .git/frob-leases/T-1766.json` by
+hand with five live agents running, because no scoped verb existed to
+release ONE stale lease without a fleet-wide `frob worktree sweep`
+(unsafe with several live agents mid-ticket). Every incident across
+T-1779's full finding set ends the same way -- a coordinator doing raw
+filesystem or git work because no scoped verb existed for the specific
+narrow thing that needed doing -- and this is that pattern's most direct
+instance yet.
+
+**Deliberately not built in this pass**, filed separately per this
+finding's own instruction to keep the fix small: (1) wiring `orphaned_
+leases` into a `frob check`/`frob doctor` GATE finding (this pass adds
+the detection primitive and a CLI report path, not a new gate rule --
+gate wiring lives in `src/frob/gates/**`, outside this fix's scope); (2)
+refusing (or warning on) creating a NESTED worktree at the SOURCE
+(`frob ticket work`) -- T-1766's own worktree was nested under another
+worktree, which is why it died when its parent was retired; this is the
+root cause the orphan is a downstream symptom of, filed as its own
+ticket since it may be larger than a small guard.
+
 ## Verify-then-destroy: `frob ticket land --retire-on-proof` (T-1619)
 
 Real incident, same session as the lease gap above: an operator ran `frob

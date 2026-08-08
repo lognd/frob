@@ -16,7 +16,12 @@ from pathlib import Path
 
 from frob.logging import get_logger
 from frob.render import Renderer
-from frob.tickets._leases import remove_worktree, sweep_worktrees
+from frob.tickets._leases import (
+    LeaseError,
+    release_orphaned_lease,
+    remove_worktree,
+    sweep_worktrees,
+)
 
 _log = get_logger(__name__)
 
@@ -88,6 +93,16 @@ def _build_worktree_parser() -> argparse.ArgumentParser:
             "`sweep --force`"
         ),
     )
+    # frob:ticket T-1789
+    release_lease_p = worktree_sub.add_parser(
+        "release-lease",
+        help=(
+            "release ONE ticket's cross-worktree lease, but only if it is "
+            "confirmed orphaned -- its recorded worktree path no longer "
+            "exists (T-1779 finding 7)"
+        ),
+    )
+    release_lease_p.add_argument("ticket_id", metavar="id")
     return p
 
 
@@ -163,13 +178,47 @@ def _run_remove(path: str, *, dry_run: bool, force: bool) -> None:
         sys.exit(1)
 
 
+# frob:ticket T-1789
+def _run_release_lease(ticket_id: str) -> None:
+    """`frob worktree release-lease TICKET-ID` (T-1779 finding 7): the
+    safe, scoped path a coordinator now has for exactly the recovery
+    T-1766's ghost lease forced by hand (`rm .git/frob-leases/T-1766.json`)
+    -- refuses (exit 1) unless `release_orphaned_lease` confirms the
+    lease's recorded worktree path is genuinely gone, so this can never
+    release a lease still pinned to a live worktree by mistake. `root` is
+    resolved from cwd, same convention as `frob worktree remove`."""
+    root = Path(".").resolve()
+    result = release_orphaned_lease(root, ticket_id)
+    if result.is_err:
+        err = result.danger_err
+        if err is LeaseError.NoLeaseForTicket:
+            _log.error(
+                "frob worktree release-lease: %s has no recorded lease", ticket_id
+            )
+        elif err is LeaseError.LeaseWorktreeMismatch:
+            _log.error(
+                "frob worktree release-lease: %s's lease is not orphaned -- "
+                "its worktree still exists; use `frob worktree remove` "
+                "(and the ordinary ticket-close path) instead",
+                ticket_id,
+            )
+        else:
+            _log.error("frob worktree release-lease: %s (%s)", err.value, ticket_id)
+        sys.exit(1)
+    renderer = Renderer.for_stream(sys.stdout)
+    renderer.line(f"released orphaned lease for {ticket_id}")
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1779
+# frob:ticket T-1789
 # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_prints_verdicts_and_summary  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_removes_a_clean_unleased_worktree  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_and_names_the_error_for_a_bad_path  # noqa: E501
 # frob:tests \
 # tests/test_ticket_leases.py::TestWorktreeRemoveCli.test_remove_cli_exits_1_when_kept
+# frob:tests tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_releases_an_orphaned_lease  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_exits_1_for_a_live_worktree  # noqa: E501
 def run(argv: list[str]) -> None:
     """`frob worktree <subcommand>` entry point (T-0836), dispatched
     directly by `__main__._dispatch` the same way `frob agent`/`frob
@@ -188,6 +237,9 @@ def run(argv: list[str]) -> None:
         return
     if args.worktree_command == "remove":
         _run_remove(args.path, dry_run=args.dry_run, force=args.force)
+        return
+    if args.worktree_command == "release-lease":
+        _run_release_lease(args.ticket_id)
         return
     parser.print_help(sys.stderr)
     sys.exit(1)

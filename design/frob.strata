@@ -1136,6 +1136,7 @@ node vet : trusted {
 // frob:ticket T-1733
 // frob:ticket T-1743
 // frob:ticket T-1779
+// frob:ticket T-1789
 store tickets_ledger : trusted {
     may "env.read" via "src/frob/tickets/_land.py";
 
@@ -1162,9 +1163,10 @@ store tickets_ledger : trusted {
         live_tracker_citations, load_active, load_all, load_archive, load_positive_int_config, load_queue,
         load_require_review_for_close, matches_collected, migrate, migrate_to_ledger, migrate_v1_to_v2, mint_draft_id,
         missing_acceptance_for_new_rules, mutate_labels, mutate_scope, new_gate_rule_ids, new_ticket, on_default_branch,
-        parse_claims_from_done_report, pending_sweep_count, queue_status, read_all_leases, read_done_report, reconcile,
-        record_failure, record_force_override, record_lease, record_rapid_debt, record_review, recover_done_report_why,
-        refuse_if_land_in_progress, refuse_if_worktree_in_use, release_lease, remove_acceptance, remove_worktree, rename_lease,
+        orphaned_leases, parse_claims_from_done_report, pending_sweep_count, queue_status, read_all_leases, read_done_report,
+        reconcile, record_failure, record_force_override, record_lease, record_rapid_debt, record_review,
+        recover_done_report_why, refuse_if_land_in_progress, refuse_if_worktree_in_use, release_lease, release_orphaned_lease,
+        remove_acceptance, remove_worktree, rename_lease,
         render_changed_block,
         render_claims_block, render_evidence_block, renumber, renumber_one, replace_done_report_section, replace_evidence,
         replay_evidence_from_done_report, resolve_lease, reverify_close_guard, reverify_cmd_evidence, run_cmd_evidence, run_pending_sweep,
