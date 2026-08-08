@@ -1,7 +1,7 @@
 ---
 id: T-1864
 title: 'post-land sweep regression from T-1843: 2 new error(s) (DOCENUM001, E501)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-08'
@@ -11,10 +11,30 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- /home/logan/projects/frob/src/frob/gates/_policy_weakening_gate.py
 - docs/modules/gates.md
+- src/frob/gates/_policy_weakening_gate.py
+- docs/strata/policy.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_policy_weakening_gate.py
+  reason: sweep filed an absolute-path scope entry that never matches from a worktree
+    checkout; add the correct worktree-relative path for the same file
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: /home/logan/projects/frob/src/frob/gates/_policy_weakening_gate.py
+  reason: absolute path from root checkout never matches worktree-relative scope checks;
+    superseded by relative path added above
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/strata/policy.md
+  reason: 'AFFECT001: policy_weakening_gate''s affects()-closure doc is docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482;
+    touching the gate function requires touching this anchor in the same diff'
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null

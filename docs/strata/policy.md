@@ -61,6 +61,11 @@ refinement error).
 <!-- frob:describes src/frob/strata/_policy.py::find_policy_weakenings -->
 <!-- frob:describes src/frob/gates/_policy_weakening_gate.py::policy_weakening_gate -->
 
+`policy_weakening_gate` (`src/frob/gates/_policy_weakening_gate.py`) merges
+every declared `design/` policy into one throwaway `Module` before compiling
+and diffing (T-1864 kept that call formatted under the repo's 88-column
+limit -- a pure line-wrap, no behavior change).
+
 `find_policy_weakenings` is the enforcing code: for every pair of
 `CompiledPolicy` whose `node_ids` sets are related by strict containment
 (a `component` policy's single node nested inside a broader `trust`/

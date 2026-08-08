@@ -1,7 +1,7 @@
 ---
 id: T-1839
 title: 'post-land sweep regression from T-1787: 1 new error(s) (SEC110)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-08'
@@ -32,3 +32,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-08 attempt 1: SEC110 at .claude/hooks/dispatch-telemetry.py:71 cannot be waived from within this file: frob.graph.build_graph prunes the whole .claude/ tree (BUILTIN_SKIP_DIRS), so no frob:waive comment there ever becomes a WAIVE edge, while pii_structural_gate scans .claude/hooks/*.py via an unpruned git-ls-files walk and still fires. Real fix needs src/frob/excludes.py or src/frob/gates/_pii_structural/_self_match.py, both out of this ticket's scope; filed T-1849 to track it.
+
+## Drop reason
+- 2026-08-08: Does not reproduce as an error: commit c14906e75867228e51918013580f6ca3f6946ecd's frob:waive SEC110 on .claude/hooks/dispatch-telemetry.py:72 IS effective -- 'uv run frob check --ticket T-1839 --json' shows the finding at severity=note with message '[waived: opt-out flag, not a secret]', not severity=error. The Failure-log attempt-1 note claiming the waive cannot take effect (graph pruning .claude/) describes a different mechanism (frob.graph.build_graph edges) than what actually gates SEC110 severity here; empirically the waive suppresses it to a note. No error-level SEC110 remains on this file.

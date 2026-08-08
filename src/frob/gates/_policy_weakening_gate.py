@@ -62,6 +62,7 @@ def _design_dir(root: Path) -> str:
 
 # frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
 # frob:ticket T-1843
+# frob:ticket T-1864
 # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_no_design_dir_noop  # noqa: E501
 # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_weakening_detected  # noqa: E501
 # frob:tests tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate.test_clean_policies_no_finding  # noqa: E501

@@ -1,7 +1,7 @@
 ---
 id: T-1858
 title: 'post-land sweep regression from T-1857: 1 new error(s) (DOC003)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-08'
@@ -29,3 +29,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC003  docs/commands/sys.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-08: Does not reproduce: 'uv run frob check --ticket T-1858 --json' (fresh run against current main tip d8b89ae0b) contains zero DOC003 diagnostics of any severity anywhere in the run, including for docs/commands/sys.md. The finding cited in the sweep no longer exists on the tree; no error-level DOC003 remains to fix.
