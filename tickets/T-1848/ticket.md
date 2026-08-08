@@ -2,7 +2,7 @@
 id: T-1848
 title: FEATURE-kind tickets implicitly lease all of ticket_runner/**, blocking unrelated
   agents; scope --remove cannot narrow it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,9 +13,22 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_models.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: add a repro test proving the CLI_WIRING_FILES narrowing (BUG002 needs a
+    test that fails at main, passes at fix)
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_tickets.py::TestScopeMatching::test_feature_kind_implies_cli_wiring_files_in_scope
+- tests/test_tickets.py::TestScopeMatching::test_cli_wiring_files_resolve_to_real_paths_on_disk
+- tests/test_tickets.py::TestScopeMatching::test_non_feature_kind_does_not_imply_cli_wiring_files
+- tests/test_tickets.py::TestScopeMatching::test_cli_wiring_grant_does_not_cover_arbitrary_ticket_runner_files
+designated_repro_test: tests/test_tickets.py::TestScopeMatching::test_cli_wiring_grant_does_not_cover_arbitrary_ticket_runner_files
 threat: null
 component: null
 ---

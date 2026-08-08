@@ -1950,6 +1950,37 @@ class TestScopeMatching:
             assert not scope_matches(wiring_file, narrow_scope)
             assert scope_matches(wiring_file, narrow_scope, kind=TicketKind.FEATURE)
 
+    # frob:ticket T-1848
+    def test_cli_wiring_grant_does_not_cover_arbitrary_ticket_runner_files(
+        self,
+    ) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        """T-1848 repro: before the fix, ANY file under
+        `src/frob/app/ticket_runner/**` was implicitly in scope for a
+        FEATURE ticket that never declared it -- a FEATURE ticket that had
+        written nothing in the package could still claim, and block other
+        agents from, e.g. `_query.py` or `_new.py`. The grant must be
+        narrow enough that a file the ticket never touches, and that is
+        not the package's dispatch/re-export hub, is NOT implicitly in
+        scope."""
+        narrow_scope = ("src/frob/tickets/**",)
+        assert not scope_matches(
+            "src/frob/app/ticket_runner/_query.py",
+            narrow_scope,
+            kind=TicketKind.FEATURE,
+        )
+        assert not scope_matches(
+            "src/frob/app/ticket_runner/_new.py",
+            narrow_scope,
+            kind=TicketKind.FEATURE,
+        )
+        # The dispatch/re-export hub itself is still structurally granted.
+        assert scope_matches(
+            "src/frob/app/ticket_runner/__init__.py",
+            narrow_scope,
+            kind=TicketKind.FEATURE,
+        )
+
     def test_non_feature_kind_does_not_imply_cli_wiring_files(self) -> None:
         # frob:tests src/frob/tickets/_models.py::scope_matches
         from frob.tickets._models import CLI_WIRING_FILES

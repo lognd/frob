@@ -209,11 +209,22 @@ LEDGER_PATH = "tickets.md"
 # NOT extended to every kind, since a bug/docs/security ticket touching
 # the CLI dispatch table unannounced is exactly the scope-creep SCOPE001
 # exists to catch.
+# T-1848: narrowed from the whole-package `src/frob/app/ticket_runner/**`
+# glob to just the package's dispatch/re-export hub. That whole-package
+# grant claimed every file under the package for ANY in-progress FEATURE
+# ticket regardless of whether it ever touched CLI wiring (observed:
+# T-1686 blocked T-1841's land for hours having written nothing under
+# `ticket_runner/`) -- `__init__.py` is where the command families are
+# re-exported/registered (see its module docstring), so it is the one
+# file a new subcommand structurally touches; individual command-family
+# modules (`_new.py`, `_query.py`, ...) are NOT structurally required and
+# must go through an explicit `frob ticket scope --add` like any other
+# file, same as `__main__.py`/`config.py` below.
 CLI_WIRING_FILES = frozenset(
     {
         "src/frob/__main__.py",
         "src/frob/app/config.py",
-        "src/frob/app/ticket_runner/**",
+        "src/frob/app/ticket_runner/__init__.py",
     }
 )
 

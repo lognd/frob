@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.405.0] - unreleased
+
+- T-1848: FEATURE-kind tickets implicitly lease all of ticket_runner/**, blocking unrelated agents; scope --remove cannot narrow it
+
 ## [0.404.0] - unreleased
 
 - T-1749: frob ticket evidence --designate-repro is a second silent BUG002-check-redirect asymmetry
