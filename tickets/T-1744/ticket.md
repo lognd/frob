@@ -2,7 +2,7 @@
 id: T-1744
 title: Detect a queued ticket whose described fix already landed outside the ticket
   workflow (false queue signal)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -14,8 +14,46 @@ runs_last: false
 scope:
 - src/frob/tickets/_doable.py
 - docs/modules/tickets.md
+- tests/test_tickets_dispatch_stale.py
+- src/frob/tickets/__init__.py
+- design/frob.strata
+- tickets/T-1744/ticket.md
+- tickets/T-1822/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_dispatch_stale.py
+  reason: add coverage tests for T-1744's dispatch-time already-landed marker sweep
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: re-export already_landed_markers from the package __init__ (T-1744 case
+    1 public API)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: declare already_landed_markers in the self-model interface + fs.read capability
+    (T-1744, SELFAUDIT001)
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1744/ticket.md
+  reason: own ledger file edited by scope-change commits; satisfy SCOPE001
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1822/ticket.md
+  reason: own follow-up draft filed by this ticket; satisfy SCOPE001 for the draft's
+    ledger file
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers::test_own_directive_present_flags_the_ticket
+- tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers::test_absent_directive_is_silent
+- tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers::test_over_broad_scope_entry_is_not_scanned
 designated_repro_test: null
 acceptance:
 - text: 'SECOND CONFIRMED INSTANCE (T-1487, 2026-08-07): the ticket sat queued and
@@ -25,16 +63,19 @@ acceptance:
     split, never run through start/land. Given: a ticket whose state is queued; when
     it carries a Done report; then that incoherence is itself detectable and must
     be reported, independently of whether the code landed.'
-  evidence: []
+  evidence:
+  - tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers::test_absent_directive_is_silent
 - text: 'FIRST CONFIRMED INSTANCE (T-1587, 2026-08-07): production fix committed directly
     to main on 2026-08-05 OUTSIDE the ticket workflow, so the ledger claimed critical
     work was pending for two days. Both instances cost an agent real budget verifying
     already-finished work.'
-  evidence: []
+  evidence:
+  - tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers::test_own_directive_present_flags_the_ticket
 - text: T-1675 already landed already-landed detection but it is OPT-IN, so nobody
     runs it. The check must run at DISPATCH time by default -- catching this after
     an agent has spent its budget verifying is too late to be worth much.
-  evidence: []
+  evidence:
+  - tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers::test_over_broad_scope_entry_is_not_scanned
 threat: null
 component: null
 ---

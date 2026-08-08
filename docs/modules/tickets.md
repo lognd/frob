@@ -146,6 +146,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/_doable.py::dispatch_stale_hours -->
 <!-- frob:describes src/frob/tickets/_doable.py::undispatched_stale -->
 <!-- frob:describes src/frob/tickets/_models.py::is_valid_ticket_ref -->
+<!-- frob:describes src/frob/tickets/_doable.py::already_landed_markers -->
 
 ```python
 # frob/tickets/__init__.py
@@ -3267,6 +3268,60 @@ empty COMMITTED diff would otherwise look identical to "already landed"
 even though the real work simply has not been committed yet -- the check
 is skipped entirely whenever the worktree is dirty, deferring to whatever
 the rest of the land pipeline does with that uncommitted work.
+
+### Already-landed markers at DISPATCH time (T-1744 case 1)
+
+T-1675's `_check_already_landed` above catches a ticket already `state:
+done` on `base_ref` at the moment IT is being landed a second time. It
+has no reach into a different failure mode: a fix that lands on `main`
+by a DIRECT commit, never through `frob ticket land`/`close` at all. Two
+confirmed instances (T-1487, T-1587, both 2026-08-07) sat `queued` for
+days -- one flagged CRITICAL by the dispatch-stale alarm -- while their
+described work was already on `main`, because nothing about the direct
+commit ever touched either ticket's own ledger record. An agent
+dispatched onto either spent real budget re-verifying a fix that had
+shipped days earlier.
+
+`already_landed_markers` (`frob.tickets._doable`) closes this at DISPATCH
+time instead: for every doable candidate (queued/planned, unblocked --
+`_doable_candidates`, the same input `doable`/`doable_blocked` use), it
+greps the files the ticket's OWN declared scope names for that ticket's
+own `frob:ticket <id>` directive text, verbatim. A hit means the code
+already carries this ticket's attribution marker despite the ledger
+still calling it open -- exactly the T-1487/T-1587 shape, caught before
+an agent is ever assigned rather than after one has spent budget
+re-deriving it by hand.
+
+This is a POSITIVE signal, same discipline as T-1675's own fix: it never
+infers from an empty diff, a stale ticket, or ledger prose, only from the
+directive text actually present in a scoped file. Any over-broad scope
+entry (`_over_broad_scope_entries`, the same criterion `leased_by`'s
+lease-demotion and `large_glob_warnings`'s nudge both already consult) is
+excluded from the scan entirely (`_narrow_scope_files`) -- scanning every
+file a `src/**`-shaped glob matches for one ticket's marker would be
+noise, not signal, and would make a broad-scoped ticket falsely look
+"already landed" the moment ANY sibling ticket's directive happened to
+land somewhere under that glob.
+
+This function returns data, not a refusal -- unlike `_check_already_
+landed`, which blocks a `land` call outright, `already_landed_markers` is
+read-only: a coordinator or dispatch-alarm caller consults it and decides
+what to do (flag the ticket for a quick land-outside-workflow check,
+surface it in `--show-blocked`-style output, etc.). CLI/alarm wiring for
+this is intentionally NOT part of this change -- `frob.tickets._doable`
+is the shared computation both a future `doable` CLI decoration and a
+future dispatch-alarm consumer would call, kept in the one file per this
+package's existing split-by-question convention (module docstring:
+"is this ticket dispatchable right now, and if not, why"), with the
+actual CLI/alarm surface left to a follow-up ticket scoped to
+`frob.app.ticket_runner`.
+
+T-1744 case 3 (a ticket whose PREMISE is already false -- the bug it
+describes was fixed by a DIFFERENT ticket's change, not its own directive
+marker) is a distinct, harder problem this function does not attempt:
+there is no positive textual signal to grep for when the fix landed under
+someone else's attribution. That case needs its own design pass and is
+tracked separately, not folded into this marker sweep.
 
 **Why `CrossTicketLeakage` did not fire for the T-1579 case** (the
 ticket's own explicit question): two independent reasons, both closed by

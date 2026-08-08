@@ -17,7 +17,9 @@ from frob.tickets import (
     Priority,
     Ticket,
     TicketKind,
+    TicketQueue,
     TicketState,
+    already_landed_markers,
     dispatch_stale_hours,
     has_live_lease,
     undispatched_stale,
@@ -32,8 +34,11 @@ def _ticket(
     state: TicketState = TicketState.QUEUED,
     priority: Priority = Priority.MEDIUM,
     created: date = date(2026, 1, 1),
+    scope: tuple[str, ...] = (),
 ) -> Ticket:
-    """A minimal ticket fixture for the staleness/lease-split checks."""
+    """A minimal ticket fixture for the staleness/lease-split checks. T-1744:
+    `scope` defaults to `()`, extended (not replaced) to also serve the
+    `already_landed_markers` marker-sweep tests, which need a real scope."""
     return Ticket(
         id=ticket_id,
         title=f"ticket {ticket_id}",
@@ -44,7 +49,7 @@ def _ticket(
         priority=priority,
         blocked_by=(),
         parent=None,
-        scope=(),
+        scope=scope,
         evidence=(),
         attachments=(),
         body="## Description\nsomething\n",
@@ -175,3 +180,51 @@ class TestUndispatchedStale:
         # 48h elapsed, 100h configured threshold -- must NOT alarm.
         alarms = undispatched_stale([ticket], tmp_path, today=date(2026, 7, 23))
         assert alarms == ()
+
+
+# frob:ticket T-1744
+class TestAlreadyLandedMarkers:
+    """T-1744 case 1: a queued/planned ticket whose own `frob:ticket <id>`
+    directive already sits in a file its declared scope names -- a fix
+    that landed OUTSIDE the ticket workflow (a direct commit, never
+    through `frob ticket land`), leaving the ledger stuck at open."""
+
+    def test_own_directive_present_flags_the_ticket(self, tmp_path: Path) -> None:
+        """A scoped file already carrying `frob:ticket T-0001` flags T-0001
+        even though its ledger state is still queued."""
+        scoped = tmp_path / "src" / "mod.py"
+        scoped.parent.mkdir(parents=True)
+        scoped.write_text("# frob:ticket T-0001\ndef f() -> None:\n    pass\n")
+        ticket = _ticket(ticket_id="T-0001", scope=("src/mod.py",))
+        queue = TicketQueue(tickets={ticket.id: ticket})
+        hits = already_landed_markers(queue, tmp_path)
+        assert hits == (ticket,)
+
+    def test_absent_directive_is_silent(self, tmp_path: Path) -> None:
+        """A scoped file with no directive at all -- genuinely undone work
+        -- never flags."""
+        scoped = tmp_path / "src" / "mod.py"
+        scoped.parent.mkdir(parents=True)
+        scoped.write_text("def f() -> None:\n    pass\n")
+        ticket = _ticket(ticket_id="T-0001", scope=("src/mod.py",))
+        queue = TicketQueue(tickets={ticket.id: ticket})
+        hits = already_landed_markers(queue, tmp_path)
+        assert hits == ()
+
+    def test_over_broad_scope_entry_is_not_scanned(self, tmp_path: Path) -> None:
+        """A scope entry `_over_broad_scope_entries` flags is excluded from
+        the scan entirely -- a hit under it must not surface, even though
+        the directive text is genuinely present there (over-broad-scope
+        noise, not this ticket's own positive signal)."""
+        src = tmp_path / "src"
+        src.mkdir()
+        for i in range(5):
+            (src / f"mod{i}.py").write_text("def f() -> None:\n    pass\n")
+        (src / "mod0.py").write_text("# frob:ticket T-0001\ndef f() -> None:\n    pass\n")
+        ticket = _ticket(ticket_id="T-0001", scope=("src/**",))
+        queue = TicketQueue(tickets={ticket.id: ticket})
+        # threshold=1 makes "src/**" (matches 5 files) over-broad.
+        hits = already_landed_markers(queue, tmp_path, breadth=(1, tuple(
+            f"src/mod{i}.py" for i in range(5)
+        )))
+        assert hits == ()

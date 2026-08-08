@@ -249,7 +249,8 @@ def _repo_files(root: Path) -> tuple[str, ...]:
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_call  # noqa: E501
+# frob:tests \
+# tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_call
 def scope_breadth_context(root: Path) -> tuple[int, tuple[str, ...]]:
     """`(large_glob_max_files threshold, repo_files)` computed ONCE -- the
     shared input `_over_broad_scope_entries`/`large_glob_warnings` reuse
@@ -331,8 +332,10 @@ def _over_broad_scope_entries(
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_glob  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_test_file  # noqa: E501
+# frob:tests \
+# tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_glob
+# frob:tests \
+# tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_test_file
 def large_glob_warnings(
     ticket: Ticket,
     root: Path,
@@ -377,8 +380,10 @@ def large_glob_warnings(
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_hide_disjoint  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only  # noqa: E501
+# frob:tests \
+# tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden
+# frob:tests \
+# tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only
 def leased_by(
     queue: TicketQueue,
     ticket: Ticket,
@@ -450,7 +455,8 @@ def leased_by(
 # frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_live_lease_decorated  # noqa: E501
 # frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_stale_lease_undecorated  # noqa: E501
 # frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_ledger_in_progress_undecorated  # noqa: E501
-# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_no_root_never_decorates  # noqa: E501
+# frob:tests \
+# tests/test_tickets_lease_overlay.py::TestDisplayState.test_no_root_never_decorates
 def display_state(ticket: Ticket, root: Path | None) -> str:
     """`ticket`'s display state for `frob ticket list`/`show` (T-0716): the
     ledger `state.value`, OVERLAID (never written back to the ledger --
@@ -491,7 +497,8 @@ def display_state(ticket: Ticket, root: Path | None) -> str:
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_queued_with_live_lease_is_in_flight  # noqa: E501
 # frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_queued_with_no_lease_is_not_in_flight  # noqa: E501
-# frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_no_root_never_in_flight  # noqa: E501
+# frob:tests \
+# tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_no_root_never_in_flight
 def has_live_lease(ticket: Ticket, root: Path | None) -> bool:
     """Whether `ticket` itself (not a scope collision with some OTHER
     ticket -- that is `leased_by`'s job) currently has a live lease against
@@ -601,7 +608,8 @@ def undispatched_stale(
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
-# frob:tests tests/test_tickets_tiers.py::TestDoableLeafOnly.test_epic_and_story_never_surface  # noqa: E501
+# frob:tests \
+# tests/test_tickets_tiers.py::TestDoableLeafOnly.test_epic_and_story_never_surface
 # frob:invariant INV-024
 # frob:ticket T-0715
 # invariant spec: [INV-024](invariants/INV-024.md)
@@ -656,7 +664,8 @@ def doable(
 
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons  # noqa: E501
+# frob:tests \
+# tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons
 def doable_blocked(
     queue: TicketQueue,
     root: Path | None = None,
@@ -684,6 +693,96 @@ def doable_blocked(
         if hits:
             blocked.append((t, hits))
     return tuple(blocked)
+
+
+# frob:ticket T-1744
+def _ticket_directive_marker(ticket_id: str) -> str:
+    """The exact `frob:ticket <id>` directive text a landed change for
+    `ticket_id` stamps onto the symbols it touches -- the literal needle
+    `already_landed_markers` greps scoped files for (T-1744 case 1)."""
+    return f"frob:ticket {ticket_id}"
+
+
+# frob:ticket T-1744
+def _narrow_scope_files(
+    ticket: Ticket, threshold: int, files: tuple[str, ...]
+) -> tuple[str, ...]:
+    """Files under `ticket`'s declared scope, EXCLUDING any glob entry
+    `_over_broad_scope_entries` flags (T-1744): `already_landed_markers`
+    is a positive-signal content scan, and scanning every file a
+    `src/**`-shaped over-broad glob matches for one ticket's marker would
+    be noise, not signal -- the same T-0453 design-correction discipline
+    `leased_by`'s over-broad demotion already applies, reused here rather
+    than duplicated."""
+    kept: list[str] = []
+    for entry in ticket.scope:
+        if entry == LEDGER_PATH:
+            continue
+        if _over_broad_scope_entries([entry], threshold, files):
+            continue
+        kept.extend(fnmatch.filter(files, _entry_to_glob(entry)))
+    return tuple(kept)
+
+
+# frob:ticket T-1744
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_own_directive_present_flags_the_ticket  # noqa: E501
+# frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_absent_directive_is_silent  # noqa: E501
+# frob:tests tests/test_tickets_dispatch_stale.py::TestAlreadyLandedMarkers.test_over_broad_scope_entry_is_not_scanned  # noqa: E501
+# frob:waive WIRE001 reason="T-1744's own declared scope is \
+# src/frob/tickets/_doable.py and docs/modules/tickets.md only -- CLI/alarm wiring \
+# belongs in frob.app.ticket_runner, outside this scope" follow_up="T-1822"
+def already_landed_markers(
+    queue: TicketQueue,
+    root: Path,
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> tuple[Ticket, ...]:
+    """Doable candidates (queued/planned, unblocked) whose OWN
+    `frob:ticket <id>` directive already appears, verbatim, in a file
+    their declared scope names (T-1744 case 1: a fix that landed OUTSIDE
+    the ticket workflow -- a direct commit that never ran through `frob
+    ticket land` -- leaves the ledger stuck at queued/planned forever
+    with nothing distinguishing it from genuinely undone work; two
+    confirmed instances, T-1487 and T-1587, each cost an agent real
+    budget re-verifying a fix that had already shipped).
+
+    POSITIVE signal only, the same discipline T-1675 established for the
+    LAND-time twin of this check (`_check_already_landed`'s `state: done`
+    read): this never infers from an empty diff, a stale-looking ticket,
+    or ledger prose -- it reads the FILES the code actually lives in
+    (`_narrow_scope_files`, itself skipping any over-broad scope entry to
+    stay a precise scan rather than a repo sweep) and only flags a hit
+    when that ticket's own directive text is found there. Never trusts
+    `state: done` in the ledger either way -- `_doable_candidates` already
+    restricts the input to queued/planned tickets, so a ticket the
+    ledger already marks done never reaches this check at all; a ticket
+    this flags is one the ledger STILL calls open despite the code
+    already being present, which is exactly the incoherence T-1487/
+    T-1587 exhibited.
+
+    This is a DIFFERENT check from T-1675's `_check_already_landed`: that
+    one runs at LAND time, against the ticket BEING landed, using a
+    `state: done` positive signal already recorded elsewhere in the
+    ledger. This one runs at DISPATCH time (`frob ticket doable`), before
+    any agent has been assigned, against every OPEN candidate, using the
+    directive marker itself as the positive signal -- there is no
+    `state: done` to consult yet, because nothing about the direct commit
+    ever touched this ticket's own ledger entry."""
+    threshold, files = breadth if breadth is not None else scope_breadth_context(root)
+    hits: list[Ticket] = []
+    for ticket in _doable_candidates(queue):
+        needle = _ticket_directive_marker(ticket.id)
+        for rel in _narrow_scope_files(ticket, threshold, files):
+            path = root / rel
+            try:
+                text = path.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            if needle in text:
+                hits.append(ticket)
+                break
+    return tuple(sorted(hits, key=lambda t: t.id))
 
 
 def _open_blockers(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:

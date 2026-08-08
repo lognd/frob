@@ -50,6 +50,7 @@ from frob.tickets._doable import (
     _repo_files_git,  # noqa: F401 -- re-exported: tests/test_tickets_lease.py's
     # TestBreadthPerf imports this directly off the package (`from frob.tickets
     # import _repo_files_git`), predating this split.
+    already_landed_markers,
     dispatch_stale_hours,
     display_state,
     doable,
@@ -242,7 +243,8 @@ def _load_large_glob_max_files(root: Path) -> int:
 # frob:ticket T-0571
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_defaults_false_with_no_frob_toml  # noqa: E501
-# frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_true_when_configured  # noqa: E501
+# frob:tests \
+# tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_true_when_configured
 # frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_false_when_absent_from_section  # noqa: E501
 def load_require_review_for_close(root: Path) -> bool:
     """Read `[tickets] require_review_for_close` from `frob.toml` (T-0571):
@@ -266,9 +268,10 @@ def load_require_review_for_close(root: Path) -> bool:
 
 # frob:ticket T-1029
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets.py::TestAddAcceptance.test_appends_criteria_to_existing_ticket  # noqa: E501
-# frob:tests tests/test_tickets.py::TestAddAcceptance.test_empty_criteria_is_rejected  # noqa: E501
-# frob:tests tests/test_tickets.py::TestAddAcceptance.test_blank_criteria_are_dropped  # noqa: E501
+# frob:tests \
+# tests/test_tickets.py::TestAddAcceptance.test_appends_criteria_to_existing_ticket
+# frob:tests tests/test_tickets.py::TestAddAcceptance.test_empty_criteria_is_rejected
+# frob:tests tests/test_tickets.py::TestAddAcceptance.test_blank_criteria_are_dropped
 def add_acceptance(
     root: Path, ticket_id: str, criteria: Sequence[str]
 ) -> Result[Ticket, TicketError]:
@@ -354,7 +357,8 @@ def _doable_sort_key(t: Ticket) -> tuple[int, date, str]:
 
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_organization.py::TestBoardView.test_columns_in_fixed_order  # noqa: E501
+# frob:tests \
+# tests/test_tickets_organization.py::TestBoardView.test_columns_in_fixed_order
 def board_view(
     queue: TicketQueue,
     *,
@@ -374,7 +378,9 @@ def board_view(
     if label is not None:
         tickets = [t for t in tickets if label in t.labels]
     columns = []
-    # frob:waive PERF004 reason="one sorted() call per BOARD_STATES entry -- a fixed 6-iteration loop over the queue's own ticket count, not an unbounded hoisted-sort opportunity"  # noqa: E501
+    # frob:waive PERF004 reason="one sorted() call per BOARD_STATES entry -- a fixed \
+    # 6-iteration loop over the queue's own ticket count, not an unbounded \
+    # hoisted-sort opportunity"
     for state in BOARD_STATES:
         in_state = sorted(
             (t for t in tickets if t.state is state), key=_doable_sort_key
@@ -385,7 +391,8 @@ def board_view(
 
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_organization.py::TestEpicRollup.test_counts_done_and_total  # noqa: E501
+# frob:tests \
+# tests/test_tickets_organization.py::TestEpicRollup.test_counts_done_and_total
 def epic_rollup(queue: TicketQueue, epic_id: str) -> Result[EpicRollup, TicketError]:
     """`frob ticket epic <id>`: the full descendant subtree of `epic_id` via
     the `parent` chain (any depth, not just direct children), plus a
@@ -417,7 +424,9 @@ def epic_rollup(queue: TicketQueue, epic_id: str) -> Result[EpicRollup, TicketEr
         for t in descendants
         if t.state is TicketState.BLOCKED and t.id not in children_of
     )
-    # frob:waive PERF004 reason="single sorted() call over the finished descendants list, not inside the BFS while-loop above it -- the checker's whole-function loop scan flags it textually, not per-iteration"  # noqa: E501
+    # frob:waive PERF004 reason="single sorted() call over the finished descendants \
+    # list, not inside the BFS while-loop above it -- the checker's whole-function \
+    # loop scan flags it textually, not per-iteration"
     return Ok(
         EpicRollup(
             epic=epic,
@@ -616,6 +625,7 @@ __all__ = [
     "add_acceptance",
     "add_cmd_evidence",
     "add_evidence",
+    "already_landed_markers",
     "amend_acceptance",
     "archive",
     "attach",

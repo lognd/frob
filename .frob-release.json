@@ -1808,6 +1808,7 @@
     "src/frob/tickets/_brief.py::cluster_union_scope": "370383f6e741f9fd997bd809185ed930f21574d8689da85c0025d4d52f8bf597",
     "src/frob/tickets/_brief.py::compose_brief": "129ae47735ba0fb584b0bcab1a5b796a0114f7295a9d628daee96b0c78ddcaa0",
     "src/frob/tickets/_brief.py::compose_cluster_brief": "040c2320f5752f103568a47098e264cfe01c71aa2e35ddb95112a604c552b254",
+    "src/frob/tickets/_doable.py::already_landed_markers": "41d8f001307d03fcbad73a05eda13ccbe7a22b9ddccabab0b1c2c7eeced43a53",
     "src/frob/tickets/_doable.py::dispatch_stale_hours": "a8d2c8e2d13eb84d7e3d1bce1ea0a05d720e573951d538a7cdfd42f56e25b2cd",
     "src/frob/tickets/_doable.py::display_state": "71464869fb4b50f80e1b23db14927076e0ccc7f6c0528dc175b4898c5d7b38e4",
     "src/frob/tickets/_doable.py::doable": "88b38e4a26838495917ffeab8ecb54339efd974c3106729cb7278de8d1994825",
@@ -2147,5 +2148,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.391.0"
+  "version": "0.392.0"
 }
