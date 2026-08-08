@@ -372,6 +372,24 @@ def _tier_a_pre_land_step(
 # unhandled crash instead of the documented None/skip path (fixed below).
 _POST_LAND_SWEEP_BUDGET_S = 300
 
+#: T-1804: PRE001/SCOPE001, in their OWN "no active ticket derivable" mode
+#: (`frob.gates._no_active_ticket_violation`, B9) -- the loud, by-design
+#: error a diff touching non-ledger source with no `--ticket`/`T-####-`
+#: branch always trips. `_unscoped_error_findings`'s whole callers
+#: (the deferred post-land sweep, `--land-parity`) run UNSCOPED with NO
+#: `--ticket` by deliberate design (catching residue outside any one
+#: ticket's own scope is the whole point), against the SHARED root
+#: checkout, on a detached timer -- so a concurrent land's transient dirt
+#: (an untracked ticket directory, a staged-but-uncommitted file) reads
+#: as a non-empty diff to B9 at the exact moment this spawn's child reads
+#: it, and B9 fires exactly as designed for that case. This is a hygiene
+#: signal about root's git state at the instant of measurement, never a
+#: code regression the sweep exists to catch -- measured 2026-08-07: five
+#: sweep-filed regression tickets in one hour whose only findings were
+#: these two. Reused as the exclusion set both this function's callers
+#: share, so it cannot drift independently between them.
+_UNSCOPED_NO_TICKET_STRUCTURAL_NOISE_RULE_IDS = frozenset({"PRE001", "SCOPE001"})
+
 
 # frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
@@ -404,7 +422,16 @@ def _unscoped_error_findings(
     whole point of T-1456's post-land sweep is catching residue OUTSIDE
     any one ticket's own scope (a relocated waiver, drifted format, a
     stale registry denominator) that a `--ticket`-scoped re-verification
-    structurally cannot see (playbook section 6c). `None` means
+    structurally cannot see (playbook section 6c).
+
+    T-1804: the returned set always excludes
+    `_UNSCOPED_NO_TICKET_STRUCTURAL_NOISE_RULE_IDS` (PRE001/SCOPE001) --
+    both fire unconditionally whenever this deliberately-no-`--ticket`
+    spawn catches root's diff genuinely non-empty (including transient
+    dirt from a concurrent land elsewhere on the shared checkout), which
+    is a hygiene signal about root's state at the instant of measurement,
+    never a code regression either caller of this function exists to
+    catch. `None` means
     unmeasurable (refused spawn, timeout, unparsable output, OR -- T-1703
     -- a `--budget` run that deferred any stage group) -- the caller
     treats that as "skip the sweep, do not compare a real set against a
@@ -480,8 +507,15 @@ def _unscoped_error_findings(
         )
         return None
     result = guarded.danger_ok
-    return _parse_error_findings_from_stdout(
+    findings = _parse_error_findings_from_stdout(
         ticket_id, result.stdout, result.returncode
+    )
+    if findings is None:
+        return None
+    return frozenset(
+        (rule, file)
+        for rule, file in findings
+        if rule not in _UNSCOPED_NO_TICKET_STRUCTURAL_NOISE_RULE_IDS
     )
 
 

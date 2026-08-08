@@ -8891,3 +8891,95 @@ class TestLandLockHolderMetadataAndTimeout:
         finally:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
+
+
+class TestUnscopedErrorFindingsExcludesNoTicketNoise:
+    """T-1804: `_unscoped_error_findings` -- the shared spawn both
+    the deferred post-land sweep and `--land-parity` use -- must exclude
+    PRE001/SCOPE001 from its returned finding-identity set. Both rules
+    fire unconditionally under `_no_active_ticket_violation` (B9,
+    `frob.gates.__init__`) whenever this deliberately-no-`--ticket` spawn
+    sees ANY non-empty diff with no derivable ticket -- a hygiene signal
+    about root's git state at measurement time (commonly a concurrent
+    land's transient dirt on the shared checkout), never a code
+    regression either caller exists to catch. Measured 2026-08-07: five
+    sweep-filed regression tickets in one hour whose only findings were
+    these two."""
+
+    @staticmethod
+    def _json_payload(findings: list[tuple[str, str]]) -> str:
+        """A minimal `frob check --json` payload shape
+        (`_parse_check_json`/`_parse_error_findings_from_json`'s own
+        contract: a `"results"` list of `{"tool", "diagnostics"}` dicts,
+        each diagnostic an error-severity `{"code", "file", "severity"}`)
+        with one ToolResult carrying exactly `findings`."""
+        return json.dumps(
+            {
+                "results": [
+                    {
+                        "tool": "gate-summary",
+                        "diagnostics": [
+                            {"code": rule, "file": file, "severity": "error"}
+                            for rule, file in findings
+                        ],
+                    }
+                ]
+            }
+        )
+
+    def test_pre001_and_scope001_are_excluded_but_real_findings_survive(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnscopedErrorFindingsExcludesNoTicketNoise.tes\
+        # t_pre001_and_scope001_are_excluded_but_real_findings_survive
+        from frob.app import ticket_runner
+
+        payload = self._json_payload(
+            [
+                ("PRE001", "tickets/T-0001"),
+                ("SCOPE001", "some/file.py"),
+                ("DEAD001", "src/frob/real_module.py"),
+            ]
+        )
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=1, stdout=payload, stderr="")
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
+
+        result = _unscoped_error_findings(tmp_path, "T-0001")
+
+        assert result == frozenset({("DEAD001", "src/frob/real_module.py")})
+
+    def test_only_no_ticket_noise_present_returns_empty_not_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnscopedErrorFindingsExcludesNoTicketNoise.tes\
+        # t_only_no_ticket_noise_present_returns_empty_not_none
+        """A run whose ONLY findings are PRE001/SCOPE001 -- exactly the
+        five-tickets-in-an-hour incident -- must read as a real, measured
+        EMPTY set (clean), never `None` (unmeasurable): the whole point is
+        that the sweep stops comparing this noise against its baseline at
+        all, not that it falls back to skipping the comparison."""
+        from frob.app import ticket_runner
+
+        payload = self._json_payload(
+            [("PRE001", "tickets/T-0001"), ("SCOPE001", "some/file.py")]
+        )
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=1, stdout=payload, stderr="")
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
+
+        result = _unscoped_error_findings(tmp_path, "T-0001")
+
+        assert result == frozenset()
