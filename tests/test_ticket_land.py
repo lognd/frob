@@ -179,10 +179,12 @@ def _make_closeable(root: Path, ticket_id: str) -> None:
 
 
 # frob:ticket T-1393
-# frob:waive WIRE001 reason="autouse=True pytest fixture -- invoked implicitly by \
-# pytest's own fixture-injection machinery on every test in this module, never by a \
-# literal name() call WIRE001's text scan looks for; same detector-gap class as \
-# T-1502/T-1527 (a real-but-non-call-shaped wiring mechanism)" follow_up="T-1534"
+# frob:ticket T-1534
+# T-1534: this frob:waive WIRE001 was removed here -- T-1510 (landed after the
+# waiver was written) added the autouse-pytest-fixture exemption to
+# frob.gates._dead_symbols._new_callable_records via _is_autouse_pytest_fixture,
+# so WIRE001 no longer flags this symbol at all; verified directly against a
+# fresh graph snapshot.
 @pytest.fixture(autouse=True)
 def _isolate_from_host_git_config(monkeypatch: pytest.MonkeyPatch) -> None:
     """T-1393: every fixture repo in this module sets its own LOCAL

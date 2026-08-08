@@ -91,10 +91,12 @@ _V1_PINNED_CLASSES = frozenset(
 
 
 # frob:ticket T-1553
-# frob:waive WIRE001 reason="autouse=True pytest fixture -- invoked implicitly by \
-# pytest's own fixture-injection machinery on every test in this module, never by a \
-# literal name() call WIRE001's text scan looks for; same detector-gap class as \
-# T-1502/T-1527" follow_up="T-1534"
+# frob:ticket T-1534
+# T-1534: this frob:waive WIRE001 was removed here -- T-1510 (landed after the
+# waiver was written) added the autouse-pytest-fixture exemption to
+# frob.gates._dead_symbols._new_callable_records via _is_autouse_pytest_fixture,
+# so WIRE001 no longer flags this symbol at all; verified directly against a
+# fresh graph snapshot.
 @pytest.fixture(autouse=True)
 def _pin_v1_mode_on_bare_tmp_path(
     request: pytest.FixtureRequest, tmp_path: Path
@@ -1000,7 +1002,8 @@ class TestAtomicWrite:
 # frob:ticket T-0458
 class TestLockPath:
     def test_lock_path_under_frob_dir(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: E501
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir
         assert _lock_path(tmp_path) == tmp_path / ".frob" / "tickets.lock"
 
 
@@ -1532,7 +1535,8 @@ class TestClosedTicketIds:
         assert closed_ticket_ids(queue) == ("T-0001", "T-0002")
 
     def test_orders_oldest_first(self) -> None:
-        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_orders_oldest_first  # noqa: E501
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestClosedTicketIds.test_orders_oldest_first
         queue = TicketQueue(
             tickets={
                 "T-0002": _ticket_state(
@@ -1546,7 +1550,8 @@ class TestClosedTicketIds:
         assert closed_ticket_ids(queue) == ("T-0001", "T-0002")
 
     def test_empty_queue_is_empty(self) -> None:
-        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_empty_queue_is_empty  # noqa: E501
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestClosedTicketIds.test_empty_queue_is_empty
         assert closed_ticket_ids(TicketQueue(tickets={})) == ()
 
 
