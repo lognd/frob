@@ -1,7 +1,7 @@
 ---
 id: T-1802
 title: 'post-land sweep regression from T-1674: 2 new error(s) (ARCH103, SEC110)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -39,3 +39,6 @@ reason="T-0977: ..."` precedents already in this same file/module for the
 CLI-runner-shape functions) and add the matching `frob:waive`s with real
 reasons, or a genuine refactor if the mixed concerns are actually
 separable.
+
+## Drop reason
+- 2026-08-07: Duplicate of the already-dropped T-1797, same two findings from the same T-1674 land. Both were real when filed and both are fixed: T-1801 split _resolve_ticket_root's three decisions (ARCH103) and waived SEC110 with a reason, since FROB_ROOT carries a filesystem path rather than a credential. Verified: 'frob check --only archgate --only secrets' reports 0 errors on main. Worth noting the sweep re-filed an identical ticket for a commit whose findings were already fixed and already ticketed -- it has no memory of what it previously reported. (absorbed by T-1801)
