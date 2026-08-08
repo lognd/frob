@@ -1,7 +1,7 @@
 ---
 id: T-1871
 title: Make duplicate bracket-attr values a strata PARSE ERROR, then delete SYS108
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -83,3 +83,6 @@ wrong, and it must be surfaced rather than auto-removed.
 
 SEQUENCING: after T-1870 (both touch `docs/strata/surface.md`, and
 deleting SYS108 only makes sense once the sync mirror is gone).
+
+## Drop reason
+- 2026-08-08: Owner reversed the requirement 2026-08-08: 'Non-unique is fine, actually. You don't need to switch syntax either.' Both halves of this ticket are withdrawn -- no parse-time uniqueness check and no sigil swap. SYS108 stays as-is. T-1872 (canonical ordering) is unaffected and re-chained directly onto T-1870.
