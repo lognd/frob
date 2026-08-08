@@ -502,6 +502,30 @@ def validate_evidence(entry: str) -> Result[str, TicketError]
     # pytest Class::method form (T-0293) first.
 ```
 
+## Exact-duplicate refusal at filing time (T-1744)
+
+`new_ticket` refuses a ticket whose `title` and `scope` EXACTLY match an
+existing, non-`dropped` ticket's -- `TicketError.DuplicateTicket`
+(`_new_renumber._find_exact_duplicate`/`_refuse_exact_duplicate`).
+Deliberately HIGH-PRECISION only: exact string equality on `title`,
+exact set equality on `scope` (order-independent), never a fuzzy/
+similarity match -- this repo files near-identical titles for
+genuinely distinct follow-ups constantly (a scope-corrected re-file, a
+phase-2 continuation), and a fuzzy matcher would refuse legitimate
+tickets at creation time, which is far more damaging than letting an
+occasional true duplicate through. Measured 2026-08-07: six duplicate
+tickets (exact title AND exact scope, including two triplicates)
+reached the queue -- 5% phantom backlog -- before being caught and
+dropped by hand.
+
+`dropped` tickets are excluded from the match: a ticket dropped as
+obsolete/absorbed does not permanently forbid the same title+scope from
+being filed again later. An unreadable ledger fails OPEN (returns no
+duplicate, never blocks filing) -- the duplicate class this check
+exists to catch is strictly worse than an occasional unnoticed one, but
+blocking every `frob ticket new` on a read failure would be worse
+still.
+
 ## Structured review channel (T-0571)
 
 Adversarial review's verdict used to live only in dispatch-chat prose --

@@ -186,6 +186,67 @@ def _warn_if_runs_last_ticket_in_progress(root: Path) -> None:
         )
 
 
+# frob:ticket T-1744
+def _find_exact_duplicate(root: Path, spec: TicketSpec) -> Ticket | None:
+    """The first currently-active, non-`dropped` ticket whose `title` and
+    `scope` EXACTLY match `spec`'s, or `None` if none does (T-1744).
+
+    Deliberately HIGH-PRECISION, not fuzzy: exact string equality on
+    `title`, exact set equality on `scope` (order-independent -- two
+    tickets declaring the same globs in a different order are still the
+    same ticket) -- never a similarity/distance heuristic. This repo
+    files near-identical titles for genuinely distinct follow-ups
+    constantly (a scope-corrected re-file, a phase-2 continuation); a
+    fuzzy matcher would refuse legitimate tickets at creation time,
+    which is far more damaging than letting an occasional true duplicate
+    through. Measured 2026-08-07: six duplicate tickets (exact title
+    AND exact scope, including two triplicates) reached the queue before
+    being caught and dropped by hand -- 5% phantom backlog with nothing
+    in the tool comparing a new ticket against existing ones.
+
+    `dropped` tickets are excluded: a ticket dropped as obsolete/absorbed
+    does not mean the same title+scope can never legitimately be filed
+    again later (circumstances change) -- refusing against a dropped
+    ticket would itself be a false positive this ticket's own precision
+    requirement rules out. Best-effort: an unreadable ledger returns
+    `None` (never blocks filing on "cannot verify") -- the DUPLICATE
+    class this check exists to catch is strictly worse than an occasional
+    unnoticed one, but blocking every `frob ticket new` on a ledger read
+    failure would be worse still."""
+    from frob.tickets._store import load_all
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return None
+    spec_scope = frozenset(spec.scope)
+    for ticket in loaded.danger_ok.values():
+        if ticket.state is TicketState.DROPPED:
+            continue
+        if ticket.title == spec.title and frozenset(ticket.scope) == spec_scope:
+            return ticket
+    return None
+
+
+# frob:ticket T-1744
+def _refuse_exact_duplicate(root: Path, spec: TicketSpec) -> Result[None, TicketError]:
+    """`new_ticket`'s own duplicate-refusal step, split out to keep that
+    function under ARCH001's line threshold: `Err(TicketError.
+    DuplicateTicket)` (logged, naming the existing ticket) when
+    `_find_exact_duplicate` finds a match, `Ok(None)` otherwise."""
+    duplicate = _find_exact_duplicate(root, spec)
+    if duplicate is None:
+        return Ok(None)
+    _log.error(
+        "tickets: refusing to file %r -- %s already has this exact title "
+        "and this exact scope (drop or reuse %s instead of filing a "
+        "duplicate)",
+        spec.title,
+        duplicate.id,
+        duplicate.id,
+    )
+    return Err(TicketError.DuplicateTicket)
+
+
 # frob:ticket T-0102
 # frob:ticket T-0140
 # frob:ticket T-0398
@@ -281,6 +342,9 @@ def new_ticket(
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
+    duplicate_check = _refuse_exact_duplicate(root, spec)
+    if duplicate_check.is_err:
+        return duplicate_check
     validated = _validate_evidence_list(spec.evidence)
     if validated.is_err:
         return Err(validated.danger_err)

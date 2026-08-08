@@ -240,6 +240,154 @@ class TestNewTicket:
         assert set(reloaded.danger_ok.tickets) == {result.danger_ok.id}
 
 
+# frob:ticket T-1744
+class TestNewTicketExactDuplicateRefusal:
+    """T-1744 case 2: `frob ticket new` refuses a ticket whose title AND
+    scope EXACTLY match an existing, non-dropped ticket's -- HIGH
+    PRECISION only (exact string title, exact set-equal scope), never a
+    fuzzy similarity match. Measured 2026-08-07: six duplicate tickets
+    (including two triplicates) reached the queue before anything caught
+    them."""
+
+    def test_exact_title_and_scope_match_is_refused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_exact_title_an\
+        # d_scope_match_is_refused
+        from frob.tickets import TicketSpec
+
+        spec = TicketSpec(
+            title="Fix the widget",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("src/widget.py", "tests/test_widget.py"),
+        )
+        first = new_ticket(tmp_path, spec)
+        assert first.is_ok
+
+        second = new_ticket(tmp_path, spec)
+        assert second.is_err
+        assert second.danger_err is TicketError.DuplicateTicket
+
+        # The original ticket alone still exists -- refusal never mutates
+        # or removes the ticket it matched against.
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert set(reloaded.danger_ok.tickets) == {first.danger_ok.id}
+
+    def test_scope_order_does_not_evade_the_match(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_scope_order_do\
+        # es_not_evade_the_match
+        from frob.tickets import TicketSpec
+
+        first_spec = TicketSpec(
+            title="Fix the widget",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("src/widget.py", "tests/test_widget.py"),
+        )
+        assert new_ticket(tmp_path, first_spec).is_ok
+
+        reordered_spec = first_spec.model_copy(
+            update={"scope": ("tests/test_widget.py", "src/widget.py")}
+        )
+        result = new_ticket(tmp_path, reordered_spec)
+        assert result.is_err
+        assert result.danger_err is TicketError.DuplicateTicket
+
+    def test_different_title_is_not_a_duplicate(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_different_titl\
+        # e_is_not_a_duplicate
+        """HIGH PRECISION: a near-identical but not exact title (the
+        common shape for a genuinely distinct follow-up in this repo)
+        must NOT be refused -- a fuzzy match here would block legitimate
+        work."""
+        from frob.tickets import TicketSpec
+
+        scope = ("src/widget.py",)
+        first_spec = TicketSpec(
+            title="Fix the widget", kind=TicketKind.BUG, origin=Origin.AGENT,
+            scope=scope,
+        )
+        assert new_ticket(tmp_path, first_spec).is_ok
+
+        second_spec = first_spec.model_copy(
+            update={"title": "Fix the widget (phase 2)"}
+        )
+        result = new_ticket(tmp_path, second_spec)
+        assert result.is_ok
+
+    def test_different_scope_is_not_a_duplicate(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_different_scop\
+        # e_is_not_a_duplicate
+        from frob.tickets import TicketSpec
+
+        first_spec = TicketSpec(
+            title="Fix the widget",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("src/widget.py",),
+        )
+        assert new_ticket(tmp_path, first_spec).is_ok
+
+        second_spec = first_spec.model_copy(update={"scope": ("src/other.py",)})
+        result = new_ticket(tmp_path, second_spec)
+        assert result.is_ok
+
+    def test_dropped_duplicate_does_not_block_refiling(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_dropped_duplic\
+        # ate_does_not_block_refiling
+        """A `dropped` ticket (obsolete/absorbed) must not permanently
+        block the same title+scope from ever being filed again --
+        circumstances change, and refusing here would itself be a false
+        positive this ticket's own precision bar rules out."""
+        from frob.tickets import TicketSpec
+        from frob.tickets._evidence import transition
+
+        spec = TicketSpec(
+            title="Fix the widget",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("src/widget.py",),
+        )
+        first = new_ticket(tmp_path, spec)
+        assert first.is_ok
+        dropped = transition(tmp_path, first.danger_ok.id, TicketState.DROPPED)
+        assert dropped.is_ok
+
+        result = new_ticket(tmp_path, spec)
+        assert result.is_ok
+
+    def test_unreadable_ledger_does_not_block_filing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketExactDuplicateRefusal.test_unreadable_led\
+        # ger_does_not_block_filing
+        """Fail-open on "cannot verify": an unreadable ledger must never
+        block ticket creation outright -- the duplicate class this check
+        exists to catch is strictly worse than an occasional unnoticed
+        one, but blocking every `frob ticket new` on a read failure would
+        be worse still."""
+        from typani.result import Err
+
+        from frob.tickets import TicketSpec
+        from frob.tickets._models import TicketError as _TE
+
+        monkeypatch.setattr(
+            "frob.tickets._store.load_all", lambda root: Err(_TE.MalformedFrontmatter)
+        )
+
+        spec = TicketSpec(
+            title="Fix the widget", kind=TicketKind.BUG, origin=Origin.AGENT
+        )
+        result = new_ticket(tmp_path, spec)
+        assert result.is_ok
+
+
 # frob:ticket T-1706
 class TestEvidenceValidation:
     """T-0102 companion fix: evidence is schema-validated at write time so a
@@ -1000,7 +1148,7 @@ class TestIterRawLedgerFrontmatter:
     exact property the strict `_parse_ledger` deliberately does not have."""
 
     def test_returns_raw_dict_per_ticket(self) -> None:
-        # frob:tests src/frob/tickets/_store.py::iter_raw_ledger_frontmatter kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_store.py::iter_raw_ledger_frontmatter kind="unit"
         from frob.tickets._store import iter_raw_ledger_frontmatter
 
         text = (
@@ -1019,7 +1167,7 @@ class TestIterRawLedgerFrontmatter:
         assert data["blocked_by"] == ["", "T-0002"]
 
     def test_skips_malformed_yaml_block_without_raising(self) -> None:
-        # frob:tests src/frob/tickets/_store.py::iter_raw_ledger_frontmatter kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_store.py::iter_raw_ledger_frontmatter kind="unit"
         from frob.tickets._store import iter_raw_ledger_frontmatter
 
         text = (
@@ -2095,7 +2243,8 @@ class TestV2IndexCache:
         assert loaded_again.danger_ok.keys() == {"T-0001", "T-0002"}
 
     def test_missing_index_never_raises(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets.py::TestV2IndexCache.test_missing_index_never_raises  # noqa: E501
+        # frob:tests \
+        # tests/test_tickets.py::TestV2IndexCache.test_missing_index_never_raises
         from frob.tickets._store import load_all
 
         self._v2_ticket(tmp_path)

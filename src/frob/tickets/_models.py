@@ -50,10 +50,14 @@ _BLOCKED_BY_ID_RE = re.compile(r"^T-(?:\d{4}|draft-[0-9a-f]{8})$")
 
 # frob:ticket T-1132
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_final_id kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_draft_id kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_empty_string kind="unit"  # noqa: E501
-# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_malformed_id kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_final_id \
+# kind="unit"
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_accepts_draft_id \
+# kind="unit"
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_empty_string \
+# kind="unit"
+# frob:tests tests/test_tickets.py::TestIsValidTicketRef.test_rejects_malformed_id \
+# kind="unit"
 def is_valid_ticket_ref(value: str) -> bool:
     """Whether `value` is a well-formed ticket-id reference (final
     `T-####` or provisional `T-draft-<8 hex>`) -- the same check
@@ -329,8 +333,10 @@ def _tokenize_glob(pattern: str) -> tuple[str, ...]:
 
 
 # frob:ticket T-0453
-# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal  # noqa: E501
-# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings  # noqa: E501
+# frob:tests \
+# tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal
+# frob:tests \
+# tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings
 def _globs_intersect(glob_a: str, glob_b: str) -> bool:
     """Whether two fnmatch-style glob patterns can ever match the SAME
     concrete path -- a sound path/glob intersection test (T-0453 DESIGN
@@ -1643,6 +1649,10 @@ class TicketError(ErrorSet):
 
     NotFound = "No ticket with that id"
     DuplicateId = "Ticket id already exists"
+    # frob:ticket T-1744
+    DuplicateTicket = (
+        "an existing ticket already has this exact title and this exact scope"
+    )
     MalformedFrontmatter = "Ticket file failed schema validation"
     InvalidTransition = "State change not allowed by the state machine"
     MissingEvidence = "done requires evidence and a Done report"
