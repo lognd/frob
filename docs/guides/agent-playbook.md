@@ -1006,6 +1006,21 @@ hand-edit of `tickets.md`, no `git stash`):
    evidence and the Done report section from scratch -- it is not a
    formality you can bypass by editing the ticket frontmatter directly.
 
+## 11b. The diagnosis-nudge Stop hook (T-1734)
+
+A Stop-event hook (`.claude/hooks/diagnosis-nudge.py`, synced to
+`~/.claude/hooks/diagnosis-nudge.py` and registered globally) may append a
+`systemMessage` at the end of a turn if your own last message stated a
+diagnosis-shaped claim ("this is a real bug", "root cause is ...") with no
+matching `frob ticket new` in this repo's telemetry stream recently. It is
+lexical and state-based, never an LLM judging your prose (an explicit,
+binding owner decision -- no second model reads your output). It NEVER
+blocks; it only nudges, and it rate-limits itself per session so a long
+turn does not nag repeatedly. If it fires and the diagnosis is real, file
+the ticket it names; if it is a false positive (quoting a ticket title,
+reviewing someone else's diagnosis, discussing a hypothetical), ignore it
+-- nothing about the turn's outcome depends on responding to the nudge.
+
 ## 12. Style
 
 - ASCII only, no exceptions.

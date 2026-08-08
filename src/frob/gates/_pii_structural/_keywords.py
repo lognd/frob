@@ -207,6 +207,11 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
         ("src/frob/deploy/_vm_runner.py", "passwd"),
         ("tests/unit/deploy/test_audit.py", "passwd"),
         ("src/frob/doctor.py", "run_diagnosis"),
+        # T-1734: `.claude/hooks/diagnosis-nudge.py`'s "diagnosis" means a
+        # software-defect finding stated in an agent's own turn text, the
+        # SAME software-diagnosis homonym `run_diagnosis` above already
+        # covers -- not a medical/health record.
+        (".claude/hooks/diagnosis-nudge.py", "_detect_diagnosis"),
         ("tests/test_doctor.py", "test_run_diagnosis_natives_present"),
         ("tests/test_doctor.py", "test_run_diagnosis_natives_absent"),
         ("tests/test_doctor.py", "test_run_diagnosis_partial_availability"),

@@ -38,6 +38,18 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/diagnosis-nudge.py",
+            "timeout": 15,
+            "statusMessage": "diagnosis-nudge"
+          }
+        ]
+      }
     ]
   }
 }

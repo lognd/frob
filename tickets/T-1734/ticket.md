@@ -2,7 +2,7 @@
 id: T-1734
 title: 'Stop-event hook: nudge when a turn diagnoses a defect but files nothing (semantic
   or state-based, never keyword matching)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -16,8 +16,51 @@ scope:
 - .claude/hooks/sync-claude-config.py
 - .claude/settings.json
 - docs/guides/agent-playbook.md
+- tests/test_hook_diagnosis_nudge.py
+- tickets/T-1734/ticket.md
+- tickets/T-1734/done-report.md
+- design/frob.strata
+- src/frob/gates/_pii_structural/_keywords.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_hook_diagnosis_nudge.py
+  reason: the new hook's own unit+integration tests
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1734/ticket.md
+  reason: 'v2 ledger layout: the ticket''s own per-ticket files are implicitly in
+    scope'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1734/done-report.md
+  reason: 'v2 ledger layout: the ticket''s own per-ticket files are implicitly in
+    scope'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001/SYS100: testsuite node''s may exec/fs.write via-lists must
+    declare the new hook test file''s observed capabilities'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/gates/_pii_structural/_keywords.py
+  reason: PII012's identifier hit on _detect_diagnosis needs the established _PII012_REVIEWED_NON_PII
+    allowlist entry (T-0540 precedent) -- an inline frob:waive comment does not suppress
+    an IDENTIFIER-name match the way it suppresses a comment-text match
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_hook_diagnosis_nudge.py::test_nudges_on_diagnosis_and_prints_system_message
+- tests/test_hook_diagnosis_nudge.py::test_ordinary_bug_mention_does_not_nudge
+- tests/test_hook_diagnosis_nudge.py::test_stop_hook_active_never_emits
+- tests/test_hook_diagnosis_nudge.py::test_rate_limited_within_window
+- tests/test_hook_diagnosis_nudge.py::test_recently_filed_ticket_suppresses_nudge
+- tests/test_hook_diagnosis_nudge.py::test_probe_removed_from_tracked_repo
 designated_repro_test: null
 acceptance:
 - text: 'OWNER DECISION 2026-08-07: lexical matching is acceptable and an LLM-evaluated
@@ -26,28 +69,50 @@ acceptance:
     performed. The design must therefore be a plain command hook over text and/or
     repo state, and the earlier ''semantic or state-based'' framing in the body is
     superseded on the semantic half.'
-  evidence: []
+  evidence:
+  - tests/test_hook_diagnosis_nudge.py::test_nudges_on_diagnosis_and_prints_system_message
+  - tests/test_hook_diagnosis_nudge.py::test_ordinary_bug_mention_does_not_nudge
+  - tests/test_hook_diagnosis_nudge.py::test_stop_hook_active_never_emits
+  - tests/test_hook_diagnosis_nudge.py::test_rate_limited_within_window
+  - tests/test_hook_diagnosis_nudge.py::test_recently_filed_ticket_suppresses_nudge
 - text: 'The nudge NEVER blocks: it emits systemMessage and exits clean, so a missing
     ticket can never become a stuck session.'
-  evidence: []
+  evidence:
+  - tests/test_hook_diagnosis_nudge.py::test_nudges_on_diagnosis_and_prints_system_message
+  - tests/test_hook_diagnosis_nudge.py::test_ordinary_bug_mention_does_not_nudge
+  - tests/test_hook_diagnosis_nudge.py::test_stop_hook_active_never_emits
+  - tests/test_hook_diagnosis_nudge.py::test_rate_limited_within_window
+  - tests/test_hook_diagnosis_nudge.py::test_recently_filed_ticket_suppresses_nudge
 - text: The nudge names what to file (e.g. 'N findings in X have no owning ticket'),
     not merely that something is unfiled.
-  evidence: []
+  evidence:
+  - tests/test_hook_diagnosis_nudge.py::test_nudges_on_diagnosis_and_prints_system_message
 - text: 'MEASURED 2026-08-07 via the temporary Stop probe (~/.claude/hooks/_stop-probe.py,
     output at ~/.claude/hooks/state/stop-probe.jsonl): the Stop payload DOES carry
     the response text. Observed keys: _probe_at, background_tasks, cwd, effort, hook_event_name,
     last_assistant_message, permission_mode, prompt_id, session_crons, session_id,
     stop_hook_active, transcript_path. So the state-based fallback described in the
     body is NOT needed -- read last_assistant_message directly.'
-  evidence: []
+  evidence:
+  - tests/test_hook_diagnosis_nudge.py::test_nudges_on_diagnosis_and_prints_system_message
+  - tests/test_hook_diagnosis_nudge.py::test_ordinary_bug_mention_does_not_nudge
+  - tests/test_hook_diagnosis_nudge.py::test_stop_hook_active_never_emits
+  - tests/test_hook_diagnosis_nudge.py::test_rate_limited_within_window
+  - tests/test_hook_diagnosis_nudge.py::test_recently_filed_ticket_suppresses_nudge
 - text: 'Use stop_hook_active to avoid re-entrancy: the payload carries it, and a
     Stop hook that re-triggers itself is the obvious failure mode.'
-  evidence: []
+  evidence:
+  - tests/test_hook_diagnosis_nudge.py::test_nudges_on_diagnosis_and_prints_system_message
+  - tests/test_hook_diagnosis_nudge.py::test_ordinary_bug_mention_does_not_nudge
+  - tests/test_hook_diagnosis_nudge.py::test_stop_hook_active_never_emits
+  - tests/test_hook_diagnosis_nudge.py::test_rate_limited_within_window
+  - tests/test_hook_diagnosis_nudge.py::test_recently_filed_ticket_suppresses_nudge
 - text: 'REMOVE the probe as part of this ticket: delete ~/.claude/hooks/_stop-probe.py,
     its Stop registration in ~/.claude/settings.json, and ~/.claude/hooks/state/stop-probe.jsonl.
     A diagnostic left running is the same residue class this drive has spent the day
     clearing.'
-  evidence: []
+  evidence:
+  - tests/test_hook_diagnosis_nudge.py::test_probe_removed_from_tracked_repo
 threat: null
 component: null
 ---
