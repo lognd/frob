@@ -472,7 +472,7 @@ class TestWriteTicketUnchecked:
 
     def test_skips_the_content_loss_guard_entirely(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestWriteTicketUnchecked.test_skips_the_content_loss_guard_entirely  # noqa: E501
-        from frob.tickets._store import _write_ticket_unchecked
+        from tests._write_unchecked import _write_ticket_unchecked
 
         done = _ticket().model_copy(
             update={
@@ -676,7 +676,6 @@ class TestWriteArchivedTicket:
         assert archived.danger_ok.keys() == {"T-0001", "T-0002"}
         assert archived.danger_ok["T-0001"].title == "T-0001 rebound"
 
-
     # frob:ticket T-1583
     def test_v2_write_archive_round_trips_many_tickets_count_and_content(
         self, tmp_path: Path
@@ -724,6 +723,7 @@ class TestWriteArchivedTicket:
             assert actual.state == expected.state
 
     # frob:ticket T-1583
+
 
 class TestMigrateToLedger:
     def test_moves_legacy_files_into_ledger(self, tmp_path: Path) -> None:
@@ -1384,9 +1384,7 @@ class TestV2FullLifecycleDoneReport:
     (a load right after a report write) exposed the gap `_merge_sibling_
     done_report` closes."""
 
-    def test_close_does_not_refuse_recent_report(
-        self, tmp_path: Path
-    ) -> None:
+    def test_close_does_not_refuse_recent_report(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestV2FullLifecycleDoneReport.test_close_does_not_refuse_recent_report  # noqa: E501
         """The exact field incident this ticket names: `frob ticket close`
         refusing a ticket whose Done report was written seconds earlier,

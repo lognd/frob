@@ -58,7 +58,6 @@ from frob.tickets._models import (
 from frob.tickets._new_renumber import _ticket_from_spec
 from frob.tickets._store import (
     _serialize_ticket,
-    _write_ticket_unchecked,
     archive_path,
     atomic_write,
     ledger_path,
@@ -68,6 +67,7 @@ from frob.tickets._store import (
     write_archive,
     write_ticket,
 )
+from tests._write_unchecked import _write_ticket_unchecked  # noqa: E402
 
 
 def _failing_run_argv(
@@ -7713,9 +7713,7 @@ class TestSyncGateRulesForLandDiffTarget:
             "_KNOWN_GATE_RULES = frozenset({'SOME001'})\n", encoding="utf-8"
         )
         run_argv(["git", "-C", str(repo), "add", "-A"])
-        run_argv(
-            ["git", "-C", str(repo), "commit", "-m", "add rule id"]
-        )
+        run_argv(["git", "-C", str(repo), "commit", "-m", "add rule id"])
 
         called: list[str] = []
 
@@ -7731,9 +7729,7 @@ class TestSyncGateRulesForLandDiffTarget:
         # actually re-resolves against.
         import frob.gates._rule_id_scan as _rule_id_scan_mod
 
-        monkeypatch.setattr(
-            _rule_id_scan_mod, "generated_gate_rule_ids", _fake_scan
-        )
+        monkeypatch.setattr(_rule_id_scan_mod, "generated_gate_rule_ids", _fake_scan)
         result = _sync_gate_rules_for_land(repo, pre_land_tip)
 
         assert result.is_ok

@@ -66,7 +66,8 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 # frob:ticket T-1204
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_detects_coverage_tracer_by_module_name  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_no_active_tracer_is_not_coverage  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestYamlLoader.test_no_active_tracer_is_not_coverage
 def _coverage_tracer_active() -> bool:
     """Thin re-export of `frob.yaml_io._coverage_tracer_active` (T-1204:
     the T-1206/T-1333 loader-selection logic moved to a shared module so
@@ -616,7 +617,8 @@ def v2_ticket_dir(root: Path, ticket_id: str) -> Path:
 
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
-# frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode
 def v2_ticket_path(root: Path, ticket_id: str) -> Path:
     """The `tickets/T-####/ticket.md` frontmatter+body file for a v2-mode
     ticket -- same shape `_serialize_ticket`/`_parse_ticket_file` already
@@ -667,7 +669,8 @@ def write_done_report(
 # frob:ticket T-1254
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
 # frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_write_then_read_back_byte_for_byte  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestV2DoneReport.test_missing_report_is_none  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestV2DoneReport.test_missing_report_is_none
 def read_done_report(root: Path, ticket_id: str) -> str | None:
     """v2-mode only: `tickets/T-####/done-report.md`'s raw text, or `None`
     if it does not exist yet (the ticket has not reached `done`, or was
@@ -757,8 +760,10 @@ def _v2_path_lineage(root: Path, rel_path: str) -> list[str]:
 
 # frob:ticket T-1543
 # frob:doc docs/design/ledger-v2.md#44-flow--velocity-mining
-# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_transitions_mined_oldest_first  # noqa: E501
-# frob:tests tests/test_tickets.py::TestV2StateTransitions.test_no_history_returns_empty_tuple  # noqa: E501
+# frob:tests \
+# tests/test_tickets.py::TestV2StateTransitions.test_transitions_mined_oldest_first
+# frob:tests \
+# tests/test_tickets.py::TestV2StateTransitions.test_no_history_returns_empty_tuple
 # frob:tests tests/test_tickets.py::TestV2StateTransitions.test_byte_similar_sibling_ticket_does_not_drop_transitions  # noqa: E501
 def v2_state_transitions(
     root: Path, ticket_id: str
@@ -925,7 +930,9 @@ def _prune_stale_v2_dirs(root: Path, keep_dirs: set[Path]) -> None:
 
 # frob:ticket T-1132
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:tests tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_returns_raw_dict_per_ticket kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_returns_raw_dict_per_ticket \
+# kind="unit"
 # frob:tests tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_skips_malformed_yaml_block_without_raising kind="unit"  # noqa: E501
 def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]:
     """Every `<!-- ticket:ID -->` section's RAW (unvalidated) frontmatter
@@ -1220,7 +1227,8 @@ def _index_path(root: Path) -> Path:
 
 
 # frob:ticket T-1257
-# frob:tests tests/test_tickets.py::TestV2IndexCache.test_stale_index_falls_back_to_fresh_parse  # noqa: E501
+# frob:tests \
+# tests/test_tickets.py::TestV2IndexCache.test_stale_index_falls_back_to_fresh_parse
 def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] | None:
     """The cached v2-mode parse keyed by exact `(relative path, mtime-ns)`
     pairs for every path in `paths`, or `None` meaning "caller must parse
@@ -1675,9 +1683,11 @@ def _write_archive_v2(
 # frob:ticket T-1536
 # frob:ticket T-1637
 # frob:ticket T-1679
-# frob:tests tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_then_load_v2_mode
 # frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_marker_lookalike_body_line_refuses_write  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_refuses_by_default  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestWriteTicket.test_content_loss_refuses_by_default
 def write_ticket(
     root: Path, ticket: Ticket, *, strict_no_content_loss: bool = True
 ) -> Result[None, TicketError]:
@@ -1734,11 +1744,14 @@ def write_ticket(
     happen today under the old warn-only default, just with a log line
     attached). `strict_no_content_loss=False` degrades to the old warn-and-
     proceed behavior for a caller that has a specific, disclosed reason to
-    want it; `_write_ticket_unchecked` below is the explicit escape hatch
-    for a caller that wants to skip the check ENTIRELY (never even a
-    warning) -- test fixtures constructing a deliberately "poorer" ticket
-    snapshot on purpose (T-1679's audit moved every one of those onto it,
-    see that function's own docstring), never a production write path.
+    want it; `tests._write_unchecked._write_ticket_unchecked` (T-1711:
+    relocated out of this module into the `tests/` tree, so its WIRE001
+    waiver can use the `permanent="true"` test-helper exemption instead of
+    an ever-orphaning `follow_up` ticket) is the explicit escape hatch for
+    a caller that wants to skip the check ENTIRELY (never even a warning)
+    -- test fixtures constructing a deliberately "poorer" ticket snapshot
+    on purpose (T-1679's audit moved every one of those onto it, see that
+    module's own docstring), never a production write path.
     Deliberately mode-agnostic (reads via `load_all`, which already
     dispatches across single/dir/v2) rather than three separate per-mode
     implementations of the same comparison.
@@ -1753,11 +1766,14 @@ def write_ticket(
 
 
 # frob:ticket T-1679
+# frob:ticket T-1711
 def _write_ticket_impl(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """The actual mode-dispatched write `write_ticket` performs AFTER its
-    own content-loss guard has already passed (T-1679 split, so `_write_
-    ticket_unchecked` can share this exact write path without re-running,
-    or bypassing via a flag, the guard `write_ticket` itself owns)."""
+    own content-loss guard has already passed (T-1679 split, so
+    `tests._write_unchecked._write_ticket_unchecked` -- T-1711: relocated
+    out of this module -- can share this exact write path without
+    re-running, or bypassing via a flag, the guard `write_ticket` itself
+    owns)."""
     mode = _store_mode(root)
     if mode == "v2":
         return _write_ticket_v2_mode(root, ticket)
@@ -1765,29 +1781,6 @@ def _write_ticket_impl(root: Path, ticket: Ticket) -> Result[None, TicketError]:
         if mode == "single":
             return _write_ticket_single_mode(root, ticket)
         return atomic_write(_dir_path_for(root, ticket), _serialize_ticket(ticket))
-
-
-# frob:ticket T-1679
-# frob:tests tests/unit/test_ticket_store.py::TestWriteTicketUnchecked.test_skips_the_content_loss_guard_entirely  # noqa: E501
-# frob:waive WIRE001 reason="deliberately test-fixture-only primitive (see its own \
-# docstring): every caller is a test constructing a poorer ticket snapshot on purpose \
-# (tests/test_ticket_land.py's splice_ledger/TICK005 fixtures, \
-# tests/unit/test_ticket_store.py's own TestWriteTicketUnchecked) -- no production \
-# caller is meant to exist" follow_up="T-1711"
-def _write_ticket_unchecked(root: Path, ticket: Ticket) -> Result[None, TicketError]:
-    """`write_ticket` with the T-1637/T-1679 content-loss guard skipped
-    ENTIRELY -- not even the warn-only degrade, no log line at all. The
-    explicit, self-documenting escape hatch T-1679 introduced so a genuine
-    "construct a deliberately poorer ticket snapshot" caller (test fixtures
-    simulating a stale/regressed ledger side for `splice_ledger`'s own
-    merge-preference tests -- the concrete case that made a hard-refuse-by-
-    default break real, correct code before this primitive existed) says so
-    plainly at the call site, instead of `write_ticket` itself needing a
-    weaker default to accommodate it. NEVER call this from a production
-    write path -- every real caller wants `write_ticket`'s guard, strict or
-    not; this is a test-fixture-only primitive, leading underscore and
-    all."""
-    return _write_ticket_impl(root, ticket)
 
 
 # frob:ticket T-1637
@@ -2201,7 +2194,8 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 
 
 # frob:ticket T-1259
-# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+# frob:doc \
+# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
 def _split_done_report(body: str) -> tuple[str, str | None]:
     """Split a v1-mode ticket `body` into (body_without_done_report,
     done_report_text_or_None), the mechanical inverse of `_models.
@@ -2230,7 +2224,8 @@ def _split_done_report(body: str) -> tuple[str, str | None]:
 
 
 # frob:ticket T-1259
-# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+# frob:doc \
+# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_migrates_one_active_ticket_with_done_report  # noqa: E501
 def _migrate_one_v2(
     root: Path, ticket: Ticket, dest_dir: Path
@@ -2261,7 +2256,8 @@ def _migrate_one_v2(
 
 
 # frob:ticket T-1259
-# frob:doc docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7  # noqa: E501
+# frob:doc \
+# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_golden_round_trip_semantic_equality  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_idempotent_no_v1_state_is_a_no_op  # noqa: E501
@@ -2319,8 +2315,7 @@ def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
 
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:tests \
-# tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsyncs_file_before_replace  # \
-# noqa: E501
+# tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsyncs_file_before_replace
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsync_failure_is_write_failed_n\
 # ot_a_partial_file  # noqa: E501

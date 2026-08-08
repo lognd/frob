@@ -245,6 +245,11 @@ field incident: a hand-rolled draft-refile recipe discarded 12 evidence
 ids and a 12KB Done report with no lock contention involved at all). See
 `docs/modules/tickets.md`'s "Content-loss guard on write_ticket" section
 for the full mechanism (`frob.tickets._store._check_no_content_loss`).
+The explicit ENTIRELY-skip-the-guard escape hatch a test fixture reaches
+for on purpose, `_write_ticket_unchecked`, lives in `tests._write_
+unchecked` (T-1711: relocated out of `src/frob/tickets/_store.py` so its
+WIRE001 no-production-caller waiver can use the `permanent="true"`
+test-tree exemption instead of an ever-orphaning `follow_up` ticket).
 
 **Implementation status (T-1253):** both primitives described above ship
 in `src/frob/tickets/_store.py` as `ticket_lock(root, ticket_id)` and

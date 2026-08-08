@@ -1688,16 +1688,19 @@ log line attached.
 
 T-1679 flipped the default and gave the genuine "poorer snapshot on
 purpose" callers their own explicit primitive instead:
-`_write_ticket_unchecked` (`frob.tickets._store`, private -- test-fixture-
-only, never a production write path) skips the content-loss check
-ENTIRELY, no warning at all, and says so plainly at the call site instead
-of `write_ticket` itself needing a weaker default to accommodate it. Every
-fixture that previously relied on the old warn-and-proceed default (the
-`splice_ledger` merge-preference tests in `tests/test_ticket_land.py`, the
-`TICK005` land-regression simulation tests) now calls `_write_ticket_
-unchecked` explicitly. `strict_no_content_loss=False` still exists as an
-explicit, disclosed opt-out (same warn-and-proceed behavior as before) for
-a caller with a specific reason to want it, but no production call site in
+`_write_ticket_unchecked` (T-1711: `tests._write_unchecked`, relocated out
+of `frob.tickets._store` so its WIRE001 waiver can use the `permanent=
+"true"` test-tree exemption instead of an ever-orphaning `follow_up`
+ticket -- private, test-fixture-only, never a production write path)
+skips the content-loss check ENTIRELY, no warning at all, and says so
+plainly at the call site instead of `write_ticket` itself needing a
+weaker default to accommodate it. Every fixture that previously relied on
+the old warn-and-proceed default (the `splice_ledger` merge-preference
+tests in `tests/test_ticket_land.py`, the `TICK005` land-regression
+simulation tests) now calls `_write_ticket_unchecked` explicitly.
+`strict_no_content_loss=False` still exists as an explicit, disclosed
+opt-out (same warn-and-proceed behavior as before) for a caller with a
+specific reason to want it, but no production call site in
 this repo passes it -- every real writer (the setters, `add_evidence`,
 `transition`, `set_done_report`, etc.) gets the strict-by-default
 refusal, confirmed by the full `write_ticket`-touching test surface
