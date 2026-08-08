@@ -11,15 +11,31 @@ kind needs a `may ... via` edit every single time -- the exact hand-patch
 `_sync_interface.py`'s own module docstring already documents main going
 red over for `interface=`.
 
-Scope, deliberately narrow (T-1531 Done report discloses this cut): only
-SYS100's CORE case (`check_capability_conformance`'s THREAT004 delegate,
-which carries a real `file`/`kind`/`component` per violation) is handled
-here. SYS100's EXTENDED case (eval/process-control/ffi/install-hook/...,
-`_selfconform.py::_extended_kind_violations`) fires per-NODE with no
-per-file evidence at all -- there is no single file this writer could add
-to a `via` list without guessing which of a node's many bound files
-actually exercises the capability, so it is left for a follow-up ticket
-(T-1137's own never-guess-at-a-fix posture) rather than approximated here.
+T-1531 handled only SYS100's CORE case (`check_capability_conformance`'s
+THREAT004 delegate, which carries a real `file`/`kind`/`component` per
+violation) and left the EXTENDED case (eval/process-control/ffi/
+install-hook/sql/deserialize/html_render/fetch_url/client_storage,
+`_selfconform.py::_extended_kind_violations`) as a disclosed follow-up
+(T-1545): EXTENDED fires per-NODE with no per-file evidence at all, so
+there is no single file `sync_may_extended_report` could add to a `via`
+list without guessing which of a node's many bound files actually
+exercises the capability.
+
+T-1545's resolution: rather than guess a `via` file (T-1137's own
+never-guess-at-a-fix posture forbids that), `sync_may_extended_report`
+inserts a bare, WHOLE-NODE `may "<kind>";` grant (no `via` at all) for
+every EXTENDED-kind capability `_extended_kind_violations` reports as
+observed-but-undeclared. A via-less grant covers every file the node
+owns, so it is DELIBERATELY the most conservative shape available --
+strictly broader than any per-file `via` entry could ever be wrong in
+the narrow direction (it can never under-grant relative to what is
+actually needed), the same "widen or create, never narrow or guess"
+posture `sync_may_report`'s CORE writer already applies, just with no
+`via` list to narrow to in the first place. A human reviewing the diff
+sees a plain `may "eval";`-style line and can hand-narrow it to a `via`
+list later if the false-positive-broad grant is worth tightening; the
+auto-fix's job is only to make the declaration truthful (SYS100 stops
+firing), not to reverse-engineer which file actually calls `eval`.
 
 Grammar (unchanged by this module -- `design/frob.strata` already writes
 it by hand today, `strata-core`'s `parse_attrval`/grant grammar, T-1440):
@@ -46,7 +62,13 @@ from frob.logging import get_logger
 from ._design_load import DEFAULT_DESIGN_DIR, load_design_ids
 from ._effects import check_capability_conformance
 from ._errors import StrataError
-from ._selfconform import _bind_conformance_inputs, _sorted_capability_files
+from ._models import KernelModel
+from ._selfconform import (
+    _bind_conformance_inputs,
+    _extended_kind_violations,
+    _observed_extended_kinds_by_node,
+    _sorted_capability_files,
+)
 from ._sync_interface import _NODE_HEADER_RE, _node_body_span
 from ._sysdoc import merge_models
 
@@ -303,8 +325,10 @@ def _rewrite_node_may_grants(
 
 # frob:ticket T-1531
 # frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
-# frob:tests tests/unit/strata/test_sync_may.py::TestSyncMayReport.test_no_drift_reports_clean  # noqa: E501
-# frob:tests tests/unit/strata/test_sync_may.py::TestSyncMayReport.test_widens_existing_via_list  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_sync_may.py::TestSyncMayReport.test_no_drift_reports_clean
+# frob:tests \
+# tests/unit/strata/test_sync_may.py::TestSyncMayReport.test_widens_existing_via_list
 # frob:tests tests/unit/strata/test_sync_may.py::TestSyncMayReport.test_inserts_new_grant_when_none_declared  # noqa: E501
 def sync_may_report(
     root: Path, design_dir: str = DEFAULT_DESIGN_DIR
@@ -371,18 +395,22 @@ def sync_may_report(
     return Ok(SyncMayReport(files=tuple(results)))
 
 
-# frob:ticket T-1531
-# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
-# frob:tests tests/unit/strata/test_sync_may.py::TestApplySyncMay.test_writes_only_changed_files  # noqa: E501
-def apply_sync_may(root: Path, report: SyncMayReport) -> tuple[str, ...]:
-    """Write every changed `FileMaySyncResult.new_text` in `report` back to
-    its file, in the same load order; returns the sorted repo-relative
-    paths actually rewritten. Mirrors `apply_sync_interface`'s own
-    write-only-what-changed contract."""
+_MaySyncResult = "FileMaySyncResult | FileMayExtendedSyncResult"
+
+
+def _write_changed_may_files(
+    root: Path, results: "tuple[_MaySyncResult, ...]"
+) -> tuple[str, ...]:
+    """Write every `result.changed` file's `new_text` back to disk, in
+    load order; returns the sorted repo-relative paths actually
+    rewritten. Shared by `apply_sync_may` (CORE, via-scoped) and
+    `apply_sync_may_extended` (T-1545, whole-node bare grants) -- both
+    result types carry the same `path`/`new_text`/`changed` shape, only
+    their `diffs` element type differs."""
     from frob.tickets._store import atomic_write
 
     written: list[str] = []
-    for result in report.files:
+    for result in results:
         if not result.changed:
             continue
         write_result = atomic_write(root / result.path, result.new_text)
@@ -397,10 +425,282 @@ def apply_sync_may(root: Path, report: SyncMayReport) -> tuple[str, ...]:
     return tuple(sorted(written))
 
 
+# frob:ticket T-1531
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+# frob:tests \
+# tests/unit/strata/test_sync_may.py::TestApplySyncMay.test_writes_only_changed_files
+def apply_sync_may(root: Path, report: SyncMayReport) -> tuple[str, ...]:
+    """Write every changed `FileMaySyncResult.new_text` in `report` back to
+    its file, in the same load order; returns the sorted repo-relative
+    paths actually rewritten. Mirrors `apply_sync_interface`'s own
+    write-only-what-changed contract."""
+    return _write_changed_may_files(root, report.files)
+
+
+# ---------------------------------------------------------------------------
+# SYS100 EXTENDED (T-1545): eval/process-control/ffi/install-hook/sql/
+# deserialize/html_render/fetch_url/client_storage -- no per-file evidence,
+# so the fix is a deliberately conservative WHOLE-NODE (via-less) grant
+# insertion, never a per-file `via` guess (module docstring above).
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-1545
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+@dataclass(frozen=True)
+class WholeNodeMayGrantDiff:
+    """One node's brand-new, via-less `may "<kind>";` grant inserted by
+    `sync_may_extended_report` -- there is no `added_files`/`created`
+    distinction here (unlike `MayGrantDiff`): EXTENDED-kind violations
+    are by construction always a fresh grant (`_extended_kind_violations`
+    only fires when the kind is undeclared in ANY form, bare or
+    via-scoped), never a widening of an existing line."""
+
+    node: str
+    kind: str
+
+
+# frob:ticket T-1545
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+@dataclass(frozen=True)
+class FileMayExtendedSyncResult:
+    """One `.strata` file's whole-node may-grant sync outcome -- same
+    shape as `FileMaySyncResult`, parameterized over `WholeNodeMayGrantDiff`
+    instead of `MayGrantDiff`."""
+
+    path: str
+    old_text: str
+    new_text: str
+    diffs: tuple[WholeNodeMayGrantDiff, ...]
+
+    # frob:ticket T-1545
+    # frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+    @property
+    def changed(self) -> bool:
+        """Whether this file's text actually differs -- mirrors
+        `FileMaySyncResult.changed`."""
+        return self.new_text != self.old_text
+
+
+# frob:ticket T-1545
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+@dataclass(frozen=True)
+class SyncMayExtendedReport:
+    """Every loaded `.strata` file's whole-node may-grant sync outcome,
+    in load order -- the T-1545 EXTENDED-kind sibling of `SyncMayReport`."""
+
+    files: tuple[FileMayExtendedSyncResult, ...]
+
+    # frob:ticket T-1545
+    # frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+    # frob:tests tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport.test_inserts_whole_node_grant_for_extended_kind  # noqa: E501
+    @property
+    def has_drift(self) -> bool:
+        """True if ANY file in this report needs a rewrite."""
+        return any(f.changed for f in self.files)
+
+
+# frob:ticket T-1545
+def _bare_may_line(indent: str, kind: str) -> str:
+    """Render one via-less `may "<kind>";` grant line -- the whole-node
+    form `_insert_whole_node_may_grants` inserts, mirroring
+    `_render_via_line`'s sorting-for-determinism convention (a single
+    kind has nothing to sort, but the naming stays parallel)."""
+    return f'{indent}may "{kind}";'
+
+
+# frob:ticket T-1545
+def _insert_whole_node_may_grants(
+    lines: list[str],
+    header_idx: int,
+    close_idx: int,
+    node_id: str,
+    missing_kinds: frozenset[str],
+) -> tuple[list[str], list[WholeNodeMayGrantDiff]]:
+    """Insert a bare `may "<kind>";` grant for every kind in
+    `missing_kinds`, right after the last existing `may` line inside the
+    node body (or right after the header if it declares none yet) --
+    module docstring's whole-node, never-guess-a-`via` policy. There is
+    no widen case here (unlike `_rewrite_node_may_grants`): every kind in
+    `missing_kinds` is, by `_extended_kind_violations`'s own contract,
+    undeclared in ANY form for this node, so this only ever inserts."""
+    if not missing_kinds:
+        return lines, []
+    insert_after = header_idx
+    indent: str | None = None
+    for idx in range(header_idx + 1, close_idx):
+        m = _MAY_LINE_RE.match(lines[idx])
+        if m is not None:
+            insert_after = idx
+            indent = m.group("indent")
+    header_match = _NODE_HEADER_RE.match(lines[header_idx])
+    assert header_match is not None
+    line_indent = (
+        indent if indent is not None else header_match.group("indent") + "    "
+    )
+    new_lines = [_bare_may_line(line_indent, kind) for kind in sorted(missing_kinds)]
+    diffs = [
+        WholeNodeMayGrantDiff(node=node_id, kind=kind) for kind in sorted(missing_kinds)
+    ]
+    full = lines[: insert_after + 1] + new_lines + lines[insert_after + 1 :]
+    return full, diffs
+
+
+# frob:ticket T-1545
+def _sync_one_file_may_extended(
+    text: str, additions: dict[str, frozenset[str]]
+) -> FileMayExtendedSyncResult | None:
+    """Insert every whole-node grant `additions` names for a node header
+    found in `text`; returns `None` when `text` declares no node headers
+    at all. `additions` maps node id -> the set of EXTENDED kinds that
+    node is missing entirely -- mirrors `_sync_one_file_may`'s per-header
+    walk, calling `_insert_whole_node_may_grants` instead of
+    `_rewrite_node_may_grants`."""
+    lines = text.splitlines()
+    header_idxs = [i for i, line in enumerate(lines) if _NODE_HEADER_RE.match(line)]
+    if not header_idxs:
+        return None
+    diffs: list[WholeNodeMayGrantDiff] = []
+    offset = 0
+    for header_idx in header_idxs:
+        idx = header_idx + offset
+        header_match = _NODE_HEADER_RE.match(lines[idx])
+        if header_match is None:
+            continue  # defensive: should always still match post-shift
+        node_id = header_match.group("id")
+        missing = additions.get(node_id)
+        if not missing:
+            continue
+        close_idx = _node_body_span(lines, idx)
+        before_len = len(lines)
+        lines, node_diffs = _insert_whole_node_may_grants(
+            lines, idx, close_idx, node_id, missing
+        )
+        diffs.extend(node_diffs)
+        offset += len(lines) - before_len
+    if not diffs:
+        return None
+    new_text = "\n".join(lines)
+    if text.endswith("\n") and not new_text.endswith("\n"):
+        new_text += "\n"
+    return FileMayExtendedSyncResult(
+        path="", old_text=text, new_text=new_text, diffs=tuple(diffs)
+    )
+
+
+# frob:ticket T-1545
+def _extended_may_additions(
+    model: KernelModel, *, root: Path, capability_files: tuple[str, ...]
+) -> Result[dict[str, frozenset[str]], StrataError]:
+    """Bind code and compute every SYS100-EXTENDED violation's node ->
+    missing-kinds set (ARCH001 split from `sync_may_extended_report`'s
+    binding/join phase)."""
+    bound = _bind_conformance_inputs(model, root, capability_files)
+    if bound.is_err:
+        _log.error("sync_may_extended_report: binding failed: %s", bound.danger_err)
+        return Err(bound.danger_err)
+    binding = bound.danger_ok
+
+    observed_by_node = _observed_extended_kinds_by_node(binding, root)
+    violations = _extended_kind_violations(model, observed_by_node)
+    additions: dict[str, set[str]] = {}
+    for violation in violations:
+        if violation.capability is None:
+            continue
+        additions.setdefault(violation.node, set()).add(violation.capability)
+    return Ok({node: frozenset(kinds) for node, kinds in additions.items()})
+
+
+# frob:ticket T-1545
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+# frob:tests tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport.test_no_drift_reports_clean  # noqa: E501
+# frob:tests tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport.test_inserts_whole_node_grant_for_extended_kind  # noqa: E501
+def sync_may_extended_report(
+    root: Path, design_dir: str = DEFAULT_DESIGN_DIR
+) -> Result[SyncMayExtendedReport, StrataError]:
+    """T-1545: load+merge every `.strata` file under `root/design_dir`,
+    bind code, and compute every SYS100-EXTENDED violation
+    (`_selfconform._extended_kind_violations`) as a whole-node, via-less
+    `may "<kind>";` grant insertion (module docstring: no per-file
+    evidence exists for this case, so the fix cannot narrow to a `via`
+    list the way `sync_may_report`'s CORE case does). Never writes --
+    `apply_sync_may_extended` is the only function with a side effect."""
+    ids = load_design_ids(root, design_dir)
+    if ids.errors:
+        first = ids.errors[0]
+        _log.error(
+            "sync_may_extended_report: %s failed to load: %s", first.path, first.error
+        )
+        return Err(first.error)
+    if not ids.models:
+        _log.info(
+            "sync_may_extended_report: no design models under %s/%s", root, design_dir
+        )
+        return Ok(SyncMayExtendedReport(files=()))
+
+    model = merge_models(ids.models)
+    capability_files = _sorted_capability_files(root)
+    additions_result = _extended_may_additions(
+        model, root=root, capability_files=capability_files
+    )
+    if additions_result.is_err:
+        return Err(additions_result.danger_err)
+    additions = additions_result.danger_ok
+    if not additions:
+        return Ok(SyncMayExtendedReport(files=()))
+
+    design_root = root / design_dir
+    results: list[FileMayExtendedSyncResult] = []
+    # frob:waive WALK001 reason="design_root (e.g. design/) is a small, hand-authored \
+    # .strata source subtree with no nested .git/.venv/node_modules/build/dist/target \
+    # to prune -- excludes.walk_pruned would add a filter that never fires here, not \
+    # change behavior, same posture sync_may_report's own WALK001 waiver documents"
+    for path in sorted(design_root.rglob("*.strata")):
+        text = path.read_text(encoding="utf-8")
+        if "node " not in text and "store " not in text:
+            continue
+        result = _sync_one_file_may_extended(text, additions)
+        if result is None:
+            continue
+        rel = path.relative_to(root).as_posix()
+        results.append(
+            FileMayExtendedSyncResult(
+                path=rel,
+                old_text=result.old_text,
+                new_text=result.new_text,
+                diffs=result.diffs,
+            )
+        )
+    drifted = sum(1 for r in results if r.changed)
+    _log.info(
+        "sync_may_extended_report: %d file(s) scanned, %d drifted",
+        len(results),
+        drifted,
+    )
+    return Ok(SyncMayExtendedReport(files=tuple(results)))
+
+
+# frob:ticket T-1545
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+# frob:tests tests/unit/strata/test_sync_may.py::TestApplySyncMayExtended.test_writes_only_changed_files  # noqa: E501
+def apply_sync_may_extended(
+    root: Path, report: SyncMayExtendedReport
+) -> tuple[str, ...]:
+    """Write every changed `FileMayExtendedSyncResult.new_text` in
+    `report` back to its file, in the same load order; returns the sorted
+    repo-relative paths actually rewritten. Mirrors `apply_sync_may`."""
+    return _write_changed_may_files(root, report.files)
+
+
 __all__ = [
+    "FileMayExtendedSyncResult",
     "FileMaySyncResult",
     "MayGrantDiff",
+    "SyncMayExtendedReport",
     "SyncMayReport",
+    "WholeNodeMayGrantDiff",
     "apply_sync_may",
+    "apply_sync_may_extended",
+    "sync_may_extended_report",
     "sync_may_report",
 ]

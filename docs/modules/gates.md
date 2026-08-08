@@ -4612,8 +4612,12 @@ nothing).
 
 <!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union -->
 <!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant -->
 <!-- frob:describes src/frob/strata/_sync_may.py::sync_may_report -->
 <!-- frob:describes src/frob/strata/_sync_may.py::apply_sync_may -->
+<!-- frob:describes src/frob/strata/_sync_may.py::sync_may_extended_report -->
+<!-- frob:describes src/frob/strata/_sync_may.py::apply_sync_may_extended -->
+<!-- frob:describes src/frob/strata/_sync_may.py::WholeNodeMayGrantDiff -->
 
 Every real land refusal on 2026-08-04 traced back to one of a small set
 of `.strata` declaration classes, each hand-fixed with the same
@@ -4643,30 +4647,43 @@ highest-frequency classes in:
   header/body-span matching, same insert-after-anchor convention for a
   node with no prior declaration).
 
-  **Disclosed scope cut**: SYS100's EXTENDED case
-  (eval/process-control/ffi/install-hook/..., `_selfconform.py::
+  T-1531's own writer, `sync_may_report`/`apply_sync_may`, handled this
+  case only -- `fix_sys100_may_via_union` never sees an EXTENDED kind at
+  all (`_selfconform.py::_extended_kind_violations` is a disjoint finding
+  source from `check_capability_conformance`, module docstring below).
+- **`fix_sys100_extended_whole_node_grant` (T-1545)**: SYS100's EXTENDED
+  case (eval/process-control/ffi/install-hook/sql/deserialize/
+  html_render/fetch_url/client_storage, `_selfconform.py::
   _extended_kind_violations`) fires per-NODE with no per-file evidence at
-  all -- there is no single file this writer could add to a `via` list
+  all -- there is no single file a writer could add to a `via` list
   without guessing which of a node's many bound files actually exercises
-  the capability, so it is deliberately NOT handled by
-  `fix_sys100_may_via_union` (T-1137's own never-guess-at-a-fix posture).
-  A follow-up ticket tracks it separately.
+  the capability (T-1137's own never-guess-at-a-fix posture forbids
+  that). Resolution: `frob.strata._sync_may.sync_may_extended_report`/
+  `apply_sync_may_extended` insert a bare, VIA-LESS `may "<kind>";` grant
+  instead -- the deliberately conservative whole-node shape, strictly
+  broader (never narrower, never a wrong per-file guess) than any `via`
+  entry could be. A human reviewing the diff can hand-narrow it to a
+  `via` list later if the broad grant is worth tightening; the auto-fix's
+  job is only to make the declaration truthful (SYS100 stops firing).
+  `TIER_A_HANDLERS["SYS100"]` runs BOTH fixers (`_fix_sys100_both_cases`,
+  CORE first since it can narrow to a real `via` list, EXTENDED second)
+  since they resolve disjoint violation shapes under the same rule id.
 
-Both handlers follow the same `(root: Path, snapshot: GraphSnapshot) ->
-list[FixApplied]` shape as every other pure-`.strata`-rewrite handler in
-this module (`snapshot` unused -- each reads the design tree itself, same
-as `fix_reg010_registry_sync`/`fix_rel002_release_sync`) and are no-ops
-(empty list, nothing written) when `root` has no `design/` directory at
-all, or when their respective `sync_*_report` call errors (a design file
-that fails to parse, an ambiguous code binding) -- logged and skipped,
-never raised, matching every other handler's "an auto-fix convenience is
-never a hard precondition" posture. Being registered in
-`TIER_A_HANDLERS` means both are automatically wired into EVERY existing
-Tier-A call site with zero further plumbing -- `_land_cmd.py`'s pre-land
-absorption step, its pre-commit unscoped sweep
+All three handlers follow the same `(root: Path, snapshot: GraphSnapshot)
+-> list[FixApplied]` shape as every other pure-`.strata`-rewrite handler
+in this module (`snapshot` unused -- each reads the design tree itself,
+same as `fix_reg010_registry_sync`/`fix_rel002_release_sync`) and are
+no-ops (empty list, nothing written) when `root` has no `design/`
+directory at all, or when their respective `sync_*_report` call errors (a
+design file that fails to parse, an ambiguous code binding) -- logged and
+skipped, never raised, matching every other handler's "an auto-fix
+convenience is never a hard precondition" posture. Being registered in
+`TIER_A_HANDLERS` means all three are automatically wired into EVERY
+existing Tier-A call site with zero further plumbing -- `_land_cmd.py`'s
+pre-land absorption step, its pre-commit unscoped sweep
 (`_pre_commit_unscoped_error_sweep`), AND its post-land unscoped sweep
 (`_post_land_unscoped_error_sweep`) all call `apply_tier_a_fixes`
-already; this ticket needed no changes to `src/frob/app/ticket_runner/
+already; T-1545 needed no changes to `src/frob/app/ticket_runner/
 _land_cmd.py` at all.
 
 **Remaining SYS100/SYS104/land-refusal recipes (disclosed deferral,

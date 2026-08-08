@@ -10578,6 +10578,52 @@ class TestFixEngineTierA:
         applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
         assert not [a for a in applied if a.rule == "SYS100"]
 
+    # frob:ticket T-1545
+    def test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant \
+        # kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "danger").mkdir(parents=True)
+        (root / "danger" / "run.py").write_text(
+            "def f(x):\n    return eval(x)\n", encoding="utf-8"
+        )
+        (root / "design").mkdir()
+        (root / "design" / "danger.strata").write_text(
+            'module danger\nnode Danger : trusted {\n    code "danger/**";\n}\n',
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        sys100_applied = [a for a in applied if a.rule == "SYS100"]
+        assert len(sys100_applied) == 1
+        assert "eval" in sys100_applied[0].detail
+
+        rewritten = (root / "design" / "danger.strata").read_text(encoding="utf-8")
+        assert 'may "eval";' in rewritten
+
+    # frob:ticket T-1545
+    def test_sys100_extended_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant \
+        # kind="unit"
+        from frob.gates import apply_tier_a_fixes
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "danger").mkdir(parents=True)
+        (root / "danger" / "run.py").write_text(
+            "def f(x):\n    return eval(x)\n", encoding="utf-8"
+        )
+        snapshot = self._snap(root)
+        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "SYS100"]
+
     # -- acceptance [2]: TICK002 draft renumber -----------------------------
 
     def test_tick002_renumbers_draft_and_reverifies_clean(self, tmp_path: Path) -> None:

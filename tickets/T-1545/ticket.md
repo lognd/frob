@@ -1,7 +1,7 @@
 ---
 id: T-1545
 title: 'Tier-A auto-fix: SYS100 EXTENDED-kind capability declaration (eval/process-control/ffi/...)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -13,8 +13,53 @@ runs_last: false
 scope:
 - src/frob/gates/_fix_engine.py
 - src/frob/strata/_sync_may.py
+- src/frob/gates/_fix_engine_sync.py
+- tests/unit/strata/test_sync_may.py
+- tests/test_gates_fix_engine.py
+- docs/modules/gates.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: the SYS100 handler lives beside fix_sys100_may_via_union in _fix_engine_sync.py
+    (T-1531's established split), and needs test coverage in both existing test homes
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/strata/test_sync_may.py
+  reason: the SYS100 handler lives beside fix_sys100_may_via_union in _fix_engine_sync.py
+    (T-1531's established split), and needs test coverage in both existing test homes
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: the SYS100 handler lives beside fix_sys100_may_via_union in _fix_engine_sync.py
+    (T-1531's established split), and needs test coverage in both existing test homes
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-1545's own doc section update lives in docs/modules/gates.md (already
+    edited); new SYS100-extended tests were added to tests/test_gates.py's TestFixEngineTierA
+    class alongside the existing SYS100 tests
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-1545's own doc section update lives in docs/modules/gates.md (already
+    edited); new SYS100-extended tests were added to tests/test_gates.py's TestFixEngineTierA
+    class alongside the existing SYS100 tests
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport::test_inserts_whole_node_grant_for_extended_kind
+- tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport::test_no_drift_reports_clean
+- tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport::test_no_design_files_reports_empty
+- tests/unit/strata/test_sync_may.py::TestApplySyncMayExtended::test_writes_only_changed_files
+- tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes
+- tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_no_design_dir_is_a_no_op
 designated_repro_test: null
 threat: null
 component: null

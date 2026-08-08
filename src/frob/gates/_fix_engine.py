@@ -49,6 +49,7 @@ from frob.gates._fix_engine_sync import (
     fix_cov002_ticket_directive_insertion,
     fix_reg010_registry_sync,
     fix_rel002_release_sync,
+    fix_sys100_extended_whole_node_grant,
     fix_sys100_may_via_union,
     fix_sys104_interface_union,
     fix_waive004_stale_waiver,
@@ -248,7 +249,6 @@ def fix_doc002_unique_slug(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
     return applied
 
 
-
 # ---------------------------------------------------------------------------
 # TICK002: a T-draft-* provisional id that survived onto the default branch.
 # ---------------------------------------------------------------------------
@@ -416,8 +416,7 @@ def _tick006_refile_for_ticket(
         created = new_ticket(root, spec)
         if created.is_err:
             _log.warning(
-                "fix_tick006_phantom_refile: could not refile %s "
-                "(cited by %s): %s",
+                "fix_tick006_phantom_refile: could not refile %s (cited by %s): %s",
                 tid,
                 ticket.id,
                 created.danger_err,
@@ -425,9 +424,7 @@ def _tick006_refile_for_ticket(
             continue
         new_id = created.danger_ok.id
         known_ids.add(new_id)
-        current_body, hits = _rewrite_body_prose_references(
-            current_body, {tid: new_id}
-        )
+        current_body, hits = _rewrite_body_prose_references(current_body, {tid: new_id})
         if hits:
             applied.append(
                 FixApplied(
@@ -445,6 +442,23 @@ def _tick006_refile_for_ticket(
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
+
+# frob:ticket T-1545
+def _fix_sys100_both_cases(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+    """SYS100 has two disjoint fixers (T-1531 CORE, T-1545 EXTENDED) that
+    both resolve findings under the same rule id -- run both and
+    concatenate rather than let a dict literal's single `"SYS100"` key
+    silently drop one. `fix_sys100_may_via_union` runs first (its
+    per-file `via` widen is the more targeted fix; running it before the
+    whole-node EXTENDED insertion means a file that already tripped a
+    CORE widening this same pass does not also need a broader EXTENDED
+    grant re-derived against stale text)."""
+    return [
+        *fix_sys100_may_via_union(root, snapshot),
+        *fix_sys100_extended_whole_node_grant(root, snapshot),
+    ]
+
 
 #: One rule id -> one Tier-A handler, uniform `(root, snapshot, queue) ->
 #: list[FixApplied]` call shape (T-1261 promotes `apply_tier_a_fixes`'s
@@ -511,7 +525,7 @@ TIER_A_HANDLERS: dict[
     "SYS104": lambda root, snapshot, queue, ticket_id: fix_sys104_interface_union(
         root, snapshot
     ),
-    "SYS100": lambda root, snapshot, queue, ticket_id: fix_sys100_may_via_union(
+    "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(
         root, snapshot
     ),
     "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(

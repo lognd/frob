@@ -8,7 +8,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.strata import StrataError
-from frob.strata._sync_may import apply_sync_may, sync_may_report
+from frob.strata._sync_may import (
+    apply_sync_may,
+    apply_sync_may_extended,
+    sync_may_extended_report,
+    sync_may_report,
+)
 
 
 def _write(root: Path, rel: str, source: str) -> None:
@@ -167,4 +172,93 @@ class TestApplySyncMay:
         assert result2.is_ok
         assert not result2.danger_ok.has_drift
         written2 = apply_sync_may(tmp_path, result2.danger_ok)
+        assert written2 == ()
+
+
+class TestSyncMayExtendedReport:
+    """T-1545: `sync_may_extended_report`'s pure-compute diff for SYS100
+    EXTENDED (no per-file evidence -- always a whole-node, via-less
+    grant insertion, module docstring)."""
+
+    def test_inserts_whole_node_grant_for_extended_kind(self, tmp_path: Path):
+        """A node with an observed `eval(` needle and no `may "eval"`
+        declaration at all gets a bare, via-less grant inserted."""
+        _write(tmp_path, "danger/run.py", "def f(x):\n    return eval(x)\n")
+        design_path = _write_design(
+            tmp_path,
+            "design",
+            "danger.strata",
+            'module danger\nnode Danger : trusted {\n    code "danger/**";\n}\n',
+        )
+        result = sync_may_extended_report(tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.has_drift
+        assert len(report.files) == 1
+        file_result = report.files[0]
+        assert file_result.path == "design/danger.strata"
+        assert len(file_result.diffs) == 1
+        diff = file_result.diffs[0]
+        assert diff.node == "Danger"
+        assert diff.kind == "eval"
+        assert 'may "eval";' in file_result.new_text
+        # No `via` clause at all -- whole-node grant, module docstring's
+        # deliberately conservative "never guess a file" posture.
+        assert 'may "eval" via' not in file_result.new_text
+        # Report never writes.
+        assert design_path.read_text(encoding="utf-8") != file_result.new_text
+
+    def test_no_drift_reports_clean(self, tmp_path: Path):
+        """A node that already declares `may "eval";` (even via-less)
+        reports zero drift -- `_extended_kind_violations` only fires when
+        the kind is undeclared in ANY form."""
+        _write(tmp_path, "danger/run.py", "def f(x):\n    return eval(x)\n")
+        _write_design(
+            tmp_path,
+            "design",
+            "danger.strata",
+            "module danger\n"
+            "node Danger : trusted {\n"
+            '    code "danger/**";\n'
+            '    may "eval";\n'
+            "}\n",
+        )
+        result = sync_may_extended_report(tmp_path)
+        assert result.is_ok
+        assert not result.danger_ok.has_drift
+
+    def test_no_design_files_reports_empty(self, tmp_path: Path):
+        """No `.strata` files at all under `design/` -- `Ok` with an empty
+        file list, mirroring `sync_may_report`'s own vacuous case."""
+        (tmp_path / "design").mkdir()
+        result = sync_may_extended_report(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.files == ()
+
+
+class TestApplySyncMayExtended:
+    """`apply_sync_may_extended`'s write side effect."""
+
+    def test_writes_only_changed_files(self, tmp_path: Path):
+        """Only a file whose report entry is `changed` gets written back;
+        re-running afterwards reports clean and writes nothing."""
+        _write(tmp_path, "danger/run.py", "def f(x):\n    return eval(x)\n")
+        design_path = _write_design(
+            tmp_path,
+            "design",
+            "danger.strata",
+            'module danger\nnode Danger : trusted {\n    code "danger/**";\n}\n',
+        )
+        result = sync_may_extended_report(tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        written = apply_sync_may_extended(tmp_path, report)
+        assert written == ("design/danger.strata",)
+        on_disk = design_path.read_text(encoding="utf-8")
+        assert 'may "eval";' in on_disk
+
+        result2 = sync_may_extended_report(tmp_path)
+        assert result2.is_ok
+        assert not result2.danger_ok.has_drift
+        written2 = apply_sync_may_extended(tmp_path, result2.danger_ok)
         assert written2 == ()

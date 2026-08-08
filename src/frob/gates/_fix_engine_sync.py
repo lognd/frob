@@ -260,6 +260,66 @@ def fix_sys100_may_via_union(root: Path, snapshot: GraphSnapshot) -> list[FixApp
     return applied
 
 
+# ---------------------------------------------------------------------------
+# SYS100 extended (T-1545): eval/process-control/ffi/install-hook/sql/
+# deserialize/html_render/fetch_url/client_storage -- no per-file evidence,
+# so `frob.strata._sync_may.sync_may_extended_report` inserts a
+# deliberately conservative WHOLE-NODE (via-less) `may "<kind>";` grant
+# instead of guessing a `via` file (T-1531's `fix_sys100_may_via_union`
+# CORE case, above, is the only handler that can narrow to a `via` list at
+# all -- see that module's docstring for why EXTENDED structurally
+# cannot).
+# ---------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_sys100_extended_no_design_dir_is_a_no_op
+# frob:ticket T-1545
+def fix_sys100_extended_whole_node_grant(
+    root: Path, snapshot: GraphSnapshot
+) -> list[FixApplied]:
+    """Tier-A fix (T-1545): insert a bare, via-less `may "<kind>";` grant
+    for a node `_extended_kind_violations` (SYS100 EXTENDED) observed
+    exercising an undeclared eval/process-control/ffi/... capability --
+    `frob.strata._sync_may.sync_may_extended_report`/
+    `apply_sync_may_extended`, this handler's own writer (module
+    docstring there for the deliberately-conservative whole-node
+    rationale: EXTENDED carries no per-file evidence to narrow a `via`
+    list to). A design root that does not resolve is logged and treated
+    as no fixes applied."""
+    from frob.strata._sync_may import apply_sync_may_extended, sync_may_extended_report
+
+    del snapshot  # signature uniformity only, this handler reads the design tree itself
+    if not (root / "design").is_dir():
+        return []
+    report = sync_may_extended_report(root, "design")
+    if report.is_err:
+        _log.warning(
+            "tier-a fixes: SYS100 extended sync-may skipped: %s", report.danger_err
+        )
+        return []
+    result = report.danger_ok
+    if not result.has_drift:
+        return []
+    written = apply_sync_may_extended(root, result)
+    applied: list[FixApplied] = []
+    for file_result in result.files:
+        if file_result.path not in written:
+            continue
+        for diff in file_result.diffs:
+            applied.append(
+                FixApplied(
+                    rule="SYS100",
+                    file=file_result.path,
+                    line=0,
+                    detail=f"node {diff.node} may {diff.kind!r} (whole-node grant)",
+                )
+            )
+    return applied
+
+
 # COV002 (T-1548): a changed symbol with no `frob:ticket` edge to an open
 # ticket AND no covering ticket scope -- insert `# frob:ticket
 # <landing-id>` above the symbol, but ONLY when the caller identifies a

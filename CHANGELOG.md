@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.403.0] - unreleased
+
+- T-1545: Tier-A auto-fix: SYS100 EXTENDED-kind capability declaration (eval/process-control/ffi/...)
+
 ## [0.402.0] - unreleased
 
 - T-1697: frob verify: surface the unverified window -- depth, age, quarantine, attribution
