@@ -263,3 +263,4 @@
 {"commit": "f53dc937a102b82b1e6f34bcc65965398396a967", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1478"}
 {"commit": "db5dfbeb1d144ba1673cafe04bd840b93bc2e7c3", "skipped": "land-evidence-scope-unbound", "ticket": "T-1799"}
 {"commit": "ba75e48081b3b3b25a65971dfe534e929eec0177", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1799"}
+{"commit": "79d0f7422713bb68d870bd4991d9846343e32684", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1572"}
