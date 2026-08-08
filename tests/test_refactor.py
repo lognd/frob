@@ -32,12 +32,12 @@ from frob.refactor import (
 from frob.refactor._resolve import module_to_path
 
 
-# frob:waive DUP001 reason="the git-init/config trio is the established test-repo-fixture \
-# shape shared by tests/test_stats.py::_repo and several other test modules \
-# (tests/test_decisions.py, tests/test_prework_parity.py) -- each test module owns its own \
-# tiny fixture builder by convention rather than importing a cross-file shared helper; \
-# extracting one would be a cross-file refactor out of T-1197's declared scope \
-# (tests/test_refactor.py only)"  # noqa: E501
+# frob:waive DUP001 reason="the git-init/config trio is the established \
+# test-repo-fixture shape shared by tests/test_stats.py::_repo and several other test \
+# modules (tests/test_decisions.py, tests/test_prework_parity.py) -- each test module \
+# owns its own tiny fixture builder by convention rather than importing a cross-file \
+# shared helper; extracting one would be a cross-file refactor out of T-1197's \
+# declared scope (tests/test_refactor.py only)"
 def _repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
     subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
@@ -712,7 +712,8 @@ class TestVerify:
 
 class TestFindPythonFiles:
     def test_finds_py_files_and_skips_venv(self, tmp_path):
-        # frob:tests tests/test_refactor.py::TestFindPythonFiles.test_finds_py_files_and_skips_venv  # noqa: E501
+        # frob:tests \
+        # tests/test_refactor.py::TestFindPythonFiles.test_finds_py_files_and_skips_venv
         from frob.refactor import find_python_files
 
         _write(tmp_path, "src/pkg/mod.py", "x = 1\n")
@@ -736,7 +737,8 @@ class TestGitOps:
         assert result.danger_ok is True
 
     def test_working_tree_clean_false_when_dirty(self, tmp_path):
-        # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_false_when_dirty  # noqa: E501
+        # frob:tests \
+        # tests/test_refactor.py::TestGitOps.test_working_tree_clean_false_when_dirty
         from frob.refactor._gitops import working_tree_clean
 
         root = _repo(tmp_path)
@@ -748,7 +750,7 @@ class TestGitOps:
         assert result.danger_ok is False
 
     def test_current_sha_matches_head(self, tmp_path):
-        # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_matches_head  # noqa: E501
+        # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_matches_head
         from frob.refactor._gitops import current_sha
 
         root = _repo(tmp_path)
@@ -766,7 +768,8 @@ class TestGitOps:
         assert result.danger_ok == expected
 
     def test_working_tree_clean_not_a_git_repo(self, tmp_path):
-        # frob:tests tests/test_refactor.py::TestGitOps.test_working_tree_clean_not_a_git_repo  # noqa: E501
+        # frob:tests \
+        # tests/test_refactor.py::TestGitOps.test_working_tree_clean_not_a_git_repo
         # A directory that is not (and is not inside) a git repository:
         # `git status --porcelain` exits nonzero, and the function must
         # report NotAGitRepo rather than misreport "clean".
@@ -802,7 +805,7 @@ class TestGitOps:
         assert result.danger_err == RefactorError.GitError
 
     def test_current_sha_not_a_git_repo(self, tmp_path):
-        # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_not_a_git_repo  # noqa: E501
+        # frob:tests tests/test_refactor.py::TestGitOps.test_current_sha_not_a_git_repo
         from frob.refactor._gitops import current_sha
         from frob.refactor._models import RefactorError
 
@@ -815,7 +818,8 @@ class TestGitOps:
 
 class TestModuleToPath:
     def test_maps_dotted_module_under_src(self, tmp_path):
-        # frob:tests tests/test_refactor.py::TestModuleToPath.test_maps_dotted_module_under_src  # noqa: E501
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleToPath.test_maps_dotted_module_under_src
         (tmp_path / "src").mkdir()
         path = module_to_path(tmp_path, "pkg.sub.mod")
         assert path == tmp_path / "src" / "pkg" / "sub" / "mod.py"
@@ -1203,6 +1207,57 @@ class TestRepointer:
         for op in ops:
             assert "src/pkg/new.py::greet" in op.new_text
             assert old_symref not in op.new_text
+
+    def test_per_ticket_ledger_file_evidence_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_per_ticket_ledger_file_evidence_re\
+        # written
+        """T-1546: `tickets/<id>/ticket.md` -- the real ledger-v2 file a
+        live ticket's Evidence lives in -- gets the same rewrite the
+        legacy `tickets.md` monofile does."""
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_symref = "src/pkg/mod.py::greet"
+        _write(root, "tickets/T-0001/ticket.md", f"Evidence: {old_symref} passes.\n")
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.new", qualname="greet")
+        ops, unresolved = scan_evidence_citations(root, resolved, destination)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert ops[0].file_path == str(root / "tickets" / "T-0001" / "ticket.md")
+        assert "src/pkg/new.py::greet" in ops[0].new_text
+        assert old_symref not in ops[0].new_text
+
+    def test_archived_per_ticket_ledger_file_evidence_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRepointer.test_archived_per_ticket_ledger_file_ev\
+        # idence_rewritten
+        """T-1546: `tickets/archive/<id>/ticket.md` -- a CLOSED ticket's
+        archived ledger-v2 file -- also gets the rewrite; a closed
+        ticket's own Evidence is exactly the case T-1520's incident (and
+        this ticket's own body) was about."""
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_symref = "src/pkg/mod.py::greet"
+        _write(
+            root,
+            "tickets/archive/T-0001/ticket.md",
+            f"Evidence: {old_symref} passes.\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.new", qualname="greet")
+        ops, unresolved = scan_evidence_citations(root, resolved, destination)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert ops[0].file_path == str(
+            root / "tickets" / "archive" / "T-0001" / "ticket.md"
+        )
+        assert "src/pkg/new.py::greet" in ops[0].new_text
+        assert old_symref not in ops[0].new_text
 
     def test_no_matching_citation_yields_no_ops(self, tmp_path):
         # frob:tests \

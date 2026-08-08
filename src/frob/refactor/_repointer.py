@@ -44,9 +44,19 @@ __all__ = [
 #: codebase today.
 _PII012_ALLOWLIST_FILE = "src/frob/gates/_pii_structural/_keywords.py"
 
-#: The ledger files a closed ticket's Evidence section can live in --
-#: both need scanning, per the ticket's own plan note ("Both files, not
-#: just the live ledger").
+#: The FIXED-PATH ledger files a closed ticket's Evidence section can
+#: live in -- both need scanning, per the ticket's own plan note ("Both
+#: files, not just the live ledger"). T-1546: this repo migrated to
+#: per-ticket files (`tickets/T-XXXX/ticket.md`,
+#: `tickets/archive/T-XXXX/ticket.md`) as the REAL place evidence lives
+#: today -- `tickets.md`/`tickets-archive.md` are legacy aggregator
+#: files this scan still checks for a repo that has not migrated, but a
+#: ticket's own per-ticket file is where `_per_ticket_ledger_files` below
+#: actually finds a live citation in THIS repo. Kept as two separate
+#: mechanisms (fixed list + glob) rather than folding the fixed list
+#: into the glob, since a repo without T-1136's ledger-v2 migration has
+#: no `tickets/` directory at all -- the glob below already tolerates
+#: that (an absent `tickets/` yields no matches, not an error).
 _LEDGER_FILES = ("tickets.md", "tickets-archive.md")
 
 #: Directories a repo-wide yaml/text scan below should never walk --
@@ -97,7 +107,8 @@ def _old_and_dest_rel(
 
 
 # frob:doc docs/commands/refactor.md#scan_pii_allowlist_carrier
-# frob:tests tests/test_refactor.py::TestRepointer.test_pii_allowlist_entry_rekeyed_on_move  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestRepointer.test_pii_allowlist_entry_rekeyed_on_move
 def scan_pii_allowlist_carrier(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:
@@ -143,7 +154,7 @@ def scan_pii_allowlist_carrier(
 
 
 # frob:doc docs/commands/refactor.md#scan_registry_citations
-# frob:tests tests/test_refactor.py::TestRepointer.test_registry_cross_ref_rewritten  # noqa: E501
+# frob:tests tests/test_refactor.py::TestRepointer.test_registry_cross_ref_rewritten
 def scan_registry_citations(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:
@@ -201,16 +212,42 @@ def _pytest_node_id(rel_path: str, qualname: str) -> str | None:
     return f"{rel_path}::{qualname.replace('.', '::')}"
 
 
+# frob:ticket T-1546
+def _per_ticket_ledger_files(repo_root: Path) -> list[Path]:
+    """Every `tickets/<id>/ticket.md` and `tickets/archive/<id>/ticket.md`
+    under `repo_root` (T-1546) -- the REAL place a ticket's Evidence
+    section lives in this repo's ledger-v2 (per-ticket-file) layout,
+    which `_LEDGER_FILES`'s two fixed legacy paths alone do not reach.
+    Sorted for deterministic `RewriteOp` ordering (matters for the
+    transaction's own diff rendering, not correctness). An absent
+    `tickets/` directory (a repo that never migrated to ledger-v2)
+    yields an empty list, not an error -- `Path.glob` on a missing
+    directory is simply empty."""
+    return sorted((repo_root / "tickets").glob("*/ticket.md")) + sorted(
+        (repo_root / "tickets" / "archive").glob("*/ticket.md")
+    )
+
+
 # frob:doc docs/commands/refactor.md#scan_evidence_citations
-# frob:tests tests/test_refactor.py::TestRepointer.test_ticket_evidence_symref_rewritten  # noqa: E501
+# frob:tests tests/test_refactor.py::TestRepointer.test_ticket_evidence_symref_rewritten
+# frob:tests \
+# tests/test_refactor.py::TestRepointer.test_per_ticket_ledger_file_evidence_rewritten
+# frob:tests \
+# tests/test_refactor.py::TestRepointer.test_archived_per_ticket_ledger_file_evidence_r\
+# ewritten
 def scan_evidence_citations(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:
-    """`tickets.md`/`tickets-archive.md` carrier: any line citing the
-    moving symbol's old `path::Class.method` symref OR its pytest
-    `path::Class::method` node-id form gets rewritten to the destination's
-    equivalent -- both files, per the ticket's own plan note, since a
-    closed ticket's Evidence lives in either one. A ledger with no
+    """Ledger carrier: any line citing the moving symbol's old
+    `path::Class.method` symref OR its pytest `path::Class::method`
+    node-id form gets rewritten to the destination's equivalent, across
+    every place a ticket's Evidence section can live -- the two legacy
+    `tickets.md`/`tickets-archive.md` monofiles (`_LEDGER_FILES`) AND, per
+    T-1546, every real per-ticket `tickets/<id>/ticket.md`/`tickets/
+    archive/<id>/ticket.md` file this repo's ledger-v2 layout actually
+    uses today (`_per_ticket_ledger_files`) -- a repo pre-T-1136
+    migration only ever hits the legacy files; this repo, post-migration,
+    overwhelmingly hits the per-ticket ones instead. A ledger with no
     matching citation (evidence overwhelmingly cites TEST node ids for
     unrelated test functions, not a moving PRODUCTION symbol) yields
     empty ops, not an error."""
@@ -232,9 +269,11 @@ def scan_evidence_citations(
     if not rewrite_map:
         return [], []
 
+    ledger_paths = [repo_root / rel_ledger for rel_ledger in _LEDGER_FILES]
+    ledger_paths += _per_ticket_ledger_files(repo_root)
+
     ops: list[RewriteOp] = []
-    for rel_ledger in _LEDGER_FILES:
-        ledger_path = repo_root / rel_ledger
+    for ledger_path in ledger_paths:
         if not ledger_path.is_file():
             continue
         lines = ledger_path.read_text(encoding="utf-8").splitlines()

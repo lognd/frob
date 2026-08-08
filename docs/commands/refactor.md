@@ -382,10 +382,14 @@ entry is the observed shape), rewritten to the destination's equivalent.
 <a id="scan_evidence_citations"></a>
 <!-- frob:describes src/frob/refactor/_repointer.py::scan_evidence_citations -->
 **`scan_evidence_citations`**: T-1200's registry/evidence repointer, part
-3 -- a text-level scan of `tickets.md` and `tickets-archive.md` for any
-line citing the moving symbol's old `path::Class.method` symref or its
-pytest `path::Class::method` node-id form, rewritten to the destination's
-equivalent. `build_plan` folds all three repointer scans into
+3 -- a text-level scan for any line citing the moving symbol's old
+`path::Class.method` symref or its pytest `path::Class::method` node-id
+form, rewritten to the destination's equivalent. Scans BOTH the legacy
+`tickets.md`/`tickets-archive.md` monofiles AND, per T-1546, every real
+per-ticket `tickets/<id>/ticket.md`/`tickets/archive/<id>/ticket.md`
+file this repo's ledger-v2 layout actually uses -- a pre-migration repo
+only ever hits the legacy files; this repo, post-migration, hits the
+per-ticket ones. `build_plan` folds all three repointer scans into
 `reference_ops`/`unresolved` alongside T-1199's directive carrier.
 
 <a id="scan_python_prose_mentions"></a>
