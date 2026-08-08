@@ -114,3 +114,62 @@ class TestDocenum001Gate:
         assert len(violations) == 1
         assert violations[0].severity.value == "warn"
         assert "cannot resolve" in violations[0].message
+
+    def test_argparse_choices_members_extracted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        # T-1506: a qualname naming the enclosing parser-builder function
+        # resolves to its one add_argument(choices=[...]) list.
+        _write(
+            tmp_path,
+            "cli.py",
+            "def _add_cycle_parser(sub) -> None:\n"
+            '    cycle_p = sub.add_parser("cycle")\n'
+            '    cycle_p.add_argument("cycle_path", metavar="path")\n'
+            '    cycle_p.add_argument(\n'
+            '        "--lang", dest="cycle_lang", choices=["python", "cpp", "c"]\n'
+            "    )\n",
+        )
+        edges = (
+            _enumerates_edge("cli.py::_add_cycle_parser", "python,cpp,c"),
+        )
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        assert violations == ()
+
+    def test_argparse_choices_stale_claim_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        _write(
+            tmp_path,
+            "cli.py",
+            "def _add_cycle_parser(sub) -> None:\n"
+            '    cycle_p = sub.add_parser("cycle")\n'
+            '    cycle_p.add_argument(\n'
+            '        "--lang", dest="cycle_lang", choices=["python", "cpp", "c"]\n'
+            "    )\n",
+        )
+        edges = (_enumerates_edge("cli.py::_add_cycle_parser", "python,cpp"),)
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        assert len(violations) == 1
+        assert "c" in violations[0].message
+
+    def test_argparse_multiple_choices_calls_is_ambiguous_punt(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        # More than one add_argument(choices=[...]) call in the same
+        # function is ambiguous -- punt (WARN), never guess which one the
+        # qualname means.
+        _write(
+            tmp_path,
+            "cli.py",
+            "def _add_two_choices_parser(sub) -> None:\n"
+            '    p = sub.add_parser("x")\n'
+            '    p.add_argument("--a", choices=["one", "two"])\n'
+            '    p.add_argument("--b", choices=["three", "four"])\n',
+        )
+        edges = (
+            _enumerates_edge("cli.py::_add_two_choices_parser", "one,two"),
+        )
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        assert len(violations) == 1
+        assert violations[0].severity.value == "warn"
+        assert "cannot resolve" in violations[0].message

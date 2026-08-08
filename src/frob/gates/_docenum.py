@@ -24,10 +24,18 @@ class-level `dict`/`set`/`tuple`/`frozenset` literal assignment, a
 `typing.Literal[...]` annotation, an `ErrorSet` subclass, or a `StrEnum`/
 `Enum` subclass -- each contributes its member NAMES (dict keys as their
 literal string/attribute value, not the assignment target; enum/errorset
-member names; Literal's own string args). A collection shape this module
-cannot resolve is NOT silently accepted as passing -- `_extract_members`
-returns `None` and the gate reports an UNRESOLVABLE-shape violation
-(punt), rather than a false "matches" result.
+member names; Literal's own string args). T-1506 widens this to a
+function-qualname shape: an argparse `<parser>.add_argument(...,
+choices=[...])` call site has no bare module/class-level assignment
+target of its own to walk to, so the qualname instead names the
+ENCLOSING function (e.g. an `_add_<x>_parser`-shaped builder), and
+`_extract_argparse_choices` resolves it to that function's one
+`choices=[...]` list (punting, same as every other unresolvable shape,
+if the function contains zero or more than one such call -- ambiguous
+otherwise). A collection shape this module cannot resolve is NOT
+silently accepted as passing -- `_extract_members` returns `None` and
+the gate reports an UNRESOLVABLE-shape violation (punt), rather than a
+false "matches" result.
 """
 # frob:ticket T-1227
 
@@ -128,11 +136,13 @@ def _resolved_names(nodes: list[ast.AST]) -> frozenset[str] | None:
 
 
 # frob:ticket T-1504
+# frob:ticket T-1506
 def _extract_members(tree: ast.Module, qualname: str) -> frozenset[str] | None:
     """The real member-name set for `qualname`'s collection literal/class,
     or `None` if the shape is not one of the supported kinds (dict/set/
     tuple/frozenset literal, `Literal[...]`, `ErrorSet`/`StrEnum`/`Enum`
-    subclass) -- a punt, not a silent pass."""
+    subclass, or a function's single argparse `choices=[...]` call) -- a
+    punt, not a silent pass."""
     node = _find_node_for_qualname(tree, qualname)
     if node is None:
         return None
@@ -169,14 +179,41 @@ def _extract_members(tree: ast.Module, qualname: str) -> frozenset[str] | None:
         if func_name != "frozenset" or len(node.args) != 1:
             return None
         return _extract_members_from_container(node.args[0])
-    # frob:todo T-1506
-    # Punt, disclosed: argparse `choices=[...]` lists (cycle.md/xref.md
-    # --lang, parse.md tool table) are not resolved here -- a
-    # `parser.add_argument(..., choices=[...])` call site has no bare
-    # module/class-level assignment target `_find_node_for_qualname` can
-    # walk to at all (the ticket's own "cheaply reachable" caveat); the
-    # follow-up ticket above tracks widening `_extract_members` to this
-    # shape rather than leaving it silently unsupported forever.
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        # T-1506: a qualname resolving to a function (typically an
+        # `_add_<x>_parser`-shaped argparse builder, since a bare
+        # `add_argument(..., choices=[...])` call site has no
+        # module/class-level assignment target of its own) -- resolve to
+        # that ONE call's choices list, see `_extract_argparse_choices`.
+        return _extract_argparse_choices(node)
+    return None
+
+
+def _extract_argparse_choices(
+    func: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> frozenset[str] | None:
+    """The single `<parser>.add_argument(..., choices=[...])` call's choices
+    list found anywhere in `func`'s body, or `None` if none or more than one
+    such call exists -- with more than one `choices=` kwarg in scope, which
+    call a bare function-qualname means is ambiguous, so this punts rather
+    than silently guessing (T-1506)."""
+    choices_values: list[ast.AST] = []
+    for call in ast.walk(func):
+        if not isinstance(call, ast.Call):
+            continue
+        is_add_argument = (
+            isinstance(call.func, ast.Attribute) and call.func.attr == "add_argument"
+        )
+        if not is_add_argument:
+            continue
+        for kw in call.keywords:
+            if kw.arg == "choices":
+                choices_values.append(kw.value)
+    if len(choices_values) != 1:
+        return None
+    (choices_node,) = choices_values
+    if isinstance(choices_node, (ast.List, ast.Tuple, ast.Set)):
+        return _resolved_names(list(choices_node.elts))
     return None
 
 

@@ -1,7 +1,7 @@
 ---
 id: T-1506
 title: 'docenum: widen _extract_members to resolve argparse choices=[...] lists'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-03'
@@ -12,8 +12,25 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_docenum.py
+- tests/test_docenum_gate.py
+- tickets/T-1506/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_docenum_gate.py
+  reason: 'T-1506: unit tests for the new argparse choices=[...] extraction shape'
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1506/**
+  reason: 'T-1506: own ticket dir needed in scope (Done report/ledger files)'
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_docenum_gate.py::TestDocenum001Gate::test_argparse_choices_members_extracted
+- tests/test_docenum_gate.py::TestDocenum001Gate::test_argparse_choices_stale_claim_fires
+- tests/test_docenum_gate.py::TestDocenum001Gate::test_argparse_multiple_choices_calls_is_ambiguous_punt
 designated_repro_test: null
 threat: null
 component: null
