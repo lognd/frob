@@ -54,6 +54,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeAlias
 
 from typani.result import Err, Ok, Result
 
@@ -395,7 +396,7 @@ def sync_may_report(
     return Ok(SyncMayReport(files=tuple(results)))
 
 
-_MaySyncResult = "FileMaySyncResult | FileMayExtendedSyncResult"
+_MaySyncResult: TypeAlias = "FileMaySyncResult | FileMayExtendedSyncResult"
 
 
 def _write_changed_may_files(
@@ -590,7 +591,7 @@ def _sync_one_file_may_extended(
 
 # frob:ticket T-1545
 def _extended_may_additions(
-    model: KernelModel, *, root: Path, capability_files: tuple[str, ...]
+    model: KernelModel, *, root: Path, capability_files: list[Path]
 ) -> Result[dict[str, frozenset[str]], StrataError]:
     """Bind code and compute every SYS100-EXTENDED violation's node ->
     missing-kinds set (ARCH001 split from `sync_may_extended_report`'s
