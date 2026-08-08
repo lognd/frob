@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.390.0] - unreleased
+
+- T-1643: Wire a real Tier-B --fix handler (T-1262 shipped only the synthetic TIERBDEMO001 reference handler)
+
 ## [0.389.0] - unreleased
 
 - T-1746: Implement real fix for WIRE001 same-file test-fixture reuse false positive

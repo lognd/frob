@@ -15851,6 +15851,7 @@ class TestNewGateRuleDynamicResolution:
         assert new_gate_rule_ids(tmp_path, base_ref="main") == ()
 
 
+# frob:ticket T-1643
 class TestFixEngineTierB:
     """`frob.gates._fix_engine_tier_b`'s Tier-B apply-verify-rollback
     transaction engine (T-1262): each test is a GIVEN/WHEN/THEN
@@ -16055,6 +16056,98 @@ class TestFixEngineTierB:
         )
         assert committed == []
         assert rolled_back == []
+
+    # -- DEAD001: the first real, production Tier-B handler (T-1643) -------
+
+    # frob:ticket T-1643
+    def test_dead001_removes_unreferenced_private_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates.py::TestFixEngineTierB.test_dead001_removes_unreferenced_pri\
+        # vate_symbol
+        from frob.gates._fix_engine_tier_b import (
+            fix_dead001_unreferenced_symbol_removal,
+        )
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        _write(
+            root,
+            "src/a.py",
+            "def _never_called() -> None:\n    pass\n\n\ndef foo() -> None:\n    pass\n",
+        )
+        snapshot = self._snap(root)
+
+        applied = fix_dead001_unreferenced_symbol_removal(
+            root, snapshot, TicketQueue(tickets={})
+        )
+        assert len(applied) == 1
+        assert applied[0].rule == "DEAD001"
+        assert "_never_called" in applied[0].detail
+        rewritten = (root / "src" / "a.py").read_text(encoding="utf-8")
+        assert "_never_called" not in rewritten
+        assert "def foo" in rewritten
+
+    # frob:ticket T-1643
+    def test_dead001_skips_a_waived_finding(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_gates.py::TestFixEngineTierB.test_dead001_skips_a_waived_finding
+        from frob.gates._fix_engine_tier_b import (
+            fix_dead001_unreferenced_symbol_removal,
+        )
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        _write(
+            root,
+            "src/a.py",
+            '# frob:waive DEAD001 reason="reached only via getattr dispatch"\n'
+            "def _never_called() -> None:\n    pass\n",
+        )
+        snapshot = self._snap(root)
+
+        applied = fix_dead001_unreferenced_symbol_removal(
+            root, snapshot, TicketQueue(tickets={})
+        )
+        assert applied == []
+        assert "_never_called" in (root / "src" / "a.py").read_text(encoding="utf-8")
+
+    # frob:ticket T-1643
+    def test_dead001_at_most_one_deletion_per_file_per_pass(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates.py::TestFixEngineTierB.test_dead001_at_most_one_deletion_per\
+        # _file_per_pass
+        from frob.gates._fix_engine_tier_b import (
+            fix_dead001_unreferenced_symbol_removal,
+        )
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        _write(
+            root,
+            "src/a.py",
+            "def _never_called_one() -> None:\n"
+            "    pass\n\n\n"
+            "def _never_called_two() -> None:\n"
+            "    pass\n\n\n"
+            "def foo() -> None:\n"
+            "    pass\n",
+        )
+        snapshot = self._snap(root)
+
+        applied = fix_dead001_unreferenced_symbol_removal(
+            root, snapshot, TicketQueue(tickets={})
+        )
+        assert len(applied) == 1
+        rewritten = (root / "src" / "a.py").read_text(encoding="utf-8")
+        # Exactly one of the two dead symbols was removed this pass; the
+        # other survives to be caught on the NEXT --fix invocation once
+        # dead_symbol_gate is re-run against the now-updated tree.
+        names = ("_never_called_one", "_never_called_two")
+        assert sum(name not in rewritten for name in names) == 1
 
 
 class TestFixEngineTierC:

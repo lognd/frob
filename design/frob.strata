@@ -313,6 +313,7 @@ node verify : trusted {
 // describe this node's public surface and has nothing to update here."
 // frob:ticket T-1548
 // frob:ticket T-1763
+// frob:ticket T-1643
 // frob:ticket T-1764
 node gates : trusted {
 
@@ -331,7 +332,8 @@ node gates : trusted {
         deprecated_gate, doc004_gate, doc005_gate, doc006_gate, docanchor_gate, docenum001_gate,
         doclink_gate, docmake_gate, docstatus_gate, drift_gate, dup_gate, evaluate_cacheable_gate,
         evidence_covers_scope, exclude_hazard_gate, exhaustive_handling_gate, extra_key, fake_marker_staleness_gate, ffi_boundary_gate,
-        file_reference_counts, fix_cov002_ticket_directive_insertion, fix_e501_merge_introduced, fix_fmt001_directive_wrap, fix_reg010_registry_sync, fix_rel002_release_sync,
+        file_reference_counts, fix_cov002_ticket_directive_insertion, fix_dead001_unreferenced_symbol_removal, fix_e501_merge_introduced, fix_fmt001_directive_wrap, fix_reg010_registry_sync,
+        fix_rel002_release_sync,
         fix_suppress001_paired_suppression, fix_tick002_renumber, fix_tick006_phantom_refile, fix_waive004_stale_waiver, fmt_gate, format_paths,
         fuzz_gate, generated_gate_rule_ids, inv003_gate, inv004_gate, inv007_violations, inv008_violations,
         invalidate, invariant_gate, is_baseline_stale, known_gate_rule_ids, lang_conformance_gate, list_debt,

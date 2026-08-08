@@ -599,9 +599,10 @@
     "src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap": "1b315b742f19d4711e81c022a37a36a787316a79de736af643361b494990cc8f",
     "src/frob/gates/_fix_engine_text.py::fix_suppress001_paired_suppression": "c32f4f239197b078b6e794f6454f92ab059eade1815ee738b8d1b06d6780385a",
     "src/frob/gates/_fix_engine_tier_b.py::FixRolledBack": "4b415e632aece6ba8fd707fbe1caa1afaa9c02583908c94fd36950ee24e3a535",
-    "src/frob/gates/_fix_engine_tier_b.py::TIER_B_HANDLERS": "e66f82bf29da57919ac7a57e95b4de53dcdad479b3c64fd66622aedd7675baaa",
+    "src/frob/gates/_fix_engine_tier_b.py::TIER_B_HANDLERS": "c075105775a8bcaa29ba0242617e1f4a8bb1b3c597aaa824be0d4861cd0948d7",
     "src/frob/gates/_fix_engine_tier_b.py::TierBFix": "438534f703f7a49c7caf2aa5d0567fbdf5110515e453eb9c00564d4c54da34ee",
     "src/frob/gates/_fix_engine_tier_b.py::apply_tier_b_fixes": "72c70e9b20dda9f630860878ebfebfb9a6b95fcba30c9d704c16a59a7dd53730",
+    "src/frob/gates/_fix_engine_tier_b.py::fix_dead001_unreferenced_symbol_removal": "b08af3f10fcf81a73df200c234c55a75a71ad900073485441869a5071ccc9137",
     "src/frob/gates/_fix_engine_tier_b.py::fix_tierbdemo001_marker_rewrite": "3e6e0b2b78aa21524acf49f4f107c704f2ec309e39cd08b8d75e97ef3a3ef5a3",
     "src/frob/gates/_fix_engine_tier_c.py::FixIt": "177429bff64a171a4528857aa9a5f09f2d10da60394f0c2880c378f1a33080fa",
     "src/frob/gates/_fix_engine_tier_c.py::TIER_C_EMITTERS": "4f0cea1cd4586ad7b60e3fcd8bf7ab1da9041e7692ca63e5fd8e4e2337b1ca20",
@@ -2145,5 +2146,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.389.0"
+  "version": "0.390.0"
 }

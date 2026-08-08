@@ -248,19 +248,33 @@ prescribes. `gate_runner`/`test_runner` are injectable (default: the
 real `run_gates`/subprocess-`pytest` pair) so the module's own tests can
 prove the commit/rollback decision logic deterministically.
 
-No concrete production Tier-B handler exists yet: per this ticket's own
-acceptance note, `fix_tierbdemo001_marker_rewrite` is a SYNTHETIC
-reference handler (a `# frob:tierbdemo <replacement>` marker-comment
-rewrite, keyed to a placeholder `TIERBDEMO001` id that is deliberately
-never a real `frob check` rule) proving the full snapshot-apply-verify-
-commit-or-rollback path end-to-end without depending on any real gate
-rule's shape. A real Tier-B handler is a follow-up. T-1481 wired `--fix`
-to call `apply_tier_b_fixes` for real (`_apply_tier_a_and_reverify`,
-above) -- `TIERBDEMO001`'s marker text never appears in this repo's own
-source, so this is an honest no-op on every real `frob check --fix` run
-today, exactly as `apply_tier_a_fixes`'s own T-1260 "no live finding, no
-fix" precedent already established, not a live production handler firing
-silently.
+`fix_tierbdemo001_marker_rewrite` is a SYNTHETIC reference handler (a
+`# frob:tierbdemo <replacement>` marker-comment rewrite, keyed to a
+placeholder `TIERBDEMO001` id that is deliberately never a real `frob
+check` rule) proving the full snapshot-apply-verify-commit-or-rollback
+path end-to-end without depending on any real gate rule's shape.
+`TIERBDEMO001`'s marker text never appears in this repo's own source, so
+it stays an honest no-op on every real `frob check --fix` run, exactly
+as `apply_tier_a_fixes`'s own T-1260 "no live finding, no fix" precedent
+already established.
+
+T-1643 added the first REAL production handler:
+`fix_dead001_unreferenced_symbol_removal` deletes a DEAD001-flagged
+private symbol's own source span (`SymbolRecord.span` already delimits
+exactly what to remove -- decorators through closing line, no
+surrounding blank lines or sibling symbols) -- mechanical, but only safe
+conditionally on the rest of the tree per `dead_symbol_gate`'s own
+disclosed soundness gap (dynamic/reflective access the call graph
+cannot see), the shape Tier A cannot cover. It reuses `dead_symbol_gate`
+and `_apply_waivers` directly (never a reimplementation of DEAD001's own
+detection) so an explicit `frob:waive DEAD001` is always honored, caps
+itself at one deletion per file per `--fix` invocation (a second
+deletion in the same file would need to account for the line-number
+shift the first one just made -- a file with several dead symbols drains
+one per run instead), and binds the symbol's own conventional test file
+(`tests/test_<stem>.py` / `tests/unit/test_<stem>.py`, if one exists) as
+`bound_tests` so a genuine regression rolls back through the same
+commit-or-revert path `TIERBDEMO001` proved end-to-end.
 
 ## `frob doctor` fold-vs-delegate decision
 

@@ -2,7 +2,7 @@
 id: T-1643
 title: Wire a real Tier-B --fix handler (T-1262 shipped only the synthetic TIERBDEMO001
   reference handler)
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-06'
@@ -15,8 +15,34 @@ scope:
 - src/frob/gates/_fix_engine_tier_b.py
 - src/frob/gates/_fix_engine.py
 - tests/test_gates.py
+- docs/design/check-fix-engine.md
+- design/frob.strata
+- tickets/T-1643/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/check-fix-engine.md
+  reason: 'AFFECT001: doc anchor for TIER_B_HANDLERS/new handler; SELFAUDIT001: new
+    public symbol needs interface sync via frob sys sync-interface'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: 'AFFECT001: doc anchor for TIER_B_HANDLERS/new handler; SELFAUDIT001: new
+    public symbol needs interface sync via frob sys sync-interface'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1643/**
+  reason: 'SCOPE001: ticket''s own per-ticket ledger file, per T-1742/T-1737/T-1483
+    precedent'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_gates.py::TestFixEngineTierB::test_dead001_removes_unreferenced_private_symbol
+- tests/test_gates.py::TestFixEngineTierB::test_dead001_skips_a_waived_finding
+- tests/test_gates.py::TestFixEngineTierB::test_dead001_at_most_one_deletion_per_file_per_pass
 designated_repro_test: null
 threat: null
 component: null

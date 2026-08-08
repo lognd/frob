@@ -21,9 +21,19 @@ It scans for a `# frob:tierbdemo <replacement>` marker comment and
 rewrites the marker's OWN line to `replacement`, verbatim -- deliberately
 trivial, so this module's own tests can exercise the full commit and
 rollback paths deterministically without depending on any real gate
-rule's shape. A real Tier-B handler (release-sync-shaped, or any other
-remedy whose safety depends on tree state) is a follow-up, out of this
-ticket's own scope per its Plan section.
+rule's shape.
+
+T-1643 added the first REAL production handler:
+`fix_dead001_unreferenced_symbol_removal` deletes a DEAD001-flagged
+private symbol's own source span, one per file per `--fix` invocation --
+mechanical (the span already delimits exactly what to remove) but only
+safe conditionally on the rest of the tree (`dead_symbol_gate`'s own
+disclosed soundness gap: dynamic/reflective access the call graph cannot
+see), exactly the shape Tier A cannot cover. It skips any finding an
+explicit `frob:waive DEAD001` already covers and binds the symbol's own
+conventional test file (if one exists) as `bound_tests`, so a genuine
+regression rolls back through the same commit-or-revert path
+`TIERBDEMO001` proved end-to-end.
 
 `apply_tier_b_fixes`'s `gate_runner`/`test_runner` keyword params default
 to the real `run_gates`/subprocess-`pytest` implementations but accept an
@@ -55,6 +65,7 @@ from frob.tickets import TicketQueue
 
 if TYPE_CHECKING:
     from frob.gates._models import GateReport
+    from frob.graph import SymbolRecord
 
 _log = logging.getLogger(__name__)
 
@@ -190,16 +201,148 @@ def fix_tierbdemo001_marker_rewrite(
     return applied
 
 
+# ---------------------------------------------------------------------------
+# DEAD001: the first real, production Tier-B handler (T-1643) -- deletes an
+# unreferenced private symbol, a remedy that is mechanical (the tree-sitter
+# span already delimits exactly the lines to remove) but only SAFE
+# conditionally on the rest of the tree: `dead_symbol_gate`'s own docstring
+# discloses a soundness gap (dynamic/reflective access the call graph cannot
+# see), so this is exactly the "mechanical but conditionally safe" shape
+# Tier B exists for, never Tier A material.
+# ---------------------------------------------------------------------------
+
+
+def _dead001_candidate_test_files(root: Path, source_rel: str) -> tuple[str, ...]:
+    """Conventional test-file paths for `source_rel`'s own module, tried in
+    the same `tests/test_<stem>.py` / `tests/unit/test_<stem>.py` shape this
+    repo's own layout uses, filtered to paths that actually exist on disk.
+    A genuinely dead symbol by definition carries no `frob:tests` edge of
+    its own (that IS the DEAD001 precondition), so there is no specific
+    node id to bind -- binding the whole conventional test FILE (pytest
+    accepts a bare path as well as a node id) is the closest available
+    smoke check: if the module's own test suite still passes with the dead
+    code gone, the deletion did not observably break anything that suite
+    covers. An empty result (no conventional test file exists) is not
+    itself a reason to skip the fix -- see `fix_dead001_unreferenced_
+    symbol_removal`'s own docstring for why."""
+    stem = Path(source_rel).stem
+    candidates = (f"tests/test_{stem}.py", f"tests/unit/test_{stem}.py")
+    return tuple(c for c in candidates if (root / c).exists())
+
+
+def _dead001_delete_one_symbol(
+    root: Path, symref: str, record: "SymbolRecord", rel: str
+) -> TierBFix | None:
+    """Delete one already-resolved dead symbol's source span from disk and
+    return the `TierBFix` receipt, or `None` if any guard refuses (span out
+    of range, unreadable/unwritable file, or the post-deletion text fails
+    to parse) -- split out of `fix_dead001_unreferenced_symbol_removal` to
+    keep that function under ARCH001's ceiling; the per-fix mechanics
+    (read, slice, parse-check, write, snapshot the backup) live here."""
+    import ast
+
+    start, end = record.span
+    path = root / rel
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    lines = text.splitlines(keepends=True)
+    if start < 1 or end > len(lines) or start > end:
+        return None
+    new_text = "".join(lines[: start - 1] + lines[end:])
+    try:
+        ast.parse(new_text)
+    except SyntaxError:
+        return None
+    backup = text.encode("utf-8")
+    try:
+        path.write_text(new_text, encoding="utf-8")
+    except OSError:
+        return None
+    return TierBFix(
+        rule="DEAD001",
+        file=rel,
+        line=start,
+        detail=f"removed unreferenced private symbol {symref}",
+        backup=backup,
+        affected_gates=("DEAD001",),
+        bound_tests=_dead001_candidate_test_files(root, rel),
+    )
+
+
+# frob:doc docs/design/check-fix-engine.md#transaction--rollback-model-tier-b
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierB.test_dead001_removes_unreferenced_private_sym\
+# bol kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierB.test_dead001_skips_a_waived_finding \
+# kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierB.test_dead001_at_most_one_deletion_per_file_pe\
+# r_pass kind="unit"
+def fix_dead001_unreferenced_symbol_removal(
+    root: Path, snapshot: GraphSnapshot, queue: TicketQueue
+) -> list[TierBFix]:
+    """Tier-B handler (T-1643): delete every DEAD001-flagged private
+    symbol's own source span (decorators through closing line, per
+    `SymbolRecord.span` -- `frob.lang._walk_python`'s own span already
+    excludes surrounding blank lines and sibling symbols) -- one per file
+    per call, never more (a second deletion in the same file within one
+    pass would need to account for the line-number shift the first
+    deletion just made; `dead_symbol_gate` is re-run on the NEXT `--fix`
+    invocation against the now-updated tree, so a file with several dead
+    symbols is drained one per run rather than risking a stale-span
+    double-edit). `_dead001_delete_one_symbol` owns the per-fix mechanics;
+    this function owns finding+filtering the candidates and enforcing the
+    one-per-file cap.
+
+    Deliberately reuses `dead_symbol_gate` (the real gate, not a
+    reimplementation of its private/uncalled/no-edge detection) and
+    `frob.gates._apply_waivers` to skip any finding a
+    `frob:waive DEAD001 reason="..."` already covers -- an explicit waiver
+    is a human decision to keep the symbol, and this handler must never
+    override that decision. `queue` is unused (signature uniformity only,
+    matching every other Tier-A/B handler's `(root, snapshot, queue)`
+    shape) -- DEAD001 has no ledger interaction of its own."""
+    del queue
+    from frob.gates import _apply_waivers
+    from frob.gates._dead_symbols import dead_symbol_gate
+
+    raw_violations = dead_symbol_gate(root, snapshot)
+    kept, _waived = _apply_waivers(raw_violations, snapshot)
+
+    applied: list[TierBFix] = []
+    touched_files: set[str] = set()
+    for violation in kept:
+        if violation.file in touched_files:
+            continue
+        symref = violation.symref
+        if symref is None:
+            continue
+        record = snapshot.symbols.get(symref)
+        if record is None:
+            continue
+        fix = _dead001_delete_one_symbol(root, symref, record, violation.file)
+        if fix is None:
+            continue
+        touched_files.add(violation.file)
+        applied.append(fix)
+    return applied
+
+
 #: The Tier-B sibling of `_fix_engine.TIER_A_HANDLERS` -- a rule id present
 #: here must NEVER also appear in `TIER_A_HANDLERS`/`TIER_C_EMITTERS`
 #: (T-1264's `FixabilityConflict` enforces this mechanically once it
 #: lands). "tierbdemo" is a synthetic placeholder id, not a real gate
 #: rule, and is deliberately excluded from `frob.gates._waive.
 #: known_gate_rule_ids()` for exactly that reason -- it must never be
-#: mistaken for something `frob check` itself can report.
+#: mistaken for something `frob check` itself can report. "DEAD001" (T-1643)
+#: is the first real entry -- an actual `frob check` rule id.
 # frob:doc docs/design/check-fix-engine.md#transaction--rollback-model-tier-b
 TIER_B_HANDLERS: dict[str, TierBHandler] = {
     "TIERBDEMO001": fix_tierbdemo001_marker_rewrite,
+    "DEAD001": fix_dead001_unreferenced_symbol_removal,
 }
 
 
