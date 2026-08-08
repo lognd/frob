@@ -1457,6 +1457,7 @@ def _land_plan_finish(
 # frob:ticket T-1355
 # frob:ticket T-1410
 # frob:ticket T-1495
+# frob:ticket T-1736
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -1627,7 +1628,7 @@ def _land_locked(
         # repairs" half of the T-0907 fix requirement.
         _write_land_repair_marker(root, ticket_id, root_pre_land_tip.danger_ok)
         try:
-            return _land_squash_apply(
+            squash_result = _land_squash_apply(
                 root,
                 worktree,
                 ticket,
@@ -1644,14 +1645,174 @@ def _land_locked(
             )
         finally:
             _clear_land_repair_marker(root, ticket_id)
+        if squash_result.is_ok:
+            # T-1736: feed the T-1686 watermark epic's verify queue --
+            # best-effort, never gates an already-sealed land.
+            _record_verify_intent_for_landed_commit(
+                root, final_id, squash_result.danger_ok, root_pre_land_tip.danger_ok
+            )
+        return squash_result
     finally:
         _clear_intent(root, ticket_id)
 
 
+# frob:ticket T-1736
+# frob:doc \
+# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_dry_run_is_a_noop  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_real_land_records_an_intent_entry  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_no_resolvable_symbols_records_nothing  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_diff_failure_is_logged_not_raised  # noqa: E501
+def _record_verify_intent_for_landed_commit(
+    root: Path, ticket_id: str, report: LandReport, pre_land_tip: str
+) -> None:
+    """T-1736: the T-1686 epic's missing enqueue side -- WITHOUT this, the
+    coalescing verify worker (T-1688, already draining/advancing/compacting
+    against `.frob/verify-queue.json`) never has anything to drain, no
+    matter how many lands happen. Called once, right after a REAL
+    (non-dry-run) `_land_squash_apply` success, from `_land_locked` itself
+    -- never from inside `_land_squash_apply` (out of this ticket's own
+    declared scope, `src/frob/tickets/_land.py` alone).
+
+    `report.commit_sha` is already durably on `root` by the time this
+    runs (this function reads, never mutates git state) -- `working_diff
+    (root, pre_land_tip)` computes `merge-base(HEAD, pre_land_tip)` first;
+    since `pre_land_tip` is `root`'s own tip captured before this land's
+    squash-apply started, it is a direct ancestor of the just-sealed
+    commit, so the merge-base IS `pre_land_tip` itself and the resulting
+    diff is exactly this land's own delta -- not a re-derivation of some
+    other window.
+
+    Best-effort throughout: a diff/graph-build failure, an empty touched-
+    symbol set, or a `record_intent` failure are each logged and
+    swallowed, never raised -- the land already succeeded and sealed a
+    real commit; an unfed verify queue is a visible, bounded liability
+    (T-1697 surfaces queue depth/age), never a reason to fail an
+    already-sealed land."""
+    if report.dry_run or report.commit_sha is None:
+        return
+
+    from frob.gitio import working_diff
+
+    diff = working_diff(root, pre_land_tip)
+    if diff.is_err:
+        _log.warning(
+            "land: %s: could not compute the landed commit's diff for "
+            "verify-queue intent (%s) -- the T-1686 watermark epic will "
+            "not see %s until a later land succeeds",
+            ticket_id,
+            diff.danger_err,
+            report.commit_sha[:12],
+        )
+        return
+
+    snapshot = _load_snapshot_for_intent(root, ticket_id, report.commit_sha)
+    if snapshot is None:
+        return
+
+    touched = _touched_symrefs_for_intent(diff.danger_ok, snapshot)
+    if not touched:
+        _log.info(
+            "land: %s: landed commit %s touched no resolvable symbols -- "
+            "no verify-queue intent recorded",
+            ticket_id,
+            report.commit_sha[:12],
+        )
+        return
+
+    _record_intent_or_log(root, ticket_id, report.commit_sha, touched)
+
+
+# frob:ticket T-1736
+def _load_snapshot_for_intent(root: Path, ticket_id: str, commit_sha: str):  # noqa: ANN201 -- GraphSnapshot | None, deferred-import type
+    """`_record_verify_intent_for_landed_commit`'s own ARCH001 split: load
+    (or build, on a cold `.frob/cache.db`) the graph snapshot -- the same
+    load-or-build shape every other graph-backed caller in this repo
+    shares. `None` on any build failure, logged, never raised."""
+    from frob.graph import build_graph, load_graph
+
+    cache = root / ".frob" / "cache.db"
+    loaded = load_graph(cache)
+    if loaded.is_ok:
+        return loaded.danger_ok
+    built = build_graph(root, cache)
+    if built.is_err:
+        _log.warning(
+            "land: %s: graph unavailable for verify-queue intent (%s) -- "
+            "%s will not be recorded",
+            ticket_id,
+            built.danger_err,
+            commit_sha[:12],
+        )
+        return None
+    return built.danger_ok
+
+
+# frob:ticket T-1736
+def _record_intent_or_log(
+    root: Path, ticket_id: str, commit_sha: str, touched: set[str]
+) -> None:
+    """`_record_verify_intent_for_landed_commit`'s own ARCH001 split: the
+    actual `record_intent` call plus its success/failure logging."""
+    from frob.tickets._profile import effective_profile
+    from frob.verify import record_intent
+
+    profile_result = effective_profile(root)
+    profile = profile_result.danger_ok.value if profile_result.is_ok else "unknown"
+    recorded = record_intent(
+        root,
+        commit_sha=commit_sha,
+        ticket_id=ticket_id,
+        touched_symbols=tuple(sorted(touched)),
+        profile=profile,
+    )
+    if recorded.is_err:
+        _log.warning(
+            "land: %s: record_intent failed (%s) for %s -- the T-1686 "
+            "watermark epic will not see this land",
+            ticket_id,
+            recorded.danger_err,
+            commit_sha[:12],
+        )
+    else:
+        _log.info(
+            "land: %s: recorded verify-queue intent for %s (%d touched "
+            "symbol(s), profile=%s)",
+            ticket_id,
+            commit_sha[:12],
+            len(touched),
+            profile,
+        )
+
+
+# frob:ticket T-1736
+# frob:waive DUP001 reason="a near-identical span-overlap match to \
+# frob.gates._touched_symrefs/_overlaps -- this ticket's own declared scope is \
+# src/frob/tickets/_land.py alone, src/frob/gates/__init__.py is out of it, so this \
+# reimplements rather than cross-package-imports a private helper; see this function's \
+# own docstring"
+def _touched_symrefs_for_intent(diff, snapshot) -> set[str]:  # noqa: ANN001
+    """Every symbol in `snapshot` whose span overlaps a `diff` hunk in the
+    same file -- the identical span-overlap match `frob.gates.
+    _touched_symrefs`/`_overlaps` already implement for AFFECT001/AFFECT002,
+    reimplemented here (see the `frob:waive DUP001` above this function for
+    why: a cross-package private import was out of this ticket's own scope
+    to fix at the source instead)."""
+    hunks_by_file: dict[str, list[tuple[int, int]]] = {}
+    for hunk in diff.hunks:
+        hunks_by_file.setdefault(hunk.file, []).append(hunk.span)
+    touched: set[str] = set()
+    for record in snapshot.symbols.values():
+        for span in hunks_by_file.get(record.id.path, ()):
+            if span[0] <= record.span[1] and record.span[0] <= span[1]:
+                touched.add(record.symref)
+                break
+    return touched
+
+
 # frob:ticket T-1699
-_NON_TERMINAL_TICKET_STATES = frozenset(
-    {"queued", "planned", "in-progress", "blocked"}
-)
+# frob:ticket T-1736
+_NON_TERMINAL_TICKET_STATES = frozenset({"queued", "planned", "in-progress", "blocked"})
 
 
 # frob:ticket T-1699

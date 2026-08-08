@@ -5454,6 +5454,7 @@ class TestLandDroppedTicket:
 
 
 # frob:ticket T-1818
+# frob:ticket T-1736
 class TestLandFailedTicket:
     """T-1818: `frob ticket land` must be able to publish a QUEUED ticket's
     `frob ticket fail` record to main -- before this fix, a ticket `fail`
@@ -5463,9 +5464,8 @@ class TestLandFailedTicket:
     log) was stranded on the worktree branch, invisible to every later
     agent (the incident this ticket was filed from: T-1478)."""
 
-    def test_failed_ticket_with_a_failure_log_lands_cleanly(
-        self, repo: Path
-    ) -> None:
+    # frob:ticket T-1736
+    def test_failed_ticket_with_a_failure_log_lands_cleanly(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestLandFailedTicket.test_failed_ticket_with_a_failure_log_lands_cleanly  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
         # frob:tests src/frob/tickets/_land_merge.py::_has_failure_log kind="unit"
@@ -5500,9 +5500,8 @@ class TestLandFailedTicket:
         assert on_main.state == TicketState.QUEUED
         assert "needs a new grammar production" in on_main.body
 
-    def test_queued_ticket_with_no_failure_log_still_refuses(
-        self, repo: Path
-    ) -> None:
+    # frob:ticket T-1736
+    def test_queued_ticket_with_no_failure_log_still_refuses(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestLandFailedTicket.test_queued_ticket_with_no_failure_log_still_refuses  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
         """A ticket that is merely QUEUED (never started, or requeued with
@@ -9275,3 +9274,190 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         result = _unscoped_error_findings(tmp_path, "T-0001")
 
         assert result == frozenset()
+
+
+# frob:ticket T-1736
+class TestTouchedSymrefsForIntent:
+    """`_touched_symrefs_for_intent`'s own span-overlap contract, tested
+    directly -- the pure-function half of `_record_verify_intent_for_
+    landed_commit`."""
+
+    # frob:ticket T-1736
+    def test_overlapping_hunk_matches_the_symbol(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestTouchedSymrefsForIntent.test_overlapping_hunk_matches_the_symbol  # noqa: E501
+        from frob.gitio import Diff, Hunk
+        from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+
+        diff = Diff(base="deadbeef", hunks=(Hunk(file="a.py", span=(3, 5)),))
+        snapshot = GraphSnapshot(
+            root="/repo",
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 10),
+                )
+            },
+            edges=(),
+        )
+        touched = _land_mod._touched_symrefs_for_intent(diff, snapshot)
+        assert touched == {"a.py::fn"}
+
+    # frob:ticket T-1736
+    def test_non_overlapping_hunk_matches_nothing(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestTouchedSymrefsForIntent.test_non_overlapping_hunk_matches_nothing  # noqa: E501
+        from frob.gitio import Diff, Hunk
+        from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+
+        diff = Diff(base="deadbeef", hunks=(Hunk(file="a.py", span=(50, 55)),))
+        snapshot = GraphSnapshot(
+            root="/repo",
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 10),
+                )
+            },
+            edges=(),
+        )
+        touched = _land_mod._touched_symrefs_for_intent(diff, snapshot)
+        assert touched == set()
+
+    # frob:ticket T-1736
+    def test_different_file_matches_nothing(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestTouchedSymrefsForIntent.test_different_file_matches_nothing  # noqa: E501
+        from frob.gitio import Diff, Hunk
+        from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+
+        diff = Diff(base="deadbeef", hunks=(Hunk(file="b.py", span=(1, 10)),))
+        snapshot = GraphSnapshot(
+            root="/repo",
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 10),
+                )
+            },
+            edges=(),
+        )
+        touched = _land_mod._touched_symrefs_for_intent(diff, snapshot)
+        assert touched == set()
+
+
+# frob:ticket T-1736
+class TestRecordVerifyIntentForLandedCommit:
+    """T-1736: the T-1686 epic's missing enqueue side -- `_land_locked`
+    calls this once, after a real squash-apply success, so the coalescing
+    verify worker (T-1688) ever has anything to drain."""
+
+    # frob:ticket T-1736
+    def _report(self, *, dry_run: bool = False, commit_sha: str | None = "c1"):
+        from frob.tickets._models import LandReport
+
+        return LandReport(
+            ticket_id="T-9000",
+            final_id="T-9000",
+            dry_run=dry_run,
+            wip_committed=True,
+            merged_main_into_worktree=False,
+            ledger_spliced=False,
+            commit_sha=commit_sha,
+        )
+
+    # frob:ticket T-1736
+    def test_dry_run_is_a_noop(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_dry_run_is_a_noop  # noqa: E501
+        from frob.verify import queue_status
+
+        _land_mod._record_verify_intent_for_landed_commit(
+            tmp_path, "T-9000", self._report(dry_run=True), "deadbeef"
+        )
+        assert queue_status(tmp_path).danger_ok == ()
+
+    # frob:ticket T-1736
+    def test_real_land_records_an_intent_entry(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_real_land_records_an_intent_entry  # noqa: E501
+        from frob.gitio import Diff, Hunk
+        from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import queue_status
+
+        diff = Diff(base="deadbeef", hunks=(Hunk(file="a.py", span=(1, 3)),))
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        monkeypatch.setattr("frob.gitio.working_diff", lambda root, base: Ok(diff))
+        monkeypatch.setattr("frob.graph.load_graph", lambda cache: Ok(snapshot))
+
+        _land_mod._record_verify_intent_for_landed_commit(
+            tmp_path, "T-9000", self._report(commit_sha="c1"), "deadbeef"
+        )
+
+        queue = queue_status(tmp_path)
+        assert queue.is_ok
+        assert len(queue.danger_ok) == 1
+        entry = queue.danger_ok[0]
+        assert entry.commit_sha == "c1"
+        assert entry.ticket_id == "T-9000"
+        assert entry.touched_symbols == ("a.py::fn",)
+
+    # frob:ticket T-1736
+    def test_no_resolvable_symbols_records_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_no_resolvable_symbols_records_nothing  # noqa: E501
+        from frob.gitio import Diff
+        from frob.graph import GraphSnapshot
+        from frob.verify import queue_status
+
+        diff = Diff(base="deadbeef", hunks=())
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        monkeypatch.setattr("frob.gitio.working_diff", lambda root, base: Ok(diff))
+        monkeypatch.setattr("frob.graph.load_graph", lambda cache: Ok(snapshot))
+
+        _land_mod._record_verify_intent_for_landed_commit(
+            tmp_path, "T-9000", self._report(commit_sha="c1"), "deadbeef"
+        )
+        assert queue_status(tmp_path).danger_ok == ()
+
+    # frob:ticket T-1736
+    def test_diff_failure_is_logged_not_raised(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_diff_failure_is_logged_not_raised  # noqa: E501
+        from frob.gitio import GitError
+        from frob.verify import queue_status
+
+        monkeypatch.setattr(
+            "frob.gitio.working_diff", lambda root, base: Err(GitError.GitFailed)
+        )
+
+        # Must not raise -- a land that already succeeded is never failed
+        # by this best-effort bookkeeping step.
+        _land_mod._record_verify_intent_for_landed_commit(
+            tmp_path, "T-9000", self._report(commit_sha="c1"), "deadbeef"
+        )
+        assert queue_status(tmp_path).danger_ok == ()

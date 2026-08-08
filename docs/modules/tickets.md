@@ -3731,6 +3731,37 @@ profile-to-queue-depth dial. This module is purely the data model plus
 its read/write primitives, verified in isolation
 (`tests/unit/verify/test_watermark.py`).
 
+**The enqueue side, wired (T-1736).** `record_intent` had no real caller
+until this leaf: T-1688's worker only drains/advances/compacts an
+EXISTING queue, so without this the coalescing worker never had anything
+to verify no matter how many lands happened. `frob.tickets._land.
+_record_verify_intent_for_landed_commit` is the call site --
+`_land_locked` invokes it once, right after a REAL (non-dry-run)
+`_land_squash_apply` success, never inside `_land_squash_apply` itself
+(that file is outside this ticket's own declared scope,
+`src/frob/tickets/_land.py` alone). It computes the landed commit's own
+diff via `frob.gitio.working_diff(root, pre_land_tip)` -- `pre_land_tip`
+is `root`'s tip captured before the squash-apply started, a direct
+ancestor of the just-sealed commit, so `merge-base(HEAD, pre_land_tip)`
+IS `pre_land_tip` and the resulting diff is exactly this land's delta,
+not some other window -- resolves it against a `frob.graph` snapshot
+(load-or-build, the same `.frob/cache.db` every other graph-backed
+caller in this repo shares) into a touched-symbol set via a local
+span-overlap match (`_touched_symrefs_for_intent`, a deliberate,
+disclosed `frob:waive DUP001` duplicate of `frob.gates._touched_symrefs`/
+`_overlaps` -- `src/frob/gates/__init__.py` is outside this ticket's own
+scope too, so fixing the duplication at its source is a follow-up, not
+this leaf's job), and calls `record_intent` with it.
+
+Best-effort end to end: a diff-compute failure, a graph-build failure, an
+empty touched-symbol set, or a `record_intent` failure are each logged
+(WARNING/INFO) and swallowed, never raised -- the land already succeeded
+and sealed a real commit by the time this runs; an unfed verify queue is
+a visible, bounded liability (T-1697 surfaces queue depth/age), never a
+reason to fail an already-sealed land.
+<!-- frob:describes src/frob/tickets/_land.py::_record_verify_intent_for_landed_commit -->
+<!-- frob:describes src/frob/tickets/_land.py::_touched_symrefs_for_intent -->
+
 ## Coalescing verify worker (T-1688)
 
 <!-- frob:describes src/frob/verify/_worker.py::WorkerError -->
