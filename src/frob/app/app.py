@@ -9,6 +9,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:ticket T-1567
 _RUNNER_MODULE_NAMES = (
     "ack_runner",
     "arch_runner",
@@ -35,6 +36,7 @@ _RUNNER_MODULE_NAMES = (
     "parse_runner",
     "perf_runner",
     "pool_runner",
+    "quality_runner",
     "registry_runner",
     "release_runner",
     "scaffold_runner",
@@ -53,6 +55,7 @@ subcommands onto; not imported as a batch by anything else (T-1216:
 subcommand actually needs)."""
 
 
+# frob:ticket T-1567
 _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.scaffold: "scaffold_runner",
     Subcommand.cycle: "cycle_runner",
@@ -62,6 +65,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.parse: "parse_runner",
     Subcommand.dup: "dup_runner",
     Subcommand.explore: "explore_runner",
+    Subcommand.quality: "quality_runner",
     Subcommand.arch: "arch_runner",
     Subcommand.docs: "docs_runner",
     Subcommand.exports: "exports_runner",
@@ -97,8 +101,16 @@ separately."""
 
 
 # frob:ticket T-1337
+# frob:ticket T-1567
 # frob:invariant INV-049
 # invariant spec: [INV-049](invariants/INV-049.md)
+# frob:waive DUP001 reason="deliberately mirrors src/frob/app/__init__.py:: \
+# _import_runner_run_module -- both are OPAQUE001 fail-closed workarounds (T-1337's \
+# own docstring below) that MUST be a closed if/elif chain of literal imports, one per \
+# module domain; T-1567 added one more elif branch (quality_runner) to this domain, \
+# pushing an already near-duplicate pre-existing pair a little closer -- extracting a \
+# shared helper would reintroduce the computed-module-name string OPAQUE001 this \
+# pattern exists to avoid"
 def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
     """Import exactly the one `frob.app.<name>` runner module named by
     `name` (T-1337), dispatching through a closed if/elif chain of LITERAL
@@ -163,6 +175,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.perf_runner as module
     elif name == "pool_runner":
         import frob.app.pool_runner as module
+    elif name == "quality_runner":
+        import frob.app.quality_runner as module
     elif name == "registry_runner":
         import frob.app.registry_runner as module
     elif name == "release_runner":

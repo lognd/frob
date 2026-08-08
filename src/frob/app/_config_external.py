@@ -34,6 +34,8 @@ from pathlib import Path
 _STRING_FIELDS = (
     "color",
     "explore_command",
+    # frob:ticket T-1567
+    "quality_command",
     "scaffold_command",
     "scaffold_type",
     "scaffold_name",

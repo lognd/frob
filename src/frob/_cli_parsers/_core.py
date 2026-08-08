@@ -68,6 +68,14 @@ def _add_cycle_parser(sub) -> None:
     """Register the `frob cycle` subcommand and its arguments."""
     # -- cycle ---------------------------------------------------------------
     cycle_p = sub.add_parser("cycle", help="detect dependency cycles")
+    _populate_cycle_args(cycle_p)
+
+
+# frob:ticket T-1567
+def _populate_cycle_args(cycle_p) -> None:
+    """Add `frob cycle`'s arguments onto `cycle_p` -- shared by the
+    standalone top-level parser and `frob quality cycle` (T-1567) so
+    neither duplicates the flag list."""
     cycle_p.add_argument("cycle_path", metavar="path")
     cycle_p.add_argument("--lang", dest="cycle_lang", choices=["python", "cpp", "c"])
     cycle_p.add_argument("--suggest", dest="cycle_suggest", action="store_true")
@@ -224,6 +232,14 @@ def _add_dup_parser(sub) -> None:
         "dup",
         help="detect duplicate/clone code segments (Type 1 exact, Type 2 renamed)",
     )
+    _populate_dup_args(dup_p)
+
+
+# frob:ticket T-1567
+def _populate_dup_args(dup_p) -> None:
+    """Add `frob dup`'s arguments onto `dup_p` -- shared by the standalone
+    top-level parser and `frob quality dup` (T-1567) so neither duplicates
+    the flag list."""
     dup_p.add_argument("dup_path", metavar="path", nargs="?", default=".")
     dup_p.add_argument(
         "--min-lines",
@@ -268,6 +284,14 @@ def _add_arch_parser(sub) -> None:
         "arch",
         help="arch analysis: long functions, god classes, coupling",
     )
+    _populate_arch_args(arch_p)
+
+
+# frob:ticket T-1567
+def _populate_arch_args(arch_p) -> None:
+    """Add `frob arch`'s arguments onto `arch_p` -- shared by the
+    standalone top-level parser and `frob quality arch` (T-1567) so
+    neither duplicates the flag list."""
     arch_p.add_argument("arch_path", metavar="path", nargs="?", default=".")
     arch_p.add_argument("--json", dest="arch_json", action="store_true")
     arch_p.add_argument(

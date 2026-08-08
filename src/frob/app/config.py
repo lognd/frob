@@ -92,12 +92,15 @@ __all__ = [
 
 
 # frob:doc docs/modules/app.md#config
+# frob:ticket T-1567
 class Subcommand(str, enum.Enum):
     # frob:ticket T-0021
     scaffold = "scaffold"
     cycle = "cycle"
     # T-1238: `frob explore` groups map/outline/xref/docs-search.
     explore = "explore"
+    # T-1567: `frob quality` groups check/test/dup/arch/bind/cycle/mutate/perf.
+    quality = "quality"
     outline = "outline"
     map = "map"
     xref = "xref"
@@ -159,6 +162,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-0877
 # frob:ticket T-1150
 # frob:ticket T-1525
+# frob:ticket T-1567
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -187,6 +191,12 @@ class AppConfig(BaseModel):
     # explore (T-1238): dispatches by explore_command onto the same
     # map/outline/xref/docs_* dests its standalone counterparts use.
     explore_command: str | None = None
+
+    # quality (T-1567): dispatches by quality_command onto the same
+    # check/test/dup/arch/cycle/mutate/perf_* dests its standalone
+    # counterparts use. `bind` is dispatched directly by
+    # `frob.__main__._dispatch`, never through this field.
+    quality_command: str | None = None
 
     # outline
     outline_file: Path | None = None

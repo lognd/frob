@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-38 total commands, statically bound to the live subcommand registry
+39 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -64,6 +64,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob ack` | Acknowledge current digests for one or more symbol refs, updating `frob.lock` |
 | `frob ticket` | The statically-checkable ticket queue: new/list/show/doable/start/attach/block/close/fail |
 | `frob check` | Aggregate quality gate: ruff, ty, cycle/dup/arch/bind/exports, and the enforcement gates |
+| `frob quality` | Correctness/hygiene verb group: `check`/`test`/`dup`/`arch`/`bind`/`cycle`/`mutate`/`perf` (T-1567); each also stays available as its own standalone command below |
 | `frob test` | Select and run tests for the touched set vs a base ref (or `--all`) |
 | `frob vet` | Dependency capability vetting: source-resolved capability scan, CVE fingerprints, supply-chain/obfuscation checks |
 | `frob sys` | strata system-design audit: model-vs-code conformance, threat/CWE/compliance/PII, deploy proofs (`plan`/`doc`/`audit`/`export`) |

@@ -29,20 +29,19 @@ reasoning, since that is the point of a design doc.
 epic's first concrete slice -- see `docs/modules/cli.md`'s "Navigation
 commands" section for the un-deprecation this required.
 
-<!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
-### `frob quality` -- correctness/hygiene gates
+### `frob quality` -- correctness/hygiene gates (T-1567, IMPLEMENTED)
 
-`check`, `test`, `fix` (a standalone `fix` verb is not a live top-level
-command today -- `frob check`'s auto-fix handlers cover this ground
-already; this line is a candidate-name placeholder for the design
-proposal below, not a scheduled build item), `dup`, `arch`, `bind`,
-<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->
-`cycle`, `mutate`, `perf`. Candidate subcommands: `frob quality check`,
-<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->
-`frob quality test`, `frob quality dup`, `frob quality arch`, `frob
-<!-- frob:waive DOC006 reason="T-1238 design proposal: candidate subcommand names for the not-yet-built 'frob quality' group" -->
-quality bind`, `frob quality cycle`, `frob quality mutate`, `frob quality
-perf`.
+`check`, `test`, `dup`, `arch`, `bind`, `cycle`, `mutate`, `perf` --
+`frob quality check`, `frob quality test`, `frob quality dup`, `frob
+quality arch`, `frob quality bind`, `frob quality cycle`, `frob quality
+mutate`, `frob quality perf`. A standalone `fix` verb is not, and never
+was, a live top-level command -- `frob check`'s auto-fix handlers cover
+that ground already, so it was never added under this group either.
+Follows the `frob explore` migration policy below: every member's
+standalone top-level form stays a permanent alias. `bind` is dispatched
+directly by `frob.__main__._dispatch` (mirroring top-level `bind`'s own
+special case, T-0355) rather than through `quality_runner.run`, since
+`bind_runner.run` takes raw argv, not an `AppConfig`.
 
 <!-- frob:waive DOC006 reason="T-1238 design proposal: not-yet-built candidate verb group name, not a live CLI surface" -->
 ### `frob tickets` -- the ticket queue

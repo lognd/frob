@@ -19,6 +19,7 @@ from frob.app.gitlog_runner import run as gitlog_run
 from frob.app.map_runner import run as map_run
 from frob.app.mutate_runner import run as mutate_run
 from frob.app.outline_runner import run as outline_run
+from frob.app.quality_runner import run as quality_run
 from frob.app.scaffold_runner import run as scaffold_run
 from frob.app.xref_runner import run as xref_run
 
@@ -532,3 +533,79 @@ class TestMutateRunner:
         mutate_run(cfg)
         out = capsys.readouterr().out
         assert out.strip().startswith("{")
+
+
+# frob:ticket T-1567
+class TestQualityRunner:
+    """`frob quality <check|test|dup|arch|cycle|mutate|perf>`: T-1567's
+    verb-group front door delegates straight into the standalone runners.
+    `bind` is excluded (dispatched by `frob.__main__._dispatch` directly,
+    never through `quality_runner.run` -- see that runner's docstring)."""
+
+    @staticmethod
+    def _delegation_target(quality_command: str):
+        """The standalone runner module a given `quality_command` delegates
+        to (T-1567) -- a closed if/elif chain of LITERAL imports, same
+        convention as `frob.app.app._import_runner_module`, so the target
+        stays statically visible instead of tripping OPAQUE001 on a
+        computed module name."""
+        if quality_command == "check":
+            import frob.app.check_runner as mod
+        elif quality_command == "test":
+            import frob.app.test_runner as mod
+        elif quality_command == "dup":
+            import frob.app.dup_runner as mod
+        elif quality_command == "cycle":
+            import frob.app.cycle_runner as mod
+        elif quality_command == "perf":
+            import frob.app.perf_runner as mod
+        else:  # pragma: no cover -- unreachable: quality_command is parametrized above
+            raise AssertionError(quality_command)
+        return mod
+
+    @pytest.mark.parametrize(
+        "quality_command", ["check", "test", "dup", "cycle", "perf"]
+    )
+    def test_subcommand_delegates_to_matching_runner(self, monkeypatch, quality_command):
+        """Each simple pass-through subcommand calls its own standalone
+        runner's `run(cfg)` with the SAME cfg instance -- one parametrized
+        case per member instead of five near-identical bodies (T-1567,
+        DUP002)."""
+        target_mod = self._delegation_target(quality_command)
+        called = {}
+        monkeypatch.setattr(
+            target_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
+        )
+        cfg = AppConfig(quality_command=quality_command)
+        quality_run(cfg)
+        assert called["cfg"] is cfg
+
+    # frob:waive DUP001 reason="deliberately mirrors TestExploreRunner's own \
+    # map/outline end-to-end delegation tests (same real-fixture-plus-caplog shape, \
+    # T-1238 precedent) -- one member of this verb group needs a real end-to-end check \
+    # (not a monkeypatch) to prove the delegation path actually works, and that \
+    # necessarily reads like the sibling group's own version of the same proof"
+    def test_arch_subcommand_delegates_to_arch_runner(self, tmp_path, caplog):
+        """`quality_command="arch"` produces the same output as `frob arch`
+        (a real end-to-end check rather than a monkeypatch, to prove the
+        delegation path actually works end to end for at least one member)."""
+        _make_py_project(tmp_path)
+        cfg = AppConfig(quality_command="arch", arch_path=tmp_path, arch_json=True)
+        with caplog.at_level("INFO"):
+            quality_run(cfg)
+        assert any("{" in r.message for r in caplog.records)
+
+    def test_mutate_subcommand_missing_file_exits_nonzero(self):
+        """`quality_command="mutate"` with no `mutate_file` errors like the
+        standalone `frob mutate`."""
+        cfg = AppConfig(quality_command="mutate", mutate_file=None)
+        with pytest.raises(SystemExit):
+            quality_run(cfg)
+
+    def test_unknown_subcommand_exits_1(self, caplog):
+        """No `quality_command` at all (bare `frob quality`) errors cleanly
+        instead of silently no-op'ing."""
+        cfg = AppConfig(quality_command=None)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            quality_run(cfg)
+        assert exc.value.code == 1

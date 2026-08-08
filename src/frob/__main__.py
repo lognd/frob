@@ -34,6 +34,7 @@ from frob._cli_parsers import (
     _add_parse_parser,
     _add_perf_parser,
     _add_pool_parser,
+    _add_quality_parser,
     _add_registry_parser,
     _add_release_parser,
     _add_scaffold_parser,
@@ -201,11 +202,13 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# frob:ticket T-1567
 def _add_analysis_subparsers(sub) -> None:
     """Register the code-analysis subcommand group: scaffold through bind."""
     _add_scaffold_parser(sub)
     _add_cycle_parser(sub)
     _add_explore_parser(sub)
+    _add_quality_parser(sub)
     _add_outline_parser(sub)
     _add_map_parser(sub)
     _add_xref_parser(sub)
@@ -275,9 +278,19 @@ def main() -> None:
         _sys.exit(1)
 
 
+# frob:ticket T-1567
+def _is_quality_bind(argv: list[str]) -> bool:
+    """`True` for `frob quality bind ...` (T-1567) -- split out of
+    `_dispatch` purely to keep that function under the ARCH001 line
+    threshold; `bind_runner.run` takes raw argv, so this argv shape is
+    dispatched directly rather than through `quality_runner.run`."""
+    return bool(argv) and argv[0] == "quality" and len(argv) > 1 and argv[1] == "bind"
+
+
 # frob:ticket T-0355
 # frob:ticket T-1218
 # frob:ticket T-1483
+# frob:ticket T-1567
 # frob:tests \
 # tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_subcommand_dispatch\
 # es_to_run_refactor_command kind="unit"  # noqa: E501
@@ -294,6 +307,14 @@ def _dispatch(argv: list[str]) -> None:
         from frob.app.bind_runner import run as _bind_run
 
         _bind_run(argv[1:])
+    elif _is_quality_bind(argv):
+        # T-1567: `frob quality bind` mirrors top-level `bind`'s own
+        # special case just above -- `bind_runner.run` takes raw argv, not
+        # an `AppConfig`, so it is dispatched here rather than through
+        # `quality_runner.run`.
+        from frob.app.bind_runner import run as _bind_run
+
+        _bind_run(argv[2:])
     elif argv and argv[0] == "agent":
         # T-0574: `frob agent` is dispatched directly, mirroring `bind`
         # above -- see `frob.app.agent_runner`'s module docstring for why.

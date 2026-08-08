@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.391.0] - unreleased
+
+- T-1567: cli regrouping: frob quality verb group (check/test/dup/arch/bind/cycle/mutate/perf)
+
 ## [0.390.0] - unreleased
 
 - T-1643: Wire a real Tier-B --fix handler (T-1262 shipped only the synthetic TIERBDEMO001 reference handler)

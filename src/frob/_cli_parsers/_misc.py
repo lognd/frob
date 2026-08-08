@@ -21,6 +21,14 @@ def _add_test_parser(sub) -> None:
     test_p = sub.add_parser(
         "test", help="select and run tests for the touched set (or --all)"
     )
+    _populate_test_args(test_p)
+
+
+# frob:ticket T-1567
+def _populate_test_args(test_p) -> None:
+    """Add `frob test`'s arguments onto `test_p` -- shared by the
+    standalone top-level parser and `frob quality test` (T-1567) so
+    neither duplicates the flag list."""
     test_p.add_argument("test_path", metavar="path", nargs="?", default=".")
     test_p.add_argument("--all", dest="test_all", action="store_true")
     test_p.add_argument(
@@ -311,6 +319,14 @@ def _add_mutate_parser(sub) -> None:
     mutate_p = sub.add_parser(
         "mutate", help="mutation testing: perturb a file, see which mutants survive"
     )
+    _populate_mutate_args(mutate_p)
+
+
+# frob:ticket T-1567
+def _populate_mutate_args(mutate_p) -> None:
+    """Add `frob mutate`'s arguments onto `mutate_p` -- shared by the
+    standalone top-level parser and `frob quality mutate` (T-1567) so
+    neither duplicates the flag list."""
     mutate_p.add_argument("mutate_file", metavar="file")
     mutate_p.add_argument("--path", dest="mutate_path", metavar="DIR", default=".")
     mutate_p.add_argument("--json", dest="mutate_json", action="store_true")

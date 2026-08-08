@@ -280,6 +280,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob parse` | parse tool output (pytest/ruff/ty/clang/junit) into compact summary |
 | `frob perf` | profile a command/test suite and inspect its heat-map |
 | `frob pool` | ratchet-pool baseline management (T-0569): warn-rule findings frozen as a tracked baseline, new findings error |
+| `frob quality` | correctness/hygiene gates: check/test/dup/arch/bind/cycle/mutate/perf grouped under one verb (T-1567) |
 | `frob registry` | unified design-knowledge registry (T-0407) |
 | `frob release` | mechanical semver from the public-API graph (REL001) |
 | `frob scaffold` | scaffold a new project from a template |
