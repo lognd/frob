@@ -1,7 +1,7 @@
 ---
 id: T-1813
 title: 'post-land sweep regression from T-1811: 2 new error(s) (ARCH001, invalid-return-type)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-08'
