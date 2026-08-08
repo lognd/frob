@@ -154,6 +154,8 @@ _STRING_FIELDS = (
     "fleet_priority",
     # frob:ticket T-0864
     "natives_command",
+    # frob:ticket T-1572
+    "coverage_base",
 )
 
 _PATH_FIELDS = (

@@ -110,7 +110,8 @@ class CoverageWaitOutcome(BaseModel):
 
 
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_app.py::TestRunCoverageWait.test_coverage_lock_path_is_under_frob_dir  # noqa: E501
+# frob:tests \
+# tests/test_app.py::TestRunCoverageWait.test_coverage_lock_path_is_under_frob_dir
 def coverage_lock_path(root: Path) -> Path:
     """The advisory single-flight lock path (`.frob/coverage.lock`) guarding
     concurrent `run_coverage_wait` callers under `root`."""
@@ -355,9 +356,10 @@ def _is_stamp_fresh(root: Path, snapshot: GraphSnapshot) -> bool:
 
 # frob:ticket T-1516
 # frob:doc docs/modules/testing.md#public-api
-# frob:tests tests/test_app.py::TestRunCoverageWait.test_no_stamp_runs_command_and_reports_ran  # noqa: E501
-# frob:tests tests/test_app.py::TestRunCoverageWait.test_fresh_stamp_skips_the_run  # noqa: E501
-# frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err  # noqa: E501
+# frob:tests \
+# tests/test_app.py::TestRunCoverageWait.test_no_stamp_runs_command_and_reports_ran
+# frob:tests tests/test_app.py::TestRunCoverageWait.test_fresh_stamp_skips_the_run
+# frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err
 # frob:tests tests/test_coverage.py::TestRunCoverageWaitNativeDefault.test_default_command_none_calls_native_refresh  # noqa: E501
 #
 # T-1516: `command=None` (the default) auto-wires the refresh through the
@@ -383,7 +385,10 @@ def _is_stamp_fresh(root: Path, snapshot: GraphSnapshot) -> bool:
 # T-1126: the OUTER lock is `_worktree_lock` (daemon lease when reachable,
 # else `_coverage_lock`).
 def run_coverage_wait(
-    root: Path, *, command: tuple[str, ...] | None = None
+    root: Path,
+    *,
+    command: tuple[str, ...] | None = None,
+    base: str = "HEAD",
 ) -> Result[CoverageWaitOutcome, CoverageWaitError]:
     """Block until `root` has a coverage stamp fresh against its current
     source tree, refreshing it under a single-flight lock if it does not
@@ -393,7 +398,12 @@ def run_coverage_wait(
     fresh), or blocks until the refresh finishes and returns `Ok(ran=True,
     ...)` / `Err(RunFailed)` -- never a detached job to poll or "wait" on
     outside its own turn. See the comment block directly above this
-    function for the T-1095/T-1516/T-1126 mechanics in detail."""
+    function for the T-1095/T-1516/T-1126 mechanics in detail. `base`
+    (T-1572, `frob coverage --base`'s equivalent -- the old `make
+    coverage-fast BASE=<ref>` shell recipe's replacement) is the git ref
+    the touched-set selection diffs against when a real (non-`command`)
+    refresh actually runs; it has no effect on the freshness check or the
+    cross-worktree digest cache, both keyed purely by tree content."""
     with _worktree_lock(root):
         cache = root / _CACHE_REL
         loaded = load_graph(cache)
@@ -423,7 +433,7 @@ def run_coverage_wait(
             hit = _adopt_if_cached(root, digest, context="post-lock")
             if hit is not None:
                 return hit
-            return _run_and_settle_shared(root, command, digest, snapshot)
+            return _run_and_settle_shared(root, command, digest, snapshot, base=base)
 
 
 def _adopt_if_cached(
@@ -469,6 +479,8 @@ def _run_and_settle_shared(
     command: tuple[str, ...] | None,
     digest: str,
     snapshot: GraphSnapshot,
+    *,
+    base: str = "HEAD",
 ) -> Result[CoverageWaitOutcome, CoverageWaitError]:
     """The actual coverage refresh (T-1095's winner-of-the-lock path):
     refresh via `command` (a spawned subprocess) if given, or -- `command
@@ -477,10 +489,13 @@ def _run_and_settle_shared(
     `digest` either way (success or failure -- acceptance [0] promises
     later callers the shared fresh-OR-FAILED result, not success only),
     and return the matching `run_coverage_wait` outcome. Called with the
-    shared per-digest lock already held."""
+    shared per-digest lock already held. `base` (T-1572) is threaded only
+    into the `command is None` native-refresh path -- a caller-supplied
+    `command` is an opaque subprocess this function has no way to pass a
+    base ref into."""
     start = time.monotonic()
     if command is None:
-        ok, label = _run_native_refresh(root, snapshot)
+        ok, label = _run_native_refresh(root, snapshot, base=base)
         duration = time.monotonic() - start
         if ok:
             _log.info("coverage_wait: %s finished in %.1fs", label, duration)
@@ -505,17 +520,22 @@ def _run_and_settle_shared(
 
 
 # frob:ticket T-1516
-def _run_native_refresh(root: Path, snapshot: GraphSnapshot) -> tuple[bool, str]:
+def _run_native_refresh(
+    root: Path, snapshot: GraphSnapshot, *, base: str = "HEAD"
+) -> tuple[bool, str]:
     """`(ok, label)` for the T-1516 in-process native refresh path --
     deferred import, same cycle-avoidance reason as `frob.gates._coverage`'s
     own T-1517 wiring (this module is inside `frob.testing`'s own package
     `__init__` import chain, and `native_coverage_refresh` itself
-    eventually imports `frob.gates._coverage`)."""
+    eventually imports `frob.gates._coverage`). `base` (T-1572) is passed
+    straight through to `native_coverage_refresh`'s own `base` kwarg,
+    which selects the touched-set diff base for an incremental (non-full)
+    run."""
     from frob.testing._coverage_refresh import native_coverage_refresh
 
     label = "native_coverage_refresh"
     _log.info("coverage_wait: stamp stale/missing, running: %s", label)
-    result = native_coverage_refresh(root, snapshot)
+    result = native_coverage_refresh(root, snapshot, base=base)
     if result.is_err:
         _log.error("coverage_wait: %s failed: %s", label, result.danger_err)
         return False, label

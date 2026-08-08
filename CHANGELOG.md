@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.399.0] - unreleased
+
+- T-1572: frob coverage: add --base override, thread through make coverage-fast BASE=
+
 ## [0.398.0] - unreleased
 
 - T-1264: gates --fix fixability registry field: generated-verified auto/verified/assisted/manual tier per rule id

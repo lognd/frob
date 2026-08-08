@@ -992,7 +992,7 @@ class TestRunCoverageWaitNativeDefault:
 
         calls: list[Path] = []
 
-        def _fake_native(refresh_root, snapshot):  # noqa: ANN001, ARG001
+        def _fake_native(refresh_root, snapshot, **kw):  # noqa: ANN001, ARG001
             calls.append(refresh_root)
             return Ok(Unit())
 

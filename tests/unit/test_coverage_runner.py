@@ -29,13 +29,37 @@ class TestCoverageRunner:
 
         calls: list[Path] = []
 
-        def _fake_wait(root: Path):  # noqa: ANN202 -- test stub
+        def _fake_wait(root: Path, *, base: str = "HEAD", **kw):  # noqa: ANN202 -- test stub
             calls.append(root)
             return Ok(wait_module.CoverageWaitOutcome(ran=True, duration_s=1.5))
 
         monkeypatch.setattr(wait_module, "run_coverage_wait", _fake_wait)
         coverage_runner.run(self._cfg(tmp_path))  # must not raise
         assert calls == [tmp_path]
+
+    # frob:ticket T-1572
+    def test_base_threads_through_to_run_coverage_wait(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`--base` (T-1572) reaches `run_coverage_wait` as its own `base`
+        kwarg -- default `AppConfig.coverage_base=None` becomes `"HEAD"`."""
+        import frob.testing._coverage_wait as wait_module
+
+        seen: dict = {}
+
+        def _fake_wait(root: Path, *, base: str = "HEAD", **kw):  # noqa: ANN202
+            seen["base"] = base
+            return Ok(wait_module.CoverageWaitOutcome(ran=False, duration_s=0.0))
+
+        monkeypatch.setattr(wait_module, "run_coverage_wait", _fake_wait)
+
+        coverage_runner.run(self._cfg(tmp_path))
+        assert seen["base"] == "HEAD"
+
+        coverage_runner.run(
+            AppConfig(coverage_path=tmp_path, coverage_base="origin/main")
+        )
+        assert seen["base"] == "origin/main"
 
     def test_full_calls_native_refresh_directly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -67,7 +91,7 @@ class TestCoverageRunner:
         monkeypatch.setattr(
             wait_module,
             "run_coverage_wait",
-            lambda root: Err(wait_module.CoverageWaitError.RunFailed),
+            lambda root, **kw: Err(wait_module.CoverageWaitError.RunFailed),
         )
         with pytest.raises(SystemExit) as exc:
             coverage_runner.run(self._cfg(tmp_path))

@@ -35,19 +35,27 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-1525
+# frob:ticket T-1572
 # frob:doc docs/modules/cli.md#frob-coverage-t-1525
 # frob:tests tests/unit/test_coverage_runner.py::TestCoverageRunner.test_default_delegates_to_run_coverage_wait  # noqa: E501
 # frob:tests tests/unit/test_coverage_runner.py::TestCoverageRunner.test_full_calls_native_refresh_directly  # noqa: E501
-# frob:tests tests/unit/test_coverage_runner.py::TestCoverageRunner.test_run_failure_exits_nonzero  # noqa: E501
+# frob:tests \
+# tests/unit/test_coverage_runner.py::TestCoverageRunner.test_run_failure_exits_nonzero
+# frob:tests tests/unit/test_coverage_runner.py::TestCoverageRunner.test_base_threads_through_to_run_coverage_wait  # noqa: E501
 def run(cfg: AppConfig) -> None:
-    """`frob coverage [--full]`: refresh `coverage.xml`/the coverage stamp
-    via the T-1516 frob-native orchestration -- touched-set incremental by
-    default (`run_coverage_wait`'s single-flight, freshness-checked path),
-    or a whole-suite run when `--full` is passed (calls
-    `native_coverage_refresh` directly, since an explicit full-refresh
-    request should not be short-circuited by another caller's already-
-    fresh result). Exits non-zero (`SystemExit`, the convention every
-    other runner facing a hard failure uses) on refresh failure."""
+    """`frob coverage [--full] [--base REF]`: refresh `coverage.xml`/the
+    coverage stamp via the T-1516 frob-native orchestration -- touched-set
+    incremental by default (`run_coverage_wait`'s single-flight,
+    freshness-checked path), or a whole-suite run when `--full` is passed
+    (calls `native_coverage_refresh` directly, since an explicit
+    full-refresh request should not be short-circuited by another
+    caller's already-fresh result). `--base` (T-1572, the old `make
+    coverage-fast BASE=<ref>` shell recipe's equivalent) overrides the
+    git ref the touched-set incremental refresh diffs against (default
+    HEAD) -- it has no effect with `--full`, which always runs the whole
+    suite regardless of any touched-set base. Exits non-zero
+    (`SystemExit`, the convention every other runner facing a hard
+    failure uses) on refresh failure."""
     root = cfg.coverage_path or Path(".")
 
     if cfg.coverage_full:
@@ -73,7 +81,7 @@ def run(cfg: AppConfig) -> None:
 
     from frob.testing._coverage_wait import run_coverage_wait
 
-    outcome = run_coverage_wait(root)
+    outcome = run_coverage_wait(root, base=cfg.coverage_base or "HEAD")
     if outcome.is_err:
         _log.error("frob coverage: %s", outcome.danger_err.value)
         raise SystemExit(1)

@@ -526,6 +526,17 @@ def _add_coverage_parser(sub) -> None:
         help="run the whole suite under coverage instead of the touched-set "
         "incremental refresh",
     )
+    # frob:ticket T-1572
+    coverage_p.add_argument(
+        "--base",
+        dest="coverage_base",
+        metavar="REF",
+        default=None,
+        help="git ref the touched-set incremental refresh diffs against "
+        "(default: HEAD) -- the old make coverage-fast BASE=<ref> shell "
+        "recipe's equivalent; has no effect with --full, which always "
+        "runs the whole suite regardless of any touched-set base",
+    )
 
 
 # frob:ticket T-0030

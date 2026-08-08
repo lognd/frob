@@ -1761,7 +1761,7 @@
     "src/frob/testing/_coverage_wait.py::CoverageWaitOutcome": "5c673dd2d06d7e5469a445522a8ad01c93cd0cc3757583ceef2b1d363c957fda",
     "src/frob/testing/_coverage_wait.py::SharedCoverageResult": "b06b24c2786b8d65a2715c34a0944991320dcdb1decf418cf232874b98bc27d8",
     "src/frob/testing/_coverage_wait.py::coverage_lock_path": "a978588bed6a9fdf500e4f3944878907b2a8ac493c16a76468517c237fafe559",
-    "src/frob/testing/_coverage_wait.py::run_coverage_wait": "18006248275bbc51cd90a19e1cf98de1d6745dea32992bd82e6ed814c9dda82f",
+    "src/frob/testing/_coverage_wait.py::run_coverage_wait": "faaf50a94b700ebdeba4e3d409fbc591f72bc272c0db1a2d47b3893341c1a92b",
     "src/frob/testing/_coverage_wait.py::shared_state_dir": "8e6197f1d143a4831bea557e315a38c9416dc6ace43afc34c9b4ae30abfca15a",
     "src/frob/testing/_coverage_wait.py::tree_digest": "5521b3911794fe5bbd7a219481a4156543e4859e2da9db0b9fa69de5dcfc5c24",
     "src/frob/testing/_incremental_coverage.py::python_coverage_targets": "4ff9bbaa63e65dfe58fbf73cde272c9d0df5b54a5b30a4d84cd0cd4461afb106",
@@ -2161,5 +2161,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.398.0"
+  "version": "0.399.0"
 }

@@ -348,13 +348,20 @@ def python_coverage_targets(root: Path, snapshot: GraphSnapshot,
     # () on a diff/selection failure or an empty selection; never raises.
 
 # frob/testing/_coverage_wait.py (T-0322, cross-worktree layer T-1095)
-def run_coverage_wait(root: Path, *, command: tuple[str, ...] | None = None
+def run_coverage_wait(root: Path, *, command: tuple[str, ...] | None = None,
+                       base: str = "HEAD"
                       ) -> Result[CoverageWaitOutcome, CoverageWaitError]
     # Blocks in the foreground under a single-flight file lock
     # (.frob/coverage.lock) until the coverage stamp is fresh, running
     # `command` if it is not already -- the definitive-result alternative
     # to backgrounding `make coverage` and stalling on a notification a
     # dispatched sub-agent can never receive.
+    #
+    # T-1572: `base` overrides the git ref a real (non-`command`) refresh
+    # diffs the touched-set selection against (default HEAD) -- threaded
+    # straight through to `native_coverage_refresh`'s own `base` kwarg;
+    # has no effect on the freshness check or the cross-worktree digest
+    # cache below, both keyed purely by tree content.
     #
     # T-1095: before the per-worktree lock/run above, checks a CROSS-
     # worktree layer first -- a shared, content-addressed cache keyed by

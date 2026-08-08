@@ -863,6 +863,8 @@ class AppConfig(BaseModel):
     # run instead of the default touched-set incremental refresh.
     coverage_full: bool = False
     coverage_path: Path | None = None
+    # frob:ticket T-1572
+    coverage_base: str | None = None
 
     # frob:ticket T-1271
     # frob:tests tests/test_app_config.py::TestEnumFieldValidation.test_invalid_ticket_state_lists_valid_values kind="unit"  # noqa: E501

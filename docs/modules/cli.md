@@ -153,6 +153,12 @@ worktree on the same tree digest adopts its settled result instead of
 re-running. `--full`: bypasses that freshness check entirely and calls
 `native_coverage_refresh(..., full=True)` directly, for a caller who
 explicitly wants a whole-suite run regardless of what is already cached.
+`--base REF` (T-1572, the old `make coverage-fast BASE=<ref>` shell
+recipe's replacement): overrides the git ref the touched-set incremental
+refresh diffs against (default `HEAD`), threaded through `run_coverage_
+wait`/`native_coverage_refresh`'s own `base` kwarg -- has no effect with
+`--full`, which always runs the whole suite regardless of any touched-set
+base.
 
 ```
 frob coverage            # touched-set incremental refresh (or a no-op if already fresh)
