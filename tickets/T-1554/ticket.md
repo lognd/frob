@@ -2,7 +2,7 @@
 id: T-1554
 title: 'land: design the remaining post-commit checkpoint gap beyond the sweep window
   (T-1523 follow-up)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -12,10 +12,30 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/_land.py
-- src/frob/app/ticket_runner/_land_cmd.py
+- docs/design/land-checkpoint-durability.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_land.py
+  reason: design-only deliverable per ticket body ('needs its own design doc before
+    implementation'); no code changes belong to this ticket
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: design-only deliverable per ticket body ('needs its own design doc before
+    implementation'); no code changes belong to this ticket
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/design/land-checkpoint-durability.md
+  reason: design-only deliverable per ticket body ('needs its own design doc before
+    implementation'); no code changes belong to this ticket
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
