@@ -17,8 +17,16 @@ scope:
 - scripts/verify_lands.py
 - docs/guides/coordinator-scripts.md
 - design/frob.strata
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: 'scope closure: the strata self-model''s frob:tests target lives here; editing
+    design/frob.strata without it leaves the edge unclosed'
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
