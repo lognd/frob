@@ -16,6 +16,12 @@ scope:
 - src/frob/app/ticket_runner/_query.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-1876: lease liveness reaping lives here'
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
