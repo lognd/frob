@@ -6,7 +6,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-05'
-priority: medium
+priority: high
 blocked_by:
 - T-1625
 parent: T-1623
