@@ -6,11 +6,14 @@ re-verify job and the rebase-bot conflict-warning job, plus the
 from __future__ import annotations
 
 import subprocess
+import threading
+import time
 from pathlib import Path
 
 import pytest
 
 from frob.serve import _daemon, _warm
+from frob.serve._socketd import SocketDaemonConfig, run_socket_daemon, send_request
 from frob.serve._tools import frob_daemon_status
 from frob.tickets._leases import record_lease
 
@@ -144,6 +147,49 @@ class TestPollVerifyWorker:
 
         result = _daemon._poll_verify_worker(repo)
         assert result is outcome
+
+
+# frob:ticket T-1737
+class TestWatchThreadNotifiesVerifyWorker:
+    """`run_socket_daemon` wires its `WatchThread` FS-watch `on_change`
+    callback to also `notify()` the T-1688 coalescing verify worker for
+    the same root (`src/frob/serve/_socketd.py`), not just the
+    `graph-changed` event publish -- closing the scope cut
+    `_poll_verify_worker`'s own docstring used to disclose."""
+
+    def test_fs_change_notifies_the_cached_verify_worker(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestWatchThreadNotifiesVerifyWorker.test_fs_chang\
+        # e_notifies_the_cached_verify_worker
+        cfg = SocketDaemonConfig(root=repo, idle_timeout_s=10.0)
+        thread = threading.Thread(target=lambda: run_socket_daemon(cfg), daemon=True)
+        thread.start()
+        try:
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                response = send_request(repo, "frob_doable_tickets", timeout_s=0.5)
+                if response.is_ok:
+                    break
+                time.sleep(0.1)
+            else:
+                raise AssertionError("daemon never became reachable")
+
+            worker = _daemon._get_verify_worker(repo)
+            assert worker._pending_since is None
+
+            (repo / "src" / "pkg" / "a.py").write_text('"""Module, edited."""\n')
+
+            watch_deadline = time.monotonic() + 10
+            while time.monotonic() < watch_deadline:
+                if worker._pending_since is not None:
+                    break
+                time.sleep(0.1)
+            assert worker._pending_since is not None, (
+                "FS-watch change did not notify() the cached verify worker"
+            )
+        finally:
+            send_request(repo, "frob_shutdown", timeout_s=2.0)
+            thread.join(timeout=15)
 
 
 # frob:ticket T-0782

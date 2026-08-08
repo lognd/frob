@@ -68,7 +68,11 @@ DEFAULT_POLL_INTERVAL_S = 20.0
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
+# documents this daemon internal; demoted to private in this ticket (frob-exports: \
+# every real caller, including tests, already accessed it module-qualified) but \
+# remains the thing the doc section describes, and the doc text/directives were \
+# updated to the new name"
 class _PostLandVerdict(BaseModel):
     """One post-land re-verify pass's result (T-0733): the `main` HEAD it
     was computed against, when it ran, and the delta/touched-test
@@ -87,7 +91,11 @@ class _PostLandVerdict(BaseModel):
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
+# documents this daemon internal; demoted to private in this ticket (frob-exports: \
+# every real caller, including tests, already accessed it module-qualified) but \
+# remains the thing the doc section describes, and the doc text/directives were \
+# updated to the new name"
 class _RebaseWarning(BaseModel):
     """One in-flight worktree branch whose eventual land against `main`
     would (T-0733) conflict, published by `_poll_rebase_bot` before the
@@ -104,7 +112,11 @@ class _RebaseWarning(BaseModel):
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
+# documents this daemon internal; demoted to private in this ticket (frob-exports: \
+# every real caller, including tests, already accessed it module-qualified) but \
+# remains the thing the doc section describes, and the doc text/directives were \
+# updated to the new name"
 class _DaemonStatus(BaseModel):
     """The daemon's latest post-land verdict and outstanding rebase
     warnings for one repo root (T-0733) -- what `frob_daemon_status`
@@ -155,9 +167,16 @@ def _main_head(root: Path) -> str | None:
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict kind="unit"  # noqa: E501
-# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop \
+# kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict \
+# kind="unit"
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
+# documents this daemon internal; demoted to private in this ticket (frob-exports: \
+# every real caller, including tests, already accessed it module-qualified) but \
+# remains the thing the doc section describes, and the doc text/directives were \
+# updated to the new name"
 def _poll_post_land(root: Path, *, run_tests: bool = True) -> _PostLandVerdict | None:
     """One post-land re-verify cycle (T-0733, job 1): if `main`'s HEAD has
     not moved since the last recorded `_PostLandVerdict` for `root`, return
@@ -257,8 +276,12 @@ def _get_verify_worker(root: Path) -> CoalescingWorker:
 
 
 # frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
-# frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ticks kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker \
+# kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_unchanged_still_ticks \
+# kind="unit"
 # frob:tests tests/test_serve_daemon.py::TestPollVerifyWorker.test_tick_result_is_returned_when_a_run_happens kind="unit"  # noqa: E501
 def _poll_verify_worker(root: Path) -> Result[WorkerOutcome, WorkerError] | None:
     """One coalescing-verify-worker cycle (T-1688, job 3): `notify()` the
@@ -273,15 +296,15 @@ def _poll_verify_worker(root: Path) -> Result[WorkerOutcome, WorkerError] | None
     inner decision is where the real debounce/floor logic lives (`frob.
     verify._worker.CoalescingWorker.tick`), not here.
 
-    DISCLOSED SCOPE CUT: the FS-watch signal `frob.serve._watch.
-    WatchThread` provides is NOT wired to this worker's `notify()` yet --
-    `WatchThread` is instantiated in `frob.serve._socketd.run_socket_daemon`,
-    outside this ticket's own `src/frob/serve/_daemon.py` scope. The
-    HEAD-moved check above and this job's own `DEFAULT_POLL_INTERVAL_S`
-    polling cadence already give every wake condition T-1686 asks for
-    EXCEPT that specific push signal; wiring `WatchThread(on_change=...)`
-    to also call this worker's `notify()` is a one-line follow-up inside
-    `_socketd.py`, filed rather than silently assumed done."""
+    T-1737: the FS-watch push signal `frob.serve._watch.WatchThread`
+    provides IS now wired to this worker's `notify()` -- `WatchThread` is
+    instantiated in `frob.serve._socketd.run_socket_daemon`, which calls
+    `_get_verify_worker(root).notify()` (this module's own cache, so the
+    SAME worker instance this job polls) from its `on_change` callback.
+    The HEAD-moved check above and this job's own `DEFAULT_POLL_INTERVAL_S`
+    polling cadence remain independent wake conditions -- the FS-watch
+    push is an earlier trigger for the exact same debounce window, not a
+    replacement for either."""
     head = _main_head(root)
     key = str(root.resolve())
     worker = _get_verify_worker(root)
@@ -410,11 +433,20 @@ def _merge_would_conflict(root: Path, branch: str, main_head: str) -> bool | Non
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns kind="unit"  # noqa: E501
-# frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings \
+# kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns \
+# kind="unit"
+# frob:tests \
+# tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning kind="unit"
 # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once kind="unit"  # noqa: E501
-# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
+# documents this daemon internal; demoted to private in this ticket (frob-exports: \
+# every real caller, including tests, already accessed it module-qualified) but \
+# remains the thing the doc section describes, and the doc text/directives were \
+# updated to the new name"
 def _poll_rebase_bot(root: Path) -> tuple[_RebaseWarning, ...]:
     """One rebase-bot cycle (T-0733, job 2): for every in-flight worktree
     branch (`_worktree_branches`), simulate merging current `main` into it
@@ -459,7 +491,9 @@ def _poll_rebase_bot(root: Path) -> tuple[_RebaseWarning, ...]:
 
 
 # frob:doc docs/modules/serve.md#daemon-jobs
-# frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns kind="unit"  # noqa: E501
+# frob:tests \
+# tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns \
+# kind="unit"
 def daemon_status(root: Path) -> _DaemonStatus:
     """The cached `_DaemonStatus` for `root` -- what `frob_daemon_status`
     (`_tools.py`) exposes over MCP; a pure read, never triggers a poll."""
@@ -468,7 +502,11 @@ def daemon_status(root: Path) -> _DaemonStatus:
 
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status kind="unit"  # noqa: E501
-# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
+# documents this daemon internal; demoted to private in this ticket (frob-exports: \
+# every real caller, including tests, already accessed it module-qualified) but \
+# remains the thing the doc section describes, and the doc text/directives were \
+# updated to the new name"
 def _run_daemon_cycle(root: Path, *, run_tests: bool = True) -> _DaemonStatus:
     """One full daemon cycle: `_poll_post_land`, `_poll_rebase_bot`, then
     `_poll_verify_worker` (T-1688), all against `root`. The unit both
@@ -487,7 +525,11 @@ def _run_daemon_cycle(root: Path, *, run_tests: bool = True) -> _DaemonStatus:
 
 # frob:doc docs/modules/serve.md#daemon-jobs
 # frob:tests tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_stops kind="unit"  # noqa: E501
-# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs documents this daemon internal; demoted to private in this ticket (frob-exports: every real caller, including tests, already accessed it module-qualified) but remains the thing the doc section describes, and the doc text/directives were updated to the new name"  # noqa: E501
+# frob:waive COV007 reason="T-0871: same -- docs/modules/serve.md#daemon-jobs \
+# documents this daemon internal; demoted to private in this ticket (frob-exports: \
+# every real caller, including tests, already accessed it module-qualified) but \
+# remains the thing the doc section describes, and the doc text/directives were \
+# updated to the new name"
 def _start_daemon(
     root: Path,
     *,

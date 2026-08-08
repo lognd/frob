@@ -3750,12 +3750,18 @@ daemon's existing `DEFAULT_POLL_INTERVAL_S` (20s) cycle, calling
 "queue append" wake proxy: a land IS a HEAD move) and calling `tick()`
 unconditionally every cycle (cheap -- it is a no-op unless the trailing-
 edge debounce window has gone quiet, or the periodic floor has elapsed).
-**Disclosed scope cut:** the FS-watch push signal `frob.serve._watch.
-WatchThread` already provides is NOT wired to `notify()` yet --
-`WatchThread` is instantiated in `frob.serve._socketd.run_socket_daemon`,
-outside this ticket's own `src/frob/serve/_daemon.py` scope; filed as a
-follow-up rather than silently assumed done (see this ticket's Done
-report for the real id).
+**T-1737 closed the scope cut.** The FS-watch push signal `frob.serve.
+_watch.WatchThread` provides IS now wired to `notify()`: `WatchThread` is
+instantiated in `frob.serve._socketd.run_socket_daemon` (outside this
+ticket's own `src/frob/serve/_daemon.py` scope, so the wiring lives in
+`_socketd.py` itself), and its `on_change` callback calls both the
+existing `graph-changed` event publish (T-1096) and `_get_verify_worker(
+root).notify()` -- the SAME cached worker instance `_poll_verify_worker`
+polls, since both look it up through this module's own `_VERIFY_WORKERS`
+cache keyed by `str(root.resolve())`. A watch tick observing a real
+on-disk change now resets the debounce window immediately, an earlier
+trigger for the identical decision `tick()` already makes -- not a third,
+independent wake condition with its own state.
 
 **Trailing-edge debounce, concretely.** Each `notify()` call pushes the
 deadline to `now + debounce_window_s` (default 90s) -- a steady trickle

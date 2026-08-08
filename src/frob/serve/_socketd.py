@@ -637,6 +637,10 @@ def _idle_monitor(
 # frob:tests \
 # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_replaced \
 # kind="unit"
+# frob:ticket T-1737
+# frob:tests \
+# tests/test_serve_daemon.py::TestWatchThreadNotifiesVerifyWorker.test_fs_change_notif\
+# ies_the_cached_verify_worker kind="unit"  # noqa: E501
 def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
     """The standalone daemon process entry point (T-1092): acquire the
     single-instance lock (`Err(DaemonError.AlreadyRunning)` if another
@@ -677,11 +681,24 @@ def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
     # leaving every rebuild to whichever client query happens to arrive
     # next. `on_change` (T-1096) publishes a `graph-changed` event to any
     # subscribed client the moment a real on-disk change is observed.
+    #
+    # T-1737: also `notify()` the T-1688 coalescing verify worker for this
+    # same root -- `_poll_verify_worker`'s own module docstring disclosed
+    # this exact wiring as a scope cut (WatchThread lives here, outside
+    # `_daemon.py`'s own ticket scope), so an FS-watch push resets the
+    # worker's debounce window immediately instead of only via the
+    # daemon's own ~20s HEAD-moved poll cadence.
+    from frob.serve._daemon import _get_verify_worker
     from frob.serve._events import CoverageWatcher
 
-    watcher = WatchThread(
-        root, on_change=lambda: server.event_bus.publish("graph-changed")
-    )
+    def _on_watch_change() -> None:
+        """T-1737: fan out one FS-watch push to both the `graph-changed`
+        event publish (T-1096) and the coalescing verify worker's
+        `notify()` (T-1688) -- a single on-disk change wakes both."""
+        server.event_bus.publish("graph-changed")
+        _get_verify_worker(root).notify()
+
+    watcher = WatchThread(root, on_change=_on_watch_change)
     watcher.start()
 
     # T-1096: the `coverage-fresh` event source -- any write to

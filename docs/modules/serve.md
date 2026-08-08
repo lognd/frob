@@ -513,6 +513,15 @@ subscribed client; `_watch` itself has no dependency on `_events` at all
 (the callback is `None` if unset) and stays a pure optimization layer on
 its own.
 
+T-1737: the SAME `on_change` callback also calls `frob.serve._daemon.
+_get_verify_worker(root).notify()` -- the T-1688 coalescing verify worker's
+own cached instance for this root, the identical object `_poll_verify_worker`
+polls from its separate background-daemon loop. A watch tick observing a
+real on-disk change now resets that worker's debounce window immediately
+instead of only via `_poll_verify_worker`'s own `main`-HEAD-moved check or
+its periodic floor; see "Coalescing verify worker" in
+`docs/modules/tickets.md` for the debounce/floor mechanics this wakes.
+
 ## Subscribe/push events (T-1096)
 
 <!-- frob:describes src/frob/serve/_events.py::DEFAULT_SUBSCRIBE_TIMEOUT_S -->
