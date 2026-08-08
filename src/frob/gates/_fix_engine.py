@@ -20,7 +20,7 @@ E501, COV002, WAIVE004) out to `frob.gates._fix_engine_text`, and the
 common infra both families need (`FixApplied`, the manifest helpers) out
 to `frob.gates._fix_engine_shared` (breaking what would otherwise be a
 circular import between the two handler-family modules). This module
-keeps the GRAPH-driven handlers (DOC007, DOC002, TICK002) plus
+keeps the GRAPH-driven handlers (DOC007, DOC002, TICK002, TICK006) plus
 `TIER_A_HANDLERS`/`apply_tier_a_fixes`, the dispatch table binding every
 handler across all three files together; see the other two modules' own
 docstrings for the seam this drew.
@@ -59,7 +59,7 @@ from frob.gates._fix_engine_text import (
     fix_suppress001_paired_suppression,
 )
 from frob.graph import EdgeKind, GraphSnapshot
-from frob.tickets import TicketQueue
+from frob.tickets import Ticket, TicketQueue
 from frob.tickets._provisional import is_draft_id
 
 _log = logging.getLogger(__name__)
@@ -289,6 +289,160 @@ def fix_tick002_renumber(root: Path, queue: TicketQueue) -> list[FixApplied]:
 
 
 # ---------------------------------------------------------------------------
+# TICK006: a phantom draft citation -- the id resolves to NO ticket at all,
+# in either the active ledger or the archive, unlike TICK002's survived-
+# draft case above.
+# ---------------------------------------------------------------------------
+
+#: How much of the phantom id's own claim window (see
+#: `frob.gates._tickets_gate._TICK006_CLAIM_WINDOW`) to quote verbatim in
+#: the refiled ticket's body -- generous enough to capture the whole
+#: "Filed: T-draft-... (why)" sentence/paragraph without pulling in an
+#: unrelated later claim.
+_TICK006_CONTEXT_CHARS = 300
+
+
+def _tick006_context_excerpt(done_report_text: str, tid: str) -> str:
+    """The `_TICK006_CONTEXT_CHARS`-wide window of `done_report_text`
+    centered on `tid`'s first occurrence -- the recoverable context a
+    refiled ticket's body quotes verbatim, since the ORIGINAL claim
+    (what the phantom id was supposed to cover) is the only description
+    of the lost work that still exists anywhere. `""` if `tid` is
+    somehow absent (defensive; every caller only ever passes an id
+    `_tick006_phantom_ids` already found in this exact text)."""
+    idx = done_report_text.find(tid)
+    if idx == -1:
+        return ""
+    start = max(0, idx - _TICK006_CONTEXT_CHARS // 2)
+    end = min(len(done_report_text), idx + _TICK006_CONTEXT_CHARS // 2)
+    return done_report_text[start:end].strip()
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:ticket T-1544
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_tick006_refiles_and_rewrites_citation \
+# kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_tick006_known_id_is_never_touched \
+# kind="unit"
+def fix_tick006_phantom_refile(root: Path, queue: TicketQueue) -> list[FixApplied]:
+    """Tier-A fix: TICK006 (T-0726) flags a Done report's affirmative
+    "filed" claim whose referenced id resolves to NO block anywhere --
+    unlike TICK002 (a draft id that survived onto main and just needs
+    `frob ticket renumber`), a TICK006 phantom was never real at all, so
+    there is no existing ticket to rename FROM. This handler instead
+    FILES the real ticket TICK006's own message tells the operator to
+    file, then rewrites the phantom citation in the CLAIMING ticket's own
+    body to the new real id -- the same whole-word prose-citation rewrite
+    `renumber_one`/T-1125 already use for a real renumber
+    (`_rewrite_body_prose_references`), reused rather than reimplemented
+    here.
+
+    The refiled ticket's body quotes the original claim's own surrounding
+    text verbatim (`_tick006_context_excerpt`) -- the only surviving
+    description of whatever work the phantom id was meant to cover, since
+    the ticket itself never existed to describe it directly. Filed as
+    `kind=bug`, `priority=high`: a phantom filing trail is itself the
+    T-0707/T-0615 incident class TICK006 exists to catch, not ordinary
+    follow-up work.
+
+    A no-op whenever `new_ticket` itself fails (rare: worktree-lease
+    violation, malformed evidence) -- the phantom citation is left
+    exactly as TICK006 already reports it rather than silently rewritten
+    to an id that was never actually filed, which would just create a
+    SECOND phantom."""
+    from frob.tickets._store import load_archive
+
+    archived = load_archive(root)
+    known_ids = set(queue.tickets) | (
+        set(archived.danger_ok) if archived.is_ok else set()
+    )
+    applied: list[FixApplied] = []
+    for ticket in sorted(queue.tickets.values(), key=lambda t: t.id):
+        applied.extend(_tick006_refile_for_ticket(root, ticket, known_ids))
+    return applied
+
+
+def _tick006_refile_ticket_spec(ticket: Ticket, tid: str, excerpt: str):  # noqa: ANN201
+    """The `TicketSpec` for the real ticket refiled in place of phantom
+    `tid` (cited by `ticket`), quoting `excerpt` (the original claim's own
+    surrounding text) verbatim -- split out of `_tick006_refile_for_ticket`
+    purely to keep that function under ARCH001's line threshold, no
+    behavior change."""
+    from frob.tickets import Origin, Priority, TicketKind, TicketSpec
+
+    return TicketSpec(
+        title=f"Recovered from {ticket.id}'s phantom TICK006 citation of {tid}",
+        kind=TicketKind.BUG,
+        origin=Origin.AGENT,
+        priority=Priority.HIGH,
+        body=(
+            f"Auto-filed by the TICK006 Tier-A fix (T-1544): "
+            f"{ticket.id}'s Done report claimed {tid} was filed, but "
+            f"{tid} resolves to no block in tickets.md or "
+            f"tickets-archive.md -- a phantom filing trail. The original "
+            f"claim's own surrounding text (the only surviving "
+            f"description of the intended work) is quoted verbatim "
+            f"below; review and refine as needed.\n\n> {excerpt}"
+        ),
+    )
+
+
+def _tick006_refile_for_ticket(
+    root: Path, ticket: Ticket, known_ids: set[str]
+) -> list[FixApplied]:
+    """One ticket's own share of `fix_tick006_phantom_refile`'s work:
+    scan its Done report for phantom citations, refile a real ticket for
+    each, and rewrite them in place -- split out of the parent purely to
+    keep it under ARCH001's line threshold. Mutates `known_ids` in place
+    (adds each newly refiled id) so a LATER ticket in the same pass never
+    double-files against an id THIS pass already claimed."""
+    from frob.gates._tickets_gate import _tick006_done_report_text, _tick006_phantom_ids
+    from frob.tickets import new_ticket
+    from frob.tickets._new_renumber import _rewrite_body_prose_references
+    from frob.tickets._store import write_ticket
+
+    done_report_text = _tick006_done_report_text(ticket.body)
+    if not done_report_text:
+        return []
+    applied: list[FixApplied] = []
+    current_body = ticket.body
+    for tid in _tick006_phantom_ids(done_report_text):
+        if tid in known_ids:
+            continue
+        excerpt = _tick006_context_excerpt(done_report_text, tid)
+        spec = _tick006_refile_ticket_spec(ticket, tid, excerpt)
+        created = new_ticket(root, spec)
+        if created.is_err:
+            _log.warning(
+                "fix_tick006_phantom_refile: could not refile %s "
+                "(cited by %s): %s",
+                tid,
+                ticket.id,
+                created.danger_err,
+            )
+            continue
+        new_id = created.danger_ok.id
+        known_ids.add(new_id)
+        current_body, hits = _rewrite_body_prose_references(
+            current_body, {tid: new_id}
+        )
+        if hits:
+            applied.append(
+                FixApplied(
+                    rule="TICK006",
+                    file="tickets.md",
+                    line=0,
+                    detail=f"{tid} -> {new_id} (refiled, cited by {ticket.id})",
+                )
+            )
+    if current_body != ticket.body:
+        write_ticket(root, ticket.model_copy(update={"body": current_body}))
+    return applied
+
+
+# ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
 
@@ -369,6 +523,9 @@ TIER_A_HANDLERS: dict[
         )
     ),
     "TICK002": lambda root, snapshot, queue, ticket_id: fix_tick002_renumber(
+        root, queue
+    ),
+    "TICK006": lambda root, snapshot, queue, ticket_id: fix_tick006_phantom_refile(
         root, queue
     ),
     "WAIVE004": lambda root, snapshot, queue, ticket_id: fix_waive004_stale_waiver(

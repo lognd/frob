@@ -1,7 +1,7 @@
 ---
 id: T-1544
 title: 'Tier-A auto-fix: TICK006 phantom draft citation refile+renumber'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -12,9 +12,47 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fix_engine.py
-- src/frob/tickets/**
+- docs/modules/gates.md
+- tests/test_gates.py
+- design/frob.strata
+- tickets/T-1544/ticket.md
+- tickets/T-1544/done-report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: narrowed from the mega-glob to the actual files touched
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrowed from the mega-glob to the actual files touched
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates.py
+  reason: narrowed from the mega-glob to the actual files touched
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: design/frob.strata
+  reason: narrowed from the mega-glob to the actual files touched
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1544/ticket.md
+  reason: v2 per-ticket ledger files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1544/done-report.md
+  reason: v2 per-ticket ledger files
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_refiles_and_rewrites_citation
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_known_id_is_never_touched
 designated_repro_test: null
 threat: null
 component: null

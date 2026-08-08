@@ -4217,6 +4217,21 @@ guess, never a waiver insertion):
   surface. Includes T-1125's prose-reference rewrite automatically,
   since `finalize_draft` -> `renumber_one` already performs it. A no-op
   off the default branch.
+- **`fix_tick006_phantom_refile`** (T-1544): TICK006's phantom-citation
+  case -- a Done report's "filed" claim whose id resolves to NO ticket
+  at all, in either the active ledger or the archive, unlike TICK002's
+  survived-draft case above (which has a real ticket to rename FROM).
+  Files the real ticket the phantom id was supposed to be, via
+  `new_ticket`, with the original claim's own surrounding text quoted
+  verbatim in the new ticket's body (the only surviving description of
+  the lost work); then rewrites the phantom citation in the CLAIMING
+  ticket's own body to the new real id, reusing `_new_renumber.
+  _rewrite_body_prose_references` -- the same whole-word prose-citation
+  rewrite `renumber_one`/T-1125 already use for a genuine renumber, not
+  a second implementation of the same substitution. A no-op whenever
+  `new_ticket` itself fails, leaving the phantom citation exactly as
+  TICK006 reports it rather than rewriting it to an id that was never
+  actually filed.
 
 T-1261 adds a second batch of four Tier-A handlers, none of which invent
 new rewrite logic -- each rule already names its own remedy verbatim in

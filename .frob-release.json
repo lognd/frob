@@ -578,11 +578,12 @@
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
     "src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate": "6c7ec22130f8c90cb92b90d3fce38a0199edfb4b091febd3589ca43fcd1008d1",
     "src/frob/gates/_ffi_boundary.py::ffi_boundary_gate": "57923ca6fb8c668ab7741001a25337f6bf5d0a682f72388274002baad2bd4eac",
-    "src/frob/gates/_fix_engine.py::TIER_A_HANDLERS": "f049e423c779093398e6298e7b4820b41b086ccb5073c83be1a321dfd8f01df2",
+    "src/frob/gates/_fix_engine.py::TIER_A_HANDLERS": "9c13da8c49d91b9b1533db31623965feb1c4e9b4580d862de942b653dde8cdac",
     "src/frob/gates/_fix_engine.py::apply_tier_a_fixes": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
     "src/frob/gates/_fix_engine.py::fix_doc002_unique_slug": "7ef8d8ae7a08a3d93bc18dc16223b448c204ff22108ce82b571ff3a9bd779892",
     "src/frob/gates/_fix_engine.py::fix_doc007_dotted_form": "327da98ed7d5183d7687e61242a3ef58b030cd5fb58e4eb335b441e918bb0024",
     "src/frob/gates/_fix_engine.py::fix_tick002_renumber": "d3462147dd6790eedaa789114b5c65fcdf397f879de80e2dbb3ba770289490fe",
+    "src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile": "b5a508ffc4bfe8e2d71811a6fe339651903a454d483aa549fd7e0a5aa5910b29",
     "src/frob/gates/_fix_engine_shared.py::FixApplied": "118127394ff1c3d576771cf12fd949714186471776c13ac5cc78b273414473cc",
     "src/frob/gates/_fix_engine_shared.py::clear_autofix_manifest": "b3dfeb490f20ededd6f239d9d9cee29df254d6e05eacf47b0e8b54c721866d66",
     "src/frob/gates/_fix_engine_shared.py::write_autofix_manifest": "8785d11019d9a8d702c7bf96707d07ced9b87c631c72e9a9923b505bf1ae5104",
@@ -2136,5 +2137,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.382.0"
+  "version": "0.383.0"
 }

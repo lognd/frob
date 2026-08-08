@@ -10308,6 +10308,118 @@ class TestFixEngineTierA:
         applied = fix_tick002_renumber(root, queue)
         assert applied == []
 
+    # -- acceptance: TICK006 phantom draft citation refile+renumber --------
+
+    def _tick006_repo(self, tmp_path: Path):  # noqa: ANN202
+        """A repo with one ticket whose Done report affirmatively claims a
+        phantom id (never filed, resolves to nothing) -- the TICK006 repro
+        every test in this section shares."""
+        import subprocess
+
+        root = tmp_path / "repo"
+        root.mkdir()
+
+        def _git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(root), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        _git("init", "-q", "-b", "main")
+        _git("config", "user.email", "test@example.com")
+        _git("config", "user.name", "Test")
+        (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+        (root / "tickets-archive.md").write_text("# Archive\n\n", encoding="utf-8")
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "init")
+        return root, _git
+
+    def test_tick006_refiles_and_rewrites_citation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile \
+        # kind="unit"
+        from frob.gates import tickets_gate
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\n"
+                "Filed T-draft-deadbeef (recovery ticket for the "
+                "phantom-citation incident) as a follow-up.\n"
+            ),
+        )
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "file claiming ticket with phantom citation")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        before = tickets_gate(root, queue)
+        assert any(v.rule == "TICK006" for v in before)
+
+        applied = fix_tick006_phantom_refile(root, queue)
+        assert len(applied) == 1
+        assert applied[0].rule == "TICK006"
+        assert "T-draft-deadbeef" in applied[0].detail
+
+        from frob.tickets._store import load_all
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        # The claiming ticket's body no longer cites the phantom id.
+        rewritten = reloaded.danger_ok["T-0001"]
+        assert "T-draft-deadbeef" not in rewritten.body
+        # A new real ticket now exists, and IS what the body cites.
+        new_ids = set(reloaded.danger_ok) - {"T-0001"}
+        assert len(new_ids) == 1
+        new_id = next(iter(new_ids))
+        assert new_id in rewritten.body
+        # The refiled ticket's body quotes the original claim.
+        assert "phantom-citation incident" in reloaded.danger_ok[new_id].body
+
+        after_queue = TicketQueue(tickets=reloaded.danger_ok)
+        after = tickets_gate(root, after_queue)
+        assert not [v for v in after if v.rule == "TICK006"]
+
+    def test_tick006_known_id_is_never_touched(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile \
+        # kind="unit"
+        """A `TICK002`-shaped claim (the id DOES exist, just as a draft)
+        must never be treated as a TICK006 phantom -- `fix_tick006_
+        phantom_refile` is a no-op when nothing it scans is phantom."""
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body="## Done report\n\nFiled T-0001 as a follow-up.\n",
+        )
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "self-citation, not a phantom")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        applied = fix_tick006_phantom_refile(root, queue)
+        assert applied == []
+
 
 # frob:ticket T-1348
 # frob:ticket T-1548
