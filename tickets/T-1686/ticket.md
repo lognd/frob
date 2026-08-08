@@ -13,10 +13,6 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/_land_queue.py
-- src/frob/serve/_daemon.py
-- docs/modules/tickets.md
-- src/frob/tickets/_land.py
 - tests/test_ticket_land.py
 - tickets/T-1686/ticket.md
 - tickets/T-1686/done-report.md
@@ -67,6 +63,42 @@ scope_changes:
     work the epic needed landed under T-1736 in _land.py instead. Releasing the stale
     declaration so T-1841 can land, rather than overriding the CrossTicketLeakage
     guard. The guard is correct; the declaration was not.'
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/tickets/_land_queue.py
+  reason: T-1686 is tier=epic and does not itself implement -- its descendants (T-1689/T-1691/T-1695/T-1696)
+    do. Holding the four hottest paths in the repo from the root checkout, with no
+    agent working it, blocked roughly 25 queued tickets and left T-1856's finished+tested
+    work unlandable on CrossTicketLeakage. tests/test_ticket_land.py is retained because
+    it covers T-1686's already-recorded evidence.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/serve/_daemon.py
+  reason: T-1686 is tier=epic and does not itself implement -- its descendants (T-1689/T-1691/T-1695/T-1696)
+    do. Holding the four hottest paths in the repo from the root checkout, with no
+    agent working it, blocked roughly 25 queued tickets and left T-1856's finished+tested
+    work unlandable on CrossTicketLeakage. tests/test_ticket_land.py is retained because
+    it covers T-1686's already-recorded evidence.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: T-1686 is tier=epic and does not itself implement -- its descendants (T-1689/T-1691/T-1695/T-1696)
+    do. Holding the four hottest paths in the repo from the root checkout, with no
+    agent working it, blocked roughly 25 queued tickets and left T-1856's finished+tested
+    work unlandable on CrossTicketLeakage. tests/test_ticket_land.py is retained because
+    it covers T-1686's already-recorded evidence.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/tickets/_land.py
+  reason: T-1686 is tier=epic and does not itself implement -- its descendants (T-1689/T-1691/T-1695/T-1696)
+    do. Holding the four hottest paths in the repo from the root checkout, with no
+    agent working it, blocked roughly 25 queued tickets and left T-1856's finished+tested
+    work unlandable on CrossTicketLeakage. tests/test_ticket_land.py is retained because
+    it covers T-1686's already-recorded evidence.
   actor: logan
   at: '2026-08-08'
 evidence:
