@@ -267,9 +267,11 @@ class DeployContract(BaseModel):
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1440
 # frob:ticket T-1627
+# frob:ticket T-1478
 class MayGrant(BaseModel):
-    """One `may "ATOM" [via "GLOB"[, "GLOB"...] [exclusive]]` declaration
-    on a node (T-1440; symbol-form via + `exclusive`, T-1627): `atom` is
+    """One `may "ATOM" [via "GLOB"[, "GLOB"...] [exclusive]] [of "GLOB"[,
+    "GLOB"...]]` declaration on a node (T-1440; symbol-form via +
+    `exclusive`, T-1627; argument-level `of`, T-1478): `atom` is
     the same capability-atom string `Node.may` already carries flat;
     `via` names the sub-glob(s) -- or, T-1627, sub-SYMBOL(s) -- of the
     node's own `code` binding this ONE grant actually covers. `via=()`
@@ -285,13 +287,22 @@ class MayGrant(BaseModel):
     `via` narrows what the per-observation join even counts as declared,
     any OTHER site exercising the same kind is already an ordinary
     undeclared-capability violation the moment `via` is symbol-scoped
-    down to just the one site (`docs/strata/surface.md#may-scope`)."""
+    down to just the one site (`docs/strata/surface.md#may-scope`).
+
+    T-1478: `of` narrows this grant to a subset of the ARGUMENT values an
+    observation carries (e.g. `of "FROB_*"` on an `env.read` grant covers
+    only a read whose literal argument text matches `FROB_*`), one level
+    finer than `via`'s file/symbol SITE scoping and fully independent of
+    it -- a grant can combine both, or neither (the pre-T-1478 default,
+    `of=()`, covering every argument value at every `via`-declared
+    site)."""
 
     model_config = ConfigDict(frozen=True)
 
     atom: str
     via: tuple[str, ...] = ()
     exclusive: bool = False
+    of: tuple[str, ...] = ()
 
 
 # frob:doc docs/strata/waive.md#surface-syntax

@@ -273,6 +273,92 @@ class TestScopedMayViaConformance:
         assert report.violations == ()
 
 
+class TestArgumentLevelMayScoping:
+    """T-1478: `may "ATOM" of "GLOB"` narrows a grant to a subset of the
+    argument VALUES an observation carries, independent of `via`'s
+    file/symbol SITE scoping."""
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_argument_matching_of_glob_is_clean(self, tmp_path: Path):
+        _write(tmp_path, "api/cfg.py", "os.environ.get('FROB_TOKEN')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("env.read",),
+                    may_grants=(MayGrant(atom="env.read", of=("FROB_*",)),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_argument_outside_of_glob_is_a_violation(self, tmp_path: Path):
+        _write(tmp_path, "api/cfg.py", "os.environ.get('SECRET_KEY')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("env.read",),
+                    may_grants=(MayGrant(atom="env.read", of=("FROB_*",)),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert [v.file for v in report.violations] == ["api/cfg.py"]
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_of_less_grant_still_covers_every_argument(self, tmp_path: Path):
+        # migration semantics: an `of`-less `may` (of=()) keeps pre-T-1478
+        # whole-grant meaning, matching `via`'s own empty-means-unscoped
+        # convention.
+        _write(tmp_path, "api/cfg.py", "os.environ.get('SECRET_KEY')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("env.read",),
+                    may_grants=(MayGrant(atom="env.read", of=()),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_via_and_of_compose_as_independent_axes(self, tmp_path: Path):
+        # a grant combining `via` (SITE) and `of` (VALUE): both axes must
+        # pass for the grant to cover an effect -- the right file with the
+        # wrong argument is still a violation.
+        _write(tmp_path, "api/cfg.py", "os.environ.get('SECRET_KEY')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="Api",
+                    trust="trusted",
+                    attrs=("code=api/**",),
+                    may=("env.read",),
+                    may_grants=(
+                        MayGrant(atom="env.read", via=("api/cfg.py",), of=("FROB_*",)),
+                    ),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert [v.file for v in report.violations] == ["api/cfg.py"]
+
+
 class TestModeQualifiedFsConformance:
     """T-0717 acceptance clause 1: a node whose code only reads files,
     declaring precisely `may "fs.read"`, discharges narrowly -- and a real

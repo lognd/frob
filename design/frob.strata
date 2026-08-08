@@ -1330,7 +1330,12 @@ node testsuite : trusted {
     // so the T-1439-incident waive clause this comment used to carry is
     // removed in favor of an honest `may` declaration below.
     may "process-control" via "tests/conftest.py", "tests/test_serve_socket.py";
-    may "env" via "tests/conftest.py", "tests/system/conftest.py", "tests/system/test_cli_doctor.py", "tests/system/test_cli_native_missing.py", "tests/system/test_cli_render_golden.py", "tests/system/test_scaffold_dx.py", "tests/test_app_daemon_proxy.py", "tests/test_capability_registry.py", "tests/test_gates.py", "tests/test_mutate.py", "tests/test_pii_structural_gate.py", "tests/test_scaffold_worktree_lease_hook.py", "tests/test_testing.py", "tests/test_ticket_land.py", "tests/test_ticket_leases.py", "tests/test_tickets_mutation_evidence.py", "tests/test_tickets_velocity.py", "tests/unit/test_lang_artifact_cache.py", "tests/unit/test_makefile_coverage.py", "tests/unit/test_process_lock.py", "tests/test_cache_gate.py", "tests/test_hook_diagnosis_nudge.py";
+    // T-1478: tests/unit/strata/test_effects.py's own new argument-level
+    // `of`-scoping fixtures contain real `os.environ.get(...)` needle
+    // literals (exercising the SAME env-read observation the `of` join
+    // matches against), same self-conformance precedent T-1589's comment
+    // above documents for `net`.
+    may "env" via "tests/conftest.py", "tests/system/conftest.py", "tests/system/test_cli_doctor.py", "tests/system/test_cli_native_missing.py", "tests/system/test_cli_render_golden.py", "tests/system/test_scaffold_dx.py", "tests/test_app_daemon_proxy.py", "tests/test_capability_registry.py", "tests/test_gates.py", "tests/test_mutate.py", "tests/test_pii_structural_gate.py", "tests/test_scaffold_worktree_lease_hook.py", "tests/test_testing.py", "tests/test_ticket_land.py", "tests/test_ticket_leases.py", "tests/test_tickets_mutation_evidence.py", "tests/test_tickets_velocity.py", "tests/unit/test_lang_artifact_cache.py", "tests/unit/test_makefile_coverage.py", "tests/unit/test_process_lock.py", "tests/test_cache_gate.py", "tests/test_hook_diagnosis_nudge.py", "tests/unit/strata/test_effects.py";
     // T-1586: `"FORCE_COLOR" not in os.environ` container-membership reads
     // classify as the distinct `env.read` capability kind (not `env`,
     // which covers `os.environ.get(...)`).

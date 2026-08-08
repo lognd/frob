@@ -46,6 +46,7 @@ T-0695's `_concurrency.py` docstring reword.
 from __future__ import annotations
 
 import fnmatch
+import re
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -120,7 +121,20 @@ _KIND_MAP: dict[str, str] = {
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
 class ObservedEffect(BaseModel):
-    """One net/fs/exec effect substring observed at `file`:`line`."""
+    """One net/fs/exec effect substring observed at `file`:`line`.
+
+    T-1478: `argument` is a best-effort extraction of the first quoted
+    string literal appearing on the same line AFTER `needle` (e.g. the
+    `"FROB_TOKEN"` in `os.environ["FROB_TOKEN"]`, or the `"cfg.json"` in
+    `open("cfg.json")`) -- `None` when no such literal is present (a
+    dynamic/computed argument, or a needle with none, e.g. bare `exec`).
+    This is a textual heuristic over the SAME line `_needle_matches`
+    already scans, not a real parse of the call expression's arguments
+    (matching this module's existing needle-substring detection posture,
+    docs/strata/surface.md#code-binding-tier-2-v0-implementation's own v0
+    scope cut) -- good enough for `of`'s glob join
+    (`_of_matches_effect`), not a guarantee of resolving every dynamic
+    argument shape."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -128,6 +142,7 @@ class ObservedEffect(BaseModel):
     line: int
     kind: str
     needle: str
+    argument: str | None = None
 
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
@@ -283,28 +298,55 @@ def _declared_kinds_for_file(node: Node, rel: str) -> frozenset[str]:
     return frozenset(declared)
 
 
+# frob:ticket T-1478
+def _of_matches_effect(of: tuple[str, ...], argument: str | None) -> bool:
+    """`True` if `grant.of` covers an effect whose extracted `argument` is
+    `argument` (T-1478's argument-level join): an empty `of` (the
+    pre-T-1478 default) covers every argument, matching `via`'s own
+    empty-means-unscoped convention. A non-empty `of` covers ONLY an
+    effect whose `argument` matches at least one of its globs
+    (`fnmatch`) -- an effect with `argument=None` (no literal could be
+    extracted, `_first_string_literal`) never matches a non-empty `of`,
+    the same fail-CLOSED posture `_via_matches_site` already takes for an
+    unresolvable symbol: a grant narrowed to specific argument VALUES
+    must not silently cover an observation whose actual value could not
+    even be read."""
+    if not of:
+        return True
+    if argument is None:
+        return False
+    return any(fnmatch.fnmatch(argument, pattern) for pattern in of)
+
+
 # frob:ticket T-1627
+# frob:ticket T-1478
 def _declared_kinds_for_effect(
-    node: Node, rel: str, symbol: str | None
+    node: Node, rel: str, symbol: str | None, argument: str | None = None
 ) -> frozenset[str]:
     """The precise capability kinds `node` declares that cover an
-    observation at `rel`, enclosed by `symbol` (T-1627's per-SYMBOL SYS100
-    join, the sibling of `_declared_kinds_for_file`'s per-FILE join): a
-    grant with no `via` covers everything, exactly like
-    `_declared_kinds_for_file`; a file-form `via` entry covers every
-    symbol in a matching file (unchanged migration behavior); a
-    symbol-form `via` entry (`"glob::qualname"`) covers ONLY an
-    observation whose `symbol` is `qualname` or nested inside it
-    (`_via_matches_site`) -- an effect sitting anywhere else in that same
-    file, even one line away, is no longer covered, which is the whole
-    point of naming a symbol instead of a file. `node.may_grants` empty
-    falls back to `_declared_kinds`'s whole-node join, same as
-    `_declared_kinds_for_file`."""
+    observation at `rel`, enclosed by `symbol`, carrying `argument`
+    (T-1627's per-SYMBOL SYS100 join, the sibling of
+    `_declared_kinds_for_file`'s per-FILE join; T-1478 adds the
+    per-ARGUMENT narrowing on top): a grant with no `via` covers every
+    file/symbol, exactly like `_declared_kinds_for_file`; a file-form
+    `via` entry covers every symbol in a matching file (unchanged
+    migration behavior); a symbol-form `via` entry (`"glob::qualname"`)
+    covers ONLY an observation whose `symbol` is `qualname` or nested
+    inside it (`_via_matches_site`) -- an effect sitting anywhere else in
+    that same file, even one line away, is no longer covered, which is
+    the whole point of naming a symbol instead of a file. T-1478: ON TOP
+    of the site join, a grant's `of` (if non-empty) must ALSO match
+    `argument` (`_of_matches_effect`) -- `via` and `of` are independent
+    axes (SITE vs VALUE), both must pass for a grant to cover a given
+    effect. `node.may_grants` empty falls back to `_declared_kinds`'s
+    whole-node join, same as `_declared_kinds_for_file`."""
     if not node.may_grants:
         return _declared_kinds(node)
     declared: set[str] = set()
     for grant in node.may_grants:
         if grant.via and not _via_matches_site(rel, symbol, grant.via):
+            continue
+        if not _of_matches_effect(grant.of, argument):
             continue
         kind = canonical_declared_kind(_may_kind(grant.atom))
         declared |= expand_declared_kind(kind)
@@ -384,6 +426,28 @@ def node_may_kinds(node: Node) -> frozenset[str]:
     return _declared_kinds(node)
 
 
+#: T-1478: matches the FIRST single- or double-quoted string literal in a
+#: line fragment -- used to pull a best-effort argument value out of the
+#: text immediately following a matched needle (`_first_string_literal`).
+#: Deliberately simple (no escape handling): a real parse of the call
+#: expression belongs to a first-class capability grammar, the same v0
+#: scope cut this module's docstring already documents for `may` targets.
+_STRING_LITERAL_RE = re.compile(r"""(['"])((?:(?!\1).)*)\1""")
+
+
+def _first_string_literal(line: str, start: int) -> str | None:
+    """The first quoted string literal's inner text in `line[start:]`, or
+    `None` if none is present (T-1478) -- `start` is the needle's own end
+    offset, so the search begins right after the matched capability
+    call/accessor, skipping over the needle text itself (which for a
+    needle like `os.environ[` would otherwise never contain a quote to
+    match against anyway, but a needle without a trailing bracket, e.g. a
+    bare attribute access, still must not accidentally match a quote that
+    is part of an EARLIER, unrelated literal on the same line)."""
+    m = _STRING_LITERAL_RE.search(line, start)
+    return m.group(2) if m else None
+
+
 def _needle_matches(
     rel: str,
     text: str,
@@ -398,16 +462,27 @@ def _needle_matches(
     exclusion `frob.vet._capability`'s own raw-text scanners already apply;
     before this fix, this function had NO such exclusion at all, so needle
     prose in a `#` comment or docstring (fork/subprocess hazard
-    documentation, e.g.) was observed as a real effect."""
+    documentation, e.g.) was observed as a real effect. T-1478: each
+    `ObservedEffect` also carries `argument`, the first string literal
+    found after the needle on the same line (`_first_string_literal`),
+    feeding the `of` argument-level join (`_of_matches_effect`)."""
     found: list[ObservedEffect] = []
     for lineno, line in enumerate(text.splitlines(), start=1):
         if lineno in non_executable_lines:
             continue
         for vet_kind, kind in _KIND_MAP.items():
             for needle in table.get(vet_kind, ()):
-                if needle in line:
+                idx = line.find(needle)
+                if idx != -1:
+                    argument = _first_string_literal(line, idx + len(needle))
                     found.append(
-                        ObservedEffect(file=rel, line=lineno, kind=kind, needle=needle)
+                        ObservedEffect(
+                            file=rel,
+                            line=lineno,
+                            kind=kind,
+                            needle=needle,
+                            argument=argument,
+                        )
                     )
     return found
 
@@ -566,7 +641,9 @@ def _file_capability_violations(
     for effect in _line_effects(root / rel, root):
         symbol = _enclosing_symbol(effect.line, symbols) if symbols else None
         kinds = (
-            no_kinds if node is None else _declared_kinds_for_effect(node, rel, symbol)
+            no_kinds
+            if node is None
+            else _declared_kinds_for_effect(node, rel, symbol, effect.argument)
         )
         if effect.kind in kinds:
             continue

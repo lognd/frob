@@ -412,8 +412,37 @@ impl Parser {
                             ));
                         }
                     }
+                    // T-1478: an optional `of GLOB[, GLOB...]` trailer,
+                    // parsed after `via`/`exclusive`, narrows this ONE
+                    // grant to a subset of the specific ARGUMENT values
+                    // the observed effect carries (e.g. `may "env.read" of
+                    // "FROB_*"` covers only an `os.environ[...]`-style
+                    // read whose literal key matches "FROB_*"), one level
+                    // finer than `via`'s file/symbol-SITE scoping. One or
+                    // more STRING-quoted globs, comma-separated (same
+                    // STRING choice `via`/`code` already use). Omitting
+                    // `of` entirely keeps the pre-T-1478 meaning (grant
+                    // covers every argument value) for migration -- a
+                    // parser-level default (`of: []`), not a distinct
+                    // keyword; join semantics live in
+                    // `frob.strata._effects` (docs/strata/surface.md
+                    // #may-scope).
+                    let mut of_patterns: Vec<String> = Vec::new();
+                    if self.at_keyword("of") {
+                        self.advance();
+                        of_patterns.push(self.expect_string("may of argument glob")?);
+                        while self.at_symbol(',') {
+                            self.advance();
+                            of_patterns.push(self.expect_string("may of argument glob")?);
+                        }
+                    }
                     may.push(atom.clone());
-                    may_grants.push(json!({"atom": atom, "via": via, "exclusive": exclusive}));
+                    may_grants.push(json!({
+                        "atom": atom,
+                        "via": via,
+                        "exclusive": exclusive,
+                        "of": of_patterns
+                    }));
                 } else if self.at_keyword("carries") {
                     // T-0154: `carries PII_TAG+` -- one or more STRING-
                     // quoted PII tags (e.g. "identifier.email"), the SAME

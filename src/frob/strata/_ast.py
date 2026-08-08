@@ -77,9 +77,11 @@ class _DeployDecl(BaseModel):
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1440
 # frob:ticket T-1627
+# frob:ticket T-1478
 class MayGrantDecl(BaseModel):
-    """A parsed `may "ATOM" [via "GLOB"[, "GLOB"...] [exclusive]]` clause
-    (T-1440, symbol-form via and `exclusive` added by T-1627): pairs each
+    """A parsed `may "ATOM" [via "GLOB"[, "GLOB"...] [exclusive]] [of
+    "GLOB"[, "GLOB"...]]` clause (T-1440, symbol-form via and `exclusive`
+    added by T-1627, argument-level `of` added by T-1478): pairs each
     declared capability atom with the sub-glob (or, T-1627, sub-SYMBOL)
     surface it is actually scoped to, narrowing the pre-T-1440 whole-node
     grant down to the files -- or, preferably, the one function/method --
@@ -102,13 +104,24 @@ class MayGrantDecl(BaseModel):
     this is the SOLE legitimate site for the atom; the parser itself
     refuses to accept `exclusive` on anything but a single symbol-form
     via entry (strata-core/src/parse/grammar_node.rs), so an `exclusive`
-    grant reaching Python always already satisfies that shape."""
+    grant reaching Python always already satisfies that shape.
+
+    T-1478: `of` names the ARGUMENT-value glob(s) this grant covers --
+    one level finer than `via`'s file/symbol SITE scoping, narrowing
+    WHICH env var/path/host literal an observation's own argument text
+    must match (e.g. `may "env.read" of "FROB_*"` covers only an
+    `os.environ[...]`-style read whose literal key matches `FROB_*`).
+    `of=()` (the parser's default when the `of` trailer is omitted) means
+    "no argument scoping" -- the grant covers every argument value,
+    preserving pre-T-1478 semantics for migration. Joined against
+    `ObservedEffect.argument` by `_effects.py::_of_matches_effect`."""
 
     model_config = ConfigDict(frozen=True)
 
     atom: str
     via: tuple[str, ...] = ()
     exclusive: bool = False
+    of: tuple[str, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#parser

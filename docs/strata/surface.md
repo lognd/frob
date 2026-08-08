@@ -192,13 +192,27 @@ require_may_scope` config knob (`_scope_config.py::StrataScopeConfig`,
 wired into SELFAUDIT001's per-sub-rule severity in
 `frob.gates._sys_selfaudit._selfaudit_severity`).
 
-**Still unbuilt (deliberately deferred, T-1440's own scope cut):**
-argument-level scoping (e.g. `may "env.read" of "FROB_*"`, narrowing
-WHICH env vars/paths/hosts a grant covers, not just which files) as a
-natural follow-up once `via` itself has real usage to learn from --
-its own follow-up ticket (T-1440's child) rather than bundled into the
-grammar/join landing.
-<!-- frob:until T-1478 -->
+**Argument-level scoping, `of` (T-1478).** A `via` glob or symbol still
+only narrows WHERE a grant applies (a file or function); `of` narrows
+WHICH ARGUMENT VALUE it applies to, one level finer and fully
+independent: `may "env.read" of "FROB_*"` covers an `os.environ[...]`-
+style read only when the literal key it reads matches `FROB_*` -- a read
+of `SECRET_KEY` on the SAME node, even the SAME file, is still an
+undeclared-capability SYS100 finding. One or more STRING-quoted globs,
+comma-separated, parsed after any `via`/`exclusive` trailer
+(`strata-core/src/parse/grammar_node.rs`); `of=()` (the parser's default
+when `of` is omitted) means "no argument scoping", identical to every
+grant written before T-1478. `ObservedEffect.argument` (`_effects.py`)
+is a best-effort extraction of the first quoted string literal following
+the matched capability needle on its line -- a textual heuristic over the
+SAME line-level detection this module already does, not a real parse of
+the call expression's arguments (this section's own v0 scope cut, same
+posture `code`/`may` targets already carry); an effect whose argument
+could not be extracted (`None`) never matches a non-empty `of`, the same
+fail-CLOSED posture unresolvable `via` symbols already take. `via` and
+`of` compose as independent axes on the SAME grant -- both must pass for
+the grant to cover a given effect (`_declared_kinds_for_effect`'s
+`_via_matches_site` + `_of_matches_effect` join).
 
 ### `via` names a SYMBOL, and `exclusive` (T-1627)
 

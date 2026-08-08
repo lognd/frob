@@ -210,7 +210,7 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         clearance=decl.clearance,
         may=decl.may,
         may_grants=tuple(
-            MayGrant(atom=g.atom, via=g.via, exclusive=g.exclusive)
+            MayGrant(atom=g.atom, via=g.via, exclusive=g.exclusive, of=g.of)
             for g in decl.may_grants
         ),
         attrs=attrs,

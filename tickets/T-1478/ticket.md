@@ -1,7 +1,7 @@
 ---
 id: T-1478
 title: argument-level may scoping (T-1440 follow-up)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-03'
@@ -14,6 +14,15 @@ scope:
 - docs/strata/surface.md
 - src/frob/strata/_mutation_audit.py
 - src/frob/strata/_native_staleness.py
+- strata-core/src/parse/grammar_node.rs
+- src/frob/strata/_ast.py
+- src/frob/strata/_models.py
+- src/frob/strata/_effects.py
+- tests/unit/strata/test_effects.py
+- design/frob.strata
+- src/frob/strata/_elaborate.py
+- docs/strata/roadmap.md
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -38,6 +47,99 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: strata-core/src/parse/grammar_node.rs
+  reason: 'T-1440''s declared scope excluded every file argument-level may scoping
+    actually needs (previous attempt''s failure log): the grammar production adding
+    the ''of'' trailer (strata-core/src/parse/grammar_node.rs), the parsed-AST field
+    (_ast.py), the elaborated field (_models.py), and the per-argument SYS100 join
+    (_effects.py). test_effects.py carries the new regression tests; design/frob.strata
+    needs a via-list addition on testsuite''s own env grant since the new test fixtures
+    contain real env-read needle literals (self-conformance, same T-1589 precedent).'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/strata/_ast.py
+  reason: 'T-1440''s declared scope excluded every file argument-level may scoping
+    actually needs (previous attempt''s failure log): the grammar production adding
+    the ''of'' trailer (strata-core/src/parse/grammar_node.rs), the parsed-AST field
+    (_ast.py), the elaborated field (_models.py), and the per-argument SYS100 join
+    (_effects.py). test_effects.py carries the new regression tests; design/frob.strata
+    needs a via-list addition on testsuite''s own env grant since the new test fixtures
+    contain real env-read needle literals (self-conformance, same T-1589 precedent).'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/strata/_models.py
+  reason: 'T-1440''s declared scope excluded every file argument-level may scoping
+    actually needs (previous attempt''s failure log): the grammar production adding
+    the ''of'' trailer (strata-core/src/parse/grammar_node.rs), the parsed-AST field
+    (_ast.py), the elaborated field (_models.py), and the per-argument SYS100 join
+    (_effects.py). test_effects.py carries the new regression tests; design/frob.strata
+    needs a via-list addition on testsuite''s own env grant since the new test fixtures
+    contain real env-read needle literals (self-conformance, same T-1589 precedent).'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/strata/_effects.py
+  reason: 'T-1440''s declared scope excluded every file argument-level may scoping
+    actually needs (previous attempt''s failure log): the grammar production adding
+    the ''of'' trailer (strata-core/src/parse/grammar_node.rs), the parsed-AST field
+    (_ast.py), the elaborated field (_models.py), and the per-argument SYS100 join
+    (_effects.py). test_effects.py carries the new regression tests; design/frob.strata
+    needs a via-list addition on testsuite''s own env grant since the new test fixtures
+    contain real env-read needle literals (self-conformance, same T-1589 precedent).'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/strata/test_effects.py
+  reason: 'T-1440''s declared scope excluded every file argument-level may scoping
+    actually needs (previous attempt''s failure log): the grammar production adding
+    the ''of'' trailer (strata-core/src/parse/grammar_node.rs), the parsed-AST field
+    (_ast.py), the elaborated field (_models.py), and the per-argument SYS100 join
+    (_effects.py). test_effects.py carries the new regression tests; design/frob.strata
+    needs a via-list addition on testsuite''s own env grant since the new test fixtures
+    contain real env-read needle literals (self-conformance, same T-1589 precedent).'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-1440''s declared scope excluded every file argument-level may scoping
+    actually needs (previous attempt''s failure log): the grammar production adding
+    the ''of'' trailer (strata-core/src/parse/grammar_node.rs), the parsed-AST field
+    (_ast.py), the elaborated field (_models.py), and the per-argument SYS100 join
+    (_effects.py). test_effects.py carries the new regression tests; design/frob.strata
+    needs a via-list addition on testsuite''s own env grant since the new test fixtures
+    contain real env-read needle literals (self-conformance, same T-1589 precedent).'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/strata/_elaborate.py
+  reason: MayGrant elaboration (_elaborate_node) needs the new of= field threaded
+    through, missed in the initial scope --add pass
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/strata/roadmap.md
+  reason: design/frob.strata is in scope (T-1478's own via-list addition); SCOPE002
+    closure requires every doc anchor design/frob.strata's nodes point at (roadmap.md's
+    self-hosting-commitments section, cli.md's natives-build anchor) to be in scope
+    too, doc-only additions, no code change needed
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/modules/cli.md
+  reason: design/frob.strata is in scope (T-1478's own via-list addition); SCOPE002
+    closure requires every doc anchor design/frob.strata's nodes point at (roadmap.md's
+    self-hosting-commitments section, cli.md's natives-build anchor) to be in scope
+    too, doc-only additions, no code change needed
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/strata/test_effects.py::TestArgumentLevelMayScoping::test_argument_matching_of_glob_is_clean
+- tests/unit/strata/test_effects.py::TestArgumentLevelMayScoping::test_argument_outside_of_glob_is_a_violation
+- tests/unit/strata/test_effects.py::TestArgumentLevelMayScoping::test_of_less_grant_still_covers_every_argument
+- tests/unit/strata/test_effects.py::TestArgumentLevelMayScoping::test_via_and_of_compose_as_independent_axes
 designated_repro_test: null
 threat: null
 component: null
