@@ -23,6 +23,7 @@ import re
 import tempfile
 from pathlib import Path
 
+from frob.excludes import iter_files
 from frob.gates._dead_symbols import (
     _CALLABLE_KINDS,
     _is_autouse_pytest_fixture,
@@ -757,33 +758,277 @@ def _wire002_violations(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Vio
     return violations
 
 
+# ---------------------------------------------------------------------------
+# WIRE003 (T-1725): a tracked hook/doc names a frob verb that does not
+# resolve against the LIVE CLI dispatch table -- the T-1567..T-1571
+# regrouping's own blocker, since a rename that silently breaks a hook's
+# matcher or a suggestion string is the exact "landed, kept running,
+# quietly wrong" shape WIRE001 already catches for code, extended to
+# prose/matcher references outside src/.
+# ---------------------------------------------------------------------------
+
+#: Files this repo tracks that are known to name frob verbs by hand, at
+#: ERROR severity: hooks (both reference shapes -- a compiled matcher
+#: AND suggestion prose) and the two docs the T-1725 ticket names
+#: directly as load-bearing (the agent playbook every dispatched agent
+#: reads, and the CLI reference doc). Glob patterns, matched via
+#: `PurePath.match` against each tracked file's root-relative path.
+#:
+#: Deliberately NOT `docs/**/*.md` generally (T-1725's own "wider scope"
+#: ask, measured and found too imprecise for ERROR-severity enforcement
+#: right now): this module's own extraction heuristic (a "frob" word
+#: followed by 1-2 alphanumeric-hyphen tokens inside a backtick span)
+#: false-positives heavily against ordinary doc prose that happens to
+#: mention "frob" near unrelated backtick-quoted vocabulary (priority
+#: levels, board columns, config keys) -- see `docs/audits/wire003-
+#: repo-scan.md` for the measured count this ticket's Done report cites.
+#: Widening this tuple to the full docs tree is a follow-up once that
+#: false-positive rate is brought down (per-token allowlist, or requiring
+#: `uv run frob`/`` frob <verb> `` as a stricter anchor), not something
+#: to force through at ERROR severity today.
+_WIRE003_SCAN_GLOBS: tuple[str, ...] = (
+    ".claude/hooks/*.py",
+    "docs/guides/agent-playbook.md",
+    "docs/modules/cli.md",
+)
+
+#: `frob` as a whole word, not part of a longer identifier/dotted path
+#: (`frob.tickets`, `frob-suggest.py`, `frob's`) -- those are filtered by
+#: `_WIRE003_SEP_RE` immediately below requiring a real separator char
+#: right after the match, never a `.`/`-`/`'`.
+_WIRE003_FROB_WORD_RE = re.compile(r"\bfrob\b")
+#: Extended-glob/prose separators between `frob` and (or between) verb
+#: tokens: whitespace, and the glob-alternation operators
+#: `frob-timeout-guard.py`'s own `PATTERN` uses (`+`, `(`, `)`, `|`) --
+#: treating alternation as a separator lets `frob +(a|b)` yield BOTH `a`
+#: and `b` as candidates, not just the first branch.
+_WIRE003_SEP_RE = re.compile(r"[\s+()|]+")
+_WIRE003_TOKEN_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9_-]*")
+#: How much of a span (after the "frob" that triggered extraction) counts
+#: as the "verb region" worth splitting into alternation fragments --
+#: generous for a real hand-written matcher/suggestion, bounded so a
+#: pathological match can never make this scan unboundedly.
+_WIRE003_REGION_CHARS = 200
+#: At most this many LEADING tokens are read from each `|`-delimited
+#: fragment -- real frob commands never nest past `<verb> <subverb>`, so
+#: anything past position 2 (a ticket id, a flag value, ordinary prose
+#: continuing after the command) is an argument, not another verb, and
+#: reading it as one would misread `frob ticket land T-0001` as
+#: referencing a nonexistent verb `T-0001`.
+_WIRE003_MAX_TOKENS_PER_FRAGMENT = 2
+
+_WIRE003_BACKTICK_RE = re.compile(r"`([^`\n]{1,200})`")
+
+
+def _wire003_fragment_tokens(fragment: str) -> list[str]:
+    """Up to `_WIRE003_MAX_TOKENS_PER_FRAGMENT` leading tokens from one
+    `|`-delimited alternation fragment, after stripping any leading/
+    trailing glob-grouping noise (`+`, `(`, `)`, whitespace) `str.split`
+    on `|` leaves behind -- split out of `_wire003_candidate_tokens` for
+    one fragment at a time."""
+    frag = fragment.strip(" \t+()")
+    tokens: list[str] = []
+    pos = 0
+    for _ in range(_WIRE003_MAX_TOKENS_PER_FRAGMENT):
+        token_match = _WIRE003_TOKEN_RE.match(frag, pos)
+        if token_match is None:
+            break
+        tokens.append(token_match.group(0))
+        pos = token_match.end()
+        sep = _WIRE003_SEP_RE.match(frag, pos)
+        if sep is None or not sep.group(0):
+            break
+        pos = sep.end()
+    return tokens
+
+
+def _wire003_candidate_tokens(span: str) -> list[str]:
+    """Every candidate verb token following a `frob` occurrence within
+    one already-isolated command-shaped `span` (a backtick span, or a
+    `re.compile(...)` pattern-string literal) -- never scans bare prose
+    directly, only text a human already marked as code/command-shaped.
+    `frob.tickets`/`frob-suggest.py`/`frob's` are
+    excluded by construction: `_WIRE003_SEP_RE` requires a REAL separator
+    character (whitespace or a glob-alternation operator) immediately
+    after `frob`, and `.`/`-`/`'` are none of those, so extraction is
+    abandoned before any token is read.
+
+    The region after `frob` is split on `|` (extended-glob/regex
+    alternation) BEFORE tokenizing, so `frob +(a|b)` yields both `a` and
+    `b` as independent candidates -- reading tokens as one continuous
+    run across an alternation would otherwise misread `land|totallymade
+    upverb` as the single nonsense chain `land totallymadeupverb`."""
+    tokens: list[str] = []
+    for match in _WIRE003_FROB_WORD_RE.finditer(span):
+        rest = span[match.end() :]
+        sep = _WIRE003_SEP_RE.match(rest)
+        if sep is None or not sep.group(0):
+            continue
+        region = rest[sep.end() : sep.end() + _WIRE003_REGION_CHARS]
+        for fragment in region.split("|"):
+            tokens.extend(_wire003_fragment_tokens(fragment))
+    return tokens
+
+
+def _wire003_spans(path: Path, text: str) -> list[str]:
+    """Every command-shaped span in `text` worth scanning for a `frob`
+    verb mention: backtick spans (markdown/docstring's own "this is
+    code" marker) for every file, PLUS every string-literal argument to
+    a `re.compile(...)` call for a `.py` file (T-1725's own concrete
+    case: `frob-timeout-guard.py`'s `PATTERN` is a raw string, never
+    backtick-wrapped, so backtick scanning alone would miss it).
+    Deliberately NOT fenced code blocks (measured too imprecise --
+    `_WIRE003_SCAN_GLOBS`'s own docstring has the numbers): example
+    OUTPUT inside a fenced block (log lines, JSON) reads as command-
+    shaped to a naive scanner without actually being one. A `.py` file
+    that fails to parse contributes only its backtick spans, never
+    raised -- a syntax error is DEAD001/a linter's problem, not this
+    gate's."""
+    spans = [m.group(1) for m in _WIRE003_BACKTICK_RE.finditer(text)]
+    if path.suffix == ".py":
+        try:
+            tree = ast.parse(text)
+        except SyntaxError:
+            return spans
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "compile"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
+                spans.append(node.args[0].value)
+    return spans
+
+
+def _wire003_subparsers_action(parser):  # noqa: ANN001, ANN202
+    """The one `argparse._SubParsersAction` a parser owns, or `None` for
+    a leaf subcommand with no further nesting."""
+    import argparse
+
+    for action in parser._actions:  # noqa: SLF001
+        if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+            return action
+    return None
+
+
+def _wire003_live_verb_tokens() -> frozenset[str]:
+    """Every subcommand/sub-subcommand NAME string reachable anywhere in
+    the LIVE `frob` CLI dispatch tree (T-1725: resolve against the real
+    argparse tree `frob.__main__._build_parser` builds, never a hand-
+    written list of verb names -- a hand-written list is the same defect
+    class as the bug this rule exists to catch, and it would drift the
+    first time someone adds a verb). Flattened (not chain-aware): a
+    reference is verified as "this token names something real somewhere
+    in the tree", not "at this exact position" -- a coarser check than
+    full positional validation, but one that still catches a rename
+    (the token vanishes from the tree entirely) without needing this
+    module to hand-encode the tree's own shape a second time."""
+    from frob.__main__ import _build_parser
+
+    tokens: set[str] = set()
+
+    def walk(parser) -> None:  # noqa: ANN001
+        action = _wire003_subparsers_action(parser)
+        if action is None:
+            return
+        for name, sub in action.choices.items():
+            tokens.add(name)
+            walk(sub)
+
+    walk(_build_parser())
+    return frozenset(tokens)
+
+
+def _wire003_stale_verb_references(root: Path) -> list[Violation]:
+    """WIRE003 (T-1725): every tracked file matching `_WIRE003_SCAN_GLOBS`
+    that names a `frob` verb (in a matcher pattern, a suggestion string,
+    or a doc's command example) resolving to nothing in the live CLI
+    dispatch tree. Repo-wide, not diff-scoped (unlike WIRE001/WIRE002
+    above) -- a rename can silently break a reference written long
+    before the renaming ticket's own diff, so this must see the whole
+    tracked tree every run, not just what one ticket touched."""
+    live_tokens = _wire003_live_verb_tokens()
+    violations: list[Violation] = []
+    for path in iter_files(root):
+        rel = path.relative_to(root)
+        if not any(rel.match(pattern) for pattern in _WIRE003_SCAN_GLOBS):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for span in _wire003_spans(path, text):
+            for token in _wire003_candidate_tokens(span):
+                if token in live_tokens:
+                    continue
+                violations.append(
+                    Violation(
+                        rule="WIRE003",
+                        severity=Severity.ERROR,
+                        file=str(rel),
+                        line=0,
+                        message=(
+                            f"WIRE003: {rel} references frob verb {token!r}, "
+                            f"which does not resolve against the live CLI "
+                            f"dispatch table -- a renamed/removed/never-"
+                            f"existed verb, or `frob:waive WIRE003 "
+                            f'reason="..."` if this is a genuine false '
+                            f"positive (prose that happened to be inside a "
+                            f"code span/pattern)"
+                        ),
+                    )
+                )
+    return violations
+
+
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:ticket T-1428
-# frob:tests tests/test_gates.py::TestWireGate.test_new_public_function_with_no_caller_is_flagged  # noqa: E501
+# frob:ticket T-1725
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_new_public_function_with_no_caller_is_flagged
 # frob:tests tests/test_gates.py::TestWireGate.test_new_function_called_from_non_test_code_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_relocated_symbol_via_file_split_is_not_flagged  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_relocated_symbol_via_file_split_is_not_flagged
 # frob:tests tests/test_gates.py::TestWireGate.test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_new_kwonly_param_never_passed_is_flagged  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_new_kwonly_param_never_passed_is_flagged
 # frob:tests tests/test_gates.py::TestWireGate.test_new_kwonly_param_passed_at_call_site_is_not_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_missing_from_config_external_is_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_present_in_config_external_is_not_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_rule_id_missing_from_known_gate_rules_is_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestWireGate.test_new_rule_id_present_in_known_gate_rules_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_missing  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_is_closed  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_wire002_clean_when_follow_up_ticket_is_open  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_missing
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_is_closed
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_wire002_clean_when_follow_up_ticket_is_open
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_wire003_matcher_pattern_stale_verb_is_flagged
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_wire003_suggestion_string_stale_verb_is_flagged
+# frob:tests tests/test_gates.py::TestWireGate.test_wire003_real_verbs_are_not_flagged
+# frob:tests \
+# tests/test_gates.py::TestWireGate.test_wire003_dotted_module_path_is_not_flagged
 # frob:enforces CHK-GATE-WIRE001
 # frob:enforces CHK-GATE-WIRE002
+# frob:enforces CHK-GATE-WIRE003
 def wire_gate(
     root: Path, snapshot: GraphSnapshot, diff: Diff, queue: TicketQueue
 ) -> tuple[Violation, ...]:
-    """WIRE001/WIRE002 (T-1428): refuse a ticket's own diff when it adds a
-    function/method/class, a gate rule id, or a CLI flag `dest` that
-    nothing outside the diff's own tests can reach -- the repeated "landed,
-    passed every gate, did nothing" defect this repo's own history names
-    (T-1384, T-1399, T-1391, T-1421, T-1422). ERROR-tier (unlike DEAD001's
-    advisory WARN): a diff-scoped inert addition is exactly the shape a
-    ticket close should refuse, not merely flag."""
+    """WIRE001/WIRE002/WIRE003 (T-1428/T-1725): refuse a ticket's own diff
+    when it adds a function/method/class, a gate rule id, or a CLI flag
+    `dest` that nothing outside the diff's own tests can reach -- the
+    repeated "landed, passed every gate, did nothing" defect this repo's
+    own history names (T-1384, T-1399, T-1391, T-1421, T-1422). ERROR-tier
+    (unlike DEAD001's advisory WARN): a diff-scoped inert addition is
+    exactly the shape a ticket close should refuse, not merely flag.
+    WIRE003 is the one exception to "diff-scoped": it scans every tracked
+    hook/doc for a stale verb reference on every run, since a rename can
+    break a reference written long before the renaming ticket's own diff."""
     hunks_by_file = _hunks_by_file(diff)
     added_lines = _added_lines(root, hunks_by_file)
     violations = [
@@ -792,6 +1037,7 @@ def wire_gate(
         *_wire001_cli_dest_violations(root, added_lines),
         *_wire001_new_kwonly_param_violations(root, diff, snapshot, hunks_by_file),
         *_wire002_violations(snapshot, queue),
+        *_wire003_stale_verb_references(root),
     ]
     _log.info("wire_gate: %d violation(s)", len(violations))
     return tuple(violations)

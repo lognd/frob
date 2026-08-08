@@ -102,6 +102,7 @@ declaration).
 | PROTO003 | protocol_summary | (error) a `frob:transition` symbol's precondition state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
 | WIRE001 | wire | (error) a ticket's own diff adds a function/method/class with no non-test caller, a gate `rule="..."` literal absent from `_KNOWN_GATE_RULES`, or a CLI `dest=` absent from `_config_external.py`'s copy lists -- code that landed, passed every gate, and does nothing; see "WIRE001/WIRE002 (T-1428)" below |
 | WIRE002 | wire | (error, unwaivable) a `frob:waive WIRE001` present without a `follow_up="T-####"` attribute naming a real, still-open ticket (or, for a private test-tree helper, `permanent="true"`) -- see "WIRE001/WIRE002 (T-1428)" below |
+| WIRE003 | wire | (error) a tracked hook (`.claude/hooks/*.py`) or one of the two load-bearing docs (`docs/guides/agent-playbook.md`, `docs/modules/cli.md`) names a `frob` verb, in a matcher pattern or a suggestion string, that does not resolve against the LIVE CLI dispatch table -- repo-wide, not diff-scoped; see "WIRE003 (T-1725)" below |
 | CACHE001 | cache | (error) a `@memoize_per_run`-decorated function reads a file (`Path.read_text`/`.read_bytes`/`open()`) or `os.environ`/`os.getenv` whose target expression names none of the function's own parameters -- the read is invisible to `memoize_per_run`'s args-only cache key, the T-1454 incident shape; see "CACHE001 (T-1520)" below |
 | ARCH102 | arch | (warn) a module's top-level exports (free functions + classes) number at least the configured minimum AND partition into at least the configured minimum count of disjoint naming/usage clusters (`frob.arch._srp.check_god_module`) -- the module bundles several unrelated concerns under one file instead of one cohesive API |
 | ARCH103 | arch | (warn) a function/method mixes all three of an I/O-capability call, a string-formatting call, and enough of its own decision points to count as real compute logic (`frob.arch._srp.check_mixed_concern_function`) -- any one or two of the three alone is ordinary code, only all three together is the "one body, three unrelated concerns" smell |
@@ -2511,6 +2512,68 @@ A `permanent="true"` waiver on a non-test-tree file, or on a public
 symbol, does NOT satisfy WIRE002 -- `_wire002_is_permanent_test_helper_
 waiver` (`frob.gates._wire`) checks both conditions, and `follow_up=` is
 still required otherwise.
+
+## WIRE003 (T-1725)
+
+Hooks and docs reference `frob` verbs BY NAME, as plain strings, with
+nothing checking they resolve: `frob-timeout-guard.py`'s own `PATTERN`
+(`frob +(ticket +(land|done-report)|check|test)\b`) decides whether a
+command needs a large tool timeout, and `frob-suggest.py`'s refusal text
+SUGGESTS `uv run frob test`/`frob check`/`frob ticket ...`/etc. A rename
+(the T-1567..T-1571 CLI regrouping this rule exists to unblock) silently
+breaks both: the hook keeps running and keeps passing, or keeps blocking
+a caller and then telling it to run a command that no longer exists
+(the T-1705 failure shape).
+
+`_wire003_stale_verb_references` (`frob.gates._wire`) resolves every
+`frob`-verb reference in a tracked hook/doc against the LIVE CLI
+dispatch table (`frob.__main__._build_parser`, walked recursively via
+`argparse._SubParsersAction.choices` -- never a hand-written list of
+verb names, which would be the same defect class as the bug and would
+drift the first time someone adds a verb). Two reference SHAPES are
+both covered from the same extraction path:
+
+- The regex/matcher form: a `re.compile(...)` call's string-literal
+  argument, found via `ast.parse` (so `frob-timeout-guard.py`'s `PATTERN`
+  is read even though it is a raw string, never backtick-wrapped).
+- The prose form: any backtick-quoted span (`` `frob check` ``) --
+  markdown's own "this is code" marker, and the convention every
+  suggestion string in this repo's hooks already follows.
+
+Extended-glob alternation (`+()`/`|`) is treated as a token separator,
+so `frob +(a|b)` yields BOTH `a` and `b` as independent candidates, each
+split into its own fragment before tokenizing -- reading tokens as one
+continuous run across an alternation would otherwise misread
+`land|totallymadeupverb` as the nonsense chain `land totallymadeupverb`.
+At most 2 leading tokens are read per fragment (real `frob` commands
+never nest past `<verb> <subverb>`); a 3rd+ token (a ticket id, a flag
+value) is an argument, not another verb, and reading it as one would
+misread `frob ticket land T-0001` as referencing a nonexistent verb
+`T-0001`.
+
+**Scope, deliberately narrower than "every tracked doc" (T-1725's own
+"wider scope" ask, measured):** `_WIRE003_SCAN_GLOBS` covers
+`.claude/hooks/*.py` and the two docs T-1725 names as load-bearing
+(`docs/guides/agent-playbook.md`, `docs/modules/cli.md`) at ERROR
+severity. A repo-wide `docs/**/*.md` scan was measured and found too
+imprecise to enforce today: this rule's extraction heuristic (a `frob`
+word followed by 1-2 tokens inside a backtick span) false-positives
+against ordinary doc prose that happens to mention "frob" near
+unrelated backtick-quoted vocabulary (ticket priority levels, board
+column names, config keys) -- 48 findings across 10 files with backtick-
+only scanning, 181 across many more once fenced code blocks (which
+routinely contain command OUTPUT -- log lines, JSON -- that reads as
+command-shaped to a naive scanner without being one) are also included.
+Widening `_WIRE003_SCAN_GLOBS` to the full docs tree is a real follow-up
+(a per-token allowlist, or requiring a stricter anchor like `` `uv run
+frob ...` ``), not something to force through at ERROR severity before
+that precision work lands -- forcing it through today would just
+reproduce the 997-waiver anti-pattern this repo has already paid for
+once.
+
+`frob:waive WIRE003 reason="..."` is the escape hatch for a genuine
+false positive within the enforced scope (prose that happened to land
+inside a code span/pattern).
 
 ## Public API
 

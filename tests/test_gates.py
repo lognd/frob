@@ -3523,6 +3523,105 @@ class TestWireGate:
         v = _first_rule(violations, "WIRE002")
         assert v is not None
 
+    # frob:ticket T-1725
+    def test_wire003_matcher_pattern_stale_verb_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """The regex-matcher shape: a compiled `re.compile(...)` pattern
+        naming a verb that no longer exists in the live CLI tree."""
+        from frob.gates._wire import _wire003_stale_verb_references
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            ".claude/hooks/frob-timeout-guard.py",
+            'import re\n'
+            'PATTERN = re.compile(\n'
+            '    r"frob +(ticket +(land|totallymadeupverb)|check|test)\\b"\n'
+            ')\n',
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+        )
+        violations = _wire003_stale_verb_references(tmp_path)
+        assert any(
+            v.rule == "WIRE003" and "totallymadeupverb" in v.message
+            for v in violations
+        )
+        # Real verbs in the SAME pattern must not be flagged.
+        assert not any(
+            v.rule == "WIRE003" and "'ticket'" in v.message for v in violations
+        )
+
+    # frob:ticket T-1725
+    def test_wire003_suggestion_string_stale_verb_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """The prose shape: a backtick-quoted suggestion string inside a
+        hook's own refusal text, naming a verb that no longer exists."""
+        from frob.gates._wire import _wire003_stale_verb_references
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            ".claude/hooks/frob-suggest.py",
+            'MSG = "Use `uv run frob totallynotarealverb` instead."\n',
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+        )
+        violations = _wire003_stale_verb_references(tmp_path)
+        assert any(
+            v.rule == "WIRE003" and "totallynotarealverb" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-1725
+    def test_wire003_real_verbs_are_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import _wire003_stale_verb_references
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "docs/modules/example.md",
+            "Run `frob ticket land T-0001` then `frob check`.\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add doc"], cwd=tmp_path, check=True
+        )
+        violations = _wire003_stale_verb_references(tmp_path)
+        assert violations == []
+
+    # frob:ticket T-1725
+    def test_wire003_dotted_module_path_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """`` `frob.tickets._land` `` (a dotted module path mentioning the
+        package name) must never be misread as a verb reference -- `.`
+        is not a recognized separator, so extraction bails before ever
+        reaching a candidate token."""
+        from frob.gates._wire import _wire003_stale_verb_references
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "docs/modules/example.md",
+            "See `frob.tickets._land` and `frob-suggest.py` for detail.\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add doc"], cwd=tmp_path, check=True
+        )
+        violations = _wire003_stale_verb_references(tmp_path)
+        assert violations == []
+
 
 # frob:ticket T-0813
 class TestProtocolSummaryGate:

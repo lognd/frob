@@ -2,7 +2,7 @@
 id: T-1725
 title: Hooks and docs reference frob verbs by name with nothing checking they resolve;
   gate it before the CLI regrouping renames them
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -16,8 +16,55 @@ scope:
 - .claude/hooks/frob-suggest.py
 - src/frob/gates/_wire.py
 - docs/modules/gates.md
+- src/frob/gates/_waive.py
+- tests/test_gates.py
+- src/frob/gates/_pii_structural/_keywords.py
+- tickets/T-1725/ticket.md
+- tickets/T-1725/done-report.md
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: WIRE003 registration in _KNOWN_GATE_RULES; the new gate's own regression
+    tests
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates.py
+  reason: WIRE003 registration in _KNOWN_GATE_RULES; the new gate's own regression
+    tests
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/gates/_pii_structural/_keywords.py
+  reason: PII012 'token' homonym allowlist entries for the new WIRE003 identifiers;
+    v2 ledger files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1725/ticket.md
+  reason: PII012 'token' homonym allowlist entries for the new WIRE003 identifiers;
+    v2 ledger files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1725/done-report.md
+  reason: PII012 'token' homonym allowlist entries for the new WIRE003 identifiers;
+    v2 ledger files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: REG010 registry sync entry for the new CHK-GATE-WIRE003 self-audit id
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_gates.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged
+- tests/test_gates.py::TestWireGate::test_wire003_suggestion_string_stale_verb_is_flagged
+- tests/test_gates.py::TestWireGate::test_wire003_real_verbs_are_not_flagged
+- tests/test_gates.py::TestWireGate::test_wire003_dotted_module_path_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null

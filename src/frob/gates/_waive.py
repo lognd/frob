@@ -607,6 +607,12 @@ _KNOWN_GATE_RULES = frozenset(
         # -- the escape hatch must bind an enforced obligation, not just
         # carry free-text prose nobody has to act on.
         "WIRE002",
+        # T-1725: a tracked hook/doc names a frob verb (a matcher
+        # pattern, a suggestion string, or a doc's command example) that
+        # does not resolve against the live CLI dispatch table --
+        # repo-wide, not diff-scoped, since a rename can break a
+        # reference written long before the renaming ticket's own diff.
+        "WIRE003",
         # T-0813: the production `mark_unresolved=True` wiring into
         # `compute_protocol_summaries` (frob.gates._protocol_summary) --
         # a frob:requires/frob:transition-tagged symbol whose transitive

@@ -118,6 +118,12 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
         ("src/frob/dup/_pipeline/_callgraph.py", "token"),
         ("src/frob/dup/_pipeline/_fingerprint.py", "token"),
         ("src/frob/dup/_pipeline/_normalize.py", "token"),
+        # T-1725: same reviewed "token" homonym -- a `frob` CLI verb word
+        # parsed out of a hook/doc reference (WIRE003), never a
+        # credential.
+        ("src/frob/gates/_wire.py", "_WIRE003_TOKEN_RE"),
+        ("src/frob/gates/_wire.py", "token_match"),
+        ("src/frob/gates/_wire.py", "token"),
         ("src/frob/dup/_pipeline/_shared.py", "token"),
         ("src/frob/gates/__init__.py", "token"),
         # T-1072's split moved the waiver machinery (and its SEC110/secret-
