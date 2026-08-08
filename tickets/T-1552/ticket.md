@@ -63,3 +63,6 @@ precondition) to actually run the migration against this repo's real
       `_land_merge.py`, `_land_merge_zones.py`, and the `.gitattributes`
       merge-driver lines no longer exist, and `frob check` reports zero
       references to any of them.
+
+## Failure log
+- 2026-08-08 attempt 1: premise not yet true: LEDGERV1001 sunset 2027-02-02 not reached, deletion would preempt own recorded deprecation window

@@ -10,11 +10,10 @@ from __future__ import annotations
 # frob:ticket T-0030
 # frob:ticket T-1100
 # frob:waive AFFECT001 reason="T-1100 added a new read-only SUBCOMMAND (flow) to this \
-# parser registration function -- the bound agentic-workflow.md #next and \
-# #plan doc anchors describe the dispatch-loop/planning skills' USE of frob \
-# ticket doable/plan, an orthogonal concern this addition never touches; \
-# docs/modules/tickets.md (the doc this change IS actually about) was updated in the \
-# same diff"
+# parser registration function -- the bound agentic-workflow.md #next and #plan doc \
+# anchors describe the dispatch-loop/planning skills' USE of frob ticket doable/plan, \
+# an orthogonal concern this addition never touches; docs/modules/tickets.md (the doc \
+# this change IS actually about) was updated in the same diff"
 def _add_ticket_query_parsers(ticket_sub) -> list:
     """Register the read-only `list`/`show`/`doable`/`board`/`epic`/
     `brief`/`flow` ticket subcommands."""
@@ -84,6 +83,31 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "priority/age-ordered list",
     )
 
+    # frob:ticket T-1738
+    ticket_wave_p = ticket_sub.add_parser(
+        "wave",
+        help="partition the doable set into N mutually scope-disjoint "
+        "groups for parallel dispatch (T-1738)",
+    )
+    ticket_wave_p.add_argument(
+        "--agents",
+        dest="ticket_wave_agents",
+        type=int,
+        required=True,
+        metavar="N",
+        help="requested number of parallel groups (a hint, not a "
+        "guarantee -- fewer, larger groups are returned when the queue "
+        "does not partition further)",
+    )
+    ticket_wave_p.add_argument("--json", dest="ticket_json", action="store_true")
+    ticket_wave_p.add_argument(
+        "--ignore-lease",
+        dest="ticket_ignore_lease",
+        action="store_true",
+        help="partition the raw blocker-only doable list, skipping the "
+        "T-0453 scope-lease collision filter against IN_PROGRESS tickets",
+    )
+
     # frob:ticket T-0454
     ticket_board_p = ticket_sub.add_parser(
         "board",
@@ -141,6 +165,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         ticket_list_p,
         ticket_show_p,
         ticket_doable_p,
+        ticket_wave_p,
         ticket_board_p,
         ticket_epic_p,
         ticket_brief_p,

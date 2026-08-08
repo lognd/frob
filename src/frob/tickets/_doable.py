@@ -20,7 +20,6 @@ the same load-order-safe indirection T-1103 used for `renumber_one`/
 exists yet at its own module scope.
 """
 
-
 from __future__ import annotations
 
 import fnmatch
@@ -39,6 +38,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketState,
     TicketTier,
+    scope_overlap,
     scope_overlap_globs,
 )
 
@@ -64,9 +64,7 @@ def _other_open_tickets(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
         sorted(
             t.id
             for t in queue.tickets.values()
-            if t.id != ticket.id
-            and not t.runs_last
-            and t.state in _OPEN_STATES
+            if t.id != ticket.id and not t.runs_last and t.state in _OPEN_STATES
         )
     )
 
@@ -660,6 +658,217 @@ def doable(
             if not leased_by(queue, t, root, breadth=breadth, all_leases=all_leases)
         ]
     return tuple(sorted(candidates, key=_doable_sort_key))
+
+
+# frob:ticket T-1738
+class WaveGroup:
+    """One dispatchable group from `wave()`: a sequence of tickets one
+    agent works IN ORDER (T-1738) -- members may share scope with each
+    other (same agent, sequential, never a collision), but a group's
+    UNION scope is guaranteed disjoint from every other group's union
+    scope, which is the actual property parallel dispatch needs."""
+
+    __slots__ = ("tickets", "scope")
+
+    def __init__(self, tickets: tuple[Ticket, ...], scope: tuple[str, ...]) -> None:
+        """Store the group's ordered ticket sequence and its accumulated
+        (deduplicated) scope-glob union, used both to render the group and
+        to test the NEXT candidate against it during packing."""
+        self.tickets = tickets
+        self.scope = scope
+
+
+# frob:ticket T-1738
+class WaveRemainderReason:
+    """Why one doable ticket could not be placed into any of the N groups
+    `wave()` produced (T-1738) -- names the group index and the specific
+    colliding ticket/glob pair, so a coordinator sees a measurement
+    ("this repo's queue does not partition further, and here is exactly
+    why") rather than a silent drop."""
+
+    __slots__ = ("ticket", "colliding_group_index", "colliding_ticket_id", "glob")
+
+    def __init__(
+        self,
+        ticket: Ticket,
+        colliding_group_index: int,
+        colliding_ticket_id: str,
+        glob: str,
+    ) -> None:
+        """Bind the unplaced ticket to the first group/ticket/glob triple
+        that blocked every placement attempt."""
+        self.ticket = ticket
+        self.colliding_group_index = colliding_group_index
+        self.colliding_ticket_id = colliding_ticket_id
+        self.glob = glob
+
+
+# frob:ticket T-1738
+class WaveResult:
+    """The full `wave()` answer (T-1738): up to `agents` mutually
+    scope-disjoint `WaveGroup`s, plus an explicit `remainder` for any
+    doable ticket that could not be placed disjointly from every group
+    already opened -- the remainder is the important half, never dropped
+    silently (see `wave`'s own docstring)."""
+
+    __slots__ = ("groups", "remainder")
+
+    def __init__(
+        self,
+        groups: tuple[WaveGroup, ...],
+        remainder: tuple[WaveRemainderReason, ...],
+    ) -> None:
+        """Bind the placed groups and the unplaced remainder together."""
+        self.groups = groups
+        self.remainder = remainder
+
+
+# frob:ticket T-1738
+# frob:todo T-1825
+# (T-1825: add docs/modules/tickets.md#public-api's `wave`
+# section and the frob:doc edge back onto this function -- that page is
+# under a T-1686/T-1736 lease for the whole span T-1738 was worked, so
+# the doc addition is filed as a real follow-up instead of a silent gap.)
+# frob:tests \
+# tests/test_tickets_wave.py::TestWave.test_disjoint_scopes_pack_into_separate_groups
+# frob:tests tests/test_tickets_wave.py::TestWave.test_colliding_scopes_share_one_group
+# frob:tests tests/test_tickets_wave.py::TestWave.test_unplaceable_ticket_lands_in_remainder_with_reason  # noqa: E501
+# frob:tests tests/test_tickets_wave.py::TestWave.test_deterministic_for_repeated_calls
+# frob:tests \
+# tests/test_tickets_wave.py::TestWave.test_fewer_groups_than_agents_is_not_an_error
+def wave(
+    queue: TicketQueue,
+    root: Path | None = None,
+    *,
+    agents: int,
+    ignore_lease: bool = False,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> WaveResult:
+    """Partition `doable(queue, root, ...)` into up to `agents` mutually
+    scope-DISJOINT groups (T-1738), so N agents dispatched one-per-group
+    can run in parallel with no lease collision -- the parallel analogue
+    of `doable`'s sequential "what can ONE agent start right now" answer.
+
+    Two tickets in the SAME group may share scope: one agent works a
+    group's tickets in order, so an intra-group collision is not a race.
+    Two tickets in DIFFERENT groups may never share scope -- that is the
+    actual property a parallel wave needs, and the one a coordinator
+    grouping by theme cannot see (T-1699/T-1705, T-1679/T-1637 in this
+    ticket's own incident log).
+
+    Algorithm: `doable()`'s own priority/age-ordered candidates are
+    packed greedily, one at a time, into the first existing group whose
+    OTHER groups' accumulated scope the candidate does not collide with
+    (checked via `scope_overlap`, the same T-0453 substrate `doable`'s own
+    lease filter uses -- no second collision definition to disagree with
+    the first). A new group opens (up to `agents` total) only when no
+    existing group can take the candidate; once `agents` groups are open
+    and none accepts a candidate, it is recorded in `remainder` naming the
+    exact blocking group/ticket/glob rather than dropped.
+
+    Packing candidates in priority order means a critical ticket is
+    offered a fresh group before a low-priority one competes for the same
+    slot, which is the cheap proxy for "prefer packing by priority" this
+    ticket's own acceptance criteria ask for -- not a proof of optimal
+    packing (that is set-partition-hard in general), just a deterministic,
+    priority-respecting heuristic. Deterministic for a fixed queue state
+    because `doable()`'s own ordering is deterministic and this function
+    performs no further reordering.
+
+    `agents` is a hint, not a guarantee: this returns fewer, larger groups
+    when the queue does not partition further (a real, reportable finding
+    in a repo where one doc path dominates most tickets' scope -- see this
+    ticket's own body), never pads a group with colliding work to hit the
+    requested count.
+    """
+    candidates = list(doable(queue, root, ignore_lease=ignore_lease, breadth=breadth))
+    group_tickets: list[list[Ticket]] = []
+    group_scope: list[list[str]] = []
+    remainder: list[WaveRemainderReason] = []
+
+    for ticket in candidates:
+        # Groups this candidate directly collides with (a genuine "must
+        # share an agent" relationship, not a packing choice). Zero direct
+        # collisions means the candidate is free to open its own fresh
+        # group -- the common case, and the one that actually spreads work
+        # across agents instead of piling everything into group 0.
+        direct = [
+            idx
+            for idx, scope in enumerate(group_scope)
+            if scope_overlap(ticket.scope, scope)
+        ]
+        if not direct:
+            if len(group_tickets) < agents:
+                group_tickets.append([ticket])
+                group_scope.append(list(dict.fromkeys(ticket.scope)))
+                continue
+            # No collision with any group, but no capacity to open a new
+            # one either -- any existing group is a safe, non-colliding
+            # home; group 0 is as good as any (first-fit).
+            group_tickets[0].append(ticket)
+            _extend_unique(group_scope[0], ticket.scope)
+            continue
+        if len(direct) == 1:
+            idx = direct[0]
+            group_tickets[idx].append(ticket)
+            _extend_unique(group_scope[idx], ticket.scope)
+            continue
+        # Colliding with two or more ALREADY-separate groups: there is no
+        # group this candidate can join without becoming a cross-group
+        # collision against whichever direct-collision group it is NOT
+        # placed in. Unplaceable as scoped -- report it, naming the first
+        # colliding group/ticket/glob, rather than merging groups behind
+        # the caller's back or silently dropping the candidate.
+        first_idx = direct[0]
+        colliding_id, glob = _first_collision_against_group(
+            ticket, group_tickets[first_idx]
+        )
+        remainder.append(
+            WaveRemainderReason(
+                ticket=ticket,
+                colliding_group_index=first_idx,
+                colliding_ticket_id=colliding_id,
+                glob=glob,
+            )
+        )
+
+    from frob.tickets import _doable_sort_key
+
+    groups = tuple(
+        WaveGroup(
+            tickets=tuple(sorted(members, key=_doable_sort_key)),
+            scope=tuple(scope),
+        )
+        for members, scope in zip(group_tickets, group_scope, strict=True)
+    )
+    return WaveResult(groups=groups, remainder=tuple(remainder))
+
+
+def _first_collision_against_group(
+    ticket: Ticket, members: list[Ticket]
+) -> tuple[str, str]:
+    """The first `(member_id, colliding_glob)` pair between `ticket` and
+    any ticket already placed in `members` (T-1738) -- used only to name a
+    concrete cause once a collision against a group's UNION scope is
+    already known to exist, so the reported id is a real ticket rather
+    than the synthetic union."""
+    for member in members:
+        pair = scope_overlap_globs(ticket.scope, member.scope)
+        if pair is not None:
+            return (member.id, pair[0])
+    # Unreachable if the union-scope collision check upstream was accurate;
+    # fall back rather than raising, since this only feeds a diagnostic.
+    return (members[0].id if members else "?", "")
+
+
+def _extend_unique(target: list[str], addition: Sequence[str]) -> None:
+    """Append each glob in `addition` to `target` that is not already
+    present (T-1738) -- keeps a group's accumulated scope from growing
+    unboundedly with duplicate globs across many tickets sharing the same
+    file."""
+    for glob in addition:
+        if glob not in target:
+            target.append(glob)
 
 
 # frob:ticket T-0453

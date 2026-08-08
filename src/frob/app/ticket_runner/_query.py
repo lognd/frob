@@ -473,6 +473,86 @@ def _render_doable_in_flight(in_flight: list) -> None:
         )
 
 
+# frob:ticket T-1738
+# frob:tests \
+# tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_json_render_shape
+# frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_plain_render_lists_groups_and_remainder  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand.test_missing_agents_flag_is_a_clean_error  # noqa: E501
+def _wave(root: Path, cfg: AppConfig) -> None:
+    """Render `frob ticket wave --agents N`: up to N mutually
+    scope-disjoint groups from the doable set, plus a remainder section
+    naming any doable ticket that could not be placed disjointly and why
+    (T-1738). `--json` emits `{"groups": [...], "remainder": [...]}`
+    with each group as a plain list of ticket dicts (`model_dump`,
+    matching `doable --json`'s per-row shape) and each remainder entry as
+    `{"ticket": ..., "colliding_group_index": ..., "colliding_ticket_id":
+    ..., "glob": ...}`."""
+    from frob.tickets import load_queue
+    from frob.tickets._doable import wave
+
+    result = load_queue(root)
+    if result.is_err:
+        _log.error("ticket wave failed: %s", result.danger_err)
+        sys.exit(1)
+    queue = result.danger_ok
+    agents = cfg.ticket_wave_agents
+    if agents is None or agents < 1:
+        _log.error("ticket wave failed: --agents N is required and must be >= 1")
+        sys.exit(1)
+
+    outcome = wave(queue, root, agents=agents, ignore_lease=cfg.ticket_ignore_lease)
+
+    if cfg.ticket_json:
+        import json
+
+        payload = {
+            "groups": [
+                [t.model_dump(mode="json") for t in g.tickets] for g in outcome.groups
+            ],
+            "remainder": [
+                {
+                    "ticket": r.ticket.model_dump(mode="json"),
+                    "colliding_group_index": r.colliding_group_index,
+                    "colliding_ticket_id": r.colliding_ticket_id,
+                    "glob": r.glob,
+                }
+                for r in outcome.remainder
+            ],
+        }
+        _log.info(json.dumps(payload, indent=2))
+        return
+
+    if not outcome.groups:
+        _log.info("zero doable tickets to partition")
+        return
+
+    for idx, group in enumerate(outcome.groups):
+        _log.info("Group %d (scope: %s):", idx, ", ".join(group.scope) or "(none)")
+        for t in group.tickets:
+            _log.info(
+                "  %s  %s  (%s)  priority=%s",
+                t.id,
+                t.title,
+                t.kind.value,
+                t.priority.value,
+            )
+
+    if outcome.remainder:
+        _log.info(
+            "Remainder (could not be placed disjointly, agents=%d requested):",
+            agents,
+        )
+        for r in outcome.remainder:
+            _log.info(
+                "  %s  %s  collides with group %d via %s (glob %s)",
+                r.ticket.id,
+                r.ticket.title,
+                r.colliding_group_index,
+                r.colliding_ticket_id,
+                r.glob,
+            )
+
+
 # frob:ticket T-0453
 def _render_active_leases(queue: "TicketQueue") -> None:
     """Print a compact "Active leases" line per IN-PROGRESS ticket (id,

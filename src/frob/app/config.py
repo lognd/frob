@@ -707,6 +707,9 @@ class AppConfig(BaseModel):
     # `frob ticket doable --sprint LABEL [--by-parent]`.
     ticket_doable_sprint: str | None = None
     ticket_doable_by_parent: bool = False
+    # frob:ticket T-1738
+    # `frob ticket wave --agents N [--json] [--ignore-lease]`.
+    ticket_wave_agents: int | None = None
     # frob:ticket T-0715
     # `frob ticket sprint assign|show` -- which sprint subcommand.
     ticket_sprint_command: str | None = None

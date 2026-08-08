@@ -124,6 +124,8 @@ _STRING_FIELDS = (
     "ticket_sprint",
     "ticket_doable_sprint",
     "ticket_sprint_command",
+    # frob:ticket T-1738
+    "ticket_wave_agents",
     # frob:ticket T-1422
     "ticket_accept_amend_text",
     "ticket_accept_amend_reason",

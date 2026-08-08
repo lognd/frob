@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.395.0] - unreleased
+
+- T-1738: frob ticket wave: partition the doable set into N mutually scope-disjoint groups for parallel dispatch
+
 ## [0.394.0] - unreleased
 
 - T-1568: cli regrouping: frob design verb group (sys/registry/docs/graph/exports)

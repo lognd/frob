@@ -129,6 +129,7 @@ from ._query import (
     _renumber,
     _renumber_one,
     _show,
+    _wave,
 )
 from ._rapid_sweep import _sweep_async
 from ._verify import (
@@ -272,6 +273,7 @@ __all__ = [
     "_tier",
     "_verify_ids_passing",
     "_verify_one_bucket_passing",
+    "_wave",
     "_work",
     "_write_release_bump",
 ]
@@ -294,6 +296,8 @@ def _ticket_dispatch_table() -> dict:
         "list": _list,
         "show": _show,
         "doable": _doable,
+        # frob:ticket T-1738
+        "wave": _wave,
         "plan": _plan,
         "start": _start,
         "work": _work,
@@ -390,7 +394,7 @@ _LEDGER_TRANSACTIONAL_VERBS = frozenset(
 # default; forgetting to add itself here instead just makes it briefly
 # less convenient during a land, never unsafe).
 _LAND_SAFE_READ_ONLY_VERBS = frozenset(
-    {"list", "show", "doable", "board", "epic", "brief", "flow"}
+    {"list", "show", "doable", "wave", "board", "epic", "brief", "flow"}
 )
 
 # frob:ticket T-1779
