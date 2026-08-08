@@ -10,8 +10,28 @@ parent: T-1273
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- frob.toml
+- docs/design/test005-ratchet-schedule.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: frob.toml
+  reason: The ratchet schedule this ticket designs lives against frob.toml [testing]s
+    existing recalibration comment (the exact anchor its own acceptance criteria name)
+    plus a new design doc for the schedule itself -- kept as two concrete files, no
+    glob, per T-1866.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: docs/design/test005-ratchet-schedule.md
+  reason: The ratchet schedule this ticket designs lives against frob.toml [testing]s
+    existing recalibration comment (the exact anchor its own acceptance criteria name)
+    plus a new design doc for the schedule itself -- kept as two concrete files, no
+    glob, per T-1866.
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a package that has reached zero TEST005 findings at 75/70 WHEN the ratchet
@@ -25,6 +45,8 @@ acceptance:
   evidence: []
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 frob.toml [testing] recalibrated unit_branch_cov=75 / module_line_cov=70
 on honest TEST005 attribution data (T-1235 fixed subprocess + pool-worker
