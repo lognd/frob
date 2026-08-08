@@ -191,12 +191,53 @@ def _warn_if_runs_last_ticket_in_progress(root: Path) -> None:
 # frob:ticket T-0398
 # frob:ticket T-1613
 # frob:doc docs/modules/tickets.md#public-api
+# frob:ticket T-1758
 def new_ticket(
     root: Path,
     spec: TicketSpec,
     collected: frozenset[str] | None = None,
+    *,
+    no_commit: bool = False,
 ) -> Result[Ticket, TicketError]:
     """Allocate the next sequential id and upsert the ticket into the store.
+
+    T-1758: auto-commits the ledger write itself (`commit_ticket_ledger_
+    change`) before returning -- moved HERE, to the write boundary, rather
+    than left for each caller to remember, because T-1615's uniform
+    auto-commit only ever covered the `frob ticket new` CLI DISPATCH path
+    (`_auto_commit_ledger_after_dispatch` wraps the dispatch call site,
+    not this library function). Every call to `new_ticket` that bypasses
+    the CLI -- confirmed at the time of this fix:
+    `frob.app.ticket_runner._rapid_sweep._file_regression_ticket`,
+    `frob.tickets._mutation_sweep_queue`, `frob.testing._stability`,
+    `frob.app.sys_runner`, `frob.fleet` -- inherited the exact silent-
+    DirtyMain hazard T-1755 fixed for the FIRST of those, one call site
+    at a time, with a bespoke wrapper (`_commit_regression_ticket`) that
+    only closed the hole IT called through. This fix closes it for all
+    five at once, and for any future caller, with nothing new to
+    remember: the guarantee lives at the one place every caller must
+    already pass through to create a ticket at all.
+
+    Commits AFTER `ledger_lock` is released (matching the CLI dispatch
+    layer's own timing: `_auto_commit_ledger_after_dispatch` runs after
+    the verb handler returns, never while it still holds a lock) -- a
+    `git commit` does not need this process's in-memory lock held, and
+    holding it across a subprocess spawn would serialize unrelated
+    concurrent ticket creation against a git call that does not need to
+    be inside that critical section.
+
+    `no_commit=True` is `frob ticket new --no-commit`'s existing escape
+    hatch (a caller that wants to batch several ledger writes into one
+    commit of its own) threaded through unchanged -- same semantics as
+    `commit_ticket_ledger_change`'s own `no_commit`: still WARNS loudly
+    when it leaves the ledger dirty, never silently. A commit failure
+    here is logged (by `commit_ticket_ledger_change` itself) but does
+    NOT turn a successful ticket creation into an `Err` -- the ticket is
+    already durably written by the time the commit step runs; degrading
+    to "created, but the ledger is dirty and logged as such" is strictly
+    better than losing the created ticket over a commit failure, the
+    same posture `_commit_regression_ticket`'s now-redundant wrapper
+    already established for this exact call site.
 
     Any `spec.evidence` entries are schema-validated (validate_evidence)
     before the ticket is ever built, so a malformed entry cannot land via
@@ -264,6 +305,19 @@ def new_ticket(
         write_result = write_ticket(root, ticket)
         if write_result.is_err:
             return Err(write_result.danger_err)
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root, ticket_id, f"chore(tickets): file {ticket_id}", no_commit=no_commit
+    )
+    if committed.is_err:
+        _log.error(
+            "tickets: %s created but the ledger commit failed (%s) -- "
+            "root is now DIRTY and will DirtyMain-block a concurrent "
+            "`frob ticket land` until committed by hand",
+            ticket_id,
+            committed.danger_err,
+        )
     _log.info("tickets: created %s", ticket_id)
     return Ok(ticket)
 

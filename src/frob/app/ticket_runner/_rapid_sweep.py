@@ -107,7 +107,8 @@ def _read_baseline(root: Path) -> frozenset[tuple[str, str]] | None:
         return None
 
 
-# frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_write_then_read_round_trips  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_write_then_read_round_trips
 def _write_baseline(
     root: Path, findings: frozenset[tuple[str, str]], commit: str
 ) -> None:
@@ -128,10 +129,13 @@ def _write_baseline(
     )
 
 
-# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_leaves_the_repo_clean  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_stages_only_the_debt_file  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_leaves_the_repo_clean
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_stages_only_the_debt_file
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_is_a_noop_when_nothing_was_appended  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_a_non_repo_never_raises  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_a_non_repo_never_raises
 # frob:ticket T-1698
 def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
     """Commit the `rapid-debt.jsonl` line this land just appended, so the
@@ -350,7 +354,8 @@ def _ticket_is_open(root: Path, ticket_id: str) -> bool:
 # frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
 def _partition_findings_by_attribution(
     root: Path, final_id: str, pairs: list[tuple[str, str]]
 ) -> tuple[list[tuple[str, str]], list[str]]:
@@ -412,7 +417,8 @@ def _partition_findings_by_attribution(
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_closed_ticket_is_refiled  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
 def _file_regression_ticket(
     root: Path, final_id: str, commit_sha: str, new_findings: frozenset[tuple[str, str]]
@@ -492,7 +498,12 @@ def _file_regression_ticket(
         scope=tuple(sorted({file for _, file in unfiled_pairs})),
         body="\n".join(body_lines),
     )
-    created = new_ticket(root, spec)
+    # T-1758: new_ticket now auto-commits internally by default -- opt
+    # out here (no_commit=True) so _commit_regression_ticket's own commit
+    # below still lands, carrying the more informative message naming
+    # BOTH the regression ticket id and the land it regressed from,
+    # rather than new_ticket's own generic "file T-####" commit.
+    created = new_ticket(root, spec, no_commit=True)
     if created.is_err:
         _log.error(
             "rapid sweep: %s introduced %d new error(s) but the regression "
@@ -572,7 +583,8 @@ def _commit_regression_ticket(root: Path, regression_id: str, final_id: str) -> 
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_no_new_findings_is_clean  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_no_new_findings_is_clean
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_new_findings_file_a_ticket_and_rebaseline  # noqa: E501
 # frob:ticket T-1684
 def run_deferred_post_land_sweep(

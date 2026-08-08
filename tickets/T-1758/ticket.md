@@ -2,7 +2,7 @@
 id: T-1758
 title: T-1615's uniform ledger auto-commit does not cover programmatic (non-CLI) callers
   of new_ticket/write_ticket
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -15,8 +15,74 @@ scope:
 - src/frob/tickets/_new_renumber.py
 - src/frob/tickets/_leases.py
 - src/frob/tickets/_store.py
+- src/frob/app/ticket_runner/_new.py
+- docs/modules/tickets.md
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+- tests/test_ticket_leases.py
+- tickets/T-1758/ticket.md
+- tickets/T-1758/done-report.md
+- tickets/T-1799/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: new_ticket now auto-commits internally (T-1758's structural fix); the CLI
+    verb must opt out via no_commit=True to preserve its documented single-commit-including-evidence
+    behavior, otherwise --evidence would split into two commits
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: new_ticket's public-api signature/behavior doc entry needs updating for
+    the new no_commit parameter and auto-commit behavior
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: new_ticket's own auto-commit makes _rapid_sweep.py's existing per-caller
+    wrapper redundant/stale -- its new_ticket call must opt out via no_commit=True
+    to preserve its documented nicer commit message, and the test encoding the old
+    'new_ticket does not commit' premise needs updating to match
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: new_ticket's own auto-commit makes _rapid_sweep.py's existing per-caller
+    wrapper redundant/stale -- its new_ticket call must opt out via no_commit=True
+    to preserve its documented nicer commit message, and the test encoding the old
+    'new_ticket does not commit' premise needs updating to match
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: new tests for new_ticket's own auto-commit behavior; v2 per-ticket ledger
+    files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1758/ticket.md
+  reason: new tests for new_ticket's own auto-commit behavior; v2 per-ticket ledger
+    files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1758/done-report.md
+  reason: new tests for new_ticket's own auto-commit behavior; v2 per-ticket ledger
+    files
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tickets/T-1799/ticket.md
+  reason: the misattribution follow-up draft filed as part of this ticket's own audit
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit::test_programmatic_call_auto_commits
+- tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit::test_no_commit_leaves_ledger_dirty_and_warns
+- tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit::test_new_verb_still_produces_one_commit_including_evidence
+- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commits_the_ledger_write
 designated_repro_test: null
 threat: null
 component: null

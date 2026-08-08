@@ -1935,7 +1935,7 @@
     "src/frob/tickets/_new_gate_rule_acceptance.py::GateRuleRegistryUnresolvable": "201cb518e8a73a7d8a5156214bd3341950f64115f15d5d977df771d2fc2ea2a3",
     "src/frob/tickets/_new_gate_rule_acceptance.py::missing_acceptance_for_new_rules": "cb259847521c252e7f378e97e5cb9a7f7f7a409ca05362bc852f0819a5524547",
     "src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids": "b9b2cf216486574b4fa8492c748ee79f27aeb16cafe6341621cedccaffd7667d",
-    "src/frob/tickets/_new_renumber.py::new_ticket": "8312328748bdfe956b33796a10ac3dd01aac842baf66fca4a8242f64e431b1a6",
+    "src/frob/tickets/_new_renumber.py::new_ticket": "bed6536429528debde303d89bcce8ac0f54f5a9e5f4843b72331ba931008a293",
     "src/frob/tickets/_new_renumber.py::renumber": "eb2063fb2de369d8fcffed391628f793f69702ff7d25265102d09a0aa14bc113",
     "src/frob/tickets/_new_renumber.py::renumber_one": "d67ae5ee6db0b02afea17c18b7793342d8b99a197bef31c4c1ce739a8277c3c4",
     "src/frob/tickets/_profile.py::ProfileError": "ea192cd8a94214a2359fab2ebbb9eb9398d7305612f71242791ad94a2389201b",
@@ -2136,5 +2136,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.381.0"
+  "version": "0.382.0"
 }

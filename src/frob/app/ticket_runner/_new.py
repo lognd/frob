@@ -175,7 +175,11 @@ def _new(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     spec = _ticket_spec_from_cfg(cfg, title=cfg.ticket_title, kind=cfg.ticket_kind)
-    result = new_ticket(root, spec)
+    # T-1758: new_ticket now auto-commits internally by default -- opt out
+    # here (no_commit=True) so THIS verb's own commit below still captures
+    # the whole filed block (title/scope/body plus any --evidence ids
+    # applied right after), not just the bare ticket in a separate commit.
+    result = new_ticket(root, spec, no_commit=True)
     if result.is_err:
         _log.error("ticket new failed: %s", result.danger_err)
         sys.exit(1)

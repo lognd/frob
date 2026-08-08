@@ -1615,6 +1615,119 @@ class TestNewDropFailAutoCommit:
         assert loaded.danger_ok["T-0001"].state == TicketState.QUEUED
 
 
+# frob:ticket T-1758
+class TestNewTicketProgrammaticAutoCommit:
+    """T-1758: `new_ticket` (the LIBRARY function, called directly rather
+    than through the `frob ticket new` CLI verb) auto-commits its own
+    ledger write -- the structural fix for the gap T-1755 first hit and
+    patched with a per-caller wrapper (`_rapid_sweep._commit_regression_
+    ticket`): T-1615's uniform auto-commit only ever covered the CLI
+    dispatch table, never a programmatic caller like
+    `frob.tickets._mutation_sweep_queue`, `frob.testing._stability`,
+    `frob.app.sys_runner`, or `frob.fleet` -- all of which call
+    `new_ticket` directly and, before this fix, left `tickets.md`
+    uncommitted every time, DirtyMain-blocking the next `frob ticket
+    land` repo-wide."""
+
+    def test_programmatic_call_auto_commits(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit.test_programmatic_call_auto_commits  # noqa: E501
+        from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
+
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitkeep").write_text("")
+        _commit_all(main_repo, "init")
+
+        spec = TicketSpec(
+            title="filed directly, not via the CLI",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+        )
+        result = new_ticket(main_repo, spec)
+        assert result.is_ok, result.danger_err
+
+        status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
+        )
+        assert status.stdout.strip() == "", (
+            "a programmatic new_ticket() call must leave the ledger "
+            "committed, not dirty -- an uncommitted ledger DirtyMain-"
+            "blocks every concurrent `frob ticket land`"
+        )
+        log = _run(["git", "log", "-1", "--pretty=%s"], main_repo)
+        assert log.stdout.strip().startswith("chore(tickets): file T-")
+
+    def test_no_commit_leaves_ledger_dirty_and_warns(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit.test_no_commit_leaves_ledger_dirty_and_warns  # noqa: E501
+        import logging
+
+        from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
+
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitkeep").write_text("")
+        _commit_all(main_repo, "init")
+
+        spec = TicketSpec(
+            title="filed directly with no_commit",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+        )
+        with caplog.at_level(logging.WARNING):
+            result = new_ticket(main_repo, spec, no_commit=True)
+        assert result.is_ok, result.danger_err
+
+        status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
+        )
+        assert status.stdout.strip() != ""
+        assert any("DirtyMain" in r.message for r in caplog.records)
+
+    def test_new_verb_still_produces_one_commit_including_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit.test_new_verb_still_produces_one_commit_including_evidence  # noqa: E501
+        """T-1758 must not regress `frob ticket new --evidence ...`'s
+        documented single-commit behavior (`_new.py`'s own docstring):
+        `new_ticket`'s own internal auto-commit is opted OUT of
+        (`no_commit=True`) by the CLI verb specifically so its own final
+        `commit_ticket_ledger_change` call -- AFTER evidence is applied --
+        is still the only commit."""
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / "tests").mkdir()
+        (main_repo / "tests" / "test_x.py").write_text(
+            "def test_x():\n    assert True\n"
+        )
+        _commit_all(main_repo, "init")
+
+        before = _run(["git", "log", "--oneline"], main_repo).stdout.strip()
+        before_count = len(before.splitlines()) if before else 0
+
+        ticket_run(
+            AppConfig(
+                ticket_command="new",
+                ticket_path=main_repo,
+                ticket_title="ticket with evidence",
+                ticket_kind="bug",
+                ticket_evidence_ids=["tests/test_x.py::test_x"],
+            )
+        )
+
+        after = _run(["git", "log", "--oneline"], main_repo).stdout.strip()
+        after_count = len(after.splitlines()) if after else 0
+        assert after_count - before_count == 1, (
+            "exactly one new commit -- the filed ticket AND its evidence "
+            "together, never split into two"
+        )
+        status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
+        )
+        assert status.stdout.strip() == ""
+
+
 class TestCloseEvidenceDoneReportRequeueAutoCommit:
     """T-1178: `frob ticket close`/`evidence`/`done-report`/`requeue` each
     auto-commit their own ledger write via `commit_ticket_ledger_change`

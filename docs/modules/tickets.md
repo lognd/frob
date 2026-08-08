@@ -157,12 +157,20 @@ def load_active(root: Path) -> Result[TicketQueue, TicketError]
     # Active store ONLY, not the archive -- what `frob ticket list`/`doable`
     # display against, so archived tickets never bloat them (T-0096).
 def new_ticket(root: Path, spec: TicketSpec,
-                collected: frozenset[str] | None = None) -> Result[Ticket, TicketError]
+                collected: frozenset[str] | None = None,
+                *, no_commit: bool = False) -> Result[Ticket, TicketError]
     # Allocates next id (T-####), writes file atomically. T-0398 D-08:
     # `collected`, when supplied, resolves spec.evidence the same way
     # add_evidence does (Err(UnknownEvidence) on a bogus id); `collected=None`
     # (default) preserves schema-only validation but now logs an explicit
-    # UNRESOLVED warning instead of silently skipping the check.
+    # UNRESOLVED warning instead of silently skipping the check. T-1758:
+    # auto-commits the ledger write itself before returning (the write
+    # BOUNDARY, not the CLI dispatch layer, now owns this guarantee) --
+    # every caller, CLI or programmatic, gets a committed ledger with
+    # nothing to remember; `no_commit=True` is the same opt-out
+    # `commit_ticket_ledger_change` itself exposes, for a caller (the
+    # `frob ticket new` CLI verb, to fold --evidence into one commit)
+    # that wants to batch further ledger writes into a commit of its own.
 def doable(queue: TicketQueue) -> tuple[Ticket, ...]
     # state in {queued, planned} and no open blockers, ordered by priority
     # (highest PRIORITY_RANK first, T-0411) then oldest-first within a tier.

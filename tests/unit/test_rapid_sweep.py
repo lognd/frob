@@ -194,7 +194,8 @@ class TestCommitRapidDebt:
     every later land refused with DirtyMain."""
 
     def test_leaves_the_repo_clean(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_leaves_the_repo_clean  # noqa: E501
+        # frob:tests \
+        # tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_leaves_the_repo_clean
         from frob.tickets._evidence import record_rapid_debt
 
         repo = _seed_repo(tmp_path)
@@ -238,7 +239,8 @@ class TestDescribeRootDirt:
     """T-1698: a DirtyMain refusal must name what made it refuse."""
 
     def test_names_the_paths(self) -> None:
-        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
+        # frob:tests \
+        # tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths
         from frob.tickets._land_git_ops import _render_dirty_paths
 
         assert _render_dirty_paths(("a.py", "b.md")) == "a.py, b.md"
@@ -299,13 +301,16 @@ class TestCommitRegressionTicket:
         from frob.tickets._models import TicketSpec
 
         repo = _seed_repo(tmp_path)
+        # T-1758: new_ticket now auto-commits internally by default;
+        # no_commit=True reproduces the shape _file_regression_ticket
+        # itself uses so this test still exercises _commit_regression_
+        # ticket committing a genuinely-dirty ledger, not a no-op.
         created = new_ticket(
-            repo, TicketSpec(title="regression", kind=TicketKind.BUG, origin=Origin.AGENT)
+            repo,
+            TicketSpec(title="regression", kind=TicketKind.BUG, origin=Origin.AGENT),
+            no_commit=True,
         )
         assert created.is_ok
-        # `new_ticket` itself does NOT commit (T-1755's own confirmed root
-        # cause) -- the ledger is dirty until `_commit_regression_ticket`
-        # runs.
         assert _git(repo, "status", "--porcelain").strip()
         _commit_regression_ticket(repo, created.danger_ok.id, "T-9000")
         # `.frob/` (untracked local state) is expected to remain; the
@@ -364,12 +369,14 @@ class TestTicketIsOpen:
     """`_ticket_is_open` is the "still open" half of T-1690's filing rule."""
 
     def test_open_ticket_is_open(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_open_ticket_is_open  # noqa: E501
+        # frob:tests \
+        # tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_open_ticket_is_open
         ticket_id = _seed_ticket(tmp_path)
         assert _ticket_is_open(tmp_path, ticket_id) is True
 
     def test_done_ticket_is_not_open(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_done_ticket_is_not_open  # noqa: E501
+        # frob:tests \
+        # tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_done_ticket_is_not_open
         from frob.tickets._models import TicketState
 
         ticket_id = _seed_ticket(tmp_path, state=TicketState.DONE)
