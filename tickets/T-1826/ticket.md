@@ -2,7 +2,7 @@
 id: T-1826
 title: 'post-land sweep regression from T-1738: 4 new error(s) (ARCH001, ARCH103,
   COV001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-08'
@@ -30,3 +30,6 @@ New (rule, file) pairs filed here:
 - COV001  src/frob/tickets/_doable.py
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-08: stale: findings already fixed by commit 411de3823 (docs(tickets): document frob ticket wave, fix its ARCH001/ARCH103 debris), landed after this sweep ticket was filed. Confirmed via unscoped frob check --json: no ARCH001/ARCH103/COV001 findings remain for src/frob/app/ticket_runner/_query.py or src/frob/tickets/_doable.py. T-1828 (duplicate) absorbed into this ticket, also dropped as stale.

@@ -2,7 +2,7 @@
 id: T-1828
 title: T-1738's wave feature landed with ARCH001/ARCH103/COV001 findings (2 files,
   unwaived)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -37,3 +37,6 @@ None of these files are in T-1570's scope (ticket/debt/deprecated CLI
 naming) and none were touched by this ticket's diff. Filed as its own
 ticket per the disclosed-cut convention rather than silently expanding
 T-1570's scope to fix someone else's landed feature.
+
+## Drop reason
+- 2026-08-08: duplicate of T-1826, same regression from T-1738 (ARCH001/ARCH103/COV001 in _query.py and _doable.py) (absorbed by T-1826)

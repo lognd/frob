@@ -29,3 +29,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - SEC110  .claude/hooks/dispatch-telemetry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-08 attempt 1: SEC110 at .claude/hooks/dispatch-telemetry.py:71 cannot be waived from within this file: frob.graph.build_graph prunes the whole .claude/ tree (BUILTIN_SKIP_DIRS), so no frob:waive comment there ever becomes a WAIVE edge, while pii_structural_gate scans .claude/hooks/*.py via an unpruned git-ls-files walk and still fires. Real fix needs src/frob/excludes.py or src/frob/gates/_pii_structural/_self_match.py, both out of this ticket's scope; filed T-1849 to track it.

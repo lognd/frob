@@ -68,9 +68,8 @@ def _telemetry_disabled() -> bool:
     """Mirrors `frob.app.telemetry.is_disabled` exactly (same env var, same
     truthiness rule) without importing `frob` -- see the module docstring's
     "NO `frob` IMPORT" note for why this cannot just call that function."""
-    value = os.environ.get(
-        "FROB_NO_TELEMETRY", ""
-    )  # frob:waive SEC110 reason="opt-out flag, not a secret"
+    # frob:waive SEC110 reason="opt-out flag, not a secret"
+    value = os.environ.get("FROB_NO_TELEMETRY", "")
     return value.strip().lower() not in ("", "0", "false")
 
 
