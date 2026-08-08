@@ -11,6 +11,7 @@ from frob.strata import (
     StrataError,
     compile_policies,
     elaborate,
+    find_policy_weakenings,
     parse_module,
 )
 
@@ -203,6 +204,139 @@ class TestScopeResolution:
         result = compile_policies(module, model)
         assert result.is_err
         assert result.danger_err is StrataError.UnknownReference
+
+
+class TestRefinementMonotonicity:
+    """INV-051 (T-1482): find_policy_weakenings over a parent (broader
+    trust/label scope) / child (narrower, contained scope) policy pair."""
+
+    # frob:tests src/frob/strata/_policy.py::find_policy_weakenings kind="unit"
+    def test_confine_use_broadened_home_detected(self):
+        module = _module(
+            """
+            module m
+            node api : trusted
+            node db : trusted
+            policy Parent on trust >= trusted {
+                confine use psycopg to "src/api/db.py"
+            }
+            policy Child on component api {
+                confine use psycopg to "src/other/place.py"
+            }
+            """
+        )
+        model = elaborate(module).danger_ok
+        compiled = compile_policies(module, model).danger_ok
+        violations = find_policy_weakenings(compiled)
+        assert len(violations) == 1
+        assert violations[0].parent_id == "Parent"
+        assert violations[0].child_id == "Child"
+        assert violations[0].rule_kind == "confine_use"
+
+    # frob:tests src/frob/strata/_policy.py::find_policy_weakenings kind="unit"
+    def test_at_call_require_dropped_arg_detected(self):
+        module = _module(
+            """
+            module m
+            node api : trusted
+            node db : trusted
+            policy Parent on trust >= trusted {
+                at call subprocess.run require arg timeout
+            }
+            policy Child on component api {
+                at call subprocess.run require arg check
+            }
+            """
+        )
+        model = elaborate(module).danger_ok
+        compiled = compile_policies(module, model).danger_ok
+        violations = find_policy_weakenings(compiled)
+        assert len(violations) == 1
+        assert violations[0].rule_kind == "at_call_require_arg"
+        assert "timeout" in violations[0].detail
+
+    # frob:tests src/frob/strata/_policy.py::find_policy_weakenings kind="unit"
+    def test_mediate_swapped_mediator_detected(self):
+        module = _module(
+            """
+            module m
+            node api : trusted
+            node db : trusted
+            policy Parent on trust >= trusted {
+                mediate db.write via "db.py::TenantScopedSession"
+            }
+            policy Child on component api {
+                mediate db.write via "db.py::OtherSession"
+            }
+            """
+        )
+        model = elaborate(module).danger_ok
+        compiled = compile_policies(module, model).danger_ok
+        violations = find_policy_weakenings(compiled)
+        assert len(violations) == 1
+        assert violations[0].rule_kind == "mediate"
+
+    # frob:tests src/frob/strata/_policy.py::find_policy_weakenings kind="unit"
+    def test_no_finding_when_child_only_strengthens(self):
+        module = _module(
+            """
+            module m
+            node api : trusted
+            node db : trusted
+            policy Parent on trust >= trusted {
+                confine use psycopg to "src/api"
+            }
+            policy Child on component api {
+                confine use psycopg to "src/api/db.py"
+            }
+            """
+        )
+        model = elaborate(module).danger_ok
+        compiled = compile_policies(module, model).danger_ok
+        assert find_policy_weakenings(compiled) == ()
+
+    # frob:tests src/frob/strata/_policy.py::find_policy_weakenings kind="unit"
+    def test_no_finding_when_child_never_overlaps_parent_scope(self):
+        module = _module(
+            """
+            module m
+            node api : trusted
+            node db : trusted
+            policy Parent on trust >= trusted {
+                confine use psycopg to "src/api/db.py"
+            }
+            policy Sibling on component api {
+                confine use ctypes to "src/api/native.py"
+            }
+            """
+        )
+        model = elaborate(module).danger_ok
+        compiled = compile_policies(module, model).danger_ok
+        # Sibling never re-confines "psycopg" at all -- inherited
+        # unmodified from Parent, not a weakening; its OWN confine_use
+        # targets a different ident ("ctypes") entirely.
+        violations = find_policy_weakenings(compiled)
+        assert violations == ()
+
+    # frob:tests src/frob/strata/_policy.py::find_policy_weakenings kind="unit"
+    def test_forbid_call_never_flagged_even_when_child_narrows(self):
+        """forbid call/import are purely additive under union-of-policies
+        enforcement (docs/strata/policy.md#compilation) -- a child
+        re-declaring forbid_call with a DIFFERENT ident set can never make
+        the parent's own prohibitions stop applying, so this is
+        deliberately never a finding regardless of what the child lists."""
+        module = _module(
+            """
+            module m
+            node api : trusted
+            node db : trusted
+            policy Parent on trust >= trusted { forbid call eval, exec }
+            policy Child on component api { forbid call reflect }
+            """
+        )
+        model = elaborate(module).danger_ok
+        compiled = compile_policies(module, model).danger_ok
+        assert find_policy_weakenings(compiled) == ()
 
 
 class TestEnablesBookkeeping:

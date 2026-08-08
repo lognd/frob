@@ -1598,7 +1598,9 @@
     "src/frob/strata/_policy.py::CompiledPolicies": "c1a4a218c63351292c26a248a214c7003858af439c9da9b5444fa1a98db1cb83",
     "src/frob/strata/_policy.py::CompiledPolicies.enabling": "7eee91db96234c0e7d76e0452bff1cbebe0d1ebb3af91805f14fe47df719647f",
     "src/frob/strata/_policy.py::CompiledPolicy": "92c429f7833c897c736c47aad61a70aeda0eb9594e2a46415cd980f6bd80f4a7",
+    "src/frob/strata/_policy.py::PolicyWeakening": "877c3518a4612eacc40f248884625be911a9b4cd0cf0c425bd3cd9acdf758c9b",
     "src/frob/strata/_policy.py::compile_policies": "136c3f4c1638a64b8630edd1775a4435619f9beafa57f5b5e12da9b7f81d454a",
+    "src/frob/strata/_policy.py::find_policy_weakenings": "ad88cb2a592cc35ac50693e4ca3c3985d6e5c0d8a90b3540ee25194b0c74012b",
     "src/frob/strata/_process_bounds.py::PROCESS_BOUNDS_RULES": "b75109f563b3b1a2c111ec4501440a07c36a18d43491489f0c5b216481b30b37",
     "src/frob/strata/_process_bounds.py::ProcessBoundsReport": "a1640c8cba23fa5b5ba6dd6feb855af3d965eef484c154e8e276131940d49c11",
     "src/frob/strata/_process_bounds.py::ProcessBoundsViolation": "3f512c64027cc59e545f9d51d439554cd3ff6aa8db12f97ecc25203534a37557",
@@ -2161,5 +2163,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.400.0"
+  "version": "0.401.0"
 }

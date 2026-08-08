@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.401.0] - unreleased
+
+- T-1482: build policy refinement-monotonicity diff pass (INV-030)
+
 ## [0.400.0] - unreleased
 
 - T-1819: SCOPE001 false-positives on a ticket's own tickets/<id>/** shard file (LEDGER_PATH predates sharded ledger)

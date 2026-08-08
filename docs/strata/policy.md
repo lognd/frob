@@ -50,18 +50,47 @@ moment it is declared.
 
 <!-- frob:invariant INV-030 -->
 
-Under refinement, policies are DESIGNED to inherit downward monotonically
--- a child should only be able to strengthen an inherited policy, never
-weaken it (a weakening would be a refinement error). This monotonicity
-check has no enforcing code today: `compile_policies`/`_resolve_scope`
-resolve scope membership but there is no refinement-diff pass that
-compares a child's policy set against its parent's and flags a
-weakening, so this paragraph currently states design intent, not an
-enforced guarantee.
-<!-- frob:until T-1482 -->
+Under refinement, policies inherit downward monotonically -- a child may
+only strengthen an inherited policy, never weaken it (a weakening is a
+refinement error).
 
-<!-- frob:waive INV003 reason="the refinement-monotonicity rule described here has no enforcing code yet (compile_policies resolves scope membership only, no parent/child refinement-diff pass exists) -- see the paragraph above; tracked as design debt, not silently claimed as proven" -->
-<!-- frob:waive INV004 reason="same gap as the INV003 waiver: refinement monotonicity is stated design intent with no discharging check yet" -->
+### Refinement monotonicity (INV-051, T-1482)
+
+<!-- frob:invariant INV-051 -->
+<!-- frob:describes src/frob/strata/_policy.py::PolicyWeakening -->
+<!-- frob:describes src/frob/strata/_policy.py::find_policy_weakenings -->
+
+`find_policy_weakenings` is the enforcing code: for every pair of
+`CompiledPolicy` whose `node_ids` sets are related by strict containment
+(a `component` policy's single node nested inside a broader `trust`/
+`label` policy, or one `trust`/`label` threshold nested inside a laxer
+one), it diffs every rule the NARROWER (child) policy re-declares for a
+target atom the containing (parent) policy already constrains, and flags
+any re-declaration that is strictly less restrictive:
+
+- `forbid call`/`forbid import` are deliberately NOT diffed: they are
+  purely additive prohibitions under union enforcement (below), so a
+  child re-declaring the form with a different ident set can never make
+  the parent's own prohibitions stop applying -- there is no way for
+  this form to be weakened by a child re-declaration.
+- `confine use` -- the child's `home` for a shared `ident` must equal or
+  narrow (sub-path of) the parent's `home`.
+- `at call ... require arg` -- if the child re-engages an `ident` the
+  parent already constrains, it must keep every `arg` the parent required.
+- `mediate` -- there is no proof-strength ordering between two distinct
+  mediators at TIER-1, so ANY mediator swap for an already-mediated
+  `ident` is flagged, fail-closed rather than silently assumed
+  equivalent.
+
+Deliberately silent when the child never re-declares a given target at
+all -- TIER-2 conformance enforcement applies the UNION of every policy
+whose scope covers a node (docs/strata/policy.md#compilation), so an
+untouched target is inheritance, not weakening. This pass is TIER-1 only
+(a pure diff over already-compiled `CompiledPolicies`, no gate wiring
+yet) -- a `frob check` gate that calls it over the real `design/`
+policies is a disclosed follow-up, not part of this ticket's scope
+(`docs/strata/policy.md`, `src/frob/strata/_policy.py`,
+`tests/unit/strata/test_policy.py`).
 
 ## Compilation
 

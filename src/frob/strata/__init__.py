@@ -368,7 +368,13 @@ from frob.strata._pii import (
     node_pii_tags,
 )
 from frob.strata._plan import MARKER_PREFIX, PlannedTicket, PlanResult, plan_obligations
-from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
+from frob.strata._policy import (
+    CompiledPolicies,
+    CompiledPolicy,
+    PolicyWeakening,
+    compile_policies,
+    find_policy_weakenings,
+)
 from frob.strata._process_bounds import (
     PROCESS_BOUNDS_RULES,
     REL_MISSING_INTERFACE_CLASSIFICATION,
@@ -714,6 +720,7 @@ __all__ = [
     "PlannedTicket",
     "PolicyDecl",
     "PolicyRule",
+    "PolicyWeakening",
     "PrivacyPolicy",
     "Quantifier",
     "Quantity",
@@ -912,6 +919,7 @@ __all__ = [
     "evaluate_vertical_isolation",
     "export_iam",
     "export_k8s_netpol",
+    "find_policy_weakenings",
     "export_seccomp",
     "extract_effects",
     "build_compromised_krb_scenario",

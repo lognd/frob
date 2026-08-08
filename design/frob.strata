@@ -495,14 +495,15 @@ node stratamod : trusted {
         evaluate_claims, evaluate_compliance, evaluate_constrained_delegation_blast_radius, evaluate_crash_contracts, evaluate_cross_realm_containment, evaluate_deploy_contracts,
         evaluate_exhaustiveness, evaluate_host_isolation_waived, evaluate_krb_movement_waived, evaluate_lateral_isolation, evaluate_lint, evaluate_pii,
         evaluate_roastable_spn, evaluate_saga_contracts, evaluate_scenarios, evaluate_threats, evaluate_unconstrained_delegation, evaluate_vertical_isolation,
-        export_iam, export_k8s_netpol, export_seccomp, extract_effects, files_evidence_token, flow_authenticates_via,
-        generate_fault_injection_cases, group_gaps_by_view, host_manifest_for, host_movement_flows, is_critical_dependency, is_external_dependency,
-        is_managed, krb_manifest_for, krb_trust_flows, load_design_ids, load_repo_benign_capabilities, load_strata_scope_config,
-        merge_models, merge_modules, mode_conflict, native_unavailable_warning, node_access_declarations, node_allowed_app_capabilities,
-        node_allowed_syscalls, node_carries_pii, node_flag_ids, node_has_bound_code, node_may_kinds, node_pii_tags,
-        owner_index, parse_module, parse_waiver_expiry, plan_obligations, render_audit_matrix, render_report,
-        require_analyzable, resource_contention_violations, run_may_mutation_audit, run_native_sys_audit, scan_text_for_fingerprints, stale_native_warning,
-        stale_natives, summarize, sync_interface_report, sync_may_report, unbound_constructs, unimportable_natives,
+        export_iam, export_k8s_netpol, export_seccomp, extract_effects, files_evidence_token, find_policy_weakenings,
+        flow_authenticates_via, generate_fault_injection_cases, group_gaps_by_view, host_manifest_for, host_movement_flows, is_critical_dependency,
+        is_external_dependency, is_managed, krb_manifest_for, krb_trust_flows, load_design_ids, load_repo_benign_capabilities,
+        load_strata_scope_config, merge_models, merge_modules, mode_conflict, native_unavailable_warning, node_access_declarations,
+        node_allowed_app_capabilities, node_allowed_syscalls, node_carries_pii, node_flag_ids, node_has_bound_code, node_may_kinds,
+        node_pii_tags, owner_index, parse_module, parse_waiver_expiry, plan_obligations, render_audit_matrix,
+        render_report, require_analyzable, resource_contention_violations, run_may_mutation_audit, run_native_sys_audit, scan_text_for_fingerprints,
+        stale_native_warning, stale_natives, summarize, sync_interface_report, sync_may_report, unbound_constructs,
+        unimportable_natives,
     ];
     clearance Internal;
     code "src/frob/strata/**";

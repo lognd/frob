@@ -17,7 +17,14 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
-from ._ast import Module, PolicyRule, ScopeSpec
+from ._ast import (
+    AtCallRequire,
+    ConfineUse,
+    Mediate,
+    Module,
+    PolicyRule,
+    ScopeSpec,
+)
 from ._errors import StrataError
 from ._models import KernelModel
 
@@ -145,3 +152,197 @@ def compile_policies(
         )
     _log.info("compiled %d polic(y/ies) for module %s", len(compiled), module.name)
     return Ok(CompiledPolicies(policies=tuple(compiled)))
+
+
+# frob:ticket T-1482
+# frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
+class PolicyWeakening(BaseModel):
+    """One INV-051 finding: `child_id`'s scope is a strict subset of
+    `parent_id`'s, but `child_id` re-declares a rule for the same
+    target atom (`detail` names it) LESS restrictively than the parent
+    already required for every node `child_id` also covers -- exactly
+    the "a child may only strengthen an inherited policy, never weaken
+    it" property docs/strata/policy.md's refinement-monotonicity
+    paragraph states as design intent."""
+
+    model_config = ConfigDict(frozen=True)
+
+    parent_id: str
+    child_id: str
+    rule_kind: str
+    detail: str
+
+
+def _confine_weakenings(
+    parent: CompiledPolicy, child: CompiledPolicy
+) -> list[PolicyWeakening]:
+    """A child `confine use IDENT to HOME` for an ident the parent also
+    confines must keep the SAME home, or narrow it to a sub-path of the
+    parent's home (a stricter confinement); moving it to an unrelated or
+    broader home is a weakening. An ident the child never re-confines is
+    unaffected (inherited unmodified)."""
+    parent_homes = {
+        rule.ident: rule.home for rule in parent.rules if isinstance(rule, ConfineUse)
+    }
+    violations: list[PolicyWeakening] = []
+    for rule in child.rules:
+        if not isinstance(rule, ConfineUse):
+            continue
+        parent_home = parent_homes.get(rule.ident)
+        if parent_home is None:
+            continue
+        narrowed = rule.home.startswith(parent_home.rstrip("/") + "/")
+        if rule.home == parent_home or narrowed:
+            continue
+        violations.append(
+            PolicyWeakening(
+                parent_id=parent.id,
+                child_id=child.id,
+                rule_kind="confine_use",
+                detail=(
+                    f"parent confines {rule.ident!r} to {parent_home!r} but child "
+                    f"re-confines it to {rule.home!r} (not the same or a sub-path)"
+                ),
+            )
+        )
+    return violations
+
+
+def _at_call_require_weakenings(
+    parent: CompiledPolicy, child: CompiledPolicy
+) -> list[PolicyWeakening]:
+    """A child that engages a call the parent already constrains (`at call
+    IDENT require arg ...`) must require every arg the parent required for
+    that same `IDENT`; dropping one is a weakening. A call the child never
+    mentions is unaffected (inherited unmodified)."""
+    parent_args: dict[str, set[str]] = {}
+    for rule in parent.rules:
+        if isinstance(rule, AtCallRequire):
+            parent_args.setdefault(rule.ident, set()).add(rule.arg)
+    child_args: dict[str, set[str]] = {}
+    for rule in child.rules:
+        if isinstance(rule, AtCallRequire):
+            child_args.setdefault(rule.ident, set()).add(rule.arg)
+    violations: list[PolicyWeakening] = []
+    for ident, required in parent_args.items():
+        if ident not in child_args:
+            continue
+        for arg in sorted(required - child_args[ident]):
+            violations.append(
+                PolicyWeakening(
+                    parent_id=parent.id,
+                    child_id=child.id,
+                    rule_kind="at_call_require_arg",
+                    detail=(
+                        f"parent requires arg {arg!r} at call {ident!r} but child "
+                        f"re-declares at call {ident!r} without it"
+                    ),
+                )
+            )
+    return violations
+
+
+def _mediate_weakenings(
+    parent: CompiledPolicy, child: CompiledPolicy
+) -> list[PolicyWeakening]:
+    """A child `mediate IDENT via MEDIATOR` for an ident the parent already
+    mediates must name the SAME mediator -- there is no proof-strength
+    ordering between two distinct mediators available at TIER-1, so any
+    change is flagged rather than silently assumed safe (fail closed).
+    An ident the child never re-mediates is unaffected (inherited
+    unmodified)."""
+    parent_mediators = {
+        rule.ident: rule.mediator for rule in parent.rules if isinstance(rule, Mediate)
+    }
+    violations: list[PolicyWeakening] = []
+    for rule in child.rules:
+        if not isinstance(rule, Mediate):
+            continue
+        parent_mediator = parent_mediators.get(rule.ident)
+        if parent_mediator is None or parent_mediator == rule.mediator:
+            continue
+        violations.append(
+            PolicyWeakening(
+                parent_id=parent.id,
+                child_id=child.id,
+                rule_kind="mediate",
+                detail=(
+                    f"parent mediates {rule.ident!r} via {parent_mediator!r} but "
+                    f"child re-declares it via {rule.mediator!r} (unproven "
+                    f"equivalence)"
+                ),
+            )
+        )
+    return violations
+
+
+def _pairwise_weakenings(
+    parent: CompiledPolicy, child: CompiledPolicy
+) -> list[PolicyWeakening]:
+    """Every INV-051 finding between one candidate parent/child scope pair,
+    across the three rule forms with a genuine per-atom "same target,
+    incompatible re-declaration" shape (`confine use`/`at call ... require
+    arg`/`mediate`).
+
+    `forbid call`/`forbid import` are deliberately NOT diffed here: they
+    are purely additive prohibitions under the union-of-applicable-
+    policies enforcement model docs/strata/policy.md#compilation
+    describes -- a child re-declaring `forbid call` with a DIFFERENT
+    ident set (e.g. adding a new prohibition unrelated to the parent's)
+    can never cause the parent's own prohibitions to stop applying, so
+    there is no way for a child to weaken this form by omission. An
+    earlier version of this pass compared aggregate ident sets per rule
+    kind and flagged exactly that non-case as a false positive (any
+    child forbid_call rule not literally re-listing every parent ident
+    read as "dropped" it) -- removed once
+    `test_no_finding_when_child_never_overlaps_parent_scope` caught it."""
+    return [
+        *_confine_weakenings(parent, child),
+        *_at_call_require_weakenings(parent, child),
+        *_mediate_weakenings(parent, child),
+    ]
+
+
+# frob:invariant INV-051
+# invariant spec: [INV-051](invariants/INV-051.md)
+# frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
+# frob:waive WIRE001 reason="T-1482 built this as a pure TIER-1 diff pass proving \
+# INV-051; gate wiring over the real design/ policies is a separate, deliberately \
+# out-of-scope follow-up" follow_up="T-1843"
+# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_confine_use_broadened_home_detected  # noqa: E501
+# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_at_call_require_dropped_arg_detected  # noqa: E501
+# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_mediate_swapped_mediator_detected  # noqa: E501
+# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_no_finding_when_child_only_strengthens  # noqa: E501
+# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_no_finding_when_child_never_overlaps_parent_scope  # noqa: E501
+# frob:tests tests/unit/strata/test_policy.py::TestRefinementMonotonicity.test_forbid_call_never_flagged_even_when_child_narrows  # noqa: E501
+def find_policy_weakenings(compiled: CompiledPolicies) -> tuple[PolicyWeakening, ...]:
+    """INV-051's refinement-monotonicity diff pass (T-1482): for every pair
+    of compiled policies whose scope one strictly contains the other (the
+    "parent"/"child" relationship docs/strata/policy.md's refinement
+    section describes -- a `component` policy's single node nested inside
+    a broader `trust`/`label` policy's node set, or one `trust`/`label`
+    threshold nested inside a laxer one), diff every rule form the CHILD
+    re-declares for a target the PARENT also constrains, and flag any
+    re-declaration that is strictly less restrictive than what the parent
+    already required.
+
+    Deliberately does NOT flag a child that never re-declares a given rule
+    target at all -- TIER-2 conformance checking enforces the UNION of
+    every policy whose scope covers a node (docs/strata/policy.md
+    #compilation), so silence from the child is inheritance, not a
+    weakening; this pass only has anything to say about an EXPLICIT
+    child-side re-declaration for the same target atom.
+    """
+    violations: list[PolicyWeakening] = []
+    for parent in compiled.policies:
+        parent_ids = set(parent.node_ids)
+        if not parent_ids:
+            continue
+        for child in compiled.policies:
+            if child.id == parent.id:
+                continue
+            child_ids = set(child.node_ids)
+            if not child_ids or not child_ids < parent_ids:
+                continue
+            violations.extend(_pairwise_weakenings(parent, child))
+    return tuple(violations)
