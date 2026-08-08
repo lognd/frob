@@ -1393,7 +1393,7 @@ class TestLand:
     def test_refuses_without_evidence_or_done_report(self, repo: Path) -> None:
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-d", str(wt)], repo)
-        created = new_ticket(wt, _spec("Not ready"))
+        created = new_ticket(wt, _spec("Not ready"), no_commit=True)
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(wt, "wip")
@@ -2364,7 +2364,7 @@ class TestLedgerBothSidesAppend:
         _commit_all(wt, "worktree ticket + feature")
 
         # Main independently gains a new ticket AFTER the worktree branched.
-        created_main = new_ticket(repo, _spec("Main-side ticket"))
+        created_main = new_ticket(repo, _spec("Main-side ticket"), no_commit=True)
         assert created_main.is_ok
         main_tid = created_main.danger_ok.id
         _commit_all(repo, "main-side ticket")
@@ -2501,7 +2501,7 @@ class TestArchiveResurrection:
         # Seed a ticket that exists (stale, still active) in the worktree's
         # ledger view, then archive it on MAIN after the branch point --
         # simulating a branch whose base predates the archive.
-        stale = new_ticket(repo, _spec("Will be archived"))
+        stale = new_ticket(repo, _spec("Will be archived"), no_commit=True)
         assert stale.is_ok
         stale_id = stale.danger_ok.id
         _commit_all(repo, "file the soon-to-be-archived ticket")
@@ -2650,8 +2650,8 @@ class TestArchiveSpliceDiscipline:
         # branches off -- the exact T-0703 incident shape: the worktree's
         # warmup merge happens before the archive sweep, so its own
         # tickets-archive.md never sees it.
-        first = new_ticket(repo, _spec("First to archive"))
-        second = new_ticket(repo, _spec("Second to archive"))
+        first = new_ticket(repo, _spec("First to archive"), no_commit=True)
+        second = new_ticket(repo, _spec("Second to archive"), no_commit=True)
         assert first.is_ok and second.is_ok
         first_id, second_id = first.danger_ok.id, second.danger_ok.id
         _commit_all(repo, "file two tickets that will later be archived")
@@ -5059,7 +5059,9 @@ class TestMergeMainIntoWorktreeRicherState:
         # in BOTH the worktree's and main's ledgers before either side
         # diverges it -- the scenario under test is a genuine same-id
         # divergence, not draft finalization (covered elsewhere).
-        created = new_ticket(repo, _spec("Landing ticket", scope=("src/widget.py",)))
+        created = new_ticket(
+            repo, _spec("Landing ticket", scope=("src/widget.py",)), no_commit=True
+        )
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "file landing ticket")

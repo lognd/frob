@@ -2,7 +2,7 @@
 id: T-1829
 title: '5 tests/test_ticket_land.py tests fail: new_ticket auto-commit (T-1758) leaves
   _commit_all with nothing to stage'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -16,6 +16,12 @@ scope:
 - tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestLand::test_refuses_without_evidence_or_done_report
+- tests/test_ticket_land.py::TestLedgerBothSidesAppend::test_both_sides_append_merges_cleanly
+- tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected
+- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
+- tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState::test_landing_tickets_in_progress_report_survives_the_merge_stage
 designated_repro_test: null
 threat: null
 component: null
