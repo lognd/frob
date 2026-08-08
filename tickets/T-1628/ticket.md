@@ -15,10 +15,39 @@ runs_last: false
 scope:
 - design/frob.strata
 - src/frob/strata/**
-- src/frob/gates/**
-- tests/**
+- tests/unit/strata/test_selfconform.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: tests/** and src/frob/gates/** are mega-globs and scope IS the lease; as
+    written this ticket would lock the fleet out of the whole tests tree. Narrowed
+    to the selfconform test and the rule registry the ratchet actually needs.
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/gates/**
+  reason: tests/** and src/frob/gates/** are mega-globs and scope IS the lease; as
+    written this ticket would lock the fleet out of the whole tests tree. Narrowed
+    to the selfconform test and the rule registry the ratchet actually needs.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: tests/** and src/frob/gates/** are mega-globs and scope IS the lease; as
+    written this ticket would lock the fleet out of the whole tests tree. Narrowed
+    to the selfconform test and the rule registry the ratchet actually needs.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: tests/** and src/frob/gates/** are mega-globs and scope IS the lease; as
+    written this ticket would lock the fleet out of the whole tests tree. Narrowed
+    to the selfconform test and the rule registry the ratchet actually needs.
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null
