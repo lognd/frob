@@ -278,12 +278,6 @@ SYS_UNMODELED_CODE = "SYS102"
 #: least one capability in, on ANY audited root -- the repo-general form
 #: of SYS102's frob-own-tree-only unmodeled-code check.
 SYS_COVERAGE_TOTALITY = "SYS103"
-# frob:doc docs/modules/strata.md#sys104-interface-conformance-t-0668
-#: `frob sys audit` rule id for SYS104 (T-0668) exact interface
-#: conformance: a node's declared `interface=<symbol>` attrs must equal
-#: its bound files' real public surface (module docstring's SYS104
-#: section) -- fires for either direction of mismatch.
-SYS_INTERFACE_CONFORMANCE = "SYS104"
 # frob:doc docs/modules/strata.md#sys105-purpose-contract-t-0669
 #: `frob sys audit` rule id for SYS105 (T-0669) purpose contract: a
 #: node's declared `purpose=<profile>` attr bounds its allowed observed
@@ -303,7 +297,7 @@ SYS_BINDING_TOTALITY = "SYS106"
 #: `[strata] require_may_scope` (`_scope_config.py`).
 SYS_VIA_LESS_LARGE_NODE = "SYS107"
 
-# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
+# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150
 #: `frob sys audit` rule id for SYS108 (T-1624) duplicate interface
 #: declaration: a node whose `interface=` attrs name the same symbol more
 #: than once (module docstring's SYS108 section). Always ERROR.
@@ -751,6 +745,15 @@ def _extended_kind_violations(
 
 
 # frob:ticket T-0361
+# frob:waive DUP001 reason="T-1870: this 95%-similarity match against \
+# src/frob/testing/_collect_ts.py::_find_ts_test_files only became visible after this \
+# ticket deleted ~1900 unrelated lines earlier in this file, shifting the \
+# duplicate-detector's resolution window -- the function body itself is byte-for-byte \
+# unchanged by this ticket (confirmed: git show main:src/frob/strata/_selfconform.py \
+# has the identical function, and this DUP001 does not fire against main at all). \
+# Deduplicating a pre-existing, coincidental filesystem-walk similarity across two \
+# unrelated modules (strata self-conformance vs. TS test-file discovery) is a real but \
+# separate refactor, out of this ticket's declared scope"
 def _repo_files_excluding_skip_dirs(root: Path) -> list[str]:
     """Every real file under `root`, as `root`-relative posix paths, with
     any path whose parts include a skip-dir (`is_skipped_dir`) omitted;
@@ -764,7 +767,11 @@ def _repo_files_excluding_skip_dirs(root: Path) -> list[str]:
     # os.walk's dirnames mutation, same as walk_pruned, just on a narrower
     # predicate.
     all_files: list[str] = []
-    # frob:waive WALK001 reason="deliberately skip-dir-only, no [graph].exclude pruning -- the SYS101 caller needs the pre-exclude file set to compare against is_excluded() per-glob itself; walk_pruned's exclude_globs=() default would load frob.toml globs and collapse that distinction. Still prunes mid-descent via dirnames mutation, same shape as walk_pruned, just a narrower predicate"  # noqa: E501
+    # frob:waive WALK001 reason="deliberately skip-dir-only, no [graph].exclude \
+    # pruning -- the SYS101 caller needs the pre-exclude file set to compare against \
+    # is_excluded() per-glob itself; walk_pruned's exclude_globs=() default would load \
+    # frob.toml globs and collapse that distinction. Still prunes mid-descent via \
+    # dirnames mutation, same shape as walk_pruned, just a narrower predicate"
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if not is_skipped_dir(d)]
         current = Path(dirpath)
@@ -1225,7 +1232,7 @@ def _imported_from_spec(node: ast.ImportFrom, file_dir: Path, root: Path) -> str
     return _join_dotted(_dotted(base_dir, root), node.module)
 
 
-# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
+# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150
 def _src_root_prefixes(binding: CodeBinding) -> frozenset[str]:
     """Every distinct FIRST path segment among `binding.owner`'s bound
     files (e.g. `{"src"}` for this repo's own `src/frob/**` layout, `{}`
@@ -1325,73 +1332,16 @@ def _cross_node_referenced_symbols(
     return {node_id: frozenset(names) for node_id, names in referenced.items()}
 
 
-# frob:tests tests/unit/strata/test_selfconform.py::TestInterfaceConformance.test_undeclared_public_symbol_fires  # noqa: E501
-# frob:tests tests/unit/strata/test_selfconform.py::TestInterfaceConformance.test_declared_but_absent_symbol_fires  # noqa: E501
-def _interface_conformance_violations(
-    model: KernelModel, binding: CodeBinding, root: Path
-) -> list[SelfConformViolation]:
-    """SYS104 (T-0668, mandatory as of T-1113; narrowed T-1625): for every
-    node whose REQUIRED interface surface is non-empty, the declared
-    `interface=` set must equal it EXACTLY (module docstring's SYS104/
-    T-1625 sections). Required = real public surface (`_node_real_public_
-    surface`) INTERSECTED with what `_cross_node_referenced_symbols` shows
-    some OTHER node's code actually imports by name -- a symbol only ever
-    used within its own node's files is not part of any contract and is
-    never required, no matter how "public" its name looks (T-1625: this is
-    what shrinks a test-only node's obligation to zero, since nothing ever
-    imports a test by name, without a test-specific carve-out). T-1113
-    closes the original opt-in scope cut (T-0668's disclosed follow-up): a
-    node is evaluated whenever its REQUIRED surface is non-empty, not only
-    when it has already declared at least one `interface=` attr. A node
-    with an empty required surface (no bound `.py` files, files with
-    nothing public, or a real surface nothing outside the node ever
-    imports by name) stays silent either way."""
-    cross_referenced = _cross_node_referenced_symbols(binding, root)
-    found: list[SelfConformViolation] = []
-    for node in model.nodes:
-        declared = frozenset(_node_attr_values(node, _INTERFACE_PREFIX))
-        real = _node_real_public_surface(binding, root, node.id)
-        required = real & cross_referenced.get(node.id, frozenset())
-        if not declared and not required:
-            continue  # nothing declared, nothing required to declare
-        for missing in sorted(required - declared):
-            _log.warning(
-                "selfconform: SYS104 undeclared public symbol %s on %s",
-                missing,
-                node.id,
-            )
-            found.append(
-                SelfConformViolation(
-                    rule=SYS_INTERFACE_CONFORMANCE,
-                    node=node.id,
-                    detail=(
-                        f"public symbol {missing!r} imported by another node "
-                        "but not declared in interface="
-                    ),
-                    capability=missing,
-                )
-            )
-        for absent in sorted(declared - required):
-            _log.warning(
-                "selfconform: SYS104 declared-but-absent symbol %s on %s",
-                absent,
-                node.id,
-            )
-            found.append(
-                SelfConformViolation(
-                    rule=SYS_INTERFACE_CONFORMANCE,
-                    node=node.id,
-                    detail=(
-                        f"interface= declares {absent!r} but no other node "
-                        "imports it by name"
-                    ),
-                    capability=absent,
-                )
-            )
-    return found
-
-
-# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150  # noqa: E501
+# T-1870: SYS104 (`_interface_conformance_violations`, T-0668) used to
+# live here -- deleted along with its writer (`frob.strata.
+# _sync_interface`, T-1150) per an explicit owner directive that no code
+# path may auto-update declared public-symbol surface. It required a
+# node's declared `interface=` set to EXACTLY equal its measured real
+# public surface (both directions); `_node_real_public_surface`,
+# `_cross_node_referenced_symbols`, and `_INTERFACE_PREFIX` (all still
+# defined in this module) survive because SYS106 and SYS108 also depend
+# on them -- only the SYS104 check function and its call site are gone.
+# frob:doc docs/strata/surface.md#compact-interface-attrs-t-1198
 # frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_duplicate_symbol_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_no_duplicates_silent  # noqa: E501
 def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViolation]:
@@ -1807,21 +1757,25 @@ def _unmodeled_violations(
 # T-1113: CHK-GATE-SYS104/105/106 registry entries added alongside the
 # SYS104 opt-in-to-mandatory flip, mirroring the CHK-GATE-SYS103
 # precedent above.
-# frob:enforces CHK-GATE-SYS104
 # frob:enforces CHK-GATE-SYS105
 # frob:enforces CHK-GATE-SYS106
 # T-1451: CHK-GATE-SYS107 registry entry added alongside the via-less-
 # may-on-a-large-node advisory (_via_less_large_node_violations below),
-# mirroring the CHK-GATE-SYS104/105/106 precedent above.
+# mirroring the CHK-GATE-SYS105/106 precedent above.
 # frob:enforces CHK-GATE-SYS107
 # frob:enforces CHK-SUBSYS-STRATA
 # T-0672: SLH-SYS-EVA-* edges bind this function directly to the
 # structural-linter-adversarial-hardening.md denominator rows T-0668/
 # T-0669/T-0670 close (docs/design/registry/arch-checks.yaml's
-# `handled_by:SYS100`/`SYS104`/`SYS105`/`SYS106` dispositions).
+# `handled_by:SYS100`/`SYS105`/`SYS106` dispositions). T-1870: the
+# CHK-GATE-SYS104 registry entry and the SLH-SYS-EVA-03-UNDECLARED-
+# PUBLIC-SURFACE `frob:enforces` edge that used to sit here are both
+# removed -- SYS104 (and its writer) are deleted, per an explicit owner
+# directive that no code path may auto-update declared public-symbol
+# surface; SLH-SYS-EVA-03 is re-dispositioned `out_of_scope:reasoned-
+# deferral` in arch-checks.yaml pending T-1629.
 # frob:enforces SLH-SYS-EVA-01-UNMODELED-MODULE
 # frob:enforces SLH-SYS-EVA-02-UNDER-DECLARED-CAPABILITY
-# frob:enforces SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE
 # frob:enforces SLH-SYS-EVA-04-PURPOSE-DRIFT
 # frob:enforces SLH-SYS-EVA-05-BINDING-LAUNDERING
 def check_self_conformance(
@@ -1870,14 +1824,17 @@ def check_self_conformance(
     return Ok(_finalize_self_conform_report(applied, root))
 
 
-#: SYS104/SYS105/SYS106 -- the conformance-obligation waiver families
-#: T-0671's staleness gate applies to (module docstring's T-0671
-#: section). SYS100-103 are UNCHANGED: their own bounded-escape-hatch
-#: treatment is out of this ticket's scope (T-0341's acceptance
-#: criterion [4] names "interface/purpose/binding waivers" specifically,
-#: the three conformance checks T-0668/T-0669/T-0670 just built).
+#: SYS105/SYS106 -- the conformance-obligation waiver families T-0671's
+#: staleness gate applies to (module docstring's T-0671 section).
+#: SYS100-103 are UNCHANGED: their own bounded-escape-hatch treatment is
+#: out of this ticket's scope (T-0341's acceptance criterion [4] names
+#: "interface/purpose/binding waivers" specifically, the conformance
+#: checks T-0668/T-0669/T-0670 built). T-1870: SYS104 (interface
+#: conformance) used to join this set for the identical reason; deleted
+#: along with the rule itself, per an explicit owner directive that no
+#: code path may auto-update declared public-symbol surface.
 _CONFORMANCE_WAIVER_RULES: frozenset[str] = frozenset(
-    {SYS_INTERFACE_CONFORMANCE, SYS_PURPOSE_CONTRACT, SYS_BINDING_TOTALITY}
+    {SYS_PURPOSE_CONTRACT, SYS_BINDING_TOTALITY}
 )
 
 
@@ -2049,9 +2006,6 @@ def _collect_sys_violations(
     violations.extend(
         _coverage_totality_violations(capability_binding, root, capability_files)
     )
-    violations.extend(
-        _interface_conformance_violations(model, capability_binding, root)
-    )
     violations.extend(_duplicate_interface_violations(model))
     violations.extend(_purpose_contract_violations(model, _all_kinds_view(raw_by_node)))
     violations.extend(_binding_totality_violations(model, capability_binding, root))
@@ -2076,7 +2030,6 @@ def _apply_sys_waivers(model: KernelModel, violations: list[SelfConformViolation
             SYS_STALE_DESIGN,
             SYS_UNMODELED_CODE,
             SYS_COVERAGE_TOTALITY,
-            SYS_INTERFACE_CONFORMANCE,
             SYS_PURPOSE_CONTRACT,
             SYS_BINDING_TOTALITY,
         )
@@ -2143,7 +2096,6 @@ def _fold_waived_violations(applied) -> tuple[SelfConformViolation, ...]:  # noq
 __all__ = [
     "SYS_BINDING_TOTALITY",
     "SYS_COVERAGE_TOTALITY",
-    "SYS_INTERFACE_CONFORMANCE",
     "SYS_PURPOSE_CONTRACT",
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",

@@ -886,12 +886,15 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS101",
         "SYS102",
         "SYS103",
-        # T-0668 (post-merge, T-1081): SYS104/105/106 (exact interface-
-        # conformance -- src/frob/strata/_selfconform.py) landed on main
-        # after this ticket's own _waive.py split diverged; picked up here
-        # via the same "generated_gate_rule_ids reports it, paste it in"
-        # discipline this literal's own comment documents.
-        "SYS104",
+        # T-0668 (post-merge, T-1081): SYS105/106 (purpose contract /
+        # binding totality -- src/frob/strata/_selfconform.py) landed on
+        # main after this ticket's own _waive.py split diverged; picked
+        # up here via the same "generated_gate_rule_ids reports it, paste
+        # it in" discipline this literal's own comment documents. T-1870:
+        # SYS104 (exact interface conformance) used to join this pair --
+        # deleted along with its writer, per an explicit owner directive
+        # that no code path may auto-update declared public-symbol
+        # surface.
         "SYS105",
         "SYS106",
         # T-1451: SYS107 via-less-may-on-a-large-node advisory

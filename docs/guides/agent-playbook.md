@@ -43,15 +43,22 @@ WHY and the recovery recipes.
    `ticket start` refuses on a lease collision, skip to the next series
    item and retry later; report anything still blocked -- never wait idle.
 5. `uv run frob ticket land` (T-1175) now absorbs `frob fmt` on the
-   worktree, `frob sys sync-interface` (writes the fix, not `--check`),
-   and the T-1138 Tier-A deterministic auto-fix handlers automatically,
-   BEFORE its own merge -- any file one of these three rewrites becomes
-   an ordinary uncommitted change, swept into `land`'s existing
-   pre-merge wip-commit like anything else. You do not need to run any
-   of the three by hand before landing any more; still worth running
-   `uv run frob fmt --check`/`uv run frob sys sync-interface --check`
-   mid-ticket if you want to see drift EARLY rather than wait for land
-   to fix it silently.
+   worktree and the T-1138 Tier-A deterministic auto-fix handlers
+   automatically, BEFORE its own merge -- any file either of these two
+   rewrites becomes an ordinary uncommitted change, swept into `land`'s
+   existing pre-merge wip-commit like anything else. You do not need to
+   run either by hand before landing any more; still worth running `uv
+   run frob fmt --check` mid-ticket if you want to see drift EARLY
+   rather than wait for land to fix it silently. T-1870: `frob sys
+   sync-interface` used to be a third absorbed step here (auto-writing
+   `interface=` drift into `design/frob.strata` on every land) --
+   deleted per an explicit owner directive that no code path may
+   auto-update declared public-symbol surface. `land` still refuses
+   synchronously (`_assert_design_loads_pre_land`) if `design/frob.
+   strata` fails to PARSE at all (T-1796's own incident: a dropped quote
+   broke strata repo-wide and survived three lands undetected) -- that
+   guard writes nothing and is not an auto-fix, so it is not part of
+   this absorption list.
 6. Evidence: pytest node ids in `file::Class::method` form, bound to
    acceptance indices via `--accepts N` (sec 5). Every `frob:tests` edge
    uses the dotted `Class.method` form, never pytest `::` form. New public

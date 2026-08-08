@@ -131,23 +131,32 @@ def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
 def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
     """`frob ticket land`'s T-1175 absorption step: run `frob fmt`
-    (directive canonicalization), `frob sys sync-interface` (interface=
-    drift), and the T-1138 Tier-A deterministic auto-fix handlers against
-    `worktree`, BEFORE `land()`'s own merge/wip-commit runs. Any file one
-    of these three rewrites becomes an ordinary uncommitted change in
-    `worktree`, picked up by `land()`'s existing `_do_wip_commit` step
-    exactly like a change the agent typed by hand -- no new commit path,
-    no new subsystem, per the T-1175 absorb-not-add directive. Every step
-    here is IN-PROCESS (no `frob fmt`/`frob sys sync-interface` subprocess
-    spawn) -- `format_paths`/`sync_interface_report`/`apply_sync_
-    interface`/`apply_tier_a_fixes` are the exact functions those CLI
-    commands themselves call, reused directly. Best-effort: any one step's
-    own failure (a design root that does not resolve, an unloadable
-    queue) is logged and skipped rather than refusing the land -- these
-    are auto-fix conveniences, not a land precondition."""
+    (directive canonicalization) and the T-1138 Tier-A deterministic
+    auto-fix handlers against `worktree`, BEFORE `land()`'s own merge/
+    wip-commit runs. Any file either of these two rewrites becomes an
+    ordinary uncommitted change in `worktree`, picked up by `land()`'s
+    existing `_do_wip_commit` step exactly like a change the agent typed
+    by hand -- no new commit path, no new subsystem, per the T-1175
+    absorb-not-add directive. Every step here is IN-PROCESS (no `frob
+    fmt` subprocess spawn) -- `format_paths`/`apply_tier_a_fixes` are the
+    exact functions those CLI commands themselves call, reused directly.
+    Best-effort: either step's own failure (an unloadable queue) is
+    logged and skipped rather than refusing the land -- these are
+    auto-fix conveniences, not a land precondition.
+
+    T-1870: this used to also run `frob sys sync-interface` (interface=
+    drift auto-write) as a third absorbed step -- deleted along with the
+    rest of that machinery, per an explicit owner directive that no code
+    path may auto-update declared public-symbol surface. What replaces
+    it is NOT an auto-fix: `_assert_design_loads_pre_land`, called
+    separately below (not part of this best-effort trio -- it can refuse
+    the land outright), keeps the ONE property from the old step that
+    protects OTHER agents rather than just this change (T-1686's
+    damages-others rule for what stays synchronous): that `design/
+    frob.strata` still PARSES before this land can commit on top of it."""
     touched_paths = _land_touched_paths(worktree, ticket_id)
     _fmt_pre_land_step(worktree, ticket_id, touched_paths)
-    _sync_interface_pre_land_step(worktree, ticket_id)
+    _assert_design_loads_pre_land(worktree, ticket_id)
     _tier_a_pre_land_step(worktree, ticket_id, touched_paths)
 
 
@@ -188,52 +197,61 @@ def _fmt_pre_land_step(
 
 # frob:ticket T-1175
 # frob:ticket T-1796
-def _sync_interface_pre_land_step(worktree: Path, ticket_id: str) -> None:
-    """The sys sync-interface half of `_absorb_pre_land_fixes` -- writes
-    interface= drift fixes into `worktree`'s design root when one exists.
+# frob:ticket T-1870
+def _assert_design_loads_pre_land(worktree: Path, ticket_id: str) -> None:
+    """Refuse the land (`sys.exit(1)`) if `worktree`'s design root exists
+    but fails to PARSE/ELABORATE. Writes nothing, ever -- this is a
+    read-only guard, not an auto-fix.
 
-    T-1796: `sync_interface_report`'s ONLY `Err` path is a design file
-    that failed to LOAD (`load_design_ids(...).errors` non-empty --
-    confirmed by reading `sync_interface_report`'s own body: an empty/
-    missing `design/` tree returns `Ok(SyncInterfaceReport(files=()))`,
-    never an `Err`), so an `Err` here always means a genuinely corrupted
-    `.strata` file already committed to the tree -- never a benign "no
-    design root" case that would make refusing overzealous. Before
-    T-1796 this only logged a WARNING and let the land proceed: the exact
-    gap that let a single dropped quote in `design/frob.strata` break
-    `strata` parsing repo-wide and survive THREE separate lands
-    undetected, because the one gate that would have caught it (SYS004)
-    only fires on an explicit `frob check --only sys`, and nothing in the
-    land path forced that invocation. `frob ticket land` is the one
-    process that mutates `design/**` on every run -- it must never accept
-    a commit on top of a design file it cannot even parse, so this now
-    refuses (`sys.exit(1)`) instead of degrading to a WARNING."""
-    from frob.strata._sync_interface import (
-        apply_sync_interface,
-        sync_interface_report,
-    )
+    T-1870: this used to be bundled into a step (formerly named
+    `_sync_interface_pre_land_step`) that ALSO auto-wrote `interface=`
+    drift into `design/frob.strata` on every land. That write half is
+    deleted per an explicit owner directive that no code path may
+    auto-update declared public-symbol surface -- but this load-
+    validation half is kept, deliberately, extracted rather than deleted
+    as collateral damage of removing the unrelated write path, because it
+    answers a DIFFERENT question with a DIFFERENT reason to stay
+    synchronous.
 
-    if (worktree / "design").is_dir():
-        sync_result = sync_interface_report(worktree, "design")
-        if sync_result.is_err:
-            _log.error(
-                "ticket land: %s refused -- design/**  failed to load (%s); "
-                "a pre-existing corrupt .strata file cannot be tolerated by "
-                "the process that mutates it on every land -- fix the "
-                "design file (see `frob check --only sys` for the exact "
-                "parse error) before retrying `frob ticket land %s`",
-                ticket_id,
-                sync_result.danger_err,
-                ticket_id,
-            )
-            sys.exit(1)
-        elif sync_result.danger_ok.has_drift:
-            written = apply_sync_interface(worktree, sync_result.danger_ok)
-            _log.info(
-                "ticket land: %s pre-land sys sync-interface wrote %d file(s)",
-                ticket_id,
-                len(written),
-            )
+    WHY THIS STAYS ON THE LAND CRITICAL PATH (T-1686's rule: a check
+    must be synchronous if and only if its failure damages someone OTHER
+    than the change's own author -- the same rule that keeps ledger
+    integrity and LAND-PROOF verification synchronous in every profile,
+    forever, while coverage floors and doc drift may defer). A `design/
+    frob.strata` that does not parse breaks `strata` -- and therefore
+    every gate built on it -- repo-wide, for every OTHER agent, not just
+    this land's own author. `frob ticket land` is the one process that
+    mutates `design/**` on nearly every run, so it is the one place a
+    parse failure can be caught before it ever reaches another agent's
+    checkout. T-1796's own incident is the proof this matters: a dropped
+    quote in `design/frob.strata` broke strata parsing repo-wide and
+    SURVIVED THREE SEPARATE LANDS undetected, because SYS004 (the gate
+    that would have caught it) only fires on an explicit `frob check
+    --only sys`, and nothing else in the land path forced that
+    invocation. "SYS004 catches it on the next `frob check`" is exactly
+    the reasoning that let it through three times -- a guard that only
+    fires when someone remembers to ask is not a guard. DO NOT delete
+    this function as leftover plumbing from the removed `sync-interface`
+    feature; it protects a different, still-live incident class."""
+    from frob.strata._design_load import load_design_ids
+
+    if not (worktree / "design").is_dir():
+        return
+    ids = load_design_ids(worktree, "design")
+    if ids.errors:
+        first = ids.errors[0]
+        _log.error(
+            "ticket land: %s refused -- design/** failed to load (%s: %s); "
+            "a pre-existing corrupt .strata file cannot be tolerated by "
+            "the process that mutates it on every land -- fix the "
+            "design file (see `frob check --only sys` for the exact "
+            "parse error) before retrying `frob ticket land %s`",
+            ticket_id,
+            first.path,
+            first.error,
+            ticket_id,
+        )
+        sys.exit(1)
 
 
 # frob:ticket T-1578

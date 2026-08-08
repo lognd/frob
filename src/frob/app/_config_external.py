@@ -372,8 +372,6 @@ _BOOL_FLAGS = (
     "perf_smells",
     "perf_sampler",
     "sys_apply",
-    # frob:ticket T-1150
-    "sys_check",
     "ticket_dry_run",
     # frob:ticket T-1561
     "ticket_evidence_archived",

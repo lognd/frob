@@ -1,15 +1,24 @@
 """`frob.strata._sync_may` -- SYS100-core auto-fix writer (T-1531).
 
-Mirrors `_sync_interface.py`'s own strategy (measure via the SAME check
-the gate itself runs, edit `.strata` text in place, never a full
-re-serialize) for the SYS100 sibling of that module's SYS104 problem: once
-SYS100's core case (net/fs-write/exec) joins per-FILE against a node's
-declared `may "<kind>" via [...]` grants (`_effects.py::
-_declared_kinds_for_file`, T-1440), adding a new file under an
-already-`code=`-bound node that exercises an already-granted capability
-kind needs a `may ... via` edit every single time -- the exact hand-patch
-`_sync_interface.py`'s own module docstring already documents main going
-red over for `interface=`.
+Measures via the SAME check the gate itself runs, edits `.strata` text in
+place, never a full re-serialize -- once SYS100's core case (net/fs-write/
+exec) joins per-FILE against a node's declared `may "<kind>" via [...]`
+grants (`_effects.py::_declared_kinds_for_file`, T-1440), adding a new
+file under an already-`code=`-bound node that exercises an
+already-granted capability kind needs a `may ... via` edit every single
+time -- the exact hand-patch this module exists to automate away instead
+of redding main.
+
+T-1870: `_NODE_HEADER_RE`/`_node_body_span` below used to live in the
+sibling `_sync_interface.py` module (the SYS104 `interface=` auto-fix
+writer, deleted by T-1870 per an explicit owner directive that no code
+path may auto-update declared public-symbol surface -- `may=` capability
+sync is DIFFERENT, deliberate, live work under T-1623/T-1628, and stays).
+This module was the only OTHER importer of those two generic ".strata
+text" helpers (confirmed by search before extracting), so they are
+inlined here as this module's own private helpers rather than either
+deleted (losing this module's own working parser) or given a new
+single-importer shared module.
 
 T-1531 handled only SYS100's CORE case (`check_capability_conformance`'s
 THREAT004 delegate, which carries a real `file`/`kind`/`component` per
@@ -70,10 +79,38 @@ from ._selfconform import (
     _observed_extended_kinds_by_node,
     _sorted_capability_files,
 )
-from ._sync_interface import _NODE_HEADER_RE, _node_body_span
 from ._sysdoc import merge_models
 
 _log = get_logger(__name__)
+
+#: One node OR store header line, e.g. `node cli : trusted {` or
+#: `store tickets_ledger : trusted {` -- captures the id so a `.strata`
+#: file's raw text can be searched WITHOUT re-parsing (that would lose
+#: comments); the parser/elaborator is only used to compute the real/
+#: declared surface, never to regenerate this file's text. `store` blocks
+#: are matched identically to `node` blocks for the same reason the
+#: former `_sync_interface.py` matched them identically (T-1425): SYS100
+#: treats a store as a first-class subject the same as any node.
+_NODE_HEADER_RE = re.compile(
+    r"^(?P<indent>[ \t]*)(?:node|store)\s+(?P<id>\S+)\b[^{]*\{\s*$"
+)
+
+
+def _node_body_span(lines: list[str], header_idx: int) -> int:
+    """The line index of the `}` that closes the node body opened at
+    `lines[header_idx]` (which itself ends in `{`), brace-depth matched so a
+    nested `on crash { ... }`/`on breach { ... }`/`on deploy { ... }`
+    sub-block's own braces do not terminate the search early."""
+    depth = 1
+    for idx in range(header_idx + 1, len(lines)):
+        # frob:waive PERF002 reason="each line is a different string every iteration \
+        # -- nothing to hoist or cache; one-pass O(n) brace-depth scan, not a repeated \
+        # identical query"
+        depth += lines[idx].count("{") - lines[idx].count("}")
+        if depth == 0:
+            return idx
+    return len(lines) - 1  # malformed input: no matching close, best effort
+
 
 #: One `may "<kind>";` or `may "<kind>" via "<f1>", "<f2>";` grant line --
 #: matches both the via-less (whole-node) and via-scoped forms this module
@@ -120,8 +157,7 @@ class FileMaySyncResult:
     # frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
     @property
     def changed(self) -> bool:
-        """Whether this file's text actually differs -- mirrors
-        `FileSyncResult.changed` (`_sync_interface.py`)."""
+        """Whether this file's text actually differs from what was read."""
         return self.new_text != self.old_text
 
 
@@ -155,8 +191,7 @@ def _via_names(via_group: str | None) -> list[str]:
 # frob:ticket T-1531
 def _render_via_line(indent: str, kind: str, files: frozenset[str]) -> str:
     """Render one `may "<kind>" via "<f1>", "<f2>";` line, sorted for a
-    deterministic diff -- mirrors `_render_interface_block`'s sorting
-    convention in `_sync_interface.py`."""
+    deterministic diff."""
     quoted = ", ".join(f'"{f}"' for f in sorted(files))
     return f'{indent}may "{kind}" via {quoted};'
 
@@ -246,8 +281,8 @@ def _widen_existing_may_grants(
             continue
         have = frozenset(_via_names(m.group("via")))
         # frob:waive PERF004 reason="each kind's want/have sets are distinct small \
-        # per-grant diffs, not a repeated identical query -- same posture \
-        # _sync_interface.py's own PERF002 waiver on its brace-depth scan documents"
+        # per-grant diffs, not a repeated identical query -- same posture as this \
+        # module's own brace-depth scan below"
         added = tuple(sorted(want - have))
         if not added:
             idx += 1
@@ -374,7 +409,7 @@ def sync_may_report(
     # frob:waive WALK001 reason="design_root (e.g. design/) is a small, hand-authored \
     # .strata source subtree with no nested .git/.venv/node_modules/build/dist/target \
     # to prune -- excludes.walk_pruned would add a filter that never fires here, not \
-    # change behavior, same posture _sync_interface.py's own WALK001 waiver documents"
+    # change behavior"
     for path in sorted(design_root.rglob("*.strata")):
         text = path.read_text(encoding="utf-8")
         if "node " not in text and "store " not in text:
@@ -433,8 +468,7 @@ def _write_changed_may_files(
 def apply_sync_may(root: Path, report: SyncMayReport) -> tuple[str, ...]:
     """Write every changed `FileMaySyncResult.new_text` in `report` back to
     its file, in the same load order; returns the sorted repo-relative
-    paths actually rewritten. Mirrors `apply_sync_interface`'s own
-    write-only-what-changed contract."""
+    paths actually rewritten -- files with no drift are never touched."""
     return _write_changed_may_files(root, report.files)
 
 

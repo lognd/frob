@@ -116,7 +116,7 @@ surface analog of `frob:waive` for gate violations. `reason` is mandatory
 IN THE GRAMMAR -- a `waive` clause with no reason is a parse error, never
 a value that can exist without one. `RULE_ID` may carry a `RULE:SUBTARGET`
 sub-target (e.g. `"SYS100:fs-write"`) -- REQUIRED for multi-instance-per-
-node rule families (26 ids today: SYS100/SYS101/SYS104/SYS105/SYS200-203/
+node rule families (25 ids today: SYS100/SYS101/SYS105/SYS200-203/
 SYS205/THREAT002/THREAT003/REL200-201/REL220-222/REL270-272/REL370-372/
 REL380-383; see `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`) and rejected
 at elaborate time if missing. See `docs/strata/waive.md` for the matching/staleness algorithm,
@@ -642,129 +642,46 @@ consistent with third-party/stdlib specifiers.
   attaches to a synthetic node id in `bind_code`'s output.
 
 <a id="directives-t-0080"></a>
-## Interface conformance mechanical upkeep (SYS104, T-1150)
-
-<!-- frob:ticket T-1150 -->
-<!-- frob:describes src/frob/strata/_sync_interface.py::sync_interface_report -->
-<!-- frob:describes src/frob/strata/_sync_interface.py::apply_sync_interface -->
-<!-- frob:describes src/frob/strata/_sync_interface.py::SyncInterfaceReport -->
-<!-- frob:describes src/frob/strata/_sync_interface.py::FileSyncResult -->
-<!-- frob:describes src/frob/strata/_sync_interface.py::NodeInterfaceDiff -->
-
-SYS104 (`_selfconform.py`'s "Key construct semantics" above) went
-MANDATORY at T-1113: every node whose bound code has a non-empty real
-public surface is evaluated whether or not it has declared any
-`interface=` attr yet. This applies to `store` blocks too (a store is a
-node, docs above) -- `sync_interface_report`/`apply_sync_interface`
-match `store <id> { ... }` headers identically to `node <id> { ... }`
-headers (T-1425 fixed a gap where only `node` headers were matched, so a
-store's own `interface=` drift was silently invisible to both the report
-and the writer even though SYS104 itself already flagged it). (T-1111 touched `sync_interface_report`'s body
-only to add a `frob:waive WALK001` comment on its `design_root.rglob`
-call -- no behavior change; noted here to satisfy this section's
-affects()-closure obligation.) A mandatory check whose satisfying state
-(`design/frob.strata`'s own `interface=` attrs) is hand-maintained is a
-red-main generator, same shape as DEPR005's line-keyed baseline (T-1052)
--- `design/frob.strata` went red twice within hours of T-1113 landing
-(a missing `tickets_gate` symbol, then a missing `net.connect` capability
-from T-1126's daemon-lease socket), both hand-fixed by the coordinator
-directly in the `.strata` file.
-
-`frob sys sync-interface` (`docs/commands/sys.md`) closes that gap: it
-reuses the SAME measurement SYS104 itself computes
-(`_selfconform.py::_node_real_public_surface`) and mechanically rewrites
-every drifted node's `interface=` block in place -- additions AND
-removals, sorted, every other line (including every comment) copied
-through untouched. `sync_interface_report` is the pure compute half
-(never writes); `apply_sync_interface` is the only function in the module
-with a write side effect. `--check` (the CLI layer,
-`app/sys_runner.py::_run_sync_interface`) calls only the former and exits
-nonzero on any drift, never writing -- suitable as a pre-commit/CI gate
-hint alongside SYS104 itself.
-
-T-1137/T-1138 Tier-A auto-fix registration (this ticket's second
-acceptance criterion): DISCLOSED DEFERRAL. T-1138 (the first Tier-A
-fix-engine handler batch) was still `queued` -- with no handler-table
-surface yet to register against -- as of this ticket's own land; wiring
-SYS104 drift as a Tier-A auto-fix belongs to whichever of T-1137's
-children actually ships that plumbing. The pure-compute/write split above
-is deliberately shaped so a future Tier-A handler can call
-`sync_interface_report`/`apply_sync_interface` directly with no rework
-once that surface exists.
-
+<a id="interface-conformance-mechanical-upkeep-sys104-t-1150"></a>
 <a id="compact-interface-attrs-t-1198"></a>
-### Compact `interface=[...]` attrs (T-1198)
+## Compact `interface=[...]` attrs (T-1198)
 
 <!-- frob:ticket T-1198 -->
-<!-- frob:describes src/frob/strata/_sync_interface.py::NAMES_PER_LINE -->
 
-**Architecture decision (coordinated with T-1196 above):** eliminate the
-`attr interface=<symbol>;`-one-line-per-symbol boilerplate SYS104's
-mechanical upkeep (previous section) produced -- 4236 of `design/
-frob.strata`'s pre-T-1198 5588 lines -- via a GRAMMAR SHORTHAND
-(`strata-core`'s `parse_attrval`, `attr interface=[Foo, Bar, Baz];`)
-rather than a generated sidecar fragment. Both options were on the
-table (the sibling ticket's own body); the grammar shorthand won because
-it needed no NEW file for `_multifile`'s merge to fold in (T-1196's own
-merge mechanism would have handled a sidecar fragment identically well,
-had that path been chosen) and, more importantly, because it is PURE
-PARSER SUGAR: the bracket-list form expands, at parse time, into the
-exact same `"interface=Foo"`/`"interface=Bar"`/`"interface=Baz"` attr
-strings the one-line-per-symbol form always produced, so `_elaborate.py`,
-`_selfconform.py`'s SYS104 measurement, and every gate reading
-`Node.attrs` needed ZERO changes -- the elaborated model is byte-for-byte
-identical either way. A generated-sidecar-fragment design would have
-needed the SAME zero downstream changes for the READ side, but would
-still have needed a real design decision about whether the main file's
-node bodies keep a placeholder for the generated attrs or split node
-declarations across two files entirely (a materially bigger AST/grammar
-change than adding one bracket production) -- the grammar shorthand sidesteps
-that question entirely by staying inside one node's own `{ ... }` body.
+**Grammar feature, permanent, independent of who writes `interface=`.**
+`design/frob.strata` (and any `.strata` file) may declare a node's
+`interface=` surface as a bracket list -- `attr interface=[Foo, Bar,
+Baz];` -- instead of one `attr interface=<symbol>;` line per symbol.
+This is PURE PARSER SUGAR: the bracket-list form expands, AT PARSE TIME,
+into the exact same `"interface=Foo"`/`"interface=Bar"`/`"interface=Baz"`
+attr strings the one-line-per-symbol form always produced, so
+`_elaborate.py`, `_selfconform.py`'s SYS104/SYS108 measurements, and
+every gate reading `Node.attrs` need ZERO changes to read either form --
+the elaborated model is byte-for-byte identical either way, whether a
+human hand-writes the bracket form or (historically, T-1150, deleted by
+T-1870) a generator wrote it.
 
 Mechanism:
 
-- `strata-core/src/parse/lexer.rs` gained `[`/`]` as lexed symbols (they
-  were not tokenized at all before this ticket).
+- `strata-core/src/parse/lexer.rs` has `[`/`]` as lexed symbols.
 - `strata-core/src/parse/grammar_core.rs::parse_attrval` accepts `KEY=
   [V1, V2, ...]` (trailing comma before `]` optional) alongside the
-  existing `KEY=V` single-value form, expanding a bracket list into N
-  `"KEY=V"` strings at parse time -- the four callers (`grammar_node.rs`,
-  `grammar_flow.rs`, `grammar_infra.rs` x2) all already `extend`ed a
+  plain `KEY=V` single-value form, expanding a bracket list into N
+  `"KEY=V"` strings at parse time -- every caller (`grammar_node.rs`,
+  `grammar_flow.rs`, `grammar_infra.rs` x2) already `extend`ed a
   `Vec<String>` from a single-attr push, so widening `parse_attrval`'s
   return type from one `String` to `Vec<String>` was the only call-site
   change needed anywhere in the Rust grammar.
-- `frob.strata._sync_interface`'s writer (`_render_interface_block`) now
-  emits the compact form -- `NAMES_PER_LINE` (6) symbol names per wrapped
-  line purely for readability, since the grammar does not care about
-  newlines inside `[...]` -- instead of one `attr interface=X;` line per
-  symbol. The reader (`_find_interface_span`) recognizes BOTH the compact
-  block it now writes and the legacy one-line-per-symbol form (backward
-  compatibility for a file not yet migrated), and always WRITES the
-  compact form -- including a one-time reformat of an already-correct
-  legacy declaration whose symbol SET already matches real, so a single
-  `frob sys sync-interface` run migrates an entire repo off the old form
-  without needing a separate one-shot migration script.
 
-Measured: migrating this repo's own `design/frob.strata` via `frob sys
-sync-interface` took it from 5588 lines (pre-T-1198, including 8 lines
-T-1196 itself added) to 2207 lines -- a ~60% reduction -- confirmed
-idempotent immediately after (`frob sys sync-interface --check` reports
-zero drift).
-
-Disclosed cut: this ticket's `frob check --only sys` acceptance criterion
-is satisfied (0 SYS-family errors before and after the migration, verified
-directly) but no dedicated Rust unit test was added for `parse_attrval`'s
-bracket-list branch -- `cargo test` in this worktree hit an unrelated
-environment defect (`pyo3-build-config` refusing to build against the
-worktree's Python 3.10 while the crate targets `abi3-py311`, and a
-separately broken `LD_LIBRARY_PATH` for `libpython3.11.so`), pre-existing
-and orthogonal to this change. Coverage instead comes from the Python
-side, which exercises the new grammar production through the real FFI
-boundary end-to-end (`tests/unit/strata/test_sync_interface.py`'s
-migration test parses+elaborates+round-trips a `attr interface=[...]`
-fixture) -- a real gap for anyone extending `parse_attrval` further
-without an in-worktree working `cargo test`, but not a gap in THIS
-change's own behavior coverage.
+T-1870 (owner directive: no code path may auto-update declared
+public-symbol surface) deleted the WRITER that used to emit and reformat
+this compact form on a human's behalf (`frob sys sync-interface`,
+`frob.strata._sync_interface`) -- `interface=` is now purely hand-
+declared, in whichever of the two equivalent forms a human chooses to
+write. The grammar shorthand itself is unaffected: it remains the
+recommended form for a node with more than a handful of declared
+symbols, exactly as much a permanent part of the `.strata` surface
+grammar as the single-value `KEY=V` form it complements.
 
 ## Multi-file design load: cross-file references (T-1196)
 

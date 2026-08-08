@@ -160,18 +160,19 @@ class Subcommand(str, enum.Enum):
 
 
 # frob:doc docs/modules/app.md#config
-# frob:waive AFFECT001 reason="T-1150 added one new bool field (sys_check, frob sys \
-# sync-interface --check); the established convention here IS a short per-field \
-# paragraph (see the T-1004/T-1029/T-1057/T-1069/T-1130 precedents just above this \
-# attr), but docs/modules/app.md is not in T-1150's declared scope and adding it \
-# opened a scope-closure cascade over dozens of unrelated app/ symbols (SCOPE002, \
+# frob:waive AFFECT001 reason="several prior tickets each added one new bool field to \
+# this class; the established convention here IS a short per-field paragraph (see the \
+# T-1004/T-1029/T-1057/T-1069/T-1130 precedents just above this attr), but \
+# docs/modules/app.md is not in every one of those tickets' declared scope and adding \
+# it opened a scope-closure cascade over dozens of unrelated app/ symbols (SCOPE002, \
 # verified) -- disclosed deferral, not a convention change; a follow-up should add the \
-# T-1150 paragraph under its own scoped ticket"
+# missing per-field paragraphs under their own scoped ticket. T-1870 removed sys_check \
+# (frob sys sync-interface --check, the field T-1150 originally added this waiver for) \
+# -- this waiver stays live for the other tickets still listed below"
 # frob:ticket T-0030
 # frob:ticket T-0085
 # frob:ticket T-0115
 # frob:ticket T-0877
-# frob:ticket T-1150
 # frob:ticket T-1525
 # frob:ticket T-1567
 # frob:ticket T-1568
@@ -835,14 +836,12 @@ class AppConfig(BaseModel):
     # sys (T-0084 plan; T-0085 doc; T-0086 export; T-0115 audit;
     # check/trace/capacity/
     # threats are later phase-5 tickets, not yet landed)
-    sys_command: str | None = None  # plan|doc|export|sync-interface (more per phase 5)
+    sys_command: str | None = None  # plan|doc|export|audit (more per phase 5)
     sys_path: Path | None = None
     sys_apply: bool = False
     sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
     sys_export_format: str | None = None
     sys_export_path: Path | None = None
-    # frob:ticket T-1150
-    sys_check: bool = False  # `frob sys sync-interface --check`: report, never write
 
     # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
     # bash compiled from std.host HostManifest facts)
@@ -965,13 +964,12 @@ class AppConfig(BaseModel):
     # frob:tests tests/unit/test_app_config_from_external_t1276.py::TestFromExternal.test_bool_flag_from_the_second_copy_loop_is_set_true kind="unit"  # noqa: E501
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
-        # frob:waive AFFECT001 reason="same T-1150 sys_check/scope-closure disclosed \
-        # deferral as this class's own AFFECT001 waiver above -- this is the \
-        # bool-field loop `sys_check` was added to, no separate rationale needed"
+        # frob:waive AFFECT001 reason="same scope-closure disclosed deferral as this \
+        # class's own AFFECT001 waiver above -- this is the bool-field loop several \
+        # prior tickets' new fields were added to, no separate rationale needed"
         # frob:ticket T-0021
         # frob:ticket T-0085
         # frob:ticket T-0030
-        # frob:ticket T-1150
         # frob:ticket T-1270
         d = _build_external_config_kwargs(args, file, Subcommand)
         return cls(**d)

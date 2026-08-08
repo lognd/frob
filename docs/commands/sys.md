@@ -1,13 +1,20 @@
 # frob sys
 
 Applications of the strata design model (`docs/strata/roadmap.md` "CLI
-surface (target)"). Five verbs today: `plan` (T-0084, obligation ->
+surface (target)"). Four verbs today: `plan` (T-0084, obligation ->
 ticket compiler), `doc` (T-0085, threat-catalog audit matrix), `export`
-(T-0086, k8s/seccomp/IAM config skeletons), `audit` (T-0115, the
-checking counterpart to `doc`), and `sync-interface` (T-1150, mechanical
-`interface=` attr upkeep). `check`/`trace`/`capacity`/`threats` are
+(T-0086, k8s/seccomp/IAM config skeletons), and `audit` (T-0115, the
+checking counterpart to `doc`). `check`/`trace`/`capacity`/`threats` are
 later phase-5 tickets not yet landed on `main` -- when they land, this
 doc and `src/frob/app/sys_runner.py` extend rather than get replaced.
+
+T-1870: `sync-interface` (T-1150, mechanical `interface=` attr
+auto-write) used to be a fifth verb here. Deleted per an explicit owner
+directive that no code path may auto-update declared public-symbol
+surface -- `interface=` is now purely hand-declared, with nothing in
+this codebase writing it. T-1629 is the follow-up that makes a node's
+declared `interface=` actually ENFORCE (flag an undeclared public
+symbol); this ticket only removed the mirror.
 <!-- frob:until T-1480 -->
 
 
@@ -303,61 +310,3 @@ file: a separate surface-grammar gap (no `.strata` source can author a
 `subject:child`-tagged flow attr today) blocks that leg specifically. See
 that test module's docstring for the full explanation.
 
-## `frob sys sync-interface`
-
-Mechanical upkeep for SYS104 (T-1113 made it mandatory: every node with a
-non-empty real public surface is now evaluated whether or not it declared
-any `interface=` attr yet, docs/strata/host.md). Before this verb existed,
-`design/frob.strata`'s `interface=<symbol>` attrs were a hand-maintained
-mirror of each node's real bound-code public surface -- a mandatory check
-with manual upkeep, which redded `main` twice within hours of T-1113
-landing (T-1150's module docstring has the incident detail). `sync-
-interface` closes that gap: it reuses the SAME measurement SYS104 itself
-computes (`_selfconform.py::_node_real_public_surface`) and turns any
-drift into a mechanical, reviewable text edit instead of a hand patch.
-
-<!-- frob:describes src/frob/app/sys_runner.py::_run_sync_interface -->
-```bash
-frob sys sync-interface            # measure, print the diff, write the fix
-frob sys sync-interface --check    # measure and report drift only; exits 1 on drift, writes nothing
-frob sys sync-interface /path/to/repo
-```
-
-Like `plan`/`doc`/`audit`, it takes a **repo root** (default `.`), not a
-design directory -- the command appends the configured design dir itself.
-
-Matches `store <id> { ... }` headers the same as `node <id> { ... }`
-headers (T-1425) -- a store is a node (docs/strata/surface.md#key-
-construct-semantics), and SYS104 already treats it as a first-class
-subject, so a design file with only `store` blocks and no bare `node`
-header is scanned and rewritten exactly like one with `node` blocks.
-
-Default mode (no `--check`) prints a per-file, per-node diff of every
-`interface=` addition/removal (`_print_sync_interface_diff`, INFO level,
-deterministic node/symbol order) and then writes the corrected text back
-to every drifted `.strata` file (`apply_sync_interface`). `--check` prints
-the same diff but never writes, and exits nonzero if any drift was found
--- this is the mode `SYS104` upkeep discipline (agent-playbook.md's "SYS104
-is mandatory") runs before every land: a `.strata` edit that changed a
-node's bound-code public surface without re-running `sync-interface` shows
-up here as drift instead of silently landing a stale `interface=` set that
-SYS104 would then fail on the next `frob sys audit`/`frob check` pass.
-
-Text-editing strategy: never a full re-serialize. Each node's contiguous
-`attr interface=<symbol>;` block is replaced in place, brace-depth matched
-so nested `on crash { ... }`/`on breach { ... }`/`on deploy { ... }`
-sub-blocks don't truncate the search early -- every comment and every
-other attr/waive/access line in the file is preserved untouched
-(`_sync_interface.py` module docstring has the full text-editing
-contract).
-
-### Public API
-
-<!-- frob:describes src/frob/strata/_sync_interface.py::sync_interface_report -->
-<!-- frob:describes src/frob/strata/_sync_interface.py::apply_sync_interface -->
-
-### CLI wiring
-
-<!-- frob:describes src/frob/app/sys_runner.py::_run_sync_interface -->
-<!-- frob:describes src/frob/app/sys_runner.py::_load_sync_interface_report -->
-<!-- frob:describes src/frob/app/sys_runner.py::_finish_sync_interface -->

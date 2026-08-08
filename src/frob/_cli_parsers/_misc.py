@@ -557,7 +557,7 @@ def _add_serve_parser(sub) -> None:
 # frob:ticket T-0084
 # frob:ticket T-0085
 # frob:ticket T-0086
-# frob:ticket T-1150
+# frob:ticket T-1870
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as this repo's \
@@ -580,10 +580,8 @@ def _add_sys_parser(sub) -> None:
     sys_sub = sys_p.add_subparsers(dest="sys_command")
     _add_sys_plan_and_export_parsers(sys_sub)
     _add_sys_doc_and_audit_parsers(sys_sub)
-    _add_sys_sync_interface_parser(sys_sub)
 
 
-# frob:ticket T-1150
 _SYS_EPILOG = (
     "examples:\n"
     "  frob sys plan                    plan a ticket tree (dry-run)\n"
@@ -592,8 +590,6 @@ _SYS_EPILOG = (
     "  frob sys doc                     render the threat-catalog audit matrix\n"
     "  frob sys audit                   check per-family exhaustiveness\n"
     "  frob sys export --format seccomp design/frob.strata\n"
-    "  frob sys sync-interface          write measured interface= attrs\n"
-    "  frob sys sync-interface --check  report interface= drift, exit nonzero\n"
     "\n"
     "convention: for plan/doc/audit, <path> (default '.') is the REPO\n"
     "ROOT -- the command appends the configured design dir itself\n"
@@ -654,25 +650,6 @@ def _add_sys_doc_and_audit_parsers(sys_sub) -> None:
         "nonzero exit + named gaps on any failure (T-0115)",
     )
     sys_audit_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
-
-
-# frob:ticket T-1150
-def _add_sys_sync_interface_parser(sys_sub) -> None:
-    """Register `frob sys sync-interface` (T-1150): mechanically measures
-    every node's bound-code public surface and rewrites `design/frob.strata`'s
-    (or another loaded `.strata` file's) `interface=<symbol>` attrs to match,
-    printing a reviewable diff; `--check` reports drift without writing."""
-    sys_sync_p = sys_sub.add_parser(
-        "sync-interface",
-        help="measure and rewrite interface= attrs to match real code (T-1150)",
-    )
-    sys_sync_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
-    sys_sync_p.add_argument(
-        "--check",
-        dest="sys_check",
-        action="store_true",
-        help="report interface= drift without writing (nonzero exit if any)",
-    )
 
 
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \

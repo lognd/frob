@@ -6,15 +6,26 @@ residue burndown): `_fix_engine_text` keeps the LINE-scoped handlers
 source line a `Violation` already names; every handler in THIS module
 instead resolves its fix by SYNCING one generated/derived artifact back
 to its source of truth -- REG010/REL002 (registry <-> gate-rule-id and
-release notes sync), SYS104/SYS100 (`.strata` text rewrites via the same
-writers `frob sys sync-interface` already uses), COV002 (insert a
-`frob:ticket` directive above an unbound symbol), and WAIVE004 (remove a
-waiver already proven dead by a fresh gate run). `TIER_A_HANDLERS` in
+release notes sync), SYS100 (`.strata` `may=` grant text rewrites via
+`frob.strata._sync_may`'s writer), COV002 (insert a `frob:ticket`
+directive above an unbound symbol), and WAIVE004 (remove a waiver
+already proven dead by a fresh gate run). `TIER_A_HANDLERS` in
 `_fix_engine` imports every public `fix_*` symbol from both this module
 and `_fix_engine_text` and dispatches through the same uniform `(root,
 snapshot, queue, ticket_id) -> list[FixApplied]` call shape every handler
 uses -- this split changes no behavior, only which file a given handler's
 body lives in.
+
+T-1870: this module used to also carry `fix_sys104_interface_union`, the
+Tier-A auto-fix for SYS104 (a node's declared `interface=` attrs drifting
+from its measured real public surface). Deleted along with the rest of
+the `frob sys sync-interface` machinery per an explicit owner directive
+("we shouldn't auto-update the public symbols") -- `interface=` is no
+longer auto-written by anything, anywhere, including at land time. SYS108
+(a node's `interface=` attrs declaring the same symbol twice) is a
+DIFFERENT rule -- a well-formedness check on the declared value, not a
+mirror-of-code check -- and was never auto-fixed by this module in the
+first place; it is unaffected by this cut.
 """
 
 from __future__ import annotations
@@ -140,66 +151,6 @@ def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixAppl
                 detail=f"added skeleton entry for {version}",
             )
         )
-    return applied
-
-
-# ---------------------------------------------------------------------------
-# SYS104 (T-1531): a node's declared `interface=[...]` surface drifted from
-# its real bound-code public surface -- `frob sys sync-interface` (T-1150)
-# already names its own remedy verbatim; this handler wires that existing
-# writer into the generic Tier-A table so both sweep paths (the pre-land
-# absorption step already calls it separately, `_sync_interface_pre_land_
-# step`, but the POST-land unscoped sweep never did) get the same fix.
-# ---------------------------------------------------------------------------
-
-
-# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys104_interface_union_applies_via_apply_tier_a_fixes  # noqa: E501
-# frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_sys104_no_design_dir_is_a_no_op
-# frob:ticket T-1531
-def fix_sys104_interface_union(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
-    """Tier-A fix (T-1531): SYS104 already names its own remedy verbatim
-    (`frob sys sync-interface`) -- reuses `sync_interface_report`/
-    `apply_sync_interface` (`frob.strata._sync_interface`, T-1150)
-    directly, the exact functions that CLI verb itself calls, so no
-    detection logic is duplicated here. A design root that does not
-    resolve (no `design/` dir, a parse/elaborate failure) is logged and
-    treated as no fixes applied, matching every other handler's
-    best-effort posture."""
-    from frob.strata._sync_interface import apply_sync_interface, sync_interface_report
-
-    del snapshot  # signature uniformity only, this handler reads the design tree itself
-    if not (root / "design").is_dir():
-        return []
-    report = sync_interface_report(root, "design")
-    if report.is_err:
-        _log.warning(
-            "tier-a fixes: SYS104 sync-interface skipped: %s", report.danger_err
-        )
-        return []
-    result = report.danger_ok
-    if not result.has_drift:
-        return []
-    written = apply_sync_interface(root, result)
-    applied: list[FixApplied] = []
-    for file_result in result.files:
-        if file_result.path not in written:
-            continue
-        for diff in file_result.diffs:
-            detail_bits = []
-            if diff.added:
-                detail_bits.append(f"+{','.join(diff.added)}")
-            if diff.removed:
-                detail_bits.append(f"-{','.join(diff.removed)}")
-            applied.append(
-                FixApplied(
-                    rule="SYS104",
-                    file=file_result.path,
-                    line=0,
-                    detail=f"node {diff.node} interface= {' '.join(detail_bits)}",
-                )
-            )
     return applied
 
 

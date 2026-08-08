@@ -22,7 +22,6 @@ from frob._cli_parsers._misc import (
     _SYS_EPILOG,
     _add_sys_doc_and_audit_parsers,
     _add_sys_plan_and_export_parsers,
-    _add_sys_sync_interface_parser,
 )
 from frob._cli_parsers._reporting import (
     _populate_graph_actions,
@@ -57,7 +56,6 @@ def _add_design_parser(sub) -> None:
     sys_sub = sys_p.add_subparsers(dest="sys_command")
     _add_sys_plan_and_export_parsers(sys_sub)
     _add_sys_doc_and_audit_parsers(sys_sub)
-    _add_sys_sync_interface_parser(sys_sub)
 
     registry_p = design_sub.add_parser(
         "registry", help="unified design-knowledge registry (T-0407)"

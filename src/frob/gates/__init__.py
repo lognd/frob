@@ -305,7 +305,6 @@ _KNOWN_RULE_FIXABILITY: dict[str, str] = {
     "REL002": "auto",
     "SUPPRESS001": "auto",
     "SYS100": "auto",
-    "SYS104": "auto",
     "TICK002": "auto",
     "TICK006": "auto",
     "TODO001": "assisted",

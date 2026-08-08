@@ -72,6 +72,15 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 designated_repro_test: null
+acceptance:
+- text: Given SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE (docs/design/registry/arch-checks.yaml)
+    was re-dispositioned to out_of_scope:reasoned-deferral when T-1870 deleted SYS104,
+    when this ticket ships its replacement rule (the hand-declared-intent enforcement
+    check), then re-disposition SLH-SYS-EVA-03 to handled_by:<that new rule id> so
+    the deferral does not orphan -- a deferral pointing at a ticket that no longer
+    exists would be the same catalogued-but-unenforced shape this repo already paid
+    for once
+  evidence: []
 threat: null
 component: null
 anchor: false

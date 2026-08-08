@@ -11,9 +11,12 @@ already names -- FMT001 (over-long `frob:` directive comment), SUPPRESS001
 over-length line) -- using `tokenize`/`fnmatch`/`tomllib` to find a line's
 own trailing-comment boundary and this repo's ruff per-file-ignore config.
 This is a narrower, LINE-scoped surface than the derived-artifact-sync
-handler family in `frob.gates._fix_engine_sync` (REG010/REL002/SYS104/
-SYS100/COV002/WAIVE004), which resyncs a whole generated artifact rather
-than rewriting one diagnosed line. `TIER_A_HANDLERS` in `_fix_engine`
+handler family in `frob.gates._fix_engine_sync` (REG010/REL002/SYS100/
+COV002/WAIVE004; SYS104 was a sixth member of that family until T-1870
+deleted it, per an explicit owner directive that no code path may
+auto-update declared public-symbol surface), which resyncs a whole
+generated artifact rather than rewriting one diagnosed line.
+`TIER_A_HANDLERS` in `_fix_engine`
 imports every public `fix_*` symbol from both text/sync modules and
 dispatches through the same uniform `(root, snapshot, queue, ticket_id)
 -> list[FixApplied]` call shape every handler uses -- this split changes

@@ -47,7 +47,8 @@ pair it excuses).
 
 Any rule whose finding names the node it fired against: SYS100
 (undeclared interface), SYS101 (stale design), SYS102 (unmodeled code,
-`_selfconform.py`), SYS104/SYS105 (bounded conformance waivers, T-0671),
+`_selfconform.py`), SYS105 (bounded conformance waiver, T-0671; SYS104
+was a second member of this pair until T-1870 deleted the rule),
 SYS200-SYS203, SYS205 (mode-conformance, T-1061), THREAT002/THREAT003
 (`_threat.py`), LINT001-005 (`_lint.py`), PII001-004 (`_pii.py`),
 COMPLIANCE001/002 (`_compliance.py`), REL200/201, REL220-222, REL270-272,
@@ -87,9 +88,10 @@ node payments : trusted {
 }
 ```
 
-`MULTI_INSTANCE_WAIVER_FAMILIES` (`_waive.py`) names the 26 families that
-REQUIRE a sub-target: `SYS100`, `SYS101`, `SYS104`, `SYS105` (T-0671
-bounded conformance waivers), `THREAT002`, `THREAT003`, `SYS200`-`SYS203`,
+`MULTI_INSTANCE_WAIVER_FAMILIES` (`_waive.py`) names the 25 families that
+REQUIRE a sub-target: `SYS100`, `SYS101`, `SYS105` (T-0671 bounded
+conformance waiver; `SYS104` was a second member until T-1870 deleted
+the rule), `THREAT002`, `THREAT003`, `SYS200`-`SYS203`,
 `SYS205` (T-1061 mode-conformance, one finding per resource/observation
 site), and (the same per-flow reasoning, one node can originate several
 flows) `REL200`/`REL201`, `REL220`/`REL221`/`REL222`, `REL270`/`REL271`/

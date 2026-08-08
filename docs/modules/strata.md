@@ -127,38 +127,27 @@ to this repo in the future, SYS103 will correctly go non-zero on it --
 that is the detector doing its job, not a regression to patch around.
 
 <a id="sys104-interface-conformance-t-0668"></a>
-## SYS104 exact interface conformance (T-0668)
+## SYS104 exact interface conformance (T-0668) -- DELETED, T-1870
 
 `docs/design/structural-linter-adversarial-hardening.md`'s "undeclared
-public surface" evasion row -- T-0341's acceptance criterion [1]. A node
-declares its public interface with one `interface=<symbol>` attr per
-symbol (`Node.attrs`, same opaque-string convention `code=`/`managed`
-already use, T-0078/T-0172; no `.strata` grammar change). SYS104 requires
-the declared set to EQUAL the real public surface of the node's own
-`code=`-bound `.py` files: a real export missing from `interface=` fires,
-and an `interface=` entry with no matching real export fires. The real
-surface is `__all__`'s literal contents if the module declares one, else
-every non-underscore-prefixed top-level `def`/`class`/assignment target.
-
-### Mandatory as of T-1113 (closes the original scope cut)
-
-SYS104 used to evaluate only a node that had ALREADY declared at least
-one `interface=` attr -- an opt-in scope cut disclosed at T-0668, because
-making it mandatory required adding real `interface=` declarations to
-`design/frob.strata` itself, out of T-0668's own `scope`. T-1113 closes
-that gap directly: `design/frob.strata` now carries a real, measured
-`interface=<symbol>` attr for every node whose bound code has a non-empty
-public surface (one attr per real symbol, generated from the same
-`_module_public_symbols`/`_node_real_public_surface` the check itself
-uses, so declared and real start out in agreement), and SYS104 now
-evaluates ANY node whose real surface is non-empty, whether or not it has
-declared anything -- a node with nothing declared and a non-empty real
-surface fires (every real symbol reports as missing), exactly like a
-node that declares some but not all of its surface. A node with an EMPTY
-real surface (no bound `.py` files, or files exporting nothing) stays
-exempt either way -- there is no obligation to declare an interface for
-code with nothing to declare. Python-only, the same boundary `bind_code`
-itself already draws.
+public surface" evasion row -- T-0341's acceptance criterion [1] -- used
+to be checked here: a node declared its public interface with one
+`interface=<symbol>` attr per symbol, and SYS104 required the declared
+set to EQUAL the real public surface of the node's own `code=`-bound
+`.py` files (either direction of mismatch fired). T-1113 (T-1150's own
+`frob sys sync-interface` writer) made this mandatory and mechanically
+kept `interface=` in sync -- which is exactly the "declaration
+auto-derived from the thing it supposedly governs cannot govern
+anything" shape T-1870's owner directive named. SYS104 (the check), its
+writer (`frob.strata._sync_interface`), and every auto-fix/CLI/land-time
+path that touched `interface=` are all deleted -- no code path anywhere
+auto-updates declared public-symbol surface any more. `interface=` is
+now purely hand-declared, and the SLH-SYS-EVA-03 evasion row above is
+re-dispositioned `out_of_scope:reasoned-deferral` (`docs/design/
+registry/arch-checks.yaml`) pending T-1629, which re-covers "undeclared
+public surface" as an ENFORCEMENT of hand-declared intent (flag a real
+symbol NOT in `interface=`) rather than a bidirectional mirror-equality
+check.
 
 <a id="sys105-purpose-contract-t-0669"></a>
 ## SYS105 purpose contract (T-0669)
@@ -240,7 +229,8 @@ as a hard failure).
 ## Bounded escape hatches for conformance obligations (T-0671)
 
 T-0341's fifth acceptance criterion: every conformance waiver
-(SYS104/SYS105/SYS106) must be reason-required (already true, T-0174's
+(SYS105/SYS106; SYS104 was a third member of this family until T-1870
+deleted the rule) must be reason-required (already true, T-0174's
 grammar-mandatory `reason`), staleness-dated, and visible in an
 un-droppable floor view -- never a permanent silent exemption.
 
@@ -251,27 +241,27 @@ a grammar change, out of this ticket's scope). `_waive.py::
 parse_waiver_expiry` is the in-scope substitute: an `expires:YYYY-MM-DD`
 substring embedded anywhere in the already-mandatory `reason` string,
 e.g. `waive "SYS105:net.connect" reason "tracked debt, expires:2026-12-
-31" ticket "T-9999";`. A SYS104/SYS105/SYS106 waiver with NO `expires:`
-marker, or one whose date has passed, is EXPIRED:
+31" ticket "T-9999";`. A SYS105/SYS106 waiver with NO `expires:` marker,
+or one whose date has passed, is EXPIRED:
 `_selfconform.py::_apply_conformance_waiver_staleness` moves its finding
 back into `violations` (the underlying obligation re-fires, unchanged
 from having no waiver at all) and adds a new `SYSWAIVE003`
 (`CONFORMANCE_WAIVER_EXPIRED_RULE`) finding naming the expired waiver.
 Every OTHER waiver family (SYS100-103, THREAT002/003, LINT004, ...) is
-untouched by this gate -- it applies only to the three conformance
-checks T-0668/T-0669/T-0670 built.
+untouched by this gate -- it applies only to the conformance checks
+T-0668/T-0669/T-0670 built (T-0668's own SYS104 no longer exists).
 
-### SYS104/SYS105 join `MULTI_INSTANCE_WAIVER_FAMILIES`
+### SYS105 joins `MULTI_INSTANCE_WAIVER_FAMILIES`
 
-Both can fire more than once per node (once per undeclared/missing
-interface symbol, once per observed effect kind outside the purpose
-profile), so a `waive` clause on either MUST carry a `RULE:SUBTARGET`
-sub-target (`waive "SYS104:secret_backdoor" ...`, `waive
-"SYS105:net.connect" ...`) -- a bare `waive "SYS104"`/`waive "SYS105"`
-is an elaborate-time `MalformedWaiver` error, same discipline SYS100/
-SYS101/THREAT002/THREAT003 already established. SYS106 is NOT in this
-set -- it fires once per unbound FILE (like SYS103), not once per node,
-so it keeps the bare-rule form.
+Can fire more than once per node (once per observed effect kind outside
+the purpose profile), so a `waive` clause on it MUST carry a
+`RULE:SUBTARGET` sub-target (`waive "SYS105:net.connect" ...`) -- a bare
+`waive "SYS105"` is an elaborate-time `MalformedWaiver` error, same
+discipline SYS100/SYS101/THREAT002/THREAT003 already established.
+SYS106 is NOT in this set -- it fires once per unbound FILE (like
+SYS103), not once per node, so it keeps the bare-rule form. T-1870:
+SYS104 used to join this set for the identical per-symbol reason SYS105
+does; deleted along with the rule.
 
 ### Floor view: un-droppable by construction
 
@@ -298,14 +288,20 @@ entry with a non-`UNDISPOSITIONED` disposition, and the registry must
 carry no `SLH-*` id the denominator does not know about either (both
 directions of the N:M totality claim).
 
-The five `SLH-SYS-EVA-01..05` rows (unmodeled module / under-declared
-capability / undeclared public surface / purpose drift / binding
-laundering) are additionally re-dispositioned from a generic
-`out_of_scope:none` reasoned-deferral to `handled_by:SYS103`/`SYS100`/
-`SYS104`/`SYS105`/`SYS106` respectively -- addressed-by-check, now that
-T-0667-T-0670 built a real registered rule for each. `check_self_
-conformance` carries the matching `frob:enforces SLH-SYS-EVA-0N-...`
-directives (REG008's "the disposition names a real code site" half).
+Four of the five `SLH-SYS-EVA-01..05` rows (unmodeled module /
+under-declared capability / purpose drift / binding laundering) are
+re-dispositioned from a generic `out_of_scope:none` reasoned-deferral to
+`handled_by:SYS103`/`SYS100`/`SYS105`/`SYS106` respectively --
+addressed-by-check, now that T-0667/T-0669/T-0670 built a real
+registered rule for each. `check_self_conformance` carries the matching
+`frob:enforces SLH-SYS-EVA-0N-...` directives for these four (REG008's
+"the disposition names a real code site" half). The fifth row,
+`SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE` (T-0668's own SYS104), was
+`handled_by:SYS104` until T-1870 deleted that rule; it is now
+re-dispositioned back to `out_of_scope:reasoned-deferral` pending T-1629
+(a different rule shape, "flag an undeclared symbol" rather than SYS104's
+bidirectional mirror-equality check) and carries no `frob:enforces`
+edge in the meantime.
 The other 18 denominator rows (the 5 design PRINCIPLES and the arch-
 evasion/remaining strata-evasion rows) stay as their existing, honest
 reasoned-deferral dispositions -- they motivate gate DESIGN holistically

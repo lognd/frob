@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUG002,CACHE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS104,SYS105,SYS106,SYS107,SYS108,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUG002,CACHE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -4609,9 +4609,9 @@ TestInsertTicketDirectiveAboveCommentLeader` (`.strata` and `.rs`
 insert `//`, `.py` inserts `#`, an unrecognized suffix inserts
 nothing).
 
-### SYS100/SYS104 `.strata` declaration auto-fix (T-1531)
+<a id="sys100sys104-strata-declaration-auto-fix-t-1531"></a>
+### SYS100 `.strata` declaration auto-fix (T-1531)
 
-<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union -->
 <!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union -->
 <!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant -->
 <!-- frob:describes src/frob/strata/_sync_may.py::sync_may_report -->
@@ -4623,35 +4623,15 @@ nothing).
 Every real land refusal on 2026-08-04 traced back to one of a small set
 of `.strata` declaration classes, each hand-fixed with the same
 deterministic recipe repeatedly -- exactly the shape `TIER_A_HANDLERS`
-already exists to close mechanically. T-1531 wires the two
-highest-frequency classes in:
+already exists to close mechanically. T-1531 wired SYS100's two cases in:
 
-- **`fix_sys104_interface_union`**: SYS104 (a node's declared
-  `interface=[...]` surface drifted from its bound code's real public
-  surface) already has a full writer, `frob.strata._sync_interface`
-  (T-1150) -- this handler is a thin `TIER_A_HANDLERS["SYS104"]` wrapper
-  around `sync_interface_report`/`apply_sync_interface`, the exact
-  functions `frob sys sync-interface` itself calls. Before this ticket,
-  that writer only ran as its own special-case pre-land step
-  (`_land_cmd.py::_sync_interface_pre_land_step`) -- registering it in
-  the generic Tier-A table means the POST-land unscoped sweep
-  (`docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456`) can
-  now auto-repair a SYS104 drift too, not just a pre-land one.
 - **`fix_sys100_may_via_union`**: SYS100's CORE case (net/fs-write/exec,
   `_effects.py::check_capability_conformance`'s per-file `via` join,
   T-1440) had no writer at all -- `frob.strata._sync_may` (this ticket)
   is the new one: for every observed effect with no `may "<kind>" via
   [...]` grant covering its file, it widens the existing `via` list
-  (sorted union) or inserts a brand-new via-scoped grant line, mirroring
-  `_sync_interface.py`'s own "measure via the real check, edit `.strata`
-  text in place, never re-serialize" strategy end to end (same node-
-  header/body-span matching, same insert-after-anchor convention for a
-  node with no prior declaration).
-
-  T-1531's own writer, `sync_may_report`/`apply_sync_may`, handled this
-  case only -- `fix_sys100_may_via_union` never sees an EXTENDED kind at
-  all (`_selfconform.py::_extended_kind_violations` is a disjoint finding
-  source from `check_capability_conformance`, module docstring below).
+  (sorted union) or inserts a brand-new via-scoped grant line -- measure
+  via the real check, edit `.strata` text in place, never re-serialize.
 - **`fix_sys100_extended_whole_node_grant` (T-1545)**: SYS100's EXTENDED
   case (eval/process-control/ffi/install-hook/sql/deserialize/
   html_render/fetch_url/client_storage, `_selfconform.py::
@@ -4670,29 +4650,37 @@ highest-frequency classes in:
   CORE first since it can narrow to a real `via` list, EXTENDED second)
   since they resolve disjoint violation shapes under the same rule id.
 
-All three handlers follow the same `(root: Path, snapshot: GraphSnapshot)
--> list[FixApplied]` shape as every other pure-`.strata`-rewrite handler
-in this module (`snapshot` unused -- each reads the design tree itself,
-same as `fix_reg010_registry_sync`/`fix_rel002_release_sync`) and are
-no-ops (empty list, nothing written) when `root` has no `design/`
-directory at all, or when their respective `sync_*_report` call errors (a
-design file that fails to parse, an ambiguous code binding) -- logged and
-skipped, never raised, matching every other handler's "an auto-fix
-convenience is never a hard precondition" posture. Being registered in
-`TIER_A_HANDLERS` means all three are automatically wired into EVERY
-existing Tier-A call site with zero further plumbing -- `_land_cmd.py`'s
-pre-land absorption step, its pre-commit unscoped sweep
+Both handlers follow the same `(root: Path, snapshot: GraphSnapshot) ->
+list[FixApplied]` shape as every other pure-`.strata`-rewrite handler in
+this module (`snapshot` unused -- each reads the design tree itself, same
+as `fix_reg010_registry_sync`/`fix_rel002_release_sync`) and are no-ops
+(empty list, nothing written) when `root` has no `design/` directory at
+all, or when their respective `sync_*_report` call errors (a design file
+that fails to parse, an ambiguous code binding) -- logged and skipped,
+never raised, matching every other handler's "an auto-fix convenience is
+never a hard precondition" posture. Being registered in
+`TIER_A_HANDLERS` means both are automatically wired into EVERY existing
+Tier-A call site with zero further plumbing -- `_land_cmd.py`'s pre-land
+absorption step, its pre-commit unscoped sweep
 (`_pre_commit_unscoped_error_sweep`), AND its post-land unscoped sweep
 (`_post_land_unscoped_error_sweep`) all call `apply_tier_a_fixes`
 already; T-1545 needed no changes to `src/frob/app/ticket_runner/
 _land_cmd.py` at all.
 
-**Remaining SYS100/SYS104/land-refusal recipes (disclosed deferral,
-T-1531's own body names six; two shipped here)**: COV002 changed-symbol-
-without-edge auto-insertion, ClaimDivergence done-report re-run,
-TICK006 phantom-draft-citation refile/renumber, and E501-from-merge
-targeted `ruff format` are real, filed as separate follow-up tickets
-rather than guessed at inside this ticket's own budget.
+T-1870 (owner directive: no code path may auto-update declared
+public-symbol surface) deleted SYS104's own writer/handler
+(`fix_sys104_interface_union`, `frob.strata._sync_interface`) that used
+to be documented in this section alongside SYS100's -- `interface=` is
+no longer synced by anything, including at land time; SYS100's `may=`
+capability sync (documented above) is a DIFFERENT, deliberate, live
+mechanism and is unaffected.
+
+**Remaining SYS100/land-refusal recipes (disclosed deferral, T-1531's own
+body names six; two shipped here)**: COV002 changed-symbol-without-edge
+auto-insertion, ClaimDivergence done-report re-run, TICK006
+phantom-draft-citation refile/renumber, and E501-from-merge targeted
+`ruff format` are real, filed as separate follow-up tickets rather than
+guessed at inside this ticket's own budget.
 
 ## Data models
 

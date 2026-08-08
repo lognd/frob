@@ -15,8 +15,8 @@ actual `frob check --fix` CLI flag is a later batch of the same epic
 that CLI batch to call directly.
 
 T-1646 (LARGE001 residue burndown) split the source-text/line-level
-handler family (FMT001, SUPPRESS001, REG010, REL002, SYS104, SYS100,
-E501, COV002, WAIVE004) out to `frob.gates._fix_engine_text`, and the
+handler family (FMT001, SUPPRESS001, REG010, REL002, SYS100, E501,
+COV002, WAIVE004) out to `frob.gates._fix_engine_text`, and the
 common infra both families need (`FixApplied`, the manifest helpers) out
 to `frob.gates._fix_engine_shared` (breaking what would otherwise be a
 circular import between the two handler-family modules). This module
@@ -51,7 +51,6 @@ from frob.gates._fix_engine_sync import (
     fix_rel002_release_sync,
     fix_sys100_extended_whole_node_grant,
     fix_sys100_may_via_union,
-    fix_sys104_interface_union,
     fix_waive004_stale_waiver,
 )
 from frob.gates._fix_engine_text import (
@@ -482,13 +481,16 @@ def _fix_sys100_both_cases(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
 #: at all, see `_FROB_DIRECTIVE_MARKER_RE`, so the two never actually
 #: collide on the same physical line in practice -- the ordering is
 #: still fixed explicitly rather than left to dict insertion accident).
-#: SYS104/SYS100 (T-1531) are pure `.strata` text rewrites (same category
-#: as DOC007/DOC002/INV006-carry/FMT001/REG010/REL002) reusing the
-#: `frob.strata._sync_interface`/`frob.strata._sync_may` writers that
-#: already back `frob sys sync-interface`; wiring them here (rather than
-#: only the pre-land-only special-case call sites those writers already
-#: had) is what makes the POST-land unscoped sweep (`_land_cmd.py::
-#: _sweep_apply_tier_a_and_commit`) able to auto-repair them too.
+#: SYS100 (T-1531) is a pure `.strata` text rewrite (same category as
+#: DOC007/DOC002/INV006-carry/FMT001/REG010/REL002) reusing the
+#: `frob.strata._sync_may` writer; wiring it here (rather than only a
+#: pre-land-only special-case call site) is what makes the POST-land
+#: unscoped sweep (`_land_cmd.py::_sweep_apply_tier_a_and_commit`) able
+#: to auto-repair it too. T-1870: SYS104 (the `interface=` sibling of
+#: this same category) is deliberately NOT wired here any more -- deleted
+#: entirely, along with its writer and every other `interface=` mutation
+#: path, per an explicit owner directive that no code path may
+#: auto-update declared public-symbol surface.
 # frob:ticket T-1531
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 #: T-1548: every handler now takes a 4th `ticket_id: str | None` argument
@@ -520,9 +522,6 @@ TIER_A_HANDLERS: dict[
         root, snapshot
     ),
     "REL002": lambda root, snapshot, queue, ticket_id: fix_rel002_release_sync(
-        root, snapshot
-    ),
-    "SYS104": lambda root, snapshot, queue, ticket_id: fix_sys104_interface_union(
         root, snapshot
     ),
     "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(

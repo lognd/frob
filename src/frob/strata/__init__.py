@@ -423,7 +423,6 @@ from frob.strata._selfconform import (
     SYS_BINDING_TOTALITY,
     SYS_COVERAGE_TOTALITY,
     SYS_DUPLICATE_INTERFACE,
-    SYS_INTERFACE_CONFORMANCE,
     SYS_PURPOSE_CONTRACT,
     SYS_STALE_DESIGN,
     SYS_UNDECLARED_INTERFACE,
@@ -490,13 +489,6 @@ from frob.strata._sync_depth import (
     SyncDepthReport,
     SyncDepthViolation,
     check_sync_chain_depth,
-)
-from frob.strata._sync_interface import (
-    FileSyncResult,
-    NodeInterfaceDiff,
-    SyncInterfaceReport,
-    apply_sync_interface,
-    sync_interface_report,
 )
 from frob.strata._sysdoc import (
     ClaimAuditResult,
@@ -573,7 +565,6 @@ __all__ = [
     "SYS_BINDING_TOTALITY",
     "SYS_COVERAGE_TOTALITY",
     "SYS_DUPLICATE_INTERFACE",
-    "SYS_INTERFACE_CONFORMANCE",
     "SYS_PURPOSE_CONTRACT",
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",
@@ -791,11 +782,6 @@ __all__ = [
     "SpofViolation",
     "SyncDepthReport",
     "SyncDepthViolation",
-    "FileSyncResult",
-    "NodeInterfaceDiff",
-    "SyncInterfaceReport",
-    "apply_sync_interface",
-    "sync_interface_report",
     "REL_MISSING_OWNER",
     "REL_UNPROVEN_OWNER",
     "SSOT_RULES",

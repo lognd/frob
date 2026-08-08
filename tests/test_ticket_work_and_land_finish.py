@@ -1,7 +1,9 @@
 """T-1175: `frob ticket work` (worktree create/reuse + freshness + natives +
-start, in one verb) and `frob ticket land`'s absorbed fmt/sync-interface/
-Tier-A-fix pre-land step plus its `LAND-PROOF:` line and `--finish`
-worktree removal.
+start, in one verb) and `frob ticket land`'s absorbed fmt/Tier-A-fix
+pre-land step (T-1870: the sync-interface auto-write third leg was
+deleted; `_assert_design_loads_pre_land`'s read-only parse guard is not
+part of this best-effort absorption trio) plus its `LAND-PROOF:` line and
+`--finish` worktree removal.
 
 Real git subprocesses (matching tests/test_ticket_land.py's own style) --
 `work`/`land --finish` are themselves thin orchestration over real `git
@@ -227,13 +229,15 @@ class TestRootIsItselfANestedWorktree:
 class TestAbsorbPreLandFixes:
     """T-1175's `_absorb_pre_land_fixes` -- the `frob fmt` half is exercised
     directly here (a real non-canonical `frob:` directive, `format_paths`'s
-    own `TestFormatPaths.test_write_mode_rewrites_file` shape); the sys
-    sync-interface/Tier-A-fix halves are no-ops on a `design/`-less
-    fixture repo and are covered by their own dedicated suites
-    (tests/unit/strata/test_sync_interface.py, tests/test_gates.py's
-    TestFixEngineTierA) -- this test's job is only that `land`'s new
+    own `TestFormatPaths.test_write_mode_rewrites_file` shape); the
+    Tier-A-fix half is a no-op on a `design/`-less fixture repo and is
+    covered by its own dedicated suite (tests/test_gates.py's
+    TestFixEngineTierA) -- this test's job is only that `land`'s
     absorption step actually reaches `format_paths` and rewrites a real
-    file, not re-proving those two modules' own behavior."""
+    file, not re-proving that module's own behavior. T-1870: the former
+    sys sync-interface half is gone (deleted along with the rest of that
+    machinery); `_assert_design_loads_pre_land`'s own load-guard behavior
+    is exercised separately below (TestAssertDesignLoadsPreLand)."""
 
     def test_fmt_half_canonicalizes_a_non_canonical_directive(self, repo: Path) -> None:
         # frob:tests \
@@ -319,14 +323,19 @@ class TestAbsorbPreLandFixes:
 
 
 # frob:ticket T-1796
-class TestSyncInterfacePreLandRefusesOnParseFailed:
-    """T-1796: a `design/**` file that fails to PARSE must refuse the
-    land outright, not degrade to a WARNING and proceed -- the exact gap
-    that let a single dropped quote in `design/frob.strata` break
-    `strata` parsing repo-wide and survive three lands undetected."""
+# frob:ticket T-1870
+class TestAssertDesignLoadsPreLand:
+    """T-1796 (T-1870 renamed/narrowed this from `_sync_interface_pre_
+    land_step` -- the write half went, this read-only guard did not): a
+    `design/**` file that fails to PARSE must refuse the land outright,
+    not degrade to a WARNING and proceed -- the exact gap that let a
+    single dropped quote in `design/frob.strata` break `strata` parsing
+    repo-wide and survive three lands undetected. This guard writes
+    NOTHING -- unlike its pre-T-1870 shape, a clean design tree with
+    interface= drift produces no side effect at all any more."""
 
     def test_refuses_when_a_design_file_is_malformed(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSyncInterfacePreLandRefusesOnParseFailed.test_refuses_when_a_design_file_is_malformed  # noqa: E501
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDesignLoadsPreLand.test_refuses_when_a_design_file_is_malformed  # noqa: E501
         design_dir = repo / "design"
         design_dir.mkdir()
         (design_dir / "broken.strata").write_text(
@@ -339,7 +348,7 @@ class TestSyncInterfacePreLandRefusesOnParseFailed:
         assert exc_info.value.code == 1
 
     def test_still_proceeds_when_design_dir_absent(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSyncInterfacePreLandRefusesOnParseFailed.test_still_proceeds_when_design_dir_absent  # noqa: E501
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDesignLoadsPreLand.test_still_proceeds_when_design_dir_absent  # noqa: E501
         # No design/ directory at all -- must NOT be treated as a parse
         # failure; a fixture repo with nothing to sync is the common case
         # every OTHER TestAbsorbPreLandFixes test already relies on.

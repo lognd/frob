@@ -30,13 +30,20 @@ require, T-0343's drift-lock framework: the corpus is the enforceable
 denominator, not just reading) and the test fails until the registry
 entry exists, so the mismatch cannot go unnoticed.
 
-The five conformance checks this epic built (SYS100/SYS103/SYS104/
-SYS105/SYS106, T-0667-T-0670) are bound to their exact denominator rows:
-`SLH-SYS-EVA-01` (unmodeled module) -> SYS103, `SLH-SYS-EVA-02` (under-
-declared capability) -> SYS100, `SLH-SYS-EVA-03` (undeclared public
-surface) -> SYS104, `SLH-SYS-EVA-04` (purpose drift) -> SYS105,
-`SLH-SYS-EVA-05` (binding laundering) -> SYS106 -- verified directly
-against the registry's own `disposition` string, not assumed."""
+Four of the five conformance checks this epic built (SYS100/SYS103/
+SYS105/SYS106, T-0667/T-0669/T-0670) are bound to their exact
+denominator rows: `SLH-SYS-EVA-01` (unmodeled module) -> SYS103,
+`SLH-SYS-EVA-02` (under-declared capability) -> SYS100, `SLH-SYS-EVA-04`
+(purpose drift) -> SYS105, `SLH-SYS-EVA-05` (binding laundering) ->
+SYS106 -- verified directly against the registry's own `disposition`
+string, not assumed. `SLH-SYS-EVA-03` (undeclared public surface) was
+the fifth binding (T-0668's SYS104) until T-1870 deleted that rule per
+an explicit owner directive that no code path may auto-update declared
+public-symbol surface; it is back to a reasoned deferral
+(`out_of_scope:reasoned-deferral`, pending T-1629) and is covered by
+`TestDenominatorFullyDispositioned` (acceptance criterion [0]) like any
+other deferred row, not by `TestConformanceChecksBoundToDenominator`
+any more."""
 
 from __future__ import annotations
 
@@ -82,15 +89,19 @@ _DENOMINATOR_IDS: frozenset[str] = frozenset(
     }
 )
 
-#: The five conformance-check denominator rows this epic (T-0667-T-0670)
-#: built a real, registered `frob sys audit` rule for -- each must carry
-#: `handled_by:<that exact rule>` (addressed-by-check, not a reasoned
-#: deferral) once its check exists, per this ticket's own mandate
-#: ("binds ... to the five conformance checks built above").
+#: Four of the five conformance-check denominator rows this epic
+#: (T-0667/T-0669/T-0670) built a real, registered `frob sys audit` rule
+#: for -- each must carry `handled_by:<that exact rule>` (addressed-by-
+#: check, not a reasoned deferral) once its check exists, per this
+#: ticket's own mandate ("binds ... to the conformance checks built
+#: above"). T-1870: SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE (T-0668's
+#: own SYS104) was the fifth binding here until SYS104 was deleted, per
+#: an explicit owner directive that no code path may auto-update
+#: declared public-symbol surface; it reverted to a reasoned deferral
+#: and is no longer a member of this dict (module docstring).
 _CONFORMANCE_CHECK_BINDINGS: dict[str, str] = {
     "SLH-SYS-EVA-01-UNMODELED-MODULE": "SYS103",
     "SLH-SYS-EVA-02-UNDER-DECLARED-CAPABILITY": "SYS100",
-    "SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE": "SYS104",
     "SLH-SYS-EVA-04-PURPOSE-DRIFT": "SYS105",
     "SLH-SYS-EVA-05-BINDING-LAUNDERING": "SYS106",
 }

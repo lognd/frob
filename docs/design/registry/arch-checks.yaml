@@ -2194,7 +2194,7 @@ entries:
     source_doc: "docs/design/structural-linter-adversarial-hardening.md"
     source_ref: "sys-evasion"
     checkability: "design-defense"
-    disposition: "handled_by:SYS104"
+    disposition: "out_of_scope:reasoned-deferral -- T-1870 deleted SYS104 (the bidirectional interface=-equals-real-surface mirror check) per an explicit owner directive that no code path may auto-update declared public-symbol surface; this row's exact shape (code exports more than interface= declares) has no live rule to bind handled_by to as of T-1870. T-1629 (interface= should declare INTENDED surface, not mirror every public symbol, already raised to high priority) is the follow-up that re-covers this differently -- flagging an undeclared public symbol against hand-declared intent, not a mirror-equality check -- at which point this row should be re-dispositioned to whatever rule id T-1629 ships"
     cross_refs: []
   - id: "SLH-SYS-EVA-04-PURPOSE-DRIFT"
     name: "Purpose drift: a logging module that opens sockets"

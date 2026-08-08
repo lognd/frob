@@ -140,20 +140,26 @@ _log = get_logger(__name__)
 #: ASSUMPTIONS-obligation family) join this set for the identical reason
 #: -- a node can originate several clock-dependent flows, so each fires
 #: per-flow.
-#: T-0668/T-0669: SYS104 (interface conformance) and SYS105 (purpose
-#: contract) join this set too -- a node can have several undeclared/
-#: missing interface symbols, or several observed effect kinds outside
-#: its purpose profile, so each fires per-symbol/per-kind
-#: (`_selfconform.py::_interface_conformance_violations`/
-#: `_purpose_contract_violations`, both already set `capability` to the
-#: specific symbol/kind). SYS106 is DELIBERATELY excluded: it fires once
-#: per unbound FILE (like SYS103), not once per node, so it keeps the
-#: bare-rule form.
+#: T-0668/T-0669: SYS105 (purpose contract) joins this set too -- a node
+#: can have several observed effect kinds outside its purpose profile, so
+#: it fires per-kind (`_selfconform.py::_purpose_contract_violations`,
+#: which already sets `capability` to the specific kind). SYS106 is
+#: DELIBERATELY excluded: it fires once per unbound FILE (like SYS103),
+#: not once per node, so it keeps the bare-rule form. T-1870: SYS104
+#: (interface conformance -- a node's `interface=` attrs drifting from
+#: its measured real public surface) used to join this set for the
+#: identical per-symbol reason; deleted along with the rule itself, per
+#: an explicit owner directive that no code path may auto-update
+#: declared public-symbol surface. SYS108 (duplicate `interface=`
+#: declaration, T-1624) is a DIFFERENT, still-live rule that ALSO sets
+#: `capability` per offending symbol name (`_selfconform.py::
+#: _duplicate_interface_violations`) -- whether it belongs in this set is
+#: pre-existing, out of T-1870's scope (this ticket only removes SYS104),
+#: and not evaluated here.
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
     {
         "SYS100",
         "SYS101",
-        "SYS104",
         "SYS105",
         "THREAT002",
         "THREAT003",

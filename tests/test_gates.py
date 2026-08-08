@@ -10621,70 +10621,12 @@ class TestFixEngineTierA:
     # the rest of the INV006 gate -- 338 waivers, zero unwaived findings
     # across its whole lifetime; see docs/modules/gates.md's T-1763 note.
 
-    # -- acceptance: SYS104 interface= union (T-1531) -----------------------
-
-    # frob:ticket T-1531
-    # frob:ticket T-1774
-    def test_sys104_interface_union_applies_via_apply_tier_a_fixes(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union \
-        # kind="unit"
-        # T-1774: T-1625 narrowed SYS104's REQUIRED interface surface to
-        # `real AND cross-node-referenced` (`_selfconform.
-        # _cross_node_referenced_symbols` -- a node's own real public
-        # surface no longer suffices on its own; some file owned by a
-        # DIFFERENT node must import the symbol BY NAME). This fixture
-        # used to have only the `widget` node, so `public_fn` was real but
-        # never cross-referenced, `required` was empty, and no fix ever
-        # applied -- 0 == 1, a stale-test false alarm, not a production
-        # regression (confirmed against `tests/unit/strata/
-        # test_sync_interface.py`'s own T-1625 fixtures, which already use
-        # exactly this `consumer`-node pattern). Adding a `consumer` node
-        # whose file imports `public_fn` by name restores the pre-T-1625
-        # fixture's intent under the current, narrower semantics.
-        from frob.gates import apply_tier_a_fixes
-        from frob.tickets import TicketQueue
-
-        root = tmp_path / "repo"
-        (root / "src" / "widget").mkdir(parents=True)
-        (root / "src" / "widget" / "_io.py").write_text(
-            "def public_fn():\n    pass\n", encoding="utf-8"
-        )
-        (root / "src" / "consumer").mkdir(parents=True)
-        (root / "src" / "consumer" / "_use.py").write_text(
-            "from widget._io import public_fn\n", encoding="utf-8"
-        )
-        (root / "design").mkdir()
-        (root / "design" / "widget.strata").write_text(
-            'module widget\n'
-            'node widget : trusted {\n    code "src/widget/**";\n}\n'
-            'node consumer : trusted {\n    code "src/consumer/**";\n}\n',
-            encoding="utf-8",
-        )
-        snapshot = self._snap(root)
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        sys104_applied = [a for a in applied if a.rule == "SYS104"]
-        assert len(sys104_applied) == 1
-        assert "public_fn" in sys104_applied[0].detail
-
-        rewritten = (root / "design" / "widget.strata").read_text(encoding="utf-8")
-        assert "attr interface=[" in rewritten
-        assert "public_fn," in rewritten
-
-    # frob:ticket T-1531
-    def test_sys104_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys104_interface_union \
-        # kind="unit"
-        from frob.gates import apply_tier_a_fixes
-        from frob.tickets import TicketQueue
-
-        root = tmp_path / "repo"
-        (root / "src").mkdir(parents=True)
-        (root / "src" / "m.py").write_text("def f():\n    pass\n", encoding="utf-8")
-        snapshot = self._snap(root)
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        assert not [a for a in applied if a.rule == "SYS104"]
+    # T-1870: the SYS104 interface= union acceptance tests that used to
+    # live here (fix_sys104_interface_union, T-1531/T-1774) were removed
+    # along with the rest of the `frob sys sync-interface` machinery, per
+    # an explicit owner directive that no code path may auto-update
+    # declared public-symbol surface; see docs/modules/gates.md's T-1870
+    # note.
 
     # -- acceptance: SYS100 core may-via union (T-1531) ----------------------
 
@@ -11444,7 +11386,10 @@ class TestFixEngineTierABatch2:
             "TICK002",
             "WAIVE004",
             "SYS100",  # T-1531
-            "SYS104",  # T-1531
+            # T-1870: SYS104 (T-1531) is deleted from this dict along with
+            # the rest of the sync-interface machinery, per an explicit
+            # owner directive that no code path may auto-update declared
+            # public-symbol surface.
             "E501",  # T-1547
             "COV002",  # T-1548
         }
