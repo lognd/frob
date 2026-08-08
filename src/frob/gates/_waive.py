@@ -311,6 +311,13 @@ _KNOWN_GATE_RULES = frozenset(
         # provably-closed case, an unresolvable id could still be a
         # not-yet-synced ledger view, so this does not error.
         "WAIVE007",
+        # T-1803: a WIRE001 waiver whose site is now STRUCTURALLY exempt
+        # from WIRE001 itself (an autouse pytest fixture or pydantic
+        # validator, per _is_autouse_pytest_fixture/_is_pydantic_
+        # validator) -- guaranteed dead regardless of which diff a future
+        # run happens to see, unlike WAIVE004's diff-scoped blind spot for
+        # this same rule.
+        "WAIVE008",
         "DEC001",
         "DEC002",
         "REL001",
@@ -1330,6 +1337,92 @@ def _waive004_violations(
                     f"still needs it, or remove the directive (T-1133: this "
                     f"rule only fires on a full, unscoped run, so match-absence "
                     f"here is meaningful, not a scoped-run artifact)"
+                ),
+            )
+        )
+    return tuple(out)
+
+
+# T-1803: a WIRE001 waiver on a symbol WIRE001's OWN dynamic-dispatch
+# rescues (_is_autouse_pytest_fixture/_is_pydantic_validator) now exempt
+# from construction entirely -- confirmed live: two waivers found while
+# working T-1534 (tests/test_ticket_land.py::_isolate_from_host_git_config,
+# tests/unit/test_ticket_store.py::_pin_v1_mode_on_bare_tmp_path) had
+# suppressed nothing since T-1510 landed the autouse-fixture rescue,
+# discovered only because an unrelated ticket happened to investigate the
+# exact symbols they sat on. WAIVE004 cannot see this: WIRE001 is diff-
+# scoped by construction (_WAIVE004_STRUCTURALLY_UNVERIFIABLE_RULES,
+# T-1577), so a full unscoped run's diff essentially never contains the
+# original hunk that would have produced the finding -- "0 findings this
+# run" is permanently true for EVERY WIRE001 waiver regardless of whether
+# it is still needed. This check sidesteps the diff dependency entirely
+# by testing the rescue predicates directly against the waived symbol's
+# OWN record, which is diff-independent: an autouse fixture or pydantic
+# validator is exempt from WIRE001 no matter what any future diff looks
+# like, so this is a genuine, permanent "can never fire again" signal,
+# not a this-run artifact.
+_WIRE001_RESCUE_EXEMPT_RULE = "WIRE001"
+
+
+def _wire001_symbol_now_rescued(root: Path, record: object) -> bool:
+    """Whether `record` (a `SymbolRecord`) is exempt from WIRE001 under
+    ITS OWN current rescue predicates -- imported lazily to avoid a
+    module-level import cycle between `frob.gates._waive` and
+    `frob.gates._dead_symbols`/`frob.gates._wire`."""
+    from frob.gates._dead_symbols import (
+        _is_autouse_pytest_fixture,
+        _is_pydantic_validator,
+    )
+
+    return _is_autouse_pytest_fixture(root, record) or _is_pydantic_validator(
+        root, record
+    )
+
+
+# frob:enforces CHK-GATE-WAIVE008
+def _waive008_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """WAIVE008: a `frob:waive WIRE001 ...` directive on a symbol WIRE001's
+    OWN dynamic-dispatch rescue predicates (`_is_autouse_pytest_fixture`/
+    `_is_pydantic_validator`) now exempt from firing at all, at ANY diff --
+    a permanently dead waiver WAIVE004 cannot see (WIRE001 is diff-scoped,
+    see the module comment above `_WIRE001_RESCUE_EXEMPT_RULE`).
+
+    Looks up each WIRE001 waiver's `edge.src` (the enclosing symbol's own
+    id) in `snapshot.symbols`; a missing lookup (the symbol was renamed/
+    deleted since the waiver was written) is left to WAIVE002/COV003-style
+    checks elsewhere and skipped here rather than guessed at."""
+    root = Path(snapshot.root)
+    out: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        if edge.target != _WIRE001_RESCUE_EXEMPT_RULE:
+            continue
+        record = snapshot.symbols.get(edge.src)
+        if record is None:
+            continue
+        if not _wire001_symbol_now_rescued(root, record):
+            continue
+        from frob.gates import _site_from_edge_origin  # local: avoids circularity
+
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.warning(
+            "WAIVE008: %s frob:waive WIRE001 targets a symbol WIRE001's own "
+            "rescue predicates now exempt unconditionally -- dead regardless "
+            "of diff",
+            edge.origin,
+        )
+        out.append(
+            Violation(
+                rule="WAIVE008",
+                severity=Severity.WARN,
+                file=file,
+                line=line,
+                message=(
+                    f"WAIVE008: {edge.src} frob:waive WIRE001 targets a symbol "
+                    f"that WIRE001's own dynamic-dispatch rescue (autouse "
+                    f"pytest fixture or pydantic validator) now exempts from "
+                    f"firing UNCONDITIONALLY -- this waiver has suppressed "
+                    f"nothing since that rescue landed and can never suppress "
+                    f"anything again at any diff; remove it"
                 ),
             )
         )

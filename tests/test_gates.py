@@ -7447,6 +7447,98 @@ class TestTestGate:
         found = _waive004_violations((), snap, frozenset(), full_unscoped_run=False)
         assert found == ()
 
+    # frob:ticket T-1803
+    def test_waive008_fires_on_a_now_rescued_autouse_fixture(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1803's confirmed incident: a WIRE001 waiver on an autouse
+        pytest fixture -- WIRE001's own `_is_autouse_pytest_fixture` rescue
+        (T-1510) exempts it unconditionally, so the waiver has suppressed
+        nothing since that rescue landed, regardless of diff. WAIVE004
+        cannot see this (WIRE001 is diff-scoped); WAIVE008 tests the
+        rescue predicate directly against the symbol's own record."""
+        # frob:tests tests/test_gates.py::TestTestGate.test_waive008_fires_on_a_now_rescued_autouse_fixture  # noqa: E501
+        from frob.gates import _waive008_violations
+        from frob.graph import (
+            Digests,
+            Edge,
+            EdgeKind,
+            GraphSnapshot,
+            SymbolId,
+            SymbolRecord,
+        )
+        from frob.lang import SymbolKind
+
+        src = tmp_path / "conftest.py"
+        src.write_text(
+            '@pytest.fixture(autouse=True)\ndef _isolate() -> None:\n    pass\n',
+            encoding="utf-8",
+        )
+        record = SymbolRecord(
+            id=SymbolId(path="conftest.py", qualname="_isolate"),
+            kind=SymbolKind.FUNCTION,
+            public=False,
+            digests=Digests(sig="s", body="b", doc="d"),
+            span=(1, 3),
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="conftest.py::_isolate",
+            target="WIRE001",
+            origin="conftest.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={"conftest.py::_isolate": record},
+            edges=(waiver,),
+        )
+        found = _waive008_violations(snap)
+        assert len(found) == 1
+        assert found[0].rule == "WAIVE008"
+        assert found[0].severity == Severity.WARN
+        assert "conftest.py::_isolate" in found[0].message
+
+    # frob:ticket T-1803
+    def test_waive008_stays_silent_on_a_non_rescued_symbol(self, tmp_path: Path) -> None:
+        """A WIRE001 waiver on an ordinary (non-fixture, non-validator)
+        symbol must not fire -- WAIVE008 only flags the specific
+        structurally-guaranteed-dead shape."""
+        # frob:tests \
+        # tests/test_gates.py::TestTestGate.test_waive008_stays_silent_on_a_non_rescued\
+        # _symbol
+        from frob.gates import _waive008_violations
+        from frob.graph import (
+            Digests,
+            Edge,
+            EdgeKind,
+            GraphSnapshot,
+            SymbolId,
+            SymbolRecord,
+        )
+        from frob.lang import SymbolKind
+
+        src = tmp_path / "a.py"
+        src.write_text("def helper() -> None:\n    pass\n", encoding="utf-8")
+        record = SymbolRecord(
+            id=SymbolId(path="a.py", qualname="helper"),
+            kind=SymbolKind.FUNCTION,
+            public=False,
+            digests=Digests(sig="s", body="b", doc="d"),
+            span=(1, 2),
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="a.py::helper",
+            target="WIRE001",
+            origin="a.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(
+            root=str(tmp_path), symbols={"a.py::helper": record}, edges=(waiver,)
+        )
+        assert _waive008_violations(snap) == ()
+
     def test_waive005_expired_until_is_error(self) -> None:
         """T-0753: `frob:waive`'s optional `until="YYYY-MM-DD"` boundary
         having passed forces a hard ERROR demanding re-review, mirroring
@@ -12966,7 +13058,10 @@ class TestPerfReachDegradedMarker:
         reported healthy)."""
         from types import SimpleNamespace
 
-        from frob.gates import PERF_REACH_DEGRADED_SKIP_MARKER, _perf_reach_degraded_marker
+        from frob.gates import (
+            PERF_REACH_DEGRADED_SKIP_MARKER,
+            _perf_reach_degraded_marker,
+        )
 
         stale_entry = SimpleNamespace(spec=SimpleNamespace(name="strata_core"))
         monkeypatch.setattr("frob.strata.stale_natives", lambda root: (stale_entry,))

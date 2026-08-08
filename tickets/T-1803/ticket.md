@@ -2,7 +2,7 @@
 id: T-1803
 title: Detect a frob:waive whose suppressed finding no longer fires, not just an orphaned
   follow_up citation
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -13,8 +13,24 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_waive.py
+- src/frob/gates/__init__.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: wire _waive008_violations into the gate assembly + import + tests
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_gates.py
+  reason: wire _waive008_violations into the gate assembly + import + tests
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_gates.py::TestTestGate::test_waive008_fires_on_a_now_rescued_autouse_fixture
+- tests/test_gates.py::TestTestGate::test_waive008_stays_silent_on_a_non_rescued_symbol
 designated_repro_test: null
 threat: null
 component: null
