@@ -2,7 +2,7 @@
 id: T-1693
 title: 'Quarantine circuit breaker: a red batch stops further deferred lands until
   attributed'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-06'
@@ -19,6 +19,22 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/verify/test_quarantine.py::TestLoadQuarantine::test_missing_file_is_none
+- tests/unit/verify/test_quarantine.py::TestLoadQuarantine::test_corrupt_file_errors
+- tests/unit/verify/test_quarantine.py::TestIsQuarantined::test_false_when_never_raised
+- tests/unit/verify/test_quarantine.py::TestIsQuarantined::test_true_while_raised
+- tests/unit/verify/test_quarantine.py::TestIsQuarantined::test_false_after_clear
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_raises_and_persists
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_empty_findings_refused
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_survives_a_fresh_load_reflecting_a_restart
+- tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_not_raised
+- tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_a_finding_is_undisposed
+- tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_clears_when_every_finding_disposed
+- tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_green_verification_alone_never_clears
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_not_quarantined_is_unchanged
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_quarantined_forces_synchronous
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_corrupt_store_also_forces_synchronous
 designated_repro_test: null
 threat: null
 component: verification

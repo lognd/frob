@@ -2021,6 +2021,14 @@
     "src/frob/verify/_backpressure.py::block_until_watermark_advances": "ade7bac9dab69bdb4b0b472025a933d750e71ca6f09c7480669946f3c55778bd",
     "src/frob/verify/_backpressure.py::ceilings_for_profile": "719f410d654ba71c8e2c1cc98de0fe28e78b7784e1f0c0651871ccd73afe7b36",
     "src/frob/verify/_backpressure.py::current_status": "a1158cc174ac3c62cdcc650f73bac3ac23c9ba5c34c0c14a5d47253f055134bd",
+    "src/frob/verify/_quarantine.py::QuarantineError": "9bb4e2ac11958b6fe775d07a753bd5ca7dfdf77279f87c2908770cc6e238b3d0",
+    "src/frob/verify/_quarantine.py::QuarantineRecord": "2b6d0ff1b4014568a34a03cdcb8118ecbedc6c60ece4c03fa3ee55ec9e23abb8",
+    "src/frob/verify/_quarantine.py::QuarantinedFinding": "0e36dd35febd2a90e0a318eb7adba7bb84c350e82d692b66605e53c948634fcb",
+    "src/frob/verify/_quarantine.py::SCHEMA_VERSION": "63a7265e981da6a7ab16e6307dd0842c69622b4949130e7194782785d27b36de",
+    "src/frob/verify/_quarantine.py::clear_quarantine": "0791aab2e094fe052e25ee69a060ebe0c8ca0cfcbf19206ed9d2fc25c9bee36e",
+    "src/frob/verify/_quarantine.py::is_quarantined": "1d82b4145f8a39265af7e625a6a6a68565973dc01a9227b2fcf0e993fe66e33d",
+    "src/frob/verify/_quarantine.py::load_quarantine": "1780cb4b855f7c95eb797163cd68520619e45a860984da54aa235c6fb5237162",
+    "src/frob/verify/_quarantine.py::raise_quarantine": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
     "src/frob/verify/_watermark.py::SCHEMA_VERSION": "63a7265e981da6a7ab16e6307dd0842c69622b4949130e7194782785d27b36de",
     "src/frob/verify/_watermark.py::VerifyQueueEntry": "8f2e3c564e0a0a1d5672797d10d45cb2492f04c6559925d457e24a5d32467bd2",
     "src/frob/verify/_watermark.py::Watermark": "7810697da265322eb8226dcaaea505f685e9af06bf928c550053a08ffc557150",
@@ -2128,5 +2136,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.378.0"
+  "version": "0.379.0"
 }

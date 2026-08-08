@@ -3922,6 +3922,84 @@ chars across `_land_cmd.py`'s `_land_core_prepare` and
 `_backpressure.py`'s `BackpressureError`/`current_status`. No behavior
 changed.
 
+## Quarantine circuit breaker (T-1693)
+
+<!-- frob:describes src/frob/verify/_quarantine.py::QuarantineError -->
+<!-- frob:describes src/frob/verify/_quarantine.py::QuarantinedFinding -->
+<!-- frob:describes src/frob/verify/_quarantine.py::QuarantineRecord -->
+<!-- frob:describes src/frob/verify/_quarantine.py::load_quarantine -->
+<!-- frob:describes src/frob/verify/_quarantine.py::is_quarantined -->
+<!-- frob:describes src/frob/verify/_quarantine.py::raise_quarantine -->
+<!-- frob:describes src/frob/verify/_quarantine.py::clear_quarantine -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_quarantine_override_ceilings -->
+
+The single most important rule in the T-1686 epic (this ticket's own
+text). Landing on top of a known-broken base is what makes attribution
+cost explode: every subsequent land widens the candidate set and adds
+findings that are consequences rather than causes, not new problems of
+their own.
+
+**Raise, on red.** `frob.verify._quarantine.raise_quarantine(root, *,
+batch_commit_shas, findings)` persists a durable `.frob/quarantine.json`
+record the moment a batch verification (T-1688's coalescing worker, or
+any other caller that has just run one) comes back red -- `findings` is
+T-1690's own `Attribution` shape, narrowed to what this module acts on
+(`QuarantinedFinding`: rule/file/line, the T-1690 attribution if one
+exists, and a `disposition` that starts empty). Logged at ERROR, naming
+the batch and every finding -- T-1686's own standing rule that a
+state-changing event on the land path must never be silent.
+
+**While raised, deferred landing is off.** `is_quarantined(root)` is
+`True` the moment a raised record's `cleared_at` is still `None`.
+`frob.app.ticket_runner._land_cmd._quarantine_override_ceilings` is the
+land-path enforcement point: called right before T-1692's own
+`ceilings_for_profile` result is handed to `block_until_watermark_
+advances`, it OVERRIDES those ceilings to `BackpressureCeilings(max_depth=
+0, max_age_s=0.0)` -- the same shape `fortress` profile already gets --
+whenever quarantine is raised, regardless of what profile this
+particular land is actually running under. This reuses T-1692's EXISTING
+block/drain mechanism rather than adding a second, parallel gate: a
+`max_depth=0` ceiling trips on ANY queued-but-unverified commit, which is
+exactly "either run fully synchronous verification, or block" (this
+ticket's own acceptance wording) -- the credit line is suspended, the
+work itself is not. `is_quarantined`'s own `Err` (an unreadable/corrupt
+`.frob/quarantine.json`) is treated identically to `True` at this call
+site -- "cannot verify is never verified" extended one hop further:
+an unreadable quarantine store must never be misread as "not raised",
+the one direction that would silently let deferred landing resume.
+
+**Clears ONLY on attribution, never on green.** This is the property the
+whole module exists to enforce, and it is deliberately not the obvious
+design: a naive circuit breaker clears itself the next time a check
+comes back green. That is wrong here -- a green run after more lands
+means the tree is clean NOW, it says nothing about whether the ORIGINAL
+regression was ever understood; auto-clearing on green is how a circuit
+breaker silently becomes decoration (this ticket's own words).
+`clear_quarantine(root, *, dispositions, reason, actor)` is the ONLY
+function in this module that clears a raised record, and it requires a
+`dispositions` entry for EVERY finding the raise recorded -- each either
+`"filed"` (a real ticket id now tracks it) or `"dismissed"` (a human's
+recorded reason) -- refusing with `QuarantineError.FindingsNotDisposed`
+otherwise, never a partial clear. There is no "record a green
+verification" entrypoint anywhere in this module, by design: a green
+result structurally cannot reach the clear path at all.
+
+**Durable across a worker restart.** `.frob/quarantine.json` mirrors
+`frob.verify._watermark`'s own single-current-record persistence shape
+(pydantic `frozen=True, extra="forbid"`, schema-versioned) -- `is_
+quarantined` reads it fresh every call, never an in-memory flag a daemon
+restart could lose. A quarantine that evaporates on restart is worse
+than none, because it is trusted (this ticket's own words).
+
+Wiring `raise_quarantine` into the batch-verification driver itself
+(T-1688's coalescing worker actually calling it on a red result) is
+disclosed as NOT done in this pass -- `src/frob/app/ticket_runner/
+_rapid_sweep.py` (T-1690's own declared scope) was leased by a concurrent
+in-progress ticket for the whole duration of this one, so this ticket's
+own declared scope (`_quarantine.py`, `_land_cmd.py`, this doc) covers
+the durable primitive and the land-path enforcement half only; the raise
+call site is a disclosed follow-up.
+
 ## Development profiles (`frob.toml [profile]`, T-1575)
 
 <!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->

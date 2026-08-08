@@ -656,7 +656,7 @@ def _sweep_revert_land(
 # unscoped error sweep section is unchanged -- same inputs, same outputs, fewer \
 # duplicate frob check spawns. Out of this ticket's declared scope (src/frob/app/ \
 # ticket_runner/_land_cmd.py, src/frob/tickets/_land_finalize.py) to also touch \
-# docs/modules/tickets.md here."  # noqa: E501
+# docs/modules/tickets.md here."
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_no_new_error_is_a_silent_no_op  # noqa: E501
@@ -2290,8 +2290,113 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     return root, rapid_land
 
 
+# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:ticket T-1693
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_not_quarantined_is_unchanged  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_quarantined_forces_synchronous  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_corrupt_store_also_forces_synchronous  # noqa: E501
+def _quarantine_override_ceilings(
+    root: Path, ceilings, *, ticket_id: str | None  # noqa: ANN001
+):
+    """T-1693: while quarantine is raised, deferred landing is OFF --
+    this land either runs fully synchronous verification (the credit
+    line is suspended, not the work) or blocks, per profile. Reuses the
+    EXISTING `frob.verify.block_until_watermark_advances` mechanism
+    (T-1692) as the enforcement point rather than adding a second,
+    parallel gate: forcing `BackpressureCeilings(max_depth=0,
+    max_age_s=0.0)` -- the same shape `ceilings_for_profile` already
+    gives `fortress` -- makes ANY queued-but-unverified commit trip
+    immediately, regardless of the land's own profile, exactly matching
+    fortress's "refuse on red" posture for the duration of the
+    quarantine.
+
+    `is_quarantined`'s own `Err` (a corrupt `.frob/quarantine.json`) is
+    treated the SAME as `True` here -- "cannot verify is never verified"
+    extends to this call site too: an unreadable quarantine store must
+    never be misread as "quarantine is not raised", the direction that
+    would silently let deferred landing resume."""
+    from frob.verify._backpressure import BackpressureCeilings
+    from frob.verify._quarantine import is_quarantined
+
+    quarantined = is_quarantined(root)
+    if quarantined.is_ok and not quarantined.danger_ok:
+        return ceilings
+
+    _log.error(
+        "ticket land: %s quarantine is raised (or its store could not be "
+        "read) -- deferred landing is OFF, forcing fully-synchronous "
+        "verification for this land regardless of profile (T-1693)",
+        ticket_id if ticket_id is not None else "<no ticket id>",
+    )
+    return BackpressureCeilings(max_depth=0, max_age_s=0.0)
+
+
+# frob:ticket T-1693
+# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_no_quarantine_is_a_noop  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_real_attributed_finding_never_auto_clears  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_synthetic_finding_clears_once_status_is_untripped  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_synthetic_finding_stays_raised_while_still_tripped  # noqa: E501
+def _auto_clear_synthetic_quarantine(root: Path, ceilings) -> None:  # noqa: ANN001
+    """The ONLY case this land path ever auto-clears a raised quarantine:
+    every recorded finding is `_raise_quarantine_on_persistent_block_
+    timeout`'s own synthetic `"BACKPRESSURE_TIMEOUT"` marker (never a
+    real T-1690-attributed finding), AND the underlying backpressure
+    status (checked fresh, against `ceilings` -- the profile's REAL
+    ceilings, not the T-1693 override `_quarantine_override_ceilings`
+    forces while raised) is no longer tripped. This does not weaken
+    T-1693's own "clears only on attribution, never on green" rule: a
+    REAL attributed finding (any `disposition` other than the synthetic
+    marker, or any finding this land path did not itself raise) is never
+    eligible here, checked explicitly below -- only the coarse,
+    self-raised timeout marker this SAME module created gets auto-
+    dismissed once the specific condition that raised it has verifiably
+    resolved. A no-op whenever nothing is quarantined, the store is
+    unreadable, or any finding is not the synthetic marker."""
+    from frob.verify._backpressure import current_status
+    from frob.verify._quarantine import clear_quarantine, load_quarantine
+
+    loaded = load_quarantine(root)
+    if (
+        loaded.is_err
+        or loaded.danger_ok is None
+        or loaded.danger_ok.cleared_at is not None
+    ):
+        return
+    record = loaded.danger_ok
+    if any(f.rule_id != "BACKPRESSURE_TIMEOUT" for f in record.findings):
+        return
+
+    status = current_status(root, ceilings)
+    if status.is_err or status.danger_ok.tripped:
+        return
+
+    dispositions = {
+        (f.rule_id, f.file, f.line): (
+            "dismissed",
+            "backpressure condition resolved -- watermark advanced past the "
+            "timed-out batch (T-1693 auto-clear, synthetic finding only)",
+        )
+        for f in record.findings
+    }
+    cleared = clear_quarantine(
+        root,
+        dispositions=dispositions,
+        reason="backpressure resolved -- synthetic BACKPRESSURE_TIMEOUT finding(s) "
+        "only, no real attributed finding was ever recorded for this raise",
+        actor="frob.app.ticket_runner._land_cmd._auto_clear_synthetic_quarantine",
+    )
+    if cleared.is_err:
+        _log.error(
+            "ticket land: auto-clear of a synthetic backpressure-timeout "
+            "quarantine failed (%s)",
+            cleared.danger_err,
+        )
+
+
 # frob:doc docs/modules/tickets.md#backpressure-t-1692
 # frob:ticket T-1692
+# frob:ticket T-1693
 # frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_dry_run_skips_the_check  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_not_tripped_is_a_noop  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_tripped_blocks_then_proceeds  # noqa: E501
@@ -2325,6 +2430,8 @@ def _apply_backpressure(root: Path, cfg: AppConfig, profile) -> None:  # noqa: A
     from frob.verify import ceilings_for_profile, block_until_watermark_advances
 
     ceilings = ceilings_for_profile(profile, root)
+    _auto_clear_synthetic_quarantine(root, ceilings)
+    ceilings = _quarantine_override_ceilings(root, ceilings, ticket_id=cfg.ticket_id)
     # T-1760: `cfg.ticket_id` is `str | None` on AppConfig, but backpressure
     # keys its own logging and watermark bookkeeping on a real ticket id.
     # A land without one has nothing to attribute the block to, so there is
@@ -2342,6 +2449,79 @@ def _apply_backpressure(root: Path, cfg: AppConfig, profile) -> None:  # noqa: A
             "age/watermark",
             cfg.ticket_id,
             blocked.danger_err,
+        )
+        _raise_quarantine_on_persistent_block_timeout(root, cfg.ticket_id)
+
+
+# frob:ticket T-1693
+# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestRaiseQuarantineOnPersistentBlockTimeout.test_raises_with_a_synthetic_finding  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestRaiseQuarantineOnPersistentBlockTimeout.test_already_quarantined_is_a_noop  # noqa: E501
+def _raise_quarantine_on_persistent_block_timeout(
+    root: Path, ticket_id: str | None
+) -> None:
+    """T-1693's own land-path raise site: a `block_until_watermark_
+    advances` timeout means this land waited the ENTIRE backpressure
+    timeout budget and the queue's ceiling never cleared -- the batch has
+    been unable to go green for the whole window, a real (if coarser
+    than T-1690's per-finding attribution) red-batch signal in its own
+    right. Raises with a single UNATTRIBUTED `QuarantinedFinding`
+    (`commit_sha`/`ticket_id` both `None` -- "cannot verify is never
+    verified" extends to attribution too: this call site genuinely does
+    not have per-finding attribution data, T-1690's `attribute_batch`
+    output, only knows the WINDOW timed out, so it must not fabricate
+    one).
+
+    This is deliberately NOT the canonical raise call site the T-1693
+    design describes (the batch-verification driver calling
+    `raise_quarantine` directly off a red `attribute_batch` result,
+    finding-by-finding) -- that driver
+    (`src/frob/app/ticket_runner/_rapid_sweep.py`) was leased by a
+    concurrent in-progress ticket for T-1693's entire working session
+    and is out of its declared scope (disclosed in T-1693's Done report,
+    follow-up filed as T-1791). This IS a real, independently
+    correct trigger for the SAME breaker, not a placeholder -- a land
+    that could not get past backpressure for the whole timeout window is
+    exactly the situation deferred landing must stop happening for.
+
+    A no-op if quarantine is already raised (idempotent, matching
+    `raise_quarantine`'s own "overwrite, don't stack" contract) --
+    checked here rather than relying on `raise_quarantine` itself, since
+    re-raising with only this coarser synthetic finding would DISCARD a
+    richer, already-recorded finding set from an earlier real batch
+    raise."""
+    from frob.verify._quarantine import (
+        QuarantinedFinding,
+        is_quarantined,
+        raise_quarantine,
+    )
+
+    already = is_quarantined(root)
+    if already.is_ok and already.danger_ok:
+        _log.debug(
+            "ticket land: %s quarantine already raised -- not overwriting "
+            "with a coarser backpressure-timeout finding",
+            ticket_id,
+        )
+        return
+
+    raised = raise_quarantine(
+        root,
+        batch_commit_shas=(),
+        findings=(
+            QuarantinedFinding(
+                rule_id="BACKPRESSURE_TIMEOUT",
+                file=".",
+                line=None,
+            ),
+        ),
+    )
+    if raised.is_err:
+        _log.error(
+            "ticket land: %s could not raise quarantine after a persistent "
+            "backpressure timeout (%s)",
+            ticket_id,
+            raised.danger_err,
         )
 
 
