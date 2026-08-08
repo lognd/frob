@@ -1,7 +1,7 @@
 ---
 id: T-1483
 title: wire frob refactor into main CLI dispatch
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-03'
@@ -13,8 +13,47 @@ runs_last: false
 scope:
 - src/frob/_cli_parsers/**
 - src/frob/__main__.py
+- docs/commands/refactor.md
+- tests/test_refactor.py
+- tests/unit/test_main_entry.py
+- src/frob/refactor/_cli.py
+- tickets/T-1483/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/commands/refactor.md
+  reason: the doc's own not-yet-wired claim (frob:until T-1483) must be updated now
+    that wiring lands, and CLI-dispatch integration coverage needs test_refactor.py/test_main_entry.py
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_refactor.py
+  reason: the doc's own not-yet-wired claim (frob:until T-1483) must be updated now
+    that wiring lands, and CLI-dispatch integration coverage needs test_refactor.py/test_main_entry.py
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: the doc's own not-yet-wired claim (frob:until T-1483) must be updated now
+    that wiring lands, and CLI-dispatch integration coverage needs test_refactor.py/test_main_entry.py
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/refactor/_cli.py
+  reason: module docstring claims wiring is out of scope/not yet connected -- now
+    stale, must be corrected
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tickets/T-1483/**
+  reason: 'SCOPE001: ticket''s own per-ticket ledger file written by ordinary frob
+    ticket CLI lifecycle commands, per T-1742/T-1737 precedent'
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/unit/test_main_entry.py::TestRefactorDispatch::test_refactor_subcommand_dispatches_to_run_refactor_command
+- tests/unit/test_main_entry.py::TestRefactorDispatch::test_refactor_exit_code_propagates
 designated_repro_test: null
 threat: null
 component: null

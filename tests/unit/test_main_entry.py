@@ -3,7 +3,6 @@ vocabulary normalization (T-0578), and the lazy log stream handlers that
 keep this module's own stderr assertions from being polluted by a stale
 captured stream (T-1385)."""
 
-
 from __future__ import annotations
 
 import io
@@ -97,6 +96,45 @@ class TestMainUnhandledException:
             main_module.main()
 
         assert logged == [{"exc_info": True}]
+
+
+# frob:ticket T-1483
+class TestRefactorDispatch:
+    """`frob refactor` is routed by `_dispatch` the same way `bind`/
+    `agent`/`worktree` already are (T-1483) -- `run_refactor_command`
+    takes a parsed `Namespace` and returns a raw exit code, not the
+    uniform `run(AppConfig)` shape every `Subcommand`-mapped runner
+    shares."""
+
+    def test_refactor_subcommand_dispatches_to_run_refactor_command(
+        self, monkeypatch
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_subcommand_dispatches_to_run_refactor_command  # noqa: E501
+        calls: list = []
+
+        def _fake_run(args) -> int:  # noqa: ANN001
+            calls.append(args)
+            return 0
+
+        monkeypatch.setattr("frob.refactor._cli.run_refactor_command", _fake_run)
+
+        with pytest.raises(SystemExit) as exc_info:
+            main_module._dispatch(["refactor", "rename", "pkg.mod:x", "pkg.mod:y"])
+
+        assert exc_info.value.code == 0
+        assert len(calls) == 1
+        assert calls[0].source.module == "pkg.mod"
+        assert calls[0].source.qualname == "x"
+        assert calls[0].destination.qualname == "y"
+
+    def test_refactor_exit_code_propagates(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_exit_code_propagates  # noqa: E501
+        monkeypatch.setattr("frob.refactor._cli.run_refactor_command", lambda args: 1)
+
+        with pytest.raises(SystemExit) as exc_info:
+            main_module._dispatch(["refactor", "rename", "pkg.mod:x", "pkg.mod:y"])
+
+        assert exc_info.value.code == 1
 
 
 # frob:ticket T-0578

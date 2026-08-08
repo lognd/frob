@@ -3,14 +3,14 @@
 refactor.md).
 
 Exposes `add_refactor_parser`/`run_refactor_command` in the same shape as
-every other `_add_*_parser` in `src/frob/_cli_parsers/**` so a sibling
-ticket can wire this into `frob.__main__`'s subcommand tree with a single
-import + one `_add_refactor_parser(sub)` call -- that wiring itself is
-outside T-1197's declared scope (`src/frob/_cli_parsers/**` and
-`src/frob/__main__.py` are not in this ticket's `scope` globs), so this
-module is the ready-to-wire surface, not yet connected to the live CLI.
-See the Done report for the filed follow-up ticket that does the wiring.
-"""
+every other `_add_*_parser` in `src/frob/_cli_parsers/**` -- T-1197 built
+this module as the ready-to-wire surface; T-1483 connected it to the live
+CLI. Because `run_refactor_command` takes a parsed `Namespace` and
+returns a raw exit code directly rather than the uniform `run(AppConfig)`
+shape every `Subcommand`-mapped runner shares, `frob.__main__._dispatch`
+routes `frob refactor` the same way it already routes `bind`/`agent`/
+`worktree` -- a direct dispatch before the main `argparse` parser tree is
+even built, never a `Subcommand` enum member."""
 
 from __future__ import annotations
 
@@ -38,7 +38,8 @@ def _parse_ref(text: str) -> SymbolRef:
 
 
 # frob:doc docs/commands/refactor.md#cli
-# frob:tests tests/test_refactor.py::TestCli.test_add_refactor_parser_registers_move_and_rename  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestCli.test_add_refactor_parser_registers_move_and_rename
 # frob:tests tests/test_refactor.py::TestCli.test_add_refactor_parser_registers_split
 def add_refactor_parser(sub: argparse._SubParsersAction) -> None:
     """Register `frob refactor {move,rename,split}` on an argparse
@@ -179,7 +180,8 @@ def _run_split_command(args: argparse.Namespace) -> int:
 
 
 # frob:doc docs/commands/refactor.md#cli
-# frob:tests tests/test_refactor.py::TestCli.test_run_refactor_command_reports_refusal_exit_code  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestCli.test_run_refactor_command_reports_refusal_exit_code
 def run_refactor_command(args: argparse.Namespace) -> int:
     """Execute a parsed `frob refactor move`/`rename`/`split` invocation
     and print the disclosed report; returns the process exit code (0

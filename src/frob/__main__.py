@@ -123,7 +123,11 @@ def _closest(bad: str, candidates: list[str]) -> str | None:
 
 
 # frob:ticket T-0578
-# frob:invariant terminates reason="_collect_option_strings only recurses into a subparser's own choices, and argparse subparser trees are built once at module load as a finite, non-self-referential tree (a subcommand can never register itself or an ancestor as one of its own subparsers)" measure="depth of the argparse subparser tree strictly decreases with each recursive call"  # noqa: E501
+# frob:invariant terminates reason="_collect_option_strings only recurses into a \
+# subparser's own choices, and argparse subparser trees are built once at module load \
+# as a finite, non-self-referential tree (a subcommand can never register itself or an \
+# ancestor as one of its own subparsers)" measure="depth of the argparse subparser \
+# tree strictly decreases with each recursive call"
 def _collect_option_strings(parser: argparse.ArgumentParser) -> set[str]:
     """Recursively collect every `--flag` string registered anywhere under
     `parser` (root + every subparser, T-0578) -- argparse exposes no public
@@ -249,7 +253,8 @@ def _add_workflow_subparsers(sub) -> None:
 # frob:ticket T-0355
 # frob:ticket T-0358
 # frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_keyboard_interrupt_prints_clean_message_and_exits_130  # noqa: E501
-# frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_normal_dispatch_is_unaffected  # noqa: E501
+# frob:tests \
+# tests/unit/test_main_entry.py::TestMainSigint.test_normal_dispatch_is_unaffected
 def main() -> None:
     """CLI entry point: parses argv and dispatches to `App`, or straight to
     `frob bind` (T-0355: SIGINT during a long-running command -- e.g. a
@@ -272,6 +277,13 @@ def main() -> None:
 
 # frob:ticket T-0355
 # frob:ticket T-1218
+# frob:ticket T-1483
+# frob:tests \
+# tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_subcommand_dispatch\
+# es_to_run_refactor_command kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_exit_code_propagate\
+# s kind="unit"  # noqa: E501
 def _dispatch(argv: list[str]) -> None:
     """`main`'s actual argv-to-`App` dispatch, split out so `main` can wrap
     only this in the `KeyboardInterrupt` handler (T-0355) without also
@@ -295,6 +307,23 @@ def _dispatch(argv: list[str]) -> None:
         from frob.app.worktree_runner import run as _worktree_run
 
         _worktree_run(argv[1:])
+    elif argv and argv[0] == "refactor":
+        # T-1483: `frob refactor` is dispatched directly, mirroring
+        # `bind`/`agent`/`worktree` above -- `frob.refactor._cli.
+        # run_refactor_command` takes a parsed `argparse.Namespace` and
+        # returns an exit code directly (T-1197's own shape, matching every
+        # other `_add_*_parser` builder for a later single-line wire-in),
+        # not the uniform `run(AppConfig)` entry point every subcommand in
+        # `_SUBCOMMAND_RUNNER_NAMES` (`frob.app.app`) shares -- so this
+        # subcommand is routed the same way as the three above rather than
+        # added to that dict.
+        from frob.refactor._cli import add_refactor_parser, run_refactor_command
+
+        refactor_parser = argparse.ArgumentParser(prog="frob")
+        refactor_sub = refactor_parser.add_subparsers(dest="subcommand")
+        add_refactor_parser(refactor_sub)
+        refactor_args = refactor_parser.parse_args(argv)
+        _sys.exit(run_refactor_command(refactor_args))
     else:
         parser = _build_parser()
         args = parser.parse_args(argv)

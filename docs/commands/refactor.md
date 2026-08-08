@@ -3,13 +3,11 @@
 Transactional Python symbol move/rename: rewrites every import/call site
 that references the moved symbol, verifies the result, and rolls back
 atomically if it cannot complete. Design: `docs/design/refactor-verb.md`
-(T-1135). This page documents the engine T-1197 built; the CLI verb
-itself is not yet wired into `frob`'s main dispatch (see "CLI wiring
-status" below).
-<!-- frob:until T-1483 -->
+(T-1135). This page documents the engine T-1197 built; T-1483 wired the
+CLI verb into `frob`'s main dispatch (see "CLI wiring status" below).
 
 
-## Usage (once wired)
+## Usage
 
 ```
 frob refactor move SOURCE_MODULE:QUALNAME DEST_MODULE:QUALNAME [--alias-conflict {error,rename-dest}]
@@ -158,15 +156,18 @@ A `from x.y import z` attribute-style call site written as
 
 ## CLI wiring status
 
-`frob.refactor._cli.add_refactor_parser`/`run_refactor_command` are
-built and ready (same shape as every other `_add_*_parser` in
-`src/frob/_cli_parsers/**`) but T-1197's declared scope
-(`src/frob/refactor/**`, this file, `tests/test_refactor.py`) does not
-include `src/frob/_cli_parsers/**` or `src/frob/__main__.py`, so the
-one-line `_add_refactor_parser(sub)` wiring call is left for a follow-up
-ticket rather than done here. Until that lands, exercise the engine via
-`frob.refactor.run_refactor` directly (Python) or the standalone
-`add_refactor_parser`/`run_refactor_command` functions.
+T-1483 wired `frob refactor` into `frob`'s main dispatch. Because
+`run_refactor_command(args: argparse.Namespace) -> int` takes a parsed
+`Namespace` and returns a raw exit code directly -- T-1197's own shape,
+matching every other `_add_*_parser` builder's signature for a later
+single-line wire-in -- rather than the uniform `run(AppConfig)` entry
+point every subcommand in `frob.app.app._SUBCOMMAND_RUNNER_NAMES`
+shares, `frob refactor` is routed the same way `frob bind`/`agent`/
+`worktree` already are: `src/frob/__main__.py::_dispatch` recognizes
+`argv[0] == "refactor"` and dispatches directly, before the main
+`argparse` parser tree (`_build_parser`) is even built -- it never
+becomes a `Subcommand` enum member or an entry in
+`_SUBCOMMAND_RUNNER_NAMES`.
 
 `run_refactor_command`'s human-facing report lines route through a
 `frob.render.Renderer` (T-1336), matching the sole-stdout convention every
