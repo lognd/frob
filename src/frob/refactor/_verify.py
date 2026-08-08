@@ -111,20 +111,33 @@ def _local_import_gaps(repo_root: Path, path: Path, tree: ast.Module) -> list[st
 
 
 # frob:doc docs/commands/refactor.md#verify_import_resolution
-# frob:tests tests/test_refactor.py::TestVerify.test_import_resolution_catches_syntax_error  # noqa: E501
-# frob:tests tests/test_refactor.py::TestVerify.test_import_resolution_catches_dangling_reference  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestVerify.test_import_resolution_catches_syntax_error
+# frob:tests \
+# tests/test_refactor.py::TestVerify.test_import_resolution_catches_dangling_reference
 def verify_import_resolution(
     touched_files: list[Path], repo_root: Path | None = None
 ) -> VerifyOutcome:
-    """Post-condition 1: every touched file still parses as valid Python
-    AND, for every absolute local-module import it contains, the imported
-    name actually resolves against something that module currently
-    defines -- a real (scoped, disclosed) import-graph resolution check,
-    not merely a syntax parse (see `_local_import_gaps`'s docstring for
-    the exact scope). A file that fails to parse, or that imports a name
-    a repo-owned module no longer defines, after rewriting is exactly the
-    "half-moved symbol" case the design doc's refuse-and-rollback rule
-    exists for.
+    """Post-condition 1: every touched `.py` file still parses as valid
+    Python AND, for every absolute local-module import it contains, the
+    imported name actually resolves against something that module
+    currently defines -- a real (scoped, disclosed) import-graph
+    resolution check, not merely a syntax parse (see `_local_import_gaps`'s
+    docstring for the exact scope). A file that fails to parse, or that
+    imports a name a repo-owned module no longer defines, after rewriting
+    is exactly the "half-moved symbol" case the design doc's
+    refuse-and-rollback rule exists for.
+
+    T-1885: `touched_files` is the FULL set a `RefactorPlan.reference_ops`
+    entry rewrote, not just Python source -- a non-Python carrier (a
+    `tickets/<id>/ticket.md` evidence citation, T-1546; a
+    `docs/design/registry/*.yaml` registry citation, T-1200) is filtered
+    out by suffix (`path.suffix != ".py"`) before ever reaching
+    `ast.parse`, rather than being handed to it and producing a spurious
+    `SyntaxError` on ordinary prose/YAML content. This check verifies
+    Python syntax/import resolution only; a non-`.py` file was never a
+    real candidate for it and is simply not this check's concern, not a
+    weakening of what it verifies.
 
     `repo_root=None` (the historical call shape, kept so existing callers
     passing loose files with no enclosing repo still work) skips the
@@ -134,8 +147,30 @@ def verify_import_resolution(
     """
     broken: list[str] = []
     trees: dict[Path, ast.Module] = {}
+    skipped: list[str] = []
     for path in touched_files:
         if not path.is_file():
+            continue
+        # T-1885: `touched_files` is every path a `RefactorPlan.reference_
+        # ops` entry rewrote -- not just Python source. A non-`.py` carrier
+        # (a `tickets/<id>/ticket.md` evidence citation, T-1546; a
+        # `docs/design/registry/*.yaml` registry citation, T-1200) reaching
+        # `ast.parse` unconditionally is not Python and predictably raises
+        # `SyntaxError` on ordinary prose/YAML content (observed: "leading
+        # zeros in decimal integer literals are not permitted" parsing a
+        # ticket.md's `T-0001`-shaped id) -- which this function correctly
+        # reported as a failed `VerifyOutcome` (never silently swallowed as
+        # a crash), but that failure was spurious AND indistinguishable
+        # from a genuine one: nothing about the actual rewrite was broken,
+        # only this check's blind assumption that every touched file is
+        # Python. A non-`.py` file is recorded in `skipped` -- disclosed
+        # explicitly, never silently folded into either `passed=True`
+        # ("I looked and it's fine") or `passed=False` ("I looked and it's
+        # broken") -- rather than being handed to `ast.parse` at all. This
+        # function's whole job is Python syntax/import resolution; a
+        # non-Python file was never a real candidate for it.
+        if path.suffix != ".py":
+            skipped.append(str(path))
             continue
         try:
             trees[path] = ast.parse(
@@ -143,12 +178,18 @@ def verify_import_resolution(
             )
         except SyntaxError as exc:
             broken.append(f"{path}: {exc}")
+    skipped_note = (
+        f" ({len(skipped)} non-.py file(s) skipped, not applicable)"
+        if skipped
+        else ""
+    )
     if broken:
         _log.warning("refactor.verify: import resolution failed: %s", broken)
         return VerifyOutcome(
             name="import_resolution",
             passed=False,
-            detail="; ".join(broken),
+            detail="; ".join(broken) + skipped_note,
+            skipped=tuple(skipped),
         )
 
     if repo_root is None:
@@ -156,10 +197,11 @@ def verify_import_resolution(
             name="import_resolution",
             passed=True,
             detail=(
-                f"{len(touched_files)} touched file(s) parse cleanly "
+                f"{len(trees)} touched .py file(s) parse cleanly "
                 "(no repo_root given -- syntax check only, local-module "
-                "resolution skipped)"
+                f"resolution skipped){skipped_note}"
             ),
+            skipped=tuple(skipped),
         )
 
     gaps: list[str] = []
@@ -170,15 +212,17 @@ def verify_import_resolution(
         return VerifyOutcome(
             name="import_resolution",
             passed=False,
-            detail="; ".join(gaps),
+            detail="; ".join(gaps) + skipped_note,
+            skipped=tuple(skipped),
         )
     return VerifyOutcome(
         name="import_resolution",
         passed=True,
         detail=(
-            f"{len(touched_files)} touched file(s) parse cleanly and every "
-            "absolute local-module import resolves"
+            f"{len(trees)} touched .py file(s) parse cleanly and every "
+            f"absolute local-module import resolves{skipped_note}"
         ),
+        skipped=tuple(skipped),
     )
 
 
@@ -225,7 +269,8 @@ def verify_pytest_collect(
 
 # frob:doc docs/commands/refactor.md#verify_check_delta
 # frob:tests tests/test_refactor.py::TestVerify.test_check_delta_reports_command_failure
-# frob:tests tests/test_refactor.py::TestVerify.test_check_delta_uses_current_interpreter  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestVerify.test_check_delta_uses_current_interpreter
 def verify_check_delta(repo_root: Path, timeout: int = 100) -> VerifyOutcome:
     """Post-condition 3: `frob check --delta` against a pre-refactor
     baseline is diff-clean. Delegated to the real CLI (not re-implemented

@@ -535,6 +535,74 @@ class TestRunRefactor:
         restored = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
         assert "def greet" in restored
 
+    # frob:ticket T-1885
+    def test_run_refactor_does_not_roll_back_on_ticket_md_evidence_carrier(
+        self, tmp_path
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunRefactor.test_run_refactor_does_not_roll_back_\
+        # on_ticket_md_evidence_carrier
+        """T-1885 end-to-end repro: a real ticket carrying a structured
+        evidence citation for the moving symbol used to make the Verify
+        phase's `verify_import_resolution` step `ast.parse` the rewritten
+        `tickets/<id>/ticket.md` as Python, raise `SyntaxError` on the
+        `T-####`-shaped id, and roll the whole transaction back --
+        even though the actual symbol rename was correct. With the
+        `.py`-suffix filter, this must now succeed and commit."""
+        from frob.tickets import TicketKind, TicketSpec, load_all, new_ticket
+        from frob.tickets._models import Origin
+
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        old_node_id = "src/pkg/mod.py::greet"
+        created = new_ticket(
+            root,
+            TicketSpec(
+                title="t1885 evidence carrier repro",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("src/pkg/mod.py",),
+                evidence=(old_node_id,),
+            ),
+        )
+        assert created.is_ok, created.err
+        ticket_id = created.danger_ok.id
+        _commit_all(root, "initial")
+
+        result = run_refactor(
+            root,
+            RefactorKind.RENAME,
+            SymbolRef(module="pkg.mod", qualname="greet"),
+            SymbolRef(module="pkg.mod", qualname="hello"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.success is True, report
+        assert report.rolled_back is False
+
+        # T-1885: the import_resolution outcome must disclose the
+        # ticket.md carrier as skipped (never analysed), not silently
+        # fold it into "checked and clean" -- the exact conflation that
+        # hid this bug behind a report indistinguishable from a genuine
+        # pass.
+        import_outcome = next(
+            o for o in report.verify_outcomes if o.name == "import_resolution"
+        )
+        assert import_outcome.passed is True
+        assert any(
+            str(root / "tickets") in skipped_path
+            for skipped_path in import_outcome.skipped
+        ), import_outcome.skipped
+
+        loaded = load_all(root)
+        assert loaded.is_ok, loaded.err
+        ticket = loaded.danger_ok[ticket_id]
+        new_node_id = "src/pkg/mod.py::hello"
+        assert new_node_id in ticket.evidence
+        assert old_node_id not in ticket.evidence
+
     def test_apply_failure_recovers_clean_precommit_tree(self, tmp_path, monkeypatch):
         # frob:tests \
         # tests/test_refactor.py::TestRunRefactor.test_apply_failure_recovers_clean_pre\
@@ -615,13 +683,15 @@ class TestRunRefactor:
         appears) -- not a raw text substitution with no audit trail.
         Drives `_route_evidence_rebinds_through_replace_evidence` (the
         apply-phase routing step) directly against a real `build_plan`
-        output, rather than the full `run_refactor` pipeline -- that
-        pipeline's `verify_import_resolution` step `ast.parse`s every
-        touched file with no extension filter, a PRE-EXISTING gap
-        (unrelated to this ticket, filed separately as T-1885)
-        that
-        trips on any touched non-Python ticket.md file regardless of
-        this fix."""
+        output, rather than the full `run_refactor` pipeline -- at the
+        time this test was written, that pipeline's `verify_import_
+        resolution` step `ast.parse`d every touched file with no
+        extension filter (a PRE-EXISTING gap, unrelated to this ticket,
+        filed separately as T-1885 and fixed there); now that T-1885 has
+        landed, `TestRunRefactor.test_run_refactor_does_not_roll_back_on_
+        ticket_md_evidence_carrier` below exercises the exact same
+        ticket.md-evidence shape through the full `run_refactor`
+        pipeline end-to-end."""
         from frob.refactor._transaction import (
             _route_evidence_rebinds_through_replace_evidence,
         )
@@ -838,6 +908,55 @@ class TestVerify:
         )
         outcome = verify_import_resolution([caller], repo_root=root)
         assert outcome.passed is True
+
+    # frob:ticket T-1885
+    def test_import_resolution_skips_non_python_touched_file(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerify.test_import_resolution_skips_non_python_to\
+        # uched_file
+        """T-1885: a non-`.py` touched file (a real `tickets/<id>/
+        ticket.md` evidence carrier, T-1546) must never reach `ast.parse`
+        at all -- before this fix, a ticket.md body containing a
+        `T-0001`-shaped id raised a spurious `SyntaxError` ("leading
+        zeros in decimal integer literals are not permitted"), and this
+        check reported `passed=False`, forcing `run_refactor` to roll
+        back a transaction whose actual rewrite was correct."""
+        from frob.refactor import verify_import_resolution
+
+        ticket_md = _write(
+            tmp_path,
+            "tickets/T-0001/ticket.md",
+            "Evidence: src/pkg/mod.py::greet passes.\n",
+        )
+        outcome = verify_import_resolution([ticket_md])
+        assert outcome.passed is True
+        # T-1885: skipped, not silently folded into "checked and clean" --
+        # the ticket.md was never analysed, and the outcome discloses that.
+        assert outcome.skipped == (str(ticket_md),)
+
+    def test_import_resolution_still_catches_syntax_error_in_py_file_among_non_py(
+        self, tmp_path
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerify.test_import_resolution_still_catches_synta\
+        # x_error_in_py_file_among_non_py
+        """The T-1885 non-`.py` skip must not widen what a genuinely
+        broken `.py` file among the touched set is verified against --
+        only the extension-filtering changed, not the Python-file
+        strictness."""
+        from frob.refactor import verify_import_resolution
+
+        ticket_md = _write(
+            tmp_path, "tickets/T-0002/ticket.md", "Evidence: T-0002 passes.\n"
+        )
+        broken_py = _write(tmp_path, "broken.py", "def f(:\n    pass\n")
+        outcome = verify_import_resolution([ticket_md, broken_py])
+        assert outcome.passed is False
+        assert "broken.py" in outcome.detail
+        # The non-.py file is still disclosed as skipped even on a
+        # failing outcome -- skipped is orthogonal to passed, never
+        # conflated with it in either direction.
+        assert outcome.skipped == (str(ticket_md),)
 
 
 class TestFindPythonFiles:

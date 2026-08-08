@@ -81,16 +81,24 @@ possibly reordered) and collapses them to one op rather than tripping
    instead of rewritten, since a whole-line-span replacement there would
    silently delete the sibling statement.
 4. **Verify** -- three post-conditions, each producing a `VerifyOutcome`:
-   - `verify_import_resolution` -- every touched file still parses AND,
-     for every absolute `from <local module> import <name>` it contains,
-     `<name>` actually resolves against something that local module
-     currently defines (real, scoped import-graph resolution -- see the
-     function's own docstring for the exact scope: repo-owned modules
-     under `src/` only, absolute imports only; third-party/stdlib and
-     relative imports are outside v1's static-AST reach and are never
-     flagged). Pass `repo_root=None` to fall back to the syntax-only
-     check (the historical behavior, still available for a caller with
-     no enclosing repo); the `detail` string always says which mode ran.
+   - `verify_import_resolution` -- every touched `.py` file still parses
+     (non-`.py` touched files, e.g. a `tickets/<id>/ticket.md` evidence
+     citation or a `docs/design/registry/*.yaml` cross-ref, are recorded
+     in the returned `VerifyOutcome.skipped` and never reach the parse
+     loop at all -- T-1885; they were never valid Python and previously
+     produced a spurious `SyntaxError`-driven rollback, indistinguishable
+     from a genuine failure) AND, for every absolute `from <local module>
+     import <name>` it contains, `<name>` actually resolves against
+     something that local module currently defines (real, scoped
+     import-graph resolution -- see the function's own docstring for the
+     exact scope: repo-owned modules under `src/` only, absolute imports
+     only; third-party/stdlib and relative imports are outside v1's
+     static-AST reach and are never flagged). Pass `repo_root=None` to
+     fall back to the syntax-only check (the historical behavior, still
+     available for a caller with no enclosing repo); the `detail` string
+     always says which mode ran, and mentions the skipped count whenever
+     it is nonzero -- a skip is disclosed, never silently folded into
+     either a pass or a failure verdict.
    - `verify_pytest_collect` -- `pytest --collect-only` succeeds with no
      new collection error.
    - `verify_check_delta` -- `frob check --delta` is diff-clean against
@@ -264,7 +272,10 @@ phase -- move ops, reference ops, aliases, and unresolved mentions.
 
 <a id="verifyoutcome"></a>
 <!-- frob:describes src/frob/refactor/_models.py::VerifyOutcome -->
-**`VerifyOutcome`**: one Verify-phase post-condition's pass/fail result.
+**`VerifyOutcome`**: one Verify-phase post-condition's pass/fail result,
+plus `skipped` (T-1885) -- the touched paths this check did not analyse
+because they are outside its own domain, disclosed distinctly from a
+pass or a failure verdict rather than silently folded into either.
 
 <a id="refactorreport"></a>
 <!-- frob:describes src/frob/refactor/_models.py::RefactorReport -->
@@ -306,9 +317,9 @@ write if two ops targeting the same file overlap.
 <a id="verify_import_resolution"></a>
 <!-- frob:describes src/frob/refactor/_verify.py::verify_import_resolution -->
 **`verify_import_resolution`**: Verify post-condition 1 -- every touched
-file still parses, and (when `repo_root` is given) every absolute
-local-module import it contains resolves against what that module
-currently defines.
+`.py` file still parses (non-`.py` touched files are skipped, T-1885),
+and (when `repo_root` is given) every absolute local-module import it
+contains resolves against what that module currently defines.
 
 <a id="verify_pytest_collect"></a>
 <!-- frob:describes src/frob/refactor/_verify.py::verify_pytest_collect -->

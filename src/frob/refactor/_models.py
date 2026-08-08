@@ -176,13 +176,30 @@ class RefactorPlan(BaseModel):
 class VerifyOutcome(BaseModel):
     """One Verify-phase post-condition's result: a named check (import
     resolution / pytest collection / `frob check --delta`) plus whether it
-    passed and the detail a disclosed report shows for it."""
+    passed and the detail a disclosed report shows for it.
+
+    T-1885: `skipped` names every touched path this check did NOT analyse
+    because it is outside the check's own domain (e.g. a `tickets/<id>/
+    ticket.md` evidence carrier or a `docs/design/registry/*.yaml` cross-
+    ref handed to `verify_import_resolution`, which only ever verifies
+    Python source) -- distinct from `passed=True`, which means "every
+    file this check DID look at was fine." Before this field existed, a
+    check that silently skipped an input it could not analyse and a check
+    that genuinely analysed everything and found no problem were both
+    reported as `passed=True` with no way to tell them apart from the
+    outcome alone -- the exact conflation a companion incident (a stale
+    mypy cache returning zero diagnostics for a file that had one; a
+    capability scanner with no language table reporting "no capabilities
+    observed") already burned this repo on, tracked at the check-gate
+    layer by T-1664. `skipped` is additive and never affects `passed`
+    itself -- it is a disclosure field, not a verdict."""
 
     model_config = ConfigDict(frozen=True)
 
     name: str
     passed: bool
     detail: str
+    skipped: tuple[str, ...] = ()
 
 
 # frob:doc docs/commands/refactor.md#refactorreport

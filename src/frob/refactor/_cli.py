@@ -147,7 +147,8 @@ def _render_chunk_report(renderer: Renderer, chunk) -> None:
         renderer.line(f"    unresolved: {item}")
     for outcome in chunk.verify_outcomes:
         v_status = "PASS" if outcome.passed else "FAIL"
-        renderer.line(f"    [{v_status}] {outcome.name}")
+        skip_note = f" ({len(outcome.skipped)} skipped)" if outcome.skipped else ""
+        renderer.line(f"    [{v_status}] {outcome.name}{skip_note}")
 
 
 def _render_split_report(renderer: Renderer, report) -> None:
@@ -215,7 +216,8 @@ def run_refactor_command(args: argparse.Namespace) -> int:
         renderer.line(f"  unresolved: {item}")
     for outcome in report.verify_outcomes:
         status = "PASS" if outcome.passed else "FAIL"
-        renderer.line(f"  [{status}] {outcome.name}")
+        skip_note = f" ({len(outcome.skipped)} skipped)" if outcome.skipped else ""
+        renderer.line(f"  [{status}] {outcome.name}{skip_note}")
     if report.rolled_back:
         print(f"rolled back to {report.pre_sha}", file=sys.stderr)
         return 1
