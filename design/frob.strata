@@ -93,14 +93,14 @@ node cli : trusted {
         _land, _land_collected_fn, _land_passed_fn, _list, _log_evidence_result, _merge_driver,
         _new, _refuse_if_land_in_progress_for_dispatch, _render_acceptance, _resolve_ticket_root, _reverify, _review,
         _run_pytest_directly, _run_tests_count_fn, _scope, _scope_ack, _show, _start,
-        _sync_gate_rules_for_land, _work, append_event, detect_footguns, ensure_daemon, estimate_tokens,
-        fast_yaml_loader, is_disabled, is_excluded, is_skipped_dir, is_test_file, iso_now,
-        iter_files, land_parity_findings, load_arch_config, load_exclude_globs, query, read_toml_lenient,
-        record_cli_event, record_ticket_event, redact_command, release_daemon_lease, render_tips, run,
-        run_deferred_post_land_sweep, run_diagnosis, scan_live_land_processes, scan_venv_shims, spawn_deferred_post_land_sweep, stale_binary_warning,
-        stale_install_warning, style_fail, style_header, style_ok, style_rule, style_state,
-        style_ticket_id, style_warn, timed_call, tips_disabled, tree_hash, try_daemon_lease,
-        usage_report, verify_derived_state, walk_pruned,
+        _sync_gate_rules_for_land, _work, append_event, build_status, detect_footguns, ensure_daemon,
+        estimate_tokens, fast_yaml_loader, is_disabled, is_excluded, is_skipped_dir, is_test_file,
+        iso_now, iter_files, land_parity_findings, load_arch_config, load_exclude_globs, query,
+        read_toml_lenient, record_cli_event, record_ticket_event, redact_command, release_daemon_lease, render_tips,
+        run, run_deferred_post_land_sweep, run_diagnosis, scan_live_land_processes, scan_venv_shims, spawn_deferred_post_land_sweep,
+        stale_binary_warning, stale_install_warning, style_fail, style_header, style_ok, style_rule,
+        style_state, style_ticket_id, style_warn, timed_call, tips_disabled, tree_hash,
+        try_daemon_lease, usage_report, verify_derived_state, walk_pruned,
     ];
     clearance Internal;
     // T-0500 (docs/audits/strata.md G4): src/frob/__init__.py (package

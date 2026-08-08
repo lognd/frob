@@ -4302,6 +4302,90 @@ record, and a caller filing a real regression must never be blocked by
 the quarantine flag failing to persist.
 <!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_raise_quarantine_for_red_batch -->  
 
+## `frob verify` CLI (T-1697)
+
+<!-- frob:describes src/frob/app/verify_runner.py::VerifyQuarantineFindingView -->
+<!-- frob:describes src/frob/app/verify_runner.py::VerifyStatus -->
+<!-- frob:describes src/frob/app/verify_runner.py::build_status -->
+<!-- frob:describes src/frob/app/verify_runner.py::run -->
+
+Before this ticket, a raised quarantine (the previous section) could only
+be inspected or cleared by calling `frob.verify._quarantine`'s private
+Python functions directly -- a safety mechanism operable only through a
+private API is not operable. `frob verify` is the CLI that makes the
+whole T-1686 unverified-window epic auditable and actionable from a
+shell.
+
+**`frob verify status [--json]`.** Assembles one `VerifyStatus` snapshot
+(`build_status`): the watermark commit and its age, the current queue
+depth, the oldest unverified entry's commit/ticket/age, and quarantine
+state -- while raised, every recorded `QuarantinedFinding` renders as a
+`VerifyQuarantineFindingView` carrying a `key` string
+(`RULE:FILE:LINE`) that round-trips straight into `frob verify
+dispose`'s own `--file-ticket`/`--dismiss` arguments, so a human/CI
+reader never has to hand-encode one. **Porcelain rule:** exits non-zero
+while quarantine is raised, so a shell or CI step can gate on "is this
+repo's verification healthy" without parsing prose. `--json` serializes
+`VerifyStatus` directly -- the pydantic model IS the wire contract, not a
+hand-maintained parallel dict.
+
+**`frob verify now [--json]`.** Drains and verifies the queue
+synchronously right now (`frob.verify.run_coalesced_verification`), for
+a human who wants the unverified window closed before walking away.
+Exits non-zero on a `"red"` outcome.
+
+**`frob verify explain RULE:FILE[:LINE] [--json]`.** Re-runs
+`frob.verify.attribute_batch` for exactly one finding against the
+CURRENT verify queue and prints the reachability path an `"attributed"`
+result carries, or the candidate-commit list an `"unattributed"` result
+carries -- so an attribution is auditable evidence a human can read, not
+a bare assertion. Exits non-zero on anything but a clean attribution.
+
+**`frob verify dispose --file-ticket RULE:FILE:LINE=TICKET | --dismiss
+RULE:FILE:LINE=REASON --reason TEXT [--actor NAME] [--json]`.** The
+operable dispose path this ticket's own critical requirement calls for:
+applies one or more dispositions (repeatable `--file-ticket`/`--dismiss`,
+keyed by the same `RULE:FILE:LINE` shape `status` prints back) and, once
+every currently-quarantined finding is disposed, calls
+`frob.verify._quarantine.clear_quarantine` -- the only path that ever
+clears a quarantine. `--reason` is `clear_quarantine`'s own overall
+narrative; `--actor` defaults to the OS user. A partial disposition set
+(fewer `--file-ticket`/`--dismiss` entries than findings raised) refuses
+the whole clear, exactly like `clear_quarantine`'s own contract -- there
+is no "half-cleared" CLI shortcut.
+
+**Live validation (2026-08-08).** This ticket's own end-to-end proof: the
+repo's `.frob/quarantine.json` was raised on an `unresolved-import`
+finding at `tests/unit/strata/test_capacity.py`, `commit_sha=None` (T-1690's
+own UNATTRIBUTED shape -- no single batch commit's touched symbols reached
+it). Investigation confirmed every imported name resolves (`hasattr`
+checks pass, `import strata_core` succeeds) and `uv run ty check
+tests/unit/strata/test_capacity.py` reports "All checks passed!" -- the
+signature of cold-worktree native-extension noise, not a real import
+break (which would attribute to whichever commit removed the symbol).
+`frob verify dispose --dismiss` cleared it with that reasoning recorded
+as the disposition, and `frob verify status` confirmed `quarantine:
+clear` immediately after (exit 0).
+
+Should an UNATTRIBUTED finding raise quarantine at all, or be re-checked
+in a warm tree first? This ticket's own answer: yes, keep raising on
+UNATTRIBUTED as-is. A quarantine that silently skips itself on
+"couldn't attribute" reintroduces exactly the failure mode T-1690's
+docstring warns against -- "cannot verify is never verified" applies to
+the breaker's own trigger condition, not just to the findings it
+records. The actual risk this session surfaced is different: a
+quarantine that fires on cold-worktree noise and gets dismissed
+routinely trains an operator to treat `--dismiss` as a rubber stamp,
+which erodes the signal for the real finding the breaker exists to
+catch. The fix for that risk is not "don't raise" -- it's making the
+COLD-WORKTREE-NOISE SHAPE ITSELF DETECTABLE before a human has to
+eyeball it (an unattributed finding whose rule/file is native-extension-
+adjacent, checked once in a warm tree before the raise persists). That is
+new work, not a change to this ticket's dispose path -- filed as a
+follow-up rather than done here, since narrowing scope mid-ticket to add
+a second detection mechanism would blur what this ticket's own evidence
+actually proved (the dispose path works end-to-end).
+
 ## Development profiles (`frob.toml [profile]`, T-1575)
 
 <!-- frob:describes src/frob/tickets/_profile.py::configured_profile -->

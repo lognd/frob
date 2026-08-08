@@ -43,6 +43,12 @@ gates-quality.md's T-0977 section): the resolve-dispatch-or-usage-error
 shape IS the dispatcher's one documented job above, not a separable
 concern.
 
+T-1697 added `Subcommand.verify` (`frob verify status|now|explain|
+dispose`, docs/modules/tickets.md#frob-verify-cli-t-1697) to
+`_SUBCOMMAND_RUNNER_NAMES`/`_RUNNER_MODULE_NAMES` alongside every other
+uniform `run(AppConfig)` runner -- no special-casing in `App.__call__`
+itself, same as any other subcommand that is not `bind`.
+
 T-1218: `_dispatch` (the argv-to-`App` step inside `main`) prints TWO
 independent stale-binary warnings to stderr before building `AppConfig`,
 both string-or-`None` probes from `frob.app._config_meta`:

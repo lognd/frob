@@ -102,6 +102,7 @@ from ._ticket import (
     _add_ticket_sprint_parser,
     _add_ticket_tier_parser,
 )
+from ._verify import _add_verify_parser
 
 __all__ = [
     "_add_ack_parser",
@@ -186,6 +187,7 @@ __all__ = [
     "_add_ticket_scope_parser",
     "_add_ticket_sprint_parser",
     "_add_ticket_tier_parser",
+    "_add_verify_parser",
     "_add_vet_parser",
     "_add_worktree_parser",
     "_add_xref_parser",

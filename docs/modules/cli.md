@@ -297,6 +297,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob sys` | strata design-model applications (plan, doc, export, ...) |
 | `frob test` | select and run tests for the touched set (or --all) |
 | `frob ticket` | the statically-checkable ticket queue |
+| `frob verify` | the T-1686 unverified window: depth/age/quarantine status, force a drain, explain an attribution, dispose a quarantined finding |
 | `frob vet` | dependency-vetting: lockfile allow conformance, quarantine, typosquat, lifecycle scripts, osv advisories |
 | `frob worktree` | manage dispatched-agent git worktrees (T-0836) |
 | `frob xref` | find where a symbol is defined and every file that uses it -- also available as `frob explore xref` (T-1238) |

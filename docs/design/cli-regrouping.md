@@ -162,6 +162,11 @@ just the top-level surface this acceptance criterion is actually about.
 T-1568/T-1569) plus the pre-existing "already atomic" verb groups this
 doc names elsewhere (`ticket`/`vet`/`serve`).
 
+T-1697 added `frob verify` as an ordinary flat top-level command (not a
+new verb group) -- it renders in the "also available directly" section
+alongside every other still-supported flat command, no
+`_GroupedHelpFormatter`/`_VERB_GROUP_NAMES` change needed.
+
 ## Ticket breakdown
 
 - T-1238 (this epic) -- design doc (this file) + `frob explore` group,

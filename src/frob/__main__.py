@@ -17,8 +17,8 @@ from frob._cli_parsers import (
     _add_cycle_parser,
     _add_debt_parser,
     _add_deploy_parser,
-    _add_design_parser,
     _add_deprecated_parser,
+    _add_design_parser,
     _add_docs_parser,
     _add_doctor_parser,
     _add_dup_parser,
@@ -45,6 +45,7 @@ from frob._cli_parsers import (
     _add_sys_parser,
     _add_test_parser,
     _add_ticket_parser,
+    _add_verify_parser,
     _add_vet_parser,
     _add_worktree_parser,
     _add_xref_parser,
@@ -198,8 +199,8 @@ class _GroupedHelpFormatter(argparse.HelpFormatter):
     ordinary flat argparse listing, unaffected."""
 
     # frob:ticket T-1571
-    # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- \
-    # invoked internally by argparse's own help-rendering machinery via \
+    # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- invoked \
+    # internally by argparse's own help-rendering machinery via \
     # formatter_class=_GroupedHelpFormatter, but the best-effort callgraph cannot \
     # trace a class-constructor-kwarg-then-internal-callback chain, same class of gap \
     # as this repo's cross-package DEAD001 waivers (T-1024 precedent)"
@@ -212,11 +213,11 @@ class _GroupedHelpFormatter(argparse.HelpFormatter):
         return super()._format_action(action)
 
     # frob:ticket T-1571
-    # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- \
-    # called by this class's own _format_action, itself invoked internally by \
-    # argparse's help-rendering machinery via formatter_class=_GroupedHelpFormatter -- \
-    # the best-effort callgraph cannot trace that chain, same class of gap as this \
-    # repo's cross-package DEAD001 waivers (T-1024 precedent)"
+    # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- called by this \
+    # class's own _format_action, itself invoked internally by argparse's \
+    # help-rendering machinery via formatter_class=_GroupedHelpFormatter -- the \
+    # best-effort callgraph cannot trace that chain, same class of gap as this repo's \
+    # cross-package DEAD001 waivers (T-1024 precedent)"
     def _format_grouped_subparsers(self, action: argparse._SubParsersAction) -> str:  # noqa: SLF001
         """Render `action`'s choice pseudo-actions in two labeled
         sections instead of argparse's default single flat block."""
@@ -305,6 +306,7 @@ def _add_analysis_subparsers(sub) -> None:
 
 # frob:ticket T-0441
 # frob:ticket T-1525
+# frob:ticket T-1697
 def _add_workflow_subparsers(sub) -> None:
     """Register the workflow/CI subcommand group: check through deploy."""
     _add_check_parser(sub)
@@ -331,6 +333,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_fmt_parser(sub)
     _add_natives_parser(sub)
     _add_coverage_parser(sub)
+    _add_verify_parser(sub)
 
 
 # frob:doc docs/modules/app.md#entry-point

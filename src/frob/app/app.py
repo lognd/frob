@@ -12,6 +12,7 @@ _log = get_logger(__name__)
 # frob:ticket T-1567
 # frob:ticket T-1568
 # frob:ticket T-1569
+# frob:ticket T-1697
 _RUNNER_MODULE_NAMES = (
     "ack_runner",
     "arch_runner",
@@ -50,6 +51,7 @@ _RUNNER_MODULE_NAMES = (
     "test_runner",
     "ticket_runner",
     "vet_runner",
+    "verify_runner",
     "xref_runner",
 )
 """Every `frob.app.*_runner` module name with a uniform `run(AppConfig)`
@@ -62,6 +64,7 @@ subcommand actually needs)."""
 # frob:ticket T-1567
 # frob:ticket T-1568
 # frob:ticket T-1569
+# frob:ticket T-1697
 _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.scaffold: "scaffold_runner",
     Subcommand.cycle: "cycle_runner",
@@ -101,6 +104,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.fmt: "fmt_runner",
     Subcommand.natives: "natives_runner",
     Subcommand.coverage: "coverage_runner",
+    Subcommand.verify: "verify_runner",
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
 mapped to the runner module name that serves it. `bind` is excluded: it takes
@@ -112,6 +116,7 @@ separately."""
 # frob:ticket T-1567
 # frob:ticket T-1568
 # frob:ticket T-1569
+# frob:ticket T-1697
 # frob:invariant INV-049
 # invariant spec: [INV-049](invariants/INV-049.md)
 # frob:waive DUP001 reason="deliberately mirrors src/frob/app/__init__.py:: \
@@ -209,6 +214,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.ticket_runner as module
     elif name == "vet_runner":
         import frob.app.vet_runner as module
+    elif name == "verify_runner":
+        import frob.app.verify_runner as module
     elif name == "xref_runner":
         import frob.app.xref_runner as module
     else:  # pragma: no cover -- unreachable: name always comes from the closed domain
@@ -247,6 +254,7 @@ def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | Non
 
 
 # frob:doc docs/modules/app.md#entry-point
+# frob:ticket T-1697
 class App:
     # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:
@@ -259,6 +267,7 @@ class App:
     def __call__(self) -> None:
         # frob:ticket T-0021
         # frob:ticket T-1216
+        # frob:ticket T-1697
         subcommand = self._cfg.subcommand
         handler: Callable[[AppConfig], None] | None
         if subcommand == Subcommand.bind:
@@ -275,7 +284,8 @@ class App:
                 "usage: frob "
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                 "exports|check|gitlog|graph|ack|debt|deprecated|pool|ticket|test|vet|"
-                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|fmt>"
+                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|fmt|"
+                "verify>"
                 " ..."
             )
             sys.exit(1)

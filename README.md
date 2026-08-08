@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-41 total commands, statically bound to the live subcommand registry
+42 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -107,6 +107,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob doctor` | Verify native extensions (`frob_core`, `strata_core`) are installed |
 | `frob natives` | Build declared `[[native]]` crates via `maturin develop`, sharing one git-common-dir-keyed `CARGO_TARGET_DIR` (`build`) |
 | `frob coverage` | Refresh coverage.xml / the coverage stamp via `native_coverage_refresh` (touched-set incremental by default, `--full` for a whole-suite run) |
+| `frob verify` | The T-1686 unverified window: depth/age/quarantine status, force a drain, explain an attribution, dispose a quarantined finding (`status`/`now`/`explain`/`dispose`) |
 | `frob clean` | Remove build/test/cache artifacts (tiered, dry-run by default) |
 | `frob fmt` | Canonicalize `frob:` directive comment line-wrapping: fewest physical lines within the line-length limit (`--check` previews without writing) |
 | `frob agent` | Print/export the dispatched-agent guard env (`FROB_WORKTREE`/`FROB_AGENT`) for a worktree (`env`) |

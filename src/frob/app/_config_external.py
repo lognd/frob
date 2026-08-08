@@ -156,6 +156,11 @@ _STRING_FIELDS = (
     "natives_command",
     # frob:ticket T-1572
     "coverage_base",
+    # frob:ticket T-1697
+    "verify_command",
+    "verify_finding",
+    "verify_dispose_reason",
+    "verify_dispose_actor",
 )
 
 _PATH_FIELDS = (
@@ -226,6 +231,8 @@ _PATH_FIELDS = (
     "natives_path",
     # frob:ticket T-1525
     "coverage_path",
+    # frob:ticket T-1697
+    "verify_path",
 )
 
 _INT_FIELDS = (
@@ -280,6 +287,9 @@ _LIST_FIELDS = (
     "mutate_argv",
     "dup_probe",
     "fleet_scope",
+    # frob:ticket T-1697
+    "verify_dispose_filed",
+    "verify_dispose_dismissed",
 )
 
 _BOOL_FLAGS = (
@@ -406,6 +416,8 @@ _BOOL_FLAGS = (
     "fmt_json",
     # frob:ticket T-1525
     "coverage_full",
+    # frob:ticket T-1697
+    "verify_json",
 )
 
 

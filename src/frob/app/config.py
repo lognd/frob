@@ -153,6 +153,10 @@ class Subcommand(str, enum.Enum):
     # native_coverage_refresh` -- the frob-native coverage orchestration
     # T-1516 built as a library call with no CLI verb of its own.
     coverage = "coverage"
+    # frob:ticket T-1697
+    # T-1697: surface + operate the T-1686 unverified window (depth, age,
+    # quarantine, attribution) -- status/now/explain/dispose.
+    verify = "verify"
 
 
 # frob:doc docs/modules/app.md#config
@@ -172,6 +176,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-1567
 # frob:ticket T-1568
 # frob:ticket T-1569
+# frob:ticket T-1697
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -757,6 +762,21 @@ class AppConfig(BaseModel):
     pool_keys: list[str] = []
     pool_key: str | None = None
     pool_reason: str | None = None
+
+    # verify (T-1697): surface + operate the T-1686 unverified window.
+    verify_command: str | None = None  # status|now|explain|dispose
+    verify_path: Path | None = None
+    verify_json: bool = False
+    #: `frob verify explain FINDING` -- `rule_id:file[:line]`.
+    verify_finding: str | None = None
+    #: `frob verify dispose` -- repeatable `rule_id:file:line=TICKET_ID`
+    #: entries (line may be empty, e.g. `rule:file:=T-0001`).
+    verify_dispose_filed: list[str] = []
+    #: `frob verify dispose` -- repeatable `rule_id:file:line=REASON`
+    #: entries (line may be empty).
+    verify_dispose_dismissed: list[str] = []
+    verify_dispose_reason: str | None = None
+    verify_dispose_actor: str | None = None
 
     # release
     release_command: str | None = None  # stamp|check
