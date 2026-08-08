@@ -2,7 +2,7 @@
 id: T-1812
 title: 'post-land sweep regression from T-1735: 2 new error(s) (invalid-assignment,
   unresolved-attribute)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-08'
