@@ -1,7 +1,7 @@
 ---
 id: T-1339
 title: Suppression-dialect compliance is automatic, never hand-maintained
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-31'
@@ -14,6 +14,10 @@ scope:
 - docs/modules/gates.md
 - src/frob/gates/_waive.py
 - src/frob/gates/_fix_engine.py
+- src/frob/gates/_suppress.py
+- src/frob/gates/_fix_engine_text.py
+- tests/test_gates_suppress.py
+- tests/test_gates_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -38,15 +42,56 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: src/frob/gates/_suppress.py
+  reason: T-1339's acceptance criteria (SUPPRESS001 detection, frob check --fix auto-pairing)
+    were implemented across T-1340/T-1341 (phases 1-2) in _suppress.py/_fix_engine_text.py,
+    not in the originally-declared _waive.py; verification work for this closing ticket
+    needs those real files and their real tests in scope
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: src/frob/gates/_fix_engine_text.py
+  reason: T-1339's acceptance criteria (SUPPRESS001 detection, frob check --fix auto-pairing)
+    were implemented across T-1340/T-1341 (phases 1-2) in _suppress.py/_fix_engine_text.py,
+    not in the originally-declared _waive.py; verification work for this closing ticket
+    needs those real files and their real tests in scope
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates_suppress.py
+  reason: T-1339's acceptance criteria (SUPPRESS001 detection, frob check --fix auto-pairing)
+    were implemented across T-1340/T-1341 (phases 1-2) in _suppress.py/_fix_engine_text.py,
+    not in the originally-declared _waive.py; verification work for this closing ticket
+    needs those real files and their real tests in scope
+  actor: logan
+  at: '2026-08-07'
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: T-1339's acceptance criteria (SUPPRESS001 detection, frob check --fix auto-pairing)
+    were implemented across T-1340/T-1341 (phases 1-2) in _suppress.py/_fix_engine_text.py,
+    not in the originally-declared _waive.py; verification work for this closing ticket
+    needs those real files and their real tests in scope
+  actor: logan
+  at: '2026-08-07'
+evidence:
+- tests/test_gates_suppress.py::TestSuppress001Gate::test_mypy_suppressed_ty_unsuppressed_fires
+- tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression
+- tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_idempotent_second_fix_pass_is_a_no_op
+- tests/test_gates_suppress.py::TestSuppress001RepoWideLock::test_repo_is_currently_clean
 designated_repro_test: null
 acceptance:
 - text: given a line carrying one checker's suppression and an unsuppressed diagnostic
     from another configured checker, when frob check runs, then SUPPRESS001 reports
     it
-  evidence: []
+  evidence:
+  - tests/test_gates_suppress.py::TestSuppress001Gate::test_mypy_suppressed_ty_unsuppressed_fires
+  - tests/test_gates_suppress.py::TestSuppress001RepoWideLock::test_repo_is_currently_clean
 - text: given SUPPRESS001 findings, when frob check --fix runs, then the paired suppression
     is written with the reporting checker's own rule code, in canonical order, idempotently
-  evidence: []
+  evidence:
+  - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression
+  - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_idempotent_second_fix_pass_is_a_no_op
 threat: null
 component: gates
 ---
