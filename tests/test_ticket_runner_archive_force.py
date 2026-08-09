@@ -74,7 +74,7 @@ def _make_done_ticket(root: Path) -> None:
             ticket_command="close",
             ticket_path=root,
             ticket_id="T-0001",
-            ticket_evidence_cmd="true",
+            ticket_evidence_cmd="echo verified",
         )
     )
 

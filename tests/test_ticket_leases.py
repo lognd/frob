@@ -159,7 +159,7 @@ class TestRefusesTerminalState:
                 ticket_command="close",
                 ticket_path=repo,
                 ticket_id="T-0001",
-                ticket_evidence_cmd="true",
+                ticket_evidence_cmd="echo verified",
             )
         )
         _commit_all(repo, "land T-0001 feature ticket")
@@ -1015,7 +1015,7 @@ class TestCommitFullLedgerChange:
                 ticket_command="close",
                 ticket_path=repo,
                 ticket_id="T-0002",
-                ticket_evidence_cmd="true",
+                ticket_evidence_cmd="echo verified",
             )
         )
         _commit_all(repo, "pre-archive: T-0002 closed")
@@ -1924,7 +1924,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
                 ticket_command="evidence",
                 ticket_path=repo,
                 ticket_id="T-0001",
-                ticket_evidence_cmd="true",
+                ticket_evidence_cmd="echo verified",
             )
         )
 
@@ -1940,7 +1940,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
                 ticket_command="evidence",
                 ticket_path=repo,
                 ticket_id="T-0001",
-                ticket_evidence_cmd="true",
+                ticket_evidence_cmd="echo verified",
                 ticket_no_commit=True,
             )
         )
@@ -1979,7 +1979,7 @@ class TestCloseEvidenceDoneReportRequeueAutoCommit:
                 ticket_command="close",
                 ticket_path=repo,
                 ticket_id="T-0001",
-                ticket_evidence_cmd="true",
+                ticket_evidence_cmd="echo verified",
             )
         )
 

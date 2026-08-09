@@ -2,7 +2,7 @@
 id: T-1905
 title: T-1892 EvidenceCmdSilent refusal breaks more fixtures using 'true' as evidence-cmd
   (test_ticket_runner_archive_force.py, test_ticket_leases.py)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -16,6 +16,15 @@ scope:
 - tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_ticket_leases.py::TestRefusesTerminalState::test_refuses_done_ticket
+- tests/test_ticket_leases.py::TestCommitFullLedgerChange::test_archive_cli_leaves_repo_clean
+- tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit::test_evidence_no_commit_leaves_ledger_dirty
+- tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit::test_evidence_auto_commits
+- tests/test_ticket_leases.py::TestCloseEvidenceDoneReportRequeueAutoCommit::test_close_auto_commits
 designated_repro_test: null
 threat: null
 component: null
