@@ -18,6 +18,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - cmd:grep -q 'src/frob/yaml_io.py' design/frob.strata exit=0 sha256=e3b0c44298fc
+- cmd:grep -c 'src/frob/yaml_io.py' design/frob.strata exit=0 sha256=4355a46b19d3
 designated_repro_test: null
 threat: null
 component: null
