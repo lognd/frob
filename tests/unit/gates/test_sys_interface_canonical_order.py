@@ -23,6 +23,16 @@ _STRATA_HEADER = "module test\n\n"
 # test actually does.
 _EMPTY_SNAPSHOT = GraphSnapshot(root="", symbols={}, edges=())
 
+# T-1896: `fix_sys_interface_canonical_order` is typed to take a
+# `GraphSnapshot` (Tier-A fix-handler signature uniformity, T-1872) even
+# though its body never reads it (the handler re-reads the design tree
+# itself) -- these tests previously passed `None`, which `ty` correctly
+# flags as an invalid-argument-type since the param is not `GraphSnapshot |
+# None`. An empty, otherwise-unused snapshot is the honest fix: it
+# satisfies the real declared type without changing what the handler under
+# test actually does.
+_EMPTY_SNAPSHOT = GraphSnapshot(root="", symbols={}, edges=())
+
 
 def _write_repo(root: Path, interface_block: str, py_source: str) -> None:
     """Lay out a minimal design/ + pkg/ tree: one node, one bound `.py`
