@@ -1386,9 +1386,7 @@ node testsuite : trusted {
 // frob:doc docs/guides/coordinator-scripts.md#design-and-gate-posture
 node scripts_ops : trusted {
 
-    attr interface=[
-        [],
-    ];
+    attr interface=[];
     clearance Internal;
     code "scripts/**";
     may "fs.write";
@@ -1414,9 +1412,7 @@ node scripts_ops : trusted {
 // frob:doc docs/guides/claude-hooks.md#the-claude_hooks-design-node
 node claude_hooks : trusted {
 
-    attr interface=[
-        [],
-    ];
+    attr interface=[];
     clearance Internal;
     code ".claude/hooks/**";
     may "env.read";
