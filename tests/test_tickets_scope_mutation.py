@@ -51,6 +51,50 @@ def _make_ticket(
     return ticket
 
 
+# frob:ticket T-1880
+class TestScopeLeaseConflict:
+    """`frob.tickets._scope.scope_lease_conflict` (T-1880): THE shared
+    predicate `mutate_scope`'s `--add` validation and `frob ticket start`'s
+    own grant-time refusal both call."""
+
+    def test_no_collision_is_none(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_no_collisio\
+        # n_is_none
+        from frob.tickets._scope import scope_lease_conflict
+
+        holder = _make_ticket(
+            tmp_path, scope=("src/frob/gates/**",), state=TicketState.IN_PROGRESS
+        )
+        queue = load_queue(tmp_path).danger_ok
+        conflict = scope_lease_conflict(
+            "T-9999", ("src/frob/other/foo.py",), queue.tickets, root=tmp_path
+        )
+        assert conflict is None
+        assert holder.state is TicketState.IN_PROGRESS
+
+    def test_first_colliding_entry_wins(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_first_colli\
+        # ding_entry_wins
+        from frob.tickets._scope import scope_lease_conflict
+
+        holder = _make_ticket(
+            tmp_path, scope=("src/frob/gates/**",), state=TicketState.IN_PROGRESS
+        )
+        queue = load_queue(tmp_path).danger_ok
+        conflict = scope_lease_conflict(
+            "T-9999",
+            ("src/frob/other/foo.py", "src/frob/gates/bar.py"),
+            queue.tickets,
+            root=tmp_path,
+        )
+        assert conflict is not None
+        holder_id, holder_glob = conflict
+        assert holder_id == holder.id
+        assert holder_glob == "src/frob/gates/**"
+
+
 class TestMutateScope:
     def test_add_free_path_granted(self, tmp_path: Path) -> None:
         # frob:tests \

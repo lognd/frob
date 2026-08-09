@@ -29,7 +29,7 @@ from datetime import date
 from pathlib import Path
 
 from frob.logging import get_logger
-from frob.tickets._leases import read_all_leases
+from frob.tickets._leases import read_all_leases, same_worktree_lease
 from frob.tickets._models import (
     LEDGER_PATH,
     OVER_BROAD_LITERAL_GLOBS,
@@ -435,17 +435,45 @@ def leased_by(
     for holder_id, holder_scope in all_leases:
         if holder_id == ticket.id:
             continue
-        effective_scope = holder_scope
-        if breadth is not None:
-            threshold, files = breadth
-            broad = frozenset(_over_broad_scope_entries(holder_scope, threshold, files))
-            effective_scope = tuple(s for s in holder_scope if s not in broad)
-            if not effective_scope:
-                continue
-        collision = scope_overlap_globs(ticket.scope, effective_scope)
-        if collision is not None:
-            hits.append((holder_id, collision[1]))
+        hit = _leased_by_one_holder(ticket, root, breadth, holder_id, holder_scope)
+        if hit is not None:
+            hits.append(hit)
     return tuple(hits)
+
+
+# frob:ticket T-1883
+def _leased_by_one_holder(
+    ticket: Ticket,
+    root: Path | None,
+    breadth: tuple[int, tuple[str, ...]] | None,
+    holder_id: str,
+    holder_scope: tuple[str, ...],
+) -> tuple[str, str] | None:
+    """`leased_by`'s per-holder collision test (ARCH001 split: the T-1883
+    same-worktree exclusion pushed the loop body past the line threshold).
+    `None` means `holder_id` does not block `ticket` -- either exempted
+    (same-worktree, T-1883; or fully over-broad, breadth-demoted) or simply
+    scope-disjoint."""
+    if root is not None and same_worktree_lease(root, ticket.id, holder_id):
+        # T-1883: a worktree cannot conflict with itself -- exactly one
+        # working copy, one agent editing it. The grouped-dispatch workflow
+        # routinely gives one worktree several tickets sharing a doc's
+        # scope; without this exclusion every such group reads as fully
+        # self-blocked in `doable --show-blocked`. Uses the SAME predicate
+        # `_scope.py`'s `--add` collision check already applies
+        # (`frob.tickets._leases.same_worktree_lease`), not a second copy.
+        return None
+    effective_scope = holder_scope
+    if breadth is not None:
+        threshold, files = breadth
+        broad = frozenset(_over_broad_scope_entries(holder_scope, threshold, files))
+        effective_scope = tuple(s for s in holder_scope if s not in broad)
+        if not effective_scope:
+            return None
+    collision = scope_overlap_globs(ticket.scope, effective_scope)
+    if collision is None:
+        return None
+    return (holder_id, collision[1])
 
 
 # frob:ticket T-0716

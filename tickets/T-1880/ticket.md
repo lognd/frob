@@ -2,7 +2,7 @@
 id: T-1880
 title: frob ticket start grants a lease without checking cross-ticket scope collision
   at grant time
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,8 +13,42 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/tickets/_scope.py
+- docs/modules/tickets.md
+- tests/unit/test_app_runners_batch7.py
+- tests/test_tickets_scope_mutation.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_scope.py
+  reason: 'T-1880 fix: shared scope_lease_conflict predicate lives in _scope.py, called
+    from _lifecycle.py''s start refusal'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-1880: doc note + regression tests for the shared scope_lease_conflict
+    predicate and start-time refusal'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: 'T-1880: doc note + regression tests for the shared scope_lease_conflict
+    predicate and start-time refusal'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: 'T-1880: doc note + regression tests for the shared scope_lease_conflict
+    predicate and start-time refusal'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_no_collision_is_none
+- tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_first_colliding_entry_wins
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_scope_colliding_with_other_in_progress_lease
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_allows_disjoint_scope
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN T-1868 landed and closed the `scope --add` door (a ticket can no longer
@@ -28,7 +62,11 @@ acceptance:
     proves it was granted exactly this way, live, on this repo''s own main, in the
     same session T-1868 landed. Anyone reading "T-1868 fixed lease conflicts" should
     not assume the class is closed -- it is one of two doors, and only one is shut.'
-  evidence: []
+  evidence:
+  - tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_no_collision_is_none
+  - tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_first_colliding_entry_wins
+  - tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_scope_colliding_with_other_in_progress_lease
+  - tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_allows_disjoint_scope
 threat: null
 component: null
 anchor: false

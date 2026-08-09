@@ -2,7 +2,7 @@
 id: T-1883
 title: doable --show-blocked reports same-worktree leases as blockers, so a grouped
   dispatch self-blocks
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -11,8 +11,56 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_doable.py
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_scope.py
+- tests/test_ticket_leases_cross_worktree.py
+- docs/modules/tickets.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'T-1883 fix: extract shared same-worktree-lease predicate and exclude same-worktree
+    leases from doable/leased_by'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-1883 fix: extract shared same-worktree-lease predicate and exclude same-worktree
+    leases from doable/leased_by'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_scope.py
+  reason: 'T-1883 fix: extract shared same-worktree-lease predicate and exclude same-worktree
+    leases from doable/leased_by'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_leases_cross_worktree.py
+  reason: 'T-1883 fix: extract shared same-worktree-lease predicate and exclude same-worktree
+    leases from doable/leased_by'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-1883 fix: extract shared same-worktree-lease predicate and exclude same-worktree
+    leases from doable/leased_by'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: frob.lock
+  reason: 'T-1883: frob ack wrote frob.lock for the new same_worktree_lease doc anchor'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease::test_both_leased_to_same_worktree_matches
+- tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease::test_different_worktrees_do_not_match
+- tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLeases::test_same_worktree_colliding_leases_do_not_block_each_other
+- tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLeases::test_cross_worktree_colliding_lease_still_blocks
 designated_repro_test: null
 threat: null
 component: null

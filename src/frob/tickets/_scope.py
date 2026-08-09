@@ -20,7 +20,6 @@ load-order-safe indirection T-1103/T-1108 used for `renumber_one`/
 before `_load_ticket_and_queue` exists yet at its own module scope.
 """
 
-
 from __future__ import annotations
 
 import fnmatch
@@ -126,6 +125,48 @@ def _scope_add_conflicts(
         return queue_conflict
     if root is not None:
         return _scope_add_live_lease_conflict(glob, ticket_id, root, new_file=new_file)
+    return None
+
+
+# frob:ticket T-1880
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_no_collision_is_none
+# frob:tests tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_first_colliding_entry_wins  # noqa: E501
+def scope_lease_conflict(
+    ticket_id: str,
+    scope: Sequence[str],
+    queue: dict[str, Ticket],
+    own_scope: Sequence[str] = (),
+    *,
+    root: Path | None = None,
+) -> tuple[str, str] | None:
+    """`(holding_ticket_id, holder_glob)` for the FIRST entry of `scope`
+    that overlaps another in-progress ticket's lease (queue-based or, when
+    `root` is given, live cross-worktree -- `_scope_add_conflicts`'s own
+    T-0453/T-0561/T-1868 mechanism), or `None` if every entry is free.
+
+    THE single "does this scope collide with an already-in-progress
+    ticket's lease" entrypoint (T-1880): `mutate_scope`'s `--add` validation
+    and `frob ticket start`'s own grant-time refusal
+    (`frob.app.ticket_runner._lifecycle._refuse_on_scope_lease_collision`)
+    both call this instead of each running its own loop over
+    `_scope_add_conflicts` -- T-1880's own incident was exactly two call
+    sites answering "does this collide?" differently: `--add` refused a
+    scope WIDENED after start (T-1868), but nothing checked a collision
+    already present in a ticket's ORIGINAL FILED scope at `start` time
+    (confirmed: T-1851/T-1870 both held `src/frob/app/config.py`
+    simultaneously this exact way). One home, so the two paths cannot
+    diverge again.
+
+    `own_scope` is `mutate_scope`'s T-0485 "already grandfathered" subset
+    exemption -- pass the ticket's OWN pre-mutation scope for an `--add`
+    call, or leave it `()` for a grant-time check (`start`) where there is
+    no pre-existing granted subset to exempt against."""
+    for glob in scope:
+        conflict = _scope_add_conflicts(glob, ticket_id, queue, own_scope, root=root)
+        if conflict is not None:
+            return conflict
     return None
 
 
@@ -240,48 +281,18 @@ def _scope_add_live_lease_conflict(
 
 
 # frob:ticket T-1356
+# frob:ticket T-1883
 def _same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
-    """Whether `requesting_id` (the ticket asking for a new `--add` glob,
-    running from `root`) and `holder_id` (the ticket whose scope the glob
-    would collide with) are BOTH leased to the same worktree (T-1356) --
-    the standing-policy series-worktree case where two tickets share one
-    agent, not two agents genuinely racing to touch the same files. The
-    cross-worktree lease side-channel (`read_all_leases`) is the one place
-    that knows which worktree a ticket is actually leased to; a ticket with
-    no recorded lease at all (never `frob ticket start`-ed in ANY worktree,
-    or a stale/removed lease) never matches, so this can only ever narrow
-    an existing conflict, never invent a new exemption out of thin air.
+    """Thin re-export of `frob.tickets._leases.same_worktree_lease` (T-1883:
+    the shared conflict predicate now lives there, called from both this
+    module's `--add` collision check and `_doable.leased_by`'s
+    `doable --show-blocked` collision check -- see that function's own
+    docstring for the WHY). Kept as a local name so this module's existing
+    call sites (`_scope_add_queue_conflict`, `_scope_add_live_lease_conflict`)
+    do not need their own call-site edits."""
+    from frob.tickets._leases import same_worktree_lease
 
-    `root` itself is resolved to its true git worktree top-level
-    (`frob.gitio.repo_root`, the same worktree-correct resolution `enforce_
-    worktree_lease` uses) rather than compared as a raw path, so a `root`
-    passed as a subdirectory of the worktree still matches correctly."""
-    from frob.gitio import repo_root
-    from frob.tickets._leases import read_all_leases
-
-    resolved_root = repo_root(root)
-    if resolved_root.is_err:
-        return False
-    root_worktree = str(resolved_root.danger_ok.resolve())
-
-    requesting_worktree: str | None = None
-    holder_worktree: str | None = None
-    for lease in read_all_leases(root):
-        if lease.ticket_id == requesting_id:
-            requesting_worktree = lease.worktree
-        elif lease.ticket_id == holder_id:
-            holder_worktree = lease.worktree
-    # T-1356: `requesting_id` is the ticket ACTIVELY running this CLI
-    # invocation FROM `root` -- if the lease side-channel has no record
-    # for it yet (e.g. its very first `scope --add` right after `start`,
-    # before any lease-recording write has landed), `root` itself IS its
-    # worktree; falling back to `root_worktree` here (rather than treating
-    # a missing self-lease as "no match") is what makes that common case
-    # work instead of a same-worktree exemption silently never firing on
-    # a brand-new ticket.
-    if requesting_worktree is None:
-        requesting_worktree = root_worktree
-    return holder_worktree is not None and requesting_worktree == holder_worktree
+    return same_worktree_lease(root, requesting_id, holder_id)
 
 
 # frob:ticket T-0561
@@ -410,18 +421,18 @@ def _validate_scope_mutation(
                 remaining_scope,
             )
             return Err(TicketError.ScopeRemoveOrphansEvidence)
-    for glob in add_globs:
-        conflict = _scope_add_conflicts(glob, ticket_id, queue, ticket.scope, root=root)
-        if conflict is not None:
-            holder_id, holder_glob = conflict
-            _log.error(
-                "tickets: %s cannot lease %r: held by in-progress %s (scope %r)",
-                ticket_id,
-                glob,
-                holder_id,
-                holder_glob,
-            )
-            return Err(TicketError.ScopeLeaseConflict)
+    conflict = scope_lease_conflict(
+        ticket_id, add_globs, queue, ticket.scope, root=root
+    )
+    if conflict is not None:
+        holder_id, holder_glob = conflict
+        _log.error(
+            "tickets: %s cannot lease an add glob: held by in-progress %s (scope %r)",
+            ticket_id,
+            holder_id,
+            holder_glob,
+        )
+        return Err(TicketError.ScopeLeaseConflict)
     return Ok(None)
 
 

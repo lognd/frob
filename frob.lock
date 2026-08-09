@@ -35,6 +35,60 @@
       "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
       "reason": "T-1719: run_diagnosis body digest moved only because it now also computes/threads global_binary_skew through report assembly and logging; the doc it points at (docs/guides/install.md's doctor section) still describes the same overall contract accurately",
       "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "body",
+      "new_digest": "683f979ec1e0db3bfeac14571056f1edbd8386d83713de9061b13d3b2c4ab906",
+      "old_digest": null,
+      "reason": "T-1883: documented same_worktree_lease extraction and leased_by same-worktree exclusion",
+      "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "sig",
+      "new_digest": "00aa6cf16cb81532ce28ed2b30eed6cc759c0639c8ce97a5e422d4c72920594d",
+      "old_digest": null,
+      "reason": "T-1883: documented same_worktree_lease extraction and leased_by same-worktree exclusion",
+      "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "body",
+      "new_digest": "99bae214d15f723ee9448697f2233c8c2deb8d2f3664c388dc6ff724b87da162",
+      "old_digest": null,
+      "reason": "T-1880: documented shared scope_lease_conflict predicate and start-time refusal wiring",
+      "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "sig",
+      "new_digest": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
+      "old_digest": null,
+      "reason": "T-1880: documented shared scope_lease_conflict predicate and start-time refusal wiring",
+      "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "body",
+      "new_digest": "035a4e775b8231358a88b29bf40988f1612e1cd508f33301db6f1b49bcdc3004",
+      "old_digest": null,
+      "reason": "T-1880: documented shared scope_lease_conflict predicate and start-time refusal wiring",
+      "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "sig",
+      "new_digest": "f8508e0b6a3e1655ccb7d0c7b443639f2171f042bd8e5d11b76755e9a9f16534",
+      "old_digest": null,
+      "reason": "T-1880: documented shared scope_lease_conflict predicate and start-time refusal wiring",
+      "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     }
   ],
   "entries": [
@@ -62,6 +116,16 @@
       "digest": "feddd2674eac3495c45aefd9525e8875be254ac4e52b710b4e505b57214186f0",
       "facet": "sig",
       "ref": "src/frob/app/telemetry.py::usage_report"
+    },
+    {
+      "digest": "035a4e775b8231358a88b29bf40988f1612e1cd508f33301db6f1b49bcdc3004",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
+    },
+    {
+      "digest": "f8508e0b6a3e1655ccb7d0c7b443639f2171f042bd8e5d11b76755e9a9f16534",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
       "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",
@@ -679,6 +743,16 @@
       "ref": "src/frob/tickets/_leases.py::read_all_leases"
     },
     {
+      "digest": "683f979ec1e0db3bfeac14571056f1edbd8386d83713de9061b13d3b2c4ab906",
+      "facet": "body",
+      "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
+    },
+    {
+      "digest": "00aa6cf16cb81532ce28ed2b30eed6cc759c0639c8ce97a5e422d4c72920594d",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_leases.py::same_worktree_lease"
+    },
+    {
       "digest": "b9fc079b9260c74cd48441d2c53f3413f8619e4a7b8ad7d7b8dea513ac5c6f3a",
       "facet": "body",
       "ref": "src/frob/tickets/_leases.py::sweep_worktrees"
@@ -707,6 +781,16 @@
       "digest": "7b89e1fd4672d761979d09b121eec67e0b4d3d5187dfbf3837aa1ba0f0474424",
       "facet": "sig",
       "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
+    },
+    {
+      "digest": "99bae214d15f723ee9448697f2233c8c2deb8d2f3664c388dc6ff724b87da162",
+      "facet": "body",
+      "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
+    },
+    {
+      "digest": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
     },
     {
       "digest": "52cca8547796b570cd071abae5497f5bb98c0c76aa55dae51bf9f2cf565eae3b",

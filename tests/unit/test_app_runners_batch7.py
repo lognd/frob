@@ -654,6 +654,86 @@ class TestTicketStart:
             ticket_run(cfg)
         assert "chronically over-broad" not in caplog.text
 
+    # frob:ticket T-1880
+    def test_start_refuses_scope_colliding_with_other_in_progress_lease(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_sco\
+        # pe_colliding_with_other_in_progress_lease
+        """T-1880: `start` refuses a ticket whose scope, AS FILED, already
+        overlaps another in-progress ticket's lease -- the T-1851/T-1870
+        shape (declared collision present before `start` ever runs, not
+        widened afterward via `scope --add`, which T-1868 already
+        covers)."""
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="holder",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0001"
+        )
+        ticket_run(cfg)
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="collider",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0002"
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            ticket_run(cfg)
+        assert exc.value.code == 1
+        assert "T-0002" in caplog.text
+        assert "T-0001" in caplog.text
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0002"].state != TicketState.IN_PROGRESS
+
+    # frob:ticket T-1880
+    def test_start_allows_disjoint_scope(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_allows_disj\
+        # oint_scope
+        """T-1880's refusal is scoped to a REAL collision -- a ticket whose
+        declared scope does not overlap any in-progress lease starts
+        normally."""
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="holder",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0001"
+        )
+        ticket_run(cfg)
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="disjoint",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/app/unrelated.py"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0002"
+        )
+        ticket_run(cfg)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0002"].state == TicketState.IN_PROGRESS
+
     def test_start_foreground_runs_sweep_synchronously(
         self, tmp_path: Path, caplog
     ) -> None:

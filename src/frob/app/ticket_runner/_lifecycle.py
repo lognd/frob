@@ -670,6 +670,7 @@ def _start(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     _refuse_over_broad_scope_on_start(root, ticket)
+    _refuse_on_scope_lease_collision(root, cfg.ticket_id, ticket)
 
     ticket = _auto_plan_if_queued(root, cfg.ticket_id, ticket)
 
@@ -895,6 +896,60 @@ def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN0
         "y" if len(warnings) == 1 else "ies",
         ticket.id,
         ticket.id,
+    )
+    sys.exit(1)
+
+
+# frob:ticket T-1880
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_scope_colliding_with_other_in_progress_lease  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_allows_disjoint_scope  # noqa: E501
+def _refuse_on_scope_lease_collision(root: Path, ticket_id: str, ticket) -> None:  # noqa: ANN001
+    """`sys.exit(1)` if `ticket`'s declared scope (as filed, BEFORE this
+    call grants its own lease) overlaps another ALREADY in-progress
+    ticket's live lease (T-1880).
+
+    `scope --add` (T-1868) already refuses this shape for a scope WIDENED
+    after `start` -- but nothing refused it when the collision was already
+    present in the ticket's ORIGINAL FILED scope and the ticket simply ran
+    `start`, the door every real dispatch goes through. Confirmed live on
+    this repo's own main: T-1851 declared `src/frob/app/config.py` in its
+    filed scope and started AFTER T-1870 already held a live lease on the
+    same path -- `start`'s guard chain checked whether T-1851 itself held a
+    lease elsewhere and whether its OWN scope was over-broad, but never
+    whether its scope collided with T-1870's.
+
+    Calls `frob.tickets._scope.scope_lease_conflict` -- the SAME shared
+    predicate `mutate_scope`'s `--add` validation now also calls, checked
+    via the live cross-worktree lease side-channel (`read_all_leases`, no
+    merge needed) with `own_scope=()` (a grant-time check has no
+    pre-existing granted subset to exempt against, unlike `--add`'s T-0485
+    exemption). Best-effort: a queue-load failure here degrades to no
+    refusal rather than blocking `start` on an unrelated I/O problem --
+    `_load_ticket_or_exit` above already proved the queue loads at least
+    once this invocation, so a failure here would be a genuinely
+    unexpected second read, not the common case."""
+    from frob.tickets import load_queue
+    from frob.tickets._scope import scope_lease_conflict
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        return
+    conflict = scope_lease_conflict(
+        ticket_id, ticket.scope, queue_result.danger_ok.tickets, root=root
+    )
+    if conflict is None:
+        return
+    holder_id, holder_glob = conflict
+    _log.error(
+        "ticket start failed: %s's declared scope collides with "
+        "in-progress %s's lease on %r -- resolve the collision (narrow "
+        "this ticket's scope via `frob ticket scope %s --remove/--add`, "
+        "or coordinate with %s) before starting",
+        ticket_id,
+        holder_id,
+        holder_glob,
+        ticket_id,
+        holder_id,
     )
     sys.exit(1)
 

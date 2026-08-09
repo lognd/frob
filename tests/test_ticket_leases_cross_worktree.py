@@ -34,6 +34,7 @@ from frob.tickets._leases import (
     force_release_lease,
     lease_holder_worktree,
     read_all_leases,
+    same_worktree_lease,
 )
 from frob.tickets._store import atomic_write, ledger_path
 
@@ -349,3 +350,115 @@ class TestScopeAddRefusesLiveCrossWorktreeLease:
         reloaded = load_all(second_worktree)
         assert reloaded.is_ok
         assert "src/feature.py" not in reloaded.danger_ok[tid_b].scope
+
+
+# frob:ticket T-1883
+class TestSameWorktreeLease:
+    """`same_worktree_lease` (T-1356's rule, T-1883's shared home): two
+    tickets leased to the SAME worktree never count as conflicting with each
+    other; two tickets leased to DIFFERENT worktrees do."""
+
+    def test_both_leased_to_same_worktree_matches(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_both_l\
+        # eased_to_same_worktree_matches
+        created_a = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(repo, tid_a, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        created_b = new_ticket(repo, _spec("Feature B", scope=("src/other.py",)))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        assert transition(repo, tid_b, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_b, TicketState.IN_PROGRESS).is_ok
+
+        assert same_worktree_lease(repo, tid_b, tid_a) is True
+
+    def test_different_worktrees_do_not_match(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_differ\
+        # ent_worktrees_do_not_match
+        created_a = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(repo, tid_a, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        created_b = new_ticket(
+            second_worktree, _spec("Feature B", scope=("src/other.py",))
+        )
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        assert transition(second_worktree, tid_b, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_b, TicketState.IN_PROGRESS).is_ok
+
+        assert same_worktree_lease(second_worktree, tid_b, tid_a) is False
+
+
+# frob:ticket T-1883
+class TestDoableExcludesSameWorktreeLeases:
+    """The bug T-1883 fixes: `doable --show-blocked`'s underlying
+    `leased_by`/`doable` must not report a same-worktree lease as a blocker
+    -- a grouped dispatch (several tickets sharing scope, one worktree, one
+    agent) must never self-block. A genuinely different worktree's colliding
+    lease must still block, unchanged."""
+
+    def test_same_worktree_colliding_leases_do_not_block_each_other(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLea\
+        # ses.test_same_worktree_colliding_leases_do_not_block_each_other
+        created_a = new_ticket(repo, _spec("Ticket A", scope=("docs/shared.md",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(repo, tid_a, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        created_b = new_ticket(repo, _spec("Ticket B", scope=("docs/shared.md",)))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        assert transition(repo, tid_b, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_b, TicketState.IN_PROGRESS).is_ok
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        queue = TicketQueue(tickets=loaded.danger_ok)
+
+        holds_a = leased_by(queue, queue.tickets[tid_a], repo)
+        holds_b = leased_by(queue, queue.tickets[tid_b], repo)
+        assert not any(holder_id == tid_b for holder_id, _glob in holds_a)
+        assert not any(holder_id == tid_a for holder_id, _glob in holds_b)
+
+    def test_cross_worktree_colliding_lease_still_blocks(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestDoableExcludesSameWorktreeLea\
+        # ses.test_cross_worktree_colliding_lease_still_blocks
+        created_a = new_ticket(repo, _spec("Ticket A", scope=("docs/shared.md",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(repo, tid_a, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        created_b = new_ticket(
+            second_worktree, _spec("Ticket B collides", scope=("docs/shared.md",))
+        )
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+
+        loaded = load_all(second_worktree)
+        assert loaded.is_ok
+        queue = TicketQueue(tickets=loaded.danger_ok)
+        ticket_b = queue.tickets[tid_b]
+
+        holds = leased_by(queue, ticket_b, second_worktree)
+        assert any(holder_id == tid_a for holder_id, _glob in holds)
+
+        offered = doable(queue, second_worktree)
+        assert all(t.id != tid_b for t in offered)

@@ -772,6 +772,63 @@ def lease_holder_worktree(root: Path, ticket_id: str) -> str | None:
     return None
 
 
+# frob:ticket T-1356
+# frob:ticket T-1883
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_both_leased_to_same_worktree_matches kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases_cross_worktree.py::TestSameWorktreeLease.test_different_worktrees_do_not_match kind="unit"  # noqa: E501
+def same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
+    """Whether `requesting_id` (the ticket asking about/acting from `root`)
+    and `holder_id` (a ticket whose scope-lease might otherwise collide with
+    it) are BOTH leased to the SAME worktree (T-1356) -- the standing-policy
+    series-worktree case where two tickets share one agent's single working
+    copy, not two agents genuinely racing over the same files. A worktree
+    cannot conflict with itself: there is exactly one working copy and one
+    agent editing it.
+
+    THE single conflict predicate `frob.tickets._scope`'s `--add` collision
+    check and `frob.tickets._doable`'s `leased_by`/`doable --show-blocked`
+    collision check both call (T-1883: these two call sites used to answer
+    "does this lease conflict?" with two different, drifting rules --
+    `_scope`'s `--add` path already excluded same-worktree leases, `_doable`'s
+    did not, which made a same-worktree grouped dispatch self-block in
+    `doable --show-blocked`). One home, so the answer can never diverge
+    between the two call sites again.
+
+    `root` itself is resolved to its true git worktree top-level
+    (`frob.gitio.repo_root`, the same worktree-correct resolution `enforce_
+    worktree_lease` uses) rather than compared as a raw path, so a `root`
+    passed as a subdirectory of the worktree still matches correctly. A
+    ticket with no recorded lease at all (never `frob ticket start`-ed in ANY
+    worktree, or a stale/removed lease) never matches, so this can only ever
+    narrow an existing conflict, never invent a new exemption out of thin
+    air."""
+    from frob.gitio import repo_root
+
+    resolved_root = repo_root(root)
+    if resolved_root.is_err:
+        return False
+    root_worktree = str(resolved_root.danger_ok.resolve())
+
+    requesting_worktree: str | None = None
+    holder_worktree: str | None = None
+    for lease in read_all_leases(root):
+        if lease.ticket_id == requesting_id:
+            requesting_worktree = lease.worktree
+        elif lease.ticket_id == holder_id:
+            holder_worktree = lease.worktree
+    # `requesting_id` is the ticket ACTIVELY running this CLI invocation FROM
+    # `root` -- if the lease side-channel has no record for it yet (e.g. its
+    # very first `scope --add` right after `start`, before any lease-
+    # recording write has landed), `root` itself IS its worktree; falling
+    # back to `root_worktree` here (rather than treating a missing self-lease
+    # as "no match") is what makes that common case work instead of a
+    # same-worktree exemption silently never firing on a brand-new ticket.
+    if requesting_worktree is None:
+        requesting_worktree = root_worktree
+    return holder_worktree is not None and requesting_worktree == holder_worktree
+
+
 # frob:ticket T-1743
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_existing_lease_file kind="unit"  # noqa: E501

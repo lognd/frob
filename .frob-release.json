@@ -1920,6 +1920,7 @@
     "src/frob/tickets/_leases.py::remove_worktree": "01c991eab75b314dd28abbd7318a303a962d99d09242d89b29f9842d4744f548",
     "src/frob/tickets/_leases.py::rename_lease": "1a4ae34a2ceb7bf50b23d6f953c65eccaf0d93fa4cd40e1bb6798a07caf4915b",
     "src/frob/tickets/_leases.py::resolve_lease": "70492f907e5ac544f189da3bace6c81c99a36400c94c96bfed19cd3e8e0c2d66",
+    "src/frob/tickets/_leases.py::same_worktree_lease": "00aa6cf16cb81532ce28ed2b30eed6cc759c0639c8ce97a5e422d4c72920594d",
     "src/frob/tickets/_leases.py::scan_for_live_worktree_process": "0a1023d411296a3c5a9b907db159be0b086c54d11fc3ef1fcf3d591fc274fdff",
     "src/frob/tickets/_leases.py::sweep_worktrees": "b8e84dbc667b1dbc6cf93f85cc8790f788e328674abd6ca9e21534c024f14d0f",
     "src/frob/tickets/_leases.py::warn_if_worktree_stale": "b78830cf07239f19a62c8f2d58df44eb47eadea366e3d2a03e4213346be53d8e",
@@ -2023,6 +2024,7 @@
     "src/frob/tickets/_reporting.py::set_done_report": "e986c914e7ed5d017e1d766983f12cc042544a6b90712b6e34d93ce1a13cd086",
     "src/frob/tickets/_reporting_attachments.py::attach": "5df30457c0549f6170224e79cdb437421a48d725f985f150f2bbd2e073947b2c",
     "src/frob/tickets/_scope.py::mutate_scope": "c0261fba55cf8031a29d4bb5f8cfa53f5ccb6fe930d15251ef57076e949926d5",
+    "src/frob/tickets/_scope.py::scope_lease_conflict": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
     "src/frob/tickets/_setters.py::set_component": "6ed99d19391bf26ac9ae25792a213e1079a841623ed2fb2deac73bff44690a40",
     "src/frob/tickets/_setters.py::set_designated_repro_test": "ac2e27338cd14f34b1fc4580b931c91abcd3f40a71be5243a00bee0f6119d58b",
     "src/frob/tickets/_setters.py::set_kind": "8a4080d822675b2aba306037e1a3af1d01669fe4772c4ecb0077d7427781ebd0",
@@ -2203,5 +2205,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.416.0"
+  "version": "0.417.0"
 }

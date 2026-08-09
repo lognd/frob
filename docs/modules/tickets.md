@@ -878,6 +878,60 @@ than the existing queue-based one for the same holder, only able to
 catch a real conflict the queue-based check's merge-dependent staleness
 missed.
 
+<!-- frob:describes src/frob/tickets/_leases.py::same_worktree_lease -->
+**`doable --show-blocked` no longer reports a same-worktree lease as a
+blocker (T-1883).** `frob.tickets._doable.leased_by` (which both `doable`'s
+default collision filter and `doable --show-blocked`'s per-ticket
+explanation call) used to compare every candidate against every OTHER
+in-progress ticket's lease with no same-worktree exemption at all --
+`_scope.py`'s `--add` collision check already had T-1356's same-worktree
+exemption, but `_doable.py`'s independent query did not, so the two
+answered "does this lease conflict?" differently for the identical shape.
+This mattered in practice: the recommended grouped-dispatch workflow
+(several related tickets, one worktree, one agent, all legitimately
+declaring the same shared doc in scope) reliably produced a fully
+self-blocked group in `doable --show-blocked`, since a worktree cannot
+conflict with itself. `frob.tickets._leases.same_worktree_lease(root,
+requesting_id, holder_id)` is now the ONE shared predicate both
+`_scope.py`'s `--add` check and `_doable.py`'s `leased_by` call -- `leased_by`
+skips any holder this predicate matches before computing a collision, so a
+same-worktree lease can never appear as a blocker again, in either
+call site, without both changing together.
+
+<!-- frob:describes src/frob/tickets/_scope.py::scope_lease_conflict -->
+<!-- frob:describes src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision -->
+**`frob ticket start` now refuses a scope collision present at GRANT time,
+not just one widened afterward via `--add` (T-1880).** T-1868 closed the
+door where a ticket's `scope --add` widened its lease into a path another
+worktree's live lease already covered. A different door stayed open: a
+ticket that simply declares a colliding path in its ORIGINAL FILED scope
+and runs `frob ticket start` -- `start`'s guard chain (`_refuse_if_
+terminal`, `_refuse_if_foreign_live_lease`, T-1866's `_refuse_over_broad_
+scope_on_start`) checked whether the ticket itself already held a lease
+elsewhere and whether its own scope was over-broad, but never whether its
+scope OVERLAPPED another already-in-progress ticket's live lease. Confirmed
+live on this repo's own main: T-1851 declared `src/frob/app/config.py` in
+its filed scope and started AFTER T-1870 already held a live lease on the
+same path, and nothing refused it.
+
+`frob.tickets._scope.scope_lease_conflict(ticket_id, scope, queue,
+own_scope=(), *, root=None)` is the shared entrypoint: given a scope
+(a tuple of globs) and the local ledger's `queue`, it returns the first
+`(holding_ticket_id, holder_glob)` collision against another in-progress
+ticket's lease -- queue-based, or (when `root` is given) also the LIVE
+cross-worktree lease side-channel (`_scope_add_conflicts`'s existing
+T-0453/T-0561/T-1868 mechanism, unchanged). `mutate_scope`'s `--add`
+validation and `_lifecycle.py`'s new `_refuse_on_scope_lease_collision`
+(called from `_start`, right after T-1866's over-broad-scope refusal and
+before the ticket transitions to `IN_PROGRESS`) both call this ONE
+function -- `--add` passes the ticket's own pre-mutation scope as
+`own_scope` (T-0485's already-grandfathered-subset exemption still
+applies there), `start` passes `own_scope=()` (a grant-time check has no
+pre-existing granted subset to exempt against). One shared predicate
+means the two call sites cannot answer "does this scope collide?"
+differently again, the same discipline T-1883's `same_worktree_lease`
+extraction already applied to the doable/`--add` pairing above.
+
 ## Start-transition auto-commit (T-1054)
 
 `frob.tickets.transition` writes `tickets.md` straight to `root`'s working

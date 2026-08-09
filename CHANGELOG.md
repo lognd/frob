@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.417.0] - unreleased
+
+- T-1880: frob ticket start grants a lease without checking cross-ticket scope collision at grant time
+
 ## [0.416.0] - unreleased
 
 - T-1870: Delete frob sys sync-interface: interface= must be declared intent, not an auto-measured mirror nothing reads
