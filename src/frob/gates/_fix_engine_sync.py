@@ -30,8 +30,10 @@ first place; it is unaffected by this cut.
 
 from __future__ import annotations
 
+import ast
 import logging
 import re
+from collections import Counter
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -41,6 +43,7 @@ from frob.tickets import TicketQueue
 
 if TYPE_CHECKING:
     from frob.gates import GateReport
+    from frob.strata._code_binding import CodeBinding
 
 _log = logging.getLogger(__name__)
 
@@ -772,3 +775,334 @@ def _waive004_target_rule(message: str) -> str | None:
     should not happen against this repo's own `_waive004_violations`)."""
     match = _WAIVE004_TARGET_RULE_RE.search(message)
     return match.group(1) if match else None
+
+
+# ---------------------------------------------------------------------------
+# SYS-interface canonical order (T-1872): reorder a node's DECLARED
+# `interface=` names -- classes, then functions, then constants, then
+# unresolved, alphabetical within each group -- never add, remove, or
+# dedup a name.
+#
+# NOT a revival of `sync_interface`/SYS104 (T-1870, deleted): that writer
+# DERIVED the declared set from measured real code (accounting). This
+# handler never consults code to decide MEMBERSHIP -- it only consults
+# code to classify a name a human already declared as class/function/
+# const, purely to choose where that name sorts. Content (which names
+# appear, how many times) is asserted identical before and after
+# (`_assert_same_multiset`); the fix silently no-ops rather than write a
+# different set, and T-1871's duplicate-value PARSE ERROR (dropped, but
+# the invariant still holds here defensively) is never swallowed by a
+# quiet dedup.
+# ---------------------------------------------------------------------------
+
+#: One node OR store header line -- mirrors the deleted
+#: `_sync_interface._NODE_HEADER_RE` byte-for-byte (T-1425's store
+#: coverage included), reimplemented here rather than imported since that
+#: module no longer exists (T-1870).
+_IFACE_NODE_HEADER_RE = re.compile(
+    r"^(?P<indent>[ \t]*)(?:node|store)\s+(?P<id>\S+)\b[^{]*\{\s*$"
+)
+
+#: Legacy one-`attr interface=<name>;`-per-line form, still readable
+#: (never written by this handler -- `_render_interface_block` below
+#: always writes the compact T-1198 bracket-list form, same posture the
+#: deleted writer took).
+_IFACE_LEGACY_LINE_RE = re.compile(
+    r"^(?P<indent>[ \t]*)attr interface=(?P<name>\S+?);\s*$"
+)
+
+#: T-1198 compact `attr interface=[...]` block open/close markers.
+_IFACE_BLOCK_OPEN_RE = re.compile(r"^(?P<indent>[ \t]*)attr interface=\[\s*$")
+_IFACE_BLOCK_CLOSE_RE = re.compile(r"^[ \t]*\];\s*$")
+
+#: Symbol names packed per wrapped line inside a rewritten `interface=[...]`
+#: block -- matches the deleted `_sync_interface.NAMES_PER_LINE` value so a
+#: canonical-order rewrite looks like the same convention T-1198 already
+#: established, not a second competing wrap width.
+_IFACE_NAMES_PER_LINE = 6
+
+#: Canonical group order for `_canonical_interface_key`: classes first,
+#: then functions, then constants/other module-level assignments, then
+#: names this handler could not resolve against any bound `.py` file at
+#: all (kept LAST and alphabetical -- "cannot verify is never verified",
+#: per this ticket's spec, never guessed into a group).
+_IFACE_GROUP_ORDER = {"class": 0, "function": 1, "const": 2, "unresolved": 3}
+
+
+# frob:waive DUP001 reason="byte-identical to _sync_may.py::_node_body_span by \
+# construction -- both independently mirror the deleted _sync_interface.py's own \
+# _node_body_span, a tiny (7-line) brace-depth scanner with no state to share; \
+# extracting a shared helper would need a new module both _sync_may.py (SYS100, not in \
+# T-1872's scope) and this handler import from, which is a real refactor outside this \
+# order-only ticket's declared scope -- filed as a follow-up, not silently done here"
+def _iface_node_body_span(lines: list[str], header_idx: int) -> int:
+    """The line index of the `}` closing the node body opened at
+    `lines[header_idx]`, brace-depth matched (mirrors the deleted
+    `_sync_interface._node_body_span`)."""
+    depth = 1
+    for idx in range(header_idx + 1, len(lines)):
+        # frob:waive PERF002 reason="each line is a different string every iteration \
+        # -- nothing to hoist or cache; one-pass O(n) brace-depth scan, not a repeated \
+        # identical query"
+        depth += lines[idx].count("{") - lines[idx].count("}")
+        if depth == 0:
+            return idx
+    return len(lines) - 1  # malformed input: no matching close, best effort
+
+
+#: One located `interface=` declaration span: `(first_line, last_line,
+#: indent, names, is_compact)`.
+_IfaceSpan = tuple[int, int, str, list[str], bool]
+
+
+def _iface_find_spans(
+    lines: list[str], header_idx: int, close_idx: int
+) -> list[_IfaceSpan]:
+    """Locate every `interface=` declaration inside one node's body, in
+    whichever form (compact block or legacy per-line) each is written --
+    mirrors the deleted `_sync_interface._find_interface_spans`
+    (T-1624's multi-span collapse precedent) so a node with more than one
+    physical declaration still gets merged into exactly one block, with
+    its full multiset of names preserved."""
+    spans: list[_IfaceSpan] = []
+    idx = header_idx + 1
+    while idx < close_idx:
+        open_m = _IFACE_BLOCK_OPEN_RE.match(lines[idx])
+        if open_m is not None:
+            names: list[str] = []
+            close_idx_inner = idx
+            for j in range(idx + 1, close_idx):
+                if _IFACE_BLOCK_CLOSE_RE.match(lines[j]):
+                    close_idx_inner = j
+                    break
+                names.extend(
+                    part.strip() for part in lines[j].split(",") if part.strip()
+                )
+            spans.append((idx, close_idx_inner, open_m.group("indent"), names, True))
+            idx = close_idx_inner + 1
+            continue
+        legacy_m = _IFACE_LEGACY_LINE_RE.match(lines[idx])
+        if legacy_m is not None:
+            spans.append(
+                (idx, idx, legacy_m.group("indent"), [legacy_m.group("name")], False)
+            )
+        idx += 1
+    return spans
+
+
+def _node_symbol_kinds(
+    binding: "CodeBinding", root: Path, node_id: str
+) -> dict[str, str]:
+    """Classify every top-level `.py` symbol name bound to `node_id` as
+    `"class"`, `"function"`, or `"const"` (plain module-level assignment/
+    annotated assignment) -- purely for canonical-order GROUPING, never
+    for deciding whether a declared `interface=` name stays or goes. A
+    name defined more than once across the node's bound files with
+    DIFFERING kinds is dropped from the map entirely (ambiguous ->
+    caller treats it as unresolved, never guesses)."""
+    kinds: dict[str, str | None] = {}
+    for rel in sorted(binding.owner):
+        if binding.owner[rel] != node_id or not rel.endswith(".py"):
+            continue
+        path = root / rel
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (SyntaxError, OSError, UnicodeDecodeError) as exc:
+            _log.warning(
+                "tier-a fixes: SYS-interface-order could not parse %s: %s", path, exc
+            )
+            continue
+        for stmt in tree.body:
+            found: dict[str, str] = {}
+            if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                found[stmt.name] = "function"
+            elif isinstance(stmt, ast.ClassDef):
+                found[stmt.name] = "class"
+            elif isinstance(stmt, ast.Assign):
+                for t in stmt.targets:
+                    if isinstance(t, ast.Name):
+                        found[t.id] = "const"
+            elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+                found[stmt.target.id] = "const"
+            for name, kind in found.items():
+                if name in kinds and kinds[name] not in (None, kind):
+                    kinds[name] = None  # ambiguous across files -- unresolved
+                elif name not in kinds:
+                    kinds[name] = kind
+    return {name: kind for name, kind in kinds.items() if kind is not None}
+
+
+def _canonical_interface_key(name: str, kind_map: dict[str, str]) -> tuple[int, str]:
+    """Sort key for one declared `interface=` name: `(group, lowercased
+    name)`. `group` comes from `_IFACE_GROUP_ORDER`, keyed off `kind_map`
+    (resolved symbol kind) -- an unresolved name (not in `kind_map`)
+    always sorts into the trailing `"unresolved"` group, never guessed
+    from lexical casing (this repo's SYMBOLIC NEVER LEXICAL rule, T-1662)."""
+    kind = kind_map.get(name, "unresolved")
+    group = _IFACE_GROUP_ORDER.get(kind, _IFACE_GROUP_ORDER["unresolved"])
+    return (group, name.lower())
+
+
+def _render_interface_block(indent: str, ordered_names: list[str]) -> list[str]:
+    """Render `ordered_names` (already in final canonical order, NOT
+    re-sorted here) as one compact `attr interface=[...]` block,
+    `_IFACE_NAMES_PER_LINE` names per wrapped line -- mirrors the deleted
+    `_sync_interface._render_interface_block`'s wrap convention exactly,
+    except the caller supplies the order (that one always alphabetized
+    the full set; this one groups-then-alphabetizes and must not
+    re-sort, or a duplicate value could silently move group)."""
+    if not ordered_names:
+        return [f"{indent}attr interface=[];"]
+    body_indent = indent + "    "
+    out = [f"{indent}attr interface=["]
+    for start in range(0, len(ordered_names), _IFACE_NAMES_PER_LINE):
+        chunk = ordered_names[start : start + _IFACE_NAMES_PER_LINE]
+        out.append(body_indent + ", ".join(chunk) + ",")
+    out.append(f"{indent}];")
+    return out
+
+
+def _reorder_node_interface_block(
+    lines: list[str], header_idx: int, kind_map: dict[str, str]
+) -> tuple[list[str], bool]:
+    """Reorder one node's declared `interface=` name(s) into canonical
+    group+alphabetical order (`_canonical_interface_key`), collapsing
+    multiple spans into one compact block same as T-1198's writer did --
+    ORDER-ONLY: asserts the multiset of names is identical before and
+    after (`Counter` comparison) and refuses the rewrite (returns
+    `lines` unchanged, `False`) rather than ever write a different set.
+    Returns `(new_lines, changed)`."""
+    close_idx = _iface_node_body_span(lines, header_idx)
+    spans = _iface_find_spans(lines, header_idx, close_idx)
+    if not spans:
+        return lines, False
+
+    declared: list[str] = [name for span in spans for name in span[3]]
+    ordered = sorted(declared, key=lambda n: _canonical_interface_key(n, kind_map))
+
+    if Counter(declared) != Counter(ordered):
+        _log.error(
+            "tier-a fixes: SYS-interface-order refused a rewrite that would change "
+            "the declared multiset (node header at line %d) -- this must never "
+            "happen; leaving the block untouched",
+            header_idx,
+        )
+        return lines, False
+
+    single_clean = len(spans) == 1 and spans[0][4] and spans[0][3] == ordered
+    if single_clean:
+        return lines, False
+
+    indent = spans[0][2]
+    new_block = _render_interface_block(indent, ordered)
+    new_lines = list(lines)
+    for first, last, _, _, _ in reversed(spans):
+        del new_lines[first : last + 1]
+    insert_at = spans[0][0]
+    new_lines[insert_at:insert_at] = new_block
+    return new_lines, True
+
+
+# frob:doc docs/strata/surface.md#interface-canonical-order-tier-a-t-1872
+# frob:tests \
+# tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder.test_groups_by_kind_then_alpha  # noqa: E501
+# frob:tests \
+# tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder.test_order_only_multiset_preserved_and_idempotent  # noqa: E501
+# frob:ticket T-1872
+def _reorder_iface_one_file(
+    abs_path: Path, root: Path, binding: "CodeBinding"
+) -> list[FixApplied]:
+    """Reorder every node's `interface=` block inside ONE `.strata` file
+    (`_reorder_node_interface_block` per node header found), writing the
+    file back only if at least one node actually changed -- split out of
+    `fix_sys_interface_canonical_order` purely to keep that function under
+    this repo's own ARCH001 line-count threshold; no behavior seam here,
+    just where the loop body lives."""
+    try:
+        text = abs_path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    if "node " not in text and "store " not in text:
+        return []
+    rel = abs_path.relative_to(root).as_posix()
+    lines = text.splitlines()
+    header_idxs = [
+        i for i, line in enumerate(lines) if _IFACE_NODE_HEADER_RE.match(line)
+    ]
+    offset = 0
+    file_changed = False
+    applied: list[FixApplied] = []
+    for header_idx in header_idxs:
+        idx = header_idx + offset
+        m = _IFACE_NODE_HEADER_RE.match(lines[idx])
+        if m is None:
+            continue
+        node_id = m.group("id")
+        kind_map = _node_symbol_kinds(binding, root, node_id)
+        before_len = len(lines)
+        lines, changed = _reorder_node_interface_block(lines, idx, kind_map)
+        if changed:
+            file_changed = True
+            offset += len(lines) - before_len
+            applied.append(
+                FixApplied(
+                    rule="SYS-IFACE-ORDER",
+                    file=rel,
+                    line=header_idx + 1,
+                    detail=f"node {node_id} interface= reordered to canonical order",
+                )
+            )
+    if file_changed:
+        new_text = "\n".join(lines)
+        if text.endswith("\n") and not new_text.endswith("\n"):
+            new_text += "\n"
+        _write_text(abs_path, new_text)
+    return applied
+
+
+# frob:doc docs/strata/surface.md#interface-canonical-order-tier-a-t-1872
+# frob:tests \
+# tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder.test_groups_by_kind_then_alpha  # noqa: E501
+# frob:tests \
+# tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder.test_order_only_multiset_preserved_and_idempotent  # noqa: E501
+# frob:ticket T-1872
+def fix_sys_interface_canonical_order(
+    root: Path, snapshot: GraphSnapshot
+) -> list[FixApplied]:
+    """Tier-A fix (T-1872): reorder every node's declared `interface=`
+    names into canonical order -- resolved symbol kind (class, function,
+    const), then alphabetical within each kind, unresolved names trailing
+    in stable alphabetical order -- WITHOUT ever adding, removing, or
+    deduping a name (module-level docstring above for why this is not a
+    `sync_interface`/SYS104 revival). A design root that does not resolve,
+    or that carries no node with an `interface=` declaration at all, is a
+    no-op. Per-file work lives in `_reorder_iface_one_file`."""
+    from frob.strata._code_binding import bind_code
+    from frob.strata._design_load import DEFAULT_DESIGN_DIR, load_design_ids
+    from frob.strata._sysdoc import merge_models
+
+    del snapshot  # signature uniformity only, this handler reads the design tree itself
+    if not (root / DEFAULT_DESIGN_DIR).is_dir():
+        return []
+    ids = load_design_ids(root, DEFAULT_DESIGN_DIR)
+    if ids.errors or not ids.models:
+        return []
+    model = merge_models(ids.models)
+    binding_result = bind_code(model, root)
+    if binding_result.is_err:
+        _log.warning(
+            "tier-a fixes: SYS-interface-order skipped, code binding failed: %s",
+            binding_result.danger_err,
+        )
+        return []
+    binding = binding_result.danger_ok
+
+    applied: list[FixApplied] = []
+    design_root = root / DEFAULT_DESIGN_DIR
+    # frob:waive WALK001 reason="design/ is a small, hand-authored .strata source \
+    # subtree with no nested .git/.venv/node_modules/build/dist/target to prune -- \
+    # excludes.walk_pruned would add a filter that never fires here, not change \
+    # behavior; matches the deleted _sync_interface.py precedent's own waiver"
+    for abs_path in sorted(design_root.rglob("*.strata")):
+        applied.extend(_reorder_iface_one_file(abs_path, root, binding))
+    return applied

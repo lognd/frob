@@ -683,6 +683,40 @@ recommended form for a node with more than a handful of declared
 symbols, exactly as much a permanent part of the `.strata` surface
 grammar as the single-value `KEY=V` form it complements.
 
+<a id="interface-canonical-order-tier-a-t-1872"></a>
+## `interface=` canonical order (Tier-A, T-1872)
+
+<!-- frob:ticket T-1872 -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys_interface_canonical_order -->
+
+A Tier-A auto-fix handler (`SYS-IFACE-ORDER`,
+`frob.gates._fix_engine_sync.fix_sys_interface_canonical_order`, wired
+into `TIER_A_HANDLERS` in `frob.gates._fix_engine`) normalizes the
+PRESENTATION of a node's declared `interface=` block: symbol names are
+grouped by resolved kind -- classes, then functions, then constants --
+alphabetical within each group, with any name this handler cannot
+resolve against the node's own bound `.py` files (via `bind_code`)
+trailing in its own stable-alphabetical group rather than guessed at.
+
+**This is not T-1870's `sync-interface` come back.** T-1870 deleted
+`frob sys sync-interface`/SYS104's writer because it DERIVED the
+declared set from measured code -- an auto-updating mirror the owner
+ruled out entirely. `SYS-IFACE-ORDER` never consults code to decide
+MEMBERSHIP: it only classifies a name a human already declared, purely
+to choose where that name sorts. The handler asserts the declared name
+multiset (duplicates included -- T-1871's duplicate-value PARSE ERROR
+was dropped, not built, so a duplicate can still exist on disk and must
+survive a reorder unchanged) is identical before and after every
+rewrite, and silently no-ops rather than ever write a different set.
+
+The rewrite reuses T-1198's compact `attr interface=[...]` bracket-list
+form as its write target (collapsing more than one physical span for the
+same node into a single block, same collapse precedent T-1624
+established for the deleted `sync-interface` writer) -- a node still
+using the legacy one-line-per-symbol form is migrated to the compact
+form the same run its order is corrected, never written back out in the
+legacy form.
+
 ## Multi-file design load: cross-file references (T-1196)
 
 <!-- frob:ticket T-1196 -->

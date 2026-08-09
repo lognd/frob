@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.418.0] - unreleased
+
+- T-1872: Tier-A canonical ordering for interface= : group by resolved symbol kind, alphabetical within group, order-only
+
 ## [0.417.0] - unreleased
 
 - T-1880: frob ticket start grants a lease without checking cross-ticket scope collision at grant time

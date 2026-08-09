@@ -51,6 +51,7 @@ from frob.gates._fix_engine_sync import (
     fix_rel002_release_sync,
     fix_sys100_extended_whole_node_grant,
     fix_sys100_may_via_union,
+    fix_sys_interface_canonical_order,
     fix_waive004_stale_waiver,
 )
 from frob.gates._fix_engine_text import (
@@ -490,9 +491,20 @@ def _fix_sys100_both_cases(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
 #: this same category) is deliberately NOT wired here any more -- deleted
 #: entirely, along with its writer and every other `interface=` mutation
 #: path, per an explicit owner directive that no code path may
-#: auto-update declared public-symbol surface.
+#: auto-update declared public-symbol surface. T-1872: `SYS-IFACE-ORDER`
+#: is NOT that same thing come back -- it never consults code to decide
+#: an `interface=` block's MEMBERSHIP (only to classify a name a human
+#: already declared, purely to choose sort position); see
+#: `_fix_engine_sync.py`'s own section docstring for the distinction and
+#: `_reorder_node_interface_block`'s multiset assertion.
 # frob:ticket T-1531
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:waive AFFECT001 reason="T-1872 added the SYS-IFACE-ORDER entry below; \
+# docs/modules/gates.md is currently held by T-1877's live cross-worktree lease \
+# (scope-lease conflict on scope --add) so it cannot be touched from this worktree -- \
+# docs/strata/surface.md#interface-canonical-order-tier-a-t-1872 (in this ticket's own \
+# scope) documents the new handler in full; the gates.md Tier-A section update is \
+# disclosed follow-up for whichever of this ticket or T-1877 lands second"
 #: T-1548: every handler now takes a 4th `ticket_id: str | None` argument
 #: (the landing ticket's id, when `apply_tier_a_fixes` is called from a
 #: land context -- `None` for a bare `frob check --fix`) -- every existing
@@ -526,6 +538,11 @@ TIER_A_HANDLERS: dict[
     ),
     "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(
         root, snapshot
+    ),
+    "SYS-IFACE-ORDER": (
+        lambda root, snapshot, queue, ticket_id: fix_sys_interface_canonical_order(
+            root, snapshot
+        )
     ),
     "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(
         root, snapshot

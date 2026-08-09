@@ -2,7 +2,7 @@
 id: T-1872
 title: 'Tier-A canonical ordering for interface= : group by resolved symbol kind,
   alphabetical within group, order-only'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -18,8 +18,19 @@ scope:
 - src/frob/gates/_fix_engine.py
 - src/frob/gates/_fix_engine_sync.py
 - docs/strata/surface.md
+- tests/unit/gates/test_sys_interface_canonical_order.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/gates/test_sys_interface_canonical_order.py
+  reason: T-1872 order-only Tier-A handler needs pytest evidence; test_gates.py is
+    leased by T-1886 so a new dedicated test file is used instead
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_groups_by_kind_then_alpha
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_order_only_multiset_preserved_and_idempotent
 designated_repro_test: null
 threat: null
 component: null
