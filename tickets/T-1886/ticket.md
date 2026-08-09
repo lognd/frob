@@ -2,7 +2,7 @@
 id: T-1886
 title: 'test_waive004_removes_stale_waiver_on_a_full_unscoped_run: proportional mass-invalidation
   guard blocks single-waiver fixtures'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
