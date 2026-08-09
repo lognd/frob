@@ -423,3 +423,4 @@
 {"commit": "d6a0f15794531a8d2817992c764c8960b05a5ba4", "skipped": "missing-evidence-or-done-report", "ticket": "T-1896"}
 {"commit": "44be46a879f1f33cc6e1ebb0e836a6a1ff129183", "skipped": "land-evidence-scope-unbound", "ticket": "T-1894"}
 {"commit": "ef9819c7eaff68b8ad157ad76a1704525a8909e1", "skipped": "land-evidence-scope-unbound", "ticket": "T-1894"}
+{"commit": "77450ac5f216bc5f74306486235b8f5115698e42", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1894"}
