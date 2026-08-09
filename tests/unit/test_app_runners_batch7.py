@@ -1260,6 +1260,7 @@ class TestTicketFail:
         assert "recorded failure attempt 1" in caplog.text
 
 
+# frob:ticket T-1902
 class TestTicketEvidence:
     def test_missing_args_exits_1(self, tmp_path: Path) -> None:
         cfg = AppConfig(ticket_command="evidence", ticket_path=tmp_path)
@@ -1288,7 +1289,36 @@ class TestTicketEvidence:
             ticket_run(cfg)
         assert "evidence now has 1 id(s)" in caplog.text
 
+    # frob:ticket T-1902
     def test_evidence_cmd_applied_for_docs_ticket(self, tmp_path: Path, caplog) -> None:
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="docs ticket",
+            ticket_kind="docs",
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_path=tmp_path,
+            ticket_id="T-0001",
+            ticket_evidence_cmd="echo verified",
+        )
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "evidence now has 1 entries" in caplog.text
+
+    # frob:ticket T-1902
+    # frob:tests src/frob/tickets/_evidence.py::add_cmd_evidence
+    # frob:waive DUP001 reason="deliberately mirrors \
+    # test_evidence_cmd_failure_logs_error's shape so the accepted (echo verified) and \
+    # refused (true, silent) evidence-cmd paths read as one locked pair, per T-1902's \
+    # Done report"
+    def test_evidence_cmd_silent_is_refused(self, tmp_path: Path, caplog) -> None:
+        # T-1892: a zero-exit command with empty stdout+stderr digests the
+        # empty string and proves nothing, so it must be refused rather
+        # than accepted as evidence. Locked together with the accepted
+        # chatty-command path above so both behaviors move as one unit.
         cfg = AppConfig(
             ticket_command="new",
             ticket_path=tmp_path,
@@ -1302,9 +1332,9 @@ class TestTicketEvidence:
             ticket_id="T-0001",
             ticket_evidence_cmd="true",
         )
-        with caplog.at_level("INFO"):
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit):
             ticket_run(cfg)
-        assert "evidence now has 1 entries" in caplog.text
+        assert "ticket evidence-cmd failed" in caplog.text
 
     def test_evidence_cmd_failure_logs_error(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
@@ -1325,6 +1355,7 @@ class TestTicketEvidence:
         assert "ticket evidence-cmd failed" in caplog.text
 
 
+# frob:ticket T-1902
 class TestTicketArchive:
     def test_nothing_to_archive(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(ticket_command="archive", ticket_path=tmp_path)
@@ -1332,6 +1363,7 @@ class TestTicketArchive:
             ticket_run(cfg)
         assert "nothing to archive" in caplog.text
 
+    # frob:ticket T-1902
     def test_archives_done_ticket(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
             ticket_command="new",
@@ -1349,7 +1381,7 @@ class TestTicketArchive:
             ticket_command="close",
             ticket_path=tmp_path,
             ticket_id="T-0001",
-            ticket_evidence_cmd="true",
+            ticket_evidence_cmd="echo verified",
         )
         ticket_run(cfg)
         cfg = AppConfig(ticket_command="archive", ticket_path=tmp_path)

@@ -2,7 +2,7 @@
 id: T-1902
 title: T-1892's EvidenceCmdSilent refusal broke two existing tests whose fixtures
   use 'true' as the evidence command
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,26 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- tests/unit/test_app_runners_batch7.py
+- tickets/T-1905/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: fixture updates for T-1892's EvidenceCmdSilent refusal
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1905/ticket.md
+  reason: reverse-dependency finding filed while working T-1902
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_cmd_applied_for_docs_ticket
+- tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_cmd_silent_is_refused
+- tests/unit/test_app_runners_batch7.py::TestTicketArchive::test_archives_done_ticket
 designated_repro_test: null
 threat: null
 component: null
