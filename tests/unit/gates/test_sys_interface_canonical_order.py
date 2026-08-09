@@ -13,24 +13,16 @@ from frob.graph._models import GraphSnapshot
 
 _STRATA_HEADER = "module test\n\n"
 
-# T-1896: `fix_sys_interface_canonical_order` is typed to take a
+# T-1896/T-1906: `fix_sys_interface_canonical_order` is typed to take a
 # `GraphSnapshot` (Tier-A fix-handler signature uniformity, T-1872) even
 # though its body never reads it (the handler re-reads the design tree
 # itself) -- these tests previously passed `None`, which `ty` correctly
 # flags as an invalid-argument-type since the param is not `GraphSnapshot |
 # None`. An empty, otherwise-unused snapshot is the honest fix: it
 # satisfies the real declared type without changing what the handler under
-# test actually does.
-_EMPTY_SNAPSHOT = GraphSnapshot(root="", symbols={}, edges=())
-
-# T-1896: `fix_sys_interface_canonical_order` is typed to take a
-# `GraphSnapshot` (Tier-A fix-handler signature uniformity, T-1872) even
-# though its body never reads it (the handler re-reads the design tree
-# itself) -- these tests previously passed `None`, which `ty` correctly
-# flags as an invalid-argument-type since the param is not `GraphSnapshot |
-# None`. An empty, otherwise-unused snapshot is the honest fix: it
-# satisfies the real declared type without changing what the handler under
-# test actually does.
+# test actually does. T-1900 added three more call sites that regressed
+# back to `None` instead of reusing this fixture -- use `_EMPTY_SNAPSHOT`
+# for every call in this file, never `None`.
 _EMPTY_SNAPSHOT = GraphSnapshot(root="", symbols={}, edges=())
 
 
@@ -132,7 +124,7 @@ class TestSysInterfaceCanonicalOrder:
         (root / "design" / "frob.strata").write_text(strata_text, encoding="utf-8")
         (root / "pkg" / "mod.py").write_text("X = 1\n", encoding="utf-8")
 
-        applied = fix_sys_interface_canonical_order(root, None)
+        applied = fix_sys_interface_canonical_order(root, _EMPTY_SNAPSHOT)
         assert applied == []
 
         after = (root / "design" / "frob.strata").read_text(encoding="utf-8")
@@ -176,7 +168,7 @@ class TestSysInterfaceCanonicalOrder:
         )
         (root / "pkg" / "empty.py").write_text("Y = 1\n", encoding="utf-8")
 
-        fix_sys_interface_canonical_order(root, None)
+        fix_sys_interface_canonical_order(root, _EMPTY_SNAPSHOT)
         after = (root / "design" / "frob.strata").read_text(encoding="utf-8")
         result = parse_module(after)
         assert result.is_ok, result.err
@@ -204,7 +196,7 @@ class TestSysInterfaceCanonicalOrder:
         monkeypatch.setattr(
             _fix_engine_sync, "_iface_rewrite_parses", lambda lines: False
         )
-        applied = fix_sys_interface_canonical_order(root, None)
+        applied = fix_sys_interface_canonical_order(root, _EMPTY_SNAPSHOT)
         assert applied == []
 
         after = (root / "design" / "frob.strata").read_text(encoding="utf-8")
