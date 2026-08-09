@@ -52,6 +52,6 @@ this ticket's scope).
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 773 warning(s), 692 waived
 - error-findings: none (measured, zero errors)
