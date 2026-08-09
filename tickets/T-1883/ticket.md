@@ -2,7 +2,7 @@
 id: T-1883
 title: doable --show-blocked reports same-worktree leases as blockers, so a grouped
   dispatch self-blocks
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -132,3 +132,21 @@ NOTE ON STATE. On `main` these three tickets read `state: queued`; the
 the LEASE FILE is the only authority for in-flight status, and the
 blocked computation reads it correctly -- that part is not the bug. The
 bug is purely the missing same-worktree exclusion.
+
+frob:waive BUG002 reason="the fix already landed on main as part of
+T-1880's land (same series worktree -- T-1880's commit c9fa9f2c620664
+267d82da66e91384c7a9ac3b5c carried this ticket's own uncommitted
+same_worktree_lease extraction and doable/leased_by exclusion forward
+as an acknowledged passenger when it landed first) -- there is no
+diff-touched production code left for THIS ticket's own commit to
+mutation-test against; the designated repro test passing at both main
+and this commit is expected and correct (the behavior it proves was
+already installed on main before this land), not confirmatory-only
+masking an unproven fix. Same posture T-1837's Done report already
+established for this identical 'fix landed under a sibling ticket
+first' shape (that ticket cites T-1633 for the same precedent again).
+Re-verified directly: post-merge `frob check --only clones` reports 0
+duplicate-group errors repo-wide (419 groups, 1 waived, unchanged) and
+the earlier ClaimDivergence ('DUP001', '_scope.py') that blocked this
+ticket's first land attempt no longer reproduces -- resolved by the
+merge, not by new code this commit adds."
