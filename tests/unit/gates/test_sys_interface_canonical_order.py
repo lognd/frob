@@ -11,7 +11,7 @@ from pathlib import Path
 from frob.gates._fix_engine_sync import fix_sys_interface_canonical_order
 from frob.graph._models import GraphSnapshot
 
-_STRATA_HEADER = 'module test\n\n'
+_STRATA_HEADER = "module test\n\n"
 
 # T-1896: `fix_sys_interface_canonical_order` is typed to take a
 # `GraphSnapshot` (Tier-A fix-handler signature uniformity, T-1872) even
@@ -31,7 +31,7 @@ def _write_repo(root: Path, interface_block: str, py_source: str) -> None:
     (root / "pkg").mkdir(parents=True)
     (root / "design" / "frob.strata").write_text(
         _STRATA_HEADER
-        + 'node core : trusted {\n'
+        + "node core : trusted {\n"
         + '    code "pkg/**";\n'
         + f"    attr interface=[\n        {interface_block}\n    ];\n"
         + "}\n",
@@ -96,3 +96,106 @@ class TestSysInterfaceCanonicalOrder:
         # Idempotent: a second run finds nothing left to reorder.
         applied_again = fix_sys_interface_canonical_order(root, _EMPTY_SNAPSHOT)
         assert applied_again == []
+
+    # frob:tests \
+    # tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonical\
+    # Order.test_empty_interface_one_line_form_is_not_read_as_a_name
+    def test_empty_interface_one_line_form_is_not_read_as_a_name(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1900: `attr interface=[];` (the one-line empty form
+        `_render_interface_block` itself emits) must be left byte-
+        identical -- the handler must NOT read the literal `[]` token as
+        a declared name called `[]` and re-expand it into an invalid
+        multi-line block."""
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "design").mkdir()
+        (root / "pkg").mkdir()
+        strata_text = (
+            _STRATA_HEADER
+            + "node core : trusted {\n"
+            + '    code "pkg/**";\n'
+            + "    attr interface=[];\n"
+            + "}\n"
+        )
+        (root / "design" / "frob.strata").write_text(strata_text, encoding="utf-8")
+        (root / "pkg" / "mod.py").write_text("X = 1\n", encoding="utf-8")
+
+        applied = fix_sys_interface_canonical_order(root, None)
+        assert applied == []
+
+        after = (root / "design" / "frob.strata").read_text(encoding="utf-8")
+        assert after == strata_text
+        assert "attr interface=[];" in after
+
+    # frob:tests \
+    # tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonical\
+    # Order.test_round_trip_every_node_shape_reparses
+    def test_round_trip_every_node_shape_reparses(self, tmp_path: Path) -> None:
+        """Round-trip over every node shape (compact multi-name, legacy
+        one-name-per-line, and the empty case) -- the rewritten
+        `design/frob.strata` must still PARSE via strata-core afterward."""
+        from frob.strata._parse import parse_module
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "design").mkdir()
+        (root / "pkg").mkdir()
+        strata_text = (
+            _STRATA_HEADER
+            + "node core : trusted {\n"
+            + '    code "pkg/core.py";\n'
+            + "    attr interface=[\n        zeta, Alpha,\n    ];\n"
+            + "}\n\n"
+            + "node legacy : trusted {\n"
+            + '    code "pkg/legacy.py";\n'
+            + "    attr interface=only_fn;\n"
+            + "}\n\n"
+            + "node empty : trusted {\n"
+            + '    code "pkg/empty.py";\n'
+            + "    attr interface=[];\n"
+            + "}\n"
+        )
+        (root / "design" / "frob.strata").write_text(strata_text, encoding="utf-8")
+        (root / "pkg" / "core.py").write_text(
+            "class Alpha:\n    pass\n\ndef zeta():\n    pass\n", encoding="utf-8"
+        )
+        (root / "pkg" / "legacy.py").write_text(
+            "def only_fn():\n    pass\n", encoding="utf-8"
+        )
+        (root / "pkg" / "empty.py").write_text("Y = 1\n", encoding="utf-8")
+
+        fix_sys_interface_canonical_order(root, None)
+        after = (root / "design" / "frob.strata").read_text(encoding="utf-8")
+        result = parse_module(after)
+        assert result.is_ok, result.err
+
+    # frob:tests \
+    # tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonical\
+    # Order.test_rewrite_that_would_not_parse_is_refused
+    def test_rewrite_that_would_not_parse_is_refused(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-1900 part 3: even when the multiset guard passes, a rewrite
+        whose rendered text fails to re-parse must be refused (`lines`
+        left unchanged) rather than written -- simulated by forcing
+        `_iface_rewrite_parses` to report failure."""
+        from frob.gates import _fix_engine_sync
+
+        root = tmp_path / "repo"
+        _write_repo(
+            root,
+            "zeta, Alpha,",
+            "class Alpha:\n    pass\n\ndef zeta():\n    pass\n",
+        )
+        before = (root / "design" / "frob.strata").read_text(encoding="utf-8")
+
+        monkeypatch.setattr(
+            _fix_engine_sync, "_iface_rewrite_parses", lambda lines: False
+        )
+        applied = fix_sys_interface_canonical_order(root, None)
+        assert applied == []
+
+        after = (root / "design" / "frob.strata").read_text(encoding="utf-8")
+        assert after == before

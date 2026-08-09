@@ -806,14 +806,28 @@ _IFACE_NODE_HEADER_RE = re.compile(
 #: Legacy one-`attr interface=<name>;`-per-line form, still readable
 #: (never written by this handler -- `_render_interface_block` below
 #: always writes the compact T-1198 bracket-list form, same posture the
-#: deleted writer took).
+#: deleted writer took). Deliberately EXCLUDES the literal `[]` token --
+#: T-1900: that is the empty compact form's one-line spelling
+#: (`_render_interface_block`'s own `not ordered_names` branch), not a
+#: name, and must never match here (see `_IFACE_EMPTY_LINE_RE`, checked
+#: first in `_iface_find_spans`).
 _IFACE_LEGACY_LINE_RE = re.compile(
-    r"^(?P<indent>[ \t]*)attr interface=(?P<name>\S+?);\s*$"
+    r"^(?P<indent>[ \t]*)attr interface=(?!\[\]\s*;)(?P<name>\S+?);\s*$"
 )
 
 #: T-1198 compact `attr interface=[...]` block open/close markers.
 _IFACE_BLOCK_OPEN_RE = re.compile(r"^(?P<indent>[ \t]*)attr interface=\[\s*$")
 _IFACE_BLOCK_CLOSE_RE = re.compile(r"^[ \t]*\];\s*$")
+
+#: T-1900: the empty compact form written on ONE line --
+#: `_render_interface_block`'s own `not ordered_names` branch emits
+#: exactly `attr interface=[];`. Must be recognized as a span with ZERO
+#: declared names, never matched by `_IFACE_LEGACY_LINE_RE` (which would
+#: read the literal token `[]` as a name called `[]` -- the corruption
+#: this ticket fixes: `_render_interface_block` would then re-expand that
+#: single "name" into an invalid multi-line block whose body is a bare
+#: `[],`, which strata-core rejects).
+_IFACE_EMPTY_LINE_RE = re.compile(r"^(?P<indent>[ \t]*)attr interface=\[\];\s*$")
 
 #: Symbol names packed per wrapped line inside a rewritten `interface=[...]`
 #: block -- matches the deleted `_sync_interface.NAMES_PER_LINE` value so a
@@ -863,10 +877,19 @@ def _iface_find_spans(
     mirrors the deleted `_sync_interface._find_interface_spans`
     (T-1624's multi-span collapse precedent) so a node with more than one
     physical declaration still gets merged into exactly one block, with
-    its full multiset of names preserved."""
+    its full multiset of names preserved. T-1900: the one-line empty
+    form (`attr interface=[];`) is recognized FIRST and yields a span
+    with zero names -- it must never fall through to
+    `_IFACE_LEGACY_LINE_RE`, which would otherwise read the literal `[]`
+    token as a declared name."""
     spans: list[_IfaceSpan] = []
     idx = header_idx + 1
     while idx < close_idx:
+        empty_m = _IFACE_EMPTY_LINE_RE.match(lines[idx])
+        if empty_m is not None:
+            spans.append((idx, idx, empty_m.group("indent"), [], True))
+            idx += 1
+            continue
         open_m = _IFACE_BLOCK_OPEN_RE.match(lines[idx])
         if open_m is not None:
             names: list[str] = []
@@ -969,9 +992,17 @@ def _reorder_node_interface_block(
     group+alphabetical order (`_canonical_interface_key`), collapsing
     multiple spans into one compact block same as T-1198's writer did --
     ORDER-ONLY: asserts the multiset of names is identical before and
-    after (`Counter` comparison) and refuses the rewrite (returns
-    `lines` unchanged, `False`) rather than ever write a different set.
-    Returns `(new_lines, changed)`."""
+    after (`Counter` comparison) AND that the rewritten file re-parses
+    (T-1900) -- refuses the rewrite (returns `lines` unchanged, `False`)
+    on either failure, rather than ever write a different set OR
+    unparseable output. The multiset check alone is not enough: T-1900's
+    incident proved a rewrite can preserve the exact name multiset
+    (`['[]']` -> `['[]']`, identical) while still emitting text
+    strata-core rejects, because the multiset check cannot see the
+    difference between a real declared NAME and a stray token this
+    handler's own span-finder misparsed. A rewriter capable of emitting
+    unparseable output must verify its own output, not just its name
+    set. Returns `(new_lines, changed)`."""
     close_idx = _iface_node_body_span(lines, header_idx)
     spans = _iface_find_spans(lines, header_idx, close_idx)
     if not spans:
@@ -1000,7 +1031,32 @@ def _reorder_node_interface_block(
         del new_lines[first : last + 1]
     insert_at = spans[0][0]
     new_lines[insert_at:insert_at] = new_block
+
+    if not _iface_rewrite_parses(new_lines):
+        _log.error(
+            "tier-a fixes: SYS-interface-order refused a rewrite that preserved "
+            "the declared multiset but produced text strata-core cannot parse "
+            "(node header at line %d) -- leaving the block untouched",
+            header_idx,
+        )
+        return lines, False
+
     return new_lines, True
+
+
+def _iface_rewrite_parses(lines: list[str]) -> bool:
+    """T-1900: re-parse the FULL rewritten file text via strata-core
+    (`frob.strata._parse.parse_module`) and report whether it still
+    parses -- the second half of `_reorder_node_interface_block`'s
+    refuse-on-failure guard. The order-only multiset check alone cannot
+    catch a rewrite that emits syntactically invalid output (the T-1900
+    incident: `Counter(['[]']) == Counter(['[]'])` passed while the
+    rewritten block was unparseable), so this handler must verify its
+    own output directly rather than trust the multiset proxy."""
+    from frob.strata._parse import parse_module
+
+    text = "\n".join(lines)
+    return parse_module(text).is_ok
 
 
 # frob:doc docs/strata/surface.md#interface-canonical-order-tier-a-t-1872
@@ -1008,7 +1064,17 @@ def _reorder_node_interface_block(
 # tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder.test_groups_by_kind_then_alpha  # noqa: E501
 # frob:tests \
 # tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder.test_order_only_multiset_preserved_and_idempotent  # noqa: E501
+# frob:tests \
+# tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrde\
+# r.test_empty_interface_one_line_form_is_not_read_as_a_name
+# frob:tests \
+# tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrde\
+# r.test_round_trip_every_node_shape_reparses
+# frob:tests \
+# tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrde\
+# r.test_rewrite_that_would_not_parse_is_refused
 # frob:ticket T-1872
+# frob:ticket T-1900
 def _reorder_iface_one_file(
     abs_path: Path, root: Path, binding: "CodeBinding"
 ) -> list[FixApplied]:

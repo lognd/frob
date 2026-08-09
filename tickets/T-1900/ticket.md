@@ -2,7 +2,7 @@
 id: T-1900
 title: 'SYS-IFACE-ORDER Tier-A auto-fix corrupts design/frob.strata on every land:
   empty interface=[] parsed as a name called ''[]'''
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,29 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_fix_engine_sync.py
+- tests/unit/gates/test_sys_interface_canonical_order.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: T-1900 fix lives in the SYS-IFACE-ORDER handler; test-file scope pending
+    T-1896 lease
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/gates/test_sys_interface_canonical_order.py
+  reason: T-1900's new round-trip/refusal tests live here
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_empty_interface_one_line_form_is_not_read_as_a_name
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_round_trip_every_node_shape_reparses
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_rewrite_that_would_not_parse_is_refused
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_groups_by_kind_then_alpha
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_order_only_multiset_preserved_and_idempotent
 designated_repro_test: null
 threat: null
 component: null
