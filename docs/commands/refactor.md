@@ -319,7 +319,10 @@ write if two ops targeting the same file overlap.
 **`verify_import_resolution`**: Verify post-condition 1 -- every touched
 `.py` file still parses (non-`.py` touched files are skipped, T-1885),
 and (when `repo_root` is given) every absolute local-module import it
-contains resolves against what that module currently defines.
+contains resolves against what that module currently defines. T-1889:
+the per-file parse/skip/syntax-error loop is factored into the private
+helper `_parse_touched_python_files` so this function stays under the
+long-function architecture threshold; behavior is unchanged.
 
 <a id="verify_pytest_collect"></a>
 <!-- frob:describes src/frob/refactor/_verify.py::verify_pytest_collect -->

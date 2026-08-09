@@ -110,6 +110,50 @@ def _local_import_gaps(repo_root: Path, path: Path, tree: ast.Module) -> list[st
     return gaps
 
 
+def _parse_touched_python_files(
+    touched_files: list[Path],
+) -> tuple[dict[Path, ast.Module], list[str], list[str]]:
+    """Split `touched_files` into (parsed ASTs, syntax-error messages,
+    skipped non-`.py` paths) -- the T-1885 filter step
+    `verify_import_resolution` needs before it can reason about import
+    resolution at all, factored out so that function stays under the
+    long-function threshold (ARCH001, T-1889)."""
+    trees: dict[Path, ast.Module] = {}
+    broken: list[str] = []
+    skipped: list[str] = []
+    for path in touched_files:
+        if not path.is_file():
+            continue
+        # T-1885: `touched_files` is every path a `RefactorPlan.reference_
+        # ops` entry rewrote -- not just Python source. A non-`.py` carrier
+        # (a `tickets/<id>/ticket.md` evidence citation, T-1546; a
+        # `docs/design/registry/*.yaml` registry citation, T-1200) reaching
+        # `ast.parse` unconditionally is not Python and predictably raises
+        # `SyntaxError` on ordinary prose/YAML content (observed: "leading
+        # zeros in decimal integer literals are not permitted" parsing a
+        # ticket.md's `T-0001`-shaped id) -- which this function correctly
+        # reported as a failed `VerifyOutcome` (never silently swallowed as
+        # a crash), but that failure was spurious AND indistinguishable
+        # from a genuine one: nothing about the actual rewrite was broken,
+        # only this check's blind assumption that every touched file is
+        # Python. A non-`.py` file is recorded in `skipped` -- disclosed
+        # explicitly, never silently folded into either `passed=True`
+        # ("I looked and it's fine") or `passed=False` ("I looked and it's
+        # broken") -- rather than being handed to `ast.parse` at all. This
+        # function's whole job is Python syntax/import resolution; a
+        # non-Python file was never a real candidate for it.
+        if path.suffix != ".py":
+            skipped.append(str(path))
+            continue
+        try:
+            trees[path] = ast.parse(
+                path.read_text(encoding="utf-8"), filename=str(path)
+            )
+        except SyntaxError as exc:
+            broken.append(f"{path}: {exc}")
+    return trees, broken, skipped
+
+
 # frob:doc docs/commands/refactor.md#verify_import_resolution
 # frob:tests \
 # tests/test_refactor.py::TestVerify.test_import_resolution_catches_syntax_error
@@ -145,43 +189,9 @@ def verify_import_resolution(
     the `detail` string says so explicitly rather than silently claiming
     full resolution ran.
     """
-    broken: list[str] = []
-    trees: dict[Path, ast.Module] = {}
-    skipped: list[str] = []
-    for path in touched_files:
-        if not path.is_file():
-            continue
-        # T-1885: `touched_files` is every path a `RefactorPlan.reference_
-        # ops` entry rewrote -- not just Python source. A non-`.py` carrier
-        # (a `tickets/<id>/ticket.md` evidence citation, T-1546; a
-        # `docs/design/registry/*.yaml` registry citation, T-1200) reaching
-        # `ast.parse` unconditionally is not Python and predictably raises
-        # `SyntaxError` on ordinary prose/YAML content (observed: "leading
-        # zeros in decimal integer literals are not permitted" parsing a
-        # ticket.md's `T-0001`-shaped id) -- which this function correctly
-        # reported as a failed `VerifyOutcome` (never silently swallowed as
-        # a crash), but that failure was spurious AND indistinguishable
-        # from a genuine one: nothing about the actual rewrite was broken,
-        # only this check's blind assumption that every touched file is
-        # Python. A non-`.py` file is recorded in `skipped` -- disclosed
-        # explicitly, never silently folded into either `passed=True`
-        # ("I looked and it's fine") or `passed=False` ("I looked and it's
-        # broken") -- rather than being handed to `ast.parse` at all. This
-        # function's whole job is Python syntax/import resolution; a
-        # non-Python file was never a real candidate for it.
-        if path.suffix != ".py":
-            skipped.append(str(path))
-            continue
-        try:
-            trees[path] = ast.parse(
-                path.read_text(encoding="utf-8"), filename=str(path)
-            )
-        except SyntaxError as exc:
-            broken.append(f"{path}: {exc}")
+    trees, broken, skipped = _parse_touched_python_files(touched_files)
     skipped_note = (
-        f" ({len(skipped)} non-.py file(s) skipped, not applicable)"
-        if skipped
-        else ""
+        f" ({len(skipped)} non-.py file(s) skipped, not applicable)" if skipped else ""
     )
     if broken:
         _log.warning("refactor.verify: import resolution failed: %s", broken)

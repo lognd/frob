@@ -1,7 +1,7 @@
 ---
 id: T-1888
 title: 'post-land sweep regression from T-1870: 1 new error(s) (REG002)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-08'
@@ -14,6 +14,8 @@ scope:
 - docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
 designated_repro_test: null
 threat: null
 component: null
