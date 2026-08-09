@@ -16,9 +16,13 @@ scope:
 - src/frob/vet/_capability_typescript_bindtable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- cmd:grep -q 'src/frob/yaml_io.py' design/frob.strata exit=0 sha256=e3b0c44298fc
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Two mechanical consequences of the wave-8 lands, both caught by the gates on main:
 
