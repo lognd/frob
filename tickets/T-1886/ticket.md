@@ -2,7 +2,7 @@
 id: T-1886
 title: 'test_waive004_removes_stale_waiver_on_a_full_unscoped_run: proportional mass-invalidation
   guard blocks single-waiver fixtures'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -16,6 +16,8 @@ scope:
 - src/frob/gates/_fix_engine_sync.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
 designated_repro_test: null
 threat: null
 component: null

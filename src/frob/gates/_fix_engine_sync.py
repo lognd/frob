@@ -442,6 +442,26 @@ _WAIVE_SINGLE_LINE_RE = re.compile(r"^\s*(#|//)\s*frob:waive\s+(\S+)\b")
 #: least as suspicious as 40 of 40, arguably more so.
 _WAIVE004_MASS_INVALIDATION_THRESHOLD = 5
 
+#: T-1886: the PROPORTIONAL check below is a sample-size argument ("all of
+#: this rule's live waivers going stale together is suspicious regardless
+#: of count") and, like any sample-size argument, has no discriminating
+#: power at `N=1` -- a rule with exactly one live `frob:waive` directive
+#: reads as "100% went stale" the instant that single waiver is genuinely
+#: dead, indistinguishable from a degraded run by construction. Without a
+#: floor this makes `fix_waive004_stale_waiver` structurally unable to
+#: ever delete a lone dead waiver for a low-traffic rule -- not a rare
+#: edge case, since a repo with exactly one live waiver for some rule is
+#: an entirely ordinary state, not itself a degradation signal. Mirrors
+#: the `_DEFLATION_MIN_KNOWN_MODULES` precedent (`frob.gates._coverage`):
+#: below a minimum sample size, the check simply does not fire rather
+#: than firing on noise. Chosen at 2 (not the absolute threshold's 5) so
+#: the guard keeps its full bite the moment there is ANY sample size to
+#: reason about proportionally -- 2-of-2 and up still trip it exactly as
+#: before; only the N=1 case, which carries no proportional signal at
+#: all, now falls through to the (also fully intact) absolute-threshold
+#: check alone.
+_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT = 2
+
 #: `GateStats.skipped` names that `_build_ticket_scoped_jobs` (`frob.gates.
 #: __init__`) appends ROUTINELY whenever `run_gates` has no bound ticket to
 #: enforce `scope`/`prework` against -- true on every genuinely unscoped
@@ -495,14 +515,18 @@ def _mass_invalidation_rules(
       (T-1323's original guard).
     - PROPORTIONAL: `live_counts[rule]` (this rule's total live
       `frob:waive` directives, from `_waivers_by_rule` over the SAME
-      snapshot this run measured) is nonzero and EVERY one of them is a
+      snapshot this run measured) is at least
+      `_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT` and EVERY one of them is a
       candidate this run -- structurally invisible to the absolute
       threshold for any rule with fewer than
       `_WAIVE004_MASS_INVALIDATION_THRESHOLD` live waivers, and just as
-      much the T-1323 incident's own shape at any count: a rule with 2
-      live waivers both going stale in the same run is the same
-      signature as 40 of 40, not weaker evidence just because there were
-      fewer to begin with."""
+      much the T-1323 incident's own shape at any count above the floor:
+      a rule with 2 live waivers both going stale in the same run is the
+      same signature as 40 of 40, not weaker evidence just because there
+      were fewer to begin with. T-1886: below the floor (i.e. `N=1`) the
+      ratio carries no proportional signal at all -- see
+      `_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT`'s own docstring -- so it is
+      excluded rather than treated as maximally suspicious."""
     counts: dict[str, int] = {}
     for _file, _line, rule in candidates:
         counts[rule] = counts.get(rule, 0) + 1
@@ -510,7 +534,10 @@ def _mass_invalidation_rules(
         rule: count
         for rule, count in counts.items()
         if count >= _WAIVE004_MASS_INVALIDATION_THRESHOLD
-        or (live_counts.get(rule, 0) > 0 and count >= live_counts[rule])
+        or (
+            live_counts.get(rule, 0) >= _WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT
+            and count >= live_counts[rule]
+        )
     }
 
 

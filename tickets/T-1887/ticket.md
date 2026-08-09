@@ -2,7 +2,7 @@
 id: T-1887
 title: test_tier_a_handlers_dict_covers_every_batch_rule missing TICK006 in expected
   set
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -15,6 +15,8 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_gates.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
 designated_repro_test: null
 threat: null
 component: null

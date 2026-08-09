@@ -11392,6 +11392,7 @@ class TestFixEngineTierABatch2:
             # public-symbol surface.
             "E501",  # T-1547
             "COV002",  # T-1548
+            "TICK006",  # T-1544
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
