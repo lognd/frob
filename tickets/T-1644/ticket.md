@@ -2,7 +2,7 @@
 id: T-1644
 title: Bind src/frob/yaml_io.py into the strata self-model and waive INV006 on the
   T-1420 TS split
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-06'
