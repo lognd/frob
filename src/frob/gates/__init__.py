@@ -4550,6 +4550,7 @@ def _test005(
         *_test008_unjoined_root(data),
         *_test011_freshness(data),
         *_test017_deflation(data),
+        *_test019_deflated_symbols(data),
         *_test012_lock(snapshot, data),
         *_test005_symbols(snapshot, data, cfg),
         *_test005_modules(data, cfg),
@@ -4638,6 +4639,46 @@ def _test017_deflation(data: CoverageData) -> tuple[Violation, ...]:
             ),
         )
     return ()
+
+
+# frob:ticket T-1877
+# frob:enforces CHK-GATE-TEST019
+# frob:tests \
+# tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_flags_suspect_symbol
+# frob:tests \
+# tests/test_gates_test019.py::TestTest019DeflatedSymbols.test_clean_when_no_suspects
+def _test019_deflated_symbols(data: CoverageData) -> tuple[Violation, ...]:
+    """TEST019 (warn): one or more symbols look per-symbol deflated -- def
+    line hit, every body line 0, corroborated by a `frob:tests` edge.
+
+    Wires T-1824's `frob.gates._coverage._suspect_deflated_symbols` heuristic
+    (computed during `load_coverage`, carried on
+    `CoverageData.suspect_deflated_symbols`) into a real gate Violation --
+    T-1824 could only log it, since its own scope could not reach this
+    module. WARN, not ERROR: like TEST011's `stale_by_mtime` signal, this is
+    advisory -- a per-symbol shape match is corroborating evidence for a
+    partial xdist worker-crash merge loss, not proof (see `_suspect_
+    deflated_symbols`'s own docstring for the false-positive tradeoff its
+    `frob:tests`-edge corroboration requirement already accepts).
+    """
+    if not data.suspect_deflated_symbols:
+        return ()
+    return (
+        Violation(
+            rule="TEST019",
+            severity=Severity.WARN,
+            file="coverage.xml",
+            line=0,
+            message=(
+                "TEST019: "
+                f"{len(data.suspect_deflated_symbols)} symbol(s) look "
+                "per-symbol deflated (def line hit, every body line 0, "
+                "each corroborated by a frob:tests edge) -- possible "
+                "partial xdist worker-crash merge loss (T-1824): "
+                f"{', '.join(data.suspect_deflated_symbols)}"
+            ),
+        ),
+    )
 
 
 # T-0545: the committed coverage-lock path, for TEST012 messages only --

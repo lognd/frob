@@ -666,10 +666,9 @@ def load_coverage(
     # T-1824: per-symbol deflation heuristic, distinct from the aggregate
     # join_fraction signal just above -- catches the case where a worker
     # crash drops just a handful of symbols without moving the repo-wide
-    # fraction enough to trip. Logged here (not yet a Violation -- wiring
-    # a new gate rule needs frob.gates.__init__/_waive.py, outside this
-    # module's own scope; see this ticket's Done report) so the signal is
-    # not silently computed and discarded.
+    # fraction enough to trip. T-1877 wires the computed list into
+    # `CoverageData.suspect_deflated_symbols` so `frob.gates._test019_
+    # deflated_symbols` can turn it into a real Violation.
     suspect_deflated = _suspect_deflated_symbols(snapshot, hits_by_class_line)
     if suspect_deflated:
         _log.warning(
@@ -701,6 +700,7 @@ def load_coverage(
             attempted_roots=tried_roots,
             stale_by_mtime=stale_by_mtime,
             module_join_fraction=join_fraction,
+            suspect_deflated_symbols=suspect_deflated,
         )
     )
 

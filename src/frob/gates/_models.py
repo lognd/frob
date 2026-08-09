@@ -257,6 +257,14 @@ class CoverageData(BaseModel):
     # did join). Both are advisory (TEST011, WARN) signals, not floors.
     stale_by_mtime: bool = False
     module_join_fraction: float = 1.0
+    # T-1824/T-1877: symrefs `_suspect_deflated_symbols` flags as
+    # per-symbol deflated (def line hit, every body line 0, corroborated by
+    # a `frob:tests` edge) -- the partial xdist worker-crash merge-loss
+    # shape TEST019 (`frob.gates._test019_deflated_symbols`) turns into a
+    # Violation. Distinct from `module_join_fraction`'s aggregate signal:
+    # a worker crash can drop just a handful of symbols without moving the
+    # repo-wide join fraction enough for TEST017 to notice.
+    suspect_deflated_symbols: tuple[str, ...] = ()
 
 
 # frob:doc docs/modules/gates.md#error-types

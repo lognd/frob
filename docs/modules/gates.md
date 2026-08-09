@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUG002,CACHE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUG002,CACHE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -60,6 +60,7 @@ declaration).
 | TEST007 | test | a cross-package `frob:uses-contract` dependency has no pairwise integration test covering that boundary (opt-in via `[testing].pair_integration`) |
 | TEST011 | test | (warn) coverage.xml predates a tracked source change (`stale_by_mtime`) -- see "TEST011/TEST017 (T-0464/T-1489)" below |
 | TEST017 | test | coverage.xml joins far fewer known modules than the snapshot has -- deflation, e.g. dropped subprocess coverage (`module_join_fraction`) -- see "TEST011/TEST017 (T-0464/T-1489)" below |
+| TEST019 | test | (warn) one or more symbols look per-symbol deflated (def line hit, every body line 0, corroborated by a `frob:tests` edge) -- possible partial xdist worker-crash merge loss (`suspect_deflated_symbols`) -- see "TEST019 (T-1824/T-1877)" below |
 | DOC001 | doclink | a doc file matching `[gates.docs] include` globs (default `docs/**/*.md` -- new files auto-obligated) has no frob:describes anchor, no frob:doc edge into it, and is unreachable via markdown links from the roots (docs/index.md, README.md) |
 | DOC002 | docanchor | a `frob:doc <file>#<slug>` edge whose target doesn't resolve: missing `#anchor`, missing file, or `<slug>` matches neither a heading slug (`frob.graph.dsl.slugify`) nor an explicit `<a id="...">` in `<file>` |
 | DOC008 | doclink | (T-1231) an obligated doc's own inline markdown link `[text](target#frag)` doesn't resolve: relative `target` isn't a real file, or `#frag` matches neither a heading slug nor an explicit `<a id="...">` in the target |
@@ -1634,6 +1635,46 @@ gate that fails on every checkout with an uncommitted edit). TEST017 is
 registered in `_UNWAIVABLE`-adjacent form like every other TEST0xx rule
 (waivable via `frob:waive TEST017 reason="..."`, same as TEST011) --
 promotion to ERROR is a default-severity change, not an unwaivable one.
+
+### TEST019 (T-1824/T-1877): per-symbol deflation, distinct from TEST017's aggregate signal
+
+<!-- frob:describes src/frob/gates/_coverage.py::_suspect_deflated_symbols -->
+<!-- frob:describes src/frob/gates/__init__.py::_test019_deflated_symbols -->
+
+TEST017's `module_join_fraction` catches a coverage.xml that dropped MOST
+of its data (a whole subprocess never merged), but a single xdist worker
+crash can drop just the handful of symbols that worker happened to be the
+SOLE source of data for, without moving the repo-wide join fraction enough
+for TEST017 to notice at all. T-1824 added `_suspect_deflated_symbols`
+(`frob.gates._coverage`) to catch that narrower shape directly: a symbol
+whose `def` line shows a coverage hit but every OTHER line in its body
+span shows zero hits is exactly what a partial merge loss looks like
+per-symbol.
+
+That heuristic is corroborated, not standalone: a symbol only qualifies if
+`snapshot.edges` also carries a `frob:tests` edge for it (checked on both
+`edge.src`/`edge.target`). An honestly unexercised or genuinely dead code
+path is indistinguishable from lost worker data by the per-line shape
+alone -- without the corroborating edge raising the expectation that this
+symbol SHOULD show real hits, flagging it would be a false positive, and
+TEST005/TEST011/TEST017 already gate real work on adjacent signals. A
+symbol with fewer than two hit-lines recorded in its span is skipped, not
+flagged either way -- same "cannot analyse, so do not claim a verdict"
+posture as `_module_join_fraction`'s own sample-size floor.
+
+T-1824's own declared scope (`src/frob/gates/_coverage.py`,
+`tests/test_gates.py`) could compute the list but could not reach
+`frob.gates.__init__` (where every Violation-emitting gate function lives)
+or `frob.gates._waive`'s `_KNOWN_GATE_RULES` registry, so it landed as a
+WARNING log line only inside `load_coverage`. T-1877 closes that gap:
+`CoverageData.suspect_deflated_symbols` (`frob.gates._models`) now carries
+the computed symref tuple out of `load_coverage`, and
+`_test019_deflated_symbols` (`frob.gates`) turns a non-empty tuple into a
+`TEST019` Violation, folded into `_test005`'s dispatch alongside
+TEST008/TEST011/TEST017/TEST012. WARN, not ERROR -- like TEST011's
+`stale_by_mtime`, a per-symbol shape match is corroborating evidence for a
+possible worker-crash merge loss, not proof; waivable via `frob:waive
+TEST019 reason="..."`, same as every other TEST0xx rule.
 
 ### Coverage as managed derived state (T-1205/T-1516/T-1517)
 

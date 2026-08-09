@@ -268,6 +268,12 @@ _KNOWN_GATE_RULES = frozenset(
         # it were removed so it would close"; see
         # `frob.gates._mutation_evidence.evidence_weakened_confirmatory_violations`.
         "TEST018",
+        # T-1877: a symbol's def line shows a coverage hit but every other
+        # body line reads zero, corroborated by a `frob:tests` edge -- the
+        # per-symbol shape of a partial xdist worker-crash merge loss
+        # (T-1824's `frob.gates._coverage._suspect_deflated_symbols`),
+        # distinct from TEST017's aggregate/repo-wide join-fraction signal.
+        "TEST019",
         "TODO001",
         "TODO002",
         # T-0783: a frob:todo edge bound to a still-open ticket whose
