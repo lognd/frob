@@ -1,7 +1,7 @@
 ---
 id: T-1896
 title: 'post-land sweep regression from T-1872: 1 new error(s) (invalid-argument-type)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -14,6 +14,9 @@ scope:
 - tests/unit/gates/test_sys_interface_canonical_order.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_groups_by_kind_then_alpha
+- tests/unit/gates/test_sys_interface_canonical_order.py::TestSysInterfaceCanonicalOrder::test_order_only_multiset_preserved_and_idempotent
 designated_repro_test: null
 threat: null
 component: null

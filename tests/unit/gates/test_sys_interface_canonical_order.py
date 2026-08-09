@@ -9,8 +9,19 @@ from collections import Counter
 from pathlib import Path
 
 from frob.gates._fix_engine_sync import fix_sys_interface_canonical_order
+from frob.graph._models import GraphSnapshot
 
 _STRATA_HEADER = 'module test\n\n'
+
+# T-1896: `fix_sys_interface_canonical_order` is typed to take a
+# `GraphSnapshot` (Tier-A fix-handler signature uniformity, T-1872) even
+# though its body never reads it (the handler re-reads the design tree
+# itself) -- these tests previously passed `None`, which `ty` correctly
+# flags as an invalid-argument-type since the param is not `GraphSnapshot |
+# None`. An empty, otherwise-unused snapshot is the honest fix: it
+# satisfies the real declared type without changing what the handler under
+# test actually does.
+_EMPTY_SNAPSHOT = GraphSnapshot(root="", symbols={}, edges=())
 
 
 def _write_repo(root: Path, interface_block: str, py_source: str) -> None:
@@ -48,7 +59,7 @@ class TestSysInterfaceCanonicalOrder:
             "def helper_fn():\n    pass\n\n"
             "BETA_CONST = 1\n",
         )
-        applied = fix_sys_interface_canonical_order(root, None)
+        applied = fix_sys_interface_canonical_order(root, _EMPTY_SNAPSHOT)
         assert len(applied) == 1
         assert applied[0].rule == "SYS-IFACE-ORDER"
 
@@ -72,7 +83,7 @@ class TestSysInterfaceCanonicalOrder:
             "def helper_fn():\n    pass\n\n"
             "BETA_CONST = 1\n",
         )
-        fix_sys_interface_canonical_order(root, None)
+        fix_sys_interface_canonical_order(root, _EMPTY_SNAPSHOT)
         text = (root / "design" / "frob.strata").read_text(encoding="utf-8")
 
         # Names live between the block's '[' and closing '];'.
@@ -83,5 +94,5 @@ class TestSysInterfaceCanonicalOrder:
         assert Counter(after_names) == Counter(before_names)
 
         # Idempotent: a second run finds nothing left to reorder.
-        applied_again = fix_sys_interface_canonical_order(root, None)
+        applied_again = fix_sys_interface_canonical_order(root, _EMPTY_SNAPSHOT)
         assert applied_again == []

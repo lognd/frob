@@ -405,6 +405,10 @@
 {"commit": "ffe3dfd774ebfee05ad13699347207f65c7e877d", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1888"}
 {"commit": "c9fa9f2c620664267d82da66e91384c7a9ac3b5c", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1880"}
 {"commit": "d241bcd7201cc3250e7b9205a4776a93e7de5da6", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1872"}
+{"commit": "687cbb558162a651a2b483333dbb3f72339571a8", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1894"}
+{"commit": "687cbb558162a651a2b483333dbb3f72339571a8", "skipped": "missing-evidence-or-done-report", "ticket": "T-1894"}
+{"commit": "ac33f4f30dcb4487489c003ad174f4e575a59b53", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1894"}
+{"commit": "ac33f4f30dcb4487489c003ad174f4e575a59b53", "skipped": "missing-evidence-or-done-report", "ticket": "T-1894"}
 {"commit": "d7fe168ca5fb2453ff1d6d2e512bfa8bb3038213", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1892"}
 {"commit": "d7fe168ca5fb2453ff1d6d2e512bfa8bb3038213", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1892"}
 {"commit": "354e6e576d51e25a7b97d3b91ef94e70192ee31d", "skipped": "land-evidence-scope-unbound", "ticket": "T-1892"}
@@ -413,3 +417,9 @@
 {"commit": "aa7fee20291571df4c06c4b3abb20f15b6edb49b", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1883"}
 {"commit": "31ae1686717bae80fd8c480ab0a093c75b5f7ab5", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1877"}
 {"commit": "c8e50a3d878dad4f2de2634ae2ebd3b41235fbb1", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1892"}
+{"commit": "68f16ad6513cbb7e04d5caec9b79febda09e568f", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1896"}
+{"commit": "68f16ad6513cbb7e04d5caec9b79febda09e568f", "skipped": "missing-evidence-or-done-report", "ticket": "T-1896"}
+{"commit": "d6a0f15794531a8d2817992c764c8960b05a5ba4", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1896"}
+{"commit": "d6a0f15794531a8d2817992c764c8960b05a5ba4", "skipped": "missing-evidence-or-done-report", "ticket": "T-1896"}
+{"commit": "44be46a879f1f33cc6e1ebb0e836a6a1ff129183", "skipped": "land-evidence-scope-unbound", "ticket": "T-1894"}
+{"commit": "ef9819c7eaff68b8ad157ad76a1704525a8909e1", "skipped": "land-evidence-scope-unbound", "ticket": "T-1894"}

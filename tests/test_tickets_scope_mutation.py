@@ -68,7 +68,7 @@ class TestScopeLeaseConflict:
         )
         queue = load_queue(tmp_path).danger_ok
         conflict = scope_lease_conflict(
-            "T-9999", ("src/frob/other/foo.py",), queue.tickets, root=tmp_path
+            "T-9999", ("src/frob/other/foo.py",), dict(queue.tickets), root=tmp_path
         )
         assert conflict is None
         assert holder.state is TicketState.IN_PROGRESS
@@ -86,7 +86,7 @@ class TestScopeLeaseConflict:
         conflict = scope_lease_conflict(
             "T-9999",
             ("src/frob/other/foo.py", "src/frob/gates/bar.py"),
-            queue.tickets,
+            dict(queue.tickets),
             root=tmp_path,
         )
         assert conflict is not None
