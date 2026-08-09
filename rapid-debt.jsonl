@@ -392,3 +392,4 @@
 {"commit": "b4b7ea06731e951c55e7e80ba423a9801894f1f4", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1644"}
 {"commit": "71f86f023db18316a3b273ba9ae869d764fcf54c", "skipped": "missing-evidence-or-done-report", "ticket": "T-1644"}
 {"commit": "e8d7d532a102bb6e2ec2c415c8611f7dd6a0d59b", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1887"}
+{"commit": "5b5c42176f1ad20230a8201339d0dc9fff261d41", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1889"}
