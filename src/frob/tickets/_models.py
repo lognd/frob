@@ -1758,6 +1758,10 @@ class TicketError(ErrorSet):
     # T-0215: non-pytest evidence channel for docs-kind tickets
     EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
     EvidenceCmdFailed = "evidence command failed to launch or exited nonzero"
+    # frob:ticket T-1892
+    EvidenceCmdSilent = (
+        "evidence command exited 0 with empty stdout+stderr -- proves nothing"
+    )
     # T-0398 D-01: injected pass/fail oracle says a collected id did not pass
     EvidenceNotPassing = "Evidence id resolved but did not pass when last run"
     # T-0398 D-02: no evidence id binds to a touched/scope symbol

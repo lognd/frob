@@ -2,7 +2,7 @@
 id: T-1892
 title: '--evidence-cmd accepts any silently-succeeding command: empty-output digest
   makes ''true'' valid evidence'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,44 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
+- tests/test_tickets_cmd_evidence.py
+- tickets/T-1899/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: 'T-1892: refuse silent --evidence-cmd (empty stdout+stderr), new TicketError
+    variant, regression tests'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'T-1892: refuse silent --evidence-cmd (empty stdout+stderr), new TicketError
+    variant, regression tests'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_tickets_cmd_evidence.py
+  reason: 'T-1892: refuse silent --evidence-cmd (empty stdout+stderr), new TicketError
+    variant, regression tests'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1899/ticket.md
+  reason: 'T-1892: scope covers the follow-up draft ticket filed during this work
+    (docs update blocked on T-1883''s lease)'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused::test_silent_zero_exit_command_is_refused
+- tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused::test_grep_q_silent_match_is_refused
+- tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused::test_chatty_zero_exit_command_is_accepted
+- tests/test_tickets_cmd_evidence.py::TestCmdEvidence::test_exit_zero
+- tests/test_tickets_cmd_evidence.py::TestCmdEvidence::test_nonzero_exit
 designated_repro_test: null
 threat: null
 component: null

@@ -92,6 +92,40 @@ class TestCmdEvidence:
         assert first.danger_ok == second.danger_ok
 
 
+class TestSilentCmdEvidenceRefused:
+    """(T-1892) a zero-exit command with empty captured stdout+stderr is
+    refused, not recorded with the empty-string sha256 -- MEASURED
+    2026-08-09 closing T-1644: `grep -q` (silent by design) recorded
+    `sha256=e3b0c44298fc` (the digest of ""), a digest `true`/`: `/`cd .`
+    would all collide on identically, carrying zero information about
+    what was actually verified."""
+
+    def test_silent_zero_exit_command_is_refused(self) -> None:
+        # frob:tests src/frob/tickets/_evidence.py::run_cmd_evidence
+        # frob:ticket T-1892
+        result = run_cmd_evidence("true")
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceCmdSilent
+
+    def test_grep_q_silent_match_is_refused(self) -> None:
+        # frob:tests src/frob/tickets/_evidence.py::run_cmd_evidence
+        # frob:ticket T-1892
+        # the exact T-1892 incident shape: a silent `grep -q` on a real,
+        # existing match still produces empty stdout+stderr.
+        result = run_cmd_evidence("grep -q run_cmd_evidence tests/test_tickets_cmd_evidence.py")
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceCmdSilent
+
+    def test_chatty_zero_exit_command_is_accepted(self) -> None:
+        # frob:tests src/frob/tickets/_evidence.py::run_cmd_evidence
+        # frob:ticket T-1892
+        # the sanctioned fix: `grep -c` (chatty, emits the count) over
+        # `grep -q` (silent) for the exact same underlying check.
+        result = run_cmd_evidence("grep -c run_cmd_evidence tests/test_tickets_cmd_evidence.py")
+        assert result.is_ok
+        assert result.danger_ok.startswith("cmd:grep -c run_cmd_evidence")
+
+
 class TestKindGate:
     """Only docs-kind tickets may close on `--evidence-cmd` alone (T-0215).
 

@@ -235,9 +235,11 @@ def _head_commit_or_unknown(root: Path) -> str:
     return head.danger_ok.stdout.strip() or "unknown"
 
 
-# frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_appends_one_json_line_per_call  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_appends_one_json_line_per_call
 # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_records_a_commit_field_even_outside_a_git_repo  # noqa: E501
-# frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_is_tracked_not_under_dot_frob  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_is_tracked_not_under_dot_frob
 # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_an_unwritable_path_never_raises  # noqa: E501
 # frob:doc docs/modules/tickets.md#rapid-debt-and-the-ratchet-override-t-1681
 # frob:ticket T-1681
@@ -885,7 +887,12 @@ def _sync_cross_worktree_lease(
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive ARCH001 reason="a typani Result guard chain (lease, schema, resolution, pass-check, then acceptance-range) where each stage is already its own dedicated helper (_check_evidence_resolution, _check_evidence_passing, ...); the length is the sequence of early-return guard calls itself, matching this module's own idiomatic and_then style -- splitting further would just rename the same guard clauses behind a second layer of indirection"  # noqa: E501
+# frob:waive ARCH001 reason="a typani Result guard chain (lease, schema, resolution, \
+# pass-check, then acceptance-range) where each stage is already its own dedicated \
+# helper (_check_evidence_resolution, _check_evidence_passing, ...); the length is the \
+# sequence of early-return guard calls itself, matching this module's own idiomatic \
+# and_then style -- splitting further would just rename the same guard clauses behind \
+# a second layer of indirection"
 # frob:ticket T-1727
 def add_evidence(
     root: Path,
@@ -1457,6 +1464,9 @@ def _rebind_evidence(
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_exit_zero
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_nonzero_exit
+# frob:tests tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused.test_silent_zero_exit_command_is_refused  # noqa: E501
+# frob:tests tests/test_tickets_cmd_evidence.py::TestSilentCmdEvidenceRefused.test_chatty_zero_exit_command_is_accepted  # noqa: E501
+# frob:ticket T-1892
 def run_cmd_evidence(command: str, cwd: Path | None = None) -> Result[str, TicketError]:
     """Run `command` as an argv (no shell, T-0805) and fold its outcome
     into one evidence string (`cmd:<command> exit=0 sha256=<12-hex>`) --
@@ -1468,6 +1478,21 @@ def run_cmd_evidence(command: str, cwd: Path | None = None) -> Result[str, Ticke
     stdout only (deterministic across whitespace-only stderr noise) so the
     same command run twice against the same repo state records the same
     entry instead of appending a new one every time.
+
+    (T-1892) A command whose captured stdout+stderr is EMPTY is refused
+    (`Err(EvidenceCmdSilent)`) even though it exited 0: an empty capture
+    means the recorded sha256 is `e3b0c44298fc..` (the digest of the empty
+    string) no matter what the command actually was -- `true`, `: `,
+    `cd .`, and a silent `grep -q` all collide on this one digest, so the
+    ledger entry looks like proof and demonstrates nothing (MEASURED
+    2026-08-09 closing T-1644: a `grep -q` evidence command recorded
+    exactly this empty digest). The fix is a hard refusal, not a warning
+    -- a warning is exactly as skippable as no check at all, and this
+    channel is the sanctioned evidence path for docs-kind tickets
+    (T-0215) precisely because nothing else re-verifies it. The refusal
+    message steers the operator toward a command that emits its own
+    finding (e.g. `grep -c` instead of `grep -q`, or `grep -n` instead of
+    `grep -q`) rather than merely rejecting silently.
 
     `cwd` (T-0834) is where `command` is actually run -- `add_cmd_evidence`
     passes the ticket's resolved `--path` root so a relative-path probe
@@ -1481,7 +1506,19 @@ def run_cmd_evidence(command: str, cwd: Path | None = None) -> Result[str, Ticke
     completed = _run_evidence_command(command, cwd=cwd)
     if completed.is_err:
         return Err(completed.danger_err)
-    digest = hashlib.sha256(completed.danger_ok.stdout.encode("utf-8")).hexdigest()[:12]
+    stdout = completed.danger_ok.stdout
+    stderr = completed.danger_ok.stderr
+    if not stdout.strip() and not stderr.strip():
+        _log.warning(
+            "tickets: evidence command %r exited 0 but captured stdout+stderr "
+            "empty -- refused (T-1892): the recorded digest would carry zero "
+            "information about what was verified (identical to `true`/`: `). "
+            "Use a command that emits its own finding, e.g. `grep -c` instead "
+            "of `grep -q`, or `grep -n` instead of a silent match check",
+            command,
+        )
+        return Err(TicketError.EvidenceCmdSilent)
+    digest = hashlib.sha256(stdout.encode("utf-8")).hexdigest()[:12]
     entry = f"cmd:{command} exit=0 sha256={digest}"
     return validate_evidence(entry)
 
@@ -1704,7 +1741,8 @@ def add_cmd_evidence(
 
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestRenderEvidenceBlock.test_mixed_cmd_and_pytest_ids  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestRenderEvidenceBlock.test_mixed_cmd_and_pytest_ids
 def render_evidence_block(evidence: Sequence[str]) -> str:
     """Auto-fill a Done report's Evidence section from a ticket's already-
     recorded evidence ids alone (T-0458 REFINEMENT).
@@ -1892,7 +1930,8 @@ def compute_changed_lines(root: Path, base_ref: str = "main") -> tuple[str, ...]
 
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestRenderChangedBlock.test_lines_rendered_fenced  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestRenderChangedBlock.test_lines_rendered_fenced
 def render_changed_block(lines: Sequence[str]) -> str:
     """Render `compute_changed_lines`'s output as a Done report Changed
     section (fenced verbatim, since git's `--stat` output is already
