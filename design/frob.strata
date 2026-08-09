@@ -1329,9 +1329,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-1873
 // frob:ticket T-1870
 node testsuite : trusted {
-    attr interface=[
-        [],
-    ];
+    attr interface=[];
     clearance Internal;
     code "tests/**";
     // T-1439: `signal.signal(` (tests/test_serve_socket.py's T-1378
