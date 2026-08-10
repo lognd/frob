@@ -302,6 +302,7 @@ _KNOWN_RULE_FIXABILITY: dict[str, str] = {
     "DEAD001": "verified",
     "DOC002": "auto",
     "DOC007": "auto",
+    "DOCENUM001": "auto",
     "E501": "auto",
     "FMT001": "auto",
     "REG010": "auto",
