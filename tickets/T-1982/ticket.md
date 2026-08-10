@@ -2,7 +2,7 @@
 id: T-1982
 title: Land-time ty check passes explicit paths, bypassing the tests/fixtures exclude,
   so detector fixtures can refuse a land
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,40 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/check/
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
+- rapid-debt.jsonl
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: the actual bug and fix live in the land-time ty invocation (_land_cmd.py),
+    not src/frob/check/ as originally filed; test coverage lives in the existing land-finish
+    test module; rapid-debt.jsonl is the standing rapid-profile debt log every land
+    under this profile appends to
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: the actual bug and fix live in the land-time ty invocation (_land_cmd.py),
+    not src/frob/check/ as originally filed; test coverage lives in the existing land-finish
+    test module; rapid-debt.jsonl is the standing rapid-profile debt log every land
+    under this profile appends to
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: the actual bug and fix live in the land-time ty invocation (_land_cmd.py),
+    not src/frob/check/ as originally filed; test coverage lives in the existing land-finish
+    test module; rapid-debt.jsonl is the standing rapid-profile debt log every land
+    under this profile appends to
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand::test_a_fixture_file_excluded_by_pyproject_is_not_type_checked
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand::test_a_bad_file_outside_fixtures_still_refuses_with_exclude_configured
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand::test_dup_region_fixture_is_covered_by_the_exclude
 designated_repro_test: null
 threat: null
 component: null

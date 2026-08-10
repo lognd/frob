@@ -2786,21 +2786,59 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
     )
 
 
+# frob:ticket T-1982
+def _ty_configured_excludes(worktree: Path) -> tuple[str, ...]:
+    """`pyproject.toml`'s `[tool.ty.src] exclude = [...]`, the SAME globs
+    a bare `ty check <root>` (no explicit paths) already honors natively
+    -- read here because `_ty_check_files` passes EXPLICIT paths instead
+    (T-1907's own touched-set scoping), and an explicit path silently
+    overrides a config exclude for `ty` (confirmed: `tests/fixtures/**`
+    is excluded here yet a fixture named on the command line still gets
+    checked). Absent/unparsable `pyproject.toml`, or a malformed/missing
+    `[tool.ty.src].exclude`, both degrade to `()` -- no excludes, i.e.
+    the pre-T-1982 behavior (over-checking, never under-checking) --
+    matching `frob.excludes.load_exclude_globs`'s own fail-open posture
+    for the analogous `frob.toml [graph] exclude` read."""
+    import tomllib
+
+    toml_path = worktree / "pyproject.toml"
+    if not toml_path.exists():
+        return ()
+    try:
+        with toml_path.open("rb") as handle:
+            doc = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError):
+        return ()
+    globs = doc.get("tool", {}).get("ty", {}).get("src", {}).get("exclude", [])
+    if not isinstance(globs, list) or not all(isinstance(g, str) for g in globs):
+        return ()
+    return tuple(globs)
+
+
 # frob:ticket T-1907
+# frob:ticket T-1982
 def _touched_py_files(
     worktree: Path, touched_paths: frozenset[str] | None
 ) -> list[str]:
-    """The `.py` subset of `touched_paths` that still exists in `worktree`,
-    sorted for a deterministic `ty` invocation -- the pure filtering half
-    of `_assert_touched_files_type_check_pre_land`, split out so that
-    function's own body stays a flat sequence with no nested filtering
-    logic."""
+    """The `.py` subset of `touched_paths` that still exists in `worktree`
+    AND is not covered by `pyproject.toml`'s own `[tool.ty.src].exclude`
+    (T-1982: `_ty_check_files` passes these as EXPLICIT paths, which
+    bypasses that exclude entirely if this function does not filter it
+    itself first) -- sorted for a deterministic `ty` invocation. The pure
+    filtering half of `_assert_touched_files_type_check_pre_land`, split
+    out so that function's own body stays a flat sequence with no nested
+    filtering logic."""
     if not touched_paths:
         return []
+    from frob.excludes import is_excluded
+
+    ty_excludes = _ty_configured_excludes(worktree)
     return sorted(
         rel
         for rel in touched_paths
-        if rel.endswith(".py") and (worktree / rel).is_file()
+        if rel.endswith(".py")
+        and (worktree / rel).is_file()
+        and not is_excluded(rel, ty_excludes)
     )
 
 

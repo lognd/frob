@@ -409,6 +409,7 @@ class TestAssertDesignLoadsPreLand:
 
 
 # frob:ticket T-1907
+# frob:ticket T-1982
 class TestAssertTouchedFilesTypeCheckPreLand:
     """`_assert_touched_files_type_check_pre_land` (T-1907): a real `ty`
     subprocess scoped to this ticket's own touched `.py` files, run
@@ -448,6 +449,86 @@ class TestAssertTouchedFilesTypeCheckPreLand:
 
         _assert_touched_files_type_check_pre_land(
             repo, "T-1907", frozenset({"src/good_types.py"})
+        )  # must not raise
+
+    # frob:ticket T-1982
+    def test_a_fixture_file_excluded_by_pyproject_is_not_type_checked(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_fixture_file_excluded_by_pyproject_is_not_type_checked  # noqa: E501
+        # T-1982's own acceptance: a fixture is deliberately ill-typed BY
+        # DESIGN (that is the whole point of a detector-testing fixture),
+        # yet must not refuse the land -- `pyproject.toml`'s `[tool.ty.
+        # src].exclude` says so, and this is the guard that must now
+        # honor it even though `_ty_check_files` passes explicit paths.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_type_check_pre_land,
+        )
+
+        (repo / "pyproject.toml").write_text(
+            '[tool.ty.src]\nexclude = ["tests/fixtures/**"]\n'
+        )
+        fixture_dir = repo / "tests" / "fixtures" / "dup_type_name"
+        fixture_dir.mkdir(parents=True)
+        bad = fixture_dir / "mod_a.py"
+        bad.write_text('def f(x: int) -> int:\n    return "not an int"\n')
+        _run(["git", "add", "-A"], repo)
+
+        _assert_touched_files_type_check_pre_land(
+            repo,
+            "T-1982",
+            frozenset({"pyproject.toml", "tests/fixtures/dup_type_name/mod_a.py"}),
+        )  # must not raise -- the fixture is excluded, so it is never checked
+
+    # frob:ticket T-1982
+    def test_a_bad_file_outside_fixtures_still_refuses_with_exclude_configured(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_bad_file_outside_fixtures_still_refuses_with_exclude_configured  # noqa: E501
+        # The exclude must not WIDEN -- a real touched-file type error
+        # outside tests/fixtures/ is still caught even once a
+        # [tool.ty.src].exclude is configured.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_type_check_pre_land,
+        )
+
+        (repo / "pyproject.toml").write_text(
+            '[tool.ty.src]\nexclude = ["tests/fixtures/**"]\n'
+        )
+        bad = repo / "src" / "bad_types.py"
+        bad.write_text('def f(x: int) -> int:\n    return "not an int"\n')
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_touched_files_type_check_pre_land(
+                repo,
+                "T-1982",
+                frozenset({"pyproject.toml", "src/bad_types.py"}),
+            )
+        assert exc_info.value.code == 1
+
+    # frob:ticket T-1982
+    def test_dup_region_fixture_is_covered_by_the_exclude(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_dup_region_fixture_is_covered_by_the_exclude  # noqa: E501
+        # The pre-existing sibling fixture named in T-1982's own body,
+        # confirmed covered by the same fix (not a name-specific patch).
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_type_check_pre_land,
+        )
+
+        (repo / "pyproject.toml").write_text(
+            '[tool.ty.src]\nexclude = ["tests/fixtures/**"]\n'
+        )
+        fixture_dir = repo / "tests" / "fixtures" / "dup_region"
+        fixture_dir.mkdir(parents=True)
+        bad = fixture_dir / "mod_a.py"
+        bad.write_text('def f(x: int) -> int:\n    return "not an int"\n')
+        _run(["git", "add", "-A"], repo)
+
+        _assert_touched_files_type_check_pre_land(
+            repo,
+            "T-1982",
+            frozenset({"pyproject.toml", "tests/fixtures/dup_region/mod_a.py"}),
         )  # must not raise
 
     def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
