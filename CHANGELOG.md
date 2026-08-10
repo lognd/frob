@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.436.0] - unreleased
+
+- T-1974: Adding one gate rule id needs three hand edits and none is checked before the land: DOCENUM001+REG010 regressed the floor twice
+
 ## [0.435.0] - unreleased
 
 - T-1628: strata: capability via lists only ever grow -- add a one-way ratchet

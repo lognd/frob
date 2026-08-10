@@ -639,3 +639,4 @@
 {"commit": "0fbaf09772d9ba16becbd584565c0fea2ae72771", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1979"}
 {"commit": "06e377056118b82f3e7a3d75add20801f5b5bc3c", "skipped": "land-evidence-scope-unbound", "ticket": "T-1957"}
 {"commit": "8a8f595f309029c5aaac5f8974189eb190863208", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1957"}
+{"commit": "efd1323a0b6da9ea5af3a0c73ca6538adfef77b2", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1974"}
