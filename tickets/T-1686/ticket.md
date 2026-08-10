@@ -13,9 +13,10 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- tests/test_ticket_land.py
 - tickets/T-1686/ticket.md
 - tickets/T-1686/done-report.md
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -101,6 +102,13 @@ scope_changes:
     it covers T-1686's already-recorded evidence.
   actor: logan
   at: '2026-08-08'
+- op: remove
+  glob: tests/test_ticket_land.py
+  reason: 'T-1944 follow-through: release the unused write lease on the repo highest-traffic
+    land test file; T-1686 has changed zero lines of code, evidence stays covered
+    via evidence_scope'
+  actor: logan
+  at: '2026-08-10'
 evidence:
 - tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_clean_run_advances_watermark_and_compacts_queue
@@ -111,6 +119,8 @@ threat: null
 component: verification
 labels:
 - watermark-epic
+anchor: false
+anchor_reason: null
 ---
 T-1684 took the multi-minute verification sweep off the land critical
 path under `rapid`. The same reasoning generalises to `standard`, and
