@@ -592,13 +592,15 @@ def _add_serve_parser(sub) -> None:
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_sys_parser(sub) -> None:
     """Register the `frob sys` subcommand group: `plan` (T-0084), `doc`
-    (T-0085), `export` (T-0086), and `trace` (T-1480) today; `check`/
-    `capacity`/`threats` (docs/strata/roadmap.md "CLI surface (target)")
-    are later roadmap-phase-5 siblings -- extend this parser with one more
+    (T-0085), `export` (T-0086), `trace` (T-1480), and `threats` (T-1925)
+    today; `capacity` (docs/strata/roadmap.md "CLI surface (target)") is a
+    later roadmap-phase-5 sibling -- extend this parser with one more
     `sys_sub.add_parser` per verb as they land, never replace it. `audit`
-    (T-0115) is the checking counterpart to `doc`."""
+    (T-0115) is the checking counterpart to `doc`; `check` was deliberately
+    dropped from the target list (T-1926) as a duplicate of `audit`."""
     # -- sys -------------------------------------------------------------------
     # frob:ticket T-0167
+    # frob:ticket T-1925
     sys_p = sub.add_parser(
         "sys",
         help="strata design-model applications (plan, doc, export, ...)",
@@ -609,6 +611,7 @@ def _add_sys_parser(sub) -> None:
     _add_sys_plan_and_export_parsers(sys_sub)
     _add_sys_doc_and_audit_parsers(sys_sub)
     _add_sys_trace_parser(sys_sub)
+    _add_sys_threats_parser(sys_sub)
 
 
 _SYS_EPILOG = (
@@ -701,6 +704,25 @@ def _add_sys_trace_parser(sys_sub) -> None:
         action="store_true",
         help="ignore declared trust/label boundaries (positive reach claims; "
         "default: stop taint at a boundary, the endorsement semantics)",
+    )
+
+
+# frob:ticket T-1925
+def _add_sys_threats_parser(sys_sub) -> None:
+    """Register `frob sys threats [boundary]` (T-1925): the roadmap-phase-5
+    `threats` verb, a thin wrapper over `frob.strata._threat.
+    threat_violations_for_boundary` -- with no `boundary` positional it
+    prints the full unfiltered `evaluate_threats` violation set (same
+    THREAT001-005 conjunction `sys audit` runs), matching `sys trace`'s
+    own "no destination = whole closure" default shape."""
+    sys_threats_p = sys_sub.add_parser(
+        "threats",
+        help="print THREAT001-005 violations, optionally scoped to one "
+        "boundary's protected zone (T-1925)",
+    )
+    sys_threats_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
+    sys_threats_p.add_argument(
+        "sys_threats_boundary", metavar="boundary", nargs="?", default=None
     )
 
 

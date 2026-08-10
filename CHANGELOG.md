@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.444.0] - unreleased
+
+- T-1925: design a ThreatViolation-to-boundary join for a boundary-scoped frob sys threats
+
 ## [0.443.0] - unreleased
 
 - T-2001: Tier-A auto-fixes design/frob.strata but not the capability ratchet lock, so half the obligation self-heals and the breach surfaces on an unrelated later land

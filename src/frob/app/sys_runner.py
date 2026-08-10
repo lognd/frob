@@ -69,12 +69,14 @@ from frob.strata import (
     check_resource_contention,
     check_self_conformance,
     evaluate_exhaustiveness,
+    evaluate_threats,
     group_gaps_by_view,
     load_design_ids,
     load_repo_benign_capabilities,
     merge_models,
     plan_obligations,
     render_audit_matrix,
+    threat_violations_for_boundary,
 )
 from frob.strata._multifile import elaborate_merged
 from frob.strata._parse import parse_module
@@ -982,6 +984,95 @@ def _run_trace(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# ---------------------------------------------------------------------------
+# threats (T-1925)
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-1925
+# frob:tests tests/unit/test_app_sys_threats.py::TestSysThreats.test_no_boundary_prints_every_violation  # noqa: E501
+def _print_threats_report(
+    violations: tuple, *, boundary: str | None
+) -> bool:
+    """Print `frob sys threats`'s violation list; returns True iff the
+    result is empty (vacuous-pass doctrine, same as `_print_audit_report`/
+    `_print_trace_report`: nothing found is the SUCCESS case here, since
+    this prints violations, not witnesses)."""
+    if not violations:
+        if boundary is not None:
+            _log.info("sys threats: no violations scoped to boundary %s", boundary)
+        else:
+            _log.info("sys threats: no violations")
+        return True
+    for v in sorted(violations, key=lambda v: (v.rule, v.cwe, v.node or "")):
+        _log.error(
+            "sys threats: %s%s%s -- %s",
+            v.rule,
+            f" {v.cwe}" if v.cwe else "",
+            f" node={v.node}" if v.node else "",
+            v.detail,
+        )
+    return False
+
+
+# frob:ticket T-1925
+# frob:tests tests/unit/test_app_sys_threats.py::TestSysThreats.test_boundary_scopes_to_its_own_zone_only  # noqa: E501
+def _run_threats(cfg: AppConfig) -> None:
+    """`frob sys threats [boundary]` (T-1925): load every `.strata` design
+    file under the repo's design dir (reusing `_load_audit_model`'s
+    parse+merge, same as `audit`/`trace`), evaluate the full THREAT001-005
+    conjunction for `cfg.sys_view`, and print either the whole violation
+    set (no `boundary` given, matching `sys trace`'s own "no destination =
+    whole closure" default) or the subset `threat_violations_for_boundary`
+    (T-1925's own node-to-boundary join) attributes to that boundary's
+    protected zone. Exits 1 on a load/evaluate error, an unknown boundary
+    id, or any violation printed -- vacuous-pass doctrine, same as
+    `_run_audit`/`_run_trace`."""
+    root = _resolve_design_root(cfg, "threats")
+    loaded = _load_audit_model(root)
+    if loaded is None:
+        return
+    model, _store_ids, _resource_module = loaded
+
+    repo_benign = load_repo_benign_capabilities(root)
+    if repo_benign.is_err:
+        _log.error("sys threats: %s", repo_benign.danger_err)
+        sys.exit(1)
+    benign = DEFAULT_BENIGN_CAPABILITIES + repo_benign.danger_ok
+
+    binding = bind_code(model, root)
+    if binding.is_err:
+        _log.error("sys threats: %s", binding.danger_err)
+        sys.exit(1)
+
+    report = evaluate_threats(
+        model,
+        cfg.sys_view,
+        benign=benign,
+        binding=binding.danger_ok,
+        root=root,
+    )
+    if report.is_err:
+        _log.error("sys threats: %s", report.danger_err)
+        sys.exit(1)
+    violations = report.danger_ok.violations
+
+    boundary = cfg.sys_threats_boundary
+    if boundary is not None:
+        facts = build_facts(model)
+        if facts.is_err:
+            _log.error("sys threats: %s", facts.danger_err)
+            sys.exit(1)
+        scoped = threat_violations_for_boundary(violations, facts.danger_ok, boundary)
+        if scoped.is_err:
+            _log.error("sys threats: %s", scoped.danger_err)
+            sys.exit(1)
+        violations = scoped.danger_ok
+
+    if not _print_threats_report(violations, boundary=boundary):
+        sys.exit(1)
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
@@ -994,15 +1085,18 @@ def _run_trace(cfg: AppConfig) -> None:
 # frob:ticket T-0086
 # frob:ticket T-0588
 # frob:ticket T-1480
+# frob:ticket T-1925
 # frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085),
-    `export` (T-0086), `audit` (T-0115), and `trace` (T-1480) exist today;
-    roadmap phase 5's `check`/`capacity`/`threats` are later tickets --
-    extend this dispatch, never replace it. T-1870: `sync-interface`
-    (T-1150) used to be a fifth branch; deleted along with its writer, per
-    an explicit owner directive that no code path may auto-update declared
-    public-symbol surface."""
+    `export` (T-0086), `audit` (T-0115), `trace` (T-1480), and `threats`
+    (T-1925) exist today; roadmap phase 5's `capacity` is a later ticket
+    -- extend this dispatch, never replace it. `check` (docs/strata/
+    roadmap.md) was deliberately dropped from the target CLI surface
+    rather than built (T-1926: it would duplicate `audit`). T-1870:
+    `sync-interface` (T-1150) used to be a branch here; deleted along with
+    its writer, per an explicit owner directive that no code path may
+    auto-update declared public-symbol surface."""
     if cfg.sys_command == "plan":
         _run_plan(cfg)
         return
@@ -1018,5 +1112,8 @@ def run(cfg: AppConfig) -> None:
     if cfg.sys_command == "trace":
         _run_trace(cfg)
         return
-    _log.error("usage: frob sys <plan|doc|export|audit|trace> ...")
+    if cfg.sys_command == "threats":
+        _run_threats(cfg)
+        return
+    _log.error("usage: frob sys <plan|doc|export|audit|trace|threats> ...")
     sys.exit(1)

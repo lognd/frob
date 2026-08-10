@@ -94,7 +94,8 @@ from ._effects import (
     extract_effects,
 )
 from ._errors import StrataError
-from ._models import KernelModel
+from ._facts import FactBase
+from ._models import Boundary, KernelModel
 from ._threat_catalog_benign import DEFAULT_BENIGN_CAPABILITIES
 from ._threat_catalog_cwe import (
     CWE_CATALOG,
@@ -731,6 +732,107 @@ def _log_pre_discharge_obligation_count(
     )
 
 
+# frob:ticket T-1925
+def _boundary_by_id(facts: FactBase, boundary_id: str) -> Boundary | None:
+    """The single `Boundary` named `boundary_id` across every flow in
+    `facts.boundaries_on`, or `None` if no flow carries it -- a boundary id
+    is unique repo-wide by construction (`_models.Boundary.id`), so the
+    first (and only) match found while scanning every flow's boundary
+    tuple is definitive; this is a linear scan rather than a second index
+    because `frob sys threats [boundary]` (T-1925, the CLI consumer) calls
+    it at most once per invocation, not in a hot loop."""
+    for boundaries in facts.boundaries_on.values():
+        for boundary in boundaries:
+            if boundary.id == boundary_id:
+                return boundary
+    return None
+
+
+# frob:doc docs/strata/threat.md#boundary-scoped-threats-t-1925
+# frob:ticket T-1925
+def boundary_scope_nodes(
+    facts: FactBase, boundary_id: str
+) -> Result[frozenset[str], StrataError]:
+    """T-1925: the node-to-boundary join `frob sys threats [boundary]`
+    needs and that did not exist before this ticket (docs/strata/
+    roadmap.md "CLI surface (target)", filed as T-1480's residue since a
+    boundary-scoped filter is real design work, not a thin CLI wrapper
+    over an already-shipped closure primitive the way `trace` was).
+
+    A `Boundary` (`_models.Boundary`) is attached to exactly one flow and
+    marks the one legal site of a trust/label change on it (docs/strata/
+    kernel.md#data-models) -- `direction=ENDORSE` raises integrity,
+    `DECLASSIFY` lowers confidentiality, downstream of `to_level`. This
+    join defines a boundary's SCOPE as the zone it protects: its own
+    flow's `src`/`dst` node ids, plus every node id `FactBase.reachable`
+    reaches from `flow.dst` with `through_barriers=False` -- the SAME
+    endorsement-semantics closure `evaluate_threats`'s own THREAT003
+    discharge check (`_claims.py::_eval_noflow`) already uses to decide
+    where taint stops, reused here rather than re-implemented (charter:
+    no duplication). `through_barriers=False` is deliberate, not
+    incidental: it makes the scope stop at the NEXT boundary downstream,
+    so a chain of two boundaries each get their own disjoint-ish
+    protected zone instead of one swallowing the other's -- exactly the
+    "which boundary is this violation's node behind" question `frob sys
+    threats [boundary]` needs answered. `flow.src` is included even
+    though it sits on the boundary's UPSTREAM side (the closure never
+    walks backward to it) because a violation firing on the boundary's
+    own guarded node -- the one immediately behind it -- must count as
+    "at this boundary", not merely everything strictly downstream of it.
+
+    Returns `Err(StrataError.UnknownReference)` for a `boundary_id` no
+    flow in `facts.boundaries_on` carries -- fails closed on a typo'd
+    boundary id rather than silently returning an empty (and therefore
+    vacuously "clean") scope, mirroring `check_catalog_completeness`'s
+    own unknown-`view` fail-closed posture."""
+    boundary = _boundary_by_id(facts, boundary_id)
+    if boundary is None:
+        _log.error("threat: unknown boundary id %r", boundary_id)
+        return Err(StrataError.UnknownReference)
+    flow = facts.flows.get(boundary.flow_id)
+    if flow is None:  # pragma: no cover - `build_facts` guarantees this join
+        _log.error(
+            "threat: boundary %r names flow_id %r with no matching flow "
+            "in this model",
+            boundary_id,
+            boundary.flow_id,
+        )
+        return Err(StrataError.UnknownReference)
+    downstream = facts.reachable(flow.dst, through_barriers=False)
+    scope = frozenset(downstream) | {flow.src, flow.dst}
+    _log.debug(
+        "threat: boundary %r scope = %d node(s) downstream of %s",
+        boundary_id,
+        len(scope),
+        flow.dst,
+    )
+    return Ok(scope)
+
+
+# frob:doc docs/strata/threat.md#boundary-scoped-threats-t-1925
+# frob:ticket T-1925
+def threat_violations_for_boundary(
+    violations: tuple[ThreatViolation, ...], facts: FactBase, boundary_id: str
+) -> Result[tuple[ThreatViolation, ...], StrataError]:
+    """T-1925: filter an already-evaluated `evaluate_threats` violation set
+    down to the ones that fire on a node inside `boundary_id`'s scope
+    (`boundary_scope_nodes`) -- the join `frob sys threats [boundary]`
+    (docs/strata/roadmap.md) is named for. A violation with `node is None`
+    (a THREAT001 catalog-completeness finding, which is view-scoped, not
+    node-scoped -- `ThreatViolation`'s own docstring) never matches any
+    boundary and is dropped, deny-by-default: an unscoped violation is not
+    silently attributed to whichever boundary happens to be asked about.
+    Propagates `boundary_scope_nodes`'s `Err(UnknownReference)` unchanged
+    for a typo'd `boundary_id` rather than degrading to an empty result."""
+    scope = boundary_scope_nodes(facts, boundary_id)
+    if scope.is_err:
+        return Err(scope.danger_err)
+    node_scope = scope.danger_ok
+    return Ok(
+        tuple(v for v in violations if v.node is not None and v.node in node_scope)
+    )
+
+
 __all__ = [
     "ALL_CATALOG",
     "CWE_CATALOG",
@@ -748,10 +850,12 @@ __all__ = [
     "ThreatViolation",
     "WeaknessEntry",
     "CAUGHT_BY_NONE_MARKER",
+    "boundary_scope_nodes",
     "check_capability_completeness",
     "check_catalog_completeness",
     "check_discharge_completeness",
     "check_effect_completeness",
     "evaluate_threats",
     "load_repo_benign_capabilities",
+    "threat_violations_for_boundary",
 ]
