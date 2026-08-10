@@ -352,6 +352,68 @@ class TestScopeAddRefusesLiveCrossWorktreeLease:
         assert "src/feature.py" not in reloaded.danger_ok[tid_b].scope
 
 
+# frob:ticket T-1882
+class TestRenumberRefusesLiveCrossWorktreeLease:
+    """T-1882: a bulk (`renumber`) or single-id (`renumber_one`) id rewrite
+    must refuse outright while a DIFFERENT worktree holds a live lease on
+    ANY ticket -- the 2026-08-08 incident renumbered all 273 tickets in one
+    shot; any one of those ids being live-leased to a sibling worktree at
+    the time would have silently orphaned that worktree's lease file
+    (keyed by ticket id string, never re-derived from content)."""
+
+    # frob:ticket T-1882
+    def test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
+        # reeLease.test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease
+        from frob.tickets import renumber
+
+        # Ticket A: started in second_worktree -- a live lease `repo`'s
+        # own local ledger has never merged.
+        created_a = new_ticket(
+            second_worktree, _spec("Feature A", scope=("src/feature.py",))
+        )
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(second_worktree, tid_a, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        # A gap in repo's OWN local ledger for renumber to want to close.
+        created_b = new_ticket(repo, _spec("Feature B", scope=("src/other.py",)))
+        assert created_b.is_ok
+
+        result = renumber(repo)
+        assert result.is_err
+        assert result.danger_err == TicketError.ScopeLeaseConflict
+
+    # frob:ticket T-1882
+    def test_bulk_renumber_dry_run_still_works_under_a_live_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
+        # reeLease.test_bulk_renumber_dry_run_still_works_under_a_live_lease
+        from frob.tickets import renumber
+
+        created_a = new_ticket(
+            second_worktree, _spec("Feature A", scope=("src/feature.py",))
+        )
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(second_worktree, tid_a, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        created_b = new_ticket(repo, _spec("Feature B", scope=("src/other.py",)))
+        assert created_b.is_ok
+
+        # A read-only preview must never be blocked by a live lease -- it
+        # writes nothing, so there is nothing to corrupt.
+        result = renumber(repo, dry_run=True)
+        assert result.is_ok
+
+
 # frob:ticket T-1883
 class TestSameWorktreeLease:
     """`same_worktree_lease` (T-1356's rule, T-1883's shared home): two

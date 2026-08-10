@@ -1785,6 +1785,7 @@ class TestSingleFileLedger:
         assert q.tickets["T-0001"].title == "legacy"
 
 
+# frob:ticket T-1882
 class TestSchemaExtras:
     def _spec(self, **kw):
         from frob.tickets import Origin, TicketKind, TicketSpec
@@ -1860,6 +1861,27 @@ class TestSchemaExtras:
         renumber(tmp_path).danger_ok
         q2 = load_queue(tmp_path).danger_ok
         assert "T-0001" in q2.tickets
+
+    # frob:ticket T-1882
+    def test_renumber_dry_run_previews_without_writing(self, tmp_path):
+        """T-1882 requirement 2: `renumber(root, dry_run=True)` reports the
+        count that WOULD be renumbered but leaves the ledger untouched."""
+        from frob.tickets import load_queue, new_ticket, renumber
+        from frob.tickets._store import write_all
+
+        new_ticket(tmp_path, self._spec(title="a")).danger_ok
+        b = new_ticket(tmp_path, self._spec(title="b")).danger_ok
+        new_ticket(tmp_path, self._spec(title="c")).danger_ok
+        q = load_queue(tmp_path).danger_ok
+        remaining = {k: v for k, v in q.tickets.items() if k != b.id}
+        write_all(tmp_path, remaining)
+        before_ids = set(load_queue(tmp_path).danger_ok.tickets)
+
+        n = renumber(tmp_path, dry_run=True).danger_ok
+        assert n >= 1
+
+        after_ids = set(load_queue(tmp_path).danger_ok.tickets)
+        assert after_ids == before_ids, "dry_run=True must never write"
 
 
 def test_tickets_queue_workflow_integration(tmp_path: Path) -> None:

@@ -262,3 +262,65 @@ class TestTicketAttachNonInteractive:
         assert r.returncode == 1, out
         assert "TTY" in out
         assert "T-0001" in out
+
+
+# frob:ticket T-1882
+class TestBulkRenumberCliRemoved:
+    """T-1882 incident: `frob ticket renumber` with no arguments used to
+    perform a legacy whole-ledger contiguous renumber (T-0012) the instant
+    it was invoked -- it renumbered all 273 tickets in one shot in a real
+    incident. Investigated (requirement 3) and found no legitimate caller
+    (`fix_tick002_renumber` uses the single-id `renumber_one`, not this
+    whole-ledger form), so the CLI dispatch now refuses unconditionally
+    rather than being guarded behind an opt-in flag. Only `--dry-run`
+    (read-only) still surfaces the underlying `frob.tickets.renumber`
+    primitive."""
+
+    # frob:ticket T-1882
+    def test_no_args_always_refuses(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_no_args_alwa\
+        # ys_refuses
+        _init_repo(tmp_path)
+        filed = run(
+            "ticket", "new", "--title", "a", "--kind", "feature", "--path", str(tmp_path)
+        )
+        assert filed.returncode == 0, filed.stdout + filed.stderr
+
+        from frob.tickets._store import load_all
+
+        before = load_all(tmp_path)
+        assert before.is_ok
+        before_ids = set(before.danger_ok)
+
+        result = run("ticket", "renumber", "--path", str(tmp_path))
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "no arguments" in (result.stdout + result.stderr).lower()
+
+        after = load_all(tmp_path)
+        assert after.is_ok
+        assert set(after.danger_ok) == before_ids, "refusal must never write"
+
+    # frob:ticket T-1882
+    def test_dry_run_still_previews_read_only(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_dry_run_stil\
+        # l_previews_read_only
+        _init_repo(tmp_path)
+        filed = run(
+            "ticket", "new", "--title", "a", "--kind", "feature", "--path", str(tmp_path)
+        )
+        assert filed.returncode == 0, filed.stdout + filed.stderr
+
+        from frob.tickets._store import load_all
+
+        before = load_all(tmp_path)
+        assert before.is_ok
+        before_ids = set(before.danger_ok)
+
+        result = run("ticket", "renumber", "--dry-run", "--path", str(tmp_path))
+        assert result.returncode == 0, result.stdout + result.stderr
+
+        after = load_all(tmp_path)
+        assert after.is_ok
+        assert set(after.danger_ok) == before_ids, "dry-run must never write"

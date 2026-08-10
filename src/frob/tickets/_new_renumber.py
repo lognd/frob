@@ -24,9 +24,10 @@ from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
+from frob.gitio import repo_root
 from frob.logging import get_logger
 from frob.tickets._archive import _load_merged
-from frob.tickets._leases import rename_lease
+from frob.tickets._leases import is_lease_ttl_expired, read_all_leases, rename_lease
 from frob.tickets._models import (
     RenumberReport,
     Ticket,
@@ -474,6 +475,47 @@ def _is_contiguous(ordered: list[Ticket], mapping: dict[str, str]) -> bool:
     return all(t.id == mapping[t.id] for t in ordered)
 
 
+# frob:ticket T-1882
+def _refuse_if_other_worktree_holds_live_lease(root: Path) -> Result[None, TicketError]:
+    """Refuse a renumber (bulk or single-id) while ANY OTHER worktree holds
+    a live, non-TTL-expired lease on ANY ticket (T-1882 incident: a bulk
+    renumber rewrote all 273 ticket ids in one shot; had any of those ids
+    been leased to a live sibling worktree at the time, every lease file
+    naming that id by string would have been silently orphaned -- a lease
+    file is keyed by ticket id and nothing re-derives it from content).
+
+    A lease held by THIS SAME worktree is not a conflict -- nothing else
+    can be racing itself, and `renumber_one` already migrates its own
+    ticket's lease (`rename_lease`, T-1173) after a successful single-id
+    rename. TTL-expired leases are excluded (same posture `_scope_add_
+    live_lease_conflict`, T-1868, already applies): a lease with no live
+    holder behind it in practice is not a real collision, matching
+    `read_all_leases`'s own dead-worktree pruning for the liveness half.
+    """
+    leases = read_all_leases(root)
+    if not leases:
+        return Ok(None)
+    actual = repo_root(root)
+    current_path = actual.danger_ok.resolve() if actual.is_ok else None
+    foreign = [
+        lease
+        for lease in leases
+        if not is_lease_ttl_expired(lease)
+        and (current_path is None or Path(lease.worktree).resolve() != current_path)
+    ]
+    if not foreign:
+        return Ok(None)
+    holders = sorted(f"{lease.ticket_id}@{lease.worktree}" for lease in foreign)
+    _log.error(
+        "tickets: refusing renumber -- %d other worktree lease(s) still live "
+        "(%s); renumbering ids out from under them would corrupt every lease "
+        "file that references a ticket by id",
+        len(foreign),
+        ", ".join(holders),
+    )
+    return Err(TicketError.ScopeLeaseConflict)
+
+
 # frob:ticket T-1125
 def _rewrite_body_prose_references(
     body: str, mapping: dict[str, str]
@@ -546,17 +588,86 @@ def _apply_renumber(
     return new_map, touched, prose_hits_total
 
 
+# frob:ticket T-1882
+def _log_bulk_renumber_preview(mapping: dict[str, str], *, dry_run: bool) -> int:
+    """Log the count plus first/last few OLD -> NEW pairs of a bulk
+    contiguous-renumber `mapping`, BEFORE any write happens (T-1882
+    requirement 1/2: the whole-ledger form must show what it is about to
+    do, not just how many). Returns the number of ids that would actually
+    change (`old != new`) -- callers use this both for the dry-run report
+    and as the real "how many tickets moved" count, so a preview and a
+    real run always agree on the number."""
+    moved = [(old, new) for old, new in mapping.items() if old != new]
+    verb = "would renumber" if dry_run else "about to renumber"
+    _log.warning(
+        "tickets: bulk renumber -- %s %d ticket id(s) (whole-ledger form, "
+        "T-1882)",
+        verb,
+        len(moved),
+    )
+    # First/last few pairs (T-1882 requirement 1): the two slices never
+    # overlap once len(moved) > 10, and for a small mapping the tail slice
+    # naturally starts past wherever the head slice ended (Python slicing
+    # on a short list just returns fewer, never duplicate, entries).
+    shown = moved[:5]
+    for old, new in shown:
+        _log.warning("tickets: bulk renumber preview: %s -> %s", old, new)
+    if len(moved) > 10:
+        _log.warning(
+            "tickets: bulk renumber preview: ... (%d more) ...", len(moved) - 10
+        )
+    if len(moved) > 5:
+        for old, new in moved[max(5, len(moved) - 5) :]:
+            _log.warning("tickets: bulk renumber preview: %s -> %s", old, new)
+    return len(moved)
+
+
+# frob:ticket T-1882
+def _renumber_dry_run(root: Path) -> Result[int, TicketError]:
+    """`renumber`'s `dry_run=True` path, split out to keep `renumber`
+    itself under ARCH001's line threshold (T-1882): computes the same
+    contiguous-id mapping a real run would, logs the full preview via
+    `_log_bulk_renumber_preview`, and returns the would-be-renumbered
+    count -- never takes `ledger_lock`, never writes."""
+    loaded = load_all(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ordered = sorted(loaded.danger_ok.values(), key=lambda t: t.id)
+    mapping = {t.id: f"T-{i + 1:04d}" for i, t in enumerate(ordered)}
+    if _is_contiguous(ordered, mapping):
+        _log.info("tickets: renumber --dry-run -- already contiguous, nothing to do")
+        return Ok(0)
+    return Ok(_log_bulk_renumber_preview(mapping, dry_run=True))
+
+
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0633
 # frob:ticket T-0889
 # frob:ticket T-1630
+# frob:ticket T-1882
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations.test_concurrent_ledger_lock_acquisition_serializes  # noqa: E501
 # frob:tests tests/test_ticket_store_stale_snapshot.py::TestRenumberV2StaleSnapshotGuard.test_renumber_root_refuses_when_a_ticket_changes_under_it  # noqa: E501
-def renumber(root: Path) -> Result[int, TicketError]:
+# frob:tests \
+# tests/test_tickets.py::TestSchemaExtras.test_renumber_dry_run_previews_without_writing
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease.test_bulk_renumber_dry_run_still_works_under_a_live_lease  # noqa: E501
+def renumber(root: Path, *, dry_run: bool = False) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
     current id), rewriting blocked_by/parent references so the queue stays
     consistent. The remedy for sequential-id collisions after a worktree
     merge (T-0012). Returns the number of tickets renumbered.
+
+    T-1882: refuses outright (`ScopeLeaseConflict`) while any OTHER
+    worktree holds a live lease (`_refuse_if_other_worktree_holds_live_
+    lease`) -- a bulk rewrite renames every id at once, corrupting any
+    live lease file that names one by string. `dry_run=True` logs the
+    full preview (count plus first/last few OLD -> NEW pairs, `_log_
+    bulk_renumber_preview`) and returns the would-be-renumbered count
+    WITHOUT taking the ledger lock or writing anything -- the CLI's
+    `--dry-run` path (T-1882 requirement 2) and the mandatory preview a
+    real (non-dry-run) call also prints before it writes (requirement 1).
 
     T-0633: `load_all` and the eventual `write_all` are now held under one
     `ledger_lock` span (same fix and rationale as `archive`'s docstring) --
@@ -580,6 +691,16 @@ def renumber(root: Path) -> Result[int, TicketError]:
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
+    if dry_run:
+        # T-1882: the preview-and-return path never takes the ledger lock,
+        # never writes, and (deliberately) is NOT gated on the live-lease
+        # check below -- a read-only preview cannot corrupt anyone's
+        # lease, so it must stay available even while another worktree is
+        # live (the whole point of a dry-run is to be safe to run anytime).
+        return _renumber_dry_run(root)
+    lease_conflict = _refuse_if_other_worktree_holds_live_lease(root)
+    if lease_conflict.is_err:
+        return Err(lease_conflict.danger_err)
     with ledger_lock(root):
         digest: str | dict[str, str]
         if _store_mode(root) == "v2":
@@ -594,6 +715,8 @@ def renumber(root: Path) -> Result[int, TicketError]:
         if _is_contiguous(ordered, mapping):
             _log.info("tickets: renumber -- already contiguous, nothing to do")
             return Ok(0)
+        # T-1882 requirement 1: print the preview BEFORE the write happens.
+        _log_bulk_renumber_preview(mapping, dry_run=False)
         new_map, renumbered, _prose_hits = _apply_renumber(ordered, mapping)
         result = write_all(root, new_map, expected_digest=digest)
         if result.is_err:
@@ -903,6 +1026,10 @@ def renumber_one(
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
+    if not dry_run:
+        lease_conflict = _refuse_if_other_worktree_holds_live_lease(root)
+        if lease_conflict.is_err:
+            return Err(lease_conflict.danger_err)
     with ledger_lock(root):
         loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
         if loaded.is_err:

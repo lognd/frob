@@ -2,7 +2,7 @@
 id: T-1882
 title: frob ticket renumber with no arguments silently renumbers EVERY ticket, destroying
   the whole id space
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -15,6 +15,9 @@ scope:
 - src/frob/app/ticket_runner/_query.py
 - src/frob/tickets/_renumber_v2.py
 - src/frob/tickets/_new_renumber.py
+- tests/system/test_cli_ticket.py
+- tests/test_ticket_leases_cross_worktree.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -33,7 +36,36 @@ scope_changes:
   reason: 'T-1882: renumber implementation and its CLI dispatch'
   actor: logan
   at: '2026-08-08'
-designated_repro_test: null
+- op: add
+  glob: tests/system/test_cli_ticket.py
+  reason: T-1882's own new/updated test coverage for the destructive no-arg renumber
+    removal and the T-1882 lease-conflict guard lives in these three existing test
+    files
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_ticket_leases_cross_worktree.py
+  reason: T-1882's own new/updated test coverage for the destructive no-arg renumber
+    removal and the T-1882 lease-conflict guard lives in these three existing test
+    files
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/test_tickets.py
+  reason: T-1882's own new/updated test coverage for the destructive no-arg renumber
+    removal and the T-1882 lease-conflict guard lives in these three existing test
+    files
+  actor: logan
+  at: '2026-08-08'
+evidence:
+- tests/test_tickets.py::TestSchemaExtras::test_renumber_makes_ids_contiguous
+- tests/test_tickets.py::TestSchemaExtras::test_renumber_rewrites_blocked_by
+- tests/test_tickets.py::TestSchemaExtras::test_renumber_dry_run_previews_without_writing
+- tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease::test_bulk_renumber_refused_by_unmerged_sibling_worktrees_live_lease
+- tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease::test_bulk_renumber_dry_run_still_works_under_a_live_lease
+- tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved::test_no_args_always_refuses
+- tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved::test_dry_run_still_previews_read_only
+designated_repro_test: tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved::test_no_args_always_refuses
 threat: null
 component: null
 anchor: false

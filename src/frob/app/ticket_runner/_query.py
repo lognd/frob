@@ -870,42 +870,87 @@ def _migrate(root: Path, to: str | None = None) -> None:
 
 
 # frob:ticket T-0162
+# frob:ticket T-1882
+# frob:tests \
+# tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_no_args_always_refuses  # noqa: E501
+# frob:tests \
+# tests/system/test_cli_ticket.py::TestBulkRenumberCliRemoved.test_dry_run_still_previews_read_only  # noqa: E501
 def _renumber(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket renumber <old> <new> [--dry-run]` rewrites one ticket's id
-    everywhere (the first-class replacement for the old T-0157-incident sed);
-    `frob ticket renumber` with no args keeps the legacy full-contiguous
-    renumber (T-0012) for whole-ledger cleanup."""
+    """`frob ticket renumber <old> <new> [--dry-run]` rewrites one ticket's
+    id everywhere (the first-class replacement for the old T-0157-incident
+    sed) -- the only way this CLI verb performs a real write.
+
+    T-1882 incident: `frob ticket renumber` with no arguments used to
+    perform the legacy whole-ledger contiguous renumber (T-0012) the
+    instant it was invoked -- one word shorter than the correct `renumber
+    <old> <new>`, with the refusal message for the correct form actively
+    advertising it. It renumbered all 273 tickets in one shot.
+    Investigated (T-1882 requirement 3) before deciding what to do about
+    it: the ONLY thing that ever needed a bulk contiguous renumber --
+    fixing a draft id that survived onto the default branch (TICK002) --
+    is already served by `frob.gates._fix_engine.fix_tick002_renumber`,
+    which calls `finalize_draft` -> the SINGLE-id `renumber_one`, never
+    this whole-ledger form. No other production caller of the bulk
+    `frob.tickets.renumber` exists (`git grep` confirmed). With no
+    legitimate CLI caller, the no-argument dispatch is removed here
+    outright rather than guarded -- this repo's standing policy prefers
+    deleting a verb with no honest use over adding a mechanism to manage
+    it. `frob.tickets.renumber` (the underlying bulk primitive) is left
+    in place as a tested library function for a future caller with a
+    real need, but the CLI can no longer reach it for real -- only
+    `--dry-run` (informational, read-only, harmless) still surfaces it
+    here, so an operator retains a way to check contiguity without any
+    write path back to it."""
     if cfg.ticket_old_id is not None or cfg.ticket_new_id is not None:
         _renumber_one(root, cfg)
         return
+
+    # frob:ticket T-1882
     if cfg.ticket_dry_run:
-        _log.error(
-            "frob ticket renumber --dry-run requires <old> <new> "
-            "(no dry-run mode for the whole-ledger form)"
-        )
-        sys.exit(1)
+        from frob.tickets import renumber
 
-    # frob:ticket T-0012
-    from frob.tickets import renumber
+        result = renumber(root, dry_run=True)
+        if result.is_err:
+            _log.error("ticket renumber --dry-run failed: %s", result.danger_err)
+            sys.exit(1)
+        n = result.danger_ok
+        if n:
+            _log.info(
+                "DRY RUN: %d ticket(s) are not contiguous (see the preview "
+                "above) -- there is no CLI form that applies this whole-"
+                "ledger rewrite for real (T-1882); rename one ticket's id "
+                "at a time with `frob ticket renumber <old> <new>` instead",
+                n,
+            )
+        else:
+            _log.info("ids already contiguous, nothing to renumber")
+        return
 
-    result = renumber(root)
-    if result.is_err:
-        _log.error("ticket renumber failed: %s", result.danger_err)
-        sys.exit(1)
-    n = result.danger_ok
-    if n:
-        _log.info("renumbered %d ticket(s)", n)
-    else:
-        _log.info("ids already contiguous")
+    _log.error(
+        "frob ticket renumber (no arguments) is not supported -- the "
+        "whole-ledger bulk rewrite it used to perform (T-0012) renumbered "
+        "all 273 tickets in one shot in a real incident and has no known "
+        "legitimate caller (T-1882: `fix_tick002_renumber` uses the "
+        "single-id `renumber_one` instead). Preview contiguity with "
+        "`frob ticket renumber --dry-run`, or rename ONE ticket's id "
+        "with `frob ticket renumber <old> <new>`."
+    )
+    sys.exit(1)
 
 
+# frob:ticket T-1882
 def _renumber_one(root: Path, cfg: AppConfig) -> None:
     """`frob ticket renumber <old> <new>`: rewrite one ticket's id in the
     ledger(s) plus every frob: directive reference across the tracked tree."""
     from frob.tickets import renumber_one
 
     if cfg.ticket_old_id is None or cfg.ticket_new_id is None:
-        _log.error("frob ticket renumber requires both <old> and <new>, or neither")
+        # T-1882: this message used to name the no-argument form as the
+        # remedy ("...both <old> and <new>, or neither") -- that phrasing
+        # is exactly what advertised the destructive bulk form to the
+        # agent in the 2026-08-08 incident. Name only the correct,
+        # single-id form here.
+        _log.error("frob ticket renumber requires both <old> and <new>")
         sys.exit(1)
 
     result = renumber_one(
