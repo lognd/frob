@@ -2,7 +2,7 @@
 id: T-1913
 title: LAND-PROOF is_ancestor_of_main=False for a non-anchor ticket whose land fully
   succeeded (T-1895)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -13,8 +13,19 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-1913 mitigation: bounded retry around the is-ancestor check plus its
+    regression test'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAncestorRetry::test_retries_until_ancestor_check_settles_true
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAncestorRetry::test_gives_up_after_exhausting_retries_on_a_genuine_non_ancestor
 designated_repro_test: null
 threat: null
 component: null

@@ -17,6 +17,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from typani.result import Ok
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _work
@@ -1300,6 +1301,71 @@ class TestLandProofAndFinish:
         ]
         assert len(proof_lines) == 1
         assert "verified=False" in proof_lines[0]
+
+
+# frob:ticket T-1913
+class TestLandProofAncestorRetry:
+    """`_is_ancestor_with_retry` (T-1913): a short, bounded retry around
+    `git merge-base --is-ancestor` before `_land_proof_checks` concludes
+    a commit is not on `main` -- T-1913's own investigation could not pin
+    down the real T-1895 incident's mechanism in a synchronous fixture,
+    but named "retry the check" as a concrete, implementable mitigation
+    for a suspected commit/ref visibility race. These tests exercise the
+    RETRY MECHANISM itself (a real git repo, a monkeypatched `run_argv`
+    that fails N times then succeeds) -- they do not, and cannot, prove
+    the retry fixes the still-unreproduced T-1895 race; see this ticket's
+    own Done report for that disclosure."""
+
+    def test_retries_until_ancestor_check_settles_true(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.app.ticket_runner import _land_cmd as _land_cmd_mod
+        from frob.gitio import ProcResult
+
+        commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        real_run_argv = _land_cmd_mod.run_argv
+        calls = {"n": 0}
+
+        def _flaky_run_argv(argv, **kwargs):  # noqa: ANN001, ANN202
+            if "merge-base" in argv and "--is-ancestor" in argv:
+                calls["n"] += 1
+                if calls["n"] < 3:
+                    return Ok(
+                        ProcResult(
+                            argv=tuple(argv), returncode=1, stdout="", stderr=""
+                        )
+                    )
+            return real_run_argv(argv, **kwargs)
+
+        monkeypatch.setattr(_land_cmd_mod, "run_argv", _flaky_run_argv)
+        sleeps: list[float] = []
+
+        result = _land_cmd_mod._is_ancestor_with_retry(
+            repo, commit_sha, sleep=sleeps.append
+        )
+
+        assert result is True
+        assert calls["n"] == 3
+        assert sleeps == [0.1, 0.2]
+
+    def test_gives_up_after_exhausting_retries_on_a_genuine_non_ancestor(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.app.ticket_runner import _land_cmd as _land_cmd_mod
+        from frob.gitio import ProcResult
+
+        def _always_false(argv, **kwargs):  # noqa: ANN001, ANN202
+            return Ok(ProcResult(argv=tuple(argv), returncode=1, stdout="", stderr=""))
+
+        monkeypatch.setattr(_land_cmd_mod, "run_argv", _always_false)
+        sleeps: list[float] = []
+
+        result = _land_cmd_mod._is_ancestor_with_retry(
+            repo, "0" * 40, sleep=sleeps.append
+        )
+
+        assert result is False
+        assert sleeps == [0.1, 0.2, 0.4]
 
 
 # frob:ticket T-1535

@@ -11,6 +11,8 @@ from __future__ import annotations
 import json
 import re
 import sys
+import time
+from collections.abc import Callable
 from pathlib import Path
 
 from typani.result import Err, Ok
@@ -1130,9 +1132,69 @@ def _pre_commit_unscoped_error_sweep(
     return False
 
 
+#: T-1913: retry count/backoff (seconds, cumulative across attempts) for
+#: `_is_ancestor_with_retry`'s `git merge-base --is-ancestor` re-check. Kept
+#: small and bounded -- this is a self-heal for a suspected commit/ref
+#: VISIBILITY race (T-1913's own ticket body, direction (c)), not a
+#: general-purpose git retry policy; a genuinely non-ancestor commit costs
+#: this same ~0.7s on every land, which is why the count stays low rather
+#: than growing to chase an unconfirmed race indefinitely.
+_LAND_PROOF_ANCESTOR_RETRY_DELAYS: tuple[float, ...] = (0.1, 0.2, 0.4)
+
+
+# frob:ticket T-1913
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAncestorRetry.test_retries_until_ancestor_check_settles_true  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAncestorRetry.test_gives_up_after_exhausting_retries_on_a_genuine_non_ancestor  # noqa: E501
+def _is_ancestor_with_retry(
+    root: Path, commit_sha: str, *, sleep: Callable[[float], None] = time.sleep
+) -> bool:
+    """`git -C root merge-base --is-ancestor commit_sha main`, retried up
+    to `len(_LAND_PROOF_ANCESTOR_RETRY_DELAYS)` extra times with a short
+    backoff between attempts before giving up and returning False (T-1913).
+
+    T-1913 investigated a real, unreproduced incident (T-1895, `frob
+    ticket land` printed `is_ancestor_of_main=False` for a commit that
+    HAD in fact fully landed) and could not pin the mechanism down in a
+    synchronous test fixture -- the "wrong checkout" theory was ruled out
+    directly. One of the ticket's own named follow-up directions is
+    exactly this: treat a `False` result as possibly a transient commit/
+    ref VISIBILITY race in the real dispatch environment (a network
+    filesystem, a bind mount, or some other non-synchronous git backend
+    this repo's own test fixtures never exercise) rather than trusting
+    the first read unconditionally, and retry briefly before concluding
+    the commit really is not on `main`. A genuinely non-ancestor commit
+    still costs the full retry budget (`sum(_LAND_PROOF_ANCESTOR_RETRY_
+    DELAYS)`, ~0.7s) on every land -- accepted deliberately: this is a
+    self-heal for a suspected race, not a proof the race exists, and a
+    False that never resolves to True is exactly what the caller should
+    report as unverified regardless of how many times it was asked.
+    `sleep` is injectable so a test can drive this without actually
+    waiting."""
+    is_ancestor = run_argv(
+        ["git", "-C", str(root), "merge-base", "--is-ancestor", commit_sha, "main"]
+    )
+    if is_ancestor.is_ok and is_ancestor.danger_ok.returncode == 0:
+        return True
+    for delay in _LAND_PROOF_ANCESTOR_RETRY_DELAYS:
+        sleep(delay)
+        retried = run_argv(
+            ["git", "-C", str(root), "merge-base", "--is-ancestor", commit_sha, "main"]
+        )
+        if retried.is_ok and retried.danger_ok.returncode == 0:
+            _log.info(
+                "land: is_ancestor_of_main re-check for %s settled True on "
+                "retry (T-1913: suspected commit/ref visibility race, not "
+                "a genuine non-ancestor)",
+                commit_sha,
+            )
+            return True
+    return False
+
+
 # frob:ticket T-1175
 # frob:ticket T-1523
 # frob:ticket T-1884
+# frob:ticket T-1913
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_verifies_an_anchor_ticket_left_queued_on_main  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_still_refuses_a_non_anchor_ticket_left_queued  # noqa: E501
 def _land_proof_checks(
@@ -1142,19 +1204,17 @@ def _land_proof_checks(
     (T-1175), split out (T-1523) so `_report_stale_post_land_verify_
     markers` can run the IDENTICAL check against a RECOVERED marker's
     `(ticket_id, commit_sha)` pair without duplicating the git/ledger
-    logic: `commit_sha` is an ancestor of `root`'s `main`, AND `final_id`'s
-    state on `main` is a terminal state (done/dropped) -- OR (T-1884)
-    `final_id` is an `anchor=True` ticket sitting in `queued`/`blocked`,
-    the legitimate non-terminal-forever shape `_skip_close_for_anchor_
-    no_close_requested` (T-1874) publishes as-is rather than forcing
-    through a DONE transition. Returns `(ancestor_ok, state_desc,
+    logic: `commit_sha` is an ancestor of `root`'s `main` (T-1913: retried
+    briefly via `_is_ancestor_with_retry` before concluding False), AND
+    `final_id`'s state on `main` is a terminal state (done/dropped) -- OR
+    (T-1884) `final_id` is an `anchor=True` ticket sitting in `queued`/
+    `blocked`, the legitimate non-terminal-forever shape `_skip_close_for_
+    anchor_no_close_requested` (T-1874) publishes as-is rather than
+    forcing through a DONE transition. Returns `(ancestor_ok, state_desc,
     is_anchor)` -- the caller derives `verified` and any logging itself."""
     from frob.tickets import load_all
 
-    is_ancestor = run_argv(
-        ["git", "-C", str(root), "merge-base", "--is-ancestor", commit_sha, "main"]
-    )
-    ancestor_ok = is_ancestor.is_ok and is_ancestor.danger_ok.returncode == 0
+    ancestor_ok = _is_ancestor_with_retry(root, commit_sha)
 
     state_desc = "unknown"
     is_anchor = False
