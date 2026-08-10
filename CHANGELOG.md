@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.441.0] - unreleased
+
+- T-1995: frob ticket new does not surface existing or archived coverage: 7 tickets filed and dropped this session, several costing a dispatch
+
 ## [0.440.0] - unreleased
 
 - T-1981: Burn down SYS110_UNAUDITED_NODES: T-1629's rule enforces on 2 of 17 nodes until the 15 exempted mirrors are hand-audited

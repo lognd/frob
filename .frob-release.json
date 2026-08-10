@@ -223,6 +223,7 @@
     "src/frob/app/ticket_runner/__init__.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings": "f72c2d4ef05d69e640784af156126ad42afa9682044061a24affc6a5224ba8a1",
     "src/frob/app/ticket_runner/_mutate.py::read_reason_file_verbatim": "f189ff6d7259da9ba89794fa25ec7f30f6aaaf3d2a89242f04e268367bd62b05",
+    "src/frob/app/ticket_runner/_new.py::related_tickets": "80631eea774f0a20c282bdc8cb1f3ffd256aca3f190e1e64030634933a18d0c0",
     "src/frob/app/ticket_runner/_rapid_sweep.py::RapidSweepError": "b518cfdc70b176310b9174b32a53c9abe841b6c402239f7338ff720d735c9e64",
     "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
     "src/frob/app/ticket_runner/_rapid_sweep.py::spawn_deferred_post_land_sweep": "5b446ce9fef6e8930dba487d35226f7ee0e0905cefe1b53ae4b0b2f6f36b5471",
@@ -2233,5 +2234,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.440.0"
+  "version": "0.441.0"
 }

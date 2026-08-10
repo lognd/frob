@@ -2,7 +2,7 @@
 id: T-1995
 title: 'frob ticket new does not surface existing or archived coverage: 7 tickets
   filed and dropped this session, several costing a dispatch'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,10 +12,61 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/_new.py
+- src/frob/app/ticket_runner/_new.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/app/config.py
+- tests/unit/test_ticket_new_related.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_new.py
+  reason: src/frob/tickets/_new.py does not exist -- the interactive frob ticket new
+    CLI dispatch lives at src/frob/app/ticket_runner/_new.py; the library new_ticket()
+    in src/frob/tickets/_new_renumber.py is shared by non-interactive auto-filing
+    callers (rapid-sweep regression filing, mutation-sweep, testing stability, sys_runner,
+    fleet) that must never block on an acknowledgement flag, so the surface-and-require-ack
+    fix belongs at the interactive CLI layer only
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: src/frob/tickets/_new.py does not exist -- the interactive frob ticket new
+    CLI dispatch lives at src/frob/app/ticket_runner/_new.py; the library new_ticket()
+    in src/frob/tickets/_new_renumber.py is shared by non-interactive auto-filing
+    callers (rapid-sweep regression filing, mutation-sweep, testing stability, sys_runner,
+    fleet) that must never block on an acknowledgement flag, so the surface-and-require-ack
+    fix belongs at the interactive CLI layer only
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: surfacing related tickets needs a new --ack-related CLI flag; wiring it
+    requires the ticket-new argparse subparser and its AppConfig field declaration
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/config.py
+  reason: surfacing related tickets needs a new --ack-related CLI flag; wiring it
+    requires the ticket-new argparse subparser and its AppConfig field declaration
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_ticket_new_related.py
+  reason: regression test for the related-ticket surfacing check, CLI-dispatch style
+    matching test_ticket_runner_designate_repro.py
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch::test_finds_an_archived_close_title_match
+- tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch::test_no_match_for_a_genuinely_distinct_title
+- tests/unit/test_ticket_new_related.py::TestRefusesUnacknowledgedRelatedTicket::test_close_match_against_an_archived_ticket_refuses
+- tests/unit/test_ticket_new_related.py::TestRefusesUnacknowledgedRelatedTicket::test_ack_related_proceeds_despite_the_match
+- tests/unit/test_ticket_new_related.py::TestNovelTicketFilesWithoutFriction::test_novel_title_needs_no_ack
+- tests/unit/test_ticket_new_related.py::TestSuccessorTicketAfterAcknowledgement::test_successor_of_an_open_ticket_files_after_ack
+- tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsCue::test_missing_enforcement_cue_surfaces_a_real_symbol
+- tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsCue::test_no_cue_means_no_grep
+designated_repro_test: tests/unit/test_ticket_new_related.py::TestRefusesUnacknowledgedRelatedTicket::test_close_match_against_an_archived_ticket_refuses
 threat: null
 component: null
 anchor: false

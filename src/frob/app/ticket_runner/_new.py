@@ -7,6 +7,7 @@ dispatch, tests that monkeypatch these names) keeps working."""
 
 from __future__ import annotations
 
+import difflib
 import os
 import re
 import sys
@@ -22,6 +23,67 @@ if TYPE_CHECKING:
     from frob.tickets import Priority
 
 _log = get_logger("frob.app.ticket_runner")
+
+# frob:ticket T-1995
+# difflib's own conventional "close enough to be worth a look" cutoff
+# (matching `frob.gates._fix_engine`'s identical use of 0.6 for the same
+# "surface a candidate, do not silently assume identity" purpose).
+_RELATED_TICKET_SIMILARITY_THRESHOLD = 0.6
+_MAX_RELATED_TICKETS_SHOWN = 5
+
+# frob:ticket T-1995
+# Phrases a ticket body uses to assert a missing enforcement -- exactly
+# the T-1986 shape ("nothing enforces X") this repo's own history shows
+# can be wrong when the covering work already shipped and archived.
+_MISSING_ENFORCEMENT_CUES = (
+    "nothing enforces",
+    "nothing refuses",
+    "nothing catches",
+    "nothing checks",
+    "not enforced",
+    "not checked",
+    "not caught",
+    "not refused",
+    "no check",
+    "only warns",
+    "does not refuse",
+    "does not check",
+    "does not catch",
+    "never refuses",
+    "never checks",
+    "unchecked",
+)
+
+_TITLE_WORD_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9_]{2,}")
+_TITLE_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "not",
+        "with",
+        "does",
+        "this",
+        "that",
+        "its",
+        "are",
+        "was",
+        "but",
+        "all",
+        "any",
+        "can",
+        "has",
+        "have",
+        "into",
+        "when",
+        "while",
+        "from",
+        "over",
+        "only",
+        "never",
+        "nothing",
+    }
+)
 
 # frob:ticket T-1556
 # Above this many scope-closure warnings, `_emit_scope_closure_warnings`
@@ -119,9 +181,7 @@ def _resolve_new_priority(root: Path, cfg: AppConfig) -> Priority:
     return Priority.MEDIUM
 
 
-def _ticket_spec_from_cfg(
-    root: Path, cfg: AppConfig, *, title: str, kind: str
-):  # noqa: ANN201
+def _ticket_spec_from_cfg(root: Path, cfg: AppConfig, *, title: str, kind: str):  # noqa: ANN201
     """Build the `TicketSpec` `frob ticket new`'s flags describe.
 
     `title`/`kind` are taken as separate required params (not read again from
@@ -171,6 +231,143 @@ def _ticket_spec_from_cfg(
     )
 
 
+# frob:ticket T-1995
+def _title_words(title: str) -> frozenset[str]:
+    """Lowercased, stopword-filtered significant words in `title` (T-1995)
+    -- used both to size the related-ticket search's candidate pool
+    sanity and to build a targeted `_refuse_*`/`_check_*` symbol grep."""
+    return frozenset(
+        w for w in _TITLE_WORD_RE.findall(title.lower()) if w not in _TITLE_STOPWORDS
+    )
+
+
+# frob:ticket T-1995
+# frob:doc docs/modules/tickets.md#public-api
+def related_tickets(root: Path, title: str) -> tuple[tuple[str, str, str, float], ...]:
+    """`(ticket_id, title, state, similarity)` for every ticket -- ACTIVE
+    or ARCHIVED -- whose own title is a close textual match to `title`
+    (T-1995), by descending similarity, capped at
+    `_MAX_RELATED_TICKETS_SHOWN`.
+
+    Archived tickets are included deliberately: a search over open
+    tickets alone is exactly the gap that let T-1986 through -- it
+    asserted a missing enforcement that had shipped and archived as
+    T-1866 two days earlier, and the standing pre-filing search (which
+    only ever covered open tickets) correctly found nothing. `difflib.
+    SequenceMatcher.ratio()` (the same 0.6 cutoff convention `frob.gates.
+    _fix_engine` uses for its own close-match nudge) catches near-
+    duplicate and reworded titles without requiring an exact match;
+    genuinely distinct titles score low and are never surfaced, so a
+    successor ticket with a deliberately similar title still needs no
+    override beyond the one `--ack-related` gate below."""
+    from frob.tickets import load_all
+    from frob.tickets._store import load_archive
+
+    pool: dict = {}
+    active = load_all(root)
+    if active.is_ok:
+        pool.update(active.danger_ok)
+    archived = load_archive(root)
+    if archived.is_ok:
+        pool.update(archived.danger_ok)
+
+    scored: list[tuple[str, str, str, float]] = []
+    lowered_title = title.lower()
+    for tid, ticket in pool.items():
+        ratio = difflib.SequenceMatcher(
+            None, lowered_title, ticket.title.lower()
+        ).ratio()
+        if ratio >= _RELATED_TICKET_SIMILARITY_THRESHOLD:
+            scored.append((tid, ticket.title, ticket.state.value, ratio))
+    scored.sort(key=lambda row: row[3], reverse=True)
+    return tuple(scored[:_MAX_RELATED_TICKETS_SHOWN])
+
+
+# frob:ticket T-1995
+def _possible_enforcement_symbols(root: Path, title: str, body: str) -> tuple[str, ...]:
+    """`file:symbol` candidates (capped at 5) that MIGHT already implement
+    the enforcement `title`/`body` claims is missing (T-1995's second
+    class: "nothing enforces X" when X already shipped). Only runs the
+    grep at all when the body actually asserts a missing enforcement
+    (`_MISSING_ENFORCEMENT_CUES`) -- a ticket with no such claim gets no
+    grep and no surfaced symbols, so this never fires on an unrelated
+    feature/docs ticket. Best-effort: any git/grep failure returns `()`,
+    never blocks ticket creation on its own (this is a hint, not a gate --
+    only `related_tickets`'s title-similarity match ever requires `--ack-
+    related`)."""
+    text = f"{title}\n{body}".lower()
+    if not any(cue in text for cue in _MISSING_ENFORCEMENT_CUES):
+        return ()
+    words = sorted(_title_words(title))[:6]
+    if not words:
+        return ()
+    from frob.gitio import run_argv
+
+    pattern = "|".join(re.escape(w) for w in words)
+    grepped = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "grep",
+            "-niE",
+            f"^\\s*def _(refuse|check)_[a-z_0-9]*({pattern})",
+            "--",
+            "src/frob/**/*.py",
+        ]
+    )
+    if grepped.is_err or grepped.danger_ok.returncode not in (0, 1):
+        return ()
+    lines = tuple(
+        line.split(":", 2)[0] + ":" + line.split(":", 2)[2].strip()
+        for line in grepped.danger_ok.stdout.splitlines()
+        if line.strip()
+    )
+    return lines[:5]
+
+
+# frob:ticket T-1995
+def _refuse_unacknowledged_related_tickets(
+    root: Path, cfg: AppConfig, title: str, body: str
+) -> None:
+    """`sys.exit(1)` if `title` closely matches an existing ticket (open,
+    done, OR archived) and the caller has not passed `--ack-related`
+    (T-1995) -- surfaces every match by id/title/state plus, when the
+    body itself claims a missing enforcement, any `_refuse_*`/`_check_*`
+    symbol that might already be it. Never auto-drops or silently
+    proceeds: the only way past a real match is the explicit flag, and a
+    title with no close match needs no flag at all (this never blocks a
+    genuinely novel ticket, including a deliberately similar successor
+    once acknowledged once)."""
+    if cfg.ticket_ack_related:
+        return
+    related = related_tickets(root, title)
+    if not related:
+        return
+    _log.warning(
+        "ticket new: %d existing ticket(s) closely match this title -- "
+        "review before filing a duplicate:",
+        len(related),
+    )
+    for tid, related_title, state, ratio in related:
+        _log.warning(
+            "  %s [%s] (%.0f%% match): %s", tid, state, ratio * 100, related_title
+        )
+    symbols = _possible_enforcement_symbols(root, title, body)
+    if symbols:
+        _log.warning(
+            "ticket new: this body claims a missing enforcement -- these "
+            "existing symbols may already cover it:"
+        )
+        for sym in symbols:
+            _log.warning("  %s", sym)
+    _log.error(
+        "ticket new: refusing -- pass --ack-related once you have confirmed "
+        "this is not a duplicate of the ticket(s) above"
+    )
+    sys.exit(1)
+
+
 def _maybe_attach_clipboard_image(root: Path, ticket_id: str) -> None:
     """Interactively (TTY only) offer to attach a clipboard image to `ticket_id`."""
     if not sys.stdin.isatty():
@@ -213,6 +410,11 @@ def _new(root: Path, cfg: AppConfig) -> None:
     if cfg.ticket_title is None or cfg.ticket_kind is None:
         _log.error("frob ticket new requires --title and --kind")
         sys.exit(1)
+
+    # frob:ticket T-1995
+    _refuse_unacknowledged_related_tickets(
+        root, cfg, cfg.ticket_title, _resolve_new_body(cfg)
+    )
 
     spec = _ticket_spec_from_cfg(
         root, cfg, title=cfg.ticket_title, kind=cfg.ticket_kind

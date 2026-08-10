@@ -139,3 +139,14 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "(parity with `start`'s T-1054 auto-commit) -- for a caller that "
         "wants to batch several ledger writes into one commit of its own",
     )
+    # frob:ticket T-1995
+    ticket_new_p.add_argument(
+        "--ack-related",
+        dest="ticket_ack_related",
+        action="store_true",
+        help="acknowledge the related-ticket surfacing check (T-1995, "
+        "checks open/done/archived tickets by title similarity) and "
+        "proceed even though a close match was found -- required only "
+        "when the check actually surfaces a candidate; a genuinely novel "
+        "title needs no flag",
+    )

@@ -466,6 +466,14 @@ class AppConfig(BaseModel):
     # commit). Default False: the commit happens unless explicitly opted
     # out, matching `start`'s own always-on precedent.
     ticket_no_commit: bool = False
+    # frob:ticket T-1995
+    # `frob ticket new --ack-related` -- acknowledges the related-ticket
+    # surfacing check (T-1995) and lets creation proceed even when a
+    # closely-titled ticket (open, done, OR archived) already exists.
+    # Default False: the check surfaces candidates and refuses (never
+    # auto-drops or silently proceeds) until the caller explicitly
+    # confirms this ticket is not a duplicate.
+    ticket_ack_related: bool = False
     # frob:ticket T-0472
     # `frob ticket requeue <id> [--reason TEXT]` -- optional, logged only.
     ticket_reason: str | None = None
