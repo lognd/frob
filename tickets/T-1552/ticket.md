@@ -99,3 +99,4 @@ precondition) to actually run the migration against this repo's real
 
 ## Failure log
 - 2026-08-08 attempt 1: premise not yet true: LEDGERV1001 sunset 2027-02-02 not reached, deletion would preempt own recorded deprecation window
+- 2026-08-10 attempt 2: blocked: 8 of 9 frob-wired sibling repos still v1-mode; v1 splice machinery is generic per-root code they depend on, not this-repo-scoped; see draft T-draft-111e5fd2
