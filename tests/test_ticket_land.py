@@ -7280,24 +7280,51 @@ class TestLandRepairMarker:
         marker = _land_mod._land_repair_marker_path(repo, "T-9999")
         assert not marker.exists()
 
-    def test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker(
+    # frob:ticket T-1963
+    def test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker  # noqa: E501
+        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker  # noqa: E501
+        # T-1963 (MUST FAIL on the pre-fix code): a marker's recorded tip
+        # is stale because a DIFFERENT land legitimately committed onto
+        # root while this one sat crashed -- the ordinary shape under
+        # parallel dispatch, where lands are near-continuous. Repair must
+        # succeed anyway, resetting to CURRENT HEAD (never the stale
+        # recorded tip, which would destroy the commit landed in
+        # between), leaving root clean and immediately landable by
+        # another agent -- no human intervention required.
         pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         _land_mod._write_land_repair_marker(repo, "T-9999", pre)
+        # A DIFFERENT, unrelated land commits for real while T-9999 sits
+        # crashed -- root's tip legitimately advances past the marker
+        # (staged/committed explicitly, so it never picks up the crashed
+        # run's own leftover staged content added next).
         (repo / "advance.txt").write_text("a real commit landed since the marker\n")
-        _commit_all(repo, "advance main past the marker's recorded tip")
+        _run(["git", "add", "advance.txt"], repo)
+        _run(
+            ["git", "commit", "-q", "-m", "advance main past the marker's recorded tip"],
+            repo,
+        )
         drifted = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert drifted != pre
+        # The crashed run's own leftover staged garbage, left sitting on
+        # top of the now-drifted tip -- exactly what a crashed land's
+        # uncommitted squash-staging looks like from the next `land()`
+        # call's point of view.
+        (repo / "leftover.txt").write_text("leftover staged squash content\n")
+        _run(["git", "add", "leftover.txt"], repo)
 
         result = _land_mod._repair_stale_land_marker(repo)
-        assert result.is_err
-        assert result.danger_err == LandError.GitFailed
-        # refuses WITHOUT resetting -- the drifted commit must survive, and
-        # the marker must be left in place for a human to inspect.
+
+        assert result.is_ok, result.err
+        # The drifted (legitimately landed) commit survives untouched.
         assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted
+        assert (repo / "advance.txt").exists()
+        # Root is clean and the marker is cleared -- immediately landable
+        # by another agent, no manual intervention.
+        assert _status_ignoring_frob(repo) == ""
         marker = _land_mod._land_repair_marker_path(repo, "T-9999")
-        assert marker.exists()
+        assert not marker.exists()
 
 
 # frob:ticket T-1523

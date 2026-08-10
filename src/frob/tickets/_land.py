@@ -466,8 +466,9 @@ def _clear_land_repair_marker(root: Path, ticket_id: str) -> None:
 
 
 # frob:ticket T-0907
+# frob:ticket T-1963
 # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker  # noqa: E501
 # frob:tests \
 # tests/test_ticket_land.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op
 def _repair_stale_land_marker(root: Path) -> Result[None, LandError]:
@@ -492,21 +493,21 @@ def _repair_stale_land_marker(root: Path) -> Result[None, LandError]:
     No marker at all is the overwhelmingly common case and is a silent
     no-op (`Ok(None)`) -- most `land()` calls never crash mid-staging.
 
-    For each marker found: if `root`'s CURRENT tip still equals the
-    marker's recorded `pre_land_tip`, the crash happened before any commit
-    landed on `root` (the pre-T-0907 safety net -- root is never committed
-    to until `_commit_squash_apply`'s final step -- held), so this resets
-    `root` to that same tip (explicit, not bare) and cleans any leftover
-    staged/conflicted squash state, then clears the marker and continues to
-    the next one.
-
-    When `root`'s current tip has DRIFTED from a marker's recorded value,
-    this is the exact ambiguous condition the T-0907 incident's reset
-    blindly cemented -- refuses loudly (`Err(GitFailed)`) instead of
-    resetting anything, naming both shas and pointing at manual
-    reflog/log inspection, and leaves that marker (and any not yet
-    processed) in place so the next attempt sees the same refusal until a
-    human resolves it."""
+    T-1963: every marker found is now repaired UNCONDITIONALLY (see
+    `_reconcile_one_land_repair_marker`'s own docstring for the full
+    reasoning) by resetting `root` to its CURRENT `HEAD` and cleaning any
+    leftover staged/conflicted squash state, whether or not that `HEAD`
+    still equals the marker's recorded `pre_land_tip`. Before T-1963, a
+    DRIFTED tip (another land legitimately committing onto `root` while
+    this one sat crashed) refused loudly instead -- correct in isolation
+    (the recorded tip is no longer safe to reset to), but since this scan
+    runs at the start of EVERY `land()` call, that refusal blocked every
+    OTHER agent's land too, not just a retry of the crashed ticket, until
+    a human intervened. Resetting to current `HEAD` is safe in both cases
+    because the crashed run itself never advanced `HEAD` (T-0907's
+    guarantee: `root` is never committed to until `_commit_squash_apply`'s
+    own final commit) -- there is no longer a case that needs the stale
+    recorded tip as a reset target, or a refusal."""
     marker_dir = _land_repair_dir(root)
     if not marker_dir.is_dir():
         return Ok(None)
@@ -519,13 +520,39 @@ def _repair_stale_land_marker(root: Path) -> Result[None, LandError]:
 
 
 # frob:ticket T-0976
+# frob:ticket T-1963
 def _reconcile_one_land_repair_marker(
     root: Path, marker_path: Path
 ) -> Result[None, LandError]:
     """One T-0907 land-repair marker's reconciliation:
     `_repair_stale_land_marker`'s per-marker half, split from its
-    directory-scan loop. See that function's docstring for the reset-if-
-    tip-matches / refuse-if-drifted contract this implements."""
+    directory-scan loop.
+
+    T-1963: repairs unconditionally by resetting to `root`'s CURRENT
+    `HEAD` -- never to the marker's `recorded_tip` -- and cleaning any
+    untracked leftovers, regardless of whether `HEAD` still equals
+    `recorded_tip` or has drifted since (another land committed onto
+    `root` while this one was crashed). This is always safe: `root` is
+    NEVER committed to until `_commit_squash_apply`'s own final commit
+    (the same T-0907 guarantee `_write_land_repair_marker` documents), so
+    a land whose marker is still present crashed strictly BEFORE that
+    commit -- it never advanced `HEAD` itself, only staged (uncommitted)
+    index/working-tree state on top of whatever `HEAD` happened to be at
+    crash time. Resetting to CURRENT `HEAD` therefore always discards
+    exactly that crashed run's own uncommitted mess and nothing else,
+    whether or not some OTHER, unrelated land legitimately advanced
+    `HEAD` in between -- there is no longer a drifted-tip case that needs
+    a different, more dangerous target (the marker's stale recorded tip)
+    or a refusal.
+
+    Before this fix, a drifted tip (the ordinary case under parallel
+    dispatch, where lands are near-continuous) refused wholesale
+    (`Err(GitFailed)`), leaving `root` dirty until a human intervened --
+    and since this reconciliation runs at the very start of EVERY
+    `land()` call (`_repair_stale_land_marker`, invoked before this run's
+    own pre-land tip is even captured), that refusal blocked every
+    subsequent land attempt by any agent, not just a retry of the crashed
+    ticket (T-1963's own measured incident)."""
     marker_ticket_id = marker_path.stem
     try:
         raw = json.loads(marker_path.read_text(encoding="utf-8"))
@@ -552,39 +579,35 @@ def _reconcile_one_land_repair_marker(
     if current.is_err:
         return Err(current.danger_err)
 
-    if current.danger_ok != recorded_tip:
-        _log.error(
-            "land: refused -- a prior `frob ticket land %s` crashed "
-            "mid-staging (T-0907) with a land-repair marker recording "
-            "%s's pre-land tip as %s, but %s's CURRENT tip is %s -- "
-            "these differ, so the exact damage cannot be safely "
-            "auto-repaired; inspect `git -C %s reflog` and `git -C %s "
-            "log --oneline -5` by hand, confirm %s's tip is sound "
-            "(recover with `git -C %s reset --hard <known-good-sha>` "
-            "if not), then remove %s and retry",
+    if current.danger_ok == recorded_tip:
+        _log.warning(
+            "land: repairing a prior crashed `frob ticket land %s` -- %s's "
+            "current tip (%s) matches the recorded pre-land tip, resetting "
+            "any leftover staged/conflicted state from the crashed run "
+            "(T-0907)",
             marker_ticket_id,
             root,
             recorded_tip,
+        )
+    else:
+        # frob:ticket T-1963
+        _log.warning(
+            "land: repairing a prior crashed `frob ticket land %s` -- %s's "
+            "tip has moved since the recorded pre-land tip (%s -> %s, "
+            "other land(s) landed meanwhile) -- resetting only the "
+            "crashed run's OWN uncommitted staged/working-tree state to "
+            "%s's CURRENT HEAD, never to the stale recorded tip (which "
+            "would destroy the commit(s) landed in between); the crashed "
+            "run itself never advanced HEAD (T-0907's own guarantee), so "
+            "this is safe regardless of the drift (T-1963)",
+            marker_ticket_id,
             root,
+            recorded_tip,
             current.danger_ok,
             root,
-            root,
-            root,
-            root,
-            marker_path,
         )
-        return Err(LandError.GitFailed)
 
-    _log.warning(
-        "land: repairing a prior crashed `frob ticket land %s` -- %s's "
-        "current tip (%s) matches the recorded pre-land tip, resetting "
-        "any leftover staged/conflicted state from the crashed run "
-        "(T-0907)",
-        marker_ticket_id,
-        root,
-        recorded_tip,
-    )
-    reset = run_argv(["git", "-C", str(root), "reset", "--hard", recorded_tip])
+    reset = run_argv(["git", "-C", str(root), "reset", "--hard", "HEAD"])
     if reset.is_err or reset.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)
     clean = run_argv(["git", "-C", str(root), "clean", "-fd"])
@@ -592,10 +615,11 @@ def _reconcile_one_land_repair_marker(
         return Err(LandError.GitFailed)
     marker_path.unlink(missing_ok=True)
     _log.info(
-        "land: %s T-0907 land-repair marker cleared, %s cleaned to %s",
+        "land: %s T-0907 land-repair marker cleared, %s cleaned to its "
+        "current HEAD (%s)",
         marker_ticket_id,
         root,
-        recorded_tip,
+        current.danger_ok,
     )
     return Ok(None)
 
