@@ -12,9 +12,38 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/
+- src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: 'TICK009 breadth: the umbrella src/frob/tickets/ collided with T-1948''s
+    live lease and suppressed this high-priority unblocked ticket from the doable
+    queue entirely. LandInProgress is raised only in src/frob/tickets/_leases.py (and
+    consumed in _rapid_sweep.py); narrowing to the actual refusal site plus its test
+    file. Measured: git grep -ln LandInProgress -- src/ returns exactly two files.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'TICK009 breadth: the umbrella src/frob/tickets/ collided with T-1948''s
+    live lease and suppressed this high-priority unblocked ticket from the doable
+    queue entirely. LandInProgress is raised only in src/frob/tickets/_leases.py (and
+    consumed in _rapid_sweep.py); narrowing to the actual refusal site plus its test
+    file. Measured: git grep -ln LandInProgress -- src/ returns exactly two files.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: 'TICK009 breadth: the umbrella src/frob/tickets/ collided with T-1948''s
+    live lease and suppressed this high-priority unblocked ticket from the doable
+    queue entirely. LandInProgress is raised only in src/frob/tickets/_leases.py (and
+    consumed in _rapid_sweep.py); narrowing to the actual refusal site plus its test
+    file. Measured: git grep -ln LandInProgress -- src/ returns exactly two files.'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
