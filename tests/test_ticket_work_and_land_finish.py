@@ -324,6 +324,7 @@ class TestAbsorbPreLandFixes:
 
 # frob:ticket T-1796
 # frob:ticket T-1870
+# frob:ticket T-1903
 class TestAssertDesignLoadsPreLand:
     """T-1796 (T-1870 renamed/narrowed this from `_sync_interface_pre_
     land_step` -- the write half went, this read-only guard did not): a
@@ -354,6 +355,151 @@ class TestAssertDesignLoadsPreLand:
         # every OTHER TestAbsorbPreLandFixes test already relies on.
         assert not (repo / "design").is_dir()
         _absorb_pre_land_fixes(repo, "T-1796")  # must not raise
+
+    # frob:ticket T-1903
+    def test_a_tier_a_handler_that_corrupts_design_after_it_was_healthy_refuses_the_land(
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDesignLoadsPreLand.test_a_tier_a_handler_that_corrupts_design_after_it_was_healthy_refuses_the_land  # noqa: E501
+        # T-1903: the pre-tier-a call to `_assert_design_loads_pre_land`
+        # passes (the design root parses cleanly going in) -- but the
+        # Tier-A fix batch itself is what corrupts `design/frob.strata`
+        # here, simulating the T-1900 SYS-IFACE-ORDER incident. Before
+        # T-1903, `_absorb_pre_land_fixes` never re-checked after the
+        # rewrite and this would have returned normally (a false green);
+        # the fix is that the SECOND (post-tier-a) call must catch it and
+        # refuse the land, naming the post-tier-a stage in its error.
+        design_dir = repo / "design"
+        design_dir.mkdir()
+        (design_dir / "sample.strata").write_text(
+            'module sample\n\nnode checker : trusted {\n    may "exec";\n}\n'
+        )
+        _run(["git", "add", "-A"], repo)
+
+        def _corrupting_tier_a_fix(*_args: object, **_kwargs: object) -> tuple[object, ...]:
+            (design_dir / "sample.strata").write_text(
+                'module sample\n\nnode checker : trusted {\n'
+                '    attr interface=["unterminated\n};\n'
+            )
+            return ()
+
+        monkeypatch.setattr(
+            "frob.gates._fix_engine.apply_tier_a_fixes", _corrupting_tier_a_fix
+        )
+
+        with caplog.at_level("ERROR"):
+            with pytest.raises(SystemExit) as exc_info:
+                _absorb_pre_land_fixes(repo, "T-1903")
+        assert exc_info.value.code == 1
+        # T-1903's whole point: the refusal must name WHICH side of the
+        # Tier-A rewrite broke design/frob.strata -- a "pre-tier-a"
+        # (pre-existing corruption) message would be misleading here,
+        # since the design root was genuinely healthy before this land's
+        # own Tier-A batch ran.
+        assert any(
+            "AFTER" in record.message and "Tier-A" in record.message
+            for record in caplog.records
+        )
+
+
+# frob:ticket T-1907
+class TestAssertTouchedFilesTypeCheckPreLand:
+    """`_assert_touched_files_type_check_pre_land` (T-1907): a real `ty`
+    subprocess scoped to this ticket's own touched `.py` files, run
+    unconditionally at land regardless of profile -- the minimum gate
+    the rapid profile may not relax. Real `ty` invocation (matching this
+    module's own real-git-subprocess style), not a mocked parser, so the
+    test proves the actual wiring (cwd, extra-search-path, exit code
+    parsing) works end to end, not just that some mocked call happened."""
+
+    def test_a_type_error_in_a_touched_file_refuses_the_land(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_type_error_in_a_touched_file_refuses_the_land  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_type_check_pre_land,
+        )
+
+        bad = repo / "src" / "bad_types.py"
+        bad.write_text('def f(x: int) -> int:\n    return "not an int"\n')
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_touched_files_type_check_pre_land(
+                repo, "T-1907", frozenset({"src/bad_types.py"})
+            )
+        assert exc_info.value.code == 1
+
+    def test_a_clean_touched_file_does_not_refuse(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_type_check_pre_land,
+        )
+
+        good = repo / "src" / "good_types.py"
+        good.write_text("def f(x: int) -> int:\n    return x + 1\n")
+        _run(["git", "add", "-A"], repo)
+
+        _assert_touched_files_type_check_pre_land(
+            repo, "T-1907", frozenset({"src/good_types.py"})
+        )  # must not raise
+
+    def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_type_check_pre_land,
+        )
+
+        _assert_touched_files_type_check_pre_land(
+            repo, "T-1907", frozenset()
+        )  # must not raise
+        _assert_touched_files_type_check_pre_land(
+            repo, "T-1907", None
+        )  # must not raise
+
+
+# frob:ticket T-1907
+class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
+    """T-1907 proposal (2): a Done report with no `### Captured claims`
+    section used to make `_reverify_done_report_claims_post_merge` a
+    silent no-op -- this land's fresh gate-state check is simply never
+    compared, with nothing in the log distinguishing "compared and
+    passed" from "never compared at all". Now it logs a WARNING naming
+    that distinction explicitly."""
+
+    def test_no_captured_claims_section_logs_unknown_not_clean(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestReverifyDoneReportClaimsDisclosesUnknownGateState.test_no_captured_claims_section_logs_unknown_not_clean  # noqa: E501
+        from frob.tickets._land_verify import _reverify_done_report_claims_post_merge
+
+        created = new_ticket(repo, _spec("No captured claims"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "body": ticket.body
+                + "\n## Done report\n\nDone by hand, no capture run.\n"
+            }
+        )
+        assert write_ticket(repo, ticket).is_ok
+        _commit_all(repo, "add done report with no captured claims")
+
+        with caplog.at_level("WARNING"):
+            result = _reverify_done_report_claims_post_merge(
+                repo, tid, frozenset(), lambda: (0, 0, 0)
+            )
+        assert result.is_ok
+        assert any(
+            "UNKNOWN" in record.message and "not clean" in record.message
+            for record in caplog.records
+        )
 
 
 # frob:ticket T-1578
@@ -829,6 +975,54 @@ class TestLandProofAndFinish:
         # verifies_a_real_land
         _tid, _worktree, report = self._land_a_real_ticket(repo)
         assert _print_land_proof(repo, report) is True
+
+    # frob:ticket T-1884
+    def test_proof_verifies_an_anchor_ticket_left_queued_on_main(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_verifies_an_anchor_ticket_left_queued_on_main  # noqa: E501
+        # T-1884: a legitimately anchored ticket (T-1856's anchor=True
+        # marker) that T-1874's skip-close path lands with its state left
+        # QUEUED on main by design must still read verified=True -- before
+        # this fix, `_land_proof_checks`'s state_ok only ever accepted
+        # done/dropped, so a completely correct anchor land always printed
+        # verified=False (observed landing T-1820, 2026-08-08).
+        from types import SimpleNamespace
+
+        created = new_ticket(repo, _spec("Anchor left queued"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={"anchor": True, "anchor_reason": "permanent waiver target"}
+        )
+        assert write_ticket(repo, ticket).is_ok
+        _commit_all(repo, "anchor ticket, still queued")
+        commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        fake_report = SimpleNamespace(final_id=tid, commit_sha=commit_sha)
+        assert _print_land_proof(repo, fake_report) is True
+
+    # frob:ticket T-1884
+    def test_proof_still_refuses_a_non_anchor_ticket_left_queued(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_still_refuses_a_non_anchor_ticket_left_queued  # noqa: E501
+        # The anchor carve-out must not become a blanket "queued is fine"
+        # -- an ORDINARY (non-anchor) ticket left queued on main is a real
+        # unverified-land signal and must still read verified=False.
+        from types import SimpleNamespace
+
+        created = new_ticket(repo, _spec("Ordinary ticket left queued"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "ordinary ticket, still queued")
+        commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        fake_report = SimpleNamespace(final_id=tid, commit_sha=commit_sha)
+        assert _print_land_proof(repo, fake_report) is False
 
     def test_finish_removes_the_worktree(self, repo: Path) -> None:
         # frob:tests \

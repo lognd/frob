@@ -2,7 +2,7 @@
 id: T-1907
 title: Rapid-profile land does not gate on the type family, so type errors land and
   the post-land sweep files them after publication
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,37 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
+- src/frob/tickets/_land_verify.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-1907''s fix: unconditional touched-file ty guard in _land_cmd.py, its
+    regression tests, and the loud UNKNOWN-not-clean disclosure in _land_verify.py''s
+    claims early-out'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-1907''s fix: unconditional touched-file ty guard in _land_cmd.py, its
+    regression tests, and the loud UNKNOWN-not-clean disclosure in _land_verify.py''s
+    claims early-out'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_land_verify.py
+  reason: 'T-1907''s fix: unconditional touched-file ty guard in _land_cmd.py, its
+    regression tests, and the loud UNKNOWN-not-clean disclosure in _land_verify.py''s
+    claims early-out'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand::test_a_type_error_in_a_touched_file_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestReverifyDoneReportClaimsDisclosesUnknownGateState::test_no_captured_claims_section_logs_unknown_not_clean
 designated_repro_test: null
 threat: null
 component: null

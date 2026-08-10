@@ -106,6 +106,8 @@ def _reverify_evidence_post_merge(
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 # frob:ticket T-0846
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands kind="integration"  # noqa: E501
+# frob:ticket T-1907
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestReverifyDoneReportClaimsDisclosesUnknownGateState.test_no_captured_claims_section_logs_unknown_not_clean  # noqa: E501
 def _reverify_done_report_claims_post_merge(
     worktree: Path,
     ticket_id: str,
@@ -195,6 +197,27 @@ def _reverify_done_report_claims_post_merge(
     ticket = loaded.danger_ok
     claims = parse_claims_from_done_report(ticket.body)
     if claims is None:
+        # frob:ticket T-1907
+        # T-1907: an early-out here used to be silent -- this land's
+        # fresh, post-merge `check_gates()` result is simply never
+        # examined for this ticket, so a done-report that never captured
+        # a gate-state claim (e.g. `--why-file` with no capture, or a
+        # capture run under a scoped `--only` selection) reads as
+        # "nothing to compare, therefore fine" with no signal that the
+        # comparison never happened at all. Disclose loudly instead: a
+        # ticket whose recorded evidence never ran a gate family is
+        # UNKNOWN, not clean, and the reader should not have to infer
+        # that from an absent line.
+        _log.warning(
+            "land: %s carries no Captured claims section in its Done "
+            "report -- this land's post-merge gate-state re-verification "
+            "is SKIPPED for this ticket (not because it passed: because "
+            "nothing was ever recorded to compare against). Treat this "
+            "ticket's gate status as UNKNOWN, not clean, unless another "
+            "check (e.g. T-1907's touched-file type-check guard) covered "
+            "it separately",
+            ticket_id,
+        )
         return Ok(None)
 
     test_count_check = _reverify_test_count_claim(

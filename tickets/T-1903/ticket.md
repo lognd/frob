@@ -2,7 +2,7 @@
 id: T-1903
 title: Pre-land strata parse guard runs BEFORE the Tier-A rewrite, so it cannot catch
   corruption the rewrite itself introduces
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,26 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-1903''s fix touches exactly these two files: the land guard ordering
+    fix and its regression test'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-1903''s fix touches exactly these two files: the land guard ordering
+    fix and its regression test'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertDesignLoadsPreLand::test_a_tier_a_handler_that_corrupts_design_after_it_was_healthy_refuses_the_land
 designated_repro_test: null
 threat: null
 component: null

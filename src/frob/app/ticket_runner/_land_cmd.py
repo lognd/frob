@@ -126,6 +126,7 @@ def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None
 
 # frob:ticket T-1175
 # frob:ticket T-1404
+# frob:ticket T-1903
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_half_canonicalizes_a_non_canonical_directive  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
@@ -153,11 +154,27 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
     the land outright), keeps the ONE property from the old step that
     protects OTHER agents rather than just this change (T-1686's
     damages-others rule for what stays synchronous): that `design/
-    frob.strata` still PARSES before this land can commit on top of it."""
+    frob.strata` still PARSES before this land can commit on top of it.
+
+    T-1903: `_assert_design_loads_pre_land` is called TWICE -- once here,
+    before `_tier_a_pre_land_step`, and once again immediately after it.
+    The first call only proves the design root was already healthy going
+    in (useful for a clearer error message pointing at pre-existing
+    breakage); it CANNOT catch corruption `_tier_a_pre_land_step` itself
+    introduces, because it runs before that rewrite exists. The T-1900
+    incident is exactly this: a Tier-A handler (SYS-IFACE-ORDER)
+    re-rendered `design/frob.strata` into an unparseable block, the
+    before-call had already passed, and nothing after the rewrite ever
+    re-checked -- the land printed 'strata parse failed' to stderr and
+    STILL reported `LAND-PROOF verified=True`. The second call below is
+    the load-bearing one: it is what makes a corrupting Tier-A handler
+    structurally unable to publish, not just the one handler T-1900
+    happened to fix."""
     touched_paths = _land_touched_paths(worktree, ticket_id)
     _fmt_pre_land_step(worktree, ticket_id, touched_paths)
-    _assert_design_loads_pre_land(worktree, ticket_id)
+    _assert_design_loads_pre_land(worktree, ticket_id, stage="pre-tier-a")
     _tier_a_pre_land_step(worktree, ticket_id, touched_paths)
+    _assert_design_loads_pre_land(worktree, ticket_id, stage="post-tier-a")
 
 
 # frob:ticket T-1404
@@ -198,10 +215,23 @@ def _fmt_pre_land_step(
 # frob:ticket T-1175
 # frob:ticket T-1796
 # frob:ticket T-1870
-def _assert_design_loads_pre_land(worktree: Path, ticket_id: str) -> None:
+# frob:ticket T-1903
+def _assert_design_loads_pre_land(
+    worktree: Path, ticket_id: str, *, stage: str = "pre-tier-a"
+) -> None:
     """Refuse the land (`sys.exit(1)`) if `worktree`'s design root exists
     but fails to PARSE/ELABORATE. Writes nothing, ever -- this is a
     read-only guard, not an auto-fix.
+
+    T-1903: called TWICE by `_absorb_pre_land_fixes` -- `stage` names
+    which call this is (`"pre-tier-a"` or `"post-tier-a"`), purely for the
+    error message, so a refusal names WHICH side of the Tier-A rewrite
+    produced the unparseable file rather than leaving that ambiguous. A
+    `"pre-tier-a"` failure means the design root was ALREADY broken before
+    this land touched it (pre-existing corruption); a `"post-tier-a"`
+    failure means `_tier_a_pre_land_step`'s own rewrite is what broke it
+    -- the failure mode T-1900 slipped through undetected because no
+    post-rewrite check existed at all.
 
     T-1870: this used to be bundled into a step (formerly named
     `_sync_interface_pre_land_step`) that ALSO auto-wrote `interface=`
@@ -240,17 +270,33 @@ def _assert_design_loads_pre_land(worktree: Path, ticket_id: str) -> None:
     ids = load_design_ids(worktree, "design")
     if ids.errors:
         first = ids.errors[0]
-        _log.error(
-            "ticket land: %s refused -- design/** failed to load (%s: %s); "
-            "a pre-existing corrupt .strata file cannot be tolerated by "
-            "the process that mutates it on every land -- fix the "
-            "design file (see `frob check --only sys` for the exact "
-            "parse error) before retrying `frob ticket land %s`",
-            ticket_id,
-            first.path,
-            first.error,
-            ticket_id,
-        )
+        if stage == "post-tier-a":
+            _log.error(
+                "ticket land: %s refused -- design/** failed to load AFTER "
+                "the pre-land Tier-A auto-fix rewrite (%s: %s); the "
+                "Tier-A pass itself just corrupted design/frob.strata -- "
+                "a handler in _tier_a_pre_land_step's batch is producing "
+                "unparseable output for this diff (see `frob check --only "
+                "sys` for the exact parse error, and re-run with Tier-A "
+                "handlers bisected/excluded to name which one) before "
+                "retrying `frob ticket land %s`",
+                ticket_id,
+                first.path,
+                first.error,
+                ticket_id,
+            )
+        else:
+            _log.error(
+                "ticket land: %s refused -- design/** failed to load (%s: "
+                "%s); a pre-existing corrupt .strata file cannot be "
+                "tolerated by the process that mutates it on every land -- "
+                "fix the design file (see `frob check --only sys` for the "
+                "exact parse error) before retrying `frob ticket land %s`",
+                ticket_id,
+                first.path,
+                first.error,
+                ticket_id,
+            )
         sys.exit(1)
 
 
@@ -1086,15 +1132,23 @@ def _pre_commit_unscoped_error_sweep(
 
 # frob:ticket T-1175
 # frob:ticket T-1523
-def _land_proof_checks(root: Path, final_id: str, commit_sha: str) -> tuple[bool, str]:
+# frob:ticket T-1884
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_verifies_an_anchor_ticket_left_queued_on_main  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_still_refuses_a_non_anchor_ticket_left_queued  # noqa: E501
+def _land_proof_checks(
+    root: Path, final_id: str, commit_sha: str
+) -> tuple[bool, str, bool]:
     """The two checks `_print_land_proof`'s `LAND-PROOF:` line reports
     (T-1175), split out (T-1523) so `_report_stale_post_land_verify_
     markers` can run the IDENTICAL check against a RECOVERED marker's
     `(ticket_id, commit_sha)` pair without duplicating the git/ledger
     logic: `commit_sha` is an ancestor of `root`'s `main`, AND `final_id`'s
-    state on `main` is a terminal state (done/dropped). Returns
-    `(ancestor_ok, state_desc)` -- the caller derives `verified` and any
-    logging itself."""
+    state on `main` is a terminal state (done/dropped) -- OR (T-1884)
+    `final_id` is an `anchor=True` ticket sitting in `queued`/`blocked`,
+    the legitimate non-terminal-forever shape `_skip_close_for_anchor_
+    no_close_requested` (T-1874) publishes as-is rather than forcing
+    through a DONE transition. Returns `(ancestor_ok, state_desc,
+    is_anchor)` -- the caller derives `verified` and any logging itself."""
     from frob.tickets import load_all
 
     is_ancestor = run_argv(
@@ -1103,12 +1157,14 @@ def _land_proof_checks(root: Path, final_id: str, commit_sha: str) -> tuple[bool
     ancestor_ok = is_ancestor.is_ok and is_ancestor.danger_ok.returncode == 0
 
     state_desc = "unknown"
+    is_anchor = False
     loaded = load_all(root)
     if loaded.is_ok:
         ticket = loaded.danger_ok.get(final_id)
         if ticket is not None:
             state_desc = ticket.state.value
-    return ancestor_ok, state_desc
+            is_anchor = ticket.anchor
+    return ancestor_ok, state_desc, is_anchor
 
 
 def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
@@ -1120,13 +1176,27 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     (`git merge-base --is-ancestor <hash> main`, then re-`show` the ticket).
     Printed as one grep-able `LAND-PROOF:` line, and the combined
     `verified` bool is also RETURNED so `--finish` can gate worktree
-    removal on it without re-deriving either check itself."""
+    removal on it without re-deriving either check itself.
+
+    T-1884: `state_ok` ALSO accepts `queued`/`blocked` when the ticket is
+    `anchor=True` -- mirroring `_skip_close_for_anchor_no_close_
+    requested`'s (T-1874) own condition for when landing a non-terminal
+    ticket record as-is is correct, not a workaround. Before this, a
+    legitimately anchored, requeued ticket (state stays `queued`/
+    `blocked` on `main` BY DESIGN) always printed `verified=False` on a
+    completely correct land, because this check predates T-1856's anchor
+    marker and T-1874's land-time skip-close path -- observed landing
+    T-1820 (2026-08-08): `is_ancestor_of_main=True state_on_main=queued
+    verified=False`."""
     from frob.tickets import TicketState
 
-    ancestor_ok, state_desc = _land_proof_checks(
+    ancestor_ok, state_desc, is_anchor = _land_proof_checks(
         root, report.final_id, report.commit_sha
     )
-    state_ok = state_desc in (TicketState.DONE.value, TicketState.DROPPED.value)
+    state_ok = state_desc in (TicketState.DONE.value, TicketState.DROPPED.value) or (
+        is_anchor
+        and state_desc in (TicketState.QUEUED.value, TicketState.BLOCKED.value)
+    )
     verified = ancestor_ok and state_ok
 
     _log.info(
@@ -1167,8 +1237,17 @@ def _report_stale_post_land_verify_markers(root: Path) -> None:
     from frob.tickets._land import _stale_post_land_verify_markers as _stale_markers
 
     for ticket_id, commit_sha in _stale_markers(root):
-        ancestor_ok, state_desc = _land_proof_checks(root, ticket_id, commit_sha)
-        state_ok = state_desc in (TicketState.DONE.value, TicketState.DROPPED.value)
+        ancestor_ok, state_desc, is_anchor = _land_proof_checks(
+            root, ticket_id, commit_sha
+        )
+        # frob:ticket T-1884
+        state_ok = state_desc in (
+            TicketState.DONE.value,
+            TicketState.DROPPED.value,
+        ) or (
+            is_anchor
+            and state_desc in (TicketState.QUEUED.value, TicketState.BLOCKED.value)
+        )
         verified = ancestor_ok and state_ok
         _log.warning(
             "LAND-PROOF-RECOVERED: a prior `frob ticket land %s` was "
@@ -2503,6 +2582,130 @@ def _land_core(root: Path, cfg: AppConfig):  # noqa: ANN201
     )
 
 
+# frob:ticket T-1907
+def _touched_py_files(
+    worktree: Path, touched_paths: frozenset[str] | None
+) -> list[str]:
+    """The `.py` subset of `touched_paths` that still exists in `worktree`,
+    sorted for a deterministic `ty` invocation -- the pure filtering half
+    of `_assert_touched_files_type_check_pre_land`, split out so that
+    function's own body stays a flat sequence with no nested filtering
+    logic."""
+    if not touched_paths:
+        return []
+    return sorted(
+        rel
+        for rel in touched_paths
+        if rel.endswith(".py") and (worktree / rel).is_file()
+    )
+
+
+# frob:ticket T-1907
+# frob:waive ARCH103 reason="build-the-command-then-run-it IS this function's one job \
+# -- the two decision points (src/.venv presence) are command-construction branches, \
+# not independent sub-concerns, and splitting the subprocess spawn away from the \
+# command that feeds it would add indirection with no cohesion gain; mirrors \
+# frob.check._python._run_ty's own identical shape, already precedented in this \
+# codebase"
+def _ty_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
+    """Spawn `ty check <py_files>` scoped to `worktree` and return its
+    parsed `ToolResult`, or `None` if the spawn itself could not run (no
+    `ty` binary, or it hung past the timeout) -- the pure subprocess-and-
+    parse half of `_assert_touched_files_type_check_pre_land`, split out
+    so that function's own body carries no I/O beyond calling this once.
+    Mirrors `frob.check._python._run_ty`'s own `--extra-search-path`/
+    `--python` resolution (T-0996) but scoped to explicit files rather
+    than a whole root, since this is a touched-set check, not a full-tree
+    one."""
+    import subprocess
+
+    from frob.process.parsers import parse_ty
+
+    cmd = ["ty", "check", *py_files]
+    src_dir = worktree / "src"
+    if src_dir.is_dir():
+        cmd += ["--extra-search-path", str(src_dir.resolve())]
+    venv_dir = worktree / ".venv"
+    if venv_dir.is_dir():
+        cmd += ["--python", str(venv_dir.resolve())]
+    try:
+        proc = subprocess.run(
+            cmd, cwd=worktree, capture_output=True, text=True, timeout=120, check=False
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    return parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
+
+
+# frob:ticket T-1907
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_type_error_in_a_touched_file_refuses_the_land  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
+# frob:waive ARCH103 reason="this IS _assert_design_loads_pre_land's own established \
+# guard shape one function up in this same module (filter/spawn/decide-refuse-or-not, \
+# three short-circuit returns): the decision points are early-outs for 'nothing to \
+# check' and 'could not measure', not independent sub-concerns to split out, and the \
+# filtering/spawning halves are already extracted into \
+# _touched_py_files/_ty_check_files above"
+def _assert_touched_files_type_check_pre_land(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """T-1907: refuse the land (`sys.exit(1)`) when `ty check` finds an
+    error in one of THIS ticket's own touched `.py` files. Writes nothing,
+    read-only, unconditional -- called from `_land_core_prepare` for every
+    profile, including `rapid`, because that is exactly the gap T-1907
+    measured: under rapid, agents commonly verify with a scoped `frob
+    check --ticket <id> --only ...` selection that omits the `ty` family
+    entirely, land green, and the type error is only ever discovered by
+    the DEFERRED post-land sweep -- against an already-published commit
+    (T-1894/T-1896, both real `invalid-argument-type` errors that landed
+    this way). `land()`'s own post-merge `check_gates()` re-verification
+    does not close this gap either: it only ever executes when the
+    ticket's Done report captured a claim to compare against
+    (`_reverify_done_report_claims_post_merge`'s `claims is None: return
+    Ok(None)` early-out) -- an agent whose done-report never captured
+    gate state (or captured a scoped one) gets NO fresh gate re-check at
+    land at all, silent unknown read as clean, precisely the "UNKNOWN is
+    being read as CLEAN" framing T-1907's own investigation names.
+
+    Scoped to `touched_paths` (T-1404's own diff-derived touched-file
+    set, reused rather than a second hand-rolled diff) so this stays
+    cheap -- a single `ty check <touched .py files>` invocation
+    (`_ty_check_files`), not a full-tree run -- and restricted to files
+    this ticket's own diff actually introduced, not a repo-wide type-debt
+    refusal. An empty touched `.py` subset, or a spawn that could not run
+    at all, is a no-op: there is nothing new to type-check (or nothing
+    measurable), matching every other touched-set guard's degrade-to-no-
+    op-not-refuse posture in this module when the touched set itself is
+    unknown."""
+    py_files = _touched_py_files(worktree, touched_paths)
+    if not py_files:
+        return
+    parsed = _ty_check_files(worktree, py_files)
+    if parsed is None:
+        _log.warning(
+            "ticket land: %s pre-land touched-file type check could not "
+            "run -- skipped, not treated as a refusal",
+            ticket_id,
+        )
+        return
+    errors = [d for d in parsed.diagnostics if d.severity == "error"]
+    if not errors:
+        return
+    _log.error(
+        "ticket land: %s refused -- `ty check` found %d error(s) in this "
+        "ticket's own touched file(s) (%s); a scoped `frob check --only "
+        "ty`/`frob check` re-run before retrying `frob ticket land %s` "
+        "names the exact line(s) (T-1907: this family is not relaxed by "
+        "the rapid profile)",
+        ticket_id,
+        len(errors),
+        ", ".join(py_files),
+        ticket_id,
+    )
+    sys.exit(1)
+
+
 # frob:ticket T-1593
 # frob:ticket T-1692
 # frob:ticket T-1845
@@ -2512,7 +2715,12 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     profile check, the override-flag warning, and (T-1692) the
     backpressure check -- pure extraction of the original leading block,
     plus the new backpressure block appended after profile resolution.
-    Returns `(resolved_root, rapid_land)`."""
+    Returns `(resolved_root, rapid_land)`.
+
+    T-1907: also runs `_assert_touched_files_type_check_pre_land`
+    immediately after the T-1175 absorption step, UNCONDITIONALLY (every
+    profile, including rapid) -- the minimum pre-land gate the rapid
+    profile may not relax, per T-1907's own required fix (1)."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
@@ -2521,6 +2729,11 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # rewritten here becomes an ordinary uncommitted change `land()`'s own
     # wip-commit step already picks up, so this needs no separate commit.
     _absorb_pre_land_fixes(worktree, cfg.ticket_id)
+
+    # frob:ticket T-1907
+    _assert_touched_files_type_check_pre_land(
+        worktree, cfg.ticket_id, _land_touched_paths(worktree, cfg.ticket_id)
+    )
 
     root = _resolve_land_root(root, worktree, cfg.ticket_id)
 
@@ -2574,7 +2787,10 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_quarantined_forces_synchronous  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_corrupt_store_also_forces_synchronous  # noqa: E501
 def _quarantine_override_ceilings(
-    root: Path, ceilings, *, ticket_id: str | None  # noqa: ANN001
+    root: Path,
+    ceilings,
+    *,
+    ticket_id: str | None,  # noqa: ANN001
 ):
     """T-1693: while quarantine is raised, deferred landing is OFF --
     this land either runs fully synchronous verification (the credit
