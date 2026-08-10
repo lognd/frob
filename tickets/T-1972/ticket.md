@@ -1,7 +1,7 @@
 ---
 id: T-1972
 title: 'REG010: file CHK-GATE-SYS110 in docs/design/registry/check-coverage.yaml'
-state: in-progress
+state: dropped
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -24,3 +24,6 @@ T-1629 added live gate rule SYS110 (frob.strata._selfconform). frob check --only
 
 ## Failure log
 - 2026-08-10 attempt 1: already resolved: T-1629's own land (7b1f55513) added the CHK-GATE-SYS110 entry to check-coverage.yaml; frob check --only registry is clean (0 errors) for SYS110. REG010 must have been a stale/pre-check read; no code change needed. Only DOCENUM001 (docs/modules/gates.md enumerates list) was actually missing, fixed separately as T-1978.
+
+## Drop reason
+- 2026-08-10: already resolved by T-1629's own land (7b1f55513), which added the CHK-GATE-SYS110 entry to check-coverage.yaml. frob check --only registry is clean for SYS110 (0 errors). No code change needed; the DOCENUM001 half was the only real gap, fixed as T-1978. (absorbed by T-1978)
