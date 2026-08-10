@@ -372,6 +372,57 @@ class TestCrossTicketLeakage:
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
 
+    # frob:ticket T-1999
+    def test_live_lease_refuses_even_when_roots_ledger_still_reads_planned(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
+        # T-1999 (MUST FAIL on the pre-fix code): the exact measured
+        # repro -- held_id already exists on ROOT's own ledger (a real
+        # ticket, not merely worktree-local), so `_find_leaked_tickets`
+        # trusts root_tickets[held_id].state over the worktree's own
+        # copy. The landing worktree starts held_id FOR REAL (taking its
+        # cross-worktree lease and flipping its OWN ledger copy to
+        # in-progress), but that transition never gets merged back into
+        # root -- root's ledger keeps reading `state: planned` the whole
+        # time, exactly like T-1977's land of T-1665 (main observed
+        # `planned` while T-1665's worktree held a live lease). Pre-fix,
+        # root's stale `planned` silently won and the land went through
+        # clean; post-fix, the live lease makes held_id count as
+        # effectively IN_PROGRESS and the land must refuse.
+        held = new_ticket(repo, _spec("Held work", scope=("src/held.py",)))
+        assert held.is_ok
+        held_id = held.danger_ok.id
+        assert transition(repo, held_id, TicketState.PLANNED).is_ok
+        _commit_all(repo, f"seed {held_id}: planned, not yet started")
+
+        # Landing worktree forks after held_id exists (planned) on root.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-live-lease", str(wt)], repo)
+
+        # wt genuinely starts held_id: takes its cross-worktree lease and
+        # flips wt's OWN ledger copy to in-progress -- but this never
+        # gets merged back into root, so root's copy stays `planned`.
+        assert transition(wt, held_id, TicketState.IN_PROGRESS).is_ok
+        (wt / "src" / "held.py").write_text("# covered by held_id's scope\n")
+        _commit_all(wt, f"{held_id}: file under held_id's scope, on the landing branch")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text(
+            "# independent fix, unrelated to held_id\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.CrossTicketLeakage
+        assert not (repo / "src" / "fix.py").exists()
+        assert not (repo / "src" / "held.py").exists()
+
 
 # frob:ticket T-1618
 class TestPassengerTickets:

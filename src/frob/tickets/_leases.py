@@ -1988,6 +1988,53 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     return _live_leases_pruning_stale(leases_root, parsed)
 
 
+# frob:ticket T-1999
+# frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_live_lease_refuses_even_when_roots_ledger_still_reads_planned kind="unit"  # noqa: E501
+# frob:waive COV001 reason="docs/modules/tickets.md (this module's own doc home) was \
+# held by a LIVE cross-worktree lease (T-1696, in-progress) at fix time and could not \
+# be added to T-1999's own scope -- filed T-2003 (renumbers on its own land) \
+# to add the frob:doc anchor once that lease clears; not silently dropped"
+def is_effectively_in_progress(
+    root: Path, ticket_id: str, ledger_state: object
+) -> bool:
+    """The single liveness authority every land-path guard gated on
+    `IN_PROGRESS` (T-1639's narrowing) must call, instead of trusting
+    `root`'s ledger `state` field directly (T-1999).
+
+    ROOT CAUSE this closes: `frob ticket start` records a ticket's
+    cross-worktree LEASE (`record_lease`, this module) and flips its
+    LOCAL ledger to `IN_PROGRESS` in the SAME operation -- but the
+    worktree that did this and `root`'s own checkout of `tickets.md` are
+    two different files. `root` only observes the `IN_PROGRESS`
+    transition once something merges/lands that worktree's ledger back
+    in. In the window between "a worktree took the lease" and "main
+    observed the state transition", a guard that reads only `root`'s
+    ledger sees `state: planned`/`queued` for a ticket that is, in fact,
+    actively held -- T-1977's land of `f3257572a` carried a change into
+    T-1665's live scope while T-1665's lease was held and main's copy
+    still read `planned` (T-1999's own measured repro).
+
+    A ticket counts as effectively in progress here if EITHER (a) a live
+    lease for `ticket_id` exists (`read_all_leases`, which already prunes
+    dead-worktree leases via `_live_leases_pruning_stale` -- this is the
+    real-time, cross-worktree-visible signal `record_lease`/
+    `release_lease` maintain), OR (b) `ledger_state` itself already reads
+    `IN_PROGRESS` (the fallback for the ordinary case where a lease was
+    never taken by a different worktree, or has since been released but
+    the ledger write has not landed yet either way -- state alone is
+    still sufficient once it says so). This is a strict widening of
+    "state says IN_PROGRESS" to "state says IN_PROGRESS OR a live lease
+    says so" -- it can only make a dormant-looking ticket refuse more
+    correctly; it can never make a genuinely dormant ticket (no lease,
+    state not IN_PROGRESS) refuse, so T-1639's queued/planned-does-not-
+    block outcome is unchanged for the case that has neither signal."""
+    from frob.tickets._models import TicketState
+
+    if ledger_state == TicketState.IN_PROGRESS:
+        return True
+    return any(record.ticket_id == ticket_id for record in read_all_leases(root))
+
+
 # frob:ticket T-0976
 def _parse_lease_files_cached(
     leases_root: Path, current_paths: list[Path]

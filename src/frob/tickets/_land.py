@@ -2892,6 +2892,7 @@ def _leaked_hits_for_candidate(
 # docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t\
 # -1639
 def _find_leaked_tickets(
+    root: Path,
     worktree: Path,
     landing_id: str,
     worktree_tickets: dict[str, Ticket],
@@ -2965,17 +2966,31 @@ def _find_leaked_tickets(
     carrying a sibling's COMMITTED work onto main): that shape always
     involves a sibling that was actually started, so it is always
     `IN_PROGRESS` (or already `DONE`/`DROPPED`, both already exempted
-    above) by the time it could leak anything."""
+    above) by the time it could leak anything.
+
+    T-1999: `IN_PROGRESS` here means `frob.tickets._leases.
+    is_effectively_in_progress` -- state alone is not enough. `root`'s
+    ledger only observes a worktree's `IN_PROGRESS` transition once
+    something merges/lands that worktree's copy of `tickets.md` back in,
+    so a sibling that took its lease locally but has not yet been
+    observed by `root` used to read as `planned`/`queued` here and slip
+    through unrefused (T-1977's land of `f3257572a`, the measured
+    T-1999 repro). `is_effectively_in_progress` also treats a live
+    cross-worktree lease (`read_all_leases`) as `IN_PROGRESS`, closing
+    that window without touching the DONE/DROPPED skip above or the
+    genuinely-dormant (no lease, no IN_PROGRESS state) case T-1639
+    already carved out."""
+    from frob.tickets._leases import is_effectively_in_progress
     from frob.tickets._models import TicketState
 
     leaked: dict[str, list[str]] = {}
     for other_id, other in worktree_tickets.items():
         if other_id == landing_id:
             continue
-        effective_state = (
+        ledger_state = (
             root_tickets[other_id].state if other_id in root_tickets else other.state
         )
-        if effective_state in (TicketState.DONE, TicketState.DROPPED):
+        if ledger_state in (TicketState.DONE, TicketState.DROPPED):
             continue
         if not other.scope:
             continue
@@ -2984,16 +2999,18 @@ def _find_leaked_tickets(
         )
         if not hits:
             continue
-        if effective_state != TicketState.IN_PROGRESS:
+        # frob:ticket T-1999
+        if not is_effectively_in_progress(root, other_id, ledger_state):
             # frob:ticket T-1639
             _log.info(
                 "land: %s cross-ticket leakage check found %s (state=%s) "
                 "scope-overlaps %d changed path(s), but %s is not "
-                "IN_PROGRESS -- a declared scope on a ticket nobody has "
-                "started is an intention, not a claim; not refusing: %s",
+                "IN_PROGRESS (ledger or live lease) -- a declared scope "
+                "on a ticket nobody has started is an intention, not a "
+                "claim; not refusing: %s",
                 landing_id,
                 other_id,
-                effective_state.value,
+                ledger_state.value,
                 len(hits),
                 other_id,
                 hits,
@@ -3327,7 +3344,7 @@ def _check_cross_ticket_leakage(
     if worktree_tickets is None:
         return Ok(None)
     leaked = _find_leaked_tickets(
-        worktree, ticket.id, worktree_tickets, root_tickets, relevant, base_ref
+        root, worktree, ticket.id, worktree_tickets, root_tickets, relevant, base_ref
     )
     if not leaked:
         return Ok(None)

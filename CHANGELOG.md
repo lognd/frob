@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.442.0] - unreleased
+
+- T-1999: Land-path guards decide ticket liveness from main's IN_PROGRESS state, not the live lease, so a started-but-unsynced worktree's files land unguarded
+
 ## [0.441.0] - unreleased
 
 - T-1995: frob ticket new does not surface existing or archived coverage: 7 tickets filed and dropped this session, several costing a dispatch
