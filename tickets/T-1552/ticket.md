@@ -1,7 +1,7 @@
 ---
 id: T-1552
 title: 'ledger v2: delete v1 splice machinery once main is migrated'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -101,3 +101,6 @@ precondition) to actually run the migration against this repo's real
 ## Failure log
 - 2026-08-08 attempt 1: premise not yet true: LEDGERV1001 sunset 2027-02-02 not reached, deletion would preempt own recorded deprecation window
 - 2026-08-10 attempt 2: blocked: 8 of 9 frob-wired sibling repos still v1-mode; v1 splice machinery is generic per-root code they depend on, not this-repo-scoped; see draft T-1971
+
+## Drop reason
+- 2026-08-10: Blocked indefinitely by T-1971, which the user dropped on 2026-08-10 (do nothing in sibling repos). T-1552's real precondition is not 'main is migrated' but 'all 8 wired sibling repos migrated to v2' -- measured 0 of 8 on v2. Deleting the v1 splice machinery now would break frob ticket land / merge-driver in all 8 sibling repos on their next concurrent-worktree ledger conflict. Reopen together with T-1971 if the siblings are ever migrated.
