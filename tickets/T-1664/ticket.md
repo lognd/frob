@@ -2,7 +2,7 @@
 id: T-1664
 title: Semantic checks must report UNRESOLVED, never silently pass when they cannot
   analyse
-state: planned
+state: done
 kind: security
 origin: human
 created: '2026-08-06'
@@ -14,16 +14,81 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
 - src/frob/lang/**
 - src/frob/check/**
-- docs/**
-- tests/**
+- src/frob/gates/_models.py
+- src/frob/check/_python.py
+- docs/modules/gates.md
+- tests/unit/test_check_gates_summary.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'narrowed to the MVP structural mechanism: Severity.UNRESOLVED, its counting/rendering
+    in check/_python.py, and doc/tests -- per-gate substrate declarations (item 2)
+    are follow-up residue, not this ticket''s scope'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/**
+  reason: 'narrowed to the MVP structural mechanism: Severity.UNRESOLVED, its counting/rendering
+    in check/_python.py, and doc/tests -- per-gate substrate declarations (item 2)
+    are follow-up residue, not this ticket''s scope'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tests/**
+  reason: 'narrowed to the MVP structural mechanism: Severity.UNRESOLVED, its counting/rendering
+    in check/_python.py, and doc/tests -- per-gate substrate declarations (item 2)
+    are follow-up residue, not this ticket''s scope'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_models.py
+  reason: 'narrowed to the MVP structural mechanism: Severity.UNRESOLVED, its counting/rendering
+    in check/_python.py, and doc/tests -- per-gate substrate declarations (item 2)
+    are follow-up residue, not this ticket''s scope'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'narrowed to the MVP structural mechanism: Severity.UNRESOLVED, its counting/rendering
+    in check/_python.py, and doc/tests -- per-gate substrate declarations (item 2)
+    are follow-up residue, not this ticket''s scope'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'narrowed to the MVP structural mechanism: Severity.UNRESOLVED, its counting/rendering
+    in check/_python.py, and doc/tests -- per-gate substrate declarations (item 2)
+    are follow-up residue, not this ticket''s scope'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_check_gates_summary.py
+  reason: 'narrowed to the MVP structural mechanism: Severity.UNRESOLVED, its counting/rendering
+    in check/_python.py, and doc/tests -- per-gate substrate declarations (item 2)
+    are follow-up residue, not this ticket''s scope'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_check_gates_summary.py::TestSeverityUnresolved::test_unresolved_is_a_distinct_severity_value
+- tests/unit/test_check_gates_summary.py::TestUnresolvedCount::test_counts_only_unresolved_violations
+- tests/unit/test_check_gates_summary.py::TestUnresolvedCount::test_zero_when_no_unresolved_present
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_error_maps_to_error
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_warn_maps_to_warning
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_unresolved_maps_to_info_not_warning
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_findings_never_fail_the_family
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_count_shown_as_its_own_term_not_folded_into_warn
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_errors_still_fail_the_family_regardless_of_unresolved
+- tests/unit/test_check_gates_summary.py::TestGatesSummaryUnresolved::test_summary_line_names_unresolved_as_its_own_term
+- tests/unit/test_check_gates_summary.py::TestGatesSummaryUnresolved::test_zero_unresolved_still_names_the_term
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 The rule this drive learned the hard way, made structural.
 

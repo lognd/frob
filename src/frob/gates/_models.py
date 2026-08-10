@@ -32,12 +32,34 @@ __all__ = [
 ]
 
 
-# frob:doc docs/modules/gates.md#data-models
+# frob:doc docs/modules/gates.md#unresolved-t-1664
+# frob:ticket T-1664
 class Severity(StrEnum):
-    """A violation's exit-code weight: `error` fails `frob check`, `warn` does not."""
+    """A violation's exit-code weight: `error` fails `frob check`, `warn`
+    and `unresolved` do not.
+
+    T-1664: `UNRESOLVED` is a THIRD, distinct outcome -- not a severity
+    tier between warn and error, but a different KIND of claim. `ERROR`/
+    `WARN` both mean "the check ran to completion and this is what it
+    found" (possibly nothing, an empty violation list). `UNRESOLVED`
+    means "the check could not determine an answer at all" -- an
+    unresolvable call target, an unparseable file, a missing language
+    adapter, a stale analysis substrate. Collapsing that into an empty
+    result (silent pass) or into `WARN` (indistinguishable from a real,
+    completed finding) is exactly the failure shape this drive kept
+    re-discovering under different names (a perf gate reading clean with
+    stale natives, an oracle cache returning zero diagnostics for a file
+    that had one, a capability scanner's "no capabilities observed" and
+    "I cannot analyse this language" being the same answer). A gate
+    emits `UNRESOLVED` when it KNOWS it cannot resolve something, never
+    as a default/fallback for an ordinary empty result -- see
+    `docs/modules/gates.md#unresolved-t-1664` for the counting/rendering
+    contract this doc anchor covers (never counted as an error, never
+    silently dropped)."""
 
     ERROR = "error"
     WARN = "warn"
+    UNRESOLVED = "unresolved"
 
 
 # frob:doc docs/modules/gates.md#data-models
