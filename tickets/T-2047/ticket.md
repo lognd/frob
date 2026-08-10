@@ -2,7 +2,7 @@
 id: T-2047
 title: Post-land sweep files UNATTRIBUTED findings as regressions from the landing
   ticket, discarding its own attribution verdict (5 of 6 in T-2038 were pre-existing)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -115,3 +115,6 @@ dispatcher reads.
 4. State whether the rolling baseline being stale/empty is separately worth
    filing, with evidence, or whether fixing the reporting is sufficient. Do
    not file speculatively -- measure first.
+
+## Drop reason
+- 2026-08-10: Filed on a wrong premise, corrected by measurement. I read UNATTRIBUTED as the attribution engine saying 'this finding was not caused by this land', and built the ticket on the sweep supposedly discarding that verdict. It means no such thing. Per _partition_findings_by_attribution's docstring (src/frob/app/ticket_runner/_rapid_sweep.py:598), the partition is about whether a finding already has a HOME: a pair attributed to a STILL-OPEN ticket is left out of the filing set because it is already tracked, while UNATTRIBUTED means no open ticket owns it and it therefore DOES need its own regression ticket. Filing unattributed findings is the correct, documented behaviour, not a defect. The underlying symptom I measured is still real -- 5 of 6 identities in T-2038 were present in my own pre-land floor measurement yet were reported as new -- but its cause is the rolling baseline being stale or empty, not attribution handling. Not re-filing that without first measuring the baseline directly; a third ticket on an unverified mechanism would repeat this mistake.
