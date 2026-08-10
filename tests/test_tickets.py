@@ -2443,3 +2443,48 @@ class TestV2StateTransitions:
             "done",
         ]
         assert len(transitions) == 3
+
+
+# frob:ticket T-1585
+class TestDoneTransitionStructuralGuardRapidLeniency:
+    """T-1585 items 1: `rapid` lets a close proceed without evidence/a
+    Done report (T-1681), recording the skip as auditable debt rather
+    than silently dropping the requirement -- locks the backstop
+    (debt_sink is ALWAYS invoked on the relaxed path) with a direct
+    regression test, since no existing test exercised this function's
+    `rapid=True` branch end to end."""
+
+    def test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded(
+        self,
+    ) -> None:
+        # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded  # noqa: E501
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        ticket = _ticket(evidence=(), body="## Description\nno done report here\n")
+        recorded: list[tuple[str, str]] = []
+        result = _done_transition_structural_guard(
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: recorded.append((tid, what)),
+        )
+        assert result.is_ok
+        assert recorded == [("T-0001", "missing-evidence-or-done-report")]
+
+    def test_non_rapid_missing_evidence_and_done_report_still_refuses(self) -> None:
+        # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_non_rapid_missing_evidence_and_done_report_still_refuses  # noqa: E501
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        ticket = _ticket(evidence=(), body="## Description\nno done report here\n")
+        recorded: list[tuple[str, str]] = []
+        result = _done_transition_structural_guard(
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=False,
+            debt_sink=lambda tid, what: recorded.append((tid, what)),
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.MissingEvidence
+        assert recorded == []

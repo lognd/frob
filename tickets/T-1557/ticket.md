@@ -2,7 +2,7 @@
 id: T-1557
 title: 'cli hygiene remainder: warning collapse, read-only check --ticket, close porcelain,
   cli-hygiene doc'
-state: queued
+state: dropped
 kind: ux
 origin: human
 created: '2026-08-04'
@@ -11,13 +11,33 @@ parent: T-1238
 tier: ticket
 sprint: null
 runs_last: false
-scope:
-- src/frob/_cli_parsers/**
-- src/frob/tickets/**
-- src/frob/check/**
-- docs/design/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: investigation-only disposition (drop as superseded); narrowing before drop,
+    no files touched
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/tickets/**
+  reason: investigation-only disposition (drop as superseded); narrowing before drop,
+    no files touched
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/check/**
+  reason: investigation-only disposition (drop as superseded); narrowing before drop,
+    no files touched
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/design/**
+  reason: investigation-only disposition (drop as superseded); narrowing before drop,
+    no files touched
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
@@ -74,3 +94,6 @@ follow-up ticket (or several):
 
 Filed by T-1271's Done report (2026-08-04) per the epic-closure
 "minimal honest core, disclose the rest" instruction.
+
+## Drop reason
+- 2026-08-10: Investigated and answered, not abandoned: items 2-5 are duplicates of T-1556 (done, 18/18 evidence nodes re-verified passing in this worktree); item 1 (AC0 enum-flag audit) re-checked via a full AST scan of every add_argument() call plus the AppConfig field_validator list -- no unvalidated enum-shaped CLI flag found (check_type already has argparse choices=; ticket_state/kind/tier/priority_level/origin/review_verdict already validated via T-1271 _validate_enum_choice). No remaining gap; stale duplicate of T-1556.
