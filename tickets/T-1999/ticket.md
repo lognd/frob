@@ -2,7 +2,7 @@
 id: T-1999
 title: Land-path guards decide ticket liveness from main's IN_PROGRESS state, not
   the live lease, so a started-but-unsynced worktree's files land unguarded
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,9 +13,26 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- src/frob/tickets/_leases.py
+- tests/unit/test_land_cross_ticket_leakage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: T-1999's fix adds is_effectively_in_progress to _leases.py (the lease-reading
+    module) and a regression test in this leakage test module
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: T-1999's fix adds is_effectively_in_progress to _leases.py (the lease-reading
+    module) and a regression test in this leakage test module
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_live_lease_refuses_even_when_roots_ledger_still_reads_planned
+designated_repro_test: tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_live_lease_refuses_even_when_roots_ledger_still_reads_planned
 threat: null
 component: null
 anchor: false
