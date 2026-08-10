@@ -36,7 +36,7 @@ from frob.tickets._leases import (
     read_all_leases,
     same_worktree_lease,
 )
-from frob.tickets._store import atomic_write, ledger_path
+from frob.tickets._store import atomic_write, ledger_path, write_ticket
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -350,6 +350,79 @@ class TestScopeAddRefusesLiveCrossWorktreeLease:
         reloaded = load_all(second_worktree)
         assert reloaded.is_ok
         assert "src/feature.py" not in reloaded.danger_ok[tid_b].scope
+
+
+# frob:ticket T-1909
+class TestScopeAddIgnoresTerminalLease:
+    """T-1909: reproduces the confirmed stale-worktree incident directly --
+    a ticket's cross-worktree lease file (T-0473) is only ever removed by
+    the SAME worktree that wrote it (`release_lease`, called from
+    `transition`'s own exit-from-IN_PROGRESS path); a worktree abandoned
+    after its ticket was dropped/closed some OTHER way (a coordinator
+    marking it terminal on the shared ledger without that worktree's own
+    `transition` ever running) leaves the lease file behind, live and
+    unexpired, on the shared side-channel. A `scope --add` from a THIRD
+    worktree must resolve that lease's holder against ITS OWN, current
+    ledger view -- not the stale lease file's mere presence -- exactly
+    the T-1893/T-1579 incident: `frob ticket new`/`start` for an unrelated
+    ticket refused with `ScopeLeaseConflict` naming an already-dropped
+    holder."""
+
+    def test_dropped_ticket_on_local_ledger_does_not_block_live_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease.\
+        # test_dropped_ticket_on_local_ledger_does_not_block_live_lease
+        # Ticket A: started IN second_worktree, leasing src/feature.py --
+        # this writes a live lease file to the SHARED side-channel that
+        # only second_worktree's own transition() could ever release.
+        created_a = new_ticket(
+            second_worktree, _spec("Feature A", scope=("src/feature.py",))
+        )
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(second_worktree, tid_a, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        started = load_all(second_worktree)
+        assert started.is_ok
+        in_progress_ticket = started.danger_ok[tid_a]
+
+        # `repo`'s own ledger independently learns ticket A is DROPPED --
+        # written directly (write_ticket), NOT via second_worktree's own
+        # transition(), so second_worktree's lease file is never released
+        # (T-1909's exact real-world shape: the drop happened somewhere
+        # that never touches the abandoned worktree's own lease).
+        dropped_ticket = in_progress_ticket.model_copy(
+            update={"state": TicketState.DROPPED}
+        )
+        assert write_ticket(repo, dropped_ticket).is_ok
+
+        # Confirm the premise: the lease file is still live on the shared
+        # side-channel, visible from repo.
+        live = read_all_leases(repo)
+        assert any(lease.ticket_id == tid_a for lease in live)
+
+        # Ticket B, started fresh in repo: a scope --add onto the same
+        # path must NOT be blocked by ticket A's stale lease, because
+        # repo's own ledger already knows ticket A is DROPPED.
+        created_b = new_ticket(repo, _spec("Feature B"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        assert transition(repo, tid_b, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_b, TicketState.IN_PROGRESS).is_ok
+
+        mutated = mutate_scope(
+            repo,
+            tid_b,
+            add=("src/feature.py",),
+            reason="T-1909 regression: a dropped ticket's lease must not block",
+        )
+        assert mutated.is_ok
+        reloaded = load_all(repo)
+        assert reloaded.is_ok
+        assert "src/feature.py" in reloaded.danger_ok[tid_b].scope
 
 
 # frob:ticket T-1882

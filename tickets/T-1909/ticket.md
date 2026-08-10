@@ -2,7 +2,7 @@
 id: T-1909
 title: A dropped ticket's scope lease survives in a stale worktree's local ledger
   and blocks unrelated work indefinitely
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,56 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_doable.py
+- tests/test_ticket_leases.py
+- tests/test_ticket_leases_cross_worktree.py
+- tests/test_tickets_leases.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: the lease read/staleness layer T-1909 targets
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: the lease read/staleness layer T-1909 targets
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: existing lease test suites, closes the scope-closure warnings
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_leases_cross_worktree.py
+  reason: existing lease test suites, closes the scope-closure warnings
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_tickets_leases.py
+  reason: existing lease test suites, closes the scope-closure warnings
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: 'T-1891: the internal batching callers whose spurious no-commit warning
+    this ticket fixes'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'T-1891: the internal batching callers whose spurious no-commit warning
+    this ticket fixes'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease::test_dropped_ticket_on_local_ledger_does_not_block_live_lease
 designated_repro_test: null
 threat: null
 component: null

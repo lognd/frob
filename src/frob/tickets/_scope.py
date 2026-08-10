@@ -27,8 +27,12 @@ import getpass
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from typani.result import Err, Ok, Result
+
+if TYPE_CHECKING:
+    from frob.tickets._leases import _LeaseRecord
 
 from frob.excludes import is_test_file
 from frob.logging import get_logger
@@ -124,7 +128,9 @@ def _scope_add_conflicts(
     if queue_conflict is not None:
         return queue_conflict
     if root is not None:
-        return _scope_add_live_lease_conflict(glob, ticket_id, root, new_file=new_file)
+        return _scope_add_live_lease_conflict(
+            glob, ticket_id, root, queue, new_file=new_file
+        )
     return None
 
 
@@ -217,11 +223,19 @@ def _scope_add_queue_conflict(
 
 
 # frob:ticket T-1868
+# frob:ticket T-1909
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease.test_dropped_ticket_on_local_ledger_does_not_block_live_lease  # noqa: E501
 def _scope_add_live_lease_conflict(
-    glob: str, ticket_id: str, root: Path, *, new_file: bool
+    glob: str,
+    ticket_id: str,
+    root: Path,
+    queue: dict[str, Ticket],
+    *,
+    new_file: bool,
 ) -> tuple[str, str] | None:
     """T-1868: the cross-worktree-lease-side-channel half of
     `_scope_add_conflicts` -- checks `glob` against every OTHER ticket's
@@ -238,7 +252,24 @@ def _scope_add_live_lease_conflict(
     queue-based check exactly so a live-lease conflict is never STRICTER
     than a queue-based one for the same underlying holder -- only able to
     catch a REAL conflict the queue-based check's merge-dependent
-    staleness missed."""
+    staleness missed.
+
+    T-1909: a lease file on the shared side-channel is written once, when
+    its ticket enters `IN_PROGRESS`, and only ever removed by THAT SAME
+    worktree's own subsequent `frob.tickets.transition` call (`release_
+    lease`) -- a worktree abandoned (never removed, never run again) after
+    its ticket was dropped/closed FROM A DIFFERENT worktree (the common
+    coordinator-driven drop/close path) leaves a lease file that
+    `read_all_leases` has no way to know is now stale, since the file's
+    own worktree path still exists on disk and its TTL has not
+    necessarily lapsed. `queue` -- `root`'s own authoritative, just-
+    merged-with-main ledger view, already threaded in from `_scope_add_
+    conflicts`/`scope_lease_conflict`'s caller -- is checked here exactly
+    like `_scope_add_queue_conflict`'s own `holder.state is not TicketState.
+    IN_PROGRESS` skip and `frob.tickets._doable._cross_worktree_leases`'s
+    existing DONE/DROPPED filter: if `root`'s ledger already knows this
+    lease's ticket is DONE or DROPPED, the lease is dead regardless of
+    what the stale worktree's own unreachable local copy still says."""
     from frob.tickets._leases import is_lease_ttl_expired, read_all_leases
 
     for lease in read_all_leases(root):
@@ -247,25 +278,9 @@ def _scope_add_live_lease_conflict(
         collision = scope_overlap_globs((glob,), lease.scope)
         if collision is None:
             continue
-        if _same_worktree_lease(root, ticket_id, lease.ticket_id):
-            _log.info(
-                "tickets: %s --add %r exempted from %s's live lease on %r "
-                "(T-1356: both tickets are leased to the same worktree)",
-                ticket_id,
-                glob,
-                lease.ticket_id,
-                collision[1],
-            )
-            continue
-        if new_file and collision[1] != glob:
-            _log.info(
-                "tickets: %s --add %r exempted from %s's live lease on %r "
-                "(T-0561: new file, holder glob is not an exact match)",
-                ticket_id,
-                glob,
-                lease.ticket_id,
-                collision[1],
-            )
+        if _live_lease_collision_is_exempt(
+            glob, ticket_id, root, queue, lease, collision, new_file=new_file
+        ):
             continue
         _log.warning(
             "tickets: %s --add %r caught by %s's LIVE cross-worktree lease "
@@ -278,6 +293,65 @@ def _scope_add_live_lease_conflict(
         )
         return (lease.ticket_id, collision[1])
     return None
+
+
+# frob:ticket T-1909
+def _live_lease_collision_is_exempt(
+    glob: str,
+    ticket_id: str,
+    root: Path,
+    queue: dict[str, Ticket],
+    lease: _LeaseRecord,
+    collision: tuple[str, str],
+    *,
+    new_file: bool,
+) -> bool:
+    """`_scope_add_live_lease_conflict`'s per-lease exemption check (ARCH001
+    split: the T-1909 terminal-ledger-state check pushed the loop body past
+    the line threshold) -- `True` iff `lease`'s collision with `glob` is
+    one of the three known-safe shapes: T-1909 (`lease.ticket_id` is
+    DONE/DROPPED on `root`'s OWN ledger -- the lease is stale, left behind
+    by a worktree abandoned after its ticket was finished/dropped some
+    OTHER way), T-1356 (`ticket_id` and `lease.ticket_id` are leased to the
+    SAME worktree), or T-0561 (a new, not-yet-existing concrete file whose
+    collision is not an exact match of the holder's own glob). Each branch
+    logs its own reason at INFO before returning `True`, matching this
+    function's pre-split call sites exactly."""
+    local = queue.get(lease.ticket_id)
+    if local is not None and local.state in (TicketState.DONE, TicketState.DROPPED):
+        _log.info(
+            "tickets: %s --add %r ignored %s's live lease on %r "
+            "(T-1909: %s is %s on this ledger -- the lease is stale, "
+            "left behind by an abandoned worktree)",
+            ticket_id,
+            glob,
+            lease.ticket_id,
+            collision[1],
+            lease.ticket_id,
+            local.state,
+        )
+        return True
+    if _same_worktree_lease(root, ticket_id, lease.ticket_id):
+        _log.info(
+            "tickets: %s --add %r exempted from %s's live lease on %r "
+            "(T-1356: both tickets are leased to the same worktree)",
+            ticket_id,
+            glob,
+            lease.ticket_id,
+            collision[1],
+        )
+        return True
+    if new_file and collision[1] != glob:
+        _log.info(
+            "tickets: %s --add %r exempted from %s's live lease on %r "
+            "(T-0561: new file, holder glob is not an exact match)",
+            ticket_id,
+            glob,
+            lease.ticket_id,
+            collision[1],
+        )
+        return True
+    return False
 
 
 # frob:ticket T-1356

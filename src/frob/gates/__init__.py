@@ -4774,6 +4774,7 @@ def _test006_stale(
     since stamping (T-0403 B15: a brand-new file has no entry in
     `stamped_hashes` at all, so it must be treated as stale too, not
     silently skipped -- its coverage is unmeasured by the existing stamp).
+
     The "did anything change" half is delegated to `frob.gates._coverage.
     is_stamp_stale` (T-1830: this loop used to hand-roll the identical
     content-hash comparison `is_stamp_stale` already provides for CI's own
