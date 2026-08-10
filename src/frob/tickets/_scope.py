@@ -681,6 +681,13 @@ def _write_scope_mutation(
 
 
 # frob:ticket T-1944
+# frob:doc docs/modules/tickets.md#evidence-only-scope-t-1944
+# frob:tests \
+# tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test_demote_\
+# releases_the_lease_and_keeps_evidence_covered
+# frob:tests \
+# tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test_demote_\
+# refuses_an_undeclared_glob
 def demote_to_evidence_only(
     root: Path, ticket_id: str, globs: Sequence[str], *, reason: str
 ) -> Result[Ticket, TicketError]:
@@ -712,8 +719,6 @@ def demote_to_evidence_only(
     invent scope history that never existed. A `glob` already present in
     `evidence_scope` is a no-op for that entry (removed from `scope`,
     stays exactly once in `evidence_scope`, never duplicated)."""
-    from frob.tickets import _load_ticket_and_queue
-
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -726,36 +731,10 @@ def demote_to_evidence_only(
         return Err(TicketError.ScopeChangeReasonMissing)
 
     with ledger_lock(root):
-        loaded = _load_ticket_and_queue(root, ticket_id)
-        if loaded.is_err:
-            return Err(loaded.danger_err)
-        ticket, _queue = loaded.danger_ok
-
-        for glob in demote_globs:
-            if glob not in ticket.scope:
-                _log.error(
-                    "tickets: %s cannot demote %r, not in declared scope %s",
-                    ticket_id,
-                    glob,
-                    ticket.scope,
-                )
-                return Err(TicketError.ScopeRemoveNotDeclared)
-
-        new_scope = tuple(s for s in ticket.scope if s not in demote_globs)
-        new_evidence_scope = ticket.evidence_scope + tuple(
-            g for g in demote_globs if g not in ticket.evidence_scope
-        )
-        new_entries = _scope_change_entries((), demote_globs, reason)
-        updated = ticket.model_copy(
-            update={
-                "scope": new_scope,
-                "evidence_scope": new_evidence_scope,
-                "scope_changes": ticket.scope_changes + new_entries,
-            }
-        )
-        write_result = write_ticket(root, updated)
-        if write_result.is_err:
-            return Err(write_result.danger_err)
+        written = _demote_to_evidence_only_locked(root, ticket_id, demote_globs, reason)
+        if written.is_err:
+            return Err(written.danger_err)
+        updated = written.danger_ok
     if updated.state is TicketState.IN_PROGRESS:
         from frob.tickets._leases import record_lease
 
@@ -767,4 +746,46 @@ def demote_to_evidence_only(
         len(demote_globs),
         reason,
     )
+    return Ok(updated)
+
+
+# frob:ticket T-1979
+def _demote_to_evidence_only_locked(
+    root: Path, ticket_id: str, demote_globs: tuple[str, ...], reason: str
+) -> Result[Ticket, TicketError]:
+    """The load-validate-write half of `demote_to_evidence_only` (T-1979:
+    split out to keep the parent under ARCH001's line threshold, zero
+    behavior change) -- caller holds `ledger_lock(root)` already."""
+    from frob.tickets import _load_ticket_and_queue
+
+    loaded = _load_ticket_and_queue(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket, _queue = loaded.danger_ok
+
+    for glob in demote_globs:
+        if glob not in ticket.scope:
+            _log.error(
+                "tickets: %s cannot demote %r, not in declared scope %s",
+                ticket_id,
+                glob,
+                ticket.scope,
+            )
+            return Err(TicketError.ScopeRemoveNotDeclared)
+
+    new_scope = tuple(s for s in ticket.scope if s not in demote_globs)
+    new_evidence_scope = ticket.evidence_scope + tuple(
+        g for g in demote_globs if g not in ticket.evidence_scope
+    )
+    new_entries = _scope_change_entries((), demote_globs, reason)
+    updated = ticket.model_copy(
+        update={
+            "scope": new_scope,
+            "evidence_scope": new_evidence_scope,
+            "scope_changes": ticket.scope_changes + new_entries,
+        }
+    )
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
     return Ok(updated)
