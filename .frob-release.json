@@ -1388,6 +1388,10 @@
     "src/frob/strata/_breach.py::BlastRadius": "e62a952f52ac0a9015315386a42f209a3a42d7b61e62bd55fefa2bd86997ae76",
     "src/frob/strata/_breach.py::BreachContractReport": "8bf3bbf4b2e40087cf8b40d9d8c8c3377837fbcfe31af0435ed609d2bd86d82c",
     "src/frob/strata/_breach.py::evaluate_breach_contracts": "abd8e30822cda6ed1665d3fc33c31248527a19a2a682f1decc46843ba4fafa6a",
+    "src/frob/strata/_capacity.py::CAPACITY_PROJECTED_OVER_THRESHOLD": "8f11bf803e640f5e41ca627ffc127896c49f0366df90e089a57a533004cd4477",
+    "src/frob/strata/_capacity.py::CapacityReport": "85e2d20beb6bdae3c2dd17b165f49e26c63f3c73c7004a31a192904464bba0be",
+    "src/frob/strata/_capacity.py::CapacityViolation": "685b276b2dbe4e81fcaa67c7e9872c44af0d287d2281c4f3f873f61ebab1d656",
+    "src/frob/strata/_capacity.py::project_capacity": "942f22880d43b192f87aee3022541f36643a1c6498a653d20f9c2da75687d913",
     "src/frob/strata/_circuit_breaker.py::CIRCUIT_BREAKER_RULES": "96fa14bd6c44527e40fdd3d7f469a353937f855801d9f891d51e7697581bb89b",
     "src/frob/strata/_circuit_breaker.py::CRITICAL_ATTR": "3c3d006a7c10e695a442e223f208975f6eb4c4f0aa6887b7aa7c2392f91f60e3",
     "src/frob/strata/_circuit_breaker.py::CircuitBreakerReport": "10fbc93396a598b75e2d7b6dcba1c3851f1a40dbd78bdfee7b2733b45137a856",
@@ -2238,5 +2242,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.444.0"
+  "version": "0.445.0"
 }

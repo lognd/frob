@@ -70,6 +70,12 @@ from frob.strata._atomic import (
     evaluate_saga_contracts,
     generate_fault_injection_cases,
 )
+from frob.strata._capacity import (
+    CAPACITY_PROJECTED_OVER_THRESHOLD,
+    CapacityReport,
+    CapacityViolation,
+    project_capacity,
+)
 from frob.strata._audit import (
     DEFAULT_COMPLIANCE_VIEWS,
     DEFAULT_QUALITY_VIEWS,
@@ -556,6 +562,10 @@ __all__ = [
     "KRB_MULTI_INSTANCE_WAIVER_FAMILIES",
     "CVE_FINGERPRINT_VIEWS",
     "CVE_FINGERPRINTS",
+    "CAPACITY_PROJECTED_OVER_THRESHOLD",
+    "CapacityReport",
+    "CapacityViolation",
+    "project_capacity",
     "CWE_CATALOG",
     "DEFAULT_BENIGN_CAPABILITIES",
     "DEFAULT_COMPLIANCE_VIEWS",

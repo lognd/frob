@@ -271,7 +271,9 @@ _INT_FIELDS = (
     "ticket_accept_remove_index",
 )
 
-_FLOAT_FIELDS = ("vet_timeout", "perf_interval_s")
+# frob:ticket T-1927
+# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_population_flag_survives_real_argv_parsing  # noqa: E501
+_FLOAT_FIELDS = ("vet_timeout", "perf_interval_s", "sys_capacity_population")
 
 _LIST_FIELDS = (
     "check_only",

@@ -178,6 +178,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1763
 # frob:ticket T-1843
 # frob:ticket T-1937
+# frob:ticket T-1927
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -856,6 +857,9 @@ _KNOWN_GATE_RULES = frozenset(
         "REL381",
         "REL382",
         "REL383",
+        # T-1927: `frob sys capacity [--population N]`, population-
+        # projected demand-vs-capacity evaluator.
+        "CAP001",
         "SYS204",
         "SYS205",
         # frob:ticket T-0960

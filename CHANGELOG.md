@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.445.0] - unreleased
+
+- T-1927: design a population/date-projected capacity evaluator for frob sys capacity
+
 ## [0.444.0] - unreleased
 
 - T-1925: design a ThreatViolation-to-boundary join for a boundary-scoped frob sys threats

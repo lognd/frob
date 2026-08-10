@@ -1609,10 +1609,50 @@ node legacy_bootloader_stage : trusted {
 }
 ```
 
+<a id="population-projected-capacity-t-1927"></a>
+## Population-projected capacity (`frob sys capacity`, T-1927)
+
+`frob.strata._capacity::project_capacity` is the roadmap-phase-5 `frob
+sys capacity [--population N]` evaluator (docs/strata/roadmap.md "CLI
+surface (target)") -- distinct from REL380/REL381 above: those compare a
+serialization point's DECLARED demand against its SINGLE-replica
+capacity (deliberately unscaled by `replicas_max`, since exclusivity
+collapses concurrency to 1 regardless of replica count); this evaluator
+compares every node's DEMAND against its TOTAL (`service_rate *
+replicas_max`) throughput ceiling, optionally PROJECTED to a hypothetical
+population -- "how many replicas would we need at 10x today's users",
+not "is this exclusive lock already overloaded".
+
+`CAP001` fires when `FactBase.demand(node.id)`, scaled by `population /
+baseline_population`, exceeds `node.capacity.service_rate.base_value() *
+node.capacity.replicas_max` for any node declaring a `Capacity`.
+`baseline_population` is the model's own summed `users` declarations
+(T-0702, docs/strata/kernel.md#demand-declarations-t-0702) -- `None`
+(not `0.0`) when no node declares `users` at all, distinguishing "no
+population baseline exists" from "the baseline is genuinely zero",
+mirroring `AggregateDemand.declared`'s own distinction. `population is
+None` runs unscaled (`scale_factor=1.0`): "is today's declared model
+already over capacity". Requesting a `population` when the model
+declares no baseline fails closed (`StrataError.UnknownReference`)
+rather than silently reporting a meaningless "no violations".
+
+**Disclosed scope cut (T-2016, filed by T-1927):** the roadmap's target
+signature is `frob sys capacity [--population N | --at DATE]`; only
+`--population N` is implemented. `--at DATE` needs a growth-rate
+declaration on `Node.users`/`rate` the T-0702 surface grammar does not
+have yet -- adding one is a language change, out of scope for "an
+evaluator over the model as it exists today". `--population N` needed
+no new grammar: it scales the model's OWN already-declared `users`
+population linearly, sound with today's data alone.
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx
   sibling family this module mirrors.
+- `#rel38x-starvationthroughput-obligation-t-0703` (above) -- the
+  sibling demand/capacity family this evaluator's `Capacity`/
+  `FactBase.demand` reuse mirrors, and how the two differ (singleton vs.
+  total-replica capacity, declared vs. projected demand).
 - `docs/strata/boundary.md#crash-contracts-and-error-totality-adjacent-claims`
   -- T-0074's narrower, magnitude-aware no-hang check.
 - `src/frob/strata/_reliability.py` -- `check_reliability_timeouts`,
@@ -1640,6 +1680,8 @@ node legacy_bootloader_stage : trusted {
 - `src/frob/strata/_obligation_proof.py` -- the shared proof-against-code
   plumbing REL22x/REL23x/REL24x reuse (not used by REL25x, module
   docstring: no proof-against-code needed for a structural fact).
+- `src/frob/strata/_capacity.py` -- `project_capacity`, `CapacityReport`,
+  `CapacityViolation`, CAP001 (T-1927, `frob sys capacity`).
 - `tests/unit/strata/test_reliability.py` -- the REL200/REL201/REL210/
   REL211 firing/clean/waived/uncheckable litmus and unit coverage.
 - `tests/unit/strata/test_retry.py` -- the REL220/REL221/REL222 firing/

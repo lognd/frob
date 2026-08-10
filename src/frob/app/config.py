@@ -185,6 +185,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-1480
 # frob:ticket T-1808
 # frob:ticket T-1925
+# frob:ticket T-1927
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -908,7 +909,7 @@ class AppConfig(BaseModel):
     # sys (T-0084 plan; T-0085 doc; T-0086 export; T-0115 audit; T-1480
     # trace; T-1925 threats; capacity is a later phase-5 ticket, not yet
     # landed -- `check` was deliberately dropped, T-1926)
-    sys_command: str | None = None  # plan|doc|export|audit|trace|threats
+    sys_command: str | None = None  # plan|doc|export|audit|trace|threats|capacity
     sys_path: Path | None = None
     sys_apply: bool = False
     sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
@@ -920,6 +921,8 @@ class AppConfig(BaseModel):
     sys_trace_through_barriers: bool = False
     # T-1925: `frob sys threats [boundary]` -- optional boundary-scope filter.
     sys_threats_boundary: str | None = None
+    # T-1927: `frob sys capacity [--population N]` -- optional population scale.
+    sys_capacity_population: float | None = None
 
     # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
     # bash compiled from std.host HostManifest facts)

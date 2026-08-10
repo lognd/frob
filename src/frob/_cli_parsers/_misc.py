@@ -592,15 +592,17 @@ def _add_serve_parser(sub) -> None:
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_sys_parser(sub) -> None:
     """Register the `frob sys` subcommand group: `plan` (T-0084), `doc`
-    (T-0085), `export` (T-0086), `trace` (T-1480), and `threats` (T-1925)
-    today; `capacity` (docs/strata/roadmap.md "CLI surface (target)") is a
-    later roadmap-phase-5 sibling -- extend this parser with one more
-    `sys_sub.add_parser` per verb as they land, never replace it. `audit`
-    (T-0115) is the checking counterpart to `doc`; `check` was deliberately
-    dropped from the target list (T-1926) as a duplicate of `audit`."""
+    (T-0085), `export` (T-0086), `trace` (T-1480), `threats` (T-1925), and
+    `capacity` (T-1927) today -- every roadmap-phase-5 verb (docs/strata/
+    roadmap.md "CLI surface (target)") now exists -- extend this parser
+    with one more `sys_sub.add_parser` per future verb, never replace it.
+    `audit` (T-0115) is the checking counterpart to `doc`; `check` was
+    deliberately dropped from the target list (T-1926) as a duplicate of
+    `audit`."""
     # -- sys -------------------------------------------------------------------
     # frob:ticket T-0167
     # frob:ticket T-1925
+    # frob:ticket T-1927
     sys_p = sub.add_parser(
         "sys",
         help="strata design-model applications (plan, doc, export, ...)",
@@ -612,6 +614,7 @@ def _add_sys_parser(sub) -> None:
     _add_sys_doc_and_audit_parsers(sys_sub)
     _add_sys_trace_parser(sys_sub)
     _add_sys_threats_parser(sys_sub)
+    _add_sys_capacity_parser(sys_sub)
 
 
 _SYS_EPILOG = (
@@ -723,6 +726,30 @@ def _add_sys_threats_parser(sys_sub) -> None:
     sys_threats_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
     sys_threats_p.add_argument(
         "sys_threats_boundary", metavar="boundary", nargs="?", default=None
+    )
+
+
+# frob:ticket T-1927
+def _add_sys_capacity_parser(sys_sub) -> None:
+    """Register `frob sys capacity [--population N]` (T-1927): the
+    roadmap-phase-5 `capacity` verb, a thin wrapper over
+    `frob.strata._capacity.project_capacity`. `--at DATE` from the
+    roadmap's target signature is NOT wired here -- disclosed scope cut,
+    see `project_capacity`'s own module docstring and the residue ticket
+    it names."""
+    sys_capacity_p = sys_sub.add_parser(
+        "capacity",
+        help="print CAP001 findings: nodes whose demand exceeds "
+        "capacity, optionally projected to a population (T-1927)",
+    )
+    sys_capacity_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
+    sys_capacity_p.add_argument(
+        "--population",
+        dest="sys_capacity_population",
+        type=float,
+        default=None,
+        help="scale the model's own declared `users` demand linearly to "
+        "this population before checking capacity",
     )
 
 

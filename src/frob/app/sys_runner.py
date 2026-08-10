@@ -75,6 +75,7 @@ from frob.strata import (
     load_repo_benign_capabilities,
     merge_models,
     plan_obligations,
+    project_capacity,
     render_audit_matrix,
     threat_violations_for_boundary,
 )
@@ -1073,6 +1074,75 @@ def _run_threats(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# ---------------------------------------------------------------------------
+# capacity (T-1927)
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-1927
+# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_no_population_reports_current_violations  # noqa: E501
+def _print_capacity_report(report, *, population: float | None) -> bool:
+    """Print `frob sys capacity`'s CAP001 findings; returns True iff none
+    fired -- vacuous-pass doctrine, same as `_print_threats_report`."""
+    if not report.violations:
+        if population is not None:
+            _log.info(
+                "sys capacity: no violations projected at population=%s "
+                "(scale=%s, baseline=%s)",
+                population,
+                report.scale_factor,
+                report.baseline_population,
+            )
+        else:
+            _log.info("sys capacity: no violations at current demand")
+        return True
+    for v in sorted(report.violations, key=lambda v: v.node):
+        _log.error(
+            "sys capacity: node=%s projected_demand=%s/s capacity=%s/s -- %s",
+            v.node,
+            v.projected_demand,
+            v.capacity,
+            v.detail,
+        )
+    return False
+
+
+# frob:ticket T-1927
+# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_population_scales_and_can_fire  # noqa: E501
+def _run_capacity(cfg: AppConfig) -> None:
+    """`frob sys capacity [--population N]` (T-1927): load every `.strata`
+    design file under the repo's design dir (reusing `_load_audit_model`'s
+    parse+merge, same as `audit`/`trace`/`threats`), build a `FactBase`,
+    and print `project_capacity`'s CAP001 findings -- optionally scaled to
+    `cfg.sys_capacity_population`. Exits 1 on a load/build/project error
+    (including `StrataError.UnknownReference` for a `--population` with
+    no baseline `users` population to scale against) or any violation
+    printed -- vacuous-pass doctrine, same as `_run_audit`/`_run_trace`/
+    `_run_threats`."""
+    root = _resolve_design_root(cfg, "capacity")
+    loaded = _load_audit_model(root)
+    if loaded is None:
+        return
+    model, _store_ids, _resource_module = loaded
+
+    facts = build_facts(model)
+    if facts.is_err:
+        _log.error("sys capacity: %s", facts.danger_err)
+        sys.exit(1)
+
+    report = project_capacity(
+        model, facts.danger_ok, population=cfg.sys_capacity_population
+    )
+    if report.is_err:
+        _log.error("sys capacity: %s", report.danger_err)
+        sys.exit(1)
+
+    if not _print_capacity_report(
+        report.danger_ok, population=cfg.sys_capacity_population
+    ):
+        sys.exit(1)
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
@@ -1086,14 +1156,16 @@ def _run_threats(cfg: AppConfig) -> None:
 # frob:ticket T-0588
 # frob:ticket T-1480
 # frob:ticket T-1925
+# frob:ticket T-1927
 # frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085),
-    `export` (T-0086), `audit` (T-0115), `trace` (T-1480), and `threats`
-    (T-1925) exist today; roadmap phase 5's `capacity` is a later ticket
-    -- extend this dispatch, never replace it. `check` (docs/strata/
-    roadmap.md) was deliberately dropped from the target CLI surface
-    rather than built (T-1926: it would duplicate `audit`). T-1870:
+    `export` (T-0086), `audit` (T-0115), `trace` (T-1480), `threats`
+    (T-1925), and `capacity` (T-1927) all exist today -- every roadmap-
+    phase-5 verb (docs/strata/roadmap.md "CLI surface (target)") is now
+    wired; extend this dispatch with any future verb, never replace it.
+    `check` was deliberately dropped from the target CLI surface rather
+    than built (T-1926: it would duplicate `audit`). T-1870:
     `sync-interface` (T-1150) used to be a branch here; deleted along with
     its writer, per an explicit owner directive that no code path may
     auto-update declared public-symbol surface."""
@@ -1115,5 +1187,10 @@ def run(cfg: AppConfig) -> None:
     if cfg.sys_command == "threats":
         _run_threats(cfg)
         return
-    _log.error("usage: frob sys <plan|doc|export|audit|trace|threats> ...")
+    if cfg.sys_command == "capacity":
+        _run_capacity(cfg)
+        return
+    _log.error(
+        "usage: frob sys <plan|doc|export|audit|trace|threats|capacity> ..."
+    )
     sys.exit(1)
