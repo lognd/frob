@@ -88,3 +88,22 @@ hint that the repo can tell it who caused it.
    confirm the ordinary `frob check --only gates` run is unchanged.
 4. An ambiguous case still reports `unattributed` with candidate shas, not
    a guess -- assert this explicitly.
+
+## Note (T-1969's agent, 2026-08-10): a related UX gap in `frob verify explain`
+
+While dropping T-2008 (re-measured, did not reproduce), I used `frob
+verify explain "SELFAUDIT001:design"` per the standing method note to
+confirm the finding was genuinely gone rather than guessing from a diff.
+It returned `verify explain: verify queue is empty, nothing to attribute
+against` (exit 1). That was the correct outcome here -- there was no
+live finding to attribute -- but the message does not distinguish that
+case from other reasons the queue could be empty (never populated,
+already drained by someone else, a genuine tool/spawn failure). An agent
+reading only the exit code and message cannot tell "the finding is
+resolved" apart from "attribution is unavailable right now" -- the same
+false-confidence shape this ticket is about, one layer earlier: the
+signal that answers "should I trust this absence?" is itself ambiguous.
+Worth folding into this ticket's acceptance work rather than filing a
+duplicate: an empty-queue `explain` response should say which case fired
+(or attach whatever queue-state fact would let the caller tell the
+difference), not just "empty".
