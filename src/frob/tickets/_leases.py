@@ -2213,9 +2213,11 @@ class _WorktreeVerdict(BaseModel):
     """One decided outcome for a single dispatched-agent worktree during
     `frob worktree sweep` (T-0836): the worktree's resolved path, the
     verdict tag (`"removed"`, `"kept:live"` [T-1739, a live process is
-    cwd'd into it], `"kept:lease"`, `"kept:dirty"`, or `"kept:age"`), and
-    a human-readable `detail` string (e.g. the pinning pid for
-    `"kept:live"`, the pinning ticket id and lease age for
+    cwd'd into it], `"kept:unlanded"` [T-1934, the branch carries
+    finished-but-unlanded ticket work], `"kept:lease"`, `"kept:dirty"`, or
+    `"kept:age"`), and a human-readable `detail` string (e.g. the pinning
+    pid for `"kept:live"`, the unlanded ticket id(s) for
+    `"kept:unlanded"`, the pinning ticket id and lease age for
     `"kept:lease"`; empty for the other verdicts unless a `git worktree
     remove` call itself failed)."""
 
@@ -2366,6 +2368,14 @@ def sweep_worktrees(
 
     A worktree is removed only if ALL of these hold:
       (0) [T-1739] no live process is cwd'd into it (unless `force`);
+      (0.5) [T-1934] its CURRENT branch carries no finished-but-unlanded
+          ticket work (`kept:unlanded` -- unconditional, `force` does NOT
+          override this one, unlike gate 0): a worktree whose agent
+          committed cleanly and died before `frob ticket land` used to
+          read identical to an abandoned one under the dirty-tree proxy
+          alone, which inverted the incentive (the better an agent
+          behaved, the more likely it was swept). Checked before (a) so a
+          CLEAN unlanded worktree is caught too, not just a dirty one.
       (a) its working tree is clean (`_worktree_is_clean` is `True` --
           `None`/unresolvable counts as dirty, never as clean);
       (b) no LIVE (unexpired) lease (`is_lease_ttl_expired`) among
@@ -2484,6 +2494,41 @@ def _kept_live_verdict_if_process_present(candidate: Path) -> "_WorktreeVerdict 
     )
 
 
+# frob:ticket T-1934
+def _kept_unlanded_verdict_if_present(
+    root: Path, candidate: Path, leases: tuple["_LeaseRecord", ...]
+) -> "_WorktreeVerdict | None":
+    """`_sweep_verdict_for_worktree`'s T-1934 gate: `kept:unlanded` (naming
+    the ticket ids) if `candidate`'s CURRENT branch carries finished-but-
+    unlanded ticket work (`frob.tickets._unlanded._unlanded_findings_for_
+    branch`), else `None` (the caller falls through to the dirty/lease/age
+    gates). This is the fix for T-1934's own inverted-heuristic finding: a
+    worktree whose agent COMMITTED its finished work cleanly and died
+    before `frob ticket land` reads identical to a genuinely abandoned one
+    under the dirty-tree proxy alone -- unlanded work must outrank
+    cleanliness, so this gate runs BEFORE `_worktree_is_clean` is ever
+    consulted, exactly mirroring how T-1739's live-process gate already
+    outranks it for a different reason. Never removes anything itself;
+    `dry_run` and real sweeps both just KEEP a candidate this gate flags."""
+    branch_result = gitio.current_branch(candidate)
+    if branch_result.is_err:
+        return None
+    from frob.tickets._unlanded import _unlanded_findings_for_branch
+
+    findings = _unlanded_findings_for_branch(root, branch_result.danger_ok, leases)
+    if not findings:
+        return None
+    ids = ",".join(sorted({finding.ticket_id for finding in findings}))
+    _log.warning(
+        "tickets: worktree sweep: kept %s -- branch %s carries unlanded "
+        "ticket work (%s), not terminal on main",
+        candidate,
+        branch_result.danger_ok,
+        ids,
+    )
+    return _WorktreeVerdict(path=str(candidate), verdict="kept:unlanded", detail=ids)
+
+
 # frob:ticket T-1739
 def _kept_lease_or_age_verdict(
     candidate: Path,
@@ -2552,6 +2597,14 @@ def _sweep_verdict_for_worktree(
         live = _kept_live_verdict_if_process_present(candidate)
         if live is not None:
             return live
+
+    # frob:ticket T-1934
+    # Unlanded work outranks cleanliness -- checked BEFORE the dirty gate,
+    # unconditionally (not gated by `force`: `force` overrides only the
+    # T-1739 live-process gate, never this data-loss guard).
+    unlanded = _kept_unlanded_verdict_if_present(root, candidate, leases)
+    if unlanded is not None:
+        return unlanded
 
     clean = _worktree_is_clean(candidate)
     if clean is not True:

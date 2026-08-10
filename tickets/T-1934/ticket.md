@@ -2,7 +2,7 @@
 id: T-1934
 title: Nothing detects finished-but-unlanded ticket work on a branch, and sweep's
   remove heuristic is inverted against it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -11,8 +11,128 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_unlanded.py
+- src/frob/tickets/_leases.py
+- src/frob/app/ticket_runner/_query.py
+- tests/unit/test_unlanded_branch_work.py
+- tests/test_ticket_leases.py
+- tests/unit/test_app_runners_doable_stale_lease.py
+- src/frob/tickets/_reconcile.py
+- src/frob/app/ticket_runner/_lifecycle.py
+- tests/test_ticket_reconcile.py
+- tickets/T-1949/**
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_unlanded.py
+  reason: detector for finished-but-unlanded branch work + inverted sweep heuristic
+    fix + doable surfacing
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: detector for finished-but-unlanded branch work + inverted sweep heuristic
+    fix + doable surfacing
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/worktree_runner.py
+  reason: detector for finished-but-unlanded branch work + inverted sweep heuristic
+    fix + doable surfacing
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: detector for finished-but-unlanded branch work + inverted sweep heuristic
+    fix + doable surfacing
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_unlanded_branch_work.py
+  reason: detector for finished-but-unlanded branch work + inverted sweep heuristic
+    fix + doable surfacing
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: detector for finished-but-unlanded branch work + inverted sweep heuristic
+    fix + doable surfacing
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_app_runners_doable_stale_lease.py
+  reason: detector for finished-but-unlanded branch work + inverted sweep heuristic
+    fix + doable surfacing
+  actor: logan
+  at: '2026-08-09'
+- op: remove
+  glob: src/frob/app/worktree_runner.py
+  reason: 'coordinator correction: surface through frob ticket reconcile (T-0456/T-0476)
+    rather than a new standalone verb'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: 'coordinator correction: surface through frob ticket reconcile (T-0456/T-0476)
+    rather than a new standalone verb'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: 'coordinator correction: surface through frob ticket reconcile (T-0456/T-0476)
+    rather than a new standalone verb'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_reconcile.py
+  reason: 'coordinator correction: surface through frob ticket reconcile (T-0456/T-0476)
+    rather than a new standalone verb'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1949/**
+  reason: residue ticket filed from within T-1934 for a pre-existing ARCH001 finding
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1929 landed, doc lease freed -- document the new unlanded_branch_work
+    reconcile anomaly properly
+  actor: logan
+  at: '2026-08-09'
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: T-1720 took a live lease on this doc mid-ticket; reverting the doc edit
+    and restoring AFFECT001 waivers to unblock landing
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: Tier-A auto-fix declared exec/fs.write capability grants for the new test
+    files (tests/unit/test_unlanded_branch_work.py, tests/test_ticket_reconcile.py
+    additions)
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_confirmed_leak_shape_done_report_plus_in_progress
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_archived_done_ticket_is_not_a_false_positive
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_dropped_ticket_on_main_is_not_a_false_positive
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_local_state_done_with_no_done_report_file_is_flagged
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_queued_ticket_on_branch_is_not_flagged
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_live_leased_ticket_is_excluded
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_findings_for_one_branch_matches_the_aggregate
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_reports_the_confirmed_leak_shape
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_apply_never_heals_this_anomaly_class
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_no_unlanded_work_reports_empty
+- tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork::test_clean_worktree_with_unlanded_work_is_kept_not_removed
+- tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork::test_dry_run_reports_kept_not_removed
+- tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork::test_landed_ticket_is_not_kept_for_unlanded_reasons
+- tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_no_root_is_a_noop
+- tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_no_unlanded_work_prints_nothing
+- tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_unlanded_branch_is_summarized
 designated_repro_test: null
 threat: null
 component: null

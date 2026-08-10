@@ -389,6 +389,7 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         return
 
     _render_active_leases(queue)
+    _render_unlanded_branch_work_summary(root)
     _render_scope_breadth_summary(root, queue, breadth=breadth)
     landed_ids = _render_already_landed_markers(root, queue, breadth=breadth)
 
@@ -521,6 +522,33 @@ def _render_doable_dispatchable(
         )
         for t in rows:
             _log.info("  %s", _doable_row(t, alarm_by_id, color, landed_ids=landed_ids))
+
+
+# frob:ticket T-1934
+def _render_unlanded_branch_work_summary(root: Path | None) -> None:
+    """Print an "N branch(es) carry unlanded ticket work" line, alongside
+    T-1876's own stale-lease warning (T-1934 REQUIRED-C: surfaced where a
+    coordinator already looks) -- one line naming every branch, never the
+    per-ticket detail (`frob ticket reconcile` is the place for that, and
+    for `frob worktree sweep --dry-run`'s own per-worktree `kept:unlanded`
+    verdicts). Silent (no line at all) when nothing is found, matching
+    `_render_active_leases`'s own posture of only speaking up when there
+    is something to say. `root=None` is a no-op, matching every other
+    lease/reconcile helper's `root=None` convention in this module."""
+    if root is None:
+        return
+    from frob.tickets._unlanded import _unlanded_branch_work
+
+    findings = _unlanded_branch_work(root)
+    if not findings:
+        return
+    branches = sorted({finding.branch for finding in findings})
+    _log.info(
+        "%d branch(es) carry unlanded ticket work (finished on a branch, "
+        "not landed to main): %s -- see `frob ticket reconcile`",
+        len(branches),
+        ", ".join(branches),
+    )
 
 
 # frob:ticket T-0976

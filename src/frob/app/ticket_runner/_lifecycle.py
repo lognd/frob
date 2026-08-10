@@ -11,11 +11,15 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from frob.app.config import AppConfig
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, exec_enabled
+
+if TYPE_CHECKING:
+    from frob.tickets._reconcile import ReconcileReport
 
 _log = get_logger("frob.app.ticket_runner")
 
@@ -797,14 +801,45 @@ def _sweep_cmd(root: Path, cfg: AppConfig) -> None:
     _run_sweep(root, ticket)
 
 
+# frob:ticket T-1934
+def _log_reconcile_intents_and_unlanded_work(report: "ReconcileReport") -> None:
+    """The orphaned-land-intent (T-0456) and unlanded-branch-work (T-1934)
+    halves of `_reconcile_cmd`'s summary, split out to stay under ARCH001's
+    per-function line budget once T-1934 added a fourth anomaly class."""
+    if report.orphaned_land_intents:
+        intent_verb = "cleared" if report.applied else "would clear"
+        _log.info(
+            "reconcile: %s %d orphaned land intent(s) (crash/interrupt mid-land): %s",
+            intent_verb,
+            len(report.orphaned_land_intents),
+            list(report.orphaned_land_intents),
+        )
+    else:
+        _log.info("reconcile: no orphaned land intents found")
+
+    # Report-only, always -- no verb heals this anomaly class (see
+    # `ReconcileReport.unlanded_branch_work`'s own docstring for why: a
+    # dead agent's branch is never landed unattended).
+    if report.unlanded_branch_work:
+        _log.info(
+            "reconcile: %d branch(es) carry unlanded ticket work "
+            "(finished on a branch, not terminal on main): %s",
+            len(report.unlanded_branch_work),
+            list(report.unlanded_branch_work),
+        )
+    else:
+        _log.info("reconcile: no unlanded branch work found")
+
+
 # frob:ticket T-0476
 def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
     """`frob ticket reconcile [--apply] [--remove-orphans]`: report (and,
     with `--apply`, heal) T-0476's two ticket<->worktree binding anomalies,
-    plus T-0456's orphaned-`land`-intent anomaly. Always logs a
-    human-readable summary; exits 0 whether or not anomalies were found
-    (finding an anomaly is not itself a command failure -- only a real
-    error loading the ledger is)."""
+    plus T-0456's orphaned-`land`-intent anomaly and T-1934's unlanded-
+    branch-work anomaly (the latter two logged by `_log_reconcile_intents_
+    and_unlanded_work`). Always logs a human-readable summary; exits 0
+    whether or not anomalies were found (finding an anomaly is not itself
+    a command failure -- only a real error loading the ledger is)."""
     from frob.tickets import reconcile
 
     result = reconcile(
@@ -839,16 +874,7 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
     else:
         _log.info("reconcile: no orphan worktrees found")
 
-    if report.orphaned_land_intents:
-        intent_verb = "cleared" if report.applied else "would clear"
-        _log.info(
-            "reconcile: %s %d orphaned land intent(s) (crash/interrupt mid-land): %s",
-            intent_verb,
-            len(report.orphaned_land_intents),
-            list(report.orphaned_land_intents),
-        )
-    else:
-        _log.info("reconcile: no orphaned land intents found")
+    _log_reconcile_intents_and_unlanded_work(report)
 
 
 # frob:ticket T-1866

@@ -483,6 +483,114 @@ class TestSweepWorktrees:
         assert wt.exists()
 
 
+# frob:ticket T-1934
+_UNLANDED_TICKET_MD = """---
+id: {tid}
+title: '{tid}'
+state: {state}
+kind: bug
+origin: human
+created: '2026-08-09'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+---
+Body for {tid}.
+"""
+
+
+def _write_finished_ticket(wt: Path, tid: str, *, state: str = "in-progress") -> None:
+    """Write a `tickets/<tid>/ticket.md` + `done-report.md` pair directly
+    into worktree `wt` and commit them on `wt`'s own current branch --
+    T-1934's exact "committed cleanly, died before land" shape."""
+    ticket_dir = wt / "tickets" / tid
+    ticket_dir.mkdir(parents=True, exist_ok=True)
+    (ticket_dir / "ticket.md").write_text(
+        _UNLANDED_TICKET_MD.format(tid=tid, state=state), encoding="utf-8"
+    )
+    (ticket_dir / "done-report.md").write_text(
+        "## Done report\n\nFinished.\n", encoding="utf-8"
+    )
+    _commit_all(wt, f"finish {tid}")
+
+
+class TestSweepWorktreesUnlandedWork:
+    """T-1934: `kept:unlanded` outranks the dirty-tree gate -- a CLEAN
+    worktree whose branch carries finished-but-unlanded ticket work is
+    kept, not removed. This is the exact inverted-heuristic fix: before
+    this gate existed, a well-behaved agent's clean, committed, unlanded
+    worktree read identically to a genuinely abandoned one."""
+
+    def test_clean_worktree_with_unlanded_work_is_kept_not_removed(
+        self, sweep_repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_clean_worktr\
+        # ee_with_unlanded_work_is_kept_not_removed
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        _write_finished_ticket(wt, "T-8001")
+        assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
+
+        result = sweep_worktrees(sweep_repo)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "kept:unlanded"
+        assert "T-8001" in verdicts[0].detail
+        assert wt.exists()
+
+    def test_dry_run_reports_kept_not_removed(self, sweep_repo: Path) -> None:
+        """T-1934 acceptance 4."""
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_dry_run_repo\
+        # rts_kept_not_removed
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        _write_finished_ticket(wt, "T-8002")
+
+        result = sweep_worktrees(sweep_repo, dry_run=True)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "kept:unlanded"
+        assert wt.exists()
+
+    def test_landed_ticket_is_not_kept_for_unlanded_reasons(
+        self, sweep_repo: Path
+    ) -> None:
+        """Once `main` itself shows the ticket terminal, the worktree is no
+        longer `kept:unlanded` -- an ordinary clean, unleased worktree goes
+        back to being removable."""
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestSweepWorktreesUnlandedWork.test_landed_ticke\
+        # t_is_not_kept_for_unlanded_reasons
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        _write_finished_ticket(wt, "T-8003", state="done")
+
+        # Land it: write the same done ticket onto main directly (a
+        # minimal stand-in for a real `frob ticket land` merge).
+        (sweep_repo / "tickets" / "T-8003").mkdir(parents=True)
+        (sweep_repo / "tickets" / "T-8003" / "ticket.md").write_text(
+            _UNLANDED_TICKET_MD.format(tid="T-8003", state="done"), encoding="utf-8"
+        )
+        _commit_all(sweep_repo, "land T-8003")
+
+        result = sweep_worktrees(sweep_repo)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "removed"
+        assert not wt.exists()
+
+
 # frob:ticket T-1433
 class TestWorktreeSweepCli:
     """`frob worktree sweep`'s CLI entry point (`frob.app.worktree_runner.

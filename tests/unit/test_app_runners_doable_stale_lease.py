@@ -27,7 +27,10 @@ import pytest
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import run as ticket_run
-from frob.app.ticket_runner._query import _stale_lease_reasons
+from frob.app.ticket_runner._query import (
+    _render_unlanded_branch_work_summary,
+    _stale_lease_reasons,
+)
 from frob.tickets._leases import LEASE_TTL_SECONDS, _LeaseRecord, leases_dir
 
 
@@ -146,3 +149,51 @@ class TestStaleLeaseReasons:
         # tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test\
         # _no_root_returns_empty
         assert _stale_lease_reasons(None) == {}
+
+
+# frob:ticket T-1934
+class TestRenderUnlandedBranchWorkSummary:
+    """T-1934 REQUIRED-C: `frob ticket doable` surfaces "N branch(es)
+    carry unlanded ticket work" alongside T-1876's own stale-lease
+    warning, in the same place a coordinator already looks."""
+
+    def test_no_root_is_a_noop(self, capsys) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
+        # rkSummary.test_no_root_is_a_noop
+        _render_unlanded_branch_work_summary(None)
+        assert capsys.readouterr().out == ""
+
+    def test_no_unlanded_work_prints_nothing(self, repo: Path, caplog) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
+        # rkSummary.test_no_unlanded_work_prints_nothing
+        _render_unlanded_branch_work_summary(repo)
+        assert "unlanded ticket work" not in caplog.text
+
+    def test_unlanded_branch_is_summarized(self, repo: Path, caplog) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
+        # rkSummary.test_unlanded_branch_is_summarized
+        import logging
+
+        caplog.set_level(logging.INFO)
+        _run(["git", "checkout", "-q", "-b", "runner-wiring"], repo)
+        ticket_dir = repo / "tickets" / "T-9101"
+        ticket_dir.mkdir(parents=True)
+        (ticket_dir / "ticket.md").write_text(
+            "---\nid: T-9101\ntitle: 'x'\nstate: in-progress\nkind: bug\n"
+            "origin: human\ncreated: '2026-08-09'\n---\nbody\n",
+            encoding="utf-8",
+        )
+        (ticket_dir / "done-report.md").write_text(
+            "## Done report\n\nDone.\n", encoding="utf-8"
+        )
+        _commit_all(repo, "finish T-9101 on runner-wiring")
+        _run(["git", "checkout", "-q", "main"], repo)
+        _run(["git", "clean", "-fdq", "--", "tickets"], repo)
+
+        _render_unlanded_branch_work_summary(repo)
+
+        assert "1 branch(es) carry unlanded ticket work" in caplog.text
+        assert "runner-wiring" in caplog.text

@@ -33,11 +33,19 @@ from frob.tickets._journal import _clear_intent, _read_all_intents
 from frob.tickets._leases import read_all_leases, release_lease
 from frob.tickets._models import TicketError, TicketState
 from frob.tickets._store import load_all
+from frob.tickets._unlanded import _unlanded_branch_work
 
 _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/tickets.md#frob-ticket-reconcile-t-0476
+# frob:waive AFFECT001 reason="T-1934 adds a fourth anomaly class \
+# (unlanded_branch_work) to this already-documented model; docs/modules/tickets.md is \
+# held by T-1720's LIVE cross-worktree lease at land time, so the doc cannot be \
+# re-touched here without fighting that lease -- remove this waiver and add a real doc \
+# section once T-1720 lands (see also T-1949-adjacent residue: the earlier \
+# T-1929 lease on this same file already forced/lifted this waiver once during this \
+# ticket's own work)"
 class ReconcileReport(BaseModel):
     """The anomalies `reconcile` found (and, if `applied`, healed) --
     (T-0476) `requeued_tickets` (stale holds) and `orphan_worktrees` (live
@@ -56,6 +64,16 @@ class ReconcileReport(BaseModel):
     removed_worktrees: tuple[str, ...]
     orphaned_land_intents: tuple[str, ...] = ()
     cleared_land_intents: tuple[str, ...] = ()
+    # frob:ticket T-1934
+    # A FOURTH anomaly class (T-1934): a ticket that reads finished
+    # (done-report or `state: done`/`dropped`) on some OTHER local branch
+    # but is not terminal on `main`, including through the archive
+    # (`frob.tickets._unlanded._unlanded_branch_work`). Formatted
+    # "T-XXXX@branch" strings, one per finding. Deliberately NEVER healed
+    # by `apply` -- landing a dead agent's branch unattended is exactly
+    # the failure mode this anomaly class exists to surface, not fix; a
+    # human or a freshly dispatched agent decides what to do with it.
+    unlanded_branch_work: tuple[str, ...] = ()
     applied: bool
     removed_orphans: bool
 
@@ -179,7 +197,12 @@ def _remove_orphan_worktrees(root: Path, orphans: tuple[Path, ...]) -> tuple[str
 # frob:doc docs/modules/tickets.md#frob-ticket-reconcile-t-0476
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape kind="unit"  # noqa: E501
 # frob:ticket T-0601
+# frob:ticket T-1934
+# frob:waive AFFECT001 reason="same T-1720 live-lease conflict on \
+# docs/modules/tickets.md as ReconcileReport's own waiver above -- see that comment \
+# for the removal condition"
 def reconcile(
     root: Path, *, apply: bool = False, remove_orphans: bool = False
 ) -> Result[ReconcileReport, TicketError]:
@@ -209,6 +232,14 @@ def reconcile(
     stale_ids = _stale_in_progress_ticket_ids(tickets, leased_ticket_ids)
     orphans = _orphan_worktree_paths(root, leased_worktrees)
     orphaned_intents = tuple(intent.ticket_id for intent in _read_all_intents(root))
+    # frob:ticket T-1934
+    # Report-only, unconditionally -- no `apply`-gated healing exists for
+    # this anomaly class (see `ReconcileReport.unlanded_branch_work`'s own
+    # docstring for why).
+    unlanded = tuple(
+        f"{finding.ticket_id}@{finding.branch}"
+        for finding in _unlanded_branch_work(root)
+    )
 
     requeued = _requeue_stale_holds(root, stale_ids) if apply else stale_ids
     removed = (
@@ -223,6 +254,7 @@ def reconcile(
             removed_worktrees=removed,
             orphaned_land_intents=orphaned_intents,
             cleared_land_intents=cleared_intents,
+            unlanded_branch_work=unlanded,
             applied=apply,
             removed_orphans=apply and remove_orphans,
         )

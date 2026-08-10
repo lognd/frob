@@ -271,3 +271,90 @@ class TestReconcileOrphanedLandIntent:
         result = reconcile(repo)
         assert result.is_ok
         assert result.danger_ok.orphaned_land_intents == ()
+
+
+_UNLANDED_TICKET_MD = """---
+id: {tid}
+title: '{tid}'
+state: {state}
+kind: bug
+origin: human
+created: '2026-08-09'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+---
+Body for {tid}.
+"""
+
+
+def _write_finished_ticket_on_branch(
+    repo: Path, branch: str, tid: str, *, state: str = "in-progress"
+) -> None:
+    """T-1934 fixture: commit a `tickets/<tid>/{{ticket,done-report}}.md`
+    pair onto a fresh local `branch`, leaving `main` (`repo`'s own current
+    checkout) untouched -- the "committed cleanly, died before land" shape
+    `frob.tickets._unlanded` detects, using a raw v2-layout write
+    independent of `repo`'s own `tickets.md`-seeded `_store_mode`."""
+    _run(["git", "checkout", "-q", "-b", branch], repo)
+    ticket_dir = repo / "tickets" / tid
+    ticket_dir.mkdir(parents=True)
+    (ticket_dir / "ticket.md").write_text(
+        _UNLANDED_TICKET_MD.format(tid=tid, state=state), encoding="utf-8"
+    )
+    (ticket_dir / "done-report.md").write_text(
+        "## Done report\n\nFinished.\n", encoding="utf-8"
+    )
+    _commit_all(repo, f"finish {tid} on {branch}")
+    _run(["git", "checkout", "-q", "main"], repo)
+    # Directory not tracked on `main` -- clean up the working-tree copy
+    # `git checkout` left behind so `main`'s own tree matches its commit.
+    _run(["git", "clean", "-fdq", "--", "tickets"], repo)
+
+
+class TestReconcileUnlandedBranchWork:
+    """T-1934: reconcile's THIRD anomaly class -- finished-on-a-branch,
+    not-terminal-on-main ticket work, report-only (never healed by
+    `apply`)."""
+
+    def test_reports_the_confirmed_leak_shape(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_\
+        # the_confirmed_leak_shape
+        _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
+
+        result = reconcile(repo)
+        assert result.is_ok
+        assert result.danger_ok.unlanded_branch_work == ("T-1315@runner-wiring",)
+
+    def test_apply_never_heals_this_anomaly_class(self, repo: Path) -> None:
+        """Report-only by design (T-1934's DO-NOT-auto-land requirement):
+        `apply=True` must still just report, never touch the branch."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_apply_ne\
+        # ver_heals_this_anomaly_class
+        _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
+
+        result = reconcile(repo, apply=True)
+        assert result.is_ok
+        assert result.danger_ok.unlanded_branch_work == ("T-1315@runner-wiring",)
+        # The branch itself is untouched -- still exists, still ahead.
+        branches = _run(["git", "branch", "--list", "runner-wiring"], repo).stdout
+        assert "runner-wiring" in branches
+
+    def test_no_unlanded_work_reports_empty(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_no_unlan\
+        # ded_work_reports_empty
+        result = reconcile(repo)
+        assert result.is_ok
+        assert result.danger_ok.unlanded_branch_work == ()
