@@ -3621,6 +3621,70 @@ window this check would need to close is narrower. Recorded as a known
 gap rather than silently assumed safe; a future Tier-A handler that
 touches test files should re-open this question.
 
+## Evidence-only scope (T-1944)
+
+<!-- frob:describes src/frob/tickets/_scope.py::demote_to_evidence_only -->
+<!-- frob:enumerates src/frob/tickets/_models.py::Ticket -->
+
+`scope` used to serve two different purposes wrongly conflated into one
+field: evidence coverage ("this ticket's recorded evidence lives here",
+D-02's `evidence_covers_scope`) and write lease ("no other ticket may
+modify these paths", `_scope_add_conflicts`/`_find_leaked_tickets`).
+Citing a PRE-EXISTING test as evidence -- an explicitly endorsed pattern
+for a ticket with no new code path -- used to be satisfiable only by
+adding that test's file to `scope`, which ALSO claimed a write lease on
+it. LIVE INCIDENT: T-1686 (an epic, done-report on main, zero lines of
+code changed) cited one existing test in `tests/test_ticket_land.py` and
+therefore permanently held a write lease on the repo's highest-traffic
+land test file -- `scope --remove` correctly refused
+(`ScopeRemoveOrphansEvidence`) because dropping the path would have
+orphaned the recorded evidence, so the epic was trapped holding a lease
+it never used, blocking an unrelated land (T-1922) with
+`CrossTicketLeakage`.
+
+**The fix**: `Ticket.evidence_scope` (a second `tuple[str, ...]`,
+disjoint from `scope`) covers evidence without ever claiming a write
+lease -- `_scope_add_conflicts`/`_find_leaked_tickets`/`scope_lease_
+conflict` read `scope` alone, so a path that lives ONLY in `evidence_
+scope` is invisible to every lease/leakage check by construction, not by
+a special-case exemption. `evidence_covers_scope` (D-02) checks `scope +
+evidence_scope` together, so evidence recorded there is exactly as
+"covered" as evidence recorded under `scope`.
+
+- **Non-leasing by default, no flag**: `add_evidence` auto-populates
+  `evidence_scope` (never `scope`) whenever a newly cited node's file is
+  not already covered by either field -- per the standing "a command
+  requires knowledge of the command" directive, an agent citing a pre-
+  existing test as evidence gets the non-leasing behavior automatically,
+  with nothing new to remember to pass.
+- **`frob.tickets.demote_to_evidence_only(root, ticket_id, globs,
+  reason=...)`**: the remedy for a ticket ALREADY stuck the old way (the
+  T-1686 shape) -- moves one or more EXISTING `scope` entries into
+  `evidence_scope` in ONE atomic write, so D-02 coverage is never
+  momentarily false between the removal and the re-add a plain `scope
+  --remove` + `--add` round-trip would require (and which would itself
+  deadlock on `ScopeRemoveOrphansEvidence`, since the removal alone
+  would look like it orphans evidence). Refuses `ScopeRemoveNotDeclared`
+  for a glob not currently in `ticket.scope`, the same "must be declared
+  to be removed" rule `mutate_scope`'s own remove path enforces.
+  Applied to T-1686 itself on 2026-08-10 as the mechanism's first real
+  case: its lease on `tests/test_ticket_land.py` released, evidence
+  coverage confirmed unaffected (`scope_lease_conflict` returns `None`
+  for that path afterward). Not yet wired to a `frob ticket scope` CLI
+  flag -- library-only for now (`T-1975` tracks the CLI surface).
+- **`ScopeRemoveOrphansEvidence` is UNCHANGED**: a plain `scope --remove`
+  with no matching `evidence_scope` demotion still refuses exactly as
+  before -- this fix adds a new, narrower escape hatch, it does not
+  weaken the existing guard the way a "safe" auto-repoint would have
+  (the WAIVE004 lesson, applied here: evidence coverage is the only
+  record a ticket was ever proven, so nothing here ever repoints or
+  deletes it, only relocates WHICH field of the SAME ticket claims it).
+- **Legacy scope entries are unaffected until demoted**: this fix does
+  not retroactively migrate every existing ticket's `scope` -- a ticket
+  filed before T-1944 that already conflated evidence coverage with a
+  write lease keeps behaving exactly as it did until someone runs
+  `demote_to_evidence_only` on it.
+
 ## Post-mutation reverification (T-1932)
 
 <!-- frob:describes src/frob/tickets/_land.py::_reverify_cross_ticket_leakage_post_mutation -->

@@ -39,8 +39,13 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from types import ModuleType
+from typing import TYPE_CHECKING
 
 from typani.result import Err, Ok, Result
+
+if TYPE_CHECKING:
+    # frob:ticket T-1979
+    from frob.testing._models import CollectedTests
 
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
@@ -3398,6 +3403,7 @@ def _reverify_cross_ticket_leakage_post_mutation(
 
 
 # frob:ticket T-1946
+# frob:ticket T-1979
 # frob:doc docs/modules/tickets.md#orphaned-evidence-deletion-t-1946
 def _check_orphaned_evidence_deletion(
     worktree: Path, ticket: Ticket, base_ref: str
@@ -3434,10 +3440,6 @@ def _check_orphaned_evidence_deletion(
     tooling problem -- this check is an additional safety net, not a
     replacement for COV003's own authoritative sweep, which still runs
     at `frob check` regardless."""
-    from frob.gates import _evidence_valid_for_ticket
-    from frob.testing import collect_python_tests
-    from frob.tickets._models import is_cmd_evidence
-
     changed = _branch_changed_files(worktree, base_ref)
     if changed.is_err:
         _log.debug(
@@ -3449,6 +3451,8 @@ def _check_orphaned_evidence_deletion(
     if not changed.danger_ok:
         return Ok(None)
 
+    from frob.testing import collect_python_tests
+
     collected = collect_python_tests(worktree)
     if collected.is_err:
         _log.debug(
@@ -3458,7 +3462,6 @@ def _check_orphaned_evidence_deletion(
             collected.danger_err,
         )
         return Ok(None)
-    tests = collected.danger_ok
 
     loaded = load_all(worktree)
     if loaded.is_err:
@@ -3469,30 +3472,60 @@ def _check_orphaned_evidence_deletion(
         )
         return Ok(None)
 
+    orphaned = _orphaned_evidence_findings(
+        ticket.id, loaded.danger_ok, changed.danger_ok, collected.danger_ok
+    )
+    if not orphaned:
+        return Ok(None)
+    return _refuse_orphaned_evidence(ticket.id, orphaned)
+
+
+# frob:ticket T-1979
+def _orphaned_evidence_findings(
+    landing_id: str,
+    queue: dict[str, Ticket],
+    changed_paths: frozenset[str],
+    tests: CollectedTests,
+) -> dict[str, list[str]]:
+    """`other_ticket_id -> [orphaned evidence id, ...]` for every OTHER
+    ticket in `queue` whose non-cmd evidence file lies under `changed_
+    paths` (T-1946's own diff-scoping) but no longer resolves against
+    `tests` (`_evidence_valid_for_ticket`) -- the pure-data half of
+    `_check_orphaned_evidence_deletion`, split out to keep that function
+    under ARCH001's line threshold (T-1979), zero behavior change."""
+    from frob.gates import _evidence_valid_for_ticket
+    from frob.tickets._models import is_cmd_evidence
+
     orphaned: dict[str, list[str]] = {}
-    for other_id, other in loaded.danger_ok.items():
-        if other_id == ticket.id:
+    for other_id, other in queue.items():
+        if other_id == landing_id:
             continue
         for evidence in other.evidence:
             if is_cmd_evidence(evidence):
                 continue
             node_path = evidence.split("::", 1)[0]
-            if node_path not in changed.danger_ok:
+            if node_path not in changed_paths:
                 continue
             if _evidence_valid_for_ticket(evidence, other, tests):
                 continue
             orphaned.setdefault(other_id, []).append(evidence)
+    return orphaned
 
-    if not orphaned:
-        return Ok(None)
 
+# frob:ticket T-1979
+def _refuse_orphaned_evidence(
+    landing_id: str, orphaned: dict[str, list[str]]
+) -> Result[None, LandError]:
+    """Log every orphaned-evidence hit and return `Err(LandError.
+    OrphanedEvidenceDeletion)` (T-1946, split out of `_check_orphaned_
+    evidence_deletion` per T-1979's ARCH001 fix, zero behavior change)."""
     for other_id, evidence_ids in sorted(orphaned.items()):
         _log.error(
             "land: %s branch deletes or renames test node(s) bound as "
             "evidence on %s, which no longer resolve: %s -- re-point "
             "%s's evidence to the replacement test (in this same diff), "
             "or re-scope %s and record fresh evidence, before landing",
-            ticket.id,
+            landing_id,
             other_id,
             evidence_ids,
             other_id,
