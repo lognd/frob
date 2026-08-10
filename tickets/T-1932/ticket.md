@@ -2,7 +2,7 @@
 id: T-1932
 title: 'Structural: land runs mutations AFTER the guards that gate them, so any guard''s
   decision can be silently invalidated'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -15,6 +15,12 @@ scope:
 - src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck::test_guard_refusal_survives_an_uncommitted_reintroduction
+- tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck::test_clean_land_is_unaffected
+- tests/unit/test_land_step_ordering.py::TestPostMutationRecheckOrdering::test_leakage_recheck_runs_after_the_wip_commit_in_land_locked
+- tests/unit/test_land_step_ordering.py::TestPostMutationRecheckOrdering::test_post_mutation_recheck_delegates_to_the_same_check_preflight_uses
+- tests/test_ticket_work_and_land_finish.py::TestAssertDesignLoadsPreLand::test_a_tier_a_handler_that_corrupts_design_after_it_was_healthy_refuses_the_land
 designated_repro_test: null
 threat: null
 component: null

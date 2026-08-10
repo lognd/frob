@@ -1528,6 +1528,27 @@ def _land_locked(
             return Err(stage.danger_err)
         wip_committed, did_merge, dry_run_report = stage.danger_ok
 
+        # T-1932/T-1931: re-run the cross-ticket leakage guard AGAIN, here,
+        # AFTER `_land_merge_stage`'s wip-commit has captured every mutation
+        # into `worktree`'s HEAD -- see `_reverify_cross_ticket_leakage_
+        # post_mutation`'s own docstring for the ordering invariant this
+        # closes (`_land_precheck`'s own copy of this same check, run
+        # earlier, only ever sees COMMITTED history; anything a caller's
+        # pre-land auto-fix absorption left as an UNCOMMITTED disk write --
+        # `frob ticket land`'s own T-1175 `_absorb_pre_land_fixes`, e.g. the
+        # T-1931 incident -- is invisible to that earlier check and only
+        # becomes part of history at the wip-commit just above). Placed
+        # BEFORE the dry-run early return for the same D-05 reason every
+        # other post-mutation re-check below is: a `--dry-run` must preview
+        # the exact refusal a real run would hit, not skip it.
+        leakage_recheck = _reverify_cross_ticket_leakage_post_mutation(
+            root, worktree, ticket, main_branch_name, allow_cross_ticket
+        )
+        if leakage_recheck.is_err:
+            if did_merge:
+                _abort_merge(worktree)
+            return Err(leakage_recheck.danger_err)
+
         # T-0754 review round 2 fix #4: refresh the pre-work sweep BEFORE
         # any inner check runs `check_gates()` (a live `frob check
         # --ticket` spawn) -- landing can pull in unrelated main-side
@@ -3201,6 +3222,71 @@ def _check_cross_ticket_leakage(
 
     return _report_leaked_tickets(
         ticket.id, leaked, worktree_tickets, allow_cross_ticket=allow_cross_ticket
+    )
+
+
+# frob:ticket T-1932
+# frob:ticket T-1931
+# frob:doc docs/modules/tickets.md#post-mutation-reverification-t-1932
+# frob:tests tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test_guard_refusal_survives_an_uncommitted_reintroduction  # noqa: E501
+# frob:tests tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test_clean_land_is_unaffected  # noqa: E501
+def _reverify_cross_ticket_leakage_post_mutation(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    base_ref: str,
+    allow_cross_ticket: bool,
+) -> Result[None, LandError]:
+    """T-1932's general fix, applied to T-1931's concrete instance: re-run
+    `_check_cross_ticket_leakage` a SECOND time, AFTER `_land_merge_stage`'s
+    wip-commit, so its refusal cannot be silently undone by a mutation that
+    ran between the first (preflight) check and the commit that actually
+    lands.
+
+    THE INVARIANT (T-1932): on the land path, no mutation may run after a
+    guard whose decision that mutation can invalidate. `_check_cross_
+    ticket_leakage`'s own diff source, `_branch_changed_files`, reads ONLY
+    committed history (`git diff base_ref...HEAD`) -- it is blind to any
+    uncommitted disk write, by construction. `frob ticket land`'s own
+    T-1175 pre-land auto-fix absorption (`_absorb_pre_land_fixes`: `frob
+    fmt` + the T-1138 Tier-A deterministic auto-fix handlers) runs BEFORE
+    `land()` is even called, and leaves its rewrites as ordinary
+    UNCOMMITTED changes for `land()`'s own wip-commit to pick up later --
+    so `_land_precheck`'s copy of this same check (run before any git
+    mutation, deliberately, so it can refuse cheaply) can only ever see
+    the world as it stood BEFORE that absorption's uncommitted output
+    exists in history. The T-1931 incident is exactly this: a human
+    reverted a leaked line and committed the revert; the preflight check
+    passed against that clean commit; `_absorb_pre_land_fixes` then
+    silently re-wrote the SAME leaked content back to disk (uncommitted,
+    Tier-A regenerating an interface edge from still-live source); and
+    nothing re-examined the diff after that write became part of history
+    at the wip-commit -- so the leak landed anyway, having been refused
+    once and never refused again.
+
+    This function is that missing re-examination: called from
+    `_land_locked` immediately after `_land_merge_stage` returns (the
+    wip-commit has already run by then, so ANY prior uncommitted mutation
+    -- Tier-A's, fmt's, or a hand edit -- is now part of `worktree`'s
+    committed history and visible to `_branch_changed_files` exactly like
+    a preflight check would see it), and again before the dry-run early
+    return (D-05's own rule: a `--dry-run` must preview the exact refusal
+    a real run would hit). A refusal here aborts the just-created merge
+    commit via the caller's existing `_abort_merge` unwind, identical to
+    every other post-merge check in `_land_locked` -- no new unwind path.
+
+    Pure re-invocation of `_check_cross_ticket_leakage` with the same
+    arguments the preflight call used (`root`, `worktree`, `ticket`,
+    `base_ref`, `allow_cross_ticket`) -- there is no separate "post-
+    mutation" variant of the check itself, only a second call site at a
+    point in the sequence where its answer cannot go stale again before
+    the commit that actually reaches main. See
+    `docs/guides/agent-playbook.md`'s land-path ordering note and
+    `docs/modules/tickets.md#post-mutation-reverification-t-1932` for how
+    a FUTURE guard or auto-fix handler added to the land path is expected
+    to reason about this same hazard (T-1932 acceptance criterion 4)."""
+    return _check_cross_ticket_leakage(
+        root, worktree, ticket, base_ref, allow_cross_ticket=allow_cross_ticket
     )
 
 

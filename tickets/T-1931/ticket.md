@@ -2,7 +2,7 @@
 id: T-1931
 title: land's Tier-A auto-fix can silently re-add a file the CrossTicketLeakage guard
   just refused
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -53,3 +53,6 @@ fixer is one concrete instance; there may be others).
 Net effect here: T-1901's own file was carried onto main ahead of its own
 close after all, just via a different mechanism than the one the guard
 was built to catch.
+
+## Drop reason
+- 2026-08-09: Folded into T-1932's general fix per T-1932's own explicit sequencing request -- the same _reverify_cross_ticket_leakage_post_mutation change closes both; a standalone T-1931 patch would have been a redundant overlapping fix to the same guard, which both tickets explicitly warn against. See T-1932's Done report. (absorbed by T-1932)

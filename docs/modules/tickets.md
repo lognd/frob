@@ -3518,6 +3518,66 @@ longer blocks. This does not weaken the T-1618 case the check exists for
 that case always involves a sibling that was actually started, so it is
 always `IN_PROGRESS` by the time it could leak anything.
 
+## Post-mutation reverification (T-1932)
+
+<!-- frob:describes src/frob/tickets/_land.py::_reverify_cross_ticket_leakage_post_mutation -->
+
+THE INVARIANT: on the land path, no mutation may run after a guard whose
+decision that mutation can invalidate. This has been violated three
+separate times, each fixed as a one-off before T-1932 named the general
+shape: T-1903 (the pre-land strata parse guard ran before the T-1138
+Tier-A rewrite it was meant to catch corruption from -- three lands
+published an unparseable `design/frob.strata` at `LAND-PROOF
+verified=True`); T-1910/T-1920 (the ticket close and REL001 bump rode the
+same commit the ancestry check tests, fixed BY CONSTRUCTION rather than
+by a later check); T-1931 (the CrossTicketLeakage guard correctly
+refused, a human reverted the offending line, and land's own Tier-A
+auto-fix pass silently re-added it before the next attempt -- the guard
+fired and was overruled).
+
+T-1931's root cause: `_check_cross_ticket_leakage`'s diff source
+(`_branch_changed_files`, `git diff base_ref...HEAD`) reads ONLY
+committed history, by construction. `frob ticket land`'s own T-1175
+pre-land auto-fix absorption (`_absorb_pre_land_fixes`: `frob fmt` + the
+Tier-A handlers) runs BEFORE `land()` is even called and leaves its
+rewrites as ORDINARY UNCOMMITTED changes for `land()`'s own wip-commit
+(inside `_land_merge_stage`) to pick up later. So the preflight leakage
+check -- deliberately the very first thing `land()` does, before any git
+mutation, for a cheap fail-fast -- structurally cannot see content
+Tier-A already wrote to disk but had not yet committed. The wip-commit is
+the FIRST point any such mutation becomes part of history.
+
+THE FIX: `_reverify_cross_ticket_leakage_post_mutation` is a pure
+re-invocation of `_check_cross_ticket_leakage` with the same arguments
+the preflight call used -- there is exactly one implementation of the
+check, called from two points in `_land_locked`'s sequence, never two
+copies that can drift apart. `_land_locked` calls it immediately after
+`_land_merge_stage` returns (the wip-commit has already run, so every
+prior uncommitted mutation is now visible to `_branch_changed_files`
+exactly as the preflight call would have seen it had it run then), and
+before the D-05 dry-run early return (a `--dry-run` must preview the
+exact refusal a real run would hit). A refusal aborts the just-created
+merge via the existing `_abort_merge` unwind -- the same shape every
+other post-merge check in `_land_locked` already uses, no new unwind
+path.
+
+HOW A NEW GUARD IS PREVENTED FROM SILENTLY VIOLATING THIS (T-1932
+acceptance criterion 4): not yet by a fully generic, structural
+mechanism -- that is residue (see the ticket filed from T-1932's own Done
+report, tracked as a follow-up to build a registry that forces every
+committed-diff-reading guard in `_land_precheck_remaining_checks` to
+register a post-mutation twin). What DOES exist now is a worked pattern
+with a locked regression test:
+`tests/unit/test_land_step_ordering.py::TestPostMutationRecheckOrdering::test_leakage_recheck_runs_after_the_wip_commit_in_land_locked`
+asserts, via `inspect.getsource(_land_locked)`, that the post-mutation
+re-check call appears strictly AFTER the `_land_merge_stage` call in
+source order -- a future edit that reorders these two calls (reintroducing
+the exact T-1931 shape for THIS guard) fails mechanically, not by relying
+on a reviewer remembering the rule. A future guard added elsewhere in the
+preflight sequence should copy this same shape (self-delegating
+re-invocation, called after `_land_merge_stage`, pinned by an equivalent
+source-order test) until the generic registry exists.
+
 ## Post-land unscoped error sweep (T-1456)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_unscoped_error_findings -->
