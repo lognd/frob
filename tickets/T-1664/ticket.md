@@ -72,6 +72,18 @@ scope_changes:
     are follow-up residue, not this ticket''s scope'
   actor: logan
   at: '2026-08-10'
+evidence:
+- tests/unit/test_check_gates_summary.py::TestSeverityUnresolved::test_unresolved_is_a_distinct_severity_value
+- tests/unit/test_check_gates_summary.py::TestUnresolvedCount::test_counts_only_unresolved_violations
+- tests/unit/test_check_gates_summary.py::TestUnresolvedCount::test_zero_when_no_unresolved_present
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_error_maps_to_error
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_warn_maps_to_warning
+- tests/unit/test_check_gates_summary.py::TestDiagSeverity::test_unresolved_maps_to_info_not_warning
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_findings_never_fail_the_family
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_unresolved_count_shown_as_its_own_term_not_folded_into_warn
+- tests/unit/test_check_gates_summary.py::TestGatesFamilyResultUnresolved::test_errors_still_fail_the_family_regardless_of_unresolved
+- tests/unit/test_check_gates_summary.py::TestGatesSummaryUnresolved::test_summary_line_names_unresolved_as_its_own_term
+- tests/unit/test_check_gates_summary.py::TestGatesSummaryUnresolved::test_zero_unresolved_still_names_the_term
 designated_repro_test: null
 threat: null
 component: null
