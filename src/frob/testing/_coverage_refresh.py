@@ -702,10 +702,10 @@ def _run(argv: list[str], *, cwd: Path) -> Result[subprocess.CompletedProcess, U
     return Ok(proc)
 
 
-#: pytest CLI tokens that select xdist's worker-count. Both the
+#: pytest CLI argv words that select xdist's worker-count. Both the
 #: short (`-n`) and long (`--numprocesses`) spellings take a separate
-#: value token; `--numprocesses=N` is the only spelling that folds the
-#: value into the same token. T-2032: `_strip_worker_count_flag` uses
+#: value word; `--numprocesses=N` is the only spelling that folds the
+#: value into the same argv word. T-2032: `_strip_worker_count_flag` uses
 #: this to find and remove all of them before appending `-p no:xdist`.
 _WORKER_COUNT_FLAGS = ("-n", "--numprocesses")
 
@@ -721,16 +721,16 @@ def _strip_worker_count_flag(argv: list[str]) -> list[str]:
     'no:xdist']`, and the retry died before collecting anything."""
     stripped: list[str] = []
     skip_next = False
-    for token in argv:
+    for arg in argv:
         if skip_next:
             skip_next = False
             continue
-        if token in _WORKER_COUNT_FLAGS:
+        if arg in _WORKER_COUNT_FLAGS:
             skip_next = True
             continue
-        if token.startswith("--numprocesses="):
+        if arg.startswith("--numprocesses="):
             continue
-        stripped.append(token)
+        stripped.append(arg)
     return stripped
 
 
