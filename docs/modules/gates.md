@@ -4794,6 +4794,57 @@ phantom-draft-citation refile/renumber, and E501-from-merge targeted
 `ruff format` are real, filed as separate follow-up tickets rather than
 guessed at inside this ticket's own budget.
 
+## Unresolved (T-1664)
+
+<!-- frob:describes src/frob/gates/_models.py::Severity -->
+<!-- frob:describes src/frob/check/_python.py::_unresolved_count -->
+<!-- frob:describes src/frob/check/_python.py::_diag_severity -->
+
+Every serious under-reporting incident this drive found traced to the
+same shape: an analysis layer that could not look, reporting that it
+found nothing -- indistinguishable from a genuinely clean result. A perf
+gate read zero findings with stale natives (the escape hatch that
+unlocked deleted 55 live `frob:waive` directives). A mypy oracle sharing
+`.mypy_cache` across xdist workers returned zero diagnostics for a file
+that had one. A capability scanner's "no capabilities observed" and "I
+cannot analyse this language" were the same answer.
+
+`Severity.UNRESOLVED` is the structural fix: a THIRD outcome, not a
+severity tier between `warn` and `error`. `ERROR`/`WARN` both mean "the
+check ran to completion and this is what it found" (possibly nothing --
+an empty violation list is a real, complete answer). `UNRESOLVED` means
+"the check could not determine an answer at all" -- an unresolvable call
+target, an unparseable file, a missing language adapter, a stale
+analysis substrate. A gate emits it only when it KNOWS it cannot
+resolve something; it is never a default/fallback for an ordinary empty
+result, and converting every hard case into UNRESOLVED would flood a
+floor that must stay a trustworthy zero (T-1664's own explicit
+guardrail).
+
+Counting and rendering (never silently dropped, never counted as an
+error):
+- `frob.check._python._unresolved_count` counts UNRESOLVED violations,
+  kept as its OWN term everywhere a family/summary line reports
+  error/warning/waived counts (`_gates_family_result`, `_gates_summary`)
+  -- an UNRESOLVED finding folded into "N warnings" would be
+  indistinguishable from a real, completed finding, exactly the failure
+  this closes.
+- `frob check`'s exit code is gated on `n_err` alone (`_gate_summary_
+  result`/`_gates_family_result`) -- UNRESOLVED never fails a run by
+  itself, matching WARN's posture; it must stay visible and countable,
+  not become a second silent-pass floor-flooding failure mode.
+- `_diag_severity` maps an UNRESOLVED `Violation` to a `Diagnostic`
+  `info` severity (distinct from `error`/`warning`) when rendered
+  through `frob.process.parsers.common.Diagnostic`.
+
+Deliberately NOT built in this pass (disclosed, not silently dropped):
+a generic per-gate "declares its optional substrate (natives, a
+language adapter, a resolver) and auto-reports UNRESOLVED when absent"
+mechanism -- that is a real per-gate wiring effort each family needs
+individually, filed as follow-up residue rather than forced into this
+change's scope. REF001 (T-1665, docs/modules/gates.md#anti-orphan-file-
+reference-gate) is the first concrete consumer.
+
 ## Data models
 
 <!-- frob:describes src/frob/gates/_models.py::Severity -->
@@ -4812,7 +4863,10 @@ guessed at inside this ticket's own budget.
 <!-- frob:describes src/frob/gates/_models.py::CoverageData -->
 
 - `Severity` -- a violation's exit-code weight: `error` fails
-  `frob check`, `warn` does not.
+  `frob check`, `warn` and `unresolved` do not. `unresolved` (T-1664,
+  see #unresolved-t-1664 below) is a DIFFERENT kind of claim than
+  `warn`, not a lower tier of the same claim -- "could not determine an
+  answer", never counted as a completed finding.
 - `WaiverRef` -- the `frob:waive` edge that suppressed a violation, kept
   on the `Violation` so waivers stay visible debt rather than silence.
 - `Violation` -- one gate finding: rule id, severity, site, and a message
