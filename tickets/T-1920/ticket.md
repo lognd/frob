@@ -2,7 +2,7 @@
 id: T-1920
 title: 'T-1910 residue: ledger records done and bumps REL001 for a land whose commit
   never reaches main'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -14,8 +14,36 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/tickets/_land.py
+- src/frob/tickets/_land_squash.py
+- src/frob/tickets/_models.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: T-1920 root fix lives in the squash/commit stage (_land_squash.py) and needs
+    a new LandError variant (_models.py); regression test lives in the existing land-proof
+    test file. Filing agent's own scope-closure warning flagged under-capture.
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: T-1920 root fix lives in the squash/commit stage (_land_squash.py) and needs
+    a new LandError variant (_models.py); regression test lives in the existing land-proof
+    test file. Filing agent's own scope-closure warning flagged under-capture.
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: T-1920 root fix lives in the squash/commit stage (_land_squash.py) and needs
+    a new LandError variant (_models.py); regression test lives in the existing land-proof
+    test file. Filing agent's own scope-closure warning flagged under-capture.
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction
+- tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_no_drift_is_a_noop
 designated_repro_test: null
 threat: null
 component: null

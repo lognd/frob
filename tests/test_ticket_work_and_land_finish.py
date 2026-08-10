@@ -37,7 +37,8 @@ from frob.app.ticket_runner._land_cmd import (
 from frob.app.ticket_runner._lifecycle import _default_work_worktree
 from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket
 from frob.tickets._land import land
-from frob.tickets._models import LandReport
+from frob.tickets._land_squash import _assert_still_on_expected_branch
+from frob.tickets._models import LandError, LandReport
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
 
 
@@ -1437,3 +1438,104 @@ class TestLandParityFindings:
         assert parity == expected
         assert ("PRE001", "tickets.md") not in parity
         assert parity == frozenset({("X001", "a.txt"), ("Y002", "b.txt")})
+
+
+# frob:ticket T-1920
+class TestBranchDriftGuard:
+    """T-1920 (T-1910 residue, REQUIRED FIXES 2-4): `_assert_still_on_
+    expected_branch` refuses a land's final squash commit BY CONSTRUCTION
+    when `root`'s checked-out branch drifted away from the branch the
+    land began operating on -- exactly the T-1895 incident's own shape (a
+    fully-formed, complete land commit reachable only from an unrelated
+    branch). Simulates the drift via the `bump_version` callable seam
+    `land()` already exposes (called late, immediately before the final
+    commit) rather than a real concurrent process, since T-1920's own
+    investigation -- mirroring T-1913's for the sibling ancestor-retry
+    mitigation -- could not reproduce the underlying race in a
+    synchronous fixture either; this proves the fix closes the SHAPE of
+    the incident by construction, disclosed honestly as an injected
+    repro rather than a spontaneous one."""
+
+    # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction  # noqa: E501
+    def test_branch_drift_before_final_commit_refuses_by_construction(
+        self, repo: Path
+    ) -> None:
+        # Pre-T-1920 fix, this exact sequence let `land()` return `Ok`
+        # after committing the ticket's `state: done` write (plus any
+        # REL001 bump) onto the DRIFTED branch, not onto `main` -- a
+        # commit `LAND-PROOF` would only discover was unreachable from
+        # `main` AFTER the fact. This test FAILS at that pre-fix
+        # behavior (asserts `is_err`, which used to be `False`/`is_ok`)
+        # and PASSES once `_assert_still_on_expected_branch` refuses
+        # before the commit ever happens.
+        created = new_ticket(repo, _spec("Branch drift regression"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        work_cfg = AppConfig(
+            ticket_command="work", ticket_id=tid, ticket_foreground=True
+        )
+        _work(repo, work_cfg)
+        worktree = _default_work_worktree(repo, tid)
+
+        loaded = load_all(worktree)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(worktree, ticket).is_ok
+        _run(["git", "add", "-A"], worktree)
+        _run(["git", "commit", "-q", "-m", "wt: done report"], worktree)
+
+        main_tip_before = _run(["git", "rev-parse", "main"], repo).stdout.strip()
+
+        def _bump_version_that_drifts_root_off_main(r, t, fid):  # noqa: ANN001, ANN202
+            # Simulates a concurrent process moving `root`'s HEAD off
+            # `main` in the window between `_land_precheck` resolving
+            # `main_branch_name` and the final squash commit -- the
+            # ledger splice (state=done) is already staged in `r`'s
+            # index at this call site (T-0338: `bump_version` runs after
+            # the squash-and-splice, before the final commit), so
+            # committing from here on would carry it onto whatever
+            # branch is now checked out.
+            _run(["git", "checkout", "-b", "sim-drift-t1920"], r)
+            return Ok(None)
+
+        result = land(
+            repo,
+            tid,
+            worktree,
+            dry_run=False,
+            bump_version=_bump_version_that_drifts_root_off_main,
+        )
+
+        assert result.is_err, (
+            "land() succeeded despite root drifting off main mid-land -- "
+            "the T-1920 guard did not fire"
+        )
+        assert result.danger_err == LandError.BranchDrift
+
+        # Acceptance 1: the ticket's state on the REAL `main` branch (not
+        # whatever `repo`'s working tree currently has checked out) must
+        # not have moved to a terminal state.
+        main_ledger = _run(
+            ["git", "show", f"main:{ledger_path(repo).relative_to(repo)}"], repo
+        ).stdout
+        assert f"# {tid} " in main_ledger or tid in main_ledger
+        assert "state: done" not in main_ledger.split(tid, 1)[-1].split("# T-", 1)[0]
+
+        # Acceptance 2: `main` itself did not move at all -- no bump, no
+        # squash commit, nothing landed on it.
+        main_tip_after = _run(["git", "rev-parse", "main"], repo).stdout.strip()
+        assert main_tip_after == main_tip_before
+
+    # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_no_drift_is_a_noop  # noqa: E501
+    def test_no_drift_is_a_noop(self, repo: Path) -> None:
+        # Sanity/baseline: an ordinary land (no branch movement) must not
+        # be refused by the new guard.
+        result = _assert_still_on_expected_branch(repo, "main", "T-0001")
+        assert result.is_ok

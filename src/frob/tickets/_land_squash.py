@@ -968,6 +968,99 @@ def _apply_pre_commit_sweep_or_unwind(
     return Err(LandError.PreLandUnscopedSweepFailed)
 
 
+# frob:ticket T-1920
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_no_drift_is_a_noop  # noqa: E501
+def _assert_still_on_expected_branch(
+    root: Path, expected_branch: str, ticket_id: str
+) -> Result[None, LandError]:
+    """T-1920 (T-1910 residue, REQUIRED FIXES 2-4): re-derive `root`'s
+    CURRENT checked-out branch fresh, right here, immediately before the
+    one git operation (`_commit_squash_apply`) that durably writes the
+    ticket's terminal state and any REL001 bump -- and refuse, unstaging
+    everything staged so far, if it no longer matches `expected_branch`
+    (the branch `main_branch_name` resolved to back at precheck time,
+    threaded through this entire land unchanged).
+
+    This is the by-construction fix T-1910 left as residue rather than a
+    race-catcher: the prior architecture computed `main_branch_name`
+    once, early, then trusted it all the way through the squash, the
+    REL001 bump, and the final commit -- so if `root`'s HEAD ever moved
+    to a DIFFERENT branch in that window (the T-1895 incident's own
+    shape: a fully-formed, complete commit that carried the whole diff
+    and sat only on branch `t-1906-fix` while the ledger read `done` on
+    `main`), `_commit_squash_apply` would commit onto whatever branch
+    HEAD NOW points at -- durably writing `state: done` plus the version
+    bump into a commit reachable from `expected_branch` only by
+    accident, discoverable only afterward via `LAND-PROOF
+    verified=False` (playbook's `[[verify-after-the-mutation]]` failure
+    shape: a guard that runs after the mutation it is meant to gate can
+    only report the problem, never prevent it).
+
+    Called as the LAST check before `_commit_squash_apply` -- nothing
+    below this point can move `root`'s HEAD before the commit runs, so a
+    clean result here means the immediately-following commit is
+    reachable from `expected_branch` BY CONSTRUCTION, not by hope: git's
+    own `commit` unconditionally advances whatever branch ref HEAD
+    currently names, so verifying HEAD's branch identity right before
+    the commit is equivalent to verifying the commit's own future
+    reachability.
+
+    On drift, only `_unstage_index_only(root)` is used to unwind -- never
+    `_verified_reset_root`'s `git reset --hard`, which would hard-reset
+    whatever branch is NOW checked out (not necessarily
+    `expected_branch`) back to `pre_land_tip`; that would be actively
+    destructive to a foreign branch a concurrent process may be using,
+    the same T-1740 lesson `_commit_squash_apply`'s own fallback already
+    applies. `expected_branch` itself was never re-derived here from a
+    hardcoded `"main"` literal -- it is the exact value this land has
+    used consistently since `_land_precheck` resolved it, so a caller
+    whose repository's default branch is not literally named `main`
+    (uncommon in this repo, but not assumed away) is still verified
+    correctly against its OWN branch, not a hardcoded string.
+
+    T-1920's own investigation (mirroring T-1913's for the sibling
+    ancestor-retry mitigation) could not reproduce the underlying T-1895
+    race in a synchronous test fixture either -- no code path in this
+    repo's own land pipeline moves `root`'s HEAD mid-land under normal
+    operation, and a real concurrent `git checkout` racing a held
+    `land_lock` was not observed. This guard closes the class BY
+    CONSTRUCTION regardless: if a branch move can happen (any cause,
+    reproduced or not), the terminal-state/bump write it would otherwise
+    poison now cannot occur without first passing this check."""
+    current = current_branch(root)
+    if current.is_err:
+        _log.error(
+            "land: %s refused -- could not determine %s's current branch "
+            "immediately before the final squash commit; refusing rather "
+            "than risk committing a terminal-state/REL001-bump write onto "
+            "an unverified branch (T-1920)",
+            ticket_id,
+            root,
+        )
+        _unstage_index_only(root)
+        return Err(LandError.BranchDrift)
+    if current.danger_ok != expected_branch:
+        _log.error(
+            "land: %s refused -- %s's checked-out branch drifted from "
+            "%s (the branch this land began operating on) to %s between "
+            "precheck and the final squash commit; committing now would "
+            "produce a commit reachable only from %s, not %s -- exactly "
+            "the T-1895 incident shape. The staged squash's index was "
+            "unstaged; nothing was committed, no terminal ticket state "
+            "and no REL001 bump were written (T-1920)",
+            ticket_id,
+            root,
+            expected_branch,
+            current.danger_ok,
+            current.danger_ok,
+            expected_branch,
+        )
+        _unstage_index_only(root)
+        return Err(LandError.BranchDrift)
+    return Ok(None)
+
+
 # frob:ticket T-0907
 def _land_squash_apply_finish(
     root: Path,
@@ -1032,6 +1125,12 @@ def _land_squash_apply_finish(
     )
     if swept.is_err:
         return Err(swept.danger_err)
+
+    still_on_branch = _assert_still_on_expected_branch(
+        root, main_branch_name, ticket_id
+    )
+    if still_on_branch.is_err:
+        return Err(still_on_branch.danger_err)
 
     committed = _commit_squash_apply(root, ticket, final_id, pre_land_tip=pre_land_tip)
     if committed.is_err:

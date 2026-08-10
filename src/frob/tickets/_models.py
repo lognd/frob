@@ -2025,6 +2025,14 @@ class LandError(ErrorSet):
         "(T-0463 completeness assertion)"
     )
     ReleaseBumpFailed = "the caller's REL001 version-bump callback failed (T-0338)"
+    # frob:ticket T-1920
+    BranchDrift = (
+        "root's checked-out branch drifted away from the branch this land "
+        "began operating on, discovered immediately before the final "
+        "squash commit -- refused by construction so no terminal ticket "
+        "state or REL001 bump is ever committed onto a branch other than "
+        "the one 'main' names (the T-1895 incident shape)"
+    )
     ClaimDivergence = (
         "captured Done-report claims (test count or gate state) no longer "
         "hold post-merge (T-0754)"
