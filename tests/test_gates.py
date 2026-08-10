@@ -11730,6 +11730,7 @@ class TestFixEngineTierABatch2:
             "E501",  # T-1547
             "COV002",  # T-1548
             "TICK006",  # T-1544
+            "DOCENUM001",  # T-1974
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
