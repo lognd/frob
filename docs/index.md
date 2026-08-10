@@ -214,6 +214,11 @@ epic's children implement:
   hygiene principles backed by real papercuts (destructive-verb-by-
   dropped-argument, scope-closure warning volume, and related output
   discipline rules `frob ticket new`/`scope` apply).
+- [`docs/design/test005-ratchet-schedule.md`](design/test005-ratchet-schedule.md)
+  -- T-1315: the staged 75/70 -> 80/75 -> 85/80 -> 90/85 TEST005/TEST006
+  floor schedule, extending (not replacing) `frob.toml`'s own T-0969
+  recalibration rationale -- each step's trigger, and why a per-package
+  override table was not built instead.
 - `docs/audits/docs-staleness-2026-07-29.md` -- the 121-doc staleness
   sweep whose findings drive the T-1226 docs-integrity epic and the
   T-1233 fix campaign.

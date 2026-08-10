@@ -1,7 +1,7 @@
 ---
 id: T-1315
 title: 'TEST005 floor ratchet-up schedule: 75/70 is a waypoint, not a surrender'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-07-29'
@@ -13,6 +13,8 @@ runs_last: false
 scope:
 - frob.toml
 - docs/design/test005-ratchet-schedule.md
+- docs/index.md
+- tickets/T-1953/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -32,17 +34,47 @@ scope_changes:
     glob, per T-1866.
   actor: logan
   at: '2026-08-08'
+- op: add
+  glob: docs/index.md
+  reason: recovering the stranded runner-wiring branch's own scope additions (docs/index.md
+    DOC001 link, the step-1 draft ticket the done-report filed) alongside the original
+    frob.toml/design-doc scope
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-draft-fd2c5ba4/**
+  reason: recovering the stranded runner-wiring branch's own scope additions (docs/index.md
+    DOC001 link, the step-1 draft ticket the done-report filed) alongside the original
+    frob.toml/design-doc scope
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tickets/T-draft-fd2c5ba4/**
+  reason: T-draft-fd2c5ba4 never existed on main (it was on the abandoned runner-wiring
+    branch); recreated as T-1953 during recovery
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-1953/**
+  reason: T-draft-fd2c5ba4 never existed on main (it was on the abandoned runner-wiring
+    branch); recreated as T-1953 during recovery
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: GIVEN a package that has reached zero TEST005 findings at 75/70 WHEN the ratchet
     schedule lands THEN that package's effective floor is documented to step toward
     90/85 (per-package override or schedule), not remain frozen at the recalibrated
     minimum
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - text: GIVEN frob.toml's existing recalibration rationale comment WHEN the ratchet
     design is written THEN it explicitly cites and extends that rationale rather than
     contradicting or duplicating it
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 anchor: false

@@ -342,6 +342,21 @@ min_integration = 1
 # recommendation; the coverage lock's per-module ratchet prevents
 # regression below current reality, and the TEST005 burn-down campaign
 # under T-0969 raises these back toward 90/85 as packages come clean.
+#
+# T-1315 (2026-08-08) extends this rationale rather than superseding it:
+# 75/70 is a WAYPOINT on that same climb back to 90/85, not a new
+# permanent target. All 38 per-package burn-down children of the T-1273
+# epic (T-1276..T-1313) are closed as of this date -- every package
+# reached zero TEST005 findings at 75/70 -- so the floor is no longer
+# doing any work as a ceiling; it is only doing work as a floor. The
+# full staged schedule (75/70 -> 80/75 -> 85/80 -> 90/85, one step at a
+# time, each step gated on a FRESH `make coverage` measurement clearing
+# the next threshold repo-wide) is docs/design/test005-ratchet-
+# schedule.md, which names the live step-1 ticket id. STEP 1 (75/70 ->
+# 80/75) is tracked as a real, closeable ticket -- not just this comment
+# -- so it shows up in `frob ticket doable` the moment its trigger
+# measurement clears it, and re-files its own successor before closing.
+# frob:ticket T-1315
 unit_branch_cov = 75
 module_line_cov = 70
 system_line_cov = 80
