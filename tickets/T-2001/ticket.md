@@ -2,7 +2,7 @@
 id: T-2001
 title: Tier-A auto-fixes design/frob.strata but not the capability ratchet lock, so
   half the obligation self-heals and the breach surfaces on an unrelated later land
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,9 +13,52 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fix_engine_sync.py
+- src/frob/gates/_fix_engine.py
+- tests/test_gates.py
+- docs/design/registry/capability-via-ratchet.lock.json
+- docs/modules/gates.md
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: registering the new handler in TIER_A_HANDLERS (lives in _fix_engine.py),
+    plus its test coverage; lock.json is the file the fix writes to, needed for a
+    real end-to-end test
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gates.py
+  reason: registering the new handler in TIER_A_HANDLERS (lives in _fix_engine.py),
+    plus its test coverage; lock.json is the file the fix writes to, needed for a
+    real end-to-end test
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: registering the new handler in TIER_A_HANDLERS (lives in _fix_engine.py),
+    plus its test coverage; lock.json is the file the fix writes to, needed for a
+    real end-to-end test
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: documenting the new Tier-A handler alongside its siblings
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: the _KNOWN_RULE_FIXABILITY checked-in literal drift-locks against TIER_A_HANDLERS
+    and needs a SYS111 entry too
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
+- tests/test_gates.py::TestFixEngineTierA::test_sys111_leaves_a_pre_existing_breach_untouched
+- tests/test_gates.py::TestFixEngineTierA::test_sys111_no_design_dir_is_a_no_op
+- tests/test_gates.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
+designated_repro_test: tests/test_gates.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
 threat: null
 component: null
 anchor: false

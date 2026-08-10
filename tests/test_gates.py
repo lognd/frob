@@ -2670,9 +2670,7 @@ class TestDeadSymbolGate:
         )
         snap = _snapshot(tmp_path)
         violations = dead_symbol_gate(tmp_path, snap)
-        assert any(
-            v.rule == "DEAD001" and "_helper" in v.message for v in violations
-        )
+        assert any(v.rule == "DEAD001" and "_helper" in v.message for v in violations)
 
     # frob:ticket T-1881
     def test_call_site_in_constant_folded_local_var_dead_branch_is_flagged(
@@ -2699,9 +2697,7 @@ class TestDeadSymbolGate:
         )
         snap = _snapshot(tmp_path)
         violations = dead_symbol_gate(tmp_path, snap)
-        assert any(
-            v.rule == "DEAD001" and "_helper" in v.message for v in violations
-        )
+        assert any(v.rule == "DEAD001" and "_helper" in v.message for v in violations)
 
     # frob:ticket T-1881
     def test_call_site_in_live_branch_is_not_flagged_by_constant_fold(
@@ -3734,10 +3730,10 @@ class TestWireGate:
         _write(
             tmp_path,
             ".claude/hooks/frob-timeout-guard.py",
-            'import re\n'
-            'PATTERN = re.compile(\n'
+            "import re\n"
+            "PATTERN = re.compile(\n"
             '    r"frob +(ticket +(land|totallymadeupverb)|check|test)\\b"\n'
-            ')\n',
+            ")\n",
         )
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
@@ -3745,8 +3741,7 @@ class TestWireGate:
         )
         violations = _wire003_stale_verb_references(tmp_path)
         assert any(
-            v.rule == "WIRE003" and "totallymadeupverb" in v.message
-            for v in violations
+            v.rule == "WIRE003" and "totallymadeupverb" in v.message for v in violations
         )
         # Real verbs in the SAME pattern must not be flagged.
         assert not any(
@@ -3797,9 +3792,7 @@ class TestWireGate:
         assert violations == []
 
     # frob:ticket T-1725
-    def test_wire003_dotted_module_path_is_not_flagged(
-        self, tmp_path: Path
-    ) -> None:
+    def test_wire003_dotted_module_path_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
         """`` `frob.tickets._land` `` (a dotted module path mentioning the
         package name) must never be misread as a verb reference -- `.`
@@ -7603,7 +7596,7 @@ class TestTestGate:
 
         src = tmp_path / "conftest.py"
         src.write_text(
-            '@pytest.fixture(autouse=True)\ndef _isolate() -> None:\n    pass\n',
+            "@pytest.fixture(autouse=True)\ndef _isolate() -> None:\n    pass\n",
             encoding="utf-8",
         )
         record = SymbolRecord(
@@ -7632,7 +7625,9 @@ class TestTestGate:
         assert "conftest.py::_isolate" in found[0].message
 
     # frob:ticket T-1803
-    def test_waive008_stays_silent_on_a_non_rescued_symbol(self, tmp_path: Path) -> None:
+    def test_waive008_stays_silent_on_a_non_rescued_symbol(
+        self, tmp_path: Path
+    ) -> None:
         """A WIRE001 waiver on an ordinary (non-fixture, non-validator)
         symbol must not fire -- WAIVE008 only flags the specific
         structurally-guaranteed-dead shape."""
@@ -9680,9 +9675,7 @@ class TestSuspectDeflatedSymbols:
         with caplog.at_level("WARNING"):
             result = load_coverage(tmp_path, snap)
         assert result.is_ok
-        assert any(
-            "per-symbol deflated" in rec.message for rec in caplog.records
-        )
+        assert any("per-symbol deflated" in rec.message for rec in caplog.records)
 
 
 # frob:ticket T-0541
@@ -11164,6 +11157,150 @@ class TestFixEngineTierA:
         applied = fix_tick006_phantom_refile(root, queue)
         assert applied == []
 
+    # -- SYS111 capability-ratchet lock sync (T-2001) ----------------------
+
+    def _init_git_repo(self, root: Path) -> None:
+        """A real git repo (T-2001's SYS111 handler diffs against `git
+        show HEAD`, unlike every other Tier-A handler in this class --
+        a plain `tmp_path` with no `.git` is not enough)."""
+        import subprocess
+
+        subprocess.run(["git", "init", "-q", "-b", "main", str(root)], check=True)
+        subprocess.run(
+            ["git", "-C", str(root), "config", "user.email", "t@example.com"],
+            check=True,
+        )
+        subprocess.run(["git", "-C", str(root), "config", "user.name", "t"], check=True)
+
+    def _commit_all(self, root: Path, message: str) -> None:
+        import subprocess
+
+        subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+        subprocess.run(
+            ["git", "-C", str(root), "commit", "-q", "-m", message], check=True
+        )
+
+    def _write_ratchet_lock(self, root: Path, entries: dict) -> None:
+        import json
+
+        registry = root / "docs" / "design" / "registry"
+        registry.mkdir(parents=True, exist_ok=True)
+        (registry / "capability-via-ratchet.lock.json").write_text(
+            json.dumps({"entries": entries, "schema_version": 1}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def _write_strata(self, root: Path, via_files: tuple[str, ...]) -> None:
+        (root / "design").mkdir(parents=True, exist_ok=True)
+        via = ", ".join(f'"{f}"' for f in via_files)
+        (root / "design" / "api.strata").write_text(
+            f'module api\nnode Api : trusted {{\n    code "app/**";\n'
+            f'    may "fs.write" via {via};\n}}\n',
+            encoding="utf-8",
+        )
+
+    # frob:ticket T-2001
+    def test_sys111_bumps_growth_this_lands_diff_caused(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_bumps_growth_this_lands_diff_caused  # noqa: E501
+        """Acceptance [1]: the handler bumps the lock in the SAME land as
+        the strata via-list change, so both places move together."""
+        from frob.gates._fix_engine_sync import fix_sys111_capability_ratchet_sync
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "app").mkdir()
+        (root / "app" / "a.py").write_text('open("x", "w")\n', encoding="utf-8")
+        self._write_strata(root, ("app/a.py",))
+        self._write_ratchet_lock(
+            root, {"Api::fs.write": {"accepted_count": 1, "reason": "T-0000 baseline"}}
+        )
+        self._init_git_repo(root)
+        self._commit_all(root, "init: 1 via site, ceiling at 1")
+
+        # simulate SYS100's own auto-fix widening the via-list, uncommitted,
+        # in THIS land -- exactly the shape T-1977/T-1665 measured.
+        self._write_strata(root, ("app/a.py", "app/b.py"))
+
+        applied = fix_sys111_capability_ratchet_sync(root)
+        assert len(applied) == 1
+        assert applied[0].rule == "SYS111"
+        assert "1 -> 2" in applied[0].detail
+
+        import json
+
+        lock = json.loads(
+            (
+                root
+                / "docs"
+                / "design"
+                / "registry"
+                / "capability-via-ratchet.lock.json"
+            ).read_text(encoding="utf-8")
+        )
+        assert lock["entries"]["Api::fs.write"]["accepted_count"] == 2
+        assert lock["entries"]["Api::fs.write"]["reason"]
+
+    # frob:ticket T-2001
+    def test_sys111_leaves_a_pre_existing_breach_untouched(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_leaves_a_pre_existing_breach_untouched  # noqa: E501
+        """Acceptance [3]: growth NOT attributable to the landing diff (the
+        ceiling is already exceeded before the land begins, and nothing in
+        this land's own diff touches it further) must still fail rather
+        than be silently ratified."""
+        from frob.gates._fix_engine_sync import fix_sys111_capability_ratchet_sync
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "app").mkdir()
+        (root / "app" / "a.py").write_text('open("x", "w")\n', encoding="utf-8")
+        # 3 via sites already committed, ceiling stuck at 1 -- a
+        # pre-existing breach that predates this "land" entirely.
+        self._write_strata(root, ("app/a.py", "app/b.py", "app/c.py"))
+        self._write_ratchet_lock(
+            root, {"Api::fs.write": {"accepted_count": 1, "reason": "T-0000 baseline"}}
+        )
+        self._init_git_repo(root)
+        self._commit_all(root, "already 3 via sites, ceiling never moved")
+
+        applied = fix_sys111_capability_ratchet_sync(root)
+        assert applied == []
+
+        import json
+
+        lock = json.loads(
+            (
+                root
+                / "docs"
+                / "design"
+                / "registry"
+                / "capability-via-ratchet.lock.json"
+            ).read_text(encoding="utf-8")
+        )
+        assert lock["entries"]["Api::fs.write"]["accepted_count"] == 1
+
+        from frob.strata import merge_models
+        from frob.strata._design_load import load_design_ids
+        from frob.strata._effects import capability_ratchet_violations
+
+        ids = load_design_ids(root, "design")
+        model = merge_models(ids.models)
+        violations = capability_ratchet_violations(model, root)
+        assert any(v.node == "Api" and v.atom == "fs.write" for v in violations)
+
+    # frob:ticket T-2001
+    def test_sys111_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_no_design_dir_is_a_no_op  # noqa: E501
+        from frob.gates._fix_engine_sync import fix_sys111_capability_ratchet_sync
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        self._init_git_repo(root)
+        (root / "readme.txt").write_text("x\n", encoding="utf-8")
+        self._commit_all(root, "init")
+        assert fix_sys111_capability_ratchet_sync(root) == []
+
 
 # frob:ticket T-1348
 # frob:ticket T-1548
@@ -11731,6 +11868,7 @@ class TestFixEngineTierABatch2:
             "COV002",  # T-1548
             "TICK006",  # T-1544
             "DOCENUM001",  # T-1974
+            "SYS111",  # T-2001
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
@@ -12036,8 +12174,7 @@ class TestWaive004ExaminedSitesGuard:
         (root / "src").mkdir(parents=True)
         (root / "tickets.md").write_text("", encoding="utf-8")
         (root / "src" / "good.py").write_text(
-            '# frob:waive ARCH001 reason="fixture, T-1942"\n'
-            "def f():\n    return 1\n",
+            '# frob:waive ARCH001 reason="fixture, T-1942"\ndef f():\n    return 1\n',
             encoding="utf-8",
         )
         snapshot = self._snap(root)
@@ -12235,12 +12372,12 @@ class TestWaive004ExaminedSitesGuard:
 
         waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
         assert [a.file for a in waive004_applied] == ["src/examined.py"]
-        assert "frob:waive ARCH001" not in (
-            root / "src" / "examined.py"
-        ).read_text(encoding="utf-8")
-        assert "frob:waive ARCH001" in (
-            root / "src" / "unexamined.bin"
-        ).read_text(encoding="utf-8")
+        assert "frob:waive ARCH001" not in (root / "src" / "examined.py").read_text(
+            encoding="utf-8"
+        )
+        assert "frob:waive ARCH001" in (root / "src" / "unexamined.bin").read_text(
+            encoding="utf-8"
+        )
 
 
 # frob:ticket T-0542
@@ -12692,7 +12829,8 @@ class TestConventionUnitBinding:
             snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
         )
         assert not any(
-            v.rule in ("TEST001", "TEST002") and v.file == ".claude/hooks/example-hook.py"
+            v.rule in ("TEST001", "TEST002")
+            and v.file == ".claude/hooks/example-hook.py"
             for v in violations
         )
 
@@ -17302,9 +17440,7 @@ class TestFixEngineTierB:
     # -- DEAD001: the first real, production Tier-B handler (T-1643) -------
 
     # frob:ticket T-1643
-    def test_dead001_removes_unreferenced_private_symbol(
-        self, tmp_path: Path
-    ) -> None:
+    def test_dead001_removes_unreferenced_private_symbol(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates.py::TestFixEngineTierB.test_dead001_removes_unreferenced_pri\
         # vate_symbol

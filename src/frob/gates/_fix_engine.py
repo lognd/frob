@@ -52,6 +52,7 @@ from frob.gates._fix_engine_sync import (
     fix_rel002_release_sync,
     fix_sys100_extended_whole_node_grant,
     fix_sys100_may_via_union,
+    fix_sys111_capability_ratchet_sync,
     fix_waive004_stale_waiver,
 )
 from frob.gates._fix_engine_text import (
@@ -522,9 +523,7 @@ TIER_A_HANDLERS: dict[
     "DOC002": lambda root, snapshot, queue, ticket_id: fix_doc002_unique_slug(
         root, snapshot
     ),
-    "FMT001": lambda root, snapshot, queue, ticket_id: fix_fmt001_directive_wrap(
-        root
-    ),
+    "FMT001": lambda root, snapshot, queue, ticket_id: fix_fmt001_directive_wrap(root),
     "SUPPRESS001": (
         lambda root, snapshot, queue, ticket_id: fix_suppress001_paired_suppression(
             root, snapshot
@@ -538,6 +537,16 @@ TIER_A_HANDLERS: dict[
     ),
     "REL002": lambda root, snapshot, queue, ticket_id: fix_rel002_release_sync(root),
     "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(root),
+    # frob:ticket T-2001
+    # Runs immediately after SYS100 (dict order, `apply_tier_a_fixes`'
+    # own docstring): the ratchet-sync handler's BEFORE-vs-CURRENT
+    # attribution depends on SYS100's own via-list widening already
+    # having happened on disk in THIS SAME pass.
+    "SYS111": (
+        lambda root, snapshot, queue, ticket_id: fix_sys111_capability_ratchet_sync(
+            root
+        )
+    ),
     "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(root),
     "COV002": (
         lambda root, snapshot, queue, ticket_id: fix_cov002_ticket_directive_insertion(
