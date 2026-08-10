@@ -1,7 +1,7 @@
 ---
 id: T-2016
 title: design a growth-rate grammar for frob sys capacity --at DATE
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -11,9 +11,41 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/strata/**
+- docs/strata/kernel.md
+- docs/strata/reliability.md
+- src/frob/strata/_capacity.py
+evidence_scope:
+- tests/unit/strata/test_capacity_projection.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/strata/kernel.md
+  reason: design deliverable is documentation, not code -- add the two docs the grammar
+    design and its capacity-evaluator cross-reference live in
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/strata/reliability.md
+  reason: design deliverable is documentation, not code -- add the two docs the grammar
+    design and its capacity-evaluator cross-reference live in
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/strata/**
+  reason: design-only ticket produced a docs deliverable plus a docstring cross-reference;
+    narrow off the epic-wide glob to just the files actually touched
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/strata/_capacity.py
+  reason: design-only ticket produced a docs deliverable plus a docstring cross-reference;
+    narrow off the epic-wide glob to just the files actually touched
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/strata/test_capacity_projection.py::TestProjectCapacityUnscaled::test_over_capacity_current_demand_fires
+- tests/unit/strata/test_capacity_projection.py::TestProjectCapacityScaled::test_population_scales_demand_linearly
 designated_repro_test: null
 threat: null
 component: null

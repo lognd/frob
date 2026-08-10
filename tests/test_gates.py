@@ -2888,6 +2888,82 @@ class TestDeadSymbolGate:
         violations = dead_symbol_gate(tmp_path, snap)
         assert not any("_never_called" in v.message for v in violations)
 
+    # frob:ticket T-1959
+    def test_call_site_inside_with_block_dead_branch_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1959 class-1 miss (`_render_ledger`, T-1881 evidence): the real
+        repo's `write_all`/`write_archive` mode-dispatch sits INSIDE a
+        `with ledger_lock(root):` block, not at the function's own top
+        level -- `_walk_dead_ranges` (T-1881) only ever recurses into an
+        `if` statement's branches, never into a `with`/`async with` body,
+        so a constant-folded dispatch nested one `with` deep was
+        completely invisible to the fold pass (verified empirically
+        against `bdb39bde3`: the real `write_all` dispatch's dead branch
+        was silently unscanned, not merely unfolded). `_helper`'s only
+        call site sits in the dead branch of a `with`-nested dispatch, so
+        this must still flag it."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _mode() -> str:\n"
+            '    return "v2"\n\n\n'
+            "def _helper() -> None:\n"
+            "    pass\n\n\n"
+            "class _Lock:\n"
+            "    def __enter__(self) -> None:\n"
+            "        return None\n\n"
+            "    def __exit__(self, *exc: object) -> None:\n"
+            "        return None\n\n\n"
+            "def dispatch() -> str:\n"
+            "    with _Lock():\n"
+            '        if _mode() == "v2":\n'
+            '            return "v2-path"\n'
+            "        _helper()\n"
+            '        return "v1-path"\n',
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert any(v.rule == "DEAD001" and "_helper" in v.message for v in violations)
+
+    # frob:ticket T-1959
+    def test_call_site_inside_with_block_live_branch_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """False-positive guard for the T-1959 `with`-recursion fix: a
+        call site inside a `with` block's LIVE branch (the fold resolves
+        `True`, not `False`) must stay unflagged -- recursing into a
+        `with` body must not accidentally treat everything inside it as
+        dead."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _mode() -> str:\n"
+            '    return "v2"\n\n\n'
+            "def _helper() -> None:\n"
+            "    pass\n\n\n"
+            "class _Lock:\n"
+            "    def __enter__(self) -> None:\n"
+            "        return None\n\n"
+            "    def __exit__(self, *exc: object) -> None:\n"
+            "        return None\n\n\n"
+            "def dispatch() -> str:\n"
+            "    with _Lock():\n"
+            '        if _mode() == "v2":\n'
+            "            _helper()\n"
+            '            return "v2-path"\n'
+            '        return "v1-path"\n',
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("_helper" in v.message for v in violations)
+
 
 # frob:ticket T-1428
 # frob:ticket T-1502

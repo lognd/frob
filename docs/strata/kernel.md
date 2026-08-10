@@ -391,7 +391,189 @@ hints on resources and arbiters this ticket's body mentions) are a
 separate, sibling ticket -- this page documents the grammar and
 propagation primitive only.
 
-## Claim evaluation
+<a id="growth-rate-declarations-t-2016"></a>
+### Growth-rate declarations (T-2016 design -- NOT implemented)
+
+**Status: design only.** No grammar, elaboration, or evaluator code
+exists for this section yet -- filed as a T-1927 residue
+(docs/strata/reliability.md#population-projected-capacity-t-1927) to
+unblock `frob sys capacity --at DATE` (docs/strata/roadmap.md "CLI
+surface (target)"), currently unimplemented for exactly this reason.
+This section is the game plan an implementer should follow, not a
+description of shipped behavior; nothing here should be cited as an
+existing `frob:describes` target.
+
+> **UNMISSABLE: this is not "add a grammar clause".** Implementing
+> `--at DATE` REQUIRES changing `FactBase.aggregate_demand`'s own
+> aggregation order (see immediately below) -- moving growth projection
+> from a post-hoc scalar to a per-node input that happens BEFORE the
+> BFS summation `strata_core.propagated_demand` performs. That is a
+> change to the shared demand-propagation primitive every REL38x/CAP001
+> consumer of `aggregate_demand` depends on, not a leaf addition to
+> `_capacity.py` alone. Scope this as "modify a shared kernel primitive
+> plus its full consumer set's regression coverage", not as
+> "`--population N` but with a date" -- the two are different orders of
+> magnitude of change, and anyone estimating this from the CLI surface
+> alone will under-scope it.
+
+**Why `--population N` could not just grow into `--at DATE`.**
+`project_capacity` (T-1927) scales every node's `aggregate_demand` by
+ONE global scalar, `population / baseline_population`, computed once
+per run. That is sound for "hypothetically N users, all else equal" but
+cannot answer "at DATE" honestly the moment two demand-declaring nodes
+grow at different rates -- which is the common case (a new region's
+`users` compounds faster than a legacy one's). A single post-hoc scalar
+applied AFTER `FactBase.aggregate_demand` sums per-source demand at a
+downstream node is structurally unable to express that: by the time the
+sum exists, which source contributed how much has already been
+collapsed away. Any sound `--at DATE` evaluator must scale EACH
+demand-declaring node's OWN seed rate by ITS OWN growth projection
+BEFORE `aggregate_demand`'s BFS summation runs -- i.e., the growth
+projection has to be a per-node input to the SAME synthetic-seed
+mechanism this section's parent (`aggregate_demand`, above) already
+uses for `users`/`rate`, not a second pass layered on top of its
+output. This is the one fact that makes `--at DATE` a modeling change,
+not a CLI-parsing one, and is why T-1927 correctly declined to improvise
+it under time pressure. **Every other consumer of `aggregate_demand`
+(REL380/REL381's serialization-point utilization checks, and any future
+consumer) is unaffected in its UNSCALED (`--at`-absent) call shape --
+only the seed-rate construction step gains a new, optional growth input
+-- but the function's own internal aggregation order changes for
+everyone who calls it, so its existing regression coverage
+(`tests/unit/strata/test_capacity.py`'s `TestPropagatedDemand`
+family, and any REL38x test exercising `aggregate_demand` directly)
+has to be re-verified against the reordered implementation, not just
+extended.**
+
+**Grammar (proposed).** An optional trailing modifier on the two
+existing T-0702 clauses, attached to the SAME node/store declaration
+(T-0261 symmetry preserved -- growth is a property of a demand
+declaration, not a new declaration kind of its own):
+
+```
+users NUMBER [growth PERCENT per PERIOD]
+rate NUMBER UNIT [growth PERCENT per PERIOD]
+```
+
+`PERCENT` reuses the existing `%` unit (`_models.py::_UNITS`, dimension
+`"percent"`) already elaborated for other quantities -- no new token
+kind. `PERIOD` needs three new fixed-length time units alongside the
+existing `s`/`ms`/`min`/`h`/`d` (`_models.py::_UNITS`): `w` (7d),
+`mo` (30d), `y` (365d) -- deliberately FIXED-length, not calendar-aware
+(no Feb-is-28-days, no leap years), the same simplification `d` (a flat
+86400s) already makes for every other time quantity in this grammar. A
+model wanting calendar precision is out of scope for a static
+capacity-planning tool; flag this explicitly in the CLI's own `--help`
+text so a real February never surprises anyone.
+
+Example:
+
+```
+node checkout_api {
+    users 50000 growth 12% per year;
+    capacity { service_rate 2000 req/s; replicas_max 40; }
+}
+```
+
+**Arithmetic: compound, not linear.** `growth 12% per year` means the
+declared `users`/`rate` value multiplies by `1.12` once per elapsed
+year, compounding -- NOT `+12% of the ORIGINAL value, added once per
+year` (linear). Compounding is the standard convention for a stated
+population/traffic growth rate (it is how "12% YoY growth" is
+universally read) and it is also the only choice that cannot produce a
+negative projected population for a NEGATIVE growth rate over a long
+horizon (linear decay crosses zero and keeps going negative; compound
+decay asymptotes toward zero and never crosses it) -- a materially safer
+default for a tool whose entire job is refusing to silently produce a
+meaningless number. Projected value at elapsed time `t` (in the SAME
+unit as `PERIOD`): `declared_value * (1 + growth_pct / 100) ** (t /
+period_length)`.
+
+**The anchor date -- DECIDED.** Every declaration above projects growth
+relative to elapsed time, but the model has NO notion of calendar time
+anywhere today -- no node, store, or top-level construct says "this
+model's `users`/`rate` values are accurate AS OF when". `--at DATE`
+cannot compute `t` (elapsed time between the model's own baseline and
+the requested date) without one. Two candidate designs were weighed
+here, genuinely different in their failure mode:
+
+1. A model-level `as_of DATE;` top-level declaration, optional,
+   defaulting to the evaluation wall-clock time when absent. Pro:
+   self-describing, reproducible from source alone when an author
+   bothers to state it. Con: a model without `as_of` silently anchors to
+   "whenever this command happens to run", so the SAME `.strata` file
+   run today vs. next month reports a DIFFERENT `--at DATE` answer for
+   the identical file -- a reproducibility trap unless every model using
+   `growth` is separately disciplined about pairing it with `as_of`,
+   which nothing enforces.
+2. A required CLI-only `--since DATE` paired with `--at DATE`
+   (`frob sys capacity --since 2026-08-01 --at 2027-08-01`), no model
+   grammar addition beyond the `growth` clause itself.
+
+**Decided: option 2, CLI-only `--since DATE`/`--at DATE`.** Ticket-owner
+call (2026-08-10): a model-level `as_of DATE` "bakes a moving fact into
+a declaration that is supposed to be timeless, and it would drift
+silently the moment the file is not re-read" -- the exact reproducibility
+trap option 1's own con already named, made the deciding factor rather
+than a tradeoff to weigh further. This also keeps `growth` symmetric
+with T-1927's own `--population N` precedent (a model declares WHAT,
+the CLI supplies the run's own WHEN/HOW-MUCH), needs no new
+elaboration-time enforcement to avoid silent non-reproducibility, and
+cannot regress an existing model's meaning the moment `growth` is added
+to one node (a `users NUMBER` declaration with no `growth` clause still
+means exactly what it means today, un-anchored, since there is no
+model-level `as_of` construct at all). No `as_of` grammar will be added.
+
+**Deliberately NOT expressed, even after this design is implemented:**
+
+- **No non-monotonic or seasonal growth.** One compounding rate for the
+  whole projection window; no "surge in December" curve. A `scenario`
+  block (`## Scenario` above, T-0073's `scale IDENT by NUM`) already
+  covers a one-off counterfactual multiplier and remains the right tool
+  for a discrete surge; `growth` is for a long-run trend line only.
+- **No growth on `capacity` itself.** `Capacity.service_rate`/
+  `replicas_max` stay static -- this section only lets DEMAND grow over
+  time, never the SUPPLY side. A capacity-planning tool that let both
+  sides drift would need a second, independent growth curve per node
+  and could never produce a stable "you need N replicas by DATE"
+  answer; deliberately out of scope, forever, not just for this pass.
+- **No per-flow growth distinct from node/store growth.** `Flow.rate`
+  (the existing, separate declaration `propagated_demand` already sums)
+  gets no `growth` clause of its own in this design -- only the T-0702
+  `users`/`rate` ENTRY-POINT declarations do. A flow's rate is
+  downstream of node/store demand in this model's own causal direction
+  (T-0702's own module docstring: entry demand causes flow load, not
+  the reverse); growing it independently would let a flow's declared
+  rate silently diverge from the entry population that is supposed to
+  be causing it.
+- **No retroactive/negative-time projection guardrail beyond what the
+  math already gives.** A `--at DATE` in the PAST relative to the
+  baseline is not specially rejected -- the compound formula above
+  already produces a smaller (not negative) number for negative elapsed
+  time under a positive growth rate, which is a coherent answer
+  ("what were we sized for, six months ago"). Not preventing this is a
+  deliberate choice, not an oversight: forbidding it would need its own
+  elaboration rule for no real safety benefit the formula does not
+  already provide.
+
+**Suggested landing shape**, if/when this proceeds: (1) the `growth`
+grammar clause plus the three new fixed-length time units, elaborated
+onto `Node`/new fields mirroring `users`/`rate`'s own precedent; (2)
+`--since DATE`/`--at DATE` wired on the `frob sys capacity` CLI (the
+anchor-date decision above -- no model grammar addition for it); (3)
+**the larger piece**, `aggregate_demand`'s synthetic per-node seed rate
+reordered to accept and apply that node's own growth projection BEFORE
+`strata_core.propagated_demand`'s BFS summation runs, plus
+re-verification of every existing `aggregate_demand` consumer's
+regression coverage against the reordered implementation (the
+`UNMISSABLE` note above) -- this is the step that makes the whole
+feature a shared-primitive change, not a leaf addition, and should be
+scoped/estimated as such before anyone commits to a timeline. Only
+once (3) exists does `project_capacity` itself need any change, and
+that change is small: accept and forward the new date parameters into
+the (now growth-aware) `FactBase` call, since it already consumes
+`aggregate_demand`'s output as a black box.
+
 
 <!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->
 

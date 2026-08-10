@@ -156,8 +156,8 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 163,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 0 to 163 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 164,
+      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 0 to 164 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::fetch_url": {
@@ -176,9 +176,9 @@
       "ticket": "T-2001"
     },
     "testsuite::fs.write": {
-      "accepted_count": 308,
-      "reason": "T-2011 merge-conflict resolution: both diverging sides (306 from one concurrent land, 307 from another) undercounted the true unioned via-list this merge produces (design/frob.strata's testsuite::fs.write now lists 308 distinct sites, including tests/unit/test_waive004_perf_guard.py added by this ticket) -- set to the real measured count rather than either stale side",
-      "ticket": "T-2011"
+      "accepted_count": 309,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 0 to 309 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

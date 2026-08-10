@@ -483,6 +483,9 @@ def _fold_if_branch(
     return False
 
 
+_TRANSPARENT_BLOCK_KINDS = (ast.With, ast.AsyncWith)
+
+
 def _walk_dead_ranges(
     stmts: list[ast.stmt],
     const_funcs: dict[str, object],
@@ -500,7 +503,20 @@ def _walk_dead_ranges(
     nested fold still catches a second `if` layered inside the alive
     branch. T-1962: the per-statement assign-tracking and if-folding
     steps live in `_track_assign_locals`/`_fold_if_branch`; this loop
-    only sequences them."""
+    only sequences them.
+
+    T-1959: `ast.With`/`ast.AsyncWith` are TRANSPARENT to this walk --
+    recursed into with the current `local` map (a `with` block does not
+    open a new variable scope in Python, unlike `FunctionDef`/`ClassDef`
+    below), so a mode-dispatch `if` nested one `with` deep (this repo's
+    own dominant `with ledger_lock(root): mode = _store_mode(root); if
+    mode == ...` shape, T-1881 evidence's `_render_ledger` miss) is no
+    longer invisible to the fold. Recursing loses newly-established
+    locals from INSIDE the `with` body once the walk returns to `stmts`
+    after it (the recursive call takes its own private copy) -- the same
+    conservative simplification `_fold_if_branch`'s unresolved-`if`
+    branches already accept, never a false-accusation risk, only a
+    missed fold."""
     local = dict(locals_)
     bool_locals: dict[str, bool] = {}
     for index, stmt in enumerate(stmts):
@@ -517,6 +533,8 @@ def _walk_dead_ranges(
                 stmt, index, stmts, const_funcs, local, bool_locals, dead_ranges
             ):
                 return
+        elif isinstance(stmt, _TRANSPARENT_BLOCK_KINDS):
+            _walk_dead_ranges(stmt.body, const_funcs, local, dead_ranges)
 
 
 # frob:ticket T-1881

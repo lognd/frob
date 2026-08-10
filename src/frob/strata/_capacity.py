@@ -15,6 +15,15 @@ that the surface grammar does not have yet -- inventing one is a language
 change, out of this ticket's "evaluator over the existing model" scope.
 `--population N` needs no new grammar: it scales the model's OWN already-
 declared `users` population linearly, which is sound with today's data.
+
+T-2016 designed (not yet implemented) the missing grammar --
+docs/strata/kernel.md#growth-rate-declarations-t-2016 -- including why
+this module's own single-scalar `scale` cannot simply be reused for a
+per-node growth rate (each demand-declaring node's synthetic seed rate
+needs its OWN growth projection applied BEFORE `aggregate_demand`'s BFS
+summation, not a scalar applied after) and one open decision (a
+model-level `as_of DATE` vs. a CLI-only `--since DATE`) an implementer
+needs from the ticket owner before starting.
 """
 
 from __future__ import annotations

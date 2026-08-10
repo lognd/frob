@@ -1643,7 +1643,13 @@ declaration on `Node.users`/`rate` the T-0702 surface grammar does not
 have yet -- adding one is a language change, out of scope for "an
 evaluator over the model as it exists today". `--population N` needed
 no new grammar: it scales the model's OWN already-declared `users`
-population linearly, sound with today's data alone.
+population linearly, sound with today's data alone. T-2016 produced a
+DESIGN (not yet implemented) for the missing grammar --
+docs/strata/kernel.md#growth-rate-declarations-t-2016 -- including why
+`project_capacity`'s single-scalar architecture cannot simply be reused
+for a per-node growth rate, and one open decision (a model-level
+`as_of DATE` vs. a CLI-only `--since DATE`) that needs an owner call
+before implementation starts.
 
 ## See also
 

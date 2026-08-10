@@ -2,7 +2,7 @@
 id: T-1959
 title: 'Dead-by-constant-branch: close the remaining 9/23 misses left by T-1881 (multi-hop,
   boolean-composition, syntactic dead-caller)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,18 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_dead_symbols.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: adding regression tests for the with-block fold gap fix
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates.py::TestDeadSymbolGate::test_call_site_inside_with_block_dead_branch_is_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_call_site_inside_with_block_live_branch_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null
