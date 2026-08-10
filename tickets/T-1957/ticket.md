@@ -2,7 +2,7 @@
 id: T-1957
 title: Wire DUP001 region_kernel (R1.5) as regression corpus for type-name-only clone
   families (T-1938 finding)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -15,8 +15,28 @@ scope:
 - src/frob/dup/**
 - tests/unit/dup/**
 - docs/modules/dup.md
+- tests/fixtures/dup_type_name/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/fixtures/dup_type_name/**
+  reason: 'Adding the regression fixture/test/corpus files this ticket''s own plan
+
+    describes (tests/fixtures/dup_type_name/**, tests/unit/dup/**), plus a
+
+    docs/modules/dup.md cross-reference noting this family as a live worked
+
+    example of what region_kernel catches (the ticket''s own decision-2
+
+    alternative to flipping the repo-wide default).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/dup/test_type_name_only_regression_t1957.py::TestTypeNameOnlyCloneMissedByDefault::test_default_config_does_not_catch_the_function_pair
+- tests/unit/dup/test_type_name_only_regression_t1957.py::TestRegionKernelAloneCatchesTypeNameOnlyClone::test_region_kernel_flag_alone_finds_the_pair_at_similarity_one
 designated_repro_test: null
 threat: null
 component: null

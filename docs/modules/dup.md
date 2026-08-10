@@ -69,6 +69,29 @@ exact by construction), and a narrowed `CloneRegion` span covering just
 the matched token window -- not the whole symbol, same posture as R4's
 region-narrowing.
 
+**Worked example: catching a "type-name-only" clone (T-1938/T-1957).**
+R1.5's R2-normalized token stream generalizes over identifier renaming
+the same way R2's own whole-body hash does -- so it also catches a clone
+that differs only in a renamed TYPE name (plus the domain word threaded
+through it), not just a copy-pasted sub-block. T-1938 found exactly this
+in production: `check_backpressure_obligations`/`check_fallback_
+obligations` (`src/frob/strata/_backpressure.py`/`_fallback.py`), each
+collecting violations of its own domain-specific type
+(`BackpressureViolation`/`FallbackViolation`) via two identically-shaped
+helper calls. With this repo's actual `frob.toml` config
+(`native_rungs_enabled=False` for perf, `region_kernel` left off), R1/R2
+missed this pair entirely -- flipping ONLY `region_kernel_enabled=True`
+(still no native rungs) surfaced it at `rung=r1.5 similarity=1.0`, no new
+detector logic. `tests/unit/dup/test_type_name_only_regression_t1957.py`
+(fixture: `tests/fixtures/dup_type_name/src/{mod_a,mod_b}.py`,
+reconstructing this exact shape standalone) locks both halves of that
+finding in as a permanent regression: the miss under this repo's real
+default config, and the catch with only `region_kernel` flipped on.
+Whether to flip `[dup].region_kernel = true` repo-wide (a perf tradeoff
+needing its own cold/warm cost re-measurement) is deliberately left an
+open, separate decision -- this corpus documents what the rung already
+catches today, opt-in.
+
 ## `[dup].native_rungs`: gating R3/R4/R5 independently of `enforce` (T-0974)
 
 R3/R4/R5 (`DupConfig.native_rungs_enabled`, default `True` at the
