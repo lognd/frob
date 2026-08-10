@@ -486,6 +486,96 @@ class TestRenumberRefusesLiveCrossWorktreeLease:
         result = renumber(repo, dry_run=True)
         assert result.is_ok
 
+    # frob:ticket T-1918
+    def test_single_id_renumber_succeeds_despite_unrelated_live_foreign_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-1918 regression: `renumber_one` must NOT refuse over a live
+        foreign lease on a DIFFERENT, unrelated ticket id -- exactly one
+        lease file (`old_id`'s own) can ever be orphaned by a single-id
+        rename, so a lease on any other id is not at risk. This is the
+        shape that broke draft promotion at land time under parallel
+        dispatch: any other agent's live lease, on any unrelated ticket,
+        made every single-id renumber refuse."""
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
+        # reeLease.test_single_id_renumber_succeeds_despite_unrelated_live_foreign_lease
+        from frob.tickets import renumber_one
+
+        # Ticket A: live-leased in second_worktree -- unrelated to the id
+        # `repo` is about to renumber.
+        created_a = new_ticket(
+            second_worktree, _spec("Feature A", scope=("src/feature.py",))
+        )
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(second_worktree, tid_a, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        # Ticket B: repo's own local ticket, entirely unrelated to A, being
+        # single-id renumbered -- not the id A holds a lease on.
+        created_b = new_ticket(repo, _spec("Feature B", scope=("src/other.py",)))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+
+        result = renumber_one(repo, tid_b, "T-9999")
+        assert result.is_ok
+
+    # frob:ticket T-1918
+    def test_single_id_renumber_still_refused_when_lease_is_on_the_id_being_renumbered(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """A live foreign lease on the EXACT id being renumbered must still
+        refuse -- T-1918 narrows the guard to the specific id at risk, it
+        does not remove the protection T-1882 added."""
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
+        # reeLease.test_single_id_renumber_still_refused_when_lease_is_on_the_id_being_\
+        # renumbered
+        from frob.tickets import renumber_one
+
+        # Ticket A is created in repo (so both checkouts agree it exists),
+        # then leased LIVE from second_worktree -- the id repo is about to
+        # try to renumber out from under that lease.
+        created_a = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        _run(["git", "merge", "main"], second_worktree)
+        assert transition(second_worktree, tid_a, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        result = renumber_one(repo, tid_a, "T-9999")
+        assert result.is_err
+        assert result.danger_err == TicketError.ScopeLeaseConflict
+
+    # frob:ticket T-1918
+    def test_bulk_renumber_still_refuses_under_any_live_foreign_lease(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """Explicit anti-regression assertion for T-1882: the BULK
+        `renumber()` path must keep refusing over ANY live foreign lease on
+        ANY ticket, even one entirely unrelated to what would move -- T-1918
+        narrows only the single-id paths, never this one."""
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorkt\
+        # reeLease.test_bulk_renumber_still_refuses_under_any_live_foreign_lease
+        from frob.tickets import renumber
+
+        created_a = new_ticket(
+            second_worktree, _spec("Feature A", scope=("src/feature.py",))
+        )
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(second_worktree, tid_a, TicketState.PLANNED).is_ok
+        assert transition(second_worktree, tid_a, TicketState.IN_PROGRESS).is_ok
+
+        created_b = new_ticket(repo, _spec("Feature B", scope=("src/other.py",)))
+        assert created_b.is_ok
+
+        result = renumber(repo)
+        assert result.is_err
+        assert result.danger_err == TicketError.ScopeLeaseConflict
+
 
 # frob:ticket T-1883
 class TestSameWorktreeLease:

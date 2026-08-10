@@ -2,7 +2,7 @@
 id: T-1918
 title: 'T-1882 regression: single-id renumber refuses on ANY foreign lease, so every
   land that files residue fails under parallel dispatch'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -17,6 +17,10 @@ scope:
 - tests/test_ticket_leases_cross_worktree.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease::test_single_id_renumber_succeeds_despite_unrelated_live_foreign_lease
+- tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease::test_single_id_renumber_still_refused_when_lease_is_on_the_id_being_renumbered
+- tests/test_ticket_leases_cross_worktree.py::TestRenumberRefusesLiveCrossWorktreeLease::test_bulk_renumber_still_refuses_under_any_live_foreign_lease
 designated_repro_test: null
 threat: null
 component: null

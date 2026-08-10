@@ -552,6 +552,53 @@ def _refuse_if_other_worktree_holds_live_lease(root: Path) -> Result[None, Ticke
     return Err(TicketError.ScopeLeaseConflict)
 
 
+# frob:ticket T-1918
+def _refuse_if_other_worktree_holds_live_lease_for_id(
+    root: Path, old_id: str
+) -> Result[None, TicketError]:
+    """Single-id counterpart to `_refuse_if_other_worktree_holds_live_lease`
+    (T-1918 fix): refuse ONLY when a live, non-TTL-expired lease held by a
+    DIFFERENT worktree names the SPECIFIC `old_id` being renumbered, rather
+    than refusing over ANY foreign lease on ANY ticket.
+
+    T-1882's original guard was correct for the bulk `renumber()` path,
+    where every id moves at once and any live foreign lease is genuinely at
+    risk of being orphaned. Applied to a single-id rename (`renumber_one`/
+    `renumber_one_v2`, including draft promotion at land time), it refused
+    over leases on ids that are not moving at all -- confirmed as a real
+    regression (T-1918): draft promotion for one ticket's residue failed
+    because an UNRELATED ticket held a lease in an unrelated worktree.
+    Exactly one lease file (`<old_id>.json`) can ever be orphaned by a
+    single-id rename, so only a conflict on that specific id needs to
+    refuse; every other live foreign lease is unaffected by this rename and
+    must not block it. A lease held by THIS SAME worktree is still not a
+    conflict, and TTL-expired leases are still excluded, matching the bulk
+    guard's same posture."""
+    leases = read_all_leases(root)
+    if not leases:
+        return Ok(None)
+    actual = repo_root(root)
+    current_path = actual.danger_ok.resolve() if actual.is_ok else None
+    foreign = [
+        lease
+        for lease in leases
+        if lease.ticket_id == old_id
+        and not is_lease_ttl_expired(lease)
+        and (current_path is None or Path(lease.worktree).resolve() != current_path)
+    ]
+    if not foreign:
+        return Ok(None)
+    holders = sorted(f"{lease.ticket_id}@{lease.worktree}" for lease in foreign)
+    _log.error(
+        "tickets: refusing renumber -- %d other worktree lease(s) still live "
+        "on the id being renumbered (%s); renumbering it out from under "
+        "them would corrupt their lease file",
+        len(foreign),
+        ", ".join(holders),
+    )
+    return Err(TicketError.ScopeLeaseConflict)
+
+
 # frob:ticket T-1125
 def _rewrite_body_prose_references(
     body: str, mapping: dict[str, str]
@@ -1062,7 +1109,13 @@ def renumber_one(
     if leased.is_err:
         return Err(leased.danger_err)
     if not dry_run:
-        lease_conflict = _refuse_if_other_worktree_holds_live_lease(root)
+        # T-1918: single-id rename only ever moves `old_id`'s own lease
+        # file, so only a foreign lease on that specific id can conflict --
+        # see `_refuse_if_other_worktree_holds_live_lease_for_id`'s
+        # docstring for why the bulk guard is too broad here.
+        lease_conflict = _refuse_if_other_worktree_holds_live_lease_for_id(
+            root, old_id
+        )
         if lease_conflict.is_err:
             return Err(lease_conflict.danger_err)
     with ledger_lock(root):

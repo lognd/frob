@@ -24,7 +24,7 @@ from frob.tickets._models import RenumberReport, TicketError
 from frob.tickets._new_renumber import (
     _log_renumber_done,
     _log_renumber_dry_run,
-    _refuse_if_other_worktree_holds_live_lease,
+    _refuse_if_other_worktree_holds_live_lease_for_id,
     _rewrite_body_prose_references,
     _scan_code_references,
 )
@@ -246,12 +246,13 @@ def _persist_v2_renumber(
 # frob:doc docs/design/ledger-v2.md#41-renumber-with-reference-rewrite
 # frob:ticket T-1255
 # frob:ticket T-1882
-# frob:waive AFFECT001 reason="T-1882 only adds a live-lease refusal guard \
-# (_refuse_if_other_worktree_holds_live_lease) ahead of the existing rename steps this \
-# function's design doc section already walks through -- no change to the rename \
-# mechanism itself; docs/design/ledger-v2.md is also out of this ticket's declared \
-# scope (src/frob/app/ticket_runner/_query.py, src/frob/tickets/_renumber_v2.py, \
-# src/frob/tickets/_new_renumber.py)"
+# frob:ticket T-1918
+# frob:waive AFFECT001 reason="T-1882/T-1918 only adjust the live-lease refusal guard \
+# (_refuse_if_other_worktree_holds_live_lease_for_id) ahead of the existing rename \
+# steps this function's design doc section already walks through -- no change to the \
+# rename mechanism itself; docs/design/ledger-v2.md is also out of this ticket's \
+# declared scope (src/frob/app/ticket_runner/_query.py, \
+# src/frob/tickets/_renumber_v2.py, src/frob/tickets/_new_renumber.py)"
 # frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_git_mv_renames_directory_and_rewrites_id_field  # noqa: E501
 # frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_sibling_ticket_prose_citation_rewritten  # noqa: E501
 # frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_locks_acquired_in_sorted_id_order_no_deadlock  # noqa: E501
@@ -275,10 +276,15 @@ def renumber_one_v2(
     if leased.is_err:
         return Err(leased.danger_err)
     if not dry_run:
-        # T-1882: refuse outright while any OTHER worktree holds a live
-        # lease on any ticket -- a dry-run mutates nothing so it stays
-        # exempt, matching `renumber`/`renumber_one`'s own posture.
-        lease_conflict = _refuse_if_other_worktree_holds_live_lease(root)
+        # T-1918 (was T-1882's all-ids guard): refuse only while a live
+        # foreign lease names THIS SPECIFIC old_id -- a dry-run mutates
+        # nothing so it stays exempt, matching `renumber`/`renumber_one`'s
+        # own posture. See `_refuse_if_other_worktree_holds_live_lease_
+        # for_id`'s docstring for why the bulk-path guard is too broad for
+        # a single-id rename (draft promotion in particular).
+        lease_conflict = _refuse_if_other_worktree_holds_live_lease_for_id(
+            root, old_id
+        )
         if lease_conflict.is_err:
             return Err(lease_conflict.danger_err)
     validated = _validate_v2_renumber_ids(root, old_id, new_id)
