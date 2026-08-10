@@ -2,7 +2,7 @@
 id: T-2017
 title: T-1946's orphaned-evidence guard did not fire on a test RENAME, so T-1963's
   land orphaned T-0907's evidence onto the floor
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'

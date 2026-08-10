@@ -108,16 +108,39 @@ worktree's own prior, already-landed T-1940 ticket-ledger commits sitting in
 branch history -- not touched by this ticket's diff, same pattern as T-1963's own
 residual SCOPE001 findings earlier in this series.
 
+## BUG002 repro-at-parent, measured at a pre-passenger ref
+
+T-1940's land (`ddd2acfecfe6ba9e783b00240eef4ff45d97e125`) carried T-2017's own
+fix as a disclosed `--allow-cross-ticket` passenger (both tickets fully evidenced/
+Done-reported, genuinely intentional joint landing in one series worktree) --
+this put the FIX on main ahead of T-2017's own close, so BUG002's repro-at-parent
+check (parent = main, which now already contains the fix) finds T-2017's
+designated repro test PASSING at the parent -- not because the evidence is
+confirmatory-only, but because of land ORDER (the known passenger-land-order
+trap).
+
+MEASURED the real repro at a genuinely pre-passenger ref instead of asserting it:
+`git worktree add <tmp> 8cea2c287` (T-1940's own parent commit, the last commit
+before ddd2acfe -- verified `git log -1 ddd2acfe^`), copied ONLY the test file
+(`tests/unit/test_land_orphaned_evidence.py` as of ddd2acfe) into that checkout
+with the FIX itself absent (confirmed: `_check_orphaned_evidence_deletion` at
+8cea2c287 still calls `load_all`, not `load_queue`), then ran the exact
+designated node:
+
+    cd <tmp-worktree-at-8cea2c287>
+    pytest "tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket::test_refuses_when_branch_deletes_evidence_bound_test_on_an_archived_ticket"
+
+Observed: FAILED --
+`assert result.is_err` -> `AssertionError: assert False +  where False =
+Ok(None).is_err` -- the guard did not fire at this pre-fix, pre-passenger
+commit, exactly the T-2017 defect. This is the proof BUG002 wants: the defect
+reproduced at a real ref, the gate is unsatisfiable only because of land order,
+not because the evidence never reached the wiring.
+
+frob:waive BUG002 reason="T-1940 landed T-2017's fix as a disclosed --allow-cross-ticket passenger (ddd2acfecfe6ba9e783b00240eef4ff45d97e125), so BUG002's repro-at-parent check (parent=main) now finds the designated test PASSING at the parent -- the fix is already there, not because the evidence is confirmatory. Measured the real repro at 8cea2c287 (T-1940's own parent commit, the last ref before the fix existed anywhere): built a temp worktree there, copied in tests/unit/test_land_orphaned_evidence.py from ddd2acfe with the _land.py fix absent (confirmed _check_orphaned_evidence_deletion still called load_all, not load_queue, at that ref), and ran tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket::test_refuses_when_branch_deletes_evidence_bound_test_on_an_archived_ticket directly -- it FAILED there (assert result.is_err -> AssertionError: Ok(None).is_err is False), the exact defect, confirming the repro is real and this is a land-order artifact, not confirmatory-only evidence."
+
 ### Changed
-```
- rapid-debt.jsonl              |   2 +
- src/frob/tickets/_land.py     | 140 ++++++++++++++++++++++++++++++++++++++++++
- tests/test_ticket_land.py     |  95 ++++++++++++++++++++++++++++
- tickets/T-1940/done-report.md | 116 ++++++++++++++++++++++++++++++++++
- tickets/T-1940/ticket.md      |  18 +++++-
- tickets/T-2017/ticket.md      |  25 +++++++-
- 6 files changed, 391 insertions(+), 5 deletions(-)
-```
+(no changed files detected)
 
 ### Evidence
 - `tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket::test_refuses_when_branch_deletes_evidence_bound_test_on_an_archived_ticket` (pytest node id, verified passing when recorded)
@@ -127,4 +150,4 @@ residual SCOPE001 findings earlier in this series.
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
-- error-findings: COV003@tickets/T-0907, F401@/home/logan/projects/frob/.claude/worktrees/series-remainder/tests/test_gates_fmt_directives.py, F401@/home/logan/projects/frob/.claude/worktrees/series-remainder/tests/unit/test_tickets_evidence_only_scope.py, PRE001@tickets/T-2017, invalid-argument-type@src/frob/tickets/_land.py
+- error-findings: ARCH001@src/frob/app/ticket_runner/_query.py, ARCH001@src/frob/app/ticket_runner/_rapid_sweep.py, ARCH103@src/frob/app/ticket_runner/_query.py, F401@/home/logan/projects/frob/.claude/worktrees/series-remainder/tests/test_gates_fmt_directives.py, F401@/home/logan/projects/frob/.claude/worktrees/series-remainder/tests/unit/test_tickets_evidence_only_scope.py, PRE001@tickets/T-2017
