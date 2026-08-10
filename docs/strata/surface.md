@@ -401,6 +401,47 @@ the prover. Planned vocabularies and their owning tickets:
 User-defined vocabularies (custom desugaring) are deferred until the std
 set proves the mechanism.
 
+### Capability via-list one-way ratchet (T-1628)
+
+<!-- frob:ticket T-1628 -->
+
+A `MayGrant`'s scoped `via` list only ever grows in practice: a new file
+starts making a net call, the fix is to append it to the grant's `via`,
+and nothing pushes back -- the self-model documents an ever-loosening
+posture while `frob check` stays green the whole time.
+`frob.strata._effects.capability_ratchet_violations` closes that: a
+via-list may SHRINK freely, but growing it past the ceiling a committed
+lock file (`docs/design/registry/capability-via-ratchet.lock.json`,
+`CAPABILITY_RATCHET_LOCK_REL`) records for that `(node, atom)` pair
+requires an explicit, non-empty, hand-written `reason` in that SAME lock
+file -- the same reason-bearing discipline `frob:waive` already enforces
+for a suppressed finding, applied to a capability's blast radius instead
+of a gate rule.
+
+This is a SECURITY control, so its failure mode is asymmetric: wrongly
+BLOCKING a legitimate widening is an annoyance a human overrides by
+editing the lock file with a reason; wrongly ALLOWING an unjustified
+widening -- or a bypass that launders one as new -- is the actual
+vulnerability. Two bypass shapes are closed structurally: deleting a
+`(node, atom)`'s lock entry reads as `accepted_count=0` (the strictest
+possible ceiling, not "unchecked"), so rewriting the lock file to erase
+history cannot un-ratchet a capability; and the ceiling is a high-water
+mark, not a moving average -- shrinking then re-growing back UP TO (never
+past) a previously justified ceiling stays silent, but growing PAST that
+ceiling still requires a fresh lock edit even after an intervening
+shrink.
+
+Disclosed scope cuts (v1, not silently dropped): an unscoped grant
+(`via=()`) is never counted -- a strictly broader, different-shaped risk
+(whole-node access) this via-list-specific ratchet does not attempt to
+bound; a genuinely new `(node, atom)` pair (a rename dodging the old key)
+reads as a fresh, unratcheted baseline like any other first sighting.
+Wiring this into `frob sys audit`'s own CLI/gate surface (a real rule id
+once it fires through a production `Violation`-producing gate path) is
+out of T-1628's own declared scope -- the same disclosed-gap shape
+SYS109's own T-1627 left (`_effects.py::check_stale_via_symbols`'s module
+docstring).
+
 <a id="key-construct-semantics"></a>
 ## Key construct semantics (normative summaries)
 

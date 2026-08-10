@@ -20,7 +20,13 @@ from frob.strata import (
     node_may_kinds,
     parse_module,
 )
-from frob.strata._effects import StaleViaSymbolViolation, check_stale_via_symbols
+from frob.strata._effects import (
+    CAPABILITY_RATCHET_LOCK_REL,
+    StaleViaSymbolViolation,
+    capability_ratchet_violations,
+    capability_via_site_counts,
+    check_stale_via_symbols,
+)
 
 
 def _write(root: Path, rel: str, source: str) -> None:
@@ -708,3 +714,177 @@ class TestStaleViaSymbol:
         model = elaborate(module).danger_ok
         binding = bind_code(model, tmp_path).danger_ok
         assert check_stale_via_symbols(model, binding, tmp_path) == ()
+
+
+def _write_lock(tmp_path: Path, entries: dict) -> None:
+    import json
+
+    path = tmp_path / CAPABILITY_RATCHET_LOCK_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"schema_version": 1, "entries": entries}), encoding="utf-8")
+
+
+def _grant_model(node_id: str, atom: str, via: tuple[str, ...]) -> KernelModel:
+    return KernelModel(
+        nodes=(
+            Node(
+                id=node_id,
+                trust="trusted",
+                may_grants=(MayGrant(atom=atom, via=via),),
+            ),
+        )
+    )
+
+
+class TestCapabilityViaSiteCounts:
+    """`capability_via_site_counts` is the ratchet's own measured
+    quantity (T-1628 module docstring)."""
+
+    # frob:tests src/frob/strata/_effects.py::capability_via_site_counts kind="unit"
+    def test_counts_scoped_via_entries(self) -> None:
+        model = _grant_model("app", "fs.write", ("a.py", "b.py", "c.py"))
+        assert capability_via_site_counts(model) == {"app::fs.write": 3}
+
+    # frob:tests src/frob/strata/_effects.py::capability_via_site_counts kind="unit"
+    def test_unscoped_grant_contributes_nothing(self) -> None:
+        model = _grant_model("app", "fs.write", ())
+        assert capability_via_site_counts(model) == {}
+
+
+class TestCapabilityRatchet:
+    """T-1628: the capability via-list one-way ratchet -- bypass paths
+    tested explicitly per the module docstring's asymmetric-failure-mode
+    section, not just the happy path."""
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_growth_without_lock_entry_fails(self, tmp_path: Path) -> None:
+        """The core enforcement shape: a scoped via-list with NO lock
+        entry at all (accepted_count defaults to 0) fires on any
+        nonzero observed count."""
+        model = _grant_model("app", "fs.write", ("a.py",))
+        found = capability_ratchet_violations(model, tmp_path)
+        assert len(found) == 1
+        assert found[0].node == "app"
+        assert found[0].atom == "fs.write"
+        assert found[0].observed_count == 1
+        assert found[0].accepted_count == 0
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_at_or_below_ceiling_is_silent(self, tmp_path: Path) -> None:
+        _write_lock(
+            tmp_path,
+            {"app::fs.write": {"accepted_count": 3, "reason": "T-0001 baseline"}},
+        )
+        model = _grant_model("app", "fs.write", ("a.py", "b.py"))
+        assert capability_ratchet_violations(model, tmp_path) == ()
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_growth_beyond_justified_ceiling_fails(self, tmp_path: Path) -> None:
+        _write_lock(
+            tmp_path,
+            {"app::fs.write": {"accepted_count": 2, "reason": "T-0001 baseline"}},
+        )
+        model = _grant_model("app", "fs.write", ("a.py", "b.py", "c.py"))
+        found = capability_ratchet_violations(model, tmp_path)
+        assert len(found) == 1
+        assert found[0].observed_count == 3
+        assert found[0].accepted_count == 2
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_shrink_is_silent(self, tmp_path: Path) -> None:
+        """A via-list may shrink freely -- no lock update, no finding."""
+        _write_lock(
+            tmp_path,
+            {"app::fs.write": {"accepted_count": 5, "reason": "T-0001 baseline"}},
+        )
+        model = _grant_model("app", "fs.write", ("a.py",))
+        assert capability_ratchet_violations(model, tmp_path) == ()
+
+    # BYPASS PATH 1: shrink-then-regrow within an already-justified ceiling
+    # must stay silent (this is NOT a new widening); growing PAST that same
+    # ceiling, even after the intervening shrink, must still fire -- the
+    # ceiling is a high-water mark, not a moving average a temporary dip
+    # can reset.
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_shrink_then_regrow_within_ceiling_stays_silent(
+        self, tmp_path: Path
+    ) -> None:
+        _write_lock(
+            tmp_path,
+            {"app::fs.write": {"accepted_count": 5, "reason": "T-0001 baseline"}},
+        )
+        shrunk = _grant_model("app", "fs.write", ("a.py",))
+        assert capability_ratchet_violations(shrunk, tmp_path) == ()
+        regrown = _grant_model(
+            "app", "fs.write", ("a.py", "b.py", "c.py", "d.py", "e.py")
+        )
+        assert capability_ratchet_violations(regrown, tmp_path) == ()
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_growth_beyond_justified_ceiling_fails_even_after_a_prior_shrink(
+        self, tmp_path: Path
+    ) -> None:
+        _write_lock(
+            tmp_path,
+            {"app::fs.write": {"accepted_count": 5, "reason": "T-0001 baseline"}},
+        )
+        shrunk = _grant_model("app", "fs.write", ("a.py",))
+        assert capability_ratchet_violations(shrunk, tmp_path) == ()
+        overgrown = _grant_model(
+            "app", "fs.write", ("a.py", "b.py", "c.py", "d.py", "e.py", "f.py")
+        )
+        found = capability_ratchet_violations(overgrown, tmp_path)
+        assert len(found) == 1
+        assert found[0].observed_count == 6
+        assert found[0].accepted_count == 5
+
+    # BYPASS PATH 2: rewriting/deleting the lock entry must not un-ratchet
+    # a capability -- a missing entry reads as accepted_count=0, the
+    # STRICTEST possible ceiling, not "unchecked".
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_deleting_lock_entry_does_not_bypass_the_ratchet(
+        self, tmp_path: Path
+    ) -> None:
+        _write_lock(
+            tmp_path,
+            {"app::fs.write": {"accepted_count": 12, "reason": "T-0001 baseline"}},
+        )
+        model = _grant_model("app", "fs.write", ("a.py", "b.py", "c.py"))
+        assert capability_ratchet_violations(model, tmp_path) == ()
+
+        # The SAME model, but the lock entry has been deleted (simulating
+        # an attempt to launder an already-justified capability as if it
+        # were a fresh, unratcheted baseline).
+        _write_lock(tmp_path, {})
+        found = capability_ratchet_violations(model, tmp_path)
+        assert len(found) == 1
+        assert found[0].observed_count == 3
+        assert found[0].accepted_count == 0
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_empty_reason_is_flagged(self, tmp_path: Path) -> None:
+        _write_lock(tmp_path, {"app::fs.write": {"accepted_count": 3, "reason": ""}})
+        model = _grant_model("app", "fs.write", ("a.py", "b.py", "c.py"))
+        found = capability_ratchet_violations(model, tmp_path)
+        assert len(found) == 1
+        assert "reason" in found[0].detail
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_missing_lock_file_treats_every_scoped_grant_as_unaccepted(
+        self, tmp_path: Path
+    ) -> None:
+        """Deny-by-default: an absent lock file is NOT "nothing to
+        check" -- it is "nothing accepted yet", same posture as a
+        deleted entry."""
+        model = _grant_model("app", "fs.write", ("a.py",))
+        found = capability_ratchet_violations(model, tmp_path)
+        assert len(found) == 1
+        assert found[0].accepted_count == 0
+
+    # frob:tests src/frob/strata/_effects.py::capability_ratchet_violations kind="unit"
+    def test_unscoped_grant_is_never_ratcheted(self, tmp_path: Path) -> None:
+        """Disclosed scope cut: an unscoped grant (`via=()`) is a
+        different, broader risk shape this ratchet does not attempt to
+        bound (module docstring)."""
+        model = _grant_model("app", "fs.write", ())
+        assert capability_ratchet_violations(model, tmp_path) == ()

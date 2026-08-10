@@ -46,6 +46,7 @@ T-0695's `_concurrency.py` docstring reword.
 from __future__ import annotations
 
 import fnmatch
+import json
 import re
 from datetime import date
 from pathlib import Path
@@ -779,12 +780,202 @@ def check_stale_via_symbols(
     return tuple(found)
 
 
+# ---------------------------------------------------------------------------
+# T-1628: capability via-list one-way ratchet.
+#
+# A `MayGrant`'s scoped `via` list (glob or symbol form) only ever grows in
+# practice: a new file starts making a net call, the fix is to append it to
+# the grant's `via`, and nothing pushes back -- the self-model documents an
+# ever-loosening posture while `frob check` stays green the whole time. The
+# ratchet closes that: a via-list may SHRINK freely, but growing it past the
+# ceiling a committed lock file records requires an explicit, non-empty,
+# hand-written justification in that SAME lock file -- the same reason-
+# bearing discipline `frob:waive` already enforces for a suppressed finding,
+# applied to a capability's blast radius instead of a gate rule.
+#
+# ASYMMETRIC FAILURE MODE (this is a SECURITY control, not a style lint):
+# wrongly BLOCKING a legitimate widening is an annoyance a human overrides
+# by editing the lock file with a reason; wrongly ALLOWING an unjustified
+# widening -- or a bypass that launders one as if it were new -- is the
+# actual vulnerability. Two bypass shapes are closed structurally, not by a
+# second check bolted on afterward:
+#   1. Deleting a (node, atom)'s lock entry does NOT reset its ceiling to
+#      "anything goes" -- a missing entry reads as accepted_count=0, so the
+#      very next observation at any nonzero count re-triggers the growth
+#      violation immediately. Rewriting the lock file to erase history is
+#      exactly as loud as never having a baseline at all.
+#   2. Shrinking then re-growing back UP TO (not beyond) a previously
+#      justified ceiling stays silent -- that ceiling was already earned by
+#      a real reason once; re-approaching it is not a new widening. Growing
+#      PAST that ceiling, even after an intervening shrink, still requires a
+#      fresh lock edit -- the ceiling is a high-water mark, not a moving
+#      average, so "shrink to look small, then grow past the real high-water
+#      mark" cannot quietly slip through camouflaged as ordinary movement.
+#
+# DISCLOSED SCOPE CUT (v1, not silently dropped): an UNSCOPED grant
+# (`via=()`, the whole-node grant every capability atom can also carry) is
+# not counted here at all -- it is a strictly broader, different-shaped risk
+# (blanket node access, not an enumerable site list) this via-list-specific
+# ratchet does not attempt to bound. Renaming a node/atom to dodge tracking
+# under a new key is also not detected -- a genuinely new (node, atom) pair
+# reads as a fresh, unratcheted baseline, same as any other first sighting.
+# Both are real residual gaps, named here rather than assumed covered.
+# ---------------------------------------------------------------------------
+
+# frob:doc docs/strata/surface.md#may-scope
+#: Repo-relative path to the committed ratchet ceiling: `{"entries":
+#: {"<node_id>::<atom>": {"accepted_count": N, "reason": "...", "ticket":
+#: "T-####"}}}`. Committed, hand-edited (never auto-written by any code
+#: path here -- widening it IS the "explicit, recorded justification" act
+#: the module-level docstring above describes), read fresh on every check.
+CAPABILITY_RATCHET_LOCK_REL = "docs/design/registry/capability-via-ratchet.lock.json"
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1628
+class CapabilityRatchetViolation(BaseModel):
+    """One capability-ratchet (T-1628) finding: a `(node, atom)` pair's
+    scoped via-list site count exceeds the committed ratchet lock's
+    `accepted_count` for that pair (unjustified growth), or that pair's
+    lock entry itself carries no non-empty `reason` (a malformed
+    justification -- the same WAIVE001 discipline `frob:waive` already
+    applies, mirrored here since this
+    mechanism's justification lives in a lock file rather than a source
+    comment)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    node: str
+    atom: str
+    observed_count: int
+    accepted_count: int
+    detail: str
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1628
+# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_is_silent
+def capability_via_site_counts(model: KernelModel) -> dict[str, int]:
+    """`{"<node_id>::<atom>": total scoped via-entry count}` across every
+    `MayGrant` in `model` -- the ratchet's own measured quantity (module
+    docstring's T-1628 section). A grant with an EMPTY `via` (the unscoped,
+    whole-node form) contributes nothing: only scoped grants have an
+    enumerable site count to ratchet."""
+    counts: dict[str, int] = {}
+    for node in model.nodes:
+        for grant in node.may_grants:
+            if not grant.via:
+                continue
+            key = f"{node.id}::{grant.atom}"
+            counts[key] = counts.get(key, 0) + len(grant.via)
+    return counts
+
+
+def _load_capability_ratchet_lock(root: Path) -> dict:
+    """The committed ratchet lock's `entries` mapping, or `{}` if the file
+    is absent/unparseable/malformed -- deny-by-default (module docstring's
+    bypass-1 discussion): a missing or corrupt lock reads as "nothing is
+    accepted yet", never as "nothing to check"."""
+    path = root / CAPABILITY_RATCHET_LOCK_REL
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    entries = data.get("entries") if isinstance(data, dict) else None
+    return entries if isinstance(entries, dict) else {}
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-1628
+# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_without_lock_entry_fails  # noqa: E501
+# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_growth_beyond_justified_ceiling_fails_even_after_a_prior_shrink  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_is_silent
+# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_shrink_then_regrow_within_ceiling_stays_silent  # noqa: E501
+# frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_deleting_lock_entry_does_not_bypass_the_ratchet  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_empty_reason_is_flagged
+# frob:waive WIRE001 reason="wiring this into frob sys audit's own CLI/gate surface \
+# (src/frob/gates/_sys_selfaudit.py, frob.strata._selfconform's \
+# _collect_sys_violations aggregator) is out of T-1628's own declared scope \
+# (src/frob/strata/_effects.py only) -- same disclosed gap shape SYS109's own T-1627 \
+# left (check_stale_via_symbols module docstring)." follow_up="T-1977"
+def capability_ratchet_violations(
+    model: KernelModel, root: Path
+) -> tuple[CapabilityRatchetViolation, ...]:
+    """T-1628: every `(node, atom)` pair whose current scoped via-list site
+    count (`capability_via_site_counts`) exceeds the committed lock's
+    `accepted_count` for that pair (module docstring: a missing entry is
+    `accepted_count=0`, so deleting an entry cannot un-ratchet it), plus
+    every EXISTING lock entry with no non-empty `reason`. Silent whenever
+    the observed count is at or below the accepted ceiling, regardless of
+    how it got there -- shrinking, holding steady, or re-growing back up to
+    (never past) a previously justified high-water mark are all ordinary,
+    unremarkable movement."""
+    observed = capability_via_site_counts(model)
+    lock = _load_capability_ratchet_lock(root)
+    found: list[CapabilityRatchetViolation] = []
+    for key, count in sorted(observed.items()):
+        node_id, atom = key.split("::", 1)
+        entry = lock.get(key)
+        accepted_raw = entry.get("accepted_count") if isinstance(entry, dict) else None
+        accepted = accepted_raw if isinstance(accepted_raw, int) else 0
+        if count > accepted:
+            _log.warning(
+                "strata effects: capability ratchet: %s %s grew to %d "
+                "site(s), above the committed ceiling of %d",
+                node_id,
+                atom,
+                count,
+                accepted,
+            )
+            found.append(
+                CapabilityRatchetViolation(
+                    node=node_id,
+                    atom=atom,
+                    observed_count=count,
+                    accepted_count=accepted,
+                    detail=(
+                        f"{atom} via-list on {node_id} grew to {count} site(s), "
+                        f"above the committed ratchet ceiling of {accepted} -- "
+                        f"edit {CAPABILITY_RATCHET_LOCK_REL} to raise "
+                        "accepted_count with a non-empty reason, in the same diff"
+                    ),
+                )
+            )
+            continue
+        reason = entry.get("reason") if isinstance(entry, dict) else None
+        if entry is not None and not (isinstance(reason, str) and reason.strip()):
+            found.append(
+                CapabilityRatchetViolation(
+                    node=node_id,
+                    atom=atom,
+                    observed_count=count,
+                    accepted_count=accepted,
+                    detail=(
+                        f"{CAPABILITY_RATCHET_LOCK_REL} entry for {key!r} has no "
+                        "non-empty reason -- every ratchet entry must carry one, "
+                        "the same discipline frob:waive already requires"
+                    ),
+                )
+            )
+    return tuple(found)
+
+
 __all__ = [
+    "CAPABILITY_RATCHET_LOCK_REL",
+    "CapabilityRatchetViolation",
     "CapabilityViolation",
     "EffectReport",
     "LegacyCapabilityAliasViolation",
     "ObservedEffect",
     "StaleViaSymbolViolation",
+    "capability_ratchet_violations",
+    "capability_via_site_counts",
     "check_capability_conformance",
     "check_legacy_capability_aliases",
     "check_stale_via_symbols",

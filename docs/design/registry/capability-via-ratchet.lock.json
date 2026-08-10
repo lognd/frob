@@ -1,0 +1,286 @@
+{
+  "entries": {
+    "cli::env": {
+      "accepted_count": 7,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "cli::env.read": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "cli::eval": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "cli::exec": {
+      "accepted_count": 6,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "cli::fs.read": {
+      "accepted_count": 13,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "cli::fs.write": {
+      "accepted_count": 18,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "cli::net": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "core::env": {
+      "accepted_count": 6,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "core::env.read": {
+      "accepted_count": 2,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "core::eval": {
+      "accepted_count": 4,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "core::exec": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "core::fs.read": {
+      "accepted_count": 28,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "core::fs.write": {
+      "accepted_count": 21,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "core::process-control": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "gates::env": {
+      "accepted_count": 5,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "gates::eval": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "gates::fs.read": {
+      "accepted_count": 42,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "gates::fs.write": {
+      "accepted_count": 27,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "graphlang::env.read": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "graphlang::eval": {
+      "accepted_count": 2,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "graphlang::fs.read": {
+      "accepted_count": 6,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "graphlang::fs.write": {
+      "accepted_count": 5,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "graphlang::sql": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "stratamod::eval": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "stratamod::ffi": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "stratamod::fs.read": {
+      "accepted_count": 9,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "stratamod::fs.write": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::deserialize": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::env": {
+      "accepted_count": 23,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::env.read": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::eval": {
+      "accepted_count": 15,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::exec": {
+      "accepted_count": 158,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::fetch_url": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::ffi": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::fs.read": {
+      "accepted_count": 121,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::fs.write": {
+      "accepted_count": 297,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::install-hook": {
+      "accepted_count": 2,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::net": {
+      "accepted_count": 12,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::process-control": {
+      "accepted_count": 2,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "testsuite::sql": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "tickets_ledger::env": {
+      "accepted_count": 5,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "tickets_ledger::env.read": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "tickets_ledger::eval": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "tickets_ledger::exec": {
+      "accepted_count": 2,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "tickets_ledger::fs.read": {
+      "accepted_count": 21,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "tickets_ledger::fs.write": {
+      "accepted_count": 16,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "verify::exec": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "verify::fs.read": {
+      "accepted_count": 3,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "verify::fs.write": {
+      "accepted_count": 4,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "vet::env": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "vet::fetch_url": {
+      "accepted_count": 2,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "vet::ffi": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "vet::fs.read": {
+      "accepted_count": 10,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "vet::fs.write": {
+      "accepted_count": 2,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "vet::install-hook": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    },
+    "vet::net": {
+      "accepted_count": 1,
+      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
+      "ticket": "T-1628"
+    }
+  },
+  "generated_by": "T-1628",
+  "schema_version": 1
+}

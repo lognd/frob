@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.435.0] - unreleased
+
+- T-1628: strata: capability via lists only ever grow -- add a one-way ratchet
+
 ## [0.434.0] - unreleased
 
 - T-1944: Scope conflates evidence coverage with write lease: citing an existing test permanently leases its whole file

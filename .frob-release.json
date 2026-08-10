@@ -1457,11 +1457,15 @@
     "src/frob/strata/_distributed_txn.py::REL_MISSING_SAGA": "8a3e99270bfb3cf69279e4662afff65fc6c154a4387db3be7c41f60d1b051ac1",
     "src/frob/strata/_distributed_txn.py::REL_UNPROVEN_SAGA": "9ccdd15d7a060d5d188cef0d0eadc2175d14c28f95f5848b99ecd55f7ae2788c",
     "src/frob/strata/_distributed_txn.py::check_distributed_txn_obligations": "391ada8975db983bc9a8df513549dcf4e9b63b9b93ff19148b386eb283a3132d",
+    "src/frob/strata/_effects.py::CAPABILITY_RATCHET_LOCK_REL": "5791b30c50c5e4ec048c15ec4f113115720bd8c9600e2390d30fd468633b9d5e",
+    "src/frob/strata/_effects.py::CapabilityRatchetViolation": "af5d3463f1f0257ade8315b112b289a1e88a22dce35e0038d9ec61010616dd04",
     "src/frob/strata/_effects.py::CapabilityViolation": "f3cc19caba53843e4bb926a7f6cdb5ccaf82cb8ac5814464b70b3c2e5f1b80f6",
     "src/frob/strata/_effects.py::EffectReport": "11e03a6516fdc2876da72cb9ce672e11ffce65f2ebd5cc00172c7659bcfc8bb4",
     "src/frob/strata/_effects.py::LegacyCapabilityAliasViolation": "da7249cf06828fe7b0d494e644bca0dfe3106aa5849e0ac7e5313e67007a2a71",
     "src/frob/strata/_effects.py::ObservedEffect": "8125e0048d37b1cf5149b04e92d36e1468a8b5a81214b712c3fcee2505f77265",
     "src/frob/strata/_effects.py::StaleViaSymbolViolation": "ce53274af1d657e9d6616740992a5908c465ccdf16855bceed2516a3f6cac6bf",
+    "src/frob/strata/_effects.py::capability_ratchet_violations": "9e17692217dfa49c7afd71cad263d457e0b880f6a714db11123e2b2fc8cc7394",
+    "src/frob/strata/_effects.py::capability_via_site_counts": "50442fba99fc8899f0a345a2533794db379aac81761e99358b6651bccc6edb72",
     "src/frob/strata/_effects.py::check_capability_conformance": "6708f0ab8444fe2707a051b14b71a959e641eea690800284173d2b5702901b09",
     "src/frob/strata/_effects.py::check_legacy_capability_aliases": "4d91cc807367dceac2c47aae2d08a827e3dd918854976eef7ea448dd37d3fdd8",
     "src/frob/strata/_effects.py::check_stale_via_symbols": "a988fab64aafe38a9b8bdfc38dd49d740776afa8f46093f6ebe28d3b13b5c463",
@@ -2224,5 +2228,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.434.0"
+  "version": "0.435.0"
 }
