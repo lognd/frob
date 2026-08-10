@@ -1063,16 +1063,67 @@ def _waive004_target_rule(message: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 
+def _archive_design_dir_at_head(root: Path, dest: Path) -> bool:
+    """Materialize `root`'s `design/` tree AT GIT HEAD into `dest` via `git
+    archive` (T-2001, split out of `_capability_counts_at_head` to keep
+    both under ARCH001's threshold, zero behavior change). Returns
+    whether the archive+extract actually succeeded -- `False` (never
+    raises) on any git spawn failure, non-zero exit, or extraction
+    error, the caller's own signal to give up on a BEFORE snapshot
+    entirely rather than guess."""
+    from frob import gitio
+
+    archive_path = dest / "head.tar"
+    archived = gitio.run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "archive",
+            "--format=tar",
+            "HEAD",
+            "--output",
+            str(archive_path),
+            "--",
+            "design",
+        ]
+    )
+    if archived.is_err or archived.danger_ok.returncode != 0:
+        _log.info(
+            "tier-a fixes: SYS111 ratchet sync: could not archive design/ "
+            "at HEAD (%s) -- skipping (no BEFORE baseline to attribute "
+            "growth to)",
+            archived.danger_err
+            if archived.is_err
+            else archived.danger_ok.stderr.strip(),
+        )
+        return False
+    extract_dir = dest / "extracted"
+    extract_dir.mkdir()
+    try:
+        with tarfile.open(archive_path) as tar:
+            tar.extractall(extract_dir)  # noqa: S202 -- our own repo's own history
+    except (tarfile.TarError, OSError) as exc:
+        _log.warning(
+            "tier-a fixes: SYS111 ratchet sync: could not extract HEAD's "
+            "design/ archive: %s -- skipping",
+            exc,
+        )
+        return False
+    return True
+
+
 def _capability_counts_at_head(root: Path) -> "dict[str, int] | None":
     """`capability_via_site_counts` computed from `design/`'s content at
     git HEAD (T-2001) -- the BEFORE snapshot `fix_sys111_capability_
     ratchet_sync` diffs the CURRENT working tree against, to attribute
     ratchet growth to THIS land specifically rather than to history.
 
-    Materializes HEAD's `design/` tree into a scratch directory via `git
-    archive` (never a second, parallel strata-parsing implementation over
-    git blob text) so the EXACT SAME `load_design_ids`/`merge_models`
-    loader the live model uses also produces the historical one.
+    Materializes HEAD's `design/` tree into a scratch directory
+    (`_archive_design_dir_at_head`, never a second, parallel strata-
+    parsing implementation over git blob text) so the EXACT SAME `load_
+    design_ids`/`merge_models` loader the live model uses also produces
+    the historical one.
 
     Returns `None` (skip the caller entirely) only when the archive
     itself could not be produced at all -- no `HEAD`, not a git repo, a
@@ -1081,50 +1132,15 @@ def _capability_counts_at_head(root: Path) -> "dict[str, int] | None":
     here at HEAD," under which every currently-observed site counts as
     this land's own growth -- e.g. a land that adds `design/` for the
     first time)."""
-    from frob import gitio
     from frob.strata import merge_models
     from frob.strata._design_load import load_design_ids
     from frob.strata._effects import capability_via_site_counts
 
     with tempfile.TemporaryDirectory(prefix="frob-sys111-head-") as tmp_str:
         tmp = Path(tmp_str)
-        archive_path = tmp / "head.tar"
-        archived = gitio.run_argv(
-            [
-                "git",
-                "-C",
-                str(root),
-                "archive",
-                "--format=tar",
-                "HEAD",
-                "--output",
-                str(archive_path),
-                "--",
-                "design",
-            ]
-        )
-        if archived.is_err or archived.danger_ok.returncode != 0:
-            _log.info(
-                "tier-a fixes: SYS111 ratchet sync: could not archive design/ "
-                "at HEAD (%s) -- skipping (no BEFORE baseline to attribute "
-                "growth to)",
-                archived.danger_err
-                if archived.is_err
-                else archived.danger_ok.stderr.strip(),
-            )
+        if not _archive_design_dir_at_head(root, tmp):
             return None
         extract_dir = tmp / "extracted"
-        extract_dir.mkdir()
-        try:
-            with tarfile.open(archive_path) as tar:
-                tar.extractall(extract_dir)  # noqa: S202 -- our own repo's own history
-        except (tarfile.TarError, OSError) as exc:
-            _log.warning(
-                "tier-a fixes: SYS111 ratchet sync: could not extract HEAD's "
-                "design/ archive: %s -- skipping",
-                exc,
-            )
-            return None
         if not (extract_dir / "design").is_dir():
             return {}
         ids = load_design_ids(extract_dir, "design")
@@ -1199,6 +1215,31 @@ def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
     return _apply_capability_ratchet_bumps(root, current_counts, before_counts)
 
 
+def _raw_capability_ratchet_lock(lock_path: Path) -> dict:
+    """`lock_path`'s parsed JSON with a guaranteed `"entries"` dict key
+    (T-2001, split out of `_apply_capability_ratchet_bumps` to keep it
+    under ARCH001's line threshold, zero behavior change) -- `{"entries":
+    {}}` shape on any missing-file/parse/malformed-shape surprise,
+    never raises. Distinct from `_load_capability_ratchet_lock` (which
+    returns just the entries mapping, best-effort `{}` on failure): this
+    keeps the WHOLE parsed document (`generated_by`/`schema_version`
+    etc.) so the caller's write-back preserves every field it did not
+    itself touch."""
+    try:
+        raw = (
+            json.loads(lock_path.read_text(encoding="utf-8"))
+            if lock_path.is_file()
+            else {}
+        )
+    except (OSError, ValueError):
+        raw = {}
+    if not isinstance(raw, dict):
+        raw = {}
+    if not isinstance(raw.get("entries"), dict):
+        raw["entries"] = {}
+    return raw
+
+
 def _apply_capability_ratchet_bumps(
     root: Path, current_counts: "dict[str, int]", before_counts: "dict[str, int]"
 ) -> list[FixApplied]:
@@ -1218,18 +1259,7 @@ def _apply_capability_ratchet_bumps(
 
     lock_path = root / CAPABILITY_RATCHET_LOCK_REL
     lock_entries = _load_capability_ratchet_lock(root)
-    try:
-        raw = (
-            json.loads(lock_path.read_text(encoding="utf-8"))
-            if lock_path.is_file()
-            else {}
-        )
-    except (OSError, ValueError):
-        raw = {}
-    if not isinstance(raw, dict):
-        raw = {}
-    if not isinstance(raw.get("entries"), dict):
-        raw["entries"] = {}
+    raw = _raw_capability_ratchet_lock(lock_path)
 
     applied: list[FixApplied] = []
     for key, count in sorted(current_counts.items()):
