@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
@@ -321,6 +321,11 @@ def _try_doable_via_daemon(root: Path, cfg: AppConfig) -> bool:
 
 # frob:ticket T-0453
 # frob:ticket T-1822
+# T-2073: no-behavior-change ARCH001/ARCH103 split only, see
+# `_load_doable_queue`/`_select_doable_tickets`/`_render_doable_json`/
+# `_render_doable_plain` docstrings for the seam. `_doable` itself keeps
+# every observable side effect (including the query-verb write inside
+# `revalidate_dispatchable_sweep_tickets`, T-2034's fix) exactly as before.
 def _doable(root: Path, cfg: AppConfig) -> None:
     """Render `frob ticket doable`: the default collision-safe list, or
     `--show-blocked`'s per-exclusion explanation, or `--ignore-lease`'s raw
@@ -337,46 +342,22 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     top of the dispatchable section. `--json`/`--ignore-lease` keep the
     prior raw/undecorated shape -- the split and alarm are a display-layer
     concern for the human-facing listing only, not a change to what
-    `doable()` itself returns."""
+    `doable()` itself returns.
+
+    T-2073 (ARCH001/ARCH103 split): this body is now three calls along the
+    load/decide/render seam ARCH103 named -- `_load_doable_queue` (I/O:
+    load the queue, run the T-2006 sweep-revalidate pass), `_select_doable_
+    tickets` (pure decision: the `doable()` call, sprint filter, in-flight/
+    dispatchable split, and alarm ordering), and either `_render_doable_
+    json` or `_render_doable_plain` (format + I/O) -- with `--show-blocked`
+    still handled as its own early-return branch since it renders a wholly
+    different (`doable_blocked`) shape."""
     if _try_doable_via_daemon(root, cfg):
         return
 
-    from frob.tickets import (
-        doable,
-        has_live_lease,
-        load_queue,
-        scope_breadth_context,
-    )
+    from frob.tickets import scope_breadth_context
 
-    result = load_queue(root)
-    if result.is_err:
-        _log.error("ticket doable failed: %s", result.danger_err)
-        sys.exit(1)
-    queue = result.danger_ok
-
-    # frob:ticket T-2006
-    # T-2006: re-verify any sweep-filed candidate ticket's own recorded
-    # identities RIGHT HERE, at the moment a coordinator would dispatch
-    # it -- T-1983's own auto-drop only runs inside a LATER, unrelated
-    # land's deferred sweep, which can leave an already-resolved ticket
-    # dispatchable and unverified for however long it takes some other
-    # land to happen to trigger the next sweep. Zero-cost when no
-    # sweep-filed ticket is present (the overwhelming common case).
-    from frob.app.ticket_runner._rapid_sweep import (
-        revalidate_dispatchable_sweep_tickets,
-    )
-
-    dropped = revalidate_dispatchable_sweep_tickets(root, tuple(queue.tickets.values()))
-    if dropped:
-        _log.info(
-            "ticket doable: T-2006 dropped %d stale sweep-filed ticket(s) "
-            "before dispatch (no longer reproduce): %s",
-            len(dropped),
-            ", ".join(dropped),
-        )
-        reloaded = load_queue(root)
-        if reloaded.is_ok:
-            queue = reloaded.danger_ok
+    queue = _load_doable_queue(root)
 
     # T-0453 perf fix: computed ONCE per invocation and threaded through
     # every lease/warning check below -- never re-walked per candidate.
@@ -385,6 +366,122 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     if cfg.ticket_show_blocked:
         _render_doable_show_blocked(root, queue, cfg, breadth=breadth)
         return
+
+    selection = _select_doable_tickets(queue, root, cfg, breadth=breadth)
+
+    if cfg.ticket_json:
+        _render_doable_json(selection.tickets)
+        return
+
+    _render_doable_plain(root, queue, cfg, breadth, selection)
+
+
+class _DoableSelection(NamedTuple):
+    """Decision-stage output of `_select_doable_tickets` (T-2073 ARCH103
+    split): the plain post-sprint-filter `tickets` tuple `--json` renders
+    unchanged, plus the in-flight/dispatchable/alarm shape the plain render
+    additionally needs -- one bundle so the pure decision step and the two
+    render steps below share it without recomputing anything."""
+
+    tickets: tuple
+    in_flight: list
+    ordered: list
+    alarm_by_id: dict
+
+
+# frob:ticket T-2006
+def _load_doable_queue(root: Path):  # noqa: ANN201
+    """I/O step of `_doable` (T-2073 split): load the active queue, exiting
+    on a load failure exactly as `_doable` did inline before this split,
+    then run the T-2006 sweep-revalidate pass via `_revalidate_doable_
+    queue`. Split into two single-decision helpers (this one, and
+    `_revalidate_doable_queue` below) rather than one combined body so
+    neither trips ARCH103's mixed-concern threshold on its own -- see
+    `_revalidate_doable_queue`'s docstring for the T-2006/T-2034 behavior
+    itself, unchanged by this split."""
+    from frob.tickets import load_queue
+
+    result = load_queue(root)
+    if result.is_err:
+        _log.error("ticket doable failed: %s", result.danger_err)
+        sys.exit(1)
+    return _revalidate_doable_queue(root, result.danger_ok)
+
+
+# frob:ticket T-2006
+def _revalidate_doable_queue(root: Path, queue: "TicketQueue") -> "TicketQueue":
+    """T-2006: re-verify any sweep-filed candidate ticket's own recorded
+    identities RIGHT HERE, at the moment a coordinator would dispatch it --
+    T-1983's own auto-drop only runs inside a LATER, unrelated land's
+    deferred sweep, which can leave an already-resolved ticket dispatchable
+    and unverified for however long it takes some other land to happen to
+    trigger the next sweep. Zero-cost when no sweep-filed ticket is present
+    (the overwhelming common case). This is the one write this "query" verb
+    still performs (T-2034 hardened the write-or-discard path so it can no
+    longer leave the shared root dirty on a lost commit); this split does
+    not change that behavior, only where it lives. Returns `queue`
+    unchanged when nothing was dropped; otherwise logs what was dropped
+    (`_log_dropped_sweep_tickets`) and returns the reloaded queue
+    (`_reload_queue_after_drop`) -- both single-decision helpers so this
+    function's own body stays a plain "revalidate, then maybe reload"
+    sequence with no compound branching of its own."""
+    from frob.app.ticket_runner._rapid_sweep import (
+        revalidate_dispatchable_sweep_tickets,
+    )
+
+    dropped = revalidate_dispatchable_sweep_tickets(root, tuple(queue.tickets.values()))
+    if not dropped:
+        return queue
+    _log_dropped_sweep_tickets(dropped)
+    return _reload_queue_after_drop(root, queue)
+
+
+# frob:ticket T-2006
+def _log_dropped_sweep_tickets(dropped) -> None:  # noqa: ANN001
+    """Log line for `_revalidate_doable_queue`'s T-2006 drop path (ARCH103
+    split): names every stale sweep-filed ticket id `revalidate_
+    dispatchable_sweep_tickets` just dropped, unchanged wording from
+    before this split."""
+    _log.info(
+        "ticket doable: T-2006 dropped %d stale sweep-filed ticket(s) "
+        "before dispatch (no longer reproduce): %s",
+        len(dropped),
+        ", ".join(dropped),
+    )
+
+
+# frob:ticket T-2006
+def _reload_queue_after_drop(root: Path, queue: "TicketQueue") -> "TicketQueue":
+    """Re-load the active queue after `_revalidate_doable_queue` dropped at
+    least one stale sweep-filed ticket (ARCH103 split) -- falls back to the
+    caller's original `queue` on a reload failure, matching the pre-split
+    inline behavior exactly (a reload failure here was never fatal; the
+    stale drop already happened, only the in-memory view might lag)."""
+    from frob.tickets import load_queue
+
+    reloaded = load_queue(root)
+    if reloaded.is_ok:
+        return reloaded.danger_ok
+    return queue
+
+
+# frob:ticket T-0715
+# frob:ticket T-0752
+# frob:ticket T-0972
+def _select_doable_tickets(
+    queue: "TicketQueue", root: Path, cfg: AppConfig, *, breadth
+) -> _DoableSelection:
+    """Pure decision step of `_doable` (T-2073 split, no I/O of its own):
+    the `doable()` call, the `--sprint` post-filter (T-0715: `doable()`
+    itself stays sprint-agnostic), and -- since the plain render needs it
+    even though `--json` does not -- the in-flight/dispatchable split
+    (T-0752: a row `doable()` returned may still carry its own live lease,
+    T-0716's `@worktree` case, and belongs in a separate IN-FLIGHT section
+    rather than the dispatchable one) plus the alarm ordering
+    (`_order_dispatchable_with_alarms`). Returns a `_DoableSelection`
+    bundling everything both render steps below need, computed exactly
+    once."""
+    from frob.tickets import doable, has_live_lease
 
     # T-0752: thread the ALREADY-COMPUTED `breadth` through so `doable()`
     # does not re-walk the tree a second time for it -- `doable_blocked`
@@ -399,46 +496,56 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         show_anchors=cfg.ticket_doable_show_anchors,
     )
 
-    # frob:ticket T-0715
-    # `frob ticket doable --sprint LABEL` restricts the queue to one
-    # sprint's commitment -- a plain post-filter, since `doable()` itself
-    # stays sprint-agnostic (the T-0453 lease/breadth machinery it already
-    # threads through has nothing to do with sprint membership).
     if cfg.ticket_doable_sprint is not None:
         tickets = tuple(t for t in tickets if t.sprint == cfg.ticket_doable_sprint)
 
-    if cfg.ticket_json:
-        import json
+    # PERF001: test membership against a set of ids, not the `in_flight`
+    # list itself, on every iteration of the comprehension below.
+    in_flight = [t for t in tickets if has_live_lease(t, root)]
+    in_flight_ids = {t.id for t in in_flight}
+    dispatchable = [t for t in tickets if t.id not in in_flight_ids]
 
-        _log.info(json.dumps([t.model_dump(mode="json") for t in tickets], indent=2))
-        return
+    ordered, alarm_by_id = _order_dispatchable_with_alarms(dispatchable, root)
+    return _DoableSelection(tickets, in_flight, ordered, alarm_by_id)
 
+
+def _render_doable_json(tickets) -> None:  # noqa: ANN001
+    """`--json` render step of `_doable` (T-2073 split): the plain
+    post-sprint-filter ticket list, one `model_dump(mode="json")` array --
+    unchanged shape from before the split."""
+    import json
+
+    _log.info(json.dumps([t.model_dump(mode="json") for t in tickets], indent=2))
+
+
+def _render_doable_plain(
+    root: Path,
+    queue: "TicketQueue",
+    cfg: AppConfig,
+    breadth,
+    selection: _DoableSelection,
+) -> None:
+    """Non-`--json` render step of `_doable` (T-2073 split): active
+    leases, unlanded-branch summary, scope-breadth summary, and the
+    already-landed markers, then either the "zero doable tickets" message
+    or the ordered dispatchable section plus the in-flight section --
+    unchanged shape from before the split."""
     _render_active_leases(queue)
     _render_unlanded_branch_work_summary(root)
     _render_scope_breadth_summary(root, queue, breadth=breadth)
     landed_ids = _render_already_landed_markers(root, queue, breadth=breadth)
 
-    if not tickets:
+    if not selection.tickets:
         _log.info(
             "zero doable tickets (no available lease found in repo tree; "
             "starting any ticket would conflict with a ticket in progress)"
         )
         return
 
-    # T-0752 dispatch-state split: a row `doable()` returned may still have
-    # a live lease of its OWN (a worktree started it before main's ledger
-    # learned about it, T-0716's @worktree case) -- those belong in-flight,
-    # not in the "next thing to dispatch" section.
-    in_flight = [t for t in tickets if has_live_lease(t, root)]
-    # frob:ticket T-0972
-    # PERF001: test membership against a set of ids, not the `in_flight`
-    # list itself, on every iteration of the comprehension below.
-    in_flight_ids = {t.id for t in in_flight}
-    dispatchable = [t for t in tickets if t.id not in in_flight_ids]
-
-    ordered, alarm_by_id = _order_dispatchable_with_alarms(dispatchable, root)
-    _render_doable_dispatchable(ordered, alarm_by_id, queue, cfg, landed_ids=landed_ids)
-    _render_doable_in_flight(in_flight, _stale_lease_reasons(root))
+    _render_doable_dispatchable(
+        selection.ordered, selection.alarm_by_id, queue, cfg, landed_ids=landed_ids
+    )
+    _render_doable_in_flight(selection.in_flight, _stale_lease_reasons(root))
 
 
 # frob:ticket T-0976

@@ -1,7 +1,7 @@
 ---
 id: T-2073
 title: Split _doable along the decide/IO/format seam (ARCH001 117 lines + ARCH103)
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-10'
@@ -12,18 +12,27 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_query.py
+evidence_scope:
+- tests/unit/test_app_runners_batch7.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_doable_text_mode
+- tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_doable_json_mode
+- tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_nothing_doable
 designated_repro_test: null
 acceptance:
 - text: given src/frob/app/ticket_runner/_query.py, when frob check --only archgate
     runs, then neither ARCH001 nor ARCH103 is reported for that file (both measured
     present before the change)
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_doable_text_mode
 - text: given the doable commands existing test surface, when it runs after the split,
     then it stays green -- a refactor of a load-bearing function needs its callers
     exercised, not just a gate reading zero
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_doable_json_mode
+  - tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_nothing_doable
 threat: null
 component: ticket_runner
 anchor: false
