@@ -1,0 +1,720 @@
+---
+id: T-1988
+title: 'post-land sweep regression from T-1968: 241 new (rule, file) identit(ies),
+  315 finding(s) (ARCH001, DOC004, DRIFT002, DSL001)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-10'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope:
+- CHANGELOG.md
+- design/frob.strata
+- docs/commands/check.md
+- docs/commands/cli-vocabulary.md
+- docs/commands/cycle.md
+- docs/commands/deploy.md
+- docs/commands/exports.md
+- docs/commands/gitlog.md
+- docs/commands/map.md
+- docs/commands/outline.md
+- docs/commands/refactor.md
+- docs/commands/scaffold.md
+- docs/commands/sys.md
+- docs/commands/xref.md
+- docs/design/coding-performance-corpus.md
+- docs/design/cwe-1000-registry.md
+- docs/design/design-pattern-traps-corpus.md
+- docs/design/language-adapter-tier-decision.md
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
+- docs/design/registry/RECONCILIATION.md
+- docs/design/system-performance-corpus.md
+- docs/guides/agent-playbook.md
+- docs/guides/agentic-workflow.md
+- docs/guides/coordinator-scripts.md
+- docs/guides/editors.md
+- docs/guides/exhaustive-research.md
+- docs/guides/extending/benign-capabilities.md
+- docs/guides/extending/capability-registry.md
+- docs/guides/extending/compliance-registry.md
+- docs/guides/extending/cve-fingerprints.md
+- docs/guides/extending/design-lint-rules.md
+- docs/guides/extending/dup-detector-registry.md
+- docs/guides/extending/gate-rule-families.md
+- docs/guides/extending/language-grammar-handlers.md
+- docs/guides/extending/litmus-fixtures.md
+- docs/guides/extending/pii-categories.md
+- docs/guides/extending/prover-claim-kinds.md
+- docs/guides/extending/scenario-kinds.md
+- docs/guides/extending/secrets-scan-providers.md
+- docs/guides/extending/sys-export-formats.md
+- docs/guides/extending/test-runner-entries.md
+- docs/guides/extending/threat-catalog.md
+- docs/guides/extending/ticket-kinds-states.md
+- docs/guides/install.md
+- docs/modules/app.md
+- docs/modules/arch.md
+- docs/modules/bind.md
+- docs/modules/clean.md
+- docs/modules/cli.md
+- docs/modules/cve.md
+- docs/modules/decisions.md
+- docs/modules/deploy.md
+- docs/modules/dup-sota-survey.md
+- docs/modules/dup.md
+- docs/modules/fleet.md
+- docs/modules/fuzz.md
+- docs/modules/gates.md
+- docs/modules/graph.md
+- docs/modules/lang.md
+- docs/modules/logging.md
+- docs/modules/mutate.md
+- docs/modules/perf.md
+- docs/modules/process.md
+- docs/modules/release.md
+- docs/modules/render.md
+- docs/modules/serve.md
+- docs/modules/stats.md
+- docs/modules/strata.md
+- docs/modules/testing.md
+- docs/modules/tickets.md
+- docs/modules/vet.md
+- docs/strata/boundary.md
+- docs/strata/charter.md
+- docs/strata/evidence.md
+- docs/strata/host.md
+- docs/strata/kernel.md
+- docs/strata/krb.md
+- docs/strata/policy.md
+- docs/strata/reliability.md
+- docs/strata/roadmap.md
+- docs/strata/selfconform.md
+- docs/strata/surface.md
+- docs/strata/threat.md
+- docs/strata/waive.md
+- frob-core/src/arch_python.rs
+- frob-core/src/capability_python.rs
+- frob-core/src/extract.rs
+- invariants/INV-002.md
+- invariants/INV-004.md
+- invariants/INV-005.md
+- invariants/INV-006.md
+- invariants/INV-007.md
+- invariants/INV-008.md
+- invariants/INV-009.md
+- invariants/INV-010.md
+- invariants/INV-011.md
+- invariants/INV-012.md
+- invariants/INV-013.md
+- invariants/INV-015.md
+- invariants/INV-016.md
+- invariants/INV-017.md
+- invariants/INV-018.md
+- invariants/INV-019.md
+- invariants/INV-020.md
+- invariants/INV-021.md
+- invariants/INV-023.md
+- invariants/INV-024.md
+- invariants/INV-025.md
+- invariants/INV-026.md
+- invariants/INV-027.md
+- invariants/INV-028.md
+- invariants/INV-029.md
+- invariants/INV-030.md
+- invariants/INV-031.md
+- invariants/INV-032.md
+- invariants/INV-033.md
+- invariants/INV-034.md
+- invariants/INV-035.md
+- invariants/INV-036.md
+- invariants/INV-037.md
+- invariants/INV-038.md
+- invariants/INV-039.md
+- invariants/INV-040.md
+- invariants/INV-041.md
+- invariants/INV-042.md
+- invariants/INV-043.md
+- invariants/INV-044.md
+- invariants/INV-045.md
+- invariants/INV-047.md
+- invariants/INV-048.md
+- invariants/INV-051.md
+- pyproject.toml
+- src/frob/app/__init__.py
+- src/frob/app/_check_chunking.py
+- src/frob/app/_config_meta.py
+- src/frob/app/_daemon_proxy.py
+- src/frob/app/_snapshot.py
+- src/frob/app/_style.py
+- src/frob/app/ack_runner.py
+- src/frob/app/agent_runner.py
+- src/frob/app/app.py
+- src/frob/app/arch_runner.py
+- src/frob/app/bind_runner.py
+- src/frob/app/check_runner.py
+- src/frob/app/claude_runner.py
+- src/frob/app/clean_runner.py
+- src/frob/app/config.py
+- src/frob/app/coverage_runner.py
+- src/frob/app/cycle_runner.py
+- src/frob/app/debt_runner.py
+- src/frob/app/deprecated_runner.py
+- src/frob/app/design_runner.py
+- src/frob/app/docs_runner.py
+- src/frob/app/doctor_runner.py
+- src/frob/app/dup_runner.py
+- src/frob/app/explore_runner.py
+- src/frob/app/exports_runner.py
+- src/frob/app/fleet_runner.py
+- src/frob/app/fmt_runner.py
+- src/frob/app/gitlog_runner.py
+- src/frob/app/graph_runner.py
+- src/frob/app/map_runner.py
+- src/frob/app/mutate_runner.py
+- src/frob/app/natives_runner.py
+- src/frob/app/ops_runner.py
+- src/frob/app/outline_runner.py
+- src/frob/app/parse_runner.py
+- src/frob/app/perf_runner.py
+- src/frob/app/pool_runner.py
+- src/frob/app/quality_runner.py
+- src/frob/app/registry_runner.py
+- src/frob/app/release_runner.py
+- src/frob/app/scaffold_runner.py
+- src/frob/app/stats_runner.py
+- src/frob/app/sys_runner.py
+- src/frob/app/telemetry.py
+- src/frob/app/test_runner.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/app/ticket_runner/_new.py
+- src/frob/app/ticket_runner/_query.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/app/verify_runner.py
+- src/frob/app/vet_runner.py
+- src/frob/app/worktree_runner.py
+- src/frob/app/xref_runner.py
+- src/frob/dup/_pipeline/_callgraph.py
+- src/frob/dup/_pipeline/_fingerprint.py
+- src/frob/fleet/__init__.py
+- src/frob/graph/__init__.py
+- src/frob/graph/_core.py
+- src/frob/graph/_generated.py
+- src/frob/graph/affects.py
+- src/frob/graph/cache.py
+- src/frob/graph/callgraph.py
+- src/frob/graph/digest.py
+- src/frob/graph/dsl.py
+- src/frob/graph/imports.py
+- src/frob/graph/lock.py
+- src/frob/graph/summary.py
+- src/frob/policy/__init__.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+---
+The deferred post-land unscoped sweep (T-1684) for T-1968 at commit 4d40d13a4455c29ed08b34c0893f17f5cec72269 found 241 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (241), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 315 actual finding(s) across those 241 identit(ies).
+
+New (rule, file) identit(ies) filed here:
+
+- ARCH001  src/frob/graph/__init__.py
+- DOC004  docs/modules/mutate.md
+- DRIFT002  design/frob.strata
+- DRIFT002  docs/commands/check.md
+- DRIFT002  docs/commands/cli-vocabulary.md
+- DRIFT002  docs/commands/cycle.md
+- DRIFT002  docs/commands/deploy.md
+- DRIFT002  docs/commands/exports.md
+- DRIFT002  docs/commands/gitlog.md
+- DRIFT002  docs/commands/map.md
+- DRIFT002  docs/commands/outline.md
+- DRIFT002  docs/commands/refactor.md
+- DRIFT002  docs/commands/scaffold.md
+- DRIFT002  docs/commands/sys.md
+- DRIFT002  docs/commands/xref.md
+- DRIFT002  docs/design/registry/EXHAUSTIVENESS-GATE.md
+- DRIFT002  docs/guides/agent-playbook.md
+- DRIFT002  docs/guides/agentic-workflow.md
+- DRIFT002  docs/guides/extending/benign-capabilities.md
+- DRIFT002  docs/guides/extending/capability-registry.md
+- DRIFT002  docs/guides/extending/compliance-registry.md
+- DRIFT002  docs/guides/extending/cve-fingerprints.md
+- DRIFT002  docs/guides/extending/design-lint-rules.md
+- DRIFT002  docs/guides/extending/dup-detector-registry.md
+- DRIFT002  docs/guides/extending/gate-rule-families.md
+- DRIFT002  docs/guides/extending/language-grammar-handlers.md
+- DRIFT002  docs/guides/extending/litmus-fixtures.md
+- DRIFT002  docs/guides/extending/pii-categories.md
+- DRIFT002  docs/guides/extending/prover-claim-kinds.md
+- DRIFT002  docs/guides/extending/scenario-kinds.md
+- DRIFT002  docs/guides/extending/secrets-scan-providers.md
+- DRIFT002  docs/guides/extending/sys-export-formats.md
+- DRIFT002  docs/guides/extending/test-runner-entries.md
+- DRIFT002  docs/guides/extending/threat-catalog.md
+- DRIFT002  docs/guides/extending/ticket-kinds-states.md
+- DRIFT002  docs/guides/install.md
+- DRIFT002  docs/modules/app.md
+- DRIFT002  docs/modules/arch.md
+- DRIFT002  docs/modules/bind.md
+- DRIFT002  docs/modules/clean.md
+- DRIFT002  docs/modules/cli.md
+- DRIFT002  docs/modules/cve.md
+- DRIFT002  docs/modules/decisions.md
+- DRIFT002  docs/modules/deploy.md
+- DRIFT002  docs/modules/dup.md
+- DRIFT002  docs/modules/fuzz.md
+- DRIFT002  docs/modules/gates.md
+- DRIFT002  docs/modules/graph.md
+- DRIFT002  docs/modules/lang.md
+- DRIFT002  docs/modules/logging.md
+- DRIFT002  docs/modules/mutate.md
+- DRIFT002  docs/modules/perf.md
+- DRIFT002  docs/modules/process.md
+- DRIFT002  docs/modules/release.md
+- DRIFT002  docs/modules/serve.md
+- DRIFT002  docs/modules/stats.md
+- DRIFT002  docs/modules/testing.md
+- DRIFT002  docs/modules/tickets.md
+- DRIFT002  docs/modules/vet.md
+- DRIFT002  docs/strata/boundary.md
+- DRIFT002  docs/strata/evidence.md
+- DRIFT002  docs/strata/kernel.md
+- DRIFT002  docs/strata/policy.md
+- DRIFT002  docs/strata/surface.md
+- DRIFT002  frob-core/src/extract.rs
+- DRIFT002  src/frob/app/__init__.py
+- DRIFT002  src/frob/app/_check_chunking.py
+- DRIFT002  src/frob/app/_config_meta.py
+- DRIFT002  src/frob/app/_daemon_proxy.py
+- DRIFT002  src/frob/app/_snapshot.py
+- DRIFT002  src/frob/app/ack_runner.py
+- DRIFT002  src/frob/app/agent_runner.py
+- DRIFT002  src/frob/app/app.py
+- DRIFT002  src/frob/app/arch_runner.py
+- DRIFT002  src/frob/app/bind_runner.py
+- DRIFT002  src/frob/app/check_runner.py
+- DRIFT002  src/frob/app/claude_runner.py
+- DRIFT002  src/frob/app/clean_runner.py
+- DRIFT002  src/frob/app/config.py
+- DRIFT002  src/frob/app/coverage_runner.py
+- DRIFT002  src/frob/app/cycle_runner.py
+- DRIFT002  src/frob/app/debt_runner.py
+- DRIFT002  src/frob/app/deprecated_runner.py
+- DRIFT002  src/frob/app/design_runner.py
+- DRIFT002  src/frob/app/docs_runner.py
+- DRIFT002  src/frob/app/doctor_runner.py
+- DRIFT002  src/frob/app/dup_runner.py
+- DRIFT002  src/frob/app/explore_runner.py
+- DRIFT002  src/frob/app/exports_runner.py
+- DRIFT002  src/frob/app/fleet_runner.py
+- DRIFT002  src/frob/app/fmt_runner.py
+- DRIFT002  src/frob/app/gitlog_runner.py
+- DRIFT002  src/frob/app/graph_runner.py
+- DRIFT002  src/frob/app/map_runner.py
+- DRIFT002  src/frob/app/mutate_runner.py
+- DRIFT002  src/frob/app/natives_runner.py
+- DRIFT002  src/frob/app/ops_runner.py
+- DRIFT002  src/frob/app/outline_runner.py
+- DRIFT002  src/frob/app/parse_runner.py
+- DRIFT002  src/frob/app/perf_runner.py
+- DRIFT002  src/frob/app/pool_runner.py
+- DRIFT002  src/frob/app/quality_runner.py
+- DRIFT002  src/frob/app/registry_runner.py
+- DRIFT002  src/frob/app/release_runner.py
+- DRIFT002  src/frob/app/scaffold_runner.py
+- DRIFT002  src/frob/app/stats_runner.py
+- DRIFT002  src/frob/app/sys_runner.py
+- DRIFT002  src/frob/app/telemetry.py
+- DRIFT002  src/frob/app/test_runner.py
+- DRIFT002  src/frob/app/ticket_runner/__init__.py
+- DRIFT002  src/frob/app/ticket_runner/_close_cmd.py
+- DRIFT002  src/frob/app/ticket_runner/_land_cmd.py
+- DRIFT002  src/frob/app/ticket_runner/_lifecycle.py
+- DRIFT002  src/frob/app/ticket_runner/_mutate.py
+- DRIFT002  src/frob/app/ticket_runner/_new.py
+- DRIFT002  src/frob/app/ticket_runner/_query.py
+- DRIFT002  src/frob/app/ticket_runner/_rapid_sweep.py
+- DRIFT002  src/frob/app/ticket_runner/_verify.py
+- DRIFT002  src/frob/app/verify_runner.py
+- DRIFT002  src/frob/app/vet_runner.py
+- DRIFT002  src/frob/app/worktree_runner.py
+- DRIFT002  src/frob/app/xref_runner.py
+- DRIFT002  src/frob/fleet/__init__.py
+- DRIFT002  src/frob/graph/__init__.py
+- DRIFT002  src/frob/graph/_core.py
+- DRIFT002  src/frob/graph/_generated.py
+- DRIFT002  src/frob/graph/affects.py
+- DRIFT002  src/frob/graph/cache.py
+- DRIFT002  src/frob/graph/callgraph.py
+- DRIFT002  src/frob/graph/dsl.py
+- DRIFT002  src/frob/graph/imports.py
+- DRIFT002  src/frob/graph/lock.py
+- DRIFT002  src/frob/graph/summary.py
+- DSL001  CHANGELOG.md
+- DSL001  docs/commands/sys.md
+- DSL001  docs/design/coding-performance-corpus.md
+- DSL001  docs/design/cwe-1000-registry.md
+- DSL001  docs/design/design-pattern-traps-corpus.md
+- DSL001  docs/design/language-adapter-tier-decision.md
+- DSL001  docs/design/registry/RECONCILIATION.md
+- DSL001  docs/design/system-performance-corpus.md
+- DSL001  docs/guides/coordinator-scripts.md
+- DSL001  docs/guides/editors.md
+- DSL001  docs/guides/exhaustive-research.md
+- DSL001  docs/guides/install.md
+- DSL001  docs/modules/app.md
+- DSL001  docs/modules/arch.md
+- DSL001  docs/modules/bind.md
+- DSL001  docs/modules/clean.md
+- DSL001  docs/modules/cli.md
+- DSL001  docs/modules/cve.md
+- DSL001  docs/modules/decisions.md
+- DSL001  docs/modules/deploy.md
+- DSL001  docs/modules/dup-sota-survey.md
+- DSL001  docs/modules/dup.md
+- DSL001  docs/modules/fleet.md
+- DSL001  docs/modules/fuzz.md
+- DSL001  docs/modules/gates.md
+- DSL001  docs/modules/graph.md
+- DSL001  docs/modules/lang.md
+- DSL001  docs/modules/logging.md
+- DSL001  docs/modules/mutate.md
+- DSL001  docs/modules/perf.md
+- DSL001  docs/modules/process.md
+- DSL001  docs/modules/release.md
+- DSL001  docs/modules/render.md
+- DSL001  docs/modules/serve.md
+- DSL001  docs/modules/stats.md
+- DSL001  docs/modules/strata.md
+- DSL001  docs/modules/testing.md
+- DSL001  docs/modules/tickets.md
+- DSL001  docs/modules/vet.md
+- DSL001  docs/strata/boundary.md
+- DSL001  docs/strata/charter.md
+- DSL001  docs/strata/evidence.md
+- DSL001  docs/strata/host.md
+- DSL001  docs/strata/kernel.md
+- DSL001  docs/strata/krb.md
+- DSL001  docs/strata/policy.md
+- DSL001  docs/strata/reliability.md
+- DSL001  docs/strata/roadmap.md
+- DSL001  docs/strata/selfconform.md
+- DSL001  docs/strata/surface.md
+- DSL001  docs/strata/threat.md
+- DSL001  docs/strata/waive.md
+- INV002  invariants/INV-002.md
+- INV002  invariants/INV-004.md
+- INV002  invariants/INV-005.md
+- INV002  invariants/INV-006.md
+- INV002  invariants/INV-007.md
+- INV002  invariants/INV-008.md
+- INV002  invariants/INV-009.md
+- INV002  invariants/INV-010.md
+- INV002  invariants/INV-011.md
+- INV002  invariants/INV-012.md
+- INV002  invariants/INV-013.md
+- INV002  invariants/INV-015.md
+- INV002  invariants/INV-016.md
+- INV002  invariants/INV-017.md
+- INV002  invariants/INV-018.md
+- INV002  invariants/INV-019.md
+- INV002  invariants/INV-020.md
+- INV002  invariants/INV-021.md
+- INV002  invariants/INV-023.md
+- INV002  invariants/INV-024.md
+- INV002  invariants/INV-025.md
+- INV002  invariants/INV-026.md
+- INV002  invariants/INV-027.md
+- INV002  invariants/INV-028.md
+- INV002  invariants/INV-029.md
+- INV002  invariants/INV-030.md
+- INV002  invariants/INV-031.md
+- INV002  invariants/INV-032.md
+- INV002  invariants/INV-033.md
+- INV002  invariants/INV-034.md
+- INV002  invariants/INV-035.md
+- INV002  invariants/INV-036.md
+- INV002  invariants/INV-037.md
+- INV002  invariants/INV-038.md
+- INV002  invariants/INV-039.md
+- INV002  invariants/INV-040.md
+- INV002  invariants/INV-041.md
+- INV002  invariants/INV-042.md
+- INV002  invariants/INV-043.md
+- INV002  invariants/INV-044.md
+- INV002  invariants/INV-045.md
+- INV002  invariants/INV-047.md
+- INV002  invariants/INV-048.md
+- INV002  invariants/INV-051.md
+- REL001  pyproject.toml
+- TEST001  frob-core/src/arch_python.rs
+- TEST001  frob-core/src/capability_python.rs
+- TEST001  frob-core/src/extract.rs
+- TEST001  src/frob/app/_style.py
+- TEST001  src/frob/app/telemetry.py
+- TEST001  src/frob/dup/_pipeline/_callgraph.py
+- TEST001  src/frob/dup/_pipeline/_fingerprint.py
+- TEST001  src/frob/graph/__init__.py
+- TEST001  src/frob/graph/digest.py
+- TEST001  src/frob/graph/dsl.py
+- TEST001  src/frob/policy/__init__.py
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- ARCH001  src/frob/graph/__init__.py  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via src/frob/graph/__init__.py::_process_doc_file
+- DOC004  docs/modules/mutate.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  design/frob.strata  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via design/frob.strata::frob.testsuite
+- DRIFT002  docs/commands/check.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/cli-vocabulary.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/cycle.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/deploy.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/exports.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/gitlog.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/map.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/outline.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/refactor.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/scaffold.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/sys.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/commands/xref.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/design/registry/EXHAUSTIVENESS-GATE.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/agent-playbook.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/agentic-workflow.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/benign-capabilities.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/capability-registry.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/compliance-registry.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/cve-fingerprints.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/design-lint-rules.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/dup-detector-registry.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/gate-rule-families.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/language-grammar-handlers.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/litmus-fixtures.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/pii-categories.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/prover-claim-kinds.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/scenario-kinds.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/secrets-scan-providers.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/sys-export-formats.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/test-runner-entries.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/threat-catalog.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/extending/ticket-kinds-states.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/guides/install.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/app.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/arch.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/bind.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/clean.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/cve.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/decisions.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/deploy.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/dup.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/fuzz.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/gates.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/graph.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/lang.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/logging.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/mutate.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/perf.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/process.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/release.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/serve.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/stats.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/testing.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/modules/vet.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/strata/boundary.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/strata/evidence.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/strata/kernel.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/strata/policy.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  docs/strata/surface.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  frob-core/src/extract.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/_check_chunking.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/_config_meta.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/_daemon_proxy.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/_snapshot.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ack_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/agent_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/app.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/arch_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/bind_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/check_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/claude_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/clean_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/config.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/coverage_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/cycle_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/debt_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/deprecated_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/design_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/docs_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/doctor_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/dup_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/explore_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/exports_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/fleet_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/fmt_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/gitlog_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/graph_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/map_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/mutate_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/natives_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ops_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/outline_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/parse_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/perf_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/pool_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/quality_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/registry_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/release_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/scaffold_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/stats_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/sys_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/telemetry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/test_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_close_cmd.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_land_cmd.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_lifecycle.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_mutate.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_new.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_query.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_rapid_sweep.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/ticket_runner/_verify.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/verify_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/vet_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/worktree_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/app/xref_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/fleet/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/__init__.py  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via src/frob/graph/__init__.py::_process_doc_file
+- DRIFT002  src/frob/graph/_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/_generated.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/affects.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/cache.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/callgraph.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/dsl.py  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via src/frob/graph/dsl.py::_ANY_MD_DIRECTIVE_RE
+- DRIFT002  src/frob/graph/imports.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/lock.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DRIFT002  src/frob/graph/summary.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  CHANGELOG.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/commands/sys.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/design/coding-performance-corpus.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/design/cwe-1000-registry.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/design/design-pattern-traps-corpus.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/design/language-adapter-tier-decision.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/design/registry/RECONCILIATION.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/design/system-performance-corpus.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/guides/coordinator-scripts.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/guides/editors.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/guides/exhaustive-research.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/guides/install.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/app.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/arch.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/bind.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/clean.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/cve.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/decisions.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/deploy.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/dup-sota-survey.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/dup.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/fleet.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/fuzz.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/gates.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/graph.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/lang.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/logging.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/mutate.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/perf.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/process.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/release.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/render.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/serve.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/stats.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/strata.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/testing.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/modules/vet.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/boundary.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/charter.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/evidence.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/host.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/kernel.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/krb.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/policy.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/reliability.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/roadmap.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/selfconform.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/surface.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/threat.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- DSL001  docs/strata/waive.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-004.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-005.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-006.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-007.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-008.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-009.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-010.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-011.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-012.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-013.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-015.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-016.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-017.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-018.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-019.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-020.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-021.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-023.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-024.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-025.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-026.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-027.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-028.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-029.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-030.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-031.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-032.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-033.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-034.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-035.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-036.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-037.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-038.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-039.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-040.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-041.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-042.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-043.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-044.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-045.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-047.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-048.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- INV002  invariants/INV-051.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REL001  pyproject.toml  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  frob-core/src/arch_python.rs  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via src/frob/graph/__init__.py::_process_doc_file -> frob-core/src/arch_python.rs::text
+- TEST001  frob-core/src/capability_python.rs  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via src/frob/graph/__init__.py::_process_doc_file -> frob-core/src/capability_python.rs::text
+- TEST001  frob-core/src/extract.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  src/frob/app/_style.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  src/frob/app/telemetry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  src/frob/dup/_pipeline/_callgraph.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  src/frob/dup/_pipeline/_fingerprint.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  src/frob/graph/__init__.py  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via src/frob/graph/__init__.py::_process_doc_file
+- TEST001  src/frob/graph/digest.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST001  src/frob/graph/dsl.py  -> attributed to T-1968 (commit 4d40d13a4455, already closed/dropped -- filed below) via src/frob/graph/dsl.py::_ANY_MD_DIRECTIVE_RE
+- TEST001  src/frob/policy/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
