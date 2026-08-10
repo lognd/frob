@@ -2,7 +2,7 @@
 id: T-2027
 title: frob_doable_tickets (serve daemon RPC + MCP tool) bypasses T-2006's dispatch-time
   sweep-ticket revalidation
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'

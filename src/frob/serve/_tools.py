@@ -75,6 +75,9 @@ def _load_snapshot(root: Path):  # noqa: ANN202
 
 # frob:doc docs/modules/serve.md#tools
 # frob:tests tests/test_app_daemon_proxy.py::TestDifferentialParity.test_doable_tickets_json_daemon_matches_in_process kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation.test_resolved_sweep_ticket_is_dropped_before_listing  # noqa: E501
+# frob:tests tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation.test_still_reproducing_sweep_ticket_stays_listed  # noqa: E501
+# frob:tests tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation.test_no_sweep_tickets_never_calls_revalidate  # noqa: E501
 def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
     """Doable tickets, oldest-first, as JSON-able dicts.
 
@@ -83,12 +86,46 @@ def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
     own `t.model_dump(mode="json")` per row (`frob.app.ticket_runner.
     _query._doable`) -- not the earlier id/title/kind-only subset, which
     could never reach byte-for-byte parity with the CLI's `--json` output.
-    """
+
+    T-2027 (found while working T-2006): this is the SHARED
+    implementation both the socket daemon RPC (`_socketd._TOOL_DISPATCH`)
+    and the FastMCP stdio tool (`server.py`'s `frob_doable_tickets`
+    registration) call -- one function, two dispatch tables, never a
+    parallel copy. `_query._doable` (the CLI's own in-process render
+    path) re-verifies any sweep-filed candidate ticket's identities right
+    before listing them (T-2006's `revalidate_dispatchable_sweep_
+    tickets`) -- this function did not, so a client reaching this code
+    (an MCP tool call, unconditionally live per this repo's own
+    `.mcp.json`; or the socket RPC, live whenever an operator sets
+    `FROB_DAEMON=1`) saw a stale, already-resolved sweep-filed ticket
+    that the CLI path would have already dropped. Mirrors `_query.
+    _doable`'s own sequence exactly: revalidate against the loaded
+    queue's tickets, reload the queue if anything dropped, THEN compute
+    `doable(...)` -- one new call to the EXISTING function, never a
+    second implementation of what it does."""
+    from frob.app.ticket_runner._rapid_sweep import (
+        revalidate_dispatchable_sweep_tickets,
+    )
+
     queue_result = load_queue(root)
     if queue_result.is_err:
         _log.error("serve: frob_doable_tickets: %s", queue_result.danger_err)
         return Err(ServeError.QueueUnavailable)
-    tickets = doable(queue_result.danger_ok, root)
+    queue = queue_result.danger_ok
+
+    dropped = revalidate_dispatchable_sweep_tickets(root, tuple(queue.tickets.values()))
+    if dropped:
+        _log.info(
+            "serve: frob_doable_tickets: T-2027 dropped %d stale "
+            "sweep-filed ticket(s) before listing (no longer reproduce): %s",
+            len(dropped),
+            ", ".join(dropped),
+        )
+        reloaded = load_queue(root)
+        if reloaded.is_ok:
+            queue = reloaded.danger_ok
+
+    tickets = doable(queue, root)
     _log.info("serve: frob_doable_tickets: %d doable", len(tickets))
     return Ok([t.model_dump(mode="json") for t in tickets])
 
