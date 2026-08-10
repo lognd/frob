@@ -2,7 +2,7 @@
 id: T-1930
 title: add a single porcelain verb sequencing the happy-path ticket workflow (T-1556
   criterion 2b)
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-09'
