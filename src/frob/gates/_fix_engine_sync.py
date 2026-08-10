@@ -1183,13 +1183,7 @@ def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
         return []
     from frob.strata import merge_models
     from frob.strata._design_load import load_design_ids
-    from frob.strata._effects import (
-        CAPABILITY_RATCHET_LOCK_REL,
-        _load_capability_ratchet_lock,
-    )
-    from frob.strata._effects import (
-        capability_via_site_counts as _current_counts,
-    )
+    from frob.strata._effects import capability_via_site_counts as _current_counts
 
     current_ids = load_design_ids(root, "design")
     if current_ids.errors or not current_ids.models:
@@ -1201,6 +1195,26 @@ def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
     before_counts = _capability_counts_at_head(root)
     if before_counts is None:
         return []
+
+    return _apply_capability_ratchet_bumps(root, current_counts, before_counts)
+
+
+def _apply_capability_ratchet_bumps(
+    root: Path, current_counts: "dict[str, int]", before_counts: "dict[str, int]"
+) -> list[FixApplied]:
+    """The load-lock/compute-bumps/write half of `fix_sys111_capability_
+    ratchet_sync` (T-2001: split out to keep the parent under ARCH001's
+    line threshold, zero behavior change) -- `current_counts`/`before_
+    counts` are the AFTER/BEFORE `capability_via_site_counts` snapshots
+    the caller already computed. A `(node, atom)` pair is bumped only
+    when its current count exceeds the committed ceiling AND grew since
+    `before_counts` -- a pair already exceeding the ceiling but unchanged
+    since `before_counts` is a PRE-EXISTING breach, left untouched (still
+    surfaced by SYS111) rather than silently ratified."""
+    from frob.strata._effects import (
+        CAPABILITY_RATCHET_LOCK_REL,
+        _load_capability_ratchet_lock,
+    )
 
     lock_path = root / CAPABILITY_RATCHET_LOCK_REL
     lock_entries = _load_capability_ratchet_lock(root)
