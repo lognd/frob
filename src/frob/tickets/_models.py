@@ -2156,6 +2156,17 @@ class LandError(ErrorSet):
         "reason=...)) if it genuinely no longer needs to anchor a "
         "waiver, or land it as queued/in-progress/blocked instead"
     )
+    # frob:ticket T-1946
+    OrphanedEvidenceDeletion = (
+        "this branch's own committed changes delete or rename a pytest "
+        "test node bound as evidence on a DIFFERENT ticket, and that "
+        "ticket's evidence no longer resolves against the worktree's "
+        "currently collected tests -- landing would silently orphan the "
+        "other ticket's only proof it was ever done (T-1946); re-point "
+        "the affected ticket's evidence to the replacement test in the "
+        "same diff, or re-scope it and record fresh evidence, before "
+        "retrying"
+    )
 
 
 # frob:ticket T-0176

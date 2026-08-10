@@ -2,7 +2,7 @@
 id: T-1946
 title: 'Deleting or renaming a test silently orphans other tickets'' evidence: nothing
   refuses it, and it is the entire current error floor'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,55 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/
+- tests/unit/test_land_orphaned_evidence.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_orphaned_evidence.py
+  reason: acceptance tests for the land-time orphaned-evidence-deletion guard live
+    here
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: documenting the new land-time orphaned-evidence-deletion guard, same pattern
+    as every other land-time check in this file
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: doc section could not be committed (T-1967's live lease on this file) --
+    deferred to follow-up T-1973
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'narrowed to the actual touched files after T-1967''s lease released: the
+    new orphaned-evidence-deletion land-time check and its LandError variant
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'narrowed to the actual touched files after T-1967''s lease released: the
+    new orphaned-evidence-deletion land-time check and its LandError variant
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/tickets/
+  reason: narrowed to the actual touched files now that the lease is free
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_refuses_when_branch_deletes_evidence_bound_test
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_deletion_of_unbound_test_lands_cleanly
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_rename_that_repoints_evidence_in_same_diff_is_accepted
 designated_repro_test: null
 threat: null
 component: null

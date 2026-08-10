@@ -3397,6 +3397,110 @@ def _reverify_cross_ticket_leakage_post_mutation(
     )
 
 
+# frob:ticket T-1946
+# frob:doc docs/modules/tickets.md#orphaned-evidence-deletion-t-1946
+def _check_orphaned_evidence_deletion(
+    worktree: Path, ticket: Ticket, base_ref: str
+) -> Result[None, LandError]:
+    """T-1946: refuse when this branch's OWN committed changes
+    (`_branch_changed_files`, three-dot -- so only paths THIS diff touched
+    can ever trigger this, mirroring `_check_cross_ticket_leakage`'s own
+    diff source) delete or rename a pytest test node bound as evidence on
+    a DIFFERENT, still-open-or-done ticket, such that the other ticket's
+    evidence no longer resolves against `worktree`'s currently collected
+    tests.
+
+    MEASURED (T-1946's own brief): two independent actors, one hour,
+    orphaned 3 unrelated tickets' evidence in one deletion each -- a
+    coordinator's file cleanup and a legitimate test replacement in an
+    unrelated ticket's land, neither of which could see the hazard: the
+    orphaned tickets were outside both diffs' declared scope, and a
+    deletion diff carries no signal pointing at what else cites the
+    deleted node.
+
+    Deliberately NOT a rewrite/auto-repoint of the stale evidence (the
+    WAIVE004 lesson: a "safe" auto-cleanup silently destroyed 55 live
+    waivers; evidence is the only record a ticket was ever proven, so
+    repointing it automatically would fabricate proof) -- this only
+    refuses and names the affected ticket(s)/evidence id(s), leaving the
+    human/agent decision (re-point to the replacement test, or re-scope
+    and record fresh evidence) to whoever resolves it. `cmd:` evidence
+    entries (T-0215, docs-kind) are never node ids and are skipped
+    outright -- they cannot be "deleted" by a test-file diff.
+
+    Best-effort like every other land-time check here: a `_branch_
+    changed_files` or `collect_python_tests` failure is logged and
+    treated as `Ok(None)` rather than blocking the land on an unrelated
+    tooling problem -- this check is an additional safety net, not a
+    replacement for COV003's own authoritative sweep, which still runs
+    at `frob check` regardless."""
+    from frob.gates import _evidence_valid_for_ticket
+    from frob.testing import collect_python_tests
+    from frob.tickets._models import is_cmd_evidence
+
+    changed = _branch_changed_files(worktree, base_ref)
+    if changed.is_err:
+        _log.debug(
+            "land: %s orphaned-evidence check skipped -- diff unreadable (%s)",
+            ticket.id,
+            changed.danger_err,
+        )
+        return Ok(None)
+    if not changed.danger_ok:
+        return Ok(None)
+
+    collected = collect_python_tests(worktree)
+    if collected.is_err:
+        _log.debug(
+            "land: %s orphaned-evidence check skipped -- test collection "
+            "failed (%s)",
+            ticket.id,
+            collected.danger_err,
+        )
+        return Ok(None)
+    tests = collected.danger_ok
+
+    loaded = load_all(worktree)
+    if loaded.is_err:
+        _log.debug(
+            "land: %s orphaned-evidence check skipped -- ledger unreadable (%s)",
+            ticket.id,
+            loaded.danger_err,
+        )
+        return Ok(None)
+
+    orphaned: dict[str, list[str]] = {}
+    for other_id, other in loaded.danger_ok.items():
+        if other_id == ticket.id:
+            continue
+        for evidence in other.evidence:
+            if is_cmd_evidence(evidence):
+                continue
+            node_path = evidence.split("::", 1)[0]
+            if node_path not in changed.danger_ok:
+                continue
+            if _evidence_valid_for_ticket(evidence, other, tests):
+                continue
+            orphaned.setdefault(other_id, []).append(evidence)
+
+    if not orphaned:
+        return Ok(None)
+
+    for other_id, evidence_ids in sorted(orphaned.items()):
+        _log.error(
+            "land: %s branch deletes or renames test node(s) bound as "
+            "evidence on %s, which no longer resolve: %s -- re-point "
+            "%s's evidence to the replacement test (in this same diff), "
+            "or re-scope %s and record fresh evidence, before landing",
+            ticket.id,
+            other_id,
+            evidence_ids,
+            other_id,
+            other_id,
+        )
+    return Err(LandError.OrphanedEvidenceDeletion)
+
+
 # frob:ticket T-1355
 def _load_leakage_ledgers(
     root: Path, worktree: Path, ticket_id: str
@@ -3678,6 +3782,10 @@ def _land_precheck_remaining_checks(
     )
     if leakage_check.is_err:
         return Err(leakage_check.danger_err)
+
+    orphan_check = _check_orphaned_evidence_deletion(worktree, ticket, main_branch_name)
+    if orphan_check.is_err:
+        return Err(orphan_check.danger_err)
 
     return _check_mutation_evidence(
         worktree,

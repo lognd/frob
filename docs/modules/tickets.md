@@ -3570,6 +3570,57 @@ way through for a genuinely intentional joint land -- once the first of
 two mutually-scoped same-worktree tickets lands, the second's own later
 land finds the first already `DONE` and exempt.
 
+## Orphaned evidence deletion (T-1946)
+
+<!-- frob:describes src/frob/tickets/_land.py::_check_orphaned_evidence_deletion -->
+
+`_check_orphaned_evidence_deletion` refuses a land whose branch's OWN
+committed changes (`_branch_changed_files`, three-dot -- only paths this
+diff itself touched can ever trigger it) delete or rename a pytest test
+node bound as evidence on a DIFFERENT ticket, such that the other
+ticket's evidence no longer resolves against the worktree's currently
+collected tests.
+
+MEASURED (2026-08-10): two independent actors orphaned three unrelated
+tickets' evidence in one hour, each deleting/replacing a test with no
+signal the diff was touching anything outside its own declared scope --
+100% of the then-current unscoped error floor (4 COV003 findings, one
+deletion took out three tickets at once since blast radius is
+superlinear in how well-cited a test is). This had been recorded as a
+known hazard before (re-measure unscoped after a refactor lands) and
+still happened twice to two different actors in the same hour -- the
+written-down rule alone did not enforce itself.
+
+Runs in `_land_precheck_remaining_checks`, right after `_check_cross_
+ticket_leakage` and before the mutation-evidence obligation, using the
+same `load_all(worktree)` ledger the leakage check reads -- so a rename
+that ALSO re-points the affected ticket's evidence in the SAME diff is
+never refused: the check evaluates the ledger's POST-diff state, and a
+re-pointed evidence id that now resolves against the worktree's
+collected tests is simply valid, no special-case needed. Deliberately
+does NOT auto-repoint or auto-delete the stale evidence itself -- the
+WAIVE004 lesson (a "safe" cleanup silently deleted 55 live waivers)
+applied to evidence: the binding is the only record a ticket was ever
+proven, so repointing it automatically would fabricate proof. The
+refusal names every orphaned ticket id and evidence id; resolving it is
+a human/agent decision -- re-point to the replacement test, or re-scope
+the ticket and record fresh evidence.
+
+Best-effort like the other land-time checks in this section: a `_branch_
+changed_files` or `collect_python_tests` failure is logged and treated
+as `Ok(None)` rather than blocking the land on an unrelated tooling
+problem -- COV003's own authoritative sweep still runs at `frob check`
+regardless of whether this preflight could evaluate.
+
+Not yet re-run post-mutation the way `_check_cross_ticket_leakage` is
+(`_reverify_cross_ticket_leakage_post_mutation`, T-1932) -- the T-1931
+hazard that motivated that second call site was a Tier-A auto-fix
+handler regenerating a specific leaked interface edge, and no Tier-A
+handler in this repo deletes or renames test files, so the mutation
+window this check would need to close is narrower. Recorded as a known
+gap rather than silently assumed safe; a future Tier-A handler that
+touches test files should re-open this question.
+
 ## Post-mutation reverification (T-1932)
 
 <!-- frob:describes src/frob/tickets/_land.py::_reverify_cross_ticket_leakage_post_mutation -->
