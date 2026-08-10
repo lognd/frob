@@ -109,9 +109,9 @@ def _fmt001_scoped_fixes(
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:ticket T-1911
 def fix_fmt001_directive_wrap(
     root: Path,
-    snapshot: GraphSnapshot,
     *,
     only_paths: frozenset[str] | None = None,
 ) -> list[FixApplied]:
@@ -123,11 +123,14 @@ def fix_fmt001_directive_wrap(
     paths (see `_fmt001_scoped_fixes`, and this section's own T-1391
     module comment above for the land-scope-discipline rationale);
     `None` (the default) preserves the original whole-tree behaviour.
-    `snapshot` is accepted for signature uniformity with its sibling
-    Tier-A handlers; `format_paths` needs no graph state."""
+    T-1911: this handler takes no `GraphSnapshot` at all -- `format_paths`
+    needs no graph state, so the dispatch-uniformity parameter that used
+    to sit here unused (and that test authors kept reaching for `None`
+    on, re-tripping ty's `invalid-argument-type`) is gone rather than
+    merely documented as ignorable; `TIER_A_HANDLERS`' lambda wrapper is
+    what absorbs the real dispatch table's uniform 4-arg shape now."""
     from frob.gates._fmt_directives import format_paths, read_line_length
 
-    del snapshot  # signature uniformity only, format_paths needs no graph state
     limit = read_line_length(root)
     if only_paths is not None:
         return _fmt001_scoped_fixes(root, limit, only_paths)
@@ -636,8 +639,9 @@ def _e501_lines_for_file(root: Path, rel_file: str) -> set[int] | None:
 # frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_merge_introduced_targeted_format_applies  # noqa: E501
 # frob:tests tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced.test_e501_no_merge_shape_is_a_no_op  # noqa: E501
 # frob:ticket T-1547
+# frob:ticket T-1911
 # frob:enforces CHK-GATE-E501
-def fix_e501_merge_introduced(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+def fix_e501_merge_introduced(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-1547): run a targeted `ruff format` over exactly the
     `.py` files a land-time merge touched (`_merge_touched_python_files`)
     that still carry an E501 (line-too-long) finding afterward, then
@@ -649,8 +653,10 @@ def fix_e501_merge_introduced(root: Path, snapshot: GraphSnapshot) -> list[FixAp
     ordinary code -- this handler's own targeted scope is the merge-
     touched set specifically, never a whole-tree `ruff format` sweep
     (that would re-litigate every pre-existing E501 finding in the repo,
-    not just ones this land's own merge introduced)."""
-    del snapshot  # signature uniformity only; this handler reads git + ruff directly
+    not just ones this land's own merge introduced). T-1911: takes no
+    `GraphSnapshot` -- this handler reads git + ruff directly and never
+    needed one; see `fix_fmt001_directive_wrap`'s docstring for why the
+    parameter is gone rather than merely unused."""
     touched = _merge_touched_python_files(root)
     if not touched:
         return []

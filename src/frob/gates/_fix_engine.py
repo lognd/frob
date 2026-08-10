@@ -518,7 +518,7 @@ TIER_A_HANDLERS: dict[
         root, snapshot
     ),
     "FMT001": lambda root, snapshot, queue, ticket_id: fix_fmt001_directive_wrap(
-        root, snapshot
+        root
     ),
     "SUPPRESS001": (
         lambda root, snapshot, queue, ticket_id: fix_suppress001_paired_suppression(
@@ -534,9 +534,7 @@ TIER_A_HANDLERS: dict[
     "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(
         root, snapshot
     ),
-    "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(
-        root, snapshot
-    ),
+    "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(root),
     "COV002": (
         lambda root, snapshot, queue, ticket_id: fix_cov002_ticket_directive_insertion(
             root, snapshot, queue, ticket_id

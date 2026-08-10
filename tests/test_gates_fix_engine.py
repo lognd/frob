@@ -280,7 +280,7 @@ class TestFmt001OnlyPathsLandScoping:
         _write(tmp_path, "src/out_of_scope.py", non_canonical)
 
         applied = fix_fmt001_directive_wrap(
-            tmp_path, _SNAPSHOT, only_paths=frozenset({"src/in_scope.py"})
+            tmp_path, only_paths=frozenset({"src/in_scope.py"})
         )
 
         assert [a.file for a in applied] == ["src/in_scope.py"]
@@ -308,7 +308,7 @@ class TestFmt001OnlyPathsLandScoping:
         _write(tmp_path, "src/a.py", non_canonical)
         _write(tmp_path, "src/b.py", non_canonical)
 
-        applied = fix_fmt001_directive_wrap(tmp_path, _SNAPSHOT)
+        applied = fix_fmt001_directive_wrap(tmp_path)
 
         assert {a.file for a in applied} == {"src/a.py", "src/b.py"}
         for rel in ("src/a.py", "src/b.py"):
@@ -325,7 +325,7 @@ class TestFmt001OnlyPathsLandScoping:
         a silent no-op for that entry, never an error, matching the
         no-guess Tier-A contract every other handler here follows."""
         applied = fix_fmt001_directive_wrap(
-            tmp_path, _SNAPSHOT, only_paths=frozenset({"src/gone.py"})
+            tmp_path, only_paths=frozenset({"src/gone.py"})
         )
         assert applied == []
 
@@ -395,7 +395,7 @@ class TestFixE501MergeIntroduced:
         _git(root, "checkout", "-q", "main")
         _git(root, "merge", "-q", "--no-ff", "feature", "-m", "merge feature")
 
-        applied = fix_e501_merge_introduced(root, _SNAPSHOT)
+        applied = fix_e501_merge_introduced(root)
         assert len(applied) == 1
         assert applied[0].rule == "E501"
         assert applied[0].file == "pkg/mod.py"
@@ -422,7 +422,7 @@ class TestFixE501MergeIntroduced:
         _git(root, "add", "-A")
         _git(root, "commit", "-q", "-m", "init, single-parent HEAD, no diff")
 
-        applied = fix_e501_merge_introduced(root, _SNAPSHOT)
+        applied = fix_e501_merge_introduced(root)
         assert applied == []
 
 
@@ -605,3 +605,75 @@ class TestInsertTicketDirectiveAboveCommentLeader:
         assert ok is False
         text = (root / "data" / "notes.xyz").read_text(encoding="utf-8")
         assert text == "some content\n"
+
+
+class TestSnapshotParameterDroppedStaticallyEnforced:
+    """T-1911: `fix_fmt001_directive_wrap` and `fix_e501_merge_introduced`
+    no longer declare an unused `snapshot: GraphSnapshot` parameter -- the
+    parameter is GONE, not made Optional (the ticket explicitly rejects
+    `GraphSnapshot | None`, since that would just push None-handling
+    downstream instead of encoding the real contract). The enforcement
+    this ticket demands ("make it enforced, not documented") is that `ty`
+    now REFUSES any call site passing a second positional argument at all
+    (`too-many-positional-arguments`) -- this is what makes the T-1896/
+    T-1900/T-1906 mistake (reaching for a stray `None`/fixture as a second
+    positional arg) impossible to type, rather than merely discouraged in
+    a comment a few lines up a neighbouring file. Uses the REAL `ty`
+    binary against an on-disk probe, same precedent as
+    `TestFixSuppress001PairedSuppression` above and
+    `tests/unit/test_executable.py::TestTyExecutable`."""
+
+    _PROBE_SOURCE = (
+        "from pathlib import Path\n"
+        "from frob.gates._fix_engine_text import (\n"
+        "    fix_e501_merge_introduced,\n"
+        "    fix_fmt001_directive_wrap,\n"
+        ")\n"
+        "from frob.graph._models import GraphSnapshot\n"
+        "\n"
+        '_SNAP = GraphSnapshot(root="", symbols={}, edges=())\n'
+        "\n"
+        'fix_fmt001_directive_wrap(Path("x"), _SNAP)\n'
+        'fix_e501_merge_introduced(Path("x"), _SNAP)\n'
+    )
+
+    def test_two_positional_args_are_statically_refused(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fix_engine.py::TestSnapshotParameterDroppedStaticallyEnforce\
+        # d.test_two_positional_args_are_statically_refused kind="unit"
+        """GIVEN a probe module that calls both handlers with a stray
+        second positional `GraphSnapshot` argument (the exact T-1896/
+        T-1900/T-1906 mistake), WHEN `ty check` runs against it from this
+        repo's own project root, THEN it reports
+        `too-many-positional-arguments` for both call sites -- the
+        mistake cannot be typed, not merely avoided by convention. NOTE:
+        this repro genuinely fails (collects and passes) at the parent
+        commit (`git show 669b7f667:...` -- the pre-T-1911 signature took
+        `(root, snapshot)` positionally, so `ty` accepted this exact
+        probe cleanly) and only starts failing once the parameter is
+        dropped, which is the point: the seven other evidence ids bound
+        to this ticket are pre-existing tests of general handler
+        behaviour that pass identically at both commits and prove nothing
+        about this specific defect."""
+        import shutil
+        import subprocess
+
+        if shutil.which("ty") is None:
+            pytest.skip("ty binary not available")
+
+        probe = tmp_path / "snapshot_arg_probe.py"
+        probe.write_text(self._PROBE_SOURCE, encoding="utf-8")
+
+        result = subprocess.run(
+            ["ty", "check", str(probe)],
+            capture_output=True,
+            text=True,
+        )
+        output = result.stdout + result.stderr
+
+        assert result.returncode != 0, output
+        assert output.count("too-many-positional-arguments") == 2, output
+        assert "fix_fmt001_directive_wrap" in output
+        assert "fix_e501_merge_introduced" in output

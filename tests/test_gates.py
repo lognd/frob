@@ -11234,7 +11234,7 @@ class TestFixEngineTierABatch2:
         limit = read_line_length(root)
         assert any(len(line) > limit for line in original.splitlines())
 
-        applied = fix_fmt001_directive_wrap(root, self._snap(root))
+        applied = fix_fmt001_directive_wrap(root)
 
         assert len(applied) == 1
         assert applied[0].rule == "FMT001"
@@ -11255,7 +11255,7 @@ class TestFixEngineTierABatch2:
         content = "# frob:ticket T-0001\ndef f():\n    pass\n"
         (root / "src" / "m.py").write_text(content, encoding="utf-8")
 
-        applied = fix_fmt001_directive_wrap(root, self._snap(root))
+        applied = fix_fmt001_directive_wrap(root)
 
         assert applied == []
         assert (root / "src" / "m.py").read_text(encoding="utf-8") == content

@@ -2,7 +2,7 @@
 id: T-1911
 title: Tier-A handler dispatch signature is stricter than any handler needs, so new
   tests reach for None and re-trip invalid-argument-type
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,9 +11,99 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_fix_engine_text.py
+- src/frob/gates/_fix_engine.py
+- tests/test_gates.py
+- tests/test_gates_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine_text.py
+  reason: '_fix_engine_sync.py (home of fix_sys_interface_canonical_order, the exact
+
+    function T-1896/T-1900/T-1906 repeatedly re-broke) is held by T-1904''s
+
+    live lease, so this ticket instead fixes the same too-strict-signature
+
+    pattern on the two Tier-A handlers in _fix_engine_text.py that also
+
+    `del snapshot` unconditionally, plus the dispatch table wiring in
+
+    _fix_engine.py and their test call sites in tests/test_gates.py. The
+
+    _fix_engine_sync.py handlers (including fix_sys_interface_canonical_order
+
+    itself) are disclosed as residue for a follow-up ticket once T-1904''s
+
+    lease clears.
+
+    '
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: '_fix_engine_sync.py (home of fix_sys_interface_canonical_order, the exact
+
+    function T-1896/T-1900/T-1906 repeatedly re-broke) is held by T-1904''s
+
+    live lease, so this ticket instead fixes the same too-strict-signature
+
+    pattern on the two Tier-A handlers in _fix_engine_text.py that also
+
+    `del snapshot` unconditionally, plus the dispatch table wiring in
+
+    _fix_engine.py and their test call sites in tests/test_gates.py. The
+
+    _fix_engine_sync.py handlers (including fix_sys_interface_canonical_order
+
+    itself) are disclosed as residue for a follow-up ticket once T-1904''s
+
+    lease clears.
+
+    '
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_gates.py
+  reason: '_fix_engine_sync.py (home of fix_sys_interface_canonical_order, the exact
+
+    function T-1896/T-1900/T-1906 repeatedly re-broke) is held by T-1904''s
+
+    live lease, so this ticket instead fixes the same too-strict-signature
+
+    pattern on the two Tier-A handlers in _fix_engine_text.py that also
+
+    `del snapshot` unconditionally, plus the dispatch table wiring in
+
+    _fix_engine.py and their test call sites in tests/test_gates.py. The
+
+    _fix_engine_sync.py handlers (including fix_sys_interface_canonical_order
+
+    itself) are disclosed as residue for a follow-up ticket once T-1904''s
+
+    lease clears.
+
+    '
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_gates_fix_engine.py
+  reason: fix_fmt001_directive_wrap and fix_e501_merge_introduced call sites also
+    live here
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
+- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
+- tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched
+- tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour
+- tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_skips_nonexistent_path_without_error
+- tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_merge_introduced_targeted_format_applies
+- tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_no_merge_shape_is_a_no_op
+- tests/test_gates_fix_engine.py::TestSnapshotParameterDroppedStaticallyEnforced::test_two_positional_args_are_statically_refused
+designated_repro_test: tests/test_gates_fix_engine.py::TestSnapshotParameterDroppedStaticallyEnforced::test_two_positional_args_are_statically_refused
 threat: null
 component: null
 anchor: false
