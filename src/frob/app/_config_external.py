@@ -101,6 +101,8 @@ _STRING_FIELDS = (
     "ticket_evidence_cmd",
     # frob:ticket T-1670
     "ticket_designate_repro",
+    # frob:ticket T-1851
+    "ticket_designate_repro_reason",
     "ticket_review_verdict",
     "ticket_reviewer",
     "ticket_review_commit",
@@ -206,6 +208,8 @@ _PATH_FIELDS = (
     "release_allow_unbumped_reason_file",
     # frob:ticket T-1733
     "ticket_evidence_replace_reason_file",
+    # frob:ticket T-1851
+    "ticket_designate_repro_reason_file",
     # frob:ticket T-1029
     "ticket_accept_criterion_file",
     # frob:ticket T-1422

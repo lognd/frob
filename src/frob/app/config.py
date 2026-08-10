@@ -521,6 +521,20 @@ class AppConfig(BaseModel):
     # as the explicit BUG002 repro test, overriding the positional-first
     # default `_designated_repro_test` otherwise falls back to.
     ticket_designate_repro: str | None = None
+    # frob:ticket T-1851
+    #: `frob ticket evidence <id> --designate-repro NODE-ID (--designate-
+    #: repro-reason TEXT | --designate-repro-reason-file PATH)`: why an
+    #: already-set designation is being changed to a different bound id --
+    #: recorded in `ticket.designated_repro_changes` (T-1749's audit
+    #: trail), required on a genuine REdesignation (T-1733's `--replace`
+    #: precedent applied here). Distinct dest from `ticket_evidence_
+    #: replace_reason` (below) so `--replace`+`--designate-repro` remain
+    #: independently reasoned in one invocation.
+    ticket_designate_repro_reason: str | None = None
+    # frob:ticket T-1851
+    #: `--designate-repro-reason-file PATH` twin of the above, same mutual-
+    #: exclusion shape as `ticket_evidence_replace_reason_file`.
+    ticket_designate_repro_reason_file: Path | None = None
     # frob:ticket T-1537
     #: `frob ticket evidence <id> --replace OLD-NODE-ID NEW-NODE-ID`: rebind
     #: one evidence id everywhere it appears (flat list + every acceptance

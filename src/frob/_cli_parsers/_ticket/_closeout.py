@@ -335,6 +335,27 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "evidence on this ticket (bind it first in the same or an "
         "earlier `frob ticket evidence` call)",
     )
+    # frob:ticket T-1851
+    ticket_evidence_p.add_argument(
+        "--designate-repro-reason",
+        dest="ticket_designate_repro_reason",
+        metavar="TEXT",
+        help="required with --designate-repro when it REdesignates an "
+        "already-set repro test to a different bound id (T-1851, "
+        "mirroring T-1733's --replace --reason precedent): why the "
+        "designation changed, recorded in the ticket's "
+        "designated_repro_changes audit trail. Not required for a "
+        "first-time designation or a redundant re-designation of the "
+        "same id -- only a genuine change of which id is designated",
+    )
+    ticket_evidence_p.add_argument(
+        "--designate-repro-reason-file",
+        dest="ticket_designate_repro_reason_file",
+        metavar="PATH",
+        help="read --designate-repro's reason verbatim from PATH instead "
+        "of the shell (T-0737 precedent); mutually exclusive with "
+        "--designate-repro-reason",
+    )
 
     ticket_drop_p = ticket_sub.add_parser(
         "drop",

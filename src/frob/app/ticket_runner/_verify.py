@@ -121,22 +121,103 @@ def _evidence_apply_replace(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1670
+# frob:ticket T-1851
 def _evidence_apply_designate_repro(root: Path, cfg: AppConfig) -> None:
     """`_evidence`'s `--designate-repro NODE-ID` channel (ARCH001 split,
     T-1670): marks `cfg.ticket_designate_repro` as the ticket's explicit
     BUG002 repro test via `set_designated_repro_test` -- see that
     function's own docstring for the "must already be bound as evidence"
-    requirement."""
+    requirement.
+
+    T-1851: threads `--designate-repro-reason`/`--designate-repro-reason-
+    file` through to `set_designated_repro_test`'s `reason` kwarg (T-1749's
+    audit trail, previously always `None` in practice since nothing wired
+    the CLI to it), and REQUIRES a reason when this call is a genuine
+    REdesignation (an already-set `designated_repro_test` changing to a
+    DIFFERENT bound id) -- the same `EvidenceReplaceReasonMissing`-shaped
+    refusal T-1733 already enforces for `--replace`. A first-time
+    designation, or a redundant re-designation of the same id, needs no
+    reason (nothing was actually redirected -- see `_redesignation_entry`'s
+    own docstring in `frob.tickets._setters`)."""
     if not cfg.ticket_designate_repro:
         return
     assert cfg.ticket_id is not None
     from frob.tickets import set_designated_repro_test
 
-    designate_result = set_designated_repro_test(
+    reason = _resolve_designate_repro_reason(cfg)
+    is_redesignation = _is_genuine_redesignation(
         root, cfg.ticket_id, cfg.ticket_designate_repro
+    )
+    if is_redesignation and not reason:
+        _log.error(
+            "ticket evidence --designate-repro: redesignating an already-"
+            "set repro test to a different id requires --designate-repro-"
+            "reason TEXT or --designate-repro-reason-file PATH (T-1851, "
+            "mirroring T-1733's --replace --reason precedent)"
+        )
+        sys.exit(1)
+    designate_result = set_designated_repro_test(
+        root, cfg.ticket_id, cfg.ticket_designate_repro, reason=reason
     )
     if designate_result.is_err:
         sys.exit(1)
+
+
+# frob:ticket T-1851
+def _is_genuine_redesignation(root: Path, ticket_id: str, node_id: str) -> bool:
+    """Whether designating `node_id` on `ticket_id` would be a genuine
+    REdesignation (an already-set `designated_repro_test` changing to a
+    DIFFERENT id) -- the same predicate `frob.tickets._setters.
+    _redesignation_entry` applies at write time, checked here BEFORE the
+    mutation so the CLI can require a reason up front rather than
+    discovering the omission after `set_designated_repro_test` already
+    wrote an entry with `reason=None`. A ticket that fails to load (never
+    happens in practice here -- `_evidence`'s own dispatcher already
+    resolved `cfg.ticket_id` against a real ticket by this point) is
+    treated as NOT a redesignation, matching `_redesignation_entry`'s own
+    `old_value is None` case -- never a false "reason required" refusal
+    on an unreadable ticket."""
+    from frob.tickets import load_queue
+
+    loaded = load_queue(root)
+    if loaded.is_err:
+        return False
+    ticket = loaded.danger_ok.tickets.get(ticket_id)
+    if ticket is None:
+        return False
+    old_value = ticket.designated_repro_test
+    return old_value is not None and old_value != node_id
+
+
+# frob:ticket T-1851
+def _resolve_designate_repro_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket evidence --designate-repro`'s reason (T-1851):
+    `--designate-repro-reason-file` wins if given (read verbatim -- T-0737,
+    same rationale as `_resolve_evidence_replace_reason`), else the inline
+    `--designate-repro-reason` string. Exits 1 if both are given; returns
+    `None` if neither is given (the caller only errors on that when the
+    designation turns out to be a genuine redesignation)."""
+    if (
+        cfg.ticket_designate_repro_reason_file is not None
+        and cfg.ticket_designate_repro_reason
+    ):
+        _log.error(
+            "ticket evidence --designate-repro: --designate-repro-reason "
+            "and --designate-repro-reason-file are mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_designate_repro_reason_file is not None:
+        try:
+            return cfg.ticket_designate_repro_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket evidence --designate-repro: could not read "
+                "--designate-repro-reason-file %s: %s",
+                cfg.ticket_designate_repro_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_designate_repro_reason
 
 
 # frob:ticket T-0458
@@ -197,7 +278,8 @@ _GATE_SUMMARY_COUNTS_ONLY_RE = re.compile(
 
 
 # frob:ticket T-0846
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
+# kind="unit"
 def _python_for_tree(root: Path) -> str:
     """The interpreter that runs `root`'s OWN installed code (T-0846): the
     checked-out tree's `.venv/bin/python` when it exists there, else
@@ -237,7 +319,8 @@ def _python_for_tree(root: Path) -> str:
 
 
 # frob:ticket T-0919
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn \
+# kind="unit"
 def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
     """T-0919: build a zero-arg closure that spawns `frob check --ticket
     <id>` in `root` AT MOST ONCE, caching the resulting
@@ -317,7 +400,8 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
 # frob:ticket T-0850
 # frob:ticket T-0919
 # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
-# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
+# kind="unit"
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_scoped_run_flaky_rule_excluded_from_error_count kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_check_gates_summary_fn_and_check_gate_findings_fn_share_one_spawn kind="unit"  # noqa: E501
 def _check_gates_summary_fn(  # noqa: ANN201
@@ -723,7 +807,8 @@ def _run_tests_count_fn(root: Path):  # noqa: ANN201
 
 # frob:ticket T-0458
 # frob:ticket T-0754
-# frob:tests tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes  # noqa: E501
+# frob:tests \
+# tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes
 def _done_report(root: Path, cfg: AppConfig) -> None:
     """`frob ticket done-report <id> (--why TEXT | --why-file PATH | -)`:
     resolve the narrative why, then call `frob.tickets.set_done_report` --

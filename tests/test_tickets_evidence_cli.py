@@ -964,6 +964,276 @@ class TestReplaceEvidenceCli:
         assert exc.value.code == 1
 
 
+# frob:ticket T-1851
+class TestDesignateReproReasonCli:
+    """`frob ticket evidence <id> --designate-repro NODE-ID (--designate-
+    repro-reason TEXT | --designate-repro-reason-file PATH)` (T-1851, CLI
+    follow-up to T-1749): threads a reason through to `set_designated_
+    repro_test`'s audit trail, required on a genuine REdesignation only --
+    mirrors `TestReplaceEvidenceCli`'s own coverage of the T-1733
+    precedent this ticket applies to `--designate-repro`."""
+
+    def test_first_time_designation_needs_no_reason(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_first_ti\
+        # me_designation_needs_no_reason
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_a"}))
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="designate repro cli",
+            ticket_kind="bug",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_a"],
+        )
+        _new(tmp_path, cfg)
+
+        from frob.app.ticket_runner import _evidence
+
+        designate_cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_designate_repro="tests/x.py::test_a",
+        )
+        _evidence(tmp_path, designate_cfg)
+
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        assert ticket.designated_repro_test == "tests/x.py::test_a"
+
+    def test_redesignation_without_reason_exits_nonzero_and_writes_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesign\
+        # ation_without_reason_exits_nonzero_and_writes_nothing
+        _patch_collect(
+            monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
+        )
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="designate repro cli redesignation",
+            ticket_kind="bug",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_a", "tests/x.py::test_b"],
+        )
+        _new(tmp_path, cfg)
+
+        from frob.app.ticket_runner import _evidence
+
+        _evidence(
+            tmp_path,
+            AppConfig(
+                ticket_command="evidence",
+                ticket_id="T-0001",
+                ticket_path=tmp_path,
+                ticket_designate_repro="tests/x.py::test_a",
+            ),
+        )
+
+        redesignate_cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_designate_repro="tests/x.py::test_b",
+        )
+        with pytest.raises(SystemExit) as exc:
+            _evidence(tmp_path, redesignate_cfg)
+        assert exc.value.code == 1
+
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        assert ticket.designated_repro_test == "tests/x.py::test_a"
+
+    def test_redesignation_with_reason_records_audit_entry(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesign\
+        # ation_with_reason_records_audit_entry
+        _patch_collect(
+            monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
+        )
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="designate repro cli redesignation with reason",
+            ticket_kind="bug",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_a", "tests/x.py::test_b"],
+        )
+        _new(tmp_path, cfg)
+
+        from frob.app.ticket_runner import _evidence
+
+        _evidence(
+            tmp_path,
+            AppConfig(
+                ticket_command="evidence",
+                ticket_id="T-0001",
+                ticket_path=tmp_path,
+                ticket_designate_repro="tests/x.py::test_a",
+            ),
+        )
+
+        _evidence(
+            tmp_path,
+            AppConfig(
+                ticket_command="evidence",
+                ticket_id="T-0001",
+                ticket_path=tmp_path,
+                ticket_designate_repro="tests/x.py::test_b",
+                ticket_designate_repro_reason="test_a stopped reproducing",
+            ),
+        )
+
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        assert ticket.designated_repro_test == "tests/x.py::test_b"
+        assert len(ticket.designated_repro_changes) == 1
+        entry = ticket.designated_repro_changes[0]
+        assert entry.old_value == "tests/x.py::test_a"
+        assert entry.new_value == "tests/x.py::test_b"
+        assert entry.reason == "test_a stopped reproducing"
+
+    def test_redesignation_reason_file_is_read_verbatim(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_redesign\
+        # ation_reason_file_is_read_verbatim
+        _patch_collect(
+            monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
+        )
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="designate repro cli reason file",
+            ticket_kind="bug",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_a", "tests/x.py::test_b"],
+        )
+        _new(tmp_path, cfg)
+
+        from frob.app.ticket_runner import _evidence
+
+        _evidence(
+            tmp_path,
+            AppConfig(
+                ticket_command="evidence",
+                ticket_id="T-0001",
+                ticket_path=tmp_path,
+                ticket_designate_repro="tests/x.py::test_a",
+            ),
+        )
+
+        reason_file = tmp_path / "reason.txt"
+        reason_file.write_text("from a file\n", encoding="utf-8")
+        _evidence(
+            tmp_path,
+            AppConfig(
+                ticket_command="evidence",
+                ticket_id="T-0001",
+                ticket_path=tmp_path,
+                ticket_designate_repro="tests/x.py::test_b",
+                ticket_designate_repro_reason_file=reason_file,
+            ),
+        )
+
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        assert ticket.designated_repro_changes[0].reason == "from a file\n"
+
+    def test_reason_and_reason_file_together_exits_nonzero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_reason_a\
+        # nd_reason_file_together_exits_nonzero
+        _patch_collect(
+            monkeypatch, frozenset({"tests/x.py::test_a", "tests/x.py::test_b"})
+        )
+        _patch_passing(monkeypatch)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="designate repro cli both reason flags",
+            ticket_kind="bug",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_a", "tests/x.py::test_b"],
+        )
+        _new(tmp_path, cfg)
+
+        from frob.app.ticket_runner import _evidence
+
+        _evidence(
+            tmp_path,
+            AppConfig(
+                ticket_command="evidence",
+                ticket_id="T-0001",
+                ticket_path=tmp_path,
+                ticket_designate_repro="tests/x.py::test_a",
+            ),
+        )
+
+        reason_file = tmp_path / "reason.txt"
+        reason_file.write_text("from a file\n", encoding="utf-8")
+        with pytest.raises(SystemExit) as exc:
+            _evidence(
+                tmp_path,
+                AppConfig(
+                    ticket_command="evidence",
+                    ticket_id="T-0001",
+                    ticket_path=tmp_path,
+                    ticket_designate_repro="tests/x.py::test_b",
+                    ticket_designate_repro_reason="inline",
+                    ticket_designate_repro_reason_file=reason_file,
+                ),
+            )
+        assert exc.value.code == 1
+
+    def test_from_external_carries_both_new_fields(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli.test_from_ext\
+        # ernal_carries_both_new_fields
+        """T-1851's `--designate-repro-reason`/`--designate-repro-reason-
+        file` dests must survive the REAL argparse-Namespace ->
+        `AppConfig.from_external` -> field round trip, not just direct
+        `AppConfig(...)` construction (which every other test in this
+        class uses for speed/hermeticity) -- `_config_external.py`'s
+        `_STRING_FIELDS`/path-fields tuples are what a new CLI dest
+        needs to actually reach `AppConfig` at all (T-1422's own WIRE001
+        precedent: a dest missing from these tuples is silently dropped,
+        parses but is never read)."""
+        import argparse
+
+        reason_file = tmp_path / "reason.txt"
+        reason_file.write_text("from argparse\n", encoding="utf-8")
+
+        ns = argparse.Namespace(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=str(tmp_path),
+            ticket_designate_repro="tests/x.py::test_b",
+            ticket_designate_repro_reason="inline via argparse",
+            ticket_designate_repro_reason_file=None,
+        )
+        cfg = AppConfig.from_external(ns, tmp_path / "pyproject.toml")
+        assert cfg.ticket_designate_repro_reason == "inline via argparse"
+        assert cfg.ticket_designate_repro_reason_file is None
+
+        ns2 = argparse.Namespace(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=str(tmp_path),
+            ticket_designate_repro="tests/x.py::test_b",
+            ticket_designate_repro_reason=None,
+            ticket_designate_repro_reason_file=str(reason_file),
+        )
+        cfg2 = AppConfig.from_external(ns2, tmp_path / "pyproject.toml")
+        assert cfg2.ticket_designate_repro_reason_file == reason_file
+        assert isinstance(cfg2.ticket_designate_repro_reason_file, Path)
+
+
 # frob:ticket T-1733
 class TestEvidenceChangesSurfaced:
     """T-1733 requirement 4: `frob ticket evidence --replace` must be

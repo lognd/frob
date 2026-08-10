@@ -2,7 +2,7 @@
 id: T-1851
 title: Wire --reason/--reason-file into frob ticket evidence --designate-repro (T-1749
   CLI follow-up)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -15,11 +15,34 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - src/frob/app/config.py
 - src/frob/app/ticket_runner/_verify.py
+- src/frob/app/_config_external.py
+- tests/test_tickets_evidence_cli.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: config field registration twin of app/config.py, required for from_external
+    round-trip (T-1851)
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_tickets_evidence_cli.py
+  reason: T-1851 evidence tests live here
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli::test_first_time_designation_needs_no_reason
+- tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli::test_redesignation_without_reason_exits_nonzero_and_writes_nothing
+- tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli::test_redesignation_with_reason_records_audit_entry
+- tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli::test_redesignation_reason_file_is_read_verbatim
+- tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli::test_reason_and_reason_file_together_exits_nonzero
+- tests/test_tickets_evidence_cli.py::TestDesignateReproReasonCli::test_from_external_carries_both_new_fields
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Follow-up from T-1749: `set_designated_repro_test`
 (src/frob/tickets/_setters.py) now accepts an optional `reason` kwarg and
