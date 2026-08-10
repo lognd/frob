@@ -131,6 +131,78 @@ def fix_reg010_registry_sync(root: Path) -> list[FixApplied]:
 # ---------------------------------------------------------------------------
 
 
+def _docenum001_tree_for(
+    root: Path, code_path: str, tree_cache: dict[str, ast.Module | None]
+) -> ast.Module | None:
+    """Parse (and memoize in `tree_cache`) `code_path`'s AST, mirroring
+    `frob.gates._docenum`'s own `_resolve_edge_tree` memoization so
+    `fix_docenum001_enumerates_sync` never re-parses a source file per
+    `frob:enumerates` edge that targets it."""
+    if code_path not in tree_cache:
+        try:
+            code_text = (root / code_path).read_text(encoding="utf-8")
+            tree_cache[code_path] = ast.parse(code_text, filename=code_path)
+        except (OSError, SyntaxError, UnicodeDecodeError):
+            tree_cache[code_path] = None
+    return tree_cache[code_path]
+
+
+def _docenum001_resync_edge(
+    root: Path,
+    edge,  # noqa: ANN001
+    tree_cache: dict[str, ast.Module | None],
+    file_lines: dict[str, list[str]],
+) -> FixApplied | None:
+    """One `frob:enumerates` edge's own resync step: resolve its target's
+    real member set, compare against the doc's claimed `members=` text,
+    and rewrite the claimed line IN `file_lines` (a per-run, per-file
+    accumulator so two stale edges in the same file apply against each
+    other's rewrites rather than a stale on-disk read) if they differ.
+    `None` if the edge does not need a rewrite -- unresolvable target,
+    unsupported collection shape, or already in sync."""
+    from frob.gates._docenum import _extract_members, _parse_symref, _site_from_origin
+
+    parsed = _parse_symref(edge.target)
+    if parsed is None:
+        return None
+    code_path, qualname = parsed
+    tree = _docenum001_tree_for(root, code_path, tree_cache)
+    if tree is None:
+        return None
+    actual = _extract_members(tree, qualname)
+    if actual is None:
+        return None
+    claimed = frozenset(
+        m.strip() for m in edge.attrs.get("members", "").split(",") if m.strip()
+    )
+    if claimed == actual:
+        return None
+    file, line = _site_from_origin(edge.origin)
+    if file not in file_lines:
+        try:
+            doc_text = (root / file).read_text(encoding="utf-8")
+        except OSError:
+            return None
+        file_lines[file] = doc_text.split("\n")
+    lines = file_lines[file]
+    if not (1 <= line <= len(lines)):
+        return None
+    # frob:waive PERF004 reason="actual is this edge's own target's member set, different every iteration -- nothing to hoist across edges"  # noqa: E501
+    new_members = ",".join(sorted(actual))
+    new_line, n = re.subn(
+        r'members="[^"]*"', f'members="{new_members}"', lines[line - 1], count=1
+    )
+    if n == 0:
+        return None
+    lines[line - 1] = new_line
+    return FixApplied(
+        rule="DOCENUM001",
+        file=file,
+        line=line,
+        detail=f"resynced enumerates members for {edge.target}",
+    )
+
+
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:ticket T-1974
 def fix_docenum001_enumerates_sync(
@@ -140,74 +212,28 @@ def fix_docenum001_enumerates_sync(
     `members="..."` attribute is mechanically DERIVABLE from the real
     collection literal it targets -- reuses `frob.gates._docenum`'s own
     AST resolution (`_extract_members`/`_parse_symref`/`_site_from_
-    origin`, the SAME functions DOCENUM001's own detector calls) to
-    recompute the real member set and rewrite the doc line's `members=`
-    attribute to match, in place, rather than requiring a hand edit at
-    land time -- the "detector in one module, fixer in a sibling module"
-    split `fix_reg010_registry_sync` above and `_sync_may`'s SYS100
-    fixer both already use. Covers EVERY `frob:enumerates` edge in the
-    graph, not only the gates.md rule-catalog anchor that motivated this
-    fix (T-1227's own shape list is anchor-agnostic), so this closes the
-    whole class rather than one instance. Idempotent: a member list
-    already correct is left untouched; multiple stale edges in the same
-    file within one run are applied against each other's rewrites, not
-    a stale on-disk read, so neither overwrites the other's fix."""
-    from frob.gates._docenum import _extract_members, _parse_symref, _site_from_origin
+    origin`, the SAME functions DOCENUM001's own detector calls, via
+    `_docenum001_resync_edge`) to recompute the real member set and
+    rewrite the doc line's `members=` attribute to match, in place,
+    rather than requiring a hand edit at land time -- the "detector in
+    one module, fixer in a sibling module" split `fix_reg010_registry_
+    sync` above and `_sync_may`'s SYS100 fixer both already use. Covers
+    EVERY `frob:enumerates` edge in the graph, not only the gates.md
+    rule-catalog anchor that motivated this fix (T-1227's own shape
+    list is anchor-agnostic), so this closes the whole class rather
+    than one instance. Idempotent: a member list already correct is
+    left untouched."""
     from frob.graph._models import EdgeKind
 
-    applied: list[FixApplied] = []
     tree_cache: dict[str, ast.Module | None] = {}
     file_lines: dict[str, list[str]] = {}
-
-    for edge in snapshot.edges:
-        if edge.kind != EdgeKind.ENUMERATES:
-            continue
-        parsed = _parse_symref(edge.target)
-        if parsed is None:
-            continue
-        code_path, qualname = parsed
-        if code_path not in tree_cache:
-            try:
-                code_text = (root / code_path).read_text(encoding="utf-8")
-                tree_cache[code_path] = ast.parse(code_text, filename=code_path)
-            except (OSError, SyntaxError, UnicodeDecodeError):
-                tree_cache[code_path] = None
-        tree = tree_cache[code_path]
-        if tree is None:
-            continue
-        actual = _extract_members(tree, qualname)
-        if actual is None:
-            continue
-        claimed = frozenset(
-            m.strip() for m in edge.attrs.get("members", "").split(",") if m.strip()
-        )
-        if claimed == actual:
-            continue
-        file, line = _site_from_origin(edge.origin)
-        if file not in file_lines:
-            try:
-                doc_text = (root / file).read_text(encoding="utf-8")
-            except OSError:
-                continue
-            file_lines[file] = doc_text.split("\n")
-        lines = file_lines[file]
-        if not (1 <= line <= len(lines)):
-            continue
-        new_members = ",".join(sorted(actual))
-        new_line, n = re.subn(
-            r'members="[^"]*"', f'members="{new_members}"', lines[line - 1], count=1
-        )
-        if n == 0:
-            continue
-        lines[line - 1] = new_line
-        applied.append(
-            FixApplied(
-                rule="DOCENUM001",
-                file=file,
-                line=line,
-                detail=f"resynced enumerates members for {edge.target}",
-            )
-        )
+    applied = [
+        fix
+        for edge in snapshot.edges
+        if edge.kind == EdgeKind.ENUMERATES
+        for fix in (_docenum001_resync_edge(root, edge, tree_cache, file_lines),)
+        if fix is not None
+    ]
 
     for file, lines in file_lines.items():
         _write_text(root / file, "\n".join(lines))
