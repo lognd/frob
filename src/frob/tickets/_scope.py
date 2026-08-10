@@ -634,6 +634,7 @@ def mutate_scope(
             return Err(result.danger_err)
         updated = result.danger_ok
     # frob:ticket T-0473
+    # frob:ticket T-1993
     # The cross-worktree lease's recorded scope must never drift from the
     # ledger's once an in-progress ticket's scope changes -- otherwise
     # another worktree's `doable` would keep colliding against (or missing)
@@ -641,7 +642,13 @@ def mutate_scope(
     if updated.state is TicketState.IN_PROGRESS:
         from frob.tickets._leases import record_lease
 
-        record_lease(root, ticket_id, updated.scope)
+        record_lease(
+            root,
+            ticket_id,
+            _lease_scope_to_record(
+                root, ticket_id, updated.scope, add_globs, remove_globs
+            ),
+        )
     _log.info(
         "tickets: %s scope changed (+%d/-%d): %s",
         ticket_id,
@@ -650,6 +657,66 @@ def mutate_scope(
         reason,
     )
     return Ok(updated)
+
+
+# frob:ticket T-1993
+def _lease_scope_to_record(
+    root: Path,
+    ticket_id: str,
+    updated_scope: tuple[str, ...],
+    add_globs: tuple[str, ...],
+    remove_globs: tuple[str, ...],
+) -> tuple[str, ...]:
+    """What to write into `ticket_id`'s cross-worktree lease record after a
+    scope mutation (T-1993) -- NOT simply `updated_scope` (the caller's own
+    freshly-written ledger scope), because `updated_scope` was computed from
+    THIS worktree's own on-disk copy of `tickets/<id>/ticket.md`, which can
+    be stale relative to `main` (a worktree that never merged a sibling's
+    narrowing commit still carries the old, broader scope in its own
+    checkout). Blindly re-recording `updated_scope` is exactly the T-1993
+    incident: worktree B, still on the pre-narrowing ledger snapshot,
+    computed its OWN `updated_scope` as a superset of what worktree A had
+    already narrowed the SHARED lease to, and overwrote A's correct,
+    narrower lease with that superset purely by writing last.
+
+    Instead, this applies the SAME `add`/`remove` delta `mutate_scope` (or
+    `demote_to_evidence_only`) just validated and wrote to the ledger --
+    but onto whatever scope is CURRENTLY recorded in the shared lease file
+    (`read_all_leases`), not onto this worktree's possibly-stale ledger
+    snapshot. A worktree that is fully up to date computes the identical
+    result either way (its local scope and the recorded lease scope already
+    agree), so this changes nothing for the common case; a stale worktree's
+    legitimate delta (e.g. adding a path nobody has touched) now lands on
+    top of the shared lease's true current state instead of reverting it.
+    Falls back to `updated_scope` when no lease is recorded yet for this
+    ticket (first `IN_PROGRESS` entry -- nothing to reconcile against) or
+    when the lease cannot be read at all (best-effort side channel, same
+    posture as `record_lease` itself).
+
+    This does NOT make the lease authoritative over the ledger: the ledger
+    write (`updated_scope`, `_write_scope_mutation`) already happened and is
+    unaffected by this function -- only the DERIVED side-channel mirror is
+    reconciled differently, against its own prior state rather than a
+    snapshot that may already be behind it."""
+    from frob.tickets._leases import read_all_leases
+
+    try:
+        existing = next(
+            (lease for lease in read_all_leases(root) if lease.ticket_id == ticket_id),
+            None,
+        )
+    except Exception:
+        # read_all_leases is itself best-effort over a peer-writable side
+        # channel; any surprise here falls back to the pre-T-1993 behavior
+        # rather than blocking the scope mutation that already succeeded.
+        return updated_scope
+    if existing is None:
+        return updated_scope
+    base = tuple(g for g in existing.scope if g not in remove_globs)
+    for glob in add_globs:
+        if glob not in base:
+            base += (glob,)
+    return base
 
 
 # frob:ticket T-0455
@@ -735,10 +802,15 @@ def demote_to_evidence_only(
         if written.is_err:
             return Err(written.danger_err)
         updated = written.danger_ok
+    # frob:ticket T-1993
     if updated.state is TicketState.IN_PROGRESS:
         from frob.tickets._leases import record_lease
 
-        record_lease(root, ticket_id, updated.scope)
+        record_lease(
+            root,
+            ticket_id,
+            _lease_scope_to_record(root, ticket_id, updated.scope, (), demote_globs),
+        )
     _log.info(
         "tickets: %s demoted %d scope glob(s) to evidence-only (write lease "
         "released, D-02 coverage kept): %s",

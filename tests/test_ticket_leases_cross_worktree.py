@@ -687,3 +687,88 @@ class TestDoableExcludesSameWorktreeLeases:
 
         offered = doable(queue, second_worktree)
         assert all(t.id != tid_b for t in offered)
+
+
+# frob:ticket T-1993
+class TestLeaseDeltaReconciliation:
+    """T-1993: `mutate_scope`'s cross-worktree lease write must never revert
+    a NARROWER scope another worktree already recorded, just because a
+    STALE worktree (one that never merged the narrowing commit) runs its
+    OWN legitimate scope mutation afterward -- the confirmed 2026-08-10
+    incident (T-1696): the `profile-collapse` worktree still carried the
+    ledger's OLD, broader scope on disk, and its own `scope --add` call
+    re-recorded the shared lease from that stale snapshot, silently
+    reverting a sibling worktree's already-landed narrowing."""
+
+    def test_stale_worktrees_add_does_not_revert_a_siblings_narrowing(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseDeltaReconciliation.test\
+        # _stale_worktrees_add_does_not_revert_a_siblings_narrowing
+        created = new_ticket(
+            repo, _spec("Feature", scope=("src/feature.py", "src/other.py"))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+        _commit_all(repo, "start ticket")
+
+        # second_worktree merges up through the START commit -- it has the
+        # ticket's ORIGINAL (broad) scope on disk, matching the shared
+        # lease at this point.
+        _run(["git", "merge", "main"], second_worktree)
+        held = next(
+            lease for lease in read_all_leases(second_worktree) if lease.ticket_id == tid
+        )
+        assert set(held.scope) == {"src/feature.py", "src/other.py"}
+
+        # repo (the OWNING worktree) narrows the scope and commits it --
+        # but second_worktree never merges this commit, so its own on-disk
+        # ticket.md stays on the pre-narrowing snapshot.
+        narrowed = mutate_scope(
+            repo, tid, remove=("src/other.py",), reason="narrow to the real touched file"
+        )
+        assert narrowed.is_ok
+        _commit_all(repo, "narrow scope")
+        held = next(lease for lease in read_all_leases(repo) if lease.ticket_id == tid)
+        assert held.scope == ("src/feature.py",)
+
+        # second_worktree, still stale, makes its OWN legitimate scope
+        # change (adding a brand-new path nobody has touched). Before
+        # T-1993, this re-recorded the lease from second_worktree's stale
+        # ticket.md (scope=feature.py+other.py), reverting repo's
+        # narrowing -- "src/other.py" would reappear in the shared lease.
+        added = mutate_scope(
+            second_worktree,
+            tid,
+            add=("src/new_thing.py",),
+            reason="also touching a new file",
+        )
+        assert added.is_ok
+
+        held = next(lease for lease in read_all_leases(repo) if lease.ticket_id == tid)
+        assert "src/other.py" not in held.scope
+        assert "src/feature.py" in held.scope
+        assert "src/new_thing.py" in held.scope
+
+    def test_a_legitimate_expansion_from_the_owning_worktree_still_takes_effect(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestLeaseDeltaReconciliation.test\
+        # _a_legitimate_expansion_from_the_owning_worktree_still_takes_effect
+        created = new_ticket(repo, _spec("Feature", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+
+        expanded = mutate_scope(repo, tid, add=("src/another.py",), reason="also needed")
+        assert expanded.is_ok
+
+        held = next(
+            lease for lease in read_all_leases(second_worktree) if lease.ticket_id == tid
+        )
+        assert set(held.scope) == {"src/feature.py", "src/another.py"}
