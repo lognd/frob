@@ -359,13 +359,12 @@ def scan_candidate_rule_id_literals(repo_root: Path) -> dict[str, str]:
 # would live in docs/modules/gates.md, whose own SCOPE002 closure is out of proportion \
 # to pull into T-1937's narrow scope for two functions; this module's own docstring is \
 # the authoritative description, see T-1937's Done report"
-# frob:waive WIRE001 reason="this ticket's own drift-lock test \
-# (TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete) already calls this \
-# on every test/check run -- the automatic-detection deliverable T-1937 asks for -- \
-# but that is a test caller, not a production one WIRE001 counts. Wiring it into the \
-# T-0756 acceptance preflight (frob.tickets._new_gate_rule_acceptance, a different \
-# ticket's scope, not this ticket's declared src/frob/gates/_rule_id_scan.py) is real \
-# follow-up work, not attempted half-heartedly here." follow_up="T-1956"
+# T-1956 discharged the deferred WIRE001 finding a waiver used to carry
+# here: find_unregistered_rule_ids now has a real production caller,
+# frob.tickets._new_gate_rule_acceptance.unregistered_rule_ids_in_scope
+# (wired into the T-0756 close/land preflight via
+# frob.tickets._evidence._done_transition_diff_derived_guard) -- the
+# suppression that used to sit here is no longer needed.
 # frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
 # frob:tests \

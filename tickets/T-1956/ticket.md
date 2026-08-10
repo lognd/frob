@@ -2,7 +2,7 @@
 id: T-1956
 title: Wire find_unregistered_rule_ids into the T-0756 acceptance preflight (or a
   dedicated gate), not just a test
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -16,6 +16,7 @@ scope:
 - src/frob/tickets/_evidence.py
 - tests/test_tickets_new_gate_rule_acceptance.py
 - src/frob/tickets/_models.py
+- src/frob/gates/_rule_id_scan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -34,6 +35,12 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_models.py
   reason: new TicketError variant for the T-1956 unregistered-rule-id close refusal
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_rule_id_scan.py
+  reason: T-1956 discharges the WIRE001 follow_up=T-1956 citation this file's own
+    waiver carries -- find_unregistered_rule_ids now has a real production caller
   actor: logan
   at: '2026-08-10'
 evidence:
