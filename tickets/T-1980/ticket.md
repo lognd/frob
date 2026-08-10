@@ -2,8 +2,8 @@
 id: T-1980
 title: 'Global frob on PATH is 0.184.0 vs this repo''s 0.433.0: 8 sibling repos run
   a pre-auto-commit build and all 8 have dirty ledgers'
-state: queued
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-10'
 priority: high
@@ -12,9 +12,51 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- docs/guides/
+- docs/guides/frob-version-policy.md
+- tickets/T-1980/**
+- docs/index.md
+- tickets/T-1990/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/guides/
+  reason: narrow the docs/guides/ umbrella to the one new policy doc this ticket actually
+    adds; the measurement itself is recorded in the ticket body/evidence, not a second
+    doc file
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/frob-version-policy.md
+  reason: narrow the docs/guides/ umbrella to the one new policy doc this ticket actually
+    adds; the measurement itself is recorded in the ticket body/evidence, not a second
+    doc file
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-1980/**
+  reason: narrow the docs/guides/ umbrella to the one new policy doc this ticket actually
+    adds; the measurement itself is recorded in the ticket body/evidence, not a second
+    doc file
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/index.md
+  reason: REF001/REF002 need one inbound link from the guide index to the new policy
+    doc, same convention every other docs/guides/ entry follows
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-1990/**
+  reason: SCOPE001 flags the follow-up ticket this ticket files (T-1980's own FIX
+    DIRECTION point c, the self-announcing detector) as an out-of-scope touched file;
+    filing a follow-up ticket is normal bookkeeping for this ticket's own Done report,
+    not scope creep
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- cmd:grep -n 'OPAQUE001. (+5)\|SUPPRESS001. (+8)\|| errors | 27 | 40 | +13 |' docs/guides/frob-version-policy.md
+  exit=0 sha256=7c1286b47ae3
 designated_repro_test: null
 threat: null
 component: null

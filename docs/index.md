@@ -39,6 +39,11 @@ real.
   converting a sibling's hand-rolled `maturin develop` Makefile step to
   the one-line `frob natives build` shim, plus the T-1031 fleet-routed
   ticket record for the sibling estate.
+- `docs/guides/frob-version-policy.md` -- the global `frob` install's
+  staged-upgrade policy (T-1980): why a stale `PATH` build across the
+  sibling estate is dangerous to blind-upgrade, the recorded rollout
+  sequence, and the measured single-repo (typani) gate delta between
+  the stale and current builds.
 
 ## Extending frob
 
