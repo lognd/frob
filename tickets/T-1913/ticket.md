@@ -2,7 +2,7 @@
 id: T-1913
 title: LAND-PROOF is_ancestor_of_main=False for a non-anchor ticket whose land fully
   succeeded (T-1895)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-09'

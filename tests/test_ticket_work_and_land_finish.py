@@ -997,6 +997,7 @@ class TestPreCommitUnscopedSweepFn:
 
 # frob:ticket T-1175
 # frob:ticket T-1685
+# frob:ticket T-1910
 class TestLandProofAndFinish:
     """T-1175's `_print_land_proof`/`_finish_worktree` -- land's own
     `frob.tickets.land()` (permissive, matching test_ticket_land.py's own
@@ -1255,6 +1256,50 @@ class TestLandProofAndFinish:
         assert branch_list_after == branch_list_before, (
             "unverified retire-on-proof touched a branch"
         )
+
+    # frob:ticket T-1910
+    # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_unverified_land_exits_nonzero_even_without_finish  # noqa: E501
+    def test_unverified_land_exits_nonzero_even_without_finish(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # T-1910: the T-1895 incident's own shape -- `frob ticket land`
+        # (no `--finish`/`--retire-on-proof` at all, the ordinary,
+        # overwhelmingly common invocation) printed "landed as <sha>" plus
+        # a REL001 bump, then `LAND-PROOF: ... verified=False`, and still
+        # EXITED 0. Before the T-1910 fix, `_finish_land_after_success`
+        # only ever `sys.exit(1)`ed on an unverified proof when
+        # `--finish`/`--retire-on-proof` was passed -- an ordinary land
+        # with neither flag just printed the LAND-PROOF line and returned
+        # normally, reporting success by exit code to any caller that
+        # does not grep the log for `verified=`. This test reproduces
+        # that exact ordinary-invocation shape (no finish flags) and
+        # asserts a `SystemExit` -- FAILS at the pre-fix behavior (no
+        # exception raised, silent return) and PASSES once `verified=
+        # False` refuses unconditionally.
+        from types import SimpleNamespace
+
+        tid, worktree, real_report = self._land_a_real_ticket(repo)
+
+        fake_report = SimpleNamespace(
+            dry_run=False,
+            final_id=real_report.final_id,
+            commit_sha="0" * 40,  # a real-looking sha, never an ancestor of main
+        )
+        cfg = AppConfig(
+            ticket_command="land",
+            ticket_id=tid,
+            ticket_worktree=worktree,
+            # deliberately no ticket_land_finish / ticket_land_retire_on_proof
+        )
+        with caplog.at_level("INFO"), pytest.raises(SystemExit) as exc_info:
+            _finish_land_after_success(repo, worktree, fake_report, cfg)
+
+        assert exc_info.value.code != 0
+        proof_lines = [
+            rec.message for rec in caplog.records if rec.message.startswith("LAND-PROOF:")
+        ]
+        assert len(proof_lines) == 1
+        assert "verified=False" in proof_lines[0]
 
 
 # frob:ticket T-1535

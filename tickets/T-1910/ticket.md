@@ -2,7 +2,7 @@
 id: T-1910
 title: frob ticket land can report 'landed as <sha>' for a commit that never reaches
   main, silently losing the work
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,24 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-1910 fix + regression test: unconditional LAND-PROOF verified=False refusal'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-1910 fix + regression test: unconditional LAND-PROOF verified=False refusal'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_unverified_land_exits_nonzero_even_without_finish
 designated_repro_test: null
 threat: null
 component: null

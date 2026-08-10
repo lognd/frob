@@ -2,7 +2,7 @@
 id: T-1914
 title: frob ticket land's internal merge-main step silently clobbers the landing worktree's
   own ledger edits
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,26 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_land.py
+- tests/unit/test_land_sibling_regression.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-1914 fix + regression test: sibling-ticket-state-regression guard in
+    the internal merge step (self-contained test file, tests/test_ticket_land.py leased
+    by T-1686)'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_land_sibling_regression.py
+  reason: 'T-1914 fix + regression test: sibling-ticket-state-regression guard in
+    the internal merge step (self-contained test file, tests/test_ticket_land.py leased
+    by T-1686)'
+  actor: logan
+  at: '2026-08-09'
 designated_repro_test: null
 threat: null
 component: null

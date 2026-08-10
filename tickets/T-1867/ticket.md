@@ -1,7 +1,7 @@
 ---
 id: T-1867
 title: Wire frob ticket anchor CLI + doable-output disclosure (T-1856 follow-up)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -13,10 +13,48 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_mutate.py
 - src/frob/_cli_parsers/_ticket/_metadata.py
-- src/frob/tickets/_doable.py
-- src/frob/app/ticket_runner/_query.py
+- src/frob/_cli_parsers/_ticket/__init__.py
+- tests/unit/test_ticket_anchor_cli.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_doable.py
+  reason: 'Narrowing to the anchor-CLI half only, per coordinator direction: _query.py
+    is leased by T-1882 and _doable.py is about to be taken by T-1883, both in the
+    ledger-identity worktree. The doable-output disclosure half will be filed as its
+    own follow-up rather than waiting on either lease.'
+  actor: logan
+  at: '2026-08-08'
+- op: remove
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'Narrowing to the anchor-CLI half only, per coordinator direction: _query.py
+    is leased by T-1882 and _doable.py is about to be taken by T-1883, both in the
+    ledger-identity worktree. The doable-output disclosure half will be filed as its
+    own follow-up rather than waiting on either lease.'
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: The metadata-command parser registration list lives here (register_ticket_metadata_parsers)
+    -- adding the new anchor subparser call site requires touching this file, alongside
+    _add_ticket_anchor_parsers own definition in the already-declared _metadata.py.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_ticket_anchor_cli.py
+  reason: New CLI-wiring regression test for the anchor verb, in the standard tests/unit/
+    location for a new small feature test module.
+  actor: logan
+  at: '2026-08-08'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001/SYS104 requires the new public _anchor symbol (imported cross-node
+    by the CLI dispatch table) declared in the cli nodes interface= list, and the
+    new test files fs.write capability declared for testsuite.
+  actor: logan
+  at: '2026-08-08'
 designated_repro_test: null
 threat: null
 component: null

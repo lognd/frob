@@ -1607,6 +1607,8 @@ def _resolve_land_root(root: Path, worktree: Path, ticket_id: str) -> Path:
 # frob:ticket T-1175
 # frob:ticket T-1715
 # frob:ticket T-1845
+# frob:ticket T-1910
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_unverified_land_exits_nonzero_even_without_finish  # noqa: E501
 def _finish_land_after_success(
     root: Path, worktree: Path, report, cfg: AppConfig
 ) -> None:  # noqa: ANN001
@@ -1632,22 +1634,44 @@ def _finish_land_after_success(
     T-1715: `_finish_worktree` itself also refuses (independent of the
     `verified` gate above) if `worktree` is still provably in use --
     `cfg.ticket_force` (`--force`) is threaded through to override that
-    refusal for a worktree confirmed genuinely wedged."""
+    refusal for a worktree confirmed genuinely wedged.
+
+    T-1910: `verified=False` now exits non-zero HERE, unconditionally --
+    not only when `--finish`/`--retire-on-proof` was passed. Before this
+    fix, a land whose commit never actually became an ancestor of `main`
+    (the T-1895 incident: `frob ticket land` printed "landed as <sha>"
+    plus a REL001 bump, then `LAND-PROOF: ... verified=False`, and still
+    exited 0) reported success to its caller by exit code even though the
+    `LAND-PROOF:` line right below it said the opposite -- a script or
+    coordinator loop that only checks the exit code, not greps the log
+    for `verified=`, sees a clean success and moves on while the real
+    code change stays lost. The two lines must never disagree about
+    whether the caller should treat this as done."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     if report.dry_run:
         return
     verified = _print_land_proof(root, report)
+    if not verified:
+        _log.error(
+            "ticket land: %s LAND-PROOF did not verify -- the commit "
+            "(%s) exists but did NOT reach `main` (or the ticket's "
+            "on-main state is not terminal); treat this land as FAILED "
+            "despite the 'landed as' line above, investigate with `git "
+            "merge-base --is-ancestor %s main` and `git branch --contains "
+            "%s`, and recover the commit (e.g. cherry-pick it onto main) "
+            "before assuming the work is safe (T-1910)",
+            cfg.ticket_id,
+            report.commit_sha,
+            report.commit_sha,
+            report.commit_sha,
+        )
+        sys.exit(1)
     wants_finish = cfg.ticket_land_finish or cfg.ticket_land_retire_on_proof
     if not wants_finish:
         return
-    if not verified:
-        _log.error(
-            "ticket land --finish/--retire-on-proof: %s LAND-PROOF did not "
-            "verify -- worktree %s left in place, branch untouched",
-            cfg.ticket_id,
-            worktree,
-        )
-        sys.exit(1)
+    # T-1910: `verified` is always True by this point -- the unconditional
+    # `sys.exit(1)` above already handled the False case for every caller,
+    # not just `--finish`/`--retire-on-proof`. Nothing left to gate here.
     branch = (
         _worktree_branch_name(root, worktree)
         if cfg.ticket_land_retire_on_proof
