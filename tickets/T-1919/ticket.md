@@ -1,7 +1,7 @@
 ---
 id: T-1919
 title: 'post-land sweep regression from T-1867: 2 new error(s) (DOC007, DRIFT002)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -14,6 +14,9 @@ scope:
 - src/frob/app/ticket_runner/_mutate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_set_anchor_via_cli
+- tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_clear_anchor_via_cli
 designated_repro_test: null
 threat: null
 component: null

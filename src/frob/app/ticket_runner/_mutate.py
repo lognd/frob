@@ -215,10 +215,9 @@ def _resolve_anchor_reason(cfg: AppConfig) -> str | None:
 
 
 # frob:ticket T-1867
+# frob:tests tests/unit/test_ticket_anchor_cli.py::TestAnchorCli.test_set_anchor_via_cli
 # frob:tests \
-# tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_set_anchor_via_cli
-# frob:tests \
-# tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_clear_anchor_via_cli
+# tests/unit/test_ticket_anchor_cli.py::TestAnchorCli.test_clear_anchor_via_cli
 # frob:tests tests/unit/test_ticket_anchor_cli.py::TestAnchorCli.test_requires_reason
 def _anchor(root: Path, cfg: AppConfig) -> None:
     """`frob ticket anchor <id> --set|--clear (--reason TEXT | --reason-file
