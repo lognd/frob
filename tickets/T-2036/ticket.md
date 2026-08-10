@@ -2,7 +2,7 @@
 id: T-2036
 title: T-1983's auto-drop silently drops a ticket whose findings are still live on
   an absolute-vs-relative path mismatch
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
