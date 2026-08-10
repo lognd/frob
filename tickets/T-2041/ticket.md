@@ -2,7 +2,7 @@
 id: T-2041
 title: 'docs/modules/tickets.md: document T-2023''s land-wait budget config + start-relative
   scaling'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-08-10'

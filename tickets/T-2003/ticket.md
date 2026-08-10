@@ -1,7 +1,7 @@
 ---
 id: T-2003
 title: Add docs/modules/tickets.md anchor for is_effectively_in_progress (T-1999 follow-up)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
