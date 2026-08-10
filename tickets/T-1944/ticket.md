@@ -2,7 +2,7 @@
 id: T-1944
 title: 'Scope conflates evidence coverage with write lease: citing an existing test
   permanently leases its whole file'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,65 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/
+- src/frob/tickets/_models.py
+- src/frob/tickets/_scope.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/__init__.py
+- src/frob/gates/__init__.py
+- tests/unit/test_tickets_evidence_only_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: 'narrowed to the actual touched files: the new evidence_scope field, D-02
+    update, add_evidence auto-population, demote_to_evidence_only, and its tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'narrowed to the actual touched files: the new evidence_scope field, D-02
+    update, add_evidence auto-population, demote_to_evidence_only, and its tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_scope.py
+  reason: 'narrowed to the actual touched files: the new evidence_scope field, D-02
+    update, add_evidence auto-population, demote_to_evidence_only, and its tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: 'narrowed to the actual touched files: the new evidence_scope field, D-02
+    update, add_evidence auto-population, demote_to_evidence_only, and its tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'narrowed to the actual touched files: the new evidence_scope field, D-02
+    update, add_evidence auto-population, demote_to_evidence_only, and its tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'narrowed to the actual touched files: the new evidence_scope field, D-02
+    update, add_evidence auto-population, demote_to_evidence_only, and its tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_tickets_evidence_only_scope.py
+  reason: 'narrowed to the actual touched files: the new evidence_scope field, D-02
+    update, add_evidence auto-population, demote_to_evidence_only, and its tests'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope::test_new_evidence_widens_evidence_scope_not_scope
+- tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope::test_evidence_already_covered_by_scope_widens_nothing
+- tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceOnlyScopeNeverLeases::test_evidence_scope_path_does_not_block_another_tickets_add
+- tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceCoversScopeWithEvidenceOnlyScope::test_evidence_covers_scope_true_via_evidence_scope_alone
+- tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly::test_demote_releases_the_lease_and_keeps_evidence_covered
+- tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly::test_demote_refuses_an_undeclared_glob
+- tests/unit/test_tickets_evidence_only_scope.py::TestScopeRemoveOrphansEvidenceUnweakened::test_remove_without_demotion_still_refuses
 designated_repro_test: null
 threat: null
 component: null

@@ -2041,6 +2041,7 @@
     "src/frob/tickets/_reporting.py::record_review": "57c6f4c0fd34fae360a6049dd736c3958d01cfef3388657fc5eb0cc5edbf62f7",
     "src/frob/tickets/_reporting.py::set_done_report": "e986c914e7ed5d017e1d766983f12cc042544a6b90712b6e34d93ce1a13cd086",
     "src/frob/tickets/_reporting_attachments.py::attach": "5df30457c0549f6170224e79cdb437421a48d725f985f150f2bbd2e073947b2c",
+    "src/frob/tickets/_scope.py::demote_to_evidence_only": "ba1179204bb115782aa964597f6c172c6f9006071fbc4b0bb2380d242896644a",
     "src/frob/tickets/_scope.py::mutate_scope": "c0261fba55cf8031a29d4bb5f8cfa53f5ccb6fe930d15251ef57076e949926d5",
     "src/frob/tickets/_scope.py::scope_lease_conflict": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
     "src/frob/tickets/_setters.py::set_component": "6ed99d19391bf26ac9ae25792a213e1079a841623ed2fb2deac73bff44690a40",
@@ -2223,5 +2224,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.433.0"
+  "version": "0.434.0"
 }

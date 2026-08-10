@@ -170,7 +170,7 @@ from frob.tickets._reporting import (
     record_review,
     set_done_report,
 )
-from frob.tickets._scope import mutate_scope
+from frob.tickets._scope import demote_to_evidence_only, mutate_scope
 from frob.tickets._setters import (
     set_component,
     set_designated_repro_test,
@@ -647,6 +647,7 @@ __all__ = [
     "land",
     "land_plan",
     "large_glob_warnings",
+    "demote_to_evidence_only",
     "leased_by",
     "ledger_lock",
     "load_active",

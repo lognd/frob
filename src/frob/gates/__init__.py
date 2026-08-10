@@ -661,11 +661,17 @@ def evidence_covers_scope(ticket: Ticket, snapshot: GraphSnapshot) -> bool:
         is_cmd_evidence(evidence) for evidence in ticket.evidence
     ):
         return True
+    # T-1944: `evidence_scope` covers a pre-existing test's file with NO
+    # write-lease claim (see the field's own docstring) -- checked here
+    # alongside `scope` so D-02 still holds for evidence recorded there,
+    # without that evidence ever having to widen `scope` (and thus a
+    # lease) just to stay provably covered.
+    combined_scope = ticket.scope + ticket.evidence_scope
     return any(
         not is_cmd_evidence(evidence)
         and (
-            _evidence_binds_to_scope(evidence, ticket.scope, snapshot)
-            or scope_matches(evidence.split("::", 1)[0], ticket.scope)
+            _evidence_binds_to_scope(evidence, combined_scope, snapshot)
+            or scope_matches(evidence.split("::", 1)[0], combined_scope)
         )
         for evidence in ticket.evidence
     )

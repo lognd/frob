@@ -476,7 +476,14 @@ def _validate_scope_mutation(
     # T-1356: the FINAL scope this call would leave behind, if every
     # requested `remove` glob is accepted -- what actually matters for
     # "does evidence stay covered", not scope-minus-one-glob-at-a-time.
-    remaining_scope = tuple(g for g in ticket.scope if g not in remove_globs)
+    # T-1944: `evidence_scope` is unioned in -- it also covers evidence
+    # (D-02, `evidence_covers_scope`) without ever being a `--remove`
+    # target itself (this function only ever operates on `scope` globs),
+    # so it always survives into `remaining_scope` and can keep evidence
+    # covered on its own.
+    remaining_scope = tuple(g for g in ticket.scope if g not in remove_globs) + tuple(
+        ticket.evidence_scope
+    )
     for glob in remove_globs:
         if glob not in ticket.scope:
             _log.error(
@@ -670,4 +677,94 @@ def _write_scope_mutation(
     write_result = write_ticket(root, updated)
     if write_result.is_err:
         return Err(write_result.danger_err)
+    return Ok(updated)
+
+
+# frob:ticket T-1944
+def demote_to_evidence_only(
+    root: Path, ticket_id: str, globs: Sequence[str], *, reason: str
+) -> Result[Ticket, TicketError]:
+    """Migrate one or more of `ticket_id`'s EXISTING `scope` entries into
+    `evidence_scope` (T-1944) -- the remedy for a ticket already stuck
+    the old way, holding a write lease it never uses purely because an
+    earlier `scope --add` was the only way to satisfy D-02 for a pre-
+    existing test cited as evidence (the confirmed T-1686 incident: an
+    epic with zero lines of code changed, unable to release a lease on
+    the repo's highest-traffic test file, because `scope --remove` on it
+    correctly refused via `ScopeRemoveOrphansEvidence`).
+
+    Deliberately NOT built on `mutate_scope`'s `remove`/`add` pair -- a
+    plain `--remove glob --add glob` round-trip would hit the exact
+    `ScopeRemoveOrphansEvidence` deadlock this function exists to escape
+    (removing `glob` from `scope` orphans evidence UNTIL the same atomic
+    write also adds it to `evidence_scope`, and `_validate_scope_
+    mutation` has no way to see that pairing). This performs both halves
+    of that move in ONE write instead: `glob` leaves `scope` and joins
+    `evidence_scope` atomically, so evidence coverage (D-02) is NEVER
+    momentarily false. Does not touch `ScopeRemoveOrphansEvidence` itself
+    -- a genuine `scope --remove` with no matching demotion still refuses
+    exactly as before; this is an ADDITIONAL, narrower move, not a
+    weakening of that guard.
+
+    Refuses (`ScopeRemoveNotDeclared`) for any `glob` not currently in
+    `ticket.scope` -- the same "must be declared to be removed" rule
+    `mutate_scope`'s own remove path enforces, so this can never silently
+    invent scope history that never existed. A `glob` already present in
+    `evidence_scope` is a no-op for that entry (removed from `scope`,
+    stays exactly once in `evidence_scope`, never duplicated)."""
+    from frob.tickets import _load_ticket_and_queue
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    demote_globs = _normalize_scope_entries(tuple(globs))
+    if not demote_globs:
+        _log.error("tickets: %s demote-to-evidence-only requires >=1 glob", ticket_id)
+        return Err(TicketError.ScopeChangeEmpty)
+    if not reason.strip():
+        _log.error("tickets: %s demote-to-evidence-only requires --reason", ticket_id)
+        return Err(TicketError.ScopeChangeReasonMissing)
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+
+        for glob in demote_globs:
+            if glob not in ticket.scope:
+                _log.error(
+                    "tickets: %s cannot demote %r, not in declared scope %s",
+                    ticket_id,
+                    glob,
+                    ticket.scope,
+                )
+                return Err(TicketError.ScopeRemoveNotDeclared)
+
+        new_scope = tuple(s for s in ticket.scope if s not in demote_globs)
+        new_evidence_scope = ticket.evidence_scope + tuple(
+            g for g in demote_globs if g not in ticket.evidence_scope
+        )
+        new_entries = _scope_change_entries((), demote_globs, reason)
+        updated = ticket.model_copy(
+            update={
+                "scope": new_scope,
+                "evidence_scope": new_evidence_scope,
+                "scope_changes": ticket.scope_changes + new_entries,
+            }
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    if updated.state is TicketState.IN_PROGRESS:
+        from frob.tickets._leases import record_lease
+
+        record_lease(root, ticket_id, updated.scope)
+    _log.info(
+        "tickets: %s demoted %d scope glob(s) to evidence-only (write lease "
+        "released, D-02 coverage kept): %s",
+        ticket_id,
+        len(demote_globs),
+        reason,
+    )
     return Ok(updated)

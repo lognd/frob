@@ -1198,6 +1198,7 @@ def _append_evidence_and_write(
     two writes, so a crash between them can never leave evidence recorded
     without its acceptance mapping (or vice versa)."""
     from frob.tickets import write_ticket
+    from frob.tickets._models import is_cmd_evidence, scope_matches
 
     merged = ticket.evidence + tuple(
         nid for nid in node_ids if nid not in ticket.evidence
@@ -1215,7 +1216,32 @@ def _append_evidence_and_write(
             else c
             for i, c in enumerate(acceptance)
         )
-    updated = ticket.model_copy(update={"evidence": merged, "acceptance": acceptance})
+    # T-1944: any NEW node id whose file is not already covered by
+    # `scope` OR `evidence_scope` gets its file auto-added to `evidence_
+    # scope` -- non-leasing by default (no flag, no separate command),
+    # the standing directive's own preferred fix for the conflation this
+    # ticket exists to close. A node id already covered by `scope` adds
+    # nothing here (its ticket genuinely writes there, or already chose
+    # to lease it) -- this only ever WIDENS coverage for evidence that
+    # would otherwise force a `scope --add` and its write-lease side
+    # effect.
+    combined = ticket.scope + ticket.evidence_scope
+    new_evidence_scope = ticket.evidence_scope + tuple(
+        dict.fromkeys(
+            path
+            for nid in node_ids
+            if not is_cmd_evidence(nid)
+            for path in (nid.split("::", 1)[0],)
+            if not scope_matches(path, combined) and path not in ticket.evidence_scope
+        )
+    )
+    updated = ticket.model_copy(
+        update={
+            "evidence": merged,
+            "acceptance": acceptance,
+            "evidence_scope": new_evidence_scope,
+        }
+    )
     write_result = write_ticket(root, updated)
     if write_result.is_err:
         return Err(write_result.danger_err)

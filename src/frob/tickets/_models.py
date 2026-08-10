@@ -1428,6 +1428,27 @@ class Ticket(BaseModel):
     # new ordinary work invalidates the precondition it started under.
     runs_last: bool = False
     scope: tuple[str, ...] = ()
+    # frob:ticket T-1944
+    # paths that cover only PRE-EXISTING evidence this ticket cites --
+    # never a write-lease claim, never checked by `_scope_add_conflicts`/
+    # `_find_leaked_tickets` (both read `scope` alone), but STILL counted
+    # by `evidence_covers_scope` (D-02) as proof the ticket's evidence is
+    # bound. Fixes the T-1944 conflation: citing a pre-existing test as
+    # evidence used to require adding its file to `scope` to satisfy D-02,
+    # which then ALSO claimed a write lease on that file (a ticket with
+    # zero lines of code changed could hold, and never release, a lease
+    # on the repo's highest-traffic test file -- the confirmed T-1686
+    # incident). `add_evidence` auto-populates this field by default (no
+    # flag) whenever a cited node's file is not already covered by
+    # `scope` or `evidence_scope`; `frob.tickets._scope.demote_to_
+    # evidence_only` migrates an EXISTING `scope` entry here for a ticket
+    # already stuck the old way. `_scope_remove_orphans_evidence` treats
+    # an entry here identically to one in `scope` for "does removing this
+    # orphan evidence" purposes, so `scope --remove` still refuses
+    # correctly if this were the only thing covering some evidence (it
+    # never should be, by construction, but the check does not assume
+    # that).
+    evidence_scope: tuple[str, ...] = ()
     # frob:ticket T-1484
     # honest acknowledged-broad escape hatch for TICK009 (WAVE14-B): when
     # True, `_tick009_scope_breadth_nudges` skips this ticket entirely,
