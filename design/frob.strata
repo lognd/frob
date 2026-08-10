@@ -150,6 +150,7 @@ node cli : trusted {
     // endpoint; degrades to the in-process/file-lock fallback when no
     // daemon is up.
     may "net" via "src/frob/app/_daemon_proxy.py";
+    may "env.read" via "src/frob/app/ticket_runner/_new.py";
     attr flag=frob_check_exec_kill_switch;
     // T-0724: SYS203 (shared store write) fires because cli/core/fleet/
     // gates/serve all have a Flow into tickets_ledger -- correctly, per

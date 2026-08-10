@@ -741,7 +741,7 @@
     "src/frob/gates/_waive_comments.py::waive006_gate": "6c3a6f2aca83dbda0c48f75695a94faec32a9fa9fcbdb667d293cf92ff507bbb",
     "src/frob/gates/_waive_comments.py::waive007_gate": "6263da88b1449aecc1c42e2bafd90827fdb82707f0a200c291b07dc5a2c77384",
     "src/frob/gates/_waive_lease.py::active_ticket": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
-    "src/frob/gates/_waive_lease.py::ticket_lease_pin": "106fdd5f30bb3063ae82ecd103861ae1ceafbb22030003feac3e0eaa39c053c2",
+    "src/frob/gates/_waive_lease.py::ticket_lease_pin": "e3f8eae24e8a2bc6e20ea17593411de07351487140109e7895481218ffe85a61",
     "src/frob/gates/_walk_lint.py::tracked_python_files_for_gate": "7fbc77cb689a5ad1ecef2e7c5ac185688faf6ca10a37d00da1ad0102e247f1ee",
     "src/frob/gates/_walk_lint.py::walk_lint_gate": "f934d14abe7964c1f09e536fa36d2db7e905ee39a8aba8f4f5f2b383b12f4b8d",
     "src/frob/gates/_wire.py::wire_gate": "523a95fc23e85d4d1abc68457e0870b4f5c5d39641cf1aae67538de71ee8003a",
@@ -2206,5 +2206,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.424.0"
+  "version": "0.425.0"
 }

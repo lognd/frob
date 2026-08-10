@@ -168,23 +168,48 @@ def _add_ticket_merge_driver_parser(ticket_sub):
 
 
 def _add_ticket_renumber_parser(ticket_sub):
-    """Register `frob ticket renumber` and return its subparser."""
+    """Register `frob ticket renumber` and return its subparser.
+
+    T-1556 (cli-hygiene Principle 1, `docs/design/cli-hygiene.md`): `old`/
+    `new` are both optional so the SAME subcommand name reaches two very
+    differently-scoped behaviors -- a narrow single-id rewrite (both
+    given) versus a whole-ledger renumber of EVERY ticket id (both
+    omitted) -- with only an argument-count difference between them and
+    no confirmation gate on the broad form. `old`'s own `help=` now names
+    the destructive fallback explicitly so `--help` alone warns a caller
+    before they reach for a bare `frob ticket renumber` by accident (a
+    truncated paste, a forgotten second argument); the fallback's own
+    behavior is unchanged, only its visibility at `--help` time."""
     ticket_renumber_p = ticket_sub.add_parser(
         "renumber",
         help="rewrite one ticket's id everywhere (with <old> <new>), or "
         "reassign every id to a contiguous T-0001.. sequence (no args)",
     )
     ticket_renumber_p.add_argument(
-        "ticket_old_id", metavar="old", nargs="?", default=None
+        "ticket_old_id",
+        metavar="old",
+        nargs="?",
+        default=None,
+        help="ticket id to rewrite; OMITTING BOTH old AND new (not just "
+        "one) reassigns EVERY ticket id in the ledger to a contiguous "
+        "T-0001.. sequence instead -- a destructive whole-ledger "
+        "operation, not a no-op",
     )
     ticket_renumber_p.add_argument(
-        "ticket_new_id", metavar="new", nargs="?", default=None
+        "ticket_new_id",
+        metavar="new",
+        nargs="?",
+        default=None,
+        help="the id to rewrite old to; omitting exactly one of old/new "
+        "(not both) is refused loudly, never silently ignored",
     )
     ticket_renumber_p.add_argument(
         "--dry-run",
         dest="ticket_dry_run",
         action="store_true",
-        help="report what renumber <old> <new> would change without writing",
+        help="report what renumber <old> <new> would change without "
+        "writing (default: False -- writes immediately; no dry-run mode "
+        "for the whole-ledger no-args form)",
     )
     return ticket_renumber_p
 

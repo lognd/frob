@@ -16,7 +16,7 @@ from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
-from ._new import _scope_closure_warnings
+from ._new import _emit_scope_closure_warnings, _scope_closure_warnings
 
 _log = get_logger("frob.app.ticket_runner")
 
@@ -119,8 +119,9 @@ def _scope(root: Path, cfg: AppConfig) -> None:
                 still_covered,
             )
     # frob:ticket T-0998
-    for warning in _scope_closure_warnings(root, ticket.scope):
-        _log.warning("ticket scope %s: scope closure: %s", ticket.id, warning)
+    _emit_scope_closure_warnings(
+        "ticket scope", ticket.id, _scope_closure_warnings(root, ticket.scope)
+    )
 
 
 # frob:ticket T-1855

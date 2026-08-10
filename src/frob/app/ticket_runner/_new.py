@@ -7,6 +7,7 @@ dispatch, tests that monkeypatch these names) keeps working."""
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -17,6 +18,14 @@ from frob.logging import get_logger
 from ._verify import _apply_evidence
 
 _log = get_logger("frob.app.ticket_runner")
+
+# frob:ticket T-1556
+# Above this many scope-closure warnings, `_emit_scope_closure_warnings`
+# collapses the rest into one counted summary line instead of one WARNING
+# per gap -- a mega-glob scope can produce thousands of lines (T-1556's own
+# "signal is never drowned" acceptance criterion), which buries the FIRST
+# few (usually the most actionable) hints under a wall of repetition.
+_SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD = 8
 
 
 def _resolve_new_body(cfg: AppConfig) -> str:
@@ -192,8 +201,9 @@ def _new(root: Path, cfg: AppConfig) -> None:
     ticket = result.danger_ok
     _log.info("created %s: %s", ticket.id, ticket.title)
     # frob:ticket T-0998
-    for warning in _scope_closure_warnings(root, ticket.scope):
-        _log.warning("ticket new %s: scope closure: %s", ticket.id, warning)
+    _emit_scope_closure_warnings(
+        "ticket new", ticket.id, _scope_closure_warnings(root, ticket.scope)
+    )
     # frob:ticket T-0178
     from frob.app.telemetry import record_ticket_event
 
@@ -214,6 +224,61 @@ def _new(root: Path, cfg: AppConfig) -> None:
     )
     if committed.is_err:
         sys.exit(1)
+
+
+# frob:ticket T-1556
+# frob:tests \
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
+# .test_few_warnings_logged_individually
+# frob:tests \
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
+# .test_many_warnings_collapse_to_counted_summary
+# frob:tests \
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
+# .test_verbose_env_var_disables_collapse
+# frob:tests \
+# tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
+# .test_no_warnings_logs_nothing
+def _emit_scope_closure_warnings(
+    prefix: str, ticket_id: str, warnings: tuple[str, ...]
+) -> None:
+    """Log `warnings` (from `_scope_closure_warnings`) as `prefix
+    <ticket_id>: scope closure: <warning>` lines -- one per warning below
+    `_SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD`, or the first N plus a
+    single counted-summary line above it (T-1556: a mega-glob scope's
+    scope-closure feedback used to flood output with one WARNING per gap,
+    up to thousands of lines, burying the first few -- usually the most
+    actionable -- hints; a genuinely narrow scope, the common case, is
+    completely unaffected since it never crosses the threshold).
+
+    `FROB_SCOPE_CLOSURE_VERBOSE=1` disables collapsing entirely (the
+    escape hatch this ticket's acceptance criterion calls for) -- shared
+    by both `frob ticket new` and `frob ticket scope`'s own call sites
+    (`_mutate.py`), matching this repo's existing `FROB_AGENT`/`FROB_NO_
+    GATE_CACHE`-style env-toggle precedent rather than a new CLI flag,
+    since `--verbose` itself would need `src/frob/_cli_parsers/**` wiring
+    outside this ticket's own declared scope (see the Done report for the
+    CLI-flag follow-up this leaves open, mirroring T-1824's log-only-
+    wiring precedent for the identical cross-file-scope shape)."""
+    if not warnings:
+        return
+    if os.environ.get("FROB_SCOPE_CLOSURE_VERBOSE") or (
+        len(warnings) <= _SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD
+    ):
+        for warning in warnings:
+            _log.warning("%s %s: scope closure: %s", prefix, ticket_id, warning)
+        return
+    shown = warnings[:_SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD]
+    for warning in shown:
+        _log.warning("%s %s: scope closure: %s", prefix, ticket_id, warning)
+    _log.warning(
+        "%s %s: scope closure: %d more warning(s) collapsed -- set "
+        "FROB_SCOPE_CLOSURE_VERBOSE=1 and retry to see all %d",
+        prefix,
+        ticket_id,
+        len(warnings) - len(shown),
+        len(warnings),
+    )
 
 
 # frob:ticket T-0998

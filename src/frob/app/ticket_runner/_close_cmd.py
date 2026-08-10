@@ -85,6 +85,68 @@ def _close_failure_hint(ticket_id: str, state, err, *, verb: str = "close") -> s
             f"--skip-mutation-evidence` (logs a loud, justification-"
             f"required override, does not suppress the finding)"
         )
+    # frob:ticket T-1556
+    if err == TicketError.EvidenceScopeUnbound:
+        return (
+            f"{verb} failed: {err} -- {ticket_id} -- no bound evidence id "
+            f"covers a touched/scope symbol; bind a test that actually "
+            f"exercises the changed code (`frob ticket evidence "
+            f"{ticket_id} <node-id>...`), or widen scope "
+            f"(`frob ticket scope {ticket_id} --add <glob> --reason "
+            f"'...'`) if the real touched files are not yet declared"
+        )
+    # frob:ticket T-1556
+    if err == TicketError.EvidenceNotPassing:
+        return (
+            f"{verb} failed: {err} -- {ticket_id}'s recorded evidence no "
+            f"longer passes against the CURRENT tree (it passed once, at "
+            f"record time, but has since regressed) -- fix the break, or "
+            f"re-record fresh passing evidence (`frob ticket evidence "
+            f"{ticket_id} <node-id>...`), then retry `frob ticket {verb} "
+            f"{ticket_id}`"
+        )
+    # frob:ticket T-1556
+    if err == TicketError.OwnObligationsUnclean:
+        return (
+            f"{verb} failed: {err} -- {ticket_id}'s own diff leaves a "
+            f"new-symbol frob:doc edge, frob:tests declaration, or REL001 "
+            f"bump outstanding; run `frob check --delta --ticket "
+            f"{ticket_id}` and resolve the finding(s) it names, then "
+            f"retry `frob ticket {verb} {ticket_id}`"
+        )
+    # frob:ticket T-1556
+    if err == TicketError.GateClaimUnverified:
+        return (
+            f"{verb} failed: {err} -- see the WARNING line above naming "
+            f"which package-wide gate-outcome acceptance criterion "
+            f"(\"0 <RULE> findings under <glob>\") is not established by "
+            f"the bound evidence; re-run the named gate against the named "
+            f"glob and bind evidence that PROVES the claim (not merely a "
+            f"passing, unrelated node id), then retry `frob ticket {verb} "
+            f"{ticket_id}`"
+        )
+    # frob:ticket T-1556
+    if err == TicketError.LiveTrackerCited:
+        return (
+            f"{verb} failed: {err} -- see the WARNING line above naming "
+            f"every site still citing {ticket_id} as its live tracker "
+            f"(a registry deferred:/tracked_by: disposition or a waiver "
+            f"ticket= attribute); file a successor ticket and re-point "
+            f"those rows to it, or re-point them in this same change, "
+            f"then retry `frob ticket {verb} {ticket_id}`"
+        )
+    # frob:ticket T-1556
+    if err == TicketError.NewGateRuleUnaccepted:
+        return (
+            f"{verb} failed: {err} -- see the WARNING line above naming "
+            f"the new gate rule id(s) this diff adds; record a bound "
+            f"before-fails/after-passes fixture acceptance criterion "
+            f"proving the rule fires through the real production "
+            f"invocation (`frob ticket accept {ticket_id} --criterion "
+            f"'...'`, then `frob ticket evidence {ticket_id} <node-id> "
+            f"--accepts <index>`), then retry `frob ticket {verb} "
+            f"{ticket_id}`"
+        )
     return f"{verb} failed: {err}"
 
 

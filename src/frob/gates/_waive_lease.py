@@ -50,11 +50,17 @@ def active_ticket(root: Path, explicit: str | None) -> Option[str]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0787
+# frob:ticket T-1556
 # frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_no_lease_mechanism_engaged_passes_through kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_pinned_lease_for_this_worktree_passes kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_lease_absent_for_this_worktree_refuses kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_lease_recorded_elsewhere_refuses kind="unit"  # noqa: E501
-def ticket_lease_pin(root: Path, ticket_id: str) -> Result[None, LeaseError]:
+# frob:tests \
+# tests/test_tickets_leases.py::TestTicketLeasePin.test_mutating_false_skips_the_pin_ch\
+# eck_entirely
+def ticket_lease_pin(
+    root: Path, ticket_id: str, *, mutating: bool = True
+) -> Result[None, LeaseError]:
     """Validate `ticket_id`'s cross-worktree lease pins to `root` (T-0787,
     promoting T-0766's `resolve_lease` primitive into the live `--ticket`
     resolution path -- previously nothing in `frob check` consulted it at
@@ -76,7 +82,31 @@ def ticket_lease_pin(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     `root` specifically -- absent entirely, or recorded for a different
     worktree. The caller (`frob check`'s CLI entry point) turns either into
     a loud refusal naming `frob ticket start <ticket_id>`, closing the
-    T-0695 hole `resolve_lease` was built to fix but nothing invoked."""
+    T-0695 hole `resolve_lease` was built to fix but nothing invoked.
+
+    T-1556: `mutating=False` skips the pin check entirely, always returning
+    `Ok(None)` -- the lease exists to protect a worktree's OWN state
+    (baseline/coverage stamps, gate-cache writes) from a concurrent
+    cross-worktree collision; a genuinely READ-ONLY `--ticket` invocation
+    (no `--stamp-baseline`/`--stamp-coverage`, nothing else that writes)
+    touches none of that state, so there is nothing for the lease to
+    protect and no reason to refuse it. Reviewers repeatedly could not
+    re-verify a ticket's gate claims with `frob check --ticket` for
+    exactly this reason -- the pin check fired even for a plain read.
+    Defaults to `True` (the pre-T-1556 behavior) so every existing caller
+    is unaffected until it explicitly opts in; wiring an actual `--ticket`
+    invocation's mutating-ness into this parameter is `frob.app.
+    check_runner`'s job (`_refuse_ticket_lease_mismatch`), outside this
+    file's own declared scope -- see this ticket's Done report for the
+    follow-up."""
+    if not mutating:
+        _log.debug(
+            "ticket_lease_pin: mutating=False, skipping pin check for %s "
+            "(read-only invocation, nothing leased state could collide "
+            "with)",
+            ticket_id,
+        )
+        return Ok(None)
     from frob.tickets._leases import leases_dir, resolve_lease
 
     leases_root_result = leases_dir(root)

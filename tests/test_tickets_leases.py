@@ -203,6 +203,27 @@ class TestTicketLeasePin:
         assert result.is_err
         assert result.danger_err == LeaseError.LeaseWorktreeMismatch
 
+    # frob:ticket T-1556
+    def test_mutating_false_skips_the_pin_check_entirely(self, repo: Path) -> None:
+        """T-1556: a read-only invocation (`mutating=False`) must pass
+        `Ok` unconditionally, even in EVERY shape that otherwise refuses
+        above -- absent lease, lease recorded for a different worktree,
+        nothing leased state could collide with on a plain read."""
+        from frob.gates import ticket_lease_pin
+
+        # Same fixture as test_lease_absent_for_this_worktree_refuses --
+        # the mechanism IS engaged (a sibling lease exists) but T-0787
+        # itself was never started; `mutating=True` (the default) refuses.
+        _write_lease(repo, "T-0733", repo)
+        assert ticket_lease_pin(repo, "T-0787").is_err
+        assert ticket_lease_pin(repo, "T-0787", mutating=False).is_ok
+
+        # Same fixture as test_lease_recorded_elsewhere_refuses.
+        other_worktree = repo / ".." / "some-other-agent-worktree"
+        _write_lease(repo, "T-0787", other_worktree)
+        assert ticket_lease_pin(repo, "T-0787").is_err
+        assert ticket_lease_pin(repo, "T-0787", mutating=False).is_ok
+
 
 class TestCheckTicketLeaseCli:
     """`frob.app.check_runner._refuse_ticket_lease_mismatch` (T-0787) --
@@ -224,16 +245,21 @@ class TestCheckTicketLeaseCli:
 
     def test_refuses_when_lease_recorded_for_another_worktree(self, repo: Path) -> None:
         """Reproduces T-0695 end to end: two fake worktree paths, a lease
-        recorded for the SIBLING worktree, and this worktree's own `frob
-        check --ticket T-0787` call must refuse loudly rather than run
-        gates against the wrong worktree's ticket."""
+        recorded for the SIBLING worktree, and this worktree's own
+        MUTATING `frob check --ticket T-0787 --stamp-baseline` call must
+        refuse loudly rather than write a baseline against the wrong
+        worktree's ticket. T-1556 narrowed the pin check to mutating
+        invocations only (see `test_read_only_invocation_skips_the_lease_
+        check` below for the plain-read counterpart), so this reproduction
+        now needs an explicit mutating flag to still exercise the T-0695
+        shape."""
         from frob.app.check_runner import _refuse_ticket_lease_mismatch
         from frob.app.config import AppConfig
 
         this_worktree = repo
         sibling_worktree = repo / ".." / "agent-sibling-fake-worktree"
         _write_lease(repo, "T-0787", sibling_worktree)
-        cfg = AppConfig(check_ticket="T-0787")
+        cfg = AppConfig(check_ticket="T-0787", check_stamp_baseline=True)
         assert _refuse_ticket_lease_mismatch(this_worktree, cfg) is True
 
     def test_no_ticket_resolved_skips_the_check_entirely(self, repo: Path) -> None:
@@ -246,6 +272,22 @@ class TestCheckTicketLeaseCli:
 
         cfg = AppConfig(check_ticket=None)
         assert _refuse_ticket_lease_mismatch(repo, cfg) is False
+
+    def test_read_only_invocation_skips_the_lease_check(self, repo: Path) -> None:
+        """T-1556: a lease recorded for a SIBLING worktree (the exact
+        T-0695 mismatch shape) no longer refuses when the invocation is a
+        plain read (no --stamp-baseline/--stamp-coverage) -- a reviewer
+        re-verifying a ticket's gate claims with `frob check --ticket`
+        writes no lease-protected state, so there is nothing for the pin
+        to protect."""
+        from frob.app.check_runner import _refuse_ticket_lease_mismatch
+        from frob.app.config import AppConfig
+
+        this_worktree = repo
+        sibling_worktree = repo / ".." / "agent-sibling-fake-worktree"
+        _write_lease(repo, "T-0787", sibling_worktree)
+        cfg = AppConfig(check_ticket="T-0787")
+        assert _refuse_ticket_lease_mismatch(this_worktree, cfg) is False
 
 
 class TestReadAllLeasesSiblingProcessVisibility:

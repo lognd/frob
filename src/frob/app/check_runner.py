@@ -870,9 +870,25 @@ def _print_stage_list(cfg: AppConfig) -> None:
         renderer.line("\n".join(stages))
 
 
+# frob:ticket T-1556
+# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_read_only_invocation_skips_the_lease_check kind="integration"  # noqa: E501
+def _check_is_mutating(cfg: AppConfig) -> bool:
+    """Whether this `frob check` invocation writes lease-protected worktree
+    state (T-1556): `--stamp-baseline`/`--stamp-coverage` are the two flags
+    that persist a new `.frob/baseline` or `frob-coverage.lock.json` --
+    the state `ticket_lease_pin`'s cross-worktree pin actually exists to
+    protect from a concurrent collision (see that function's own T-1556
+    docstring section). Every other `frob check --ticket ...` shape (a
+    plain gate read, `--only`, `--budget`, `--land-parity`) reads and
+    reports without writing any of that, so it is not mutating and does
+    not need a pinned lease to run."""
+    return bool(cfg.check_stamp_baseline or cfg.check_stamp_coverage)
+
+
 # frob:ticket T-0787
 # frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_pins_to_own_worktree_lease kind="integration"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_refuses_when_lease_recorded_for_another_worktree kind="integration"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_read_only_invocation_skips_the_lease_check kind="integration"  # noqa: E501
 def _refuse_ticket_lease_mismatch(root: Path, cfg: AppConfig) -> bool:
     """True (after logging a loud, `frob ticket start`-naming refusal) when
     `--ticket`/branch-derived ticket resolution does not pin to `root`'s own
@@ -892,14 +908,21 @@ def _refuse_ticket_lease_mismatch(root: Path, cfg: AppConfig) -> bool:
     paths (plain repos, non-agent invocations of a repo where no ticket has
     ever been `frob ticket start`ed) working unchanged -- this function just
     surfaces its `Err` loudly at the CLI boundary when it does fire.
-    """
+
+    T-1556: passes `mutating=` through to `ticket_lease_pin` based on
+    `_check_is_mutating(cfg)` -- a plain read (`frob check --ticket` with
+    neither `--stamp-baseline` nor `--stamp-coverage`) writes no lease-
+    protected worktree state at all, so it no longer needs a pinned lease
+    to run. Reviewers repeatedly could not re-verify a ticket's gate claims
+    with `frob check --ticket` for exactly this reason (cli-hygiene.md
+    Principle-adjacent papercut, this ticket's own acceptance criterion 1)."""
     from frob.gates import active_ticket, ticket_lease_pin
 
     ticket_opt = active_ticket(root, cfg.check_ticket)
     if ticket_opt.is_nothing:
         return False
     ticket_id = ticket_opt.danger_some
-    pin_result = ticket_lease_pin(root, ticket_id)
+    pin_result = ticket_lease_pin(root, ticket_id, mutating=_check_is_mutating(cfg))
     if pin_result.is_ok:
         return False
     _log.error(
