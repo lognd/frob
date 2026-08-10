@@ -3507,16 +3507,35 @@ The fix reuses the same line `frob.tickets._leases` already draws for
 worktree leases: a lease (and now a CrossTicketLeakage refusal) exists
 only for a ticket that is actually being worked, never one merely filed.
 `_find_leaked_tickets` still computes every scope-overlap hit exactly as
-before (including the T-1370 same-worktree exemption and the T-1390
-"sibling's own ledger record never moved" exemption), but only a hit
-against an `IN_PROGRESS` sibling lands in the `leaked` map that
-`_report_leaked_tickets` refuses on. A hit against a `QUEUED`/`PLANNED`/
-`BLOCKED` sibling is still logged (at INFO, naming the ticket and its
-state) so the overlap is disclosed, not silently dropped -- it just no
-longer blocks. This does not weaken the T-1618 case the check exists for
-(a shared series worktree carrying a sibling's COMMITTED work onto main):
-that case always involves a sibling that was actually started, so it is
-always `IN_PROGRESS` by the time it could leak anything.
+before (including the T-1390 "sibling's own ledger record never moved"
+exemption), but only a hit against an `IN_PROGRESS` sibling lands in the
+`leaked` map that `_report_leaked_tickets` refuses on. A hit against a
+`QUEUED`/`PLANNED`/`BLOCKED` sibling is still logged (at INFO, naming the
+ticket and its state) so the overlap is disclosed, not silently dropped
+-- it just no longer blocks. This does not weaken the T-1618 case the
+check exists for (a shared series worktree carrying a sibling's
+COMMITTED work onto main): that case always involves a sibling that was
+actually started, so it is always `IN_PROGRESS` by the time it could
+leak anything.
+
+**T-1967 removed the T-1370 same-worktree exemption entirely.** A
+sibling ticket leased to the SAME worktree as the landing ticket used to
+be exempted here unconditionally, no matter its state -- "one agent
+landing its own tickets back to back, not a real cross-agent leak".
+Measured 2026-08-10: that exemption was exactly the guard hole that let
+a docs-only ticket's land (T-1958) silently carry a sibling's (T-1956's)
+entire production change onto main, with no flag and no warning printed
+at all -- sharing a worktree across a ticket series is the NORMAL,
+endorsed dispatch pattern here (playbook section 0), which made this the
+default configuration, not an edge case. A same-worktree sibling with a
+real hit now flows into the exact same refusal/`--allow-cross-ticket`
+path a cross-worktree leak already used. This does not reintroduce
+T-1370's original mutual-deadlock concern: a hit only ever exists once a
+sibling has genuinely been worked (`IN_PROGRESS`, ledger record moved)
+on this branch, and `--allow-cross-ticket` remains the explicit, logged
+way through for a genuinely intentional joint land -- once the first of
+two mutually-scoped same-worktree tickets lands, the second's own later
+land finds the first already `DONE` and exempt.
 
 ## Post-mutation reverification (T-1932)
 

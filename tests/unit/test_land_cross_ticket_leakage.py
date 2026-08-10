@@ -130,7 +130,7 @@ class TestCrossTicketLeakage:
         return wt, held_id, landing_id
 
     def test_refuses_when_sibling_ticket_still_open(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"
         # T-1370: the genuine cross-AGENT leak the guard exists for -- the
         # held ticket is leased to a DIFFERENT worktree (`wt2`, standing in
         # for a different agent's own series) than the one landing (`wt`),
@@ -174,7 +174,7 @@ class TestCrossTicketLeakage:
         assert not (repo / "src" / "held.py").exists()
 
     def test_allow_cross_ticket_overrides_the_refusal(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"
         wt, held_id, landing_id = self._seed_two_ticket_worktree(repo)
 
         result = land(repo, landing_id, wt, dry_run=False, allow_cross_ticket=True)
@@ -185,7 +185,7 @@ class TestCrossTicketLeakage:
     def test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"
         # Sanity check: a single-ticket worktree (the common case) is
         # entirely unaffected by the new preflight.
         wt = repo.parent / "wt"
@@ -202,25 +202,53 @@ class TestCrossTicketLeakage:
         assert result.is_ok, result.err
         assert (repo / "src" / "solo.py").exists()
 
+    # frob:ticket T-1967
     def test_sibling_leased_to_same_worktree_does_not_block(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
-        # T-1370: the real deadlock -- two open tickets sharing ONE series
-        # worktree, both still `in-progress` (both leased to `wt`, via
-        # `transition`'s automatic T-0473 lease recording). Landing either
-        # one used to refuse solely because the sibling was still open;
-        # with the same-worktree-lease exemption, landing the ready one
-        # succeeds even though the sibling is untouched and open.
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
+        # T-1967 CORRECTION (function name kept for T-1370/T-1639 evidence
+        # resolution -- both are DONE tickets citing this node id; renaming
+        # it would break their COV003 evidence): this test used to assert
+        # the OLD, buggy behavior -- an in-progress sibling sharing the
+        # worktree was silently exempted no matter what. That exemption
+        # was measured to be the exact guard hole T-1967 fixed (T-1958's
+        # docs-only land silently carrying T-1956's entire production
+        # change onto main, no flag, no warning). The correct behavior,
+        # asserted below, is the opposite of what this test's name says:
+        # a same-worktree sibling with real committed hits now REFUSES
+        # like any other leaked ticket, unless explicitly acknowledged
+        # (see test_sibling_leased_to_same_worktree_lands_with_explicit_
+        # ack immediately below for that acknowledgment path).
         wt, held_id, landing_id = self._seed_two_ticket_worktree(repo)
 
         result = land(repo, landing_id, wt, dry_run=False)
 
+        assert result.is_err
+        assert result.danger_err == LandError.CrossTicketLeakage
+        assert not (repo / "src" / "fix.py").exists()
+        assert not (repo / "src" / "held.py").exists()
+
+    # frob:ticket T-1967
+    def test_sibling_leased_to_same_worktree_lands_with_explicit_ack(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
+        # T-1967: the same shape as the refusal test above, but with the
+        # operator explicitly acknowledging the carry via the existing
+        # `--allow-cross-ticket` escape hatch -- the real T-1370 deadlock
+        # concern (two mutually-scoped same-worktree tickets, neither
+        # landable) is resolved this way, not by silence.
+        wt, held_id, landing_id = self._seed_two_ticket_worktree(repo)
+
+        result = land(repo, landing_id, wt, dry_run=False, allow_cross_ticket=True)
+
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
+        assert (repo / "src" / "held.py").exists()
 
     def test_sibling_ticket_already_done_on_main_does_not_block(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_cross_ticket_leakage kind="unit"
         # A ticket whose scope overlaps the changeset but is ALREADY done
         # (terminal) on main is not a leakage hazard -- its work already
         # shipped legitimately, so it must not block an unrelated land.
@@ -243,7 +271,7 @@ class TestCrossTicketLeakage:
     def test_sibling_declaring_broad_scope_but_untouched_does_not_block(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
         # T-1390: the measured false-positive class -- an UNRELATED open
         # ticket (never leased to this worktree, never worked on this
         # branch) merely DECLARES a broad scope ("src/**") that happens to
@@ -280,7 +308,7 @@ class TestCrossTicketLeakage:
     # sibling_scope_overlap_does_not_block
     # frob:ticket T-1639
     def test_queued_sibling_scope_overlap_does_not_block(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
         # T-1639: the real 2026-08-06 incident shape -- a freshly filed,
         # never-started (QUEUED) sibling declaring a scope that happens to
         # cover a changed path must not refuse the land at all. A declared
@@ -318,7 +346,7 @@ class TestCrossTicketLeakage:
     # _sibling_scope_overlap_does_not_block
     # frob:ticket T-1639
     def test_planned_sibling_scope_overlap_does_not_block(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_find_leaked_tickets kind="unit"
         # T-1639: PLANNED (the pre-work-sweep state `frob ticket start`
         # sets before a worktree/lease exists) is the same "not actually
         # being worked yet" shape as QUEUED -- must not refuse either.
@@ -356,7 +384,7 @@ class TestPassengerTickets:
     ticket's land because nothing disclosed it was there."""
 
     def test_refuses_and_lists_every_passenger_by_id(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "series-a", str(wt)], repo)
 
@@ -386,7 +414,7 @@ class TestPassengerTickets:
     def test_allow_cross_ticket_logs_and_proceeds(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "series-b", str(wt)], repo)
 
@@ -414,7 +442,7 @@ class TestPassengerTickets:
     def test_no_op_when_only_the_landing_tickets_own_directives_are_present(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "solo-directive", str(wt)], repo)
 
@@ -433,7 +461,7 @@ class TestPassengerTickets:
     def test_a_dropped_siblings_still_present_code_is_still_reported(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_passenger_tickets kind="unit"
         # The exact T-1618 gap: `_check_cross_ticket_leakage` exempts a
         # DONE/DROPPED sibling outright (`_find_leaked_tickets`'s own
         # `effective_state in (DONE, DROPPED): continue`). A directive-

@@ -2796,13 +2796,36 @@ def _leaked_hits_for_candidate(
     `None` if it is not actually leaked (T-1390: split out of `_find_
     leaked_tickets` to keep that function's own per-candidate exemption
     logic readable and under ARCH001's line threshold, zero behavior
-    change to any exemption's own semantics) -- exempts a sibling leased
-    to the SAME worktree as `landing_id` (T-1370), then requires BOTH a
+    change to any exemption's own semantics) -- requires BOTH a
     scope hit against `changed_paths` AND `other`'s own ledger record to
     have actually changed since this branch forked from `base_ref`
     (T-1390, via `_ledger_ticket_at_merge_base`) -- a scope hit alone is
     never enough; see `_find_leaked_tickets`'s own docstring for the
     false-positive class this second requirement closes.
+
+    T-1967: a sibling leased to the SAME worktree as `landing_id` used to
+    be exempted here unconditionally (T-1370) -- "one agent landing its
+    own tickets back to back, not a real cross-agent leak". Measured
+    2026-08-10: that exemption is exactly the guard hole that let a
+    docs-only ticket's land silently carry a sibling's ENTIRE production
+    change (T-1958 carrying T-1956's `_evidence.py`/`_models.py`/
+    `_new_gate_rule_acceptance.py` plus its own tests and Done report)
+    onto main with no flag and no warning printed at all -- sharing a
+    worktree across a ticket series is the NORMAL dispatch pattern here,
+    which made this the default configuration, not an edge case. Removed:
+    a same-worktree sibling with real committed hits now flows into the
+    exact same `leaked` reporting/refusal path a cross-worktree sibling
+    already does (`_report_leaked_tickets`), so carrying it either
+    requires the existing `--allow-cross-ticket` acknowledgment (an
+    affirmative, logged statement for a genuinely intentional joint land)
+    or refuses. This does not reintroduce T-1370's original deadlock
+    concern: a sibling only ever counts as leaked once it is genuinely
+    `IN_PROGRESS` with real content change since the fork (see
+    `_find_leaked_tickets`), and the moment the first of two mutually-
+    scoped same-worktree tickets lands (with `--allow-cross-ticket`, or
+    because the second was never actually started), the second's own
+    later land finds the first already `DONE` and exempt -- there is
+    always a way through, it just now requires being told.
 
     T-1855 grant-on-use: a hit that matches ONLY via the implicit
     FEATURE-kind CLI-wiring grant (`_scope_claim_reason` returns
@@ -2812,18 +2835,7 @@ def _leaked_hits_for_candidate(
     `__main__.py`/`config.py`/`ticket_runner/__init__.py` against every
     sibling's land whether or not it had ever touched them."""
     from frob.tickets._models import scope_matches
-    from frob.tickets._scope import _same_worktree_lease
 
-    if _same_worktree_lease(worktree, landing_id, other_id):
-        _log.info(
-            "land: %s cross-ticket leakage check exempting %s "
-            "(T-1370: both tickets are leased to the same worktree "
-            "-- one agent landing its own tickets back to back, not "
-            "a real cross-agent leak)",
-            landing_id,
-            other_id,
-        )
-        return None
     hits = [
         path
         for path in changed_paths
@@ -2870,6 +2882,7 @@ def _leaked_hits_for_candidate(
 # frob:ticket T-1370
 # frob:ticket T-1390
 # frob:ticket T-1639
+# frob:ticket T-1967
 # frob:doc \
 # docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t\
 # -1639
@@ -2910,14 +2923,24 @@ def _find_leaked_tickets(
     identical. A ticket record identical since the fork is skipped even
     if its declared scope happens to match a changed path.
 
-    T-1370: a sibling ticket LEASED TO THE SAME WORKTREE as `landing_id`
-    (`_scope._same_worktree_lease`, the exact T-1356 precedent this
-    mirrors) is never reported as leaked, no matter its state -- two
-    tickets sharing one series worktree is one agent landing its own
-    tickets back to back, not a real cross-agent leak. Without this, two
-    open siblings in the same worktree whose scopes overlap mutually
-    deadlock: landing either one refuses because the other is still
-    open, and there is no way to land either first.
+    T-1370/T-1967: a sibling ticket LEASED TO THE SAME WORKTREE as
+    `landing_id` used to be exempted here unconditionally, no matter its
+    state (`_scope._same_worktree_lease`, the exact T-1356 precedent this
+    mirrored) -- "two tickets sharing one series worktree is one agent
+    landing its own tickets back to back, not a real cross-agent leak".
+    T-1967 found and removed that exemption: it was the exact silent
+    guard hole that let a docs-only ticket's land carry a sibling's
+    entire production change onto main with no flag and no warning at
+    all, because sharing a worktree across a ticket series is the
+    NORMAL, endorsed dispatch pattern here, not an edge case. A
+    same-worktree sibling now goes through the SAME `IN_PROGRESS` +
+    ledger-record-changed gate as any other candidate below, and a real
+    hit against it flows into the same refusal/`--allow-cross-ticket`
+    path as a cross-worktree leak. This does not reintroduce the
+    mutual-deadlock concern T-1370 originally worried about: a hit only
+    ever exists once a sibling has genuinely been worked on this branch,
+    and `--allow-cross-ticket` remains the explicit, logged way through
+    for a genuinely intentional joint land.
 
     T-1639: a scope hit is only ever REFUSED when the sibling is
     `IN_PROGRESS` -- the same "declared scope is a claim only once a

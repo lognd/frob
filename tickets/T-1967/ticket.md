@@ -2,7 +2,7 @@
 id: T-1967
 title: 'land silently carries a sibling ticket''s code when a worktree holds two tickets:
   no flag needed, no warning, guard never fires'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,32 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- tests/unit/test_land_cross_ticket_leakage.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: T-1967 needs to add/modify regression tests for the cross-ticket leakage
+    guard fix in tests/unit/test_land_cross_ticket_leakage.py, per the ticket acceptance
+    criteria (a test that must fail before the fix). Widening scope to include this
+    test file.
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: The fixed function DIRECTLY frob:describes docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t-1639,
+    which now contains a stale sentence about the T-1370 same-worktree exemption T-1967
+    removed. Doc must move in the same change per playbook section 8.
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_lands_with_explicit_ack
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_allow_cross_ticket_overrides_the_refusal
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_disjoint_worktree_with_no_other_open_ticket_lands_cleanly
+designated_repro_test: tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_leased_to_same_worktree_does_not_block
 threat: null
 component: null
 anchor: false
