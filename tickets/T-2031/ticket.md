@@ -2,7 +2,7 @@
 id: T-2031
 title: frob-suggest does not cover hand-rolled coordinator measurement, so scripts/check_summary.py
   and fleet_status.py are bypassed and their known failure modes re-hit
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -126,3 +126,6 @@ cannot do so unknowingly.
 5. Report the denominator: enumerate the coordinator measurement commands
    used this session and state how many the new rules would have caught.
    Do not claim coverage that was not measured.
+
+## Drop reason
+- 2026-08-10: Fix applied, but NOT as a repo change: the frob-suggest hook lives at ~/.claude/hooks/frob-suggest.py (user scope, outside any frob-tracked repo), so there is nothing for a frob worktree to land. Added two rules there directly with user authorisation: handrolled-floor-count (frob check piped into grep -> scripts/check_summary.py) and handrolled-fleet-probe (git status --porcelain AND ps aux/pgrep/git worktree list in one command -> scripts/fleet_status.py). 12/12 test cases pass including the negative cases this ticket required: plain 'frob check --only gates', '| tail -30', 'git grep | grep', and bare 'git status --porcelain' all stay quiet. Testing caught a disarmed-guard bug: the first pattern used [^|;&]* between 'frob check' and the pipe, which cannot cross the & in 2>&1, so it matched nothing while looking correct.
