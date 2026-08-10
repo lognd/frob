@@ -809,8 +809,42 @@ class TestCommitTicketLedgerChange:
                 repo, "T-0001", "chore(tickets): drop T-0001", no_commit=True
             )
         assert result.is_ok
-        warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+        warnings = [
+            r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
+        ]
         assert any("DirtyMain-block" in w and "T-0001" in w for w in warnings)
+
+    # frob:ticket T-1891
+    def test_no_commit_flag_with_warn_if_dirty_false_stays_silent(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_with_warn_if_dirty_false_stays_silent  # noqa: E501
+        """T-1891: an internal batching caller (`warn_if_dirty=False`) that
+        KNOWS a real commit for the same pathspecs runs moments later in
+        the same operation must not print the DirtyMain warning just
+        because the ledger is dirty at THIS instant -- that dirtiness is
+        real but temporary by construction, not a genuine `--no-commit`
+        left-dirty outcome."""
+        import logging
+
+        from frob.tickets import transition
+        from frob.tickets._leases import commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            result = commit_ticket_ledger_change(
+                repo,
+                "T-0001",
+                "chore(tickets): drop T-0001",
+                no_commit=True,
+                warn_if_dirty=False,
+            )
+        assert result.is_ok
+        warnings = [
+            r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
+        ]
+        assert not any("DirtyMain-block" in w for w in warnings)
 
     # frob:ticket T-1615
     def test_no_commit_flag_does_not_warn_when_clean(
@@ -829,7 +863,9 @@ class TestCommitTicketLedgerChange:
                 repo, "T-0001", "chore(tickets): drop T-0001", no_commit=True
             )
         assert result.is_ok
-        warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+        warnings = [
+            r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
+        ]
         assert not any("DirtyMain-block" in w for w in warnings)
 
     # frob:ticket T-1432
@@ -989,7 +1025,9 @@ class TestCommitFullLedgerChange:
         assert result.is_ok
         status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() != ""
-        warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+        warnings = [
+            r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
+        ]
         assert any("DirtyMain-block" in w for w in warnings)
 
     def test_archive_cli_leaves_repo_clean(self, repo: Path) -> None:
@@ -1142,7 +1180,14 @@ class TestRefuseIfLandInProgress:
 
         assert not (repo / ".frob" / "land.lock").exists()
         holder = subprocess.Popen(
-            ["python3", "-c", "import time; time.sleep(30)", "ticket", "land", "T-4242"],
+            [
+                "python3",
+                "-c",
+                "import time; time.sleep(30)",
+                "ticket",
+                "land",
+                "T-4242",
+            ],
             cwd=str(repo),
         )
         try:
@@ -1255,9 +1300,7 @@ class TestDispatchLandGuard:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
 
-    def test_refused_verb_never_writes_the_ticket_file_at_all(
-        self, repo: Path
-    ) -> None:
+    def test_refused_verb_never_writes_the_ticket_file_at_all(self, repo: Path) -> None:
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
         # Incident 6 (T-1779 follow-up, observed live): the OLD
         # commit-time-only guard let a verb's handler run to completion
@@ -1382,9 +1425,7 @@ class TestOrphanedLeases:
         from frob.tickets._leases import orphaned_leases
 
         ghost = repo.parent / "nowhere" / "nested" / "gone"
-        _write_lease(
-            repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat()
-        )
+        _write_lease(repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat())
 
         found = orphaned_leases(repo)
         assert [lease.ticket_id for lease in found] == ["T-9001"]
@@ -1410,9 +1451,7 @@ class TestOrphanedLeases:
         found = orphaned_leases(repo)
         assert found == ()
 
-    def test_finds_a_ticket_gone_lease(
-        self, repo: Path, second_worktree: Path
-    ) -> None:
+    def test_finds_a_ticket_gone_lease(self, repo: Path, second_worktree: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_leases kind="unit"
         from frob.tickets._leases import orphaned_leases
 
@@ -1426,9 +1465,7 @@ class TestOrphanedLeases:
         found = orphaned_leases(repo)
         assert [lease.ticket_id for lease in found] == ["T-draft-ghost"]
 
-    def test_finds_a_holder_dead_lease(
-        self, repo: Path, second_worktree: Path
-    ) -> None:
+    def test_finds_a_holder_dead_lease(self, repo: Path, second_worktree: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::orphaned_leases kind="unit"
         from datetime import timedelta
 
@@ -1454,9 +1491,7 @@ class TestReleaseOrphanedLease:
         from frob.tickets._leases import _lease_path, leases_dir, release_orphaned_lease
 
         ghost = repo.parent / "nowhere" / "nested" / "gone"
-        _write_lease(
-            repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat()
-        )
+        _write_lease(repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat())
         leases_root = leases_dir(repo).danger_ok
         lease_file = _lease_path(leases_root, "T-9001")
         assert lease_file.exists()
@@ -1652,9 +1687,7 @@ class TestWorktreeReleaseLeaseCli:
         from frob.tickets._leases import _lease_path, leases_dir
 
         ghost = repo.parent / "nowhere" / "nested" / "gone"
-        _write_lease(
-            repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat()
-        )
+        _write_lease(repo, "T-9001", ghost, recorded_at=datetime.now(UTC).isoformat())
         leases_root = leases_dir(repo).danger_ok
         lease_file = _lease_path(leases_root, "T-9001")
 
@@ -1742,6 +1775,81 @@ class TestNewDropFailAutoCommit:
                 ticket_no_commit=True,
             )
         )
+
+        status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
+        )
+        assert status.stdout.strip() != ""
+
+    # frob:ticket T-1891
+    def test_new_without_no_commit_never_warns_dirty(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewDropFailAutoCommit.test_new_without_no_commit_never_warns_dirty  # noqa: E501
+        """T-1891: reproduces the 2026-08-09 coordinator incident directly
+        -- plain `frob ticket new` (no `--no-commit` anywhere) must never
+        print 'left DIRTY by --no-commit', because it always commits for
+        real. The warning used to fire from `new_ticket`'s OWN internal
+        batching call (`no_commit=True`, purely to defer the commit to
+        `_new`'s outer call a few lines later in the SAME command), which
+        is genuinely dirty at that instant but never left that way."""
+        import logging
+
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitkeep").write_text("")
+        _commit_all(main_repo, "init")
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            ticket_run(
+                AppConfig(
+                    ticket_command="new",
+                    ticket_path=main_repo,
+                    ticket_title="a new ticket",
+                    ticket_kind="bug",
+                )
+            )
+        warnings = [
+            r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
+        ]
+        assert not any("left DIRTY by --no-commit" in w for w in warnings)
+
+        # And the ledger really was committed -- the warning would have
+        # been actively wrong, not just noisy.
+        status = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
+        )
+        assert status.stdout.strip() == ""
+
+    # frob:ticket T-1891
+    def test_new_with_no_commit_still_warns_dirty(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestNewDropFailAutoCommit.test_new_with_no_commit_still_warns_dirty  # noqa: E501
+        """T-1891's other direction: a GENUINE `frob ticket new --no-commit`
+        that really does leave the ledger dirty must still warn -- the fix
+        narrows the condition, it does not silence it."""
+        import logging
+
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitkeep").write_text("")
+        _commit_all(main_repo, "init")
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            ticket_run(
+                AppConfig(
+                    ticket_command="new",
+                    ticket_path=main_repo,
+                    ticket_title="a new ticket",
+                    ticket_kind="bug",
+                    ticket_no_commit=True,
+                )
+            )
+        warnings = [
+            r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
+        ]
+        assert any("left DIRTY by --no-commit" in w for w in warnings)
 
         status = _run(
             ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo

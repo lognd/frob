@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.422.0] - unreleased
+
+- T-1891: frob ticket new prints a DirtyMain --no-commit warning even when it DID commit the ledger
+
 ## [0.421.0] - unreleased
 
 - T-1867: Wire frob ticket anchor CLI + doable-output disclosure (T-1856 follow-up)

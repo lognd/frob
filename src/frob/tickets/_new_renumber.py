@@ -307,14 +307,38 @@ def _allocate_and_write_new_ticket(
 
 
 # frob:ticket T-1813
-def _commit_new_ticket(root: Path, ticket: Ticket, no_commit: bool) -> None:
+# frob:ticket T-1891
+def _commit_new_ticket(
+    root: Path, ticket: Ticket, no_commit: bool, *, warn_if_dirty: bool = True
+) -> None:
     """`new_ticket`'s post-write ledger-commit step, split out to keep
     that function under ARCH001's line threshold (T-1813). A commit
     failure here is logged but never turns a successful ticket creation
     into an `Err` -- the ticket is already durably written by the time
     this runs; degrading to "created, but the ledger is dirty and logged
     as such" is strictly better than losing the created ticket over a
-    commit failure."""
+    commit failure.
+
+    T-1891: `warn_if_dirty` (threaded straight from `new_ticket`'s own
+    same-named parameter) lets an INTERNAL CALLER that passes `no_commit
+    =True` purely to BATCH this write into a real commit it issues
+    itself moments later in the SAME operation
+    (`frob.app.ticket_runner._new._new`, `frob.app.ticket_runner.
+    _rapid_sweep._file_regression_ticket` -- both call `new_ticket(...,
+    no_commit=True, warn_if_dirty=False)` and immediately follow with
+    their OWN unconditional `commit_ticket_ledger_change` call, which is
+    where a real end-user `--no-commit` flag, if any, is actually
+    threaded through and warns correctly) suppress the misleading warning
+    here. Confirmed live 2026-08-09: a coordinator ran plain `frob ticket
+    new` (no `--no-commit` anywhere) and still saw 'left DIRTY by
+    --no-commit' from THIS call, even though the ledger was committed for
+    real moments later by `_new`'s own outer call -- true about
+    dirtiness at this instant, false about the outcome. Left at its
+    default `True` for a caller that invokes `new_ticket` DIRECTLY as a
+    library function with a genuine `no_commit=True` (no follow-up commit
+    of its own) -- that caller's tree really is left dirty, and must
+    still be warned (`TestNewTicketProgrammaticAutoCommit.test_no_
+    commit_leaves_ledger_dirty_and_warns`, T-1758's own precedent)."""
     from frob.tickets._leases import commit_ticket_ledger_change
 
     committed = commit_ticket_ledger_change(
@@ -322,6 +346,7 @@ def _commit_new_ticket(root: Path, ticket: Ticket, no_commit: bool) -> None:
         ticket.id,
         f"chore(tickets): file {ticket.id}",
         no_commit=no_commit,
+        warn_if_dirty=warn_if_dirty,
     )
     if committed.is_err:
         _log.error(
@@ -352,6 +377,7 @@ def new_ticket(
     collected: frozenset[str] | None = None,
     *,
     no_commit: bool = False,
+    warn_if_dirty: bool = True,
 ) -> Result[Ticket, TicketError]:
     """Allocate the next sequential id and upsert the ticket into the store.
 
@@ -392,6 +418,16 @@ def new_ticket(
     better than losing the created ticket over a commit failure, the
     same posture `_commit_regression_ticket`'s now-redundant wrapper
     already established for this exact call site.
+
+    T-1891: `warn_if_dirty=False` is the escape hatch for a caller that
+    passes `no_commit=True` purely to BATCH this write into a real commit
+    IT issues itself moments later in the same operation (`frob.app.
+    ticket_runner._new._new`, `frob.app.ticket_runner._rapid_sweep.
+    _file_regression_ticket`) -- suppresses only the WARNING above, never
+    the underlying skip-the-commit behavior. Left at its default `True`
+    for every other caller (a genuine programmatic `no_commit=True` with
+    no follow-up commit of its own must still be warned, since its tree
+    really is left dirty).
 
     Any `spec.evidence` entries are schema-validated (validate_evidence)
     before the ticket is ever built, so a malformed entry cannot land via
@@ -439,7 +475,7 @@ def new_ticket(
     if written.is_err:
         return Err(written.danger_err)
     ticket = written.danger_ok
-    _commit_new_ticket(root, ticket, no_commit)
+    _commit_new_ticket(root, ticket, no_commit, warn_if_dirty=warn_if_dirty)
     return Ok(ticket)
 
 
@@ -600,8 +636,7 @@ def _log_bulk_renumber_preview(mapping: dict[str, str], *, dry_run: bool) -> int
     moved = [(old, new) for old, new in mapping.items() if old != new]
     verb = "would renumber" if dry_run else "about to renumber"
     _log.warning(
-        "tickets: bulk renumber -- %s %d ticket id(s) (whole-ledger form, "
-        "T-1882)",
+        "tickets: bulk renumber -- %s %d ticket id(s) (whole-ledger form, T-1882)",
         verb,
         len(moved),
     )

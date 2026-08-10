@@ -98,6 +98,24 @@
       "old_digest": null,
       "reason": "T-1893: documented the N=1 floor and the T-1579/T-1592 unconditional-refusal history in docs/modules/gates.md",
       "ref": "src/frob/gates/_fix_engine_sync.py::_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "body",
+      "new_digest": "1bf504dc206c40291f8bf1c03e3d44a897007d181daa1dfdef231fdbc0f67519",
+      "old_digest": null,
+      "reason": "T-1891 only threads warn_if_dirty=False into the existing new_ticket(no_commit=True) call so the misleading no-commit warning is suppressed for this internal batching write -- no change to the symbolic-attribution/regression-ticket-filing behavior docs/modules/tickets.md#symbolic-attribution-t-1690 documents; the following commit_ticket_ledger_change(root, regression_id, message) call is untouched",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-09",
+      "facet": "sig",
+      "new_digest": "eb316f5abf5c291d4a575be9b2dbc868729350319d64f6a867e707ef5b3add3c",
+      "old_digest": null,
+      "reason": "T-1891 only threads warn_if_dirty=False into the existing new_ticket(no_commit=True) call so the misleading no-commit warning is suppressed for this internal batching write -- no change to the symbolic-attribution/regression-ticket-filing behavior docs/modules/tickets.md#symbolic-attribution-t-1690 documents; the following commit_ticket_ledger_change(root, regression_id, message) call is untouched",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     }
   ],
   "entries": [
@@ -135,6 +153,16 @@
       "digest": "f8508e0b6a3e1655ccb7d0c7b443639f2171f042bd8e5d11b76755e9a9f16534",
       "facet": "sig",
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
+    },
+    {
+      "digest": "1bf504dc206c40291f8bf1c03e3d44a897007d181daa1dfdef231fdbc0f67519",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "digest": "eb316f5abf5c291d4a575be9b2dbc868729350319d64f6a867e707ef5b3add3c",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },
     {
       "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",

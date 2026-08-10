@@ -1904,7 +1904,7 @@
     "src/frob/tickets/_leases.py::WorktreeInUseError": "659c71269312afe4633dd1e5076998ee4b602b737f8182c90e46beff29f3de97",
     "src/frob/tickets/_leases.py::commit_full_ledger_change": "62bd3e9690f9a1e6ef0ee36247e1f08da8395ff38ee06bb0f8f1bc688bc4b523",
     "src/frob/tickets/_leases.py::commit_start_transition": "83e5fb84b2503da6ea560f64fdb89fed5dca305a77e721a43918a132cbb38ec3",
-    "src/frob/tickets/_leases.py::commit_ticket_ledger_change": "bc90fb756e1350ef2f155e596b767641cefde5d539857b750dfa06ca12f8c499",
+    "src/frob/tickets/_leases.py::commit_ticket_ledger_change": "5b7bd508585e233bb0fc4dcffae2b599f7023fd136095c27c54aa644f878954d",
     "src/frob/tickets/_leases.py::force_release_lease": "b79d852bc4e995679adafbbe1924dad6aad6d4685287f00016fe6b7e10bc0883",
     "src/frob/tickets/_leases.py::is_lease_ttl_expired": "1b9f81c0b64bacc8a963fcb9483a912a457b9f617de6997d9be863aad140f668",
     "src/frob/tickets/_leases.py::lease_age_seconds": "19b8a74d675eda0555ce3f5e7b8e11e696667099b7c81a3fbc113931527aee16",
@@ -1997,7 +1997,7 @@
     "src/frob/tickets/_new_gate_rule_acceptance.py::GateRuleRegistryUnresolvable": "201cb518e8a73a7d8a5156214bd3341950f64115f15d5d977df771d2fc2ea2a3",
     "src/frob/tickets/_new_gate_rule_acceptance.py::missing_acceptance_for_new_rules": "cb259847521c252e7f378e97e5cb9a7f7f7a409ca05362bc852f0819a5524547",
     "src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids": "b9b2cf216486574b4fa8492c748ee79f27aeb16cafe6341621cedccaffd7667d",
-    "src/frob/tickets/_new_renumber.py::new_ticket": "bed6536429528debde303d89bcce8ac0f54f5a9e5f4843b72331ba931008a293",
+    "src/frob/tickets/_new_renumber.py::new_ticket": "ce75740a13b47d8b618561742bffb0d4384aa8f9a81a5060b29b193a86972850",
     "src/frob/tickets/_new_renumber.py::renumber": "7b9fd4ce26b4aefc0dfbec9bcf1cc594f139a5e4676b2971807c766fd797080a",
     "src/frob/tickets/_new_renumber.py::renumber_one": "d67ae5ee6db0b02afea17c18b7793342d8b99a197bef31c4c1ce739a8277c3c4",
     "src/frob/tickets/_profile.py::ProfileError": "ea192cd8a94214a2359fab2ebbb9eb9398d7305612f71242791ad94a2389201b",
@@ -2207,5 +2207,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.421.0"
+  "version": "0.422.0"
 }

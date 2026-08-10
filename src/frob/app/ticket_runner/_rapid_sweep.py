@@ -435,9 +435,7 @@ _NATIVE_EXTENSION_ADJACENT_RULE_IDS = frozenset({"unresolved-import"})
 
 # frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1847
-def _warm_tree_clears_unattributed_native_noise(
-    root: Path, rule: str, attr
-) -> bool:  # noqa: ANN001 -- Attribution | None, deferred-import type
+def _warm_tree_clears_unattributed_native_noise(root: Path, rule: str, attr) -> bool:  # noqa: ANN001 -- Attribution | None, deferred-import type
     """T-1847: `True` when `(rule, attr)` matches the cold-worktree
     native-extension-noise shape (UNATTRIBUTED, rule in
     `_NATIVE_EXTENSION_ADJACENT_RULE_IDS`) AND a re-check RIGHT NOW shows
@@ -561,9 +559,7 @@ def _raise_quarantine_for_red_batch(
         return
 
     batch_commit_shas = tuple(e.commit_sha for e in queue.danger_ok)
-    findings = _quarantined_findings_from_attributions(
-        quarantine_pairs, attributions
-    )
+    findings = _quarantined_findings_from_attributions(quarantine_pairs, attributions)
     raised = raise_quarantine(
         root, batch_commit_shas=batch_commit_shas, findings=findings
     )
@@ -715,7 +711,12 @@ def _file_regression_ticket(
     # below still lands, carrying the more informative message naming
     # BOTH the regression ticket id and the land it regressed from,
     # rather than new_ticket's own generic "file T-####" commit.
-    created = new_ticket(root, spec, no_commit=True)
+    # T-1891: warn_if_dirty=False too -- _commit_regression_ticket below
+    # always attempts its own commit for the same pathspecs (retried on
+    # a transient land-in-progress conflict, T-1841), so a dirty ledger
+    # HERE is never the final, left-behind state a --no-commit warning
+    # would correctly describe.
+    created = new_ticket(root, spec, no_commit=True, warn_if_dirty=False)
     if created.is_err:
         _log.error(
             "rapid sweep: %s introduced %d new error(s) but the regression "

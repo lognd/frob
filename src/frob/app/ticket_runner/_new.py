@@ -179,7 +179,13 @@ def _new(root: Path, cfg: AppConfig) -> None:
     # here (no_commit=True) so THIS verb's own commit below still captures
     # the whole filed block (title/scope/body plus any --evidence ids
     # applied right after), not just the bare ticket in a separate commit.
-    result = new_ticket(root, spec, no_commit=True)
+    # T-1891: warn_if_dirty=False too -- this call is always followed,
+    # unconditionally, by this same function's own commit_ticket_ledger_
+    # change call below, so the ledger being dirty HERE is never the
+    # final outcome; warning about it as if --no-commit left it that way
+    # is actively misleading (confirmed live: a plain `frob ticket new`,
+    # no --no-commit anywhere, still printed that warning).
+    result = new_ticket(root, spec, no_commit=True, warn_if_dirty=False)
     if result.is_err:
         _log.error("ticket new failed: %s", result.danger_err)
         sys.exit(1)

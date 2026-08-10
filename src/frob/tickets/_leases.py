@@ -615,9 +615,10 @@ def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     if queue.is_ok and record.ticket_id not in queue.danger_ok.tickets:
         return "ticket-gone"
 
-    if is_lease_ttl_expired(record) and scan_for_live_worktree_process(
-        Path(record.worktree)
-    ) is None:
+    if (
+        is_lease_ttl_expired(record)
+        and scan_for_live_worktree_process(Path(record.worktree)) is None
+    ):
         return "holder-dead"
 
     return None
@@ -1748,14 +1749,21 @@ def _log_ledger_commit_failure(
 
 # frob:ticket T-1130
 # frob:ticket T-1615
+# frob:ticket T-1891
 # frob:doc docs/modules/tickets.md#newdropfail-auto-commit-t-1130
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commits_dirty_ledger_with_given_message kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_skips_entirely_even_when_dirty kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_warns_when_dirty kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_does_not_warn_when_clean kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_commit_flag_with_warn_if_dirty_false_stays_silent kind="unit"  # noqa: E501
 def commit_ticket_ledger_change(
-    root: Path, ticket_id: str, message: str, *, no_commit: bool = False
+    root: Path,
+    ticket_id: str,
+    message: str,
+    *,
+    no_commit: bool = False,
+    warn_if_dirty: bool = True,
 ) -> Result[None, LeaseError]:
     """Auto-commit `root`'s just-written `tickets.md` change with `message`
     (T-1130, parity with T-1054's `commit_start_transition` for `frob
@@ -1785,9 +1793,33 @@ def commit_ticket_ledger_change(
     empty commit). `Err(LeaseError.CommitFailed)` only when `tickets.md`
     IS dirty and either `git add`/`git commit` itself fails -- callers
     are expected to surface this as a hard `sys.exit(1)`, the same
-    posture `commit_start_transition`'s own callers already have."""
+    posture `commit_start_transition`'s own callers already have.
+
+    T-1891: `warn_if_dirty=False` suppresses ONLY the WARNING above --
+    for an internal caller that passes `no_commit=True` purely to BATCH
+    this write into a real commit it issues itself moments later in the
+    SAME operation (`frob.tickets._new_renumber._commit_new_ticket`,
+    called from `new_ticket` with `no_commit=True` so `frob ticket
+    new`'s own outer `commit_ticket_ledger_change` call -- bound to the
+    REAL `--no-commit` flag the user actually passed -- captures the
+    whole filed block in one commit). Confirmed live on 2026-08-09 (a
+    coordinator ran plain `frob ticket new`, no `--no-commit` anywhere,
+    and still saw 'left DIRTY by --no-commit' even though the ledger WAS
+    committed moments later by that same command): the condition this
+    checked was real dirtiness at THIS call, which is genuinely true for
+    every batching call by construction (the whole point of batching is
+    writing before the real commit) -- the message was not wrong about
+    dirtiness, it was wrong to claim `--no-commit` caused a problem that
+    the very next step in the same command was always going to fix. A
+    caller passing `warn_if_dirty=False` must be certain a real
+    (non-`no_commit`) `commit_ticket_ledger_change`/`_add_and_commit_
+    tickets_md` call covering the SAME pathspecs runs unconditionally
+    right after -- if that later call itself is also `no_commit=True`
+    (the genuine end-user opt-out), IT still warns (default `warn_if_
+    dirty=True`), so the operator is never left without a warning for a
+    tree that is actually, durably left dirty."""
     if no_commit:
-        if _tickets_md_dirty(root, ticket_id):
+        if warn_if_dirty and _tickets_md_dirty(root, ticket_id):
             pathspecs = _ledger_pathspecs(root, ticket_id)
             _log.warning(
                 "tickets: %s ledger change left DIRTY by --no-commit -- "
