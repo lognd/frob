@@ -2,7 +2,7 @@
 id: T-1935
 title: Rapid post-land sweep undercounts new-error identities (T-1923 said 6, measured
   19)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -13,9 +13,48 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/verify
-- docs/modules/tickets.md
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+- tickets/T-1952/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_rapid_sweep*
+  reason: narrowing to the actual rapid-sweep source module; docs/modules/tickets.md
+    collides with T-1720's live lease
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/tickets/_rapid_sweep*
+  reason: wrong path guessed; no such module under src/frob/tickets
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: collides with T-1720's live lease
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: the actual rapid post-land sweep counting logic this ticket investigates
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: the new _true_finding_count_for_identities tests live here
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-1952/ticket.md
+  reason: the follow-up residue ticket T-1935 itself filed for the T-1720-blocked
+    doc re-ack
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_counts_every_diagnostic_matching_an_identity
+- tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_unparsable_json_is_none_not_zero
+- tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_spawn_refused_is_none_not_zero
 designated_repro_test: null
 threat: null
 component: null

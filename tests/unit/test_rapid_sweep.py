@@ -15,6 +15,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _file_regression_ticket,
     _read_baseline,
     _ticket_is_open,
+    _true_finding_count_for_identities,
     _write_baseline,
     run_deferred_post_land_sweep,
     spawn_deferred_post_land_sweep,
@@ -581,6 +582,116 @@ class TestAttributeNewFindings:
         assert result[("RULE1", "a.py")].status == "attributed"
         assert result[("RULE1", "a.py")].commit_sha == "commitA"
         assert result[("RULE2", "nowhere.py")].status == "unattributed"
+
+
+# frob:ticket T-1935
+class TestTrueFindingCount:
+    """`_true_finding_count_for_identities` re-measures the TRUE
+    per-finding count for a set of `(rule, file)` identities -- proving
+    the T-1923 undercount (6 identities reported, 19 real findings) is
+    now recoverable rather than silently lost."""
+
+    # frob:ticket T-1935
+    @staticmethod
+    def _ok_result(stdout: str):
+        from typani import Ok
+
+        class _Proc:
+            def __init__(self, stdout: str) -> None:
+                self.stdout = stdout
+                self.returncode = 1
+
+        return Ok(_Proc(stdout))
+
+    # frob:ticket T-1935
+    def test_counts_every_diagnostic_matching_an_identity(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_counts_every_diagnostic_matching_an_identity  # noqa: E501
+        # T-1923's real shape: 5 files each carrying MULTIPLE COV003
+        # findings (18 total) plus one F401 -- a coarse (rule, file)
+        # identity set has only 6 entries, but the true finding count is
+        # 19. This reproduces that undercount and proves the fix
+        # recovers the real number.
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "COV003", "file": "tickets/T-1872", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1872", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1896", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1896", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
+                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
+                        {"code": "F401", "file": "src/frob/x.py", "severity": "error"},
+                        # A finding NOT in `pairs` below must not be counted.
+                        {"code": "SCOPE001", "file": "other.py", "severity": "error"},
+                    ],
+                }
+            ]
+        }
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result(json.dumps(payload)),
+        )
+        pairs = frozenset(
+            {
+                ("COV003", "tickets/T-1872"),
+                ("COV003", "tickets/T-1895"),
+                ("COV003", "tickets/T-1896"),
+                ("COV003", "tickets/T-1900"),
+                ("COV003", "tickets/T-1906"),
+                ("F401", "src/frob/x.py"),
+            }
+        )
+        assert len(pairs) == 6
+        count = _true_finding_count_for_identities(tmp_path, pairs)
+        assert count == 19
+
+    # frob:ticket T-1935
+    def test_unparsable_json_is_none_not_zero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_unparsable_json_is_none_not_zero  # noqa: E501
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result("not json at all"),
+        )
+        assert (
+            _true_finding_count_for_identities(tmp_path, frozenset({("R", "f.py")}))
+            is None
+        )
+
+    # frob:ticket T-1935
+    def test_spawn_refused_is_none_not_zero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_spawn_refused_is_none_not_zero  # noqa: E501
+        from typani import Err
+
+        from frob.process._guard import ProcessGuardError
+
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: Err(ProcessGuardError.ExecDisabled),
+        )
+        assert (
+            _true_finding_count_for_identities(tmp_path, frozenset({("R", "f.py")}))
+            is None
+        )
 
 
 # frob:ticket T-1791

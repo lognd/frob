@@ -37,7 +37,29 @@ The baseline is rewritten to the freshly measured set on EVERY sweep,
 including a red one. Errors that have already been filed as a ticket must
 not be re-filed by the next land; the filed ticket is the record from
 then on.
-"""
+
+T-1935: the baseline/attribution/quarantine machinery below all operate
+on `(rule_id, file)` IDENTITIES (via `_land_cmd._unscoped_error_
+findings`, which itself dedupes on `(rule, file)` -- see `frob.app.
+ticket_runner._verify._parse_error_findings_from_json`'s own docstring),
+never on raw per-finding counts. This is deliberate for attribution and
+quarantine (both reason about "which files/rules went red", not
+individual diagnostics) and stays that way here (widening the identity
+itself would need changes inside `_land_cmd.py`/`_verify.py`'s shared
+parsers, both under another agent's live lease at the time of this fix,
+T-1720/T-1929). What changes here instead: a filed regression ticket's
+own "N new identit(ies)" count can be smaller than the true number of
+distinct findings when several findings share one `(rule, file)` pair --
+confirmed live, T-1923's sweep reported 6 identities for a commit whose
+real unscoped `frob check` found 19 distinct findings (18 COV003 across 5
+files collapsed to 5 identities, plus 1 F401) -- so `_file_regression_
+ticket` (a) labels its own headline count "(rule, file) identit(ies)",
+never "error(s)", and (b) pays for ONE extra, independent `frob check
+--json` spawn (`_true_finding_count_for_identities`) ONLY on this rare
+red-batch path (a clean sweep never reaches it, so the common-case "one
+check per land" design goal above is unaffected) to report the TRUE
+per-finding count alongside the identity count, rather than let the
+identity count alone be misread as a completeness claim."""
 
 from __future__ import annotations
 
@@ -66,6 +88,15 @@ _BASELINE_REL = Path(".frob") / "rapid-sweep-baseline.json"
 #: Detached-child stdout/stderr, one file per swept ticket, so a sweep
 #: that dies (OOM, reboot) leaves its partial output behind to read.
 _LOG_DIR_REL = Path(".frob") / "rapid-sweep"
+
+#: T-1935: the check budget (seconds) `_true_finding_count_for_identities`
+#: passes to its own independent `frob check --budget --json` re-measure.
+#: Deliberately the SAME value as `_land_cmd._POST_LAND_SWEEP_BUDGET_S`
+#: (300) rather than an import of it -- `_land_cmd.py` is under another
+#: agent's live lease at the time of this fix (T-1720), so this is a
+#: literal duplicate of one constant, not a shared import; keep the two
+#: values in sync by hand if either changes.
+_TRUE_COUNT_BUDGET_S = 300
 
 
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
@@ -604,9 +635,123 @@ def _quarantined_findings_from_attributions(
     return tuple(findings)
 
 
+# frob:ticket T-1935
+def _spawn_true_count_check(root: Path, budget: int):  # noqa: ANN201 -- Result[CompletedProcess, ...] | None sentinel via caller, deferred import
+    """T-1935: spawn the independent `frob check --budget --json`
+    `_true_finding_count_for_identities` needs (ARCH001 split of that
+    function). Returns the spawned `subprocess.CompletedProcess` on
+    success, or `None` on any of the three unmeasurable outcomes (timeout,
+    spawn refused, decode failure) -- each already logged here at WARNING
+    with the specific reason, so the caller only has to check for `None`
+    and degrade."""
+    import subprocess as _subprocess
+
+    from frob.app.ticket_runner._verify import _python_for_tree
+    from frob.process._guard import guarded_subprocess_run
+
+    try:
+        guarded = guarded_subprocess_run(
+            [
+                _python_for_tree(root),
+                "-m",
+                "frob",
+                "check",
+                "--budget",
+                str(budget),
+                "--json",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=budget + 60,
+            check=False,
+        )
+    except _subprocess.TimeoutExpired:
+        _log.warning(
+            "rapid sweep: T-1935 true-finding-count re-measure timed out "
+            "after %ds -- reporting the identity count alone",
+            budget + 60,
+        )
+        return None
+    if guarded.is_err:
+        _log.warning(
+            "rapid sweep: T-1935 true-finding-count re-measure spawn "
+            "refused (%s) -- reporting the identity count alone",
+            guarded.danger_err,
+        )
+        return None
+    return guarded.danger_ok
+
+
+# frob:ticket T-1935
+# frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_counts_every_diagnostic_matching_an_identity  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_unparsable_json_is_none_not_zero  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_spawn_refused_is_none_not_zero  # noqa: E501
+def _true_finding_count_for_identities(
+    root: Path, pairs: frozenset[tuple[str, str]], budget: int = _TRUE_COUNT_BUDGET_S
+) -> int | None:
+    """T-1935: the TRUE per-finding count restricted to `pairs` -- as
+    opposed to `len(pairs)`, which is only ever a count of DISTINCT
+    `(rule, file)` IDENTITIES, never a raw finding count (this module's
+    docstring). Spawns its own independent `frob check --budget --json`
+    (`_spawn_true_count_check`) and counts every `severity == "error"`
+    diagnostic whose `(code, file)` is in `pairs`, WITHOUT deduping by
+    identity -- so several findings sharing one `(rule, file)` pair are
+    each counted, unlike `_land_cmd._unscoped_error_findings`'s own
+    identity set.
+
+    Returns `None` (never a wrong number) when unmeasurable: spawn
+    refused, a timeout, or output that does not decode as a `frob check
+    --json` payload (including a `--budget`-truncated run that deferred a
+    stage group -- `_parse_check_json` alone cannot detect that case, so
+    an unparsable/budget-truncated `results` list is treated the same as
+    "could not measure"). The caller degrades gracefully to reporting the
+    identity count alone when this returns `None`.
+
+    Deliberately a SECOND check spawn, paid only by
+    `_file_regression_ticket`'s red-batch path (a clean sweep never calls
+    this) -- see the module docstring for why that does not reopen T-
+    1684's "one check per land" cost concern."""
+    from frob.app.ticket_runner._verify import _parse_check_json
+
+    proc = _spawn_true_count_check(root, budget)
+    if proc is None:
+        return None
+    data = _parse_check_json(proc.stdout)
+    if data is None:
+        _log.warning(
+            "rapid sweep: T-1935 true-finding-count re-measure produced "
+            "unparsable output -- reporting the identity count alone"
+        )
+        return None
+    results = data.get("results")
+    if not isinstance(results, list):
+        return None
+    count = 0
+    for r in results:
+        if not isinstance(r, dict):
+            continue
+        for d in r.get("diagnostics", ()):
+            if not isinstance(d, dict) or d.get("severity") != "error":
+                continue
+            if (d.get("code") or "", d.get("file") or "") in pairs:
+                count += 1
+    return count
+
+
 # frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:ticket T-1791
+# frob:waive AFFECT001 reason="T-1935 changed this function's own count/ wording logic \
+# only, not its (rule, file) attribution/filing behavior the affects()-closure doc \
+# docs/modules/tickets.md#symbolic-attribution-t-1690 describes; \
+# docs/modules/tickets.md is under T-1720's live lease at the time of this fix and \
+# cannot be edited here -- filed as follow-up residue"
+# frob:waive DRIFT001 reason="same T-1720 live-lease block as the AFFECT001 waiver \
+# directly above -- docs/modules/tickets.md cannot be acked here; the underlying \
+# attribution/filing behavior this doc describes is unchanged by T-1935, only the \
+# reported count/wording, so the doc's own content is still accurate -- filed as \
+# follow-up residue to re-ack once the lease frees"
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_closed_ticket_is_refiled  # noqa: E501
@@ -670,12 +815,40 @@ def _file_regression_ticket(
         return None
 
     rules = sorted({rule for rule, _ in unfiled_pairs})
+    true_count = _true_finding_count_for_identities(root, frozenset(unfiled_pairs))
+    if true_count is None:
+        count_line = (
+            "T-1935: this is a count of DISTINCT (rule, file) IDENTITIES, "
+            "not a raw finding count -- every finding sharing a (rule, "
+            "file) pair collapses into ONE identity here (deliberately, "
+            "so attribution and quarantine reason about \"which files "
+            "went red\", not individual diagnostics). The true per-"
+            "finding count could not be independently re-measured this "
+            "run (spawn refused/timeout/unparsable) -- re-run `frob "
+            "check` unscoped against the file(s) below for the exact "
+            "count before treating this identity count as a "
+            "completeness claim."
+        )
+    else:
+        count_line = (
+            f"T-1935: this is a count of DISTINCT (rule, file) IDENTITIES "
+            f"({len(unfiled_pairs)}), not a raw finding count -- every "
+            "finding sharing a (rule, file) pair collapses into ONE "
+            "identity here (deliberately, so attribution and quarantine "
+            'reason about "which files went red", not individual '
+            f"diagnostics). An independent re-measurement found "
+            f"{true_count} actual finding(s) across those "
+            f"{len(unfiled_pairs)} identit(ies)."
+        )
     body_lines = [
         f"The deferred post-land unscoped sweep (T-1684) for {final_id} at "
-        f"commit {commit_sha} found {len(pairs)} error identit(ies) that "
-        "were not present in the previous sweep's baseline.",
+        f"commit {commit_sha} found {len(pairs)} new (rule, file) "
+        "identit(ies) that were not present in the previous sweep's "
+        "baseline.",
         "",
-        "New (rule, file) pairs filed here:",
+        count_line,
+        "",
+        "New (rule, file) identit(ies) filed here:",
         "",
         *(f"- {rule}  {file}" for rule, file in unfiled_pairs),
     ]
@@ -695,10 +868,16 @@ def _file_regression_ticket(
         "baseline simply had not recorded yet -- close this ticket with "
         "that finding stated explicitly.",
     ]
+    title_count = (
+        f"{len(unfiled_pairs)} new (rule, file) identit(ies)"
+        if true_count is None
+        else f"{len(unfiled_pairs)} new (rule, file) identit(ies), "
+        f"{true_count} finding(s)"
+    )
     spec = TicketSpec(
         title=(
-            f"post-land sweep regression from {final_id}: "
-            f"{len(unfiled_pairs)} new error(s) ({', '.join(rules[:4])})"
+            f"post-land sweep regression from {final_id}: {title_count} "
+            f"({', '.join(rules[:4])})"
         ),
         kind=TicketKind.BUG,
         origin=Origin.AGENT,
@@ -884,6 +1063,10 @@ def _commit_regression_ticket(
 
 
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:waive AFFECT001 reason="T-1935 changed only this function's own log-line \
+# wording (identity vs finding count caveat), not the deferred-sweep-mechanism doc \
+# (see the frob:doc target directly above); that doc is under T-1720's live lease at \
+# the time of this fix and cannot be edited here -- filed as follow-up residue"
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
 # frob:tests \
@@ -946,9 +1129,11 @@ def run_deferred_post_land_sweep(
 
     filed = _file_regression_ticket(root, final_id, commit_sha, new_findings)
     _log.error(
-        "rapid sweep: %s deferred unscoped sweep found %d NEW error(s) at "
-        "%s -- filed as %s (the commit stands; rapid never reverts "
-        "published history)",
+        "rapid sweep: %s deferred unscoped sweep found %d NEW (rule, "
+        "file) identit(ies) at %s -- filed as %s (the commit stands; "
+        "rapid never reverts published history; T-1935: this is a "
+        "distinct-identity count, not a raw per-finding count -- see "
+        "the filed ticket's body for the caveat)",
         final_id,
         len(new_findings),
         commit_sha[:12],
