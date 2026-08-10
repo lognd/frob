@@ -12,6 +12,7 @@ from frob.app.ticket_runner import _rapid_sweep
 from frob.app.ticket_runner._rapid_sweep import (
     RapidSweepError,
     _attribute_new_findings,
+    _build_regression_body,
     _close_resolved_sweep_tickets,
     _file_regression_ticket,
     _identities_still_reproducing,
@@ -19,6 +20,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _parse_sweep_ticket_identities,
     _read_baseline,
     _read_baseline_commit,
+    _regression_count_line,
     _resolve_actual_head,
     _ticket_is_open,
     _true_finding_count_for_identities,
@@ -1313,6 +1315,66 @@ class TestRevalidateDispatchableSweepTickets:
         requeried = load_queue(tmp_path)
         assert requeried.is_ok
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.QUEUED
+
+
+# frob:ticket T-2077
+class TestRegressionCountLine:
+    """T-2058 (ARCH001 split of `_file_regression_ticket`): the T-1935
+    identity-vs-finding-count caveat line."""
+
+    # frob:ticket T-2077
+    def test_true_count_known(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRegressionCountLine.test_true_count_known  # noqa: E501
+        line = _regression_count_line([("RULE1", "a.py"), ("RULE2", "b.py")], 5)
+        assert "2 identit" in line
+        assert "5 actual finding" in line
+
+    # frob:ticket T-2077
+    def test_true_count_unmeasurable(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRegressionCountLine.test_true_count_unmeasurable  # noqa: E501
+        line = _regression_count_line([("RULE1", "a.py")], None)
+        assert "could not be independently re-measured" in line
+        assert "5 actual finding" not in line
+
+
+# frob:ticket T-2077
+class TestBuildRegressionBody:
+    """T-2058 (ARCH001 split of `_file_regression_ticket`): body assembly
+    -- the T-2009 multi-land block and the T-1690 attribution block are
+    each appended only when their own inputs are non-empty."""
+
+    # frob:ticket T-2077
+    def test_no_attribution_lines_no_multi_land(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBuildRegressionBody.test_no_attribution_lines_no_multi_land  # noqa: E501
+        body = _build_regression_body(
+            attribution_label="T-9000",
+            commit_sha="deadbeef",
+            pairs=[("RULE1", "a.py")],
+            unfiled_pairs=[("RULE1", "a.py")],
+            count_line="count line here",
+            attributed_ids=None,
+            attribution_lines=(),
+        )
+        assert "T-9000" in body
+        assert "RULE1  a.py" in body
+        assert "T-2009" not in body
+        assert "Attribution (T-1690" not in body
+
+    # frob:ticket T-2077
+    def test_multi_land_and_attribution_lines_both_appended(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBuildRegressionBody.test_multi_land_and_attribution_lines_both_appended  # noqa: E501
+        body = _build_regression_body(
+            attribution_label="T-9000, T-9001",
+            commit_sha="deadbeef",
+            pairs=[("RULE1", "a.py")],
+            unfiled_pairs=[("RULE1", "a.py")],
+            count_line="count line here",
+            attributed_ids=["T-9000", "T-9001"],
+            attribution_lines=["- RULE1 a.py: unattributed"],
+        )
+        assert "T-2009: 2 lands (T-9000, T-9001)" in body
+        assert "Attribution (T-1690" in body
+        assert "- RULE1 a.py: unattributed" in body
 
 
 # frob:ticket T-1791

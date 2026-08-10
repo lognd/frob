@@ -978,9 +978,113 @@ def _identities_still_reproducing(
     return frozenset((d.get("code") or "", d.get("file") or "") for d in matched)
 
 
+# frob:ticket T-2077
+# frob:tests tests/unit/test_rapid_sweep.py::TestRegressionCountLine.test_true_count_known  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRegressionCountLine.test_true_count_unmeasurable  # noqa: E501
+def _regression_count_line(
+    unfiled_pairs: Sequence[tuple[str, str]], true_count: int | None
+) -> str:
+    """T-2058 (ARCH001 split of `_file_regression_ticket`): the T-1935
+    identity-vs-finding-count caveat line for a filed regression ticket's
+    body -- names the distinct-identity count always, and the
+    independently re-measured true finding count only when that
+    re-measurement itself succeeded (`None` means unmeasurable this run,
+    never "zero")."""
+    if true_count is None:
+        return (
+            "T-1935: this is a count of DISTINCT (rule, file) IDENTITIES, "
+            "not a raw finding count -- every finding sharing a (rule, "
+            "file) pair collapses into ONE identity here (deliberately, "
+            'so attribution and quarantine reason about "which files '
+            'went red", not individual diagnostics). The true per-'
+            "finding count could not be independently re-measured this "
+            "run (spawn refused/timeout/unparsable) -- re-run `frob "
+            "check` unscoped against the file(s) below for the exact "
+            "count before treating this identity count as a "
+            "completeness claim."
+        )
+    return (
+        f"T-1935: this is a count of DISTINCT (rule, file) IDENTITIES "
+        f"({len(unfiled_pairs)}), not a raw finding count -- every "
+        "finding sharing a (rule, file) pair collapses into ONE "
+        "identity here (deliberately, so attribution and quarantine "
+        'reason about "which files went red", not individual '
+        f"diagnostics). An independent re-measurement found "
+        f"{true_count} actual finding(s) across those "
+        f"{len(unfiled_pairs)} identit(ies)."
+    )
+
+
+# frob:ticket T-2077
+# frob:tests tests/unit/test_rapid_sweep.py::TestBuildRegressionBody.test_no_attribution_lines_no_multi_land  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestBuildRegressionBody.test_multi_land_and_attribution_lines_both_appended  # noqa: E501
+def _build_regression_body(
+    *,
+    attribution_label: str,
+    commit_sha: str,
+    pairs: Sequence[tuple[str, str]],
+    unfiled_pairs: Sequence[tuple[str, str]],
+    count_line: str,
+    attributed_ids: Sequence[str] | None,
+    attribution_lines: Sequence[str],
+) -> str:
+    """T-2058 (ARCH001 split of `_file_regression_ticket`): assemble the
+    filed regression ticket's full body -- the T-1684 preamble, the
+    T-1935 count caveat, every `(rule, file)` identity, the T-2009
+    multi-land disclosure (only when more than one land landed in the
+    measured window), the T-1690 attribution audit trail (only when one
+    was computable), and the standing rapid-profile closing note.
+    Behavior-identical to the body this replaces -- only the assembly is
+    now named and testable on its own."""
+    body_lines = [
+        f"The deferred post-land unscoped sweep (T-1684) for {attribution_label} "
+        f"at commit {commit_sha} found {len(pairs)} new (rule, file) "
+        "identit(ies) that were not present in the previous sweep's "
+        "baseline.",
+        "",
+        count_line,
+        "",
+        _REGRESSION_IDENTITY_HEADING,
+        "",
+        *(f"- {rule}  {file}" for rule, file in unfiled_pairs),
+    ]
+    if attributed_ids and len(attributed_ids) > 1:
+        body_lines += [
+            "",
+            f"T-2009: {len(attributed_ids)} lands ({', '.join(attributed_ids)}) "
+            "landed between the previous sweep's baseline and the commit "
+            "THIS sweep actually measured (the sweep is deliberately "
+            "detached, off the land critical path -- T-1684 -- so other "
+            "agents' lands can land in the window before it runs). Which "
+            "specific land introduced which finding below could not be "
+            "determined without re-measuring at each intermediate commit; "
+            "this ticket is filed against all of them rather than "
+            f"falsely pinned on {attribution_label} alone (the one that "
+            "happened to spawn this sweep process).",
+        ]
+    if attribution_lines:
+        body_lines += [
+            "",
+            "Attribution (T-1690, symbolic reachability over the verify "
+            "queue's touched-symbol sets):",
+            "",
+            *attribution_lines,
+        ]
+    body_lines += [
+        "",
+        "Under the rapid profile the sweep runs detached and files this "
+        "ticket rather than reverting an already-published commit. Fix the "
+        "errors, or -- if they are pre-existing residue the rolling "
+        "baseline simply had not recorded yet -- close this ticket with "
+        "that finding stated explicitly.",
+    ]
+    return "\n".join(body_lines)
+
+
 # frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:ticket T-1791
+# frob:ticket T-2077
 # frob:waive AFFECT001 reason="T-1935 changed this function's own count/ wording logic \
 # only, not its (rule, file) attribution/filing behavior the affects()-closure doc \
 # docs/modules/tickets.md#symbolic-attribution-t-1690 describes; \
@@ -1072,72 +1176,16 @@ def _file_regression_ticket(
 
     rules = sorted({rule for rule, _ in unfiled_pairs})
     true_count = _true_finding_count_for_identities(root, frozenset(unfiled_pairs))
-    if true_count is None:
-        count_line = (
-            "T-1935: this is a count of DISTINCT (rule, file) IDENTITIES, "
-            "not a raw finding count -- every finding sharing a (rule, "
-            "file) pair collapses into ONE identity here (deliberately, "
-            'so attribution and quarantine reason about "which files '
-            'went red", not individual diagnostics). The true per-'
-            "finding count could not be independently re-measured this "
-            "run (spawn refused/timeout/unparsable) -- re-run `frob "
-            "check` unscoped against the file(s) below for the exact "
-            "count before treating this identity count as a "
-            "completeness claim."
-        )
-    else:
-        count_line = (
-            f"T-1935: this is a count of DISTINCT (rule, file) IDENTITIES "
-            f"({len(unfiled_pairs)}), not a raw finding count -- every "
-            "finding sharing a (rule, file) pair collapses into ONE "
-            "identity here (deliberately, so attribution and quarantine "
-            'reason about "which files went red", not individual '
-            f"diagnostics). An independent re-measurement found "
-            f"{true_count} actual finding(s) across those "
-            f"{len(unfiled_pairs)} identit(ies)."
-        )
-    body_lines = [
-        f"The deferred post-land unscoped sweep (T-1684) for {attribution_label} "
-        f"at commit {commit_sha} found {len(pairs)} new (rule, file) "
-        "identit(ies) that were not present in the previous sweep's "
-        "baseline.",
-        "",
-        count_line,
-        "",
-        _REGRESSION_IDENTITY_HEADING,
-        "",
-        *(f"- {rule}  {file}" for rule, file in unfiled_pairs),
-    ]
-    if attributed_ids and len(attributed_ids) > 1:
-        body_lines += [
-            "",
-            f"T-2009: {len(attributed_ids)} lands ({', '.join(attributed_ids)}) "
-            "landed between the previous sweep's baseline and the commit "
-            "THIS sweep actually measured (the sweep is deliberately "
-            "detached, off the land critical path -- T-1684 -- so other "
-            "agents' lands can land in the window before it runs). Which "
-            "specific land introduced which finding below could not be "
-            "determined without re-measuring at each intermediate commit; "
-            "this ticket is filed against all of them rather than "
-            f"falsely pinned on {final_id} alone (the one that happened "
-            "to spawn this sweep process).",
-        ]
-    if attribution_lines:
-        body_lines += [
-            "",
-            "Attribution (T-1690, symbolic reachability over the verify "
-            "queue's touched-symbol sets):",
-            "",
-            *attribution_lines,
-        ]
-    body_lines += [
-        "",
-        "Under the rapid profile the sweep runs detached and files this "
-        "ticket rather than reverting an already-published commit. Fix the "
-        "errors, or -- if they are pre-existing residue the rolling "
-        "baseline simply had not recorded yet -- close this ticket with "
-        "that finding stated explicitly.",
-    ]
+    count_line = _regression_count_line(unfiled_pairs, true_count)
+    body = _build_regression_body(
+        attribution_label=attribution_label,
+        commit_sha=commit_sha,
+        pairs=pairs,
+        unfiled_pairs=unfiled_pairs,
+        count_line=count_line,
+        attributed_ids=attributed_ids,
+        attribution_lines=attribution_lines,
+    )
     title_count = (
         f"{len(unfiled_pairs)} new (rule, file) identit(ies)"
         if true_count is None
@@ -1153,7 +1201,7 @@ def _file_regression_ticket(
         origin=Origin.AGENT,
         priority=Priority.HIGH,
         scope=tuple(sorted({file for _, file in unfiled_pairs})),
-        body="\n".join(body_lines),
+        body=body,
     )
     # T-1758: new_ticket now auto-commits internally by default -- opt
     # out here (no_commit=True) so _commit_regression_ticket's own commit
@@ -1728,11 +1776,69 @@ def revalidate_dispatchable_sweep_tickets(
     return tuple(dropped)
 
 
+# frob:ticket T-2077
+def _close_and_log_resolved_sweep_tickets(
+    root: Path,
+    final_id: str,
+    baseline: frozenset[tuple[str, str]],
+    fresh: frozenset[tuple[str, str]],
+) -> tuple[str, ...]:
+    """T-2058 (ARCH001 split of `run_deferred_post_land_sweep`): T-1983's
+    close-the-loop pass -- diff `vanished` (identities the previous
+    baseline had that `fresh` no longer finds) and drop every sweep-filed
+    ticket now fully resolved by it, logging a summary when anything
+    closed. Returns the same `_close_resolved_sweep_tickets` tuple
+    unchanged; this only names and isolates the call plus its log line."""
+    vanished = baseline - fresh
+    closed = _close_resolved_sweep_tickets(root, final_id, vanished)
+    if closed:
+        _log.info(
+            "rapid sweep: %s: closed the loop on %d resolved regression "
+            "ticket(s) (T-1983): %s",
+            final_id,
+            len(closed),
+            ", ".join(closed),
+        )
+    return closed
+
+
+# frob:ticket T-2009
+# frob:ticket T-2077
+def _resolve_regression_attribution(
+    root: Path,
+    final_id: str,
+    prev_baseline_commit: str | None,
+    actual_head: str,
+) -> list[str] | None:
+    """T-2058 (ARCH001 split of `run_deferred_post_land_sweep`): T-2009's
+    multi-land attribution decision -- `None` (trust `final_id` alone)
+    unless more than one land landed between the previous sweep baseline
+    and this sweep's actual measured HEAD, in which case every land id in
+    that window is returned instead, logged once here."""
+    if not prev_baseline_commit or prev_baseline_commit == actual_head:
+        return None
+    land_ids = _land_ids_between(root, prev_baseline_commit, actual_head)
+    if len(land_ids) <= 1:
+        return None
+    _log.warning(
+        "rapid sweep: %s: %d lands (%s) landed between the last "
+        "sweep baseline and the tree this sweep actually "
+        "measured -- attributing the regression to all of them "
+        "instead of just %s (T-2009)",
+        final_id,
+        len(land_ids),
+        ", ".join(land_ids),
+        final_id,
+    )
+    return land_ids
+
+
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:waive AFFECT001 reason="T-1935 changed only this function's own log-line \
 # wording (identity vs finding count caveat), not the deferred-sweep-mechanism doc \
 # (see the frob:doc target directly above); that doc is under T-1720's live lease at \
 # the time of this fix and cannot be edited here -- filed as follow-up residue"
+# frob:ticket T-2077
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
 # frob:tests \
@@ -1802,22 +1908,10 @@ def run_deferred_post_land_sweep(
     new_findings = fresh - baseline
 
     # frob:ticket T-1983
-    # T-1983: `vanished` (identities the PREVIOUS baseline had that this
-    # fresh measurement no longer finds) was always computable from the
-    # same two sets `new_findings` above already diffs -- this sweep just
-    # never used it before. Run the close pass regardless of whether this
-    # sweep is otherwise clean or red: a resolved regression ticket and a
+    # T-1983: run the close pass regardless of whether this sweep is
+    # otherwise clean or red -- a resolved regression ticket and a
     # brand-new one are independent outcomes of the same measurement.
-    vanished = baseline - fresh
-    closed = _close_resolved_sweep_tickets(root, final_id, vanished)
-    if closed:
-        _log.info(
-            "rapid sweep: %s: closed the loop on %d resolved regression "
-            "ticket(s) (T-1983): %s",
-            final_id,
-            len(closed),
-            ", ".join(closed),
-        )
+    _close_and_log_resolved_sweep_tickets(root, final_id, baseline, fresh)
 
     if not new_findings:
         _log.info(
@@ -1833,22 +1927,9 @@ def run_deferred_post_land_sweep(
     # contains exactly one land -- otherwise name every land that
     # occurred in it, so the filed ticket is never pinned on the wrong
     # (or merely coincidental) land.
-    attributed_ids: list[str] | None = None
-    if prev_baseline_commit and prev_baseline_commit != actual_head:
-        land_ids = _land_ids_between(root, prev_baseline_commit, actual_head)
-        if len(land_ids) > 1:
-            attributed_ids = land_ids
-            _log.warning(
-                "rapid sweep: %s: %d lands (%s) landed between the last "
-                "sweep baseline and the tree this sweep actually "
-                "measured -- attributing the regression to all of them "
-                "instead of just %s (T-2009)",
-                final_id,
-                len(land_ids),
-                ", ".join(land_ids),
-                final_id,
-            )
-
+    attributed_ids = _resolve_regression_attribution(
+        root, final_id, prev_baseline_commit, actual_head
+    )
     if attributed_ids is not None:
         filed = _file_regression_ticket(
             root, final_id, actual_head, new_findings, attributed_ids=attributed_ids
