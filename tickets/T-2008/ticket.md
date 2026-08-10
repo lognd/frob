@@ -1,7 +1,7 @@
 ---
 id: T-2008
 title: 'post-land sweep regression from T-1638: 1 new (rule, file) identit(ies) (SELFAUDIT001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -33,3 +33,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - SELFAUDIT001  design  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-10: Re-measured before implementing, per standing guidance that sweep-filed tickets are often already-fixed (T-2000/T-1998 precedent). frob check --only sys against current main reports 0 errors/0 warnings for SELFAUDIT001 on design -- finding does not reproduce. Cross-checked via frob verify explain SELFAUDIT001:design (T-1690/T-2018 attribution tool): returned queue-empty, consistent with no live finding to attribute. Likely closed by T-2001's SYS111 Tier-A auto-fix landing after this sweep ticket was filed. Note for T-2018: the explain command's queue-empty error does not distinguish finding-resolved from other empty-queue causes, but was usable enough to confirm absence here.
