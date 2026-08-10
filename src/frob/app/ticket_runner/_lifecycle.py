@@ -832,15 +832,33 @@ def _log_reconcile_intents_and_unlanded_work(report: "ReconcileReport") -> None:
 
 
 # frob:ticket T-0476
+# frob:ticket T-1936
 def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket reconcile [--apply] [--remove-orphans]`: report (and,
-    with `--apply`, heal) T-0476's two ticket<->worktree binding anomalies,
-    plus T-0456's orphaned-`land`-intent anomaly and T-1934's unlanded-
-    branch-work anomaly (the latter two logged by `_log_reconcile_intents_
-    and_unlanded_work`). Always logs a human-readable summary; exits 0
-    whether or not anomalies were found (finding an anomaly is not itself
-    a command failure -- only a real error loading the ledger is)."""
+    """`frob ticket reconcile [--apply] [--remove-orphans] [--no-commit]`:
+    report (and, with `--apply`, heal) T-0476's two ticket<->worktree
+    binding anomalies, plus T-0456's orphaned-`land`-intent anomaly and
+    T-1934's unlanded-branch-work anomaly (the latter two logged by
+    `_log_reconcile_intents_and_unlanded_work`). Always logs a
+    human-readable summary; exits 0 whether or not anomalies were found
+    (finding an anomaly is not itself a command failure -- only a real
+    error loading the ledger is).
+
+    T-1936: `--apply`'s ledger writes (each `transition(...)` call inside
+    `reconcile` requeuing a stale hold) used to leave `tickets.md` dirty
+    and uncommitted with no warning -- the one ledger-mutating verb that
+    neither auto-committed nor offered `--no-commit`, silently
+    DirtyMain-blocking every concurrent `frob ticket land` until an
+    operator happened to notice by chance. Routed through
+    `commit_full_ledger_change` (the `archive`-verb precedent: `reconcile
+    --apply` can requeue MANY ticket ids in one call, not one, so the
+    single-ticket `_auto_commit_ledger_after_dispatch` wrapper other verbs
+    ride cannot cover it) -- same `--no-commit` opt-out shape, same loud
+    DirtyMain warning when left dirty on purpose, same pathspec-scoped
+    commit (never `git add -A`) so an unrelated dirty file elsewhere in
+    the tree is never swept in. A dry-run (`apply=False`) never writes
+    anything, so this commit call is a guaranteed no-op then."""
     from frob.tickets import reconcile
+    from frob.tickets._leases import commit_full_ledger_change
 
     result = reconcile(
         root,
@@ -851,6 +869,16 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket reconcile failed: %s", result.danger_err)
         sys.exit(1)
     report = result.danger_ok
+
+    committed = commit_full_ledger_change(
+        root,
+        f"chore(tickets): reconcile requeued {len(report.requeued_tickets)} "
+        "stale hold(s)",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        _log.error("ticket reconcile failed: %s", committed.danger_err)
+        sys.exit(1)
 
     verb = "requeued" if report.applied else "would requeue"
     if report.requeued_tickets:

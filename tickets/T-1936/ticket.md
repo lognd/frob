@@ -2,7 +2,7 @@
 id: T-1936
 title: frob ticket reconcile --apply leaves the ledger dirty and silently DirtyMain-blocks
   every concurrent land
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -13,8 +13,87 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_reconcile.py
+- src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/_cli_parsers/_ticket/_progress.py
+- tests/unit/test_reconcile_auto_commit_t1936.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: 'Auto-commit routing belongs at the CLI layer, the same place the
+
+    archive-verb precedent (commit_full_ledger_change) lives -- reconcile()
+
+    itself (src/frob/tickets/_reconcile.py) stays a pure ledger-mutation
+
+    function with no git-commit concern of its own, matching every other
+
+    verb''s split between a core function and its _lifecycle.py/_new.py/
+
+    _archive.py CLI wrapper that owns the commit call. The actual fix
+
+    touches _reconcile_cmd (src/frob/app/ticket_runner/_lifecycle.py) and
+
+    the --no-commit flag registration (src/frob/_cli_parsers/_ticket/
+
+    _progress.py), plus a new regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: 'Auto-commit routing belongs at the CLI layer, the same place the
+
+    archive-verb precedent (commit_full_ledger_change) lives -- reconcile()
+
+    itself (src/frob/tickets/_reconcile.py) stays a pure ledger-mutation
+
+    function with no git-commit concern of its own, matching every other
+
+    verb''s split between a core function and its _lifecycle.py/_new.py/
+
+    _archive.py CLI wrapper that owns the commit call. The actual fix
+
+    touches _reconcile_cmd (src/frob/app/ticket_runner/_lifecycle.py) and
+
+    the --no-commit flag registration (src/frob/_cli_parsers/_ticket/
+
+    _progress.py), plus a new regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_reconcile_auto_commit_t1936.py
+  reason: 'Auto-commit routing belongs at the CLI layer, the same place the
+
+    archive-verb precedent (commit_full_ledger_change) lives -- reconcile()
+
+    itself (src/frob/tickets/_reconcile.py) stays a pure ledger-mutation
+
+    function with no git-commit concern of its own, matching every other
+
+    verb''s split between a core function and its _lifecycle.py/_new.py/
+
+    _archive.py CLI wrapper that owns the commit call. The actual fix
+
+    touches _reconcile_cmd (src/frob/app/ticket_runner/_lifecycle.py) and
+
+    the --no-commit flag registration (src/frob/_cli_parsers/_ticket/
+
+    _progress.py), plus a new regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_reconcile_auto_commit_t1936.py::TestReconcileAutoCommit::test_apply_leaves_the_ledger_clean
+- tests/unit/test_reconcile_auto_commit_t1936.py::TestReconcileAutoCommit::test_dry_run_never_commits_anything
+- tests/unit/test_reconcile_auto_commit_t1936.py::TestReconcileNoCommitFlag::test_no_commit_leaves_ledger_dirty_and_warns
+- tests/unit/test_reconcile_auto_commit_t1936.py::TestReconcileCommitScopedToLedgerRows::test_unrelated_dirty_file_is_not_swept_into_the_commit
+- tests/unit/test_reconcile_auto_commit_t1936.py::TestReconcileRemoveOrphansAutoCommit::test_apply_with_remove_orphans_still_leaves_ledger_clean
 designated_repro_test: null
 threat: null
 component: null

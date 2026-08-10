@@ -118,6 +118,16 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         help="with --apply, also `git worktree remove` orphan worktrees "
         "(a strictly more destructive action, gated separately)",
     )
+    # frob:ticket T-1936
+    ticket_reconcile_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1936's auto-commit of the ledger rows --apply changed "
+        "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit); WARNS "
+        "that the ledger is left dirty and will DirtyMain-block a "
+        "concurrent `frob ticket land`",
+    )
 
     ticket_migrate_p = ticket_sub.add_parser(
         "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
