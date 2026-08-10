@@ -12,7 +12,9 @@ from frob.app.ticket_runner import _rapid_sweep
 from frob.app.ticket_runner._rapid_sweep import (
     RapidSweepError,
     _attribute_new_findings,
+    _close_resolved_sweep_tickets,
     _file_regression_ticket,
+    _parse_sweep_ticket_identities,
     _read_baseline,
     _ticket_is_open,
     _true_finding_count_for_identities,
@@ -618,24 +620,96 @@ class TestTrueFindingCount:
                 {
                     "tool": "gate-summary",
                     "diagnostics": [
-                        {"code": "COV003", "file": "tickets/T-1872", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1872", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1895", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1896", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1896", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1900", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
-                        {"code": "COV003", "file": "tickets/T-1906", "severity": "error"},
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1872",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1872",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1895",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1895",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1895",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1895",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1896",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1896",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1900",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1900",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1900",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1900",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1900",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1906",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1906",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1906",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1906",
+                            "severity": "error",
+                        },
+                        {
+                            "code": "COV003",
+                            "file": "tickets/T-1906",
+                            "severity": "error",
+                        },
                         {"code": "F401", "file": "src/frob/x.py", "severity": "error"},
                         # A finding NOT in `pairs` below must not be counted.
                         {"code": "SCOPE001", "file": "other.py", "severity": "error"},
@@ -1116,3 +1190,161 @@ class TestRaiseQuarantineForRedBatch:
         assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
             ("unresolved-import", "a.py"),
         }
+
+
+# frob:ticket T-1983
+class TestCloseResolvedSweepTickets:
+    """T-1983: a sweep-filed regression ticket whose findings stop
+    reproducing must be auto-DROPPED (not closed, not left forever) the
+    next time the sweep can prove it, reusing the rolling-baseline diff
+    the sweep already computes for the opposite direction."""
+
+    def test_non_sweep_ticket_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_non_sweep_ticket_returns_none  # noqa: E501
+        ticket_id = _seed_ticket(tmp_path)
+        from frob.tickets import load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        ticket = queue.danger_ok.tickets[ticket_id]
+        assert _parse_sweep_ticket_identities(ticket) is None
+
+    def test_parses_a_sweep_titled_ticket_identity_set(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_parses_a_sweep_titled_ticket_identity_set  # noqa: E501
+        findings = frozenset({("RULE1", "a.py"), ("RULE2", "b.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", findings)
+        assert filed is not None
+        from frob.tickets import load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        ticket = queue.danger_ok.tickets[filed]
+        assert _parse_sweep_ticket_identities(ticket) == findings
+
+    def test_drops_a_fully_resolved_sweep_ticket(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_drops_a_fully_resolved_sweep_ticket  # noqa: E501
+        findings = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", findings)
+        assert filed is not None
+
+        dropped = _close_resolved_sweep_tickets(tmp_path, "T-9001", findings)
+        assert dropped == (filed,)
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        assert queue.danger_ok.tickets[filed].state == TicketState.DROPPED
+
+    def test_leaves_a_partially_resolved_ticket_untouched(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_leaves_a_partially_resolved_ticket_untouched  # noqa: E501
+        findings = frozenset({("RULE1", "a.py"), ("RULE2", "b.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", findings)
+        assert filed is not None
+
+        # Only RULE1/a.py vanished -- RULE2/b.py still reproduces, so the
+        # ticket as a whole must not be dropped.
+        dropped = _close_resolved_sweep_tickets(
+            tmp_path, "T-9001", frozenset({("RULE1", "a.py")})
+        )
+        assert dropped == ()
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
+
+    def test_leaves_a_still_reproducing_ticket_untouched(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_leaves_a_still_reproducing_ticket_untouched  # noqa: E501
+        findings = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", findings)
+        assert filed is not None
+
+        dropped = _close_resolved_sweep_tickets(tmp_path, "T-9001", frozenset())
+        assert dropped == ()
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
+
+    def test_in_progress_sweep_ticket_is_never_touched(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_in_progress_sweep_ticket_is_never_touched  # noqa: E501
+        from frob.tickets import TicketState, transition
+
+        findings = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", findings)
+        assert filed is not None
+        planned = transition(tmp_path, filed, TicketState.PLANNED)
+        assert planned.is_ok
+        started = transition(tmp_path, filed, TicketState.IN_PROGRESS)
+        assert started.is_ok
+
+        dropped = _close_resolved_sweep_tickets(tmp_path, "T-9001", findings)
+        assert dropped == ()
+
+
+# frob:ticket T-1983
+class TestDeferredSweepClosesResolvedRegressions:
+    """End-to-end: `run_deferred_post_land_sweep` itself closes the loop
+    on a prior sweep ticket whose findings vanish, and leaves one whose
+    findings still reproduce alone -- the acceptance shape T-1983 itself
+    demands (first assert must FAIL before the fix)."""
+
+    def test_resolved_finding_is_dropped_by_the_next_sweep(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions.test_resolved_finding_is_dropped_by_the_next_sweep  # noqa: E501
+        _write_baseline(tmp_path, frozenset(), "c0")
+
+        # Land 1: RULE1/a.py appears -- files a real regression ticket.
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset({("RULE1", "a.py")}),
+        )
+        first = run_deferred_post_land_sweep(tmp_path, "T-1001", "c1")
+        assert first.is_ok
+        filed = first.danger_ok
+        assert filed is not None
+
+        # Land 2: RULE1/a.py is fixed -- the fresh measurement no longer
+        # finds it, so the sweep must drop the ticket it filed for it.
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset(),
+        )
+        second = run_deferred_post_land_sweep(tmp_path, "T-1002", "c2")
+        assert second.is_ok
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        assert queue.danger_ok.tickets[filed].state == TicketState.DROPPED
+
+    def test_still_reproducing_finding_is_left_untouched(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions.test_still_reproducing_finding_is_left_untouched  # noqa: E501
+        _write_baseline(tmp_path, frozenset(), "c0")
+
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset({("RULE1", "a.py")}),
+        )
+        first = run_deferred_post_land_sweep(tmp_path, "T-1001", "c1")
+        assert first.is_ok
+        filed = first.danger_ok
+        assert filed is not None
+
+        # Land 2: RULE1/a.py is STILL present -- must not be dropped.
+        second = run_deferred_post_land_sweep(tmp_path, "T-1002", "c2")
+        assert second.is_ok
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED

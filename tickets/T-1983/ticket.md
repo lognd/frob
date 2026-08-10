@@ -2,7 +2,7 @@
 id: T-1983
 title: 'Sweep-filed tickets go stale before anyone reads them: 2 today, one cost a
   full agent investigation, and they displace genuinely starved work'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,24 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+evidence_scope:
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: test evidence for the T-1983 fix lives here, matching the existing test
+    file's coverage of this same module
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions::test_resolved_finding_is_dropped_by_the_next_sweep
+- tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions::test_still_reproducing_finding_is_left_untouched
+- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket
+- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_leaves_a_partially_resolved_ticket_untouched
+- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_in_progress_sweep_ticket_is_never_touched
 designated_repro_test: null
 threat: null
 component: null

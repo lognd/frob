@@ -89,6 +89,22 @@ _BASELINE_REL = Path(".frob") / "rapid-sweep-baseline.json"
 #: that dies (OOM, reboot) leaves its partial output behind to read.
 _LOG_DIR_REL = Path(".frob") / "rapid-sweep"
 
+#: T-1983: `_file_regression_ticket`'s title prefix, reused here to
+#: recognize a sweep-filed ticket for `_close_resolved_sweep_tickets`'s
+#: staleness check -- a title match plus `_REGRESSION_IDENTITY_HEADING`
+#: parsing recovers the exact identity set the sweep itself recorded,
+#: rather than re-deriving a second, possibly-drifting notion of "which
+#: findings this ticket is about".
+_REGRESSION_TITLE_PREFIX = "post-land sweep regression from "
+
+#: T-1983: the exact heading `_file_regression_ticket` writes immediately
+#: before its `"- {rule}  {file}"` lines -- the anchor
+#: `_parse_sweep_ticket_identities` scans from, so parsing only ever
+#: reads the identity list itself, never the attribution section below it
+#: (which reuses the same "- rule  file  -> ..." shape but is not the
+#: ticket's own obligation).
+_REGRESSION_IDENTITY_HEADING = "New (rule, file) identit(ies) filed here:"
+
 #: T-1935: the check budget (seconds) `_true_finding_count_for_identities`
 #: passes to its own independent `frob check --budget --json` re-measure.
 #: Deliberately the SAME value as `_land_cmd._POST_LAND_SWEEP_BUDGET_S`
@@ -821,8 +837,8 @@ def _file_regression_ticket(
             "T-1935: this is a count of DISTINCT (rule, file) IDENTITIES, "
             "not a raw finding count -- every finding sharing a (rule, "
             "file) pair collapses into ONE identity here (deliberately, "
-            "so attribution and quarantine reason about \"which files "
-            "went red\", not individual diagnostics). The true per-"
+            'so attribution and quarantine reason about "which files '
+            'went red", not individual diagnostics). The true per-'
             "finding count could not be independently re-measured this "
             "run (spawn refused/timeout/unparsable) -- re-run `frob "
             "check` unscoped against the file(s) below for the exact "
@@ -848,7 +864,7 @@ def _file_regression_ticket(
         "",
         count_line,
         "",
-        "New (rule, file) identit(ies) filed here:",
+        _REGRESSION_IDENTITY_HEADING,
         "",
         *(f"- {rule}  {file}" for rule, file in unfiled_pairs),
     ]
@@ -876,7 +892,7 @@ def _file_regression_ticket(
     )
     spec = TicketSpec(
         title=(
-            f"post-land sweep regression from {final_id}: {title_count} "
+            f"{_REGRESSION_TITLE_PREFIX}{final_id}: {title_count} "
             f"({', '.join(rules[:4])})"
         ),
         kind=TicketKind.BUG,
@@ -1062,6 +1078,168 @@ def _commit_regression_ticket(
     _discard_uncommitted_regression_ticket(root, regression_id)
 
 
+# frob:ticket T-1983
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_parses_a_sweep_titled_ticket_identity_set  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_non_sweep_ticket_returns_none  # noqa: E501
+def _parse_sweep_ticket_identities(ticket) -> frozenset[tuple[str, str]] | None:  # noqa: ANN001 -- Ticket, deferred-import type
+    """T-1983: recover the exact `(rule, file)` identity set
+    `_file_regression_ticket` recorded in `ticket`'s body, or `None` if
+    `ticket` was not filed by this sweep (its title lacks
+    `_REGRESSION_TITLE_PREFIX`) or the identity list could not be found/
+    was empty.
+
+    Scans from `_REGRESSION_IDENTITY_HEADING` and stops at the first
+    blank line once at least one identity has been collected -- the
+    attribution section right below reuses the same `"- rule  file  ->
+    ..."` shape for a DIFFERENT purpose (human-readable audit trail, not
+    the ticket's own obligation), so this deliberately stops before it
+    rather than also matching `" -> "` lines, which would silently widen
+    the parsed set with attribution text fragments that can never appear
+    in a real fresh measurement -- a wrong identity here can only ever
+    make the later subset check fail closed (no drop), never wrongly
+    succeed."""
+    if not ticket.title.startswith(_REGRESSION_TITLE_PREFIX):
+        return None
+    lines = ticket.body.splitlines()
+    try:
+        start = lines.index(_REGRESSION_IDENTITY_HEADING) + 1
+    except ValueError:
+        return None
+    identities: set[tuple[str, str]] = set()
+    for line in lines[start:]:
+        if not line.strip():
+            if identities:
+                break
+            continue
+        if not line.startswith("- ") or " -> " in line:
+            break
+        parts = line[2:].split("  ", 1)
+        if len(parts) != 2:
+            continue
+        identities.add((parts[0].strip(), parts[1].strip()))
+    return frozenset(identities) if identities else None
+
+
+# frob:ticket T-1983
+def _maybe_drop_resolved_ticket(
+    root: Path,
+    final_id: str,
+    ticket,  # noqa: ANN001 -- Ticket, deferred-import type
+    vanished: frozenset[tuple[str, str]],
+) -> str | None:
+    """T-1983 (ARCH001 split of `_close_resolved_sweep_tickets`, one
+    ticket's worth of the drop-if-resolved decision): `None` unless
+    `ticket`'s full recorded identity set is a non-empty subset of
+    `vanished`, in which case it drops `ticket` (`drop_ticket` +
+    `commit_ticket_ledger_change`, mirroring `frob ticket drop`'s own CLI
+    wiring) and returns its id. Best-effort: a `drop_ticket`/commit
+    failure is logged and returns `None`, never raised -- one
+    un-droppable stale ticket must not abort the sweep's real job
+    (recording the fresh baseline) for every other ticket."""
+    from frob.tickets import drop_ticket
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    identities = _parse_sweep_ticket_identities(ticket)
+    if not identities or not identities <= vanished:
+        return None
+    # frob:waive PERF004 reason="this function itself runs once per candidate ticket \
+    # from _close_resolved_sweep_tickets' loop, but `identities` is a DIFFERENT set \
+    # per ticket (this ticket's own recorded findings) -- there is nothing to hoist, \
+    # the sort is not loop-invariant"
+    reason = (
+        "T-1983: auto-dropped by the deferred post-land sweep -- every "
+        f"(rule, file) identity this ticket named "
+        f"({', '.join(f'{r} {f}' for r, f in sorted(identities))}) is "
+        f"absent from the fresh unscoped measurement at {final_id}'s "
+        "deferred sweep, i.e. no longer reproduces. If this is wrong (a "
+        "flaky/incomplete measurement), re-file with `frob check --only "
+        "<gate>` evidence attached."
+    )
+    result = drop_ticket(root, ticket.id, reason)
+    if result.is_err:
+        _log.error(
+            "rapid sweep: %s: could not auto-drop resolved regression "
+            "ticket %s (%s)",
+            final_id,
+            ticket.id,
+            result.danger_err,
+        )
+        return None
+    committed = commit_ticket_ledger_change(
+        root, ticket.id, f"chore(tickets): auto-drop {ticket.id} (resolved, T-1983)"
+    )
+    if committed.is_err:
+        _log.error(
+            "rapid sweep: %s: dropped %s but could not commit the ledger "
+            "change (%s) -- ticket is dropped in this worktree's tree "
+            "but not yet recorded on disk for other agents",
+            final_id,
+            ticket.id,
+            committed.danger_err,
+        )
+        return None
+    _log.info(
+        "rapid sweep: %s: auto-dropped resolved regression ticket %s (%d "
+        "identit(ies) no longer reproduce)",
+        final_id,
+        ticket.id,
+        len(identities),
+    )
+    return ticket.id
+
+
+# frob:ticket T-1983
+# frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_drops_a_fully_resolved_sweep_ticket  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_leaves_a_partially_resolved_ticket_untouched  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_leaves_a_still_reproducing_ticket_untouched  # noqa: E501
+def _close_resolved_sweep_tickets(
+    root: Path, final_id: str, vanished: frozenset[tuple[str, str]]
+) -> tuple[str, ...]:
+    """T-1983: auto-DROP (never close -- dropping states no work happened
+    and no evidence exists, matching how T-1947/T-1972 were handled by
+    hand) every QUEUED/PLANNED sweep-filed regression ticket whose full
+    recorded identity set is now a subset of `vanished` -- (rule, file)
+    identities present in the PREVIOUS baseline but absent from THIS
+    sweep's fresh unscoped measurement, i.e. no longer reproducing, per
+    this exact same land's own re-measurement rather than a guess or a
+    stale prior run. Per-ticket decision + drop lives in
+    `_maybe_drop_resolved_ticket`; this function is just the queue scan
+    + IN_PROGRESS exclusion.
+
+    A ticket with only SOME of its identities vanished is left untouched
+    entirely -- no partial drop, matching this ticket's own acceptance
+    ("no false drops, since dropping a live regression is strictly worse
+    than leaving a stale one"). IN_PROGRESS tickets are never touched
+    here either: a ticket someone is actively working must never be
+    yanked out from under them by a background sweep. Returns the
+    dropped ids, for the caller's own log line."""
+    if not vanished:
+        return ()
+    from frob.tickets import TicketState, load_queue
+
+    queue = load_queue(root)
+    if queue.is_err:
+        _log.warning(
+            "rapid sweep: %s: could not load the queue to check for "
+            "resolved sweep tickets (%s) -- skipping the T-1983 close "
+            "pass this run",
+            final_id,
+            queue.danger_err,
+        )
+        return ()
+
+    dropped = []
+    for ticket in sorted(queue.danger_ok.tickets.values(), key=lambda t: t.id):
+        if ticket.state not in (TicketState.QUEUED, TicketState.PLANNED):
+            continue
+        result = _maybe_drop_resolved_ticket(root, final_id, ticket, vanished)
+        if result is not None:
+            dropped.append(result)
+    return tuple(dropped)
+
+
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:waive AFFECT001 reason="T-1935 changed only this function's own log-line \
 # wording (identity vs finding count caveat), not the deferred-sweep-mechanism doc \
@@ -1118,6 +1296,25 @@ def run_deferred_post_land_sweep(
         return Ok(None)
 
     new_findings = fresh - baseline
+
+    # frob:ticket T-1983
+    # T-1983: `vanished` (identities the PREVIOUS baseline had that this
+    # fresh measurement no longer finds) was always computable from the
+    # same two sets `new_findings` above already diffs -- this sweep just
+    # never used it before. Run the close pass regardless of whether this
+    # sweep is otherwise clean or red: a resolved regression ticket and a
+    # brand-new one are independent outcomes of the same measurement.
+    vanished = baseline - fresh
+    closed = _close_resolved_sweep_tickets(root, final_id, vanished)
+    if closed:
+        _log.info(
+            "rapid sweep: %s: closed the loop on %d resolved regression "
+            "ticket(s) (T-1983): %s",
+            final_id,
+            len(closed),
+            ", ".join(closed),
+        )
+
     if not new_findings:
         _log.info(
             "rapid sweep: %s deferred unscoped sweep CLEAN (%d error(s), "
