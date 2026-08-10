@@ -1,3 +1,5 @@
+<!-- frob:describes src/frob/app/ticket_runner/_new.py::_emit_scope_closure_warnings -->
+
 # CLI hygiene principles (T-1556, T-1271 split)
 
 T-1271's dispatch delivered criterion 0 (an enum-valued flag's error lists
@@ -98,6 +100,24 @@ new refusal path this repo adds; a new command whose failure mode is a
 sub-second silent-looking exit should either raise its own loud banner at
 refusal time or explicitly ride on `FAST_EXIT1`'s existing detection
 rather than reinventing a quieter one.
+
+## Principle 4: scope-closure warning volume must not bury its own most
+## actionable lines
+
+`_emit_scope_closure_warnings` (`src/frob/app/ticket_runner/_new.py`) is
+the concrete instance this principle generalizes from: a mega-glob
+scope's closure feedback used to emit one WARNING line per gap, up to
+thousands of lines for a broad scope, burying the first few -- usually
+the most actionable -- hints under noise nobody reads to the end of. It
+now logs at most `_SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD` lines
+individually and collapses the remainder into a single counted-summary
+line naming an escape hatch (`FROB_SCOPE_CLOSURE_VERBOSE=1`) that
+restores the uncollapsed view on demand. A narrow, ordinary scope -- the
+common case -- never crosses the threshold and is completely unaffected.
+The general rule: any per-item warning loop whose item count is
+attacker/input-controlled (a glob, a diff, a scan) needs the same shape
+-- a bounded head plus a counted tail, never an unbounded emit -- so
+volume degrades gracefully into a summary instead of drowning the signal.
 
 ## Checklist (verified by `tests/unit/test_cli_hygiene_checklist_t1556.py`)
 

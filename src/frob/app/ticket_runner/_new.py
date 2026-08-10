@@ -239,6 +239,9 @@ def _new(root: Path, cfg: AppConfig) -> None:
 # frob:tests \
 # tests/unit/test_scope_closure_warning_collapse_t1556.py::TestEmitScopeClosureWarnings\
 # .test_no_warnings_logs_nothing
+# frob:doc \
+# docs/design/cli-hygiene.md#principle-4-scope-closure-warning-volume-must-not-bury-its\
+# -own-most
 def _emit_scope_closure_warnings(
     prefix: str, ticket_id: str, warnings: tuple[str, ...]
 ) -> None:
@@ -262,6 +265,9 @@ def _emit_scope_closure_warnings(
     wiring precedent for the identical cross-file-scope shape)."""
     if not warnings:
         return
+    # frob:waive SEC110 reason="FROB_SCOPE_CLOSURE_VERBOSE is a boolean \
+    # output-verbosity toggle (T-1556), not a credential or secret -- its value never \
+    # holds anything sensitive"
     if os.environ.get("FROB_SCOPE_CLOSURE_VERBOSE") or (
         len(warnings) <= _SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD
     ):

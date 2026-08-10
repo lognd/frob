@@ -210,6 +210,10 @@ epic's children implement:
   -- T-1554: the post-commit checkpoint gap in `frob ticket land` beyond
   T-1523's sweep-window marker (audit of what remains unmarked, Option A
   vs B, recommendation).
+- [`docs/design/cli-hygiene.md`](design/cli-hygiene.md) -- T-1556: CLI
+  hygiene principles backed by real papercuts (destructive-verb-by-
+  dropped-argument, scope-closure warning volume, and related output
+  discipline rules `frob ticket new`/`scope` apply).
 - `docs/audits/docs-staleness-2026-07-29.md` -- the 121-doc staleness
   sweep whose findings drive the T-1226 docs-integrity epic and the
   T-1233 fix campaign.

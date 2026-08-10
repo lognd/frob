@@ -31,6 +31,143 @@ _CACHE_REL = Path(".frob") / "cache.db"
 _log = get_logger("frob.app.ticket_runner")
 
 
+def _hint_invalid_transition(ticket_id: str, state, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a close/reverify attempted on a not-yet-started ticket."""
+    return (
+        f"{verb} failed: InvalidTransition -- {ticket_id} is {state.value}, "
+        f"not in-progress -- run `frob ticket start {ticket_id}` first"
+    )
+
+
+def _hint_missing_evidence(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a close/reverify with no evidence or Done report bound."""
+    return (
+        f"{verb} failed: {err} -- {ticket_id} is missing evidence or a "
+        f"Done report -- add evidence (`frob ticket evidence {ticket_id} "
+        f"<node-id>...`, or for a docs-kind ticket `--evidence-cmd "
+        f"'<command>'`) and write a '## Done report' heading under "
+        f"{ticket_id}'s section in tickets.md"
+    )
+
+
+def _hint_acceptance_unbound(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a close/reverify with an unbound acceptance criterion."""
+    return (
+        f"{verb} failed: {err} -- see the WARNING line above naming "
+        f"which acceptance criterion/criteria still have no resolving "
+        f"evidence id; bind one with `frob ticket evidence {ticket_id} "
+        f"<node-id> --accepts <index>` (0-based, per "
+        f"`frob ticket show {ticket_id}`'s acceptance list)"
+    )
+
+
+def _hint_missing_approved_review(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a `--strict` close/reverify with no approve-verdict review."""
+    return (
+        f"{verb} failed: {err} -- {ticket_id} needs an approve-verdict "
+        f"review naming the current commit (`frob ticket review "
+        f"{ticket_id} --verdict approve --reviewer NAME --findings-file "
+        f"PATH`) before `--strict` will succeed"
+    )
+
+
+def _hint_evidence_confirmatory_only(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for evidence that only confirms, never kills, its mutation."""
+    return (
+        f"{verb} failed: {err} -- see the WARNING TEST016 line(s) above "
+        f"naming the exact file:line + mutation the bound evidence "
+        f"never killed; strengthen those tests, then retry `frob "
+        f"ticket {verb} {ticket_id}`, or if this is a genuine false "
+        f"positive retry with `frob ticket {verb} {ticket_id} "
+        f"--skip-mutation-evidence` (logs a loud, justification-"
+        f"required override, does not suppress the finding)"
+    )
+
+
+# frob:ticket T-1556
+def _hint_evidence_scope_unbound(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a close/reverify with no evidence covering a
+    touched/scope symbol."""
+    return (
+        f"{verb} failed: {err} -- {ticket_id} -- no bound evidence id "
+        f"covers a touched/scope symbol; bind a test that actually "
+        f"exercises the changed code (`frob ticket evidence "
+        f"{ticket_id} <node-id>...`), or widen scope "
+        f"(`frob ticket scope {ticket_id} --add <glob> --reason "
+        f"'...'`) if the real touched files are not yet declared"
+    )
+
+
+# frob:ticket T-1556
+def _hint_evidence_not_passing(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for evidence that has regressed since it was recorded."""
+    return (
+        f"{verb} failed: {err} -- {ticket_id}'s recorded evidence no "
+        f"longer passes against the CURRENT tree (it passed once, at "
+        f"record time, but has since regressed) -- fix the break, or "
+        f"re-record fresh passing evidence (`frob ticket evidence "
+        f"{ticket_id} <node-id>...`), then retry `frob ticket {verb} "
+        f"{ticket_id}`"
+    )
+
+
+# frob:ticket T-1556
+def _hint_own_obligations_unclean(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a ticket's own diff leaving a doc/test/release
+    obligation open."""
+    return (
+        f"{verb} failed: {err} -- {ticket_id}'s own diff leaves a "
+        f"new-symbol frob:doc edge, frob:tests declaration, or REL001 "
+        f"bump outstanding; run `frob check --delta --ticket "
+        f"{ticket_id}` and resolve the finding(s) it names, then "
+        f"retry `frob ticket {verb} {ticket_id}`"
+    )
+
+
+# frob:ticket T-1556
+def _hint_gate_claim_unverified(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a package-wide gate-outcome acceptance criterion
+    left unproven."""
+    return (
+        f"{verb} failed: {err} -- see the WARNING line above naming "
+        f"which package-wide gate-outcome acceptance criterion "
+        f'("0 <RULE> findings under <glob>") is not established by '
+        f"the bound evidence; re-run the named gate against the named "
+        f"glob and bind evidence that PROVES the claim (not merely a "
+        f"passing, unrelated node id), then retry `frob ticket {verb} "
+        f"{ticket_id}`"
+    )
+
+
+# frob:ticket T-1556
+def _hint_live_tracker_cited(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a ticket still cited as a live tracker elsewhere."""
+    return (
+        f"{verb} failed: {err} -- see the WARNING line above naming "
+        f"every site still citing {ticket_id} as its live tracker "
+        f"(a registry deferred:/tracked_by: disposition or a waiver "
+        f"ticket= attribute); file a successor ticket and re-point "
+        f"those rows to it, or re-point them in this same change, "
+        f"then retry `frob ticket {verb} {ticket_id}`"
+    )
+
+
+# frob:ticket T-1556
+def _hint_new_gate_rule_unaccepted(ticket_id: str, err, verb: str) -> str:  # noqa: ANN001
+    """Remedy text for a diff that adds a gate rule with no bound acceptance fixture."""
+    return (
+        f"{verb} failed: {err} -- see the WARNING line above naming "
+        f"the new gate rule id(s) this diff adds; record a bound "
+        f"before-fails/after-passes fixture acceptance criterion "
+        f"proving the rule fires through the real production "
+        f"invocation (`frob ticket accept {ticket_id} --criterion "
+        f"'...'`, then `frob ticket evidence {ticket_id} <node-id> "
+        f"--accepts <index>`), then retry `frob ticket {verb} "
+        f"{ticket_id}`"
+    )
+
+
+# frob:ticket T-1933
 def _close_failure_hint(ticket_id: str, state, err, *, verb: str = "close") -> str:  # noqa: ANN001
     """The log message for a failed close: names a concrete remedy instead of
     just echoing the raw error (T-0215 -- both close-on-queued's
@@ -41,112 +178,34 @@ def _close_failure_hint(ticket_id: str, state, err, *, verb: str = "close") -> s
     forking a second copy that could drift -- the remedies themselves
     (start first, add evidence, bind acceptance, get an approved review,
     strengthen mutation-killing tests) are identical for both commands,
-    only the failing verb differs."""
+    only the failing verb differs.
+
+    T-1933: dispatches to one small per-error `_hint_*` helper instead of a
+    single 116-line if-chain (ARCH001 threshold), keeping each remedy's text
+    independently readable and editable."""
     from frob.tickets import TicketError, TicketState
 
     if err == TicketError.InvalidTransition and state in (
         TicketState.QUEUED,
         TicketState.PLANNED,
     ):
-        return (
-            f"{verb} failed: {err} -- {ticket_id} is {state.value}, not "
-            f"in-progress -- run `frob ticket start {ticket_id}` first"
-        )
-    if err == TicketError.MissingEvidence:
-        return (
-            f"{verb} failed: {err} -- {ticket_id} is missing evidence or a "
-            f"Done report -- add evidence (`frob ticket evidence {ticket_id} "
-            f"<node-id>...`, or for a docs-kind ticket `--evidence-cmd "
-            f"'<command>'`) and write a '## Done report' heading under "
-            f"{ticket_id}'s section in tickets.md"
-        )
-    if err == TicketError.AcceptanceUnbound:
-        return (
-            f"{verb} failed: {err} -- see the WARNING line above naming "
-            f"which acceptance criterion/criteria still have no resolving "
-            f"evidence id; bind one with `frob ticket evidence {ticket_id} "
-            f"<node-id> --accepts <index>` (0-based, per "
-            f"`frob ticket show {ticket_id}`'s acceptance list)"
-        )
-    if err == TicketError.MissingApprovedReview:
-        return (
-            f"{verb} failed: {err} -- {ticket_id} needs an approve-verdict "
-            f"review naming the current commit (`frob ticket review "
-            f"{ticket_id} --verdict approve --reviewer NAME --findings-file "
-            f"PATH`) before `--strict` will succeed"
-        )
-    if err == TicketError.EvidenceConfirmatoryOnly:
-        return (
-            f"{verb} failed: {err} -- see the WARNING TEST016 line(s) above "
-            f"naming the exact file:line + mutation the bound evidence "
-            f"never killed; strengthen those tests, then retry `frob "
-            f"ticket {verb} {ticket_id}`, or if this is a genuine false "
-            f"positive retry with `frob ticket {verb} {ticket_id} "
-            f"--skip-mutation-evidence` (logs a loud, justification-"
-            f"required override, does not suppress the finding)"
-        )
-    # frob:ticket T-1556
-    if err == TicketError.EvidenceScopeUnbound:
-        return (
-            f"{verb} failed: {err} -- {ticket_id} -- no bound evidence id "
-            f"covers a touched/scope symbol; bind a test that actually "
-            f"exercises the changed code (`frob ticket evidence "
-            f"{ticket_id} <node-id>...`), or widen scope "
-            f"(`frob ticket scope {ticket_id} --add <glob> --reason "
-            f"'...'`) if the real touched files are not yet declared"
-        )
-    # frob:ticket T-1556
-    if err == TicketError.EvidenceNotPassing:
-        return (
-            f"{verb} failed: {err} -- {ticket_id}'s recorded evidence no "
-            f"longer passes against the CURRENT tree (it passed once, at "
-            f"record time, but has since regressed) -- fix the break, or "
-            f"re-record fresh passing evidence (`frob ticket evidence "
-            f"{ticket_id} <node-id>...`), then retry `frob ticket {verb} "
-            f"{ticket_id}`"
-        )
-    # frob:ticket T-1556
-    if err == TicketError.OwnObligationsUnclean:
-        return (
-            f"{verb} failed: {err} -- {ticket_id}'s own diff leaves a "
-            f"new-symbol frob:doc edge, frob:tests declaration, or REL001 "
-            f"bump outstanding; run `frob check --delta --ticket "
-            f"{ticket_id}` and resolve the finding(s) it names, then "
-            f"retry `frob ticket {verb} {ticket_id}`"
-        )
-    # frob:ticket T-1556
-    if err == TicketError.GateClaimUnverified:
-        return (
-            f"{verb} failed: {err} -- see the WARNING line above naming "
-            f"which package-wide gate-outcome acceptance criterion "
-            f"(\"0 <RULE> findings under <glob>\") is not established by "
-            f"the bound evidence; re-run the named gate against the named "
-            f"glob and bind evidence that PROVES the claim (not merely a "
-            f"passing, unrelated node id), then retry `frob ticket {verb} "
-            f"{ticket_id}`"
-        )
-    # frob:ticket T-1556
-    if err == TicketError.LiveTrackerCited:
-        return (
-            f"{verb} failed: {err} -- see the WARNING line above naming "
-            f"every site still citing {ticket_id} as its live tracker "
-            f"(a registry deferred:/tracked_by: disposition or a waiver "
-            f"ticket= attribute); file a successor ticket and re-point "
-            f"those rows to it, or re-point them in this same change, "
-            f"then retry `frob ticket {verb} {ticket_id}`"
-        )
-    # frob:ticket T-1556
-    if err == TicketError.NewGateRuleUnaccepted:
-        return (
-            f"{verb} failed: {err} -- see the WARNING line above naming "
-            f"the new gate rule id(s) this diff adds; record a bound "
-            f"before-fails/after-passes fixture acceptance criterion "
-            f"proving the rule fires through the real production "
-            f"invocation (`frob ticket accept {ticket_id} --criterion "
-            f"'...'`, then `frob ticket evidence {ticket_id} <node-id> "
-            f"--accepts <index>`), then retry `frob ticket {verb} "
-            f"{ticket_id}`"
-        )
+        return _hint_invalid_transition(ticket_id, state, verb)
+
+    dispatch = {
+        TicketError.MissingEvidence: _hint_missing_evidence,
+        TicketError.AcceptanceUnbound: _hint_acceptance_unbound,
+        TicketError.MissingApprovedReview: _hint_missing_approved_review,
+        TicketError.EvidenceConfirmatoryOnly: _hint_evidence_confirmatory_only,
+        TicketError.EvidenceScopeUnbound: _hint_evidence_scope_unbound,
+        TicketError.EvidenceNotPassing: _hint_evidence_not_passing,
+        TicketError.OwnObligationsUnclean: _hint_own_obligations_unclean,
+        TicketError.GateClaimUnverified: _hint_gate_claim_unverified,
+        TicketError.LiveTrackerCited: _hint_live_tracker_cited,
+        TicketError.NewGateRuleUnaccepted: _hint_new_gate_rule_unaccepted,
+    }
+    hint_fn = dispatch.get(err)
+    if hint_fn is not None:
+        return hint_fn(ticket_id, err, verb)
     return f"{verb} failed: {err}"
 
 
