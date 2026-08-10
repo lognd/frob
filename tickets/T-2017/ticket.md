@@ -2,7 +2,7 @@
 id: T-2017
 title: T-1946's orphaned-evidence guard did not fire on a test RENAME, so T-1963's
   land orphaned T-0907's evidence onto the floor
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,9 +13,30 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- tests/unit/test_land_orphaned_evidence.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_orphaned_evidence.py
+  reason: T-2017's fix (load_all -> load_queue in _check_orphaned_evidence_deletion)
+    needs a regression test where the orphaned evidence's owning ticket is ARCHIVED,
+    the actual root cause
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: coordinator flagged 3 COV002 findings on T-1940 tests needing a frob:ticket
+    edge to an open ticket; T-2017 is their natural home since it is the live defect
+    in that same registry
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket::test_refuses_when_branch_deletes_evidence_bound_test_on_an_archived_ticket
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket::test_deletion_unbound_to_any_archived_ticket_still_lands_cleanly
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_refuses_when_branch_deletes_evidence_bound_test
+designated_repro_test: tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArchivedTicket::test_refuses_when_branch_deletes_evidence_bound_test_on_an_archived_ticket
 threat: null
 component: null
 anchor: false

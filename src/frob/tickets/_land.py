@@ -35,12 +35,13 @@ import importlib
 import json
 import os
 import re
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
 from typani.result import Err, Ok, Result
 
 if TYPE_CHECKING:
@@ -1577,6 +1578,19 @@ def _land_locked(
             if did_merge:
                 _abort_merge(worktree)
             return Err(leakage_recheck.danger_err)
+
+        # frob:ticket T-1940
+        # T-1940: passenger-tickets' own post-mutation twin, registered in
+        # `_COMMITTED_DIFF_GUARDS` -- same T-1932 ordering invariant, same
+        # placement (right alongside the leakage re-check, before the
+        # dry-run early return) as its worked precedent above.
+        passenger_recheck = _reverify_passenger_tickets_post_mutation(
+            worktree, ticket, main_branch_name, allow_cross_ticket
+        )
+        if passenger_recheck.is_err:
+            if did_merge:
+                _abort_merge(worktree)
+            return Err(passenger_recheck.danger_err)
 
         # T-0754 review round 2 fix #4: refresh the pre-work sweep BEFORE
         # any inner check runs `check_gates()` (a live `frob check
@@ -3491,8 +3505,135 @@ def _reverify_cross_ticket_leakage_post_mutation(
     )
 
 
+# frob:ticket T-1940
+def _reverify_passenger_tickets_post_mutation(
+    worktree: Path, ticket: Ticket, base_ref: str, allow_cross_ticket: bool
+) -> Result[None, LandError]:
+    """T-1940's first concrete application of the generalized registry
+    (`_COMMITTED_DIFF_GUARDS`): `_check_passenger_tickets`'s own post-
+    mutation twin, mirroring `_reverify_cross_ticket_leakage_post_
+    mutation`'s exact shape and rationale one guard over.
+
+    Same T-1932 invariant, same hazard: `_check_passenger_tickets`'s diff
+    source, `_directive_ticket_ids_in_diff`, reads ONLY committed history
+    -- it is blind to `_absorb_pre_land_fixes`'s (T-1175's `frob fmt` +
+    Tier-A auto-fix) uncommitted rewrites, which run BEFORE `land()` is
+    even called and only become part of committed history at `_land_
+    merge_stage`'s wip-commit. A Tier-A handler regenerating a `frob:
+    ticket <id>` directive line for some OTHER ticket (the same shape
+    T-1931 hit for a `frob:enumerates` edge) would silently carry that id
+    onto main as an undisclosed passenger, refused once at preflight and
+    never refused again -- exactly the class T-1932 exists to close, just
+    for `_check_passenger_tickets` instead of `_check_cross_ticket_
+    leakage`.
+
+    Pure re-invocation with the same arguments the preflight call used,
+    called from `_land_locked` immediately alongside the leakage re-
+    check -- no separate unwind path, no new refusal semantics."""
+    return _check_passenger_tickets(
+        worktree, ticket, base_ref, allow_cross_ticket=allow_cross_ticket
+    )
+
+
+# frob:ticket T-1940
+class _CommittedDiffGuard(BaseModel):
+    """One entry in `_COMMITTED_DIFF_GUARDS` (T-1940): `name` is the
+    preflight guard function's own name (as it appears called from
+    `_land_precheck`/`_land_precheck_remaining_checks`); `post_mutation_
+    check` is that guard's registered post-mutation twin -- the T-1932
+    worked pattern, a pure re-invocation of the SAME guard called again
+    after `_land_merge_stage`'s wip-commit -- or `None` if no twin exists
+    yet, in which case `exemption_reason` MUST explain why (never blank:
+    `TestCommittedDiffGuardRegistryCompleteness` in tests/test_ticket_
+    land.py enforces this, closing T-1932 acceptance criterion 4
+    mechanically for every future guard added to either preflight
+    sequence -- a new guard with neither a twin nor a stated reason fails
+    that test, forcing an explicit decision instead of a silent gap)."""
+
+    model_config = {}
+
+    name: str
+    post_mutation_check: str | None = None
+    exemption_reason: str | None = None
+
+
+# frob:ticket T-1940
+# NOTE: no frob:doc anchor here -- docs/modules/tickets.md was held by a
+# LIVE cross-worktree lease (T-1696, in-progress) at fix time and could
+# not be added to T-1940's own scope; a follow-up doc pass should add a
+# section describing this registry alongside the existing T-1932
+# post-mutation-reverification anchor.
+_COMMITTED_DIFF_GUARDS: tuple[_CommittedDiffGuard, ...] = (
+    _CommittedDiffGuard(
+        name="_check_cross_ticket_leakage",
+        post_mutation_check="_reverify_cross_ticket_leakage_post_mutation",
+    ),
+    _CommittedDiffGuard(
+        name="_check_passenger_tickets",
+        post_mutation_check="_reverify_passenger_tickets_post_mutation",
+    ),
+    _CommittedDiffGuard(
+        name="_check_already_landed",
+        exemption_reason=(
+            "T-1940: identified as diff-content-reading (base_ref-scoped "
+            "_branch_changed_files) and therefore subject to the same "
+            "T-1932 hazard, but NOT yet closed here -- a post-mutation "
+            "twin risks a DIFFERENT false-positive class (a Tier-A "
+            "rewrite landing between the preflight and the wip-commit "
+            "could make a genuinely-not-yet-landed ticket's scope diff "
+            "look transiently empty), which needs its own investigation "
+            "rather than a blind copy of the leakage/passenger pattern. "
+            "Tracked as an acknowledged, explicit gap rather than a "
+            "silent one -- a future ticket closes it."
+        ),
+    ),
+    _CommittedDiffGuard(
+        name="_check_live_tracker_citations",
+        exemption_reason=(
+            "T-1940: diff-content-reading (base_ref-scoped) and subject "
+            "to the same T-1932 hazard in principle, but only ever fires "
+            "for a TERMINAL (done/dropped) land (T-1853) -- a narrower "
+            "blast radius than leakage/passenger, which fire for any "
+            "land. Tracked as an acknowledged, explicit gap; a future "
+            "ticket closes it."
+        ),
+    ),
+    _CommittedDiffGuard(
+        name="_check_orphaned_evidence_deletion",
+        exemption_reason=(
+            "T-1940: diff-content-reading (base_ref-scoped _branch_"
+            "changed_files, same source as leakage) and subject to the "
+            "same T-1932 hazard in principle. Tracked as an "
+            "acknowledged, explicit gap rather than a silent one; a "
+            "future ticket closes it."
+        ),
+    ),
+    _CommittedDiffGuard(
+        name="_check_mutation_evidence",
+        exemption_reason=(
+            "T-1940: diff-content-reading and subject to the same T-1932 "
+            "hazard in principle, but its own escape hatch (skip_"
+            "mutation_evidence) and BUG002's independent land-time gate "
+            "already cover most of the same ground a post-mutation "
+            "re-check would. Tracked as an acknowledged, explicit gap "
+            "rather than a silent one; a future ticket closes it."
+        ),
+    ),
+    _CommittedDiffGuard(
+        name="_refuse_anchor_terminal_land",
+        exemption_reason=(
+            "Reads only ticket.state (an in-memory field, not committed "
+            "diff content) -- structurally immune to the T-1932 hazard, "
+            "no twin needed."
+        ),
+    ),
+)
+
+
+
 # frob:ticket T-1946
 # frob:ticket T-1979
+# frob:ticket T-2017
 # frob:doc docs/modules/tickets.md#orphaned-evidence-deletion-t-1946
 def _check_orphaned_evidence_deletion(
     worktree: Path, ticket: Ticket, base_ref: str
@@ -3512,6 +3653,21 @@ def _check_orphaned_evidence_deletion(
     orphaned tickets were outside both diffs' declared scope, and a
     deletion diff carries no signal pointing at what else cites the
     deleted node.
+
+    T-2017 ROOT CAUSE (measured, not one of the two hypotheses that ticket
+    started from -- neither a stale collection cache nor a rename
+    mis-parsed as add+delete): this check used `load_all(worktree)`,
+    which for a v2-mode repo globs ONLY `tickets/T-####/ticket.md` (the
+    ACTIVE tree) -- an ARCHIVED ticket's evidence was never even a
+    candidate `_orphaned_evidence_findings` could flag, regardless of
+    collection freshness or how the diff was shaped. T-0907 (the T-1963
+    incident's own orphaned ticket) was archived at the v1->v2 migration,
+    long before T-1963 ever ran, so it was structurally invisible to this
+    guard from the day this check was written -- `frob check`'s own
+    COV003 (`_cov003` in `frob.gates`) caught the SAME orphan on its next
+    unscoped run only because it loads via `frob.tickets._archive.
+    load_queue` (active+archive merged, `TicketQueue`), the authoritative
+    source this check now also uses.
 
     Deliberately NOT a rewrite/auto-repoint of the stale evidence (the
     WAIVE004 lesson: a "safe" auto-cleanup silently destroyed 55 live
@@ -3552,7 +3708,10 @@ def _check_orphaned_evidence_deletion(
         )
         return Ok(None)
 
-    loaded = load_all(worktree)
+    # frob:ticket T-2017
+    from frob.tickets._archive import load_queue
+
+    loaded = load_queue(worktree)
     if loaded.is_err:
         _log.debug(
             "land: %s orphaned-evidence check skipped -- ledger unreadable (%s)",
@@ -3562,7 +3721,7 @@ def _check_orphaned_evidence_deletion(
         return Ok(None)
 
     orphaned = _orphaned_evidence_findings(
-        ticket.id, loaded.danger_ok, changed.danger_ok, collected.danger_ok
+        ticket.id, loaded.danger_ok.tickets, changed.danger_ok, collected.danger_ok
     )
     if not orphaned:
         return Ok(None)
@@ -3572,7 +3731,7 @@ def _check_orphaned_evidence_deletion(
 # frob:ticket T-1979
 def _orphaned_evidence_findings(
     landing_id: str,
-    queue: dict[str, Ticket],
+    queue: Mapping[str, Ticket],
     changed_paths: frozenset[str],
     tests: CollectedTests,
 ) -> dict[str, list[str]]:

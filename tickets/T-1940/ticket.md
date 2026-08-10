@@ -2,7 +2,7 @@
 id: T-1940
 title: Generalize T-1932's post-mutation guard re-check into a registry every future
   land-path guard is forced to use
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -13,9 +13,21 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: T-1940's registry needs a structural completeness test asserting every committed-diff-reading
+    land guard is registered with a twin or an explicit exemption reason
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_every_call_site_guard_is_registered
+- tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_every_registry_entry_has_a_twin_or_a_stated_reason
+- tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_registered_twins_are_actually_wired_into_the_land_sequence
+designated_repro_test: tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_every_call_site_guard_is_registered
 threat: null
 component: null
 anchor: false

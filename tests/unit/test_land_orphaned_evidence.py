@@ -16,13 +16,22 @@ subprocess spawn."""
 from __future__ import annotations
 
 import subprocess
+from datetime import date
 from pathlib import Path
 
 import pytest
 from typani import Ok
 
 from frob.testing._models import CollectedTests
-from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket, transition
+from frob.tickets import (
+    Origin,
+    Ticket,
+    TicketKind,
+    TicketSpec,
+    TicketState,
+    new_ticket,
+    transition,
+)
 from frob.tickets._land import _check_orphaned_evidence_deletion
 from frob.tickets._models import LandError
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
@@ -31,6 +40,35 @@ from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticke
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         argv, cwd=str(cwd), check=True, capture_output=True, text=True
+    )
+
+
+# frob:ticket T-2017
+# frob:waive WIRE001 permanent="true" reason="private test-tree fixture helper, only \
+# ever called from this file's own two archived-ticket regression tests -- the same \
+# permanent test-support-helper class WIRE002 exempts from the follow_up requirement"
+def _ticket_done(ticket_id: str, evidence_id: str) -> Ticket:
+    """A minimal, already-DONE `Ticket` bound to `evidence_id` (T-2017) --
+    built directly rather than via `transition` (which this test module's
+    other fixtures use for an ACTIVE ticket) so the archived-ticket
+    regression tests can seed a ticket straight into the DONE state
+    `archive()` requires, with no intermediate PLANNED/IN_PROGRESS lease
+    machinery to satisfy."""
+    return Ticket(
+        id=ticket_id,
+        title=f"archived ticket {ticket_id}",
+        state=TicketState.DONE,
+        kind=TicketKind.FEATURE,
+        origin=Origin.AGENT,
+        created=date(2026, 1, 1),
+        blocked_by=(),
+        parent=None,
+        scope=(),
+        evidence=(evidence_id,),
+        attachments=(),
+        acceptance=(),
+        threat=None,
+        body="## Done report\n\nseeded directly for T-2017's archived-ticket test\n",
     )
 
 
@@ -212,3 +250,108 @@ class TestOrphanedEvidenceDeletion:
         result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
 
         assert result.is_ok
+
+
+# frob:ticket T-2017
+class TestOrphanedEvidenceDeletionOnArchivedTicket:
+    """T-2017: the MEASURED root cause of the T-1963 incident -- neither
+    of the two hypotheses that ticket started from (a stale collection
+    cache, or a rename mis-parsed as add+delete). `_check_orphaned_
+    evidence_deletion` used `load_all(worktree)`, which for a repo's
+    ACTIVE ledger never includes an already-ARCHIVED (done) ticket -- so
+    an archived ticket's evidence was never even a CANDIDATE this check
+    could flag, regardless of collection freshness or diff shape. T-0907
+    (the real orphaned ticket) was archived long before T-1963's land
+    ever ran."""
+
+    # frob:ticket T-2017
+    def test_refuses_when_branch_deletes_evidence_bound_test_on_an_archived_ticket(
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArch\
+        # ivedTicket.test_refuses_when_branch_deletes_evidence_bound_test_on_an_archive\
+        # d_ticket
+        # T-2017 (MUST FAIL on the pre-fix code, matching T-1963's real
+        # incident exactly): other_id is DONE and ARCHIVED -- moved out
+        # of the active ledger into tickets-archive.md -- before the
+        # landing branch's own diff deletes the test its evidence cites.
+        from frob.tickets._archive import archive
+        from frob.tickets._store import write_all
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-archived", str(wt)], repo)
+
+        (wt / "tests").mkdir(exist_ok=True)
+        (wt / "tests" / "test_archived.py").write_text("def test_it():\n    pass\n")
+        other_id = "T-9001"
+        other_ticket = _ticket_done(other_id, "tests/test_archived.py::test_it")
+        assert write_all(wt, {other_id: other_ticket}).is_ok
+        _commit_all(wt, f"seed {other_id}: done, evidence bound to test_archived.py")
+
+        archived_count = archive(wt, force=True)
+        assert archived_count.is_ok, archived_count.err
+        assert archived_count.danger_ok == 1
+        _commit_all(wt, f"archive {other_id}")
+
+        landing = new_ticket(wt, _spec("Independent cleanup", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        (wt / "tests" / "test_archived.py").write_text("# test_it deleted\n")
+        _commit_all(
+            wt, f"{landing_id}: unrelated cleanup that deletes test_it (archived owner)"
+        )
+
+        _patch_collect(monkeypatch, frozenset())
+
+        landing_ticket = load_all(wt).danger_ok[landing_id]
+        with caplog.at_level("ERROR"):
+            result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
+
+        assert result.is_err
+        assert result.danger_err == LandError.OrphanedEvidenceDeletion
+        assert other_id in caplog.text
+        assert "tests/test_archived.py::test_it" in caplog.text
+
+    # frob:ticket T-2017
+    def test_deletion_unbound_to_any_archived_ticket_still_lands_cleanly(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletionOnArch\
+        # ivedTicket.test_deletion_unbound_to_any_archived_ticket_still_lands_cleanly
+        # Sanity companion (acceptance criterion 4): a real archived
+        # ticket exists, but its evidence is untouched by this diff --
+        # must not over-refuse.
+        from frob.tickets._archive import archive
+        from frob.tickets._store import write_all
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-archived-unbound", str(wt)], repo)
+
+        (wt / "tests").mkdir(exist_ok=True)
+        (wt / "tests" / "test_kept.py").write_text("def test_it():\n    pass\n")
+        other_id = "T-9002"
+        other_ticket = _ticket_done(other_id, "tests/test_kept.py::test_it")
+        assert write_all(wt, {other_id: other_ticket}).is_ok
+        _commit_all(wt, f"seed {other_id}: done, evidence bound to test_kept.py")
+        assert archive(wt, force=True).is_ok
+        _commit_all(wt, f"archive {other_id}")
+
+        landing = new_ticket(wt, _spec("Unrelated fix", scope=("tests/test_scratch2.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        (wt / "tests" / "test_scratch2.py").write_text("def test_it():\n    pass\n")
+        _commit_all(wt, f"{landing_id}: add scratch test, unrelated to {other_id}")
+        (wt / "tests" / "test_scratch2.py").write_text("# deleted, cited by nobody\n")
+        _commit_all(wt, f"{landing_id}: delete scratch test, unbound to anything")
+
+        _patch_collect(monkeypatch, frozenset({"tests/test_kept.py::test_it"}))
+
+        landing_ticket = load_all(wt).danger_ok[landing_id]
+        result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
+
+        assert result.is_ok, result.err

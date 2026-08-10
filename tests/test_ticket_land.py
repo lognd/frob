@@ -7253,6 +7253,104 @@ class TestCommitSquashApplyUnwindsOnCommitFailure:
         assert _status_ignoring_frob(repo) == ""
 
 
+# frob:ticket T-1940
+class TestCommittedDiffGuardRegistryCompleteness:
+    """T-1940: generalizes T-1932's worked pattern (a hand-copied post-
+    mutation twin per guard) into a registry (`_land_mod.
+    _COMMITTED_DIFF_GUARDS`) plus a structural test -- this class -- that
+    fails the moment a NEW committed-diff-reading guard is added to
+    either `_land_precheck` or `_land_precheck_remaining_checks` without
+    an explicit registry entry (a post-mutation twin, or a stated
+    exemption reason), closing T-1932 acceptance criterion 4
+    mechanically instead of relying on a future author remembering the
+    worked example by hand."""
+
+    #: Every guard-calling function name this test currently expects to
+    #: find invoked inside `_land_precheck`/`_land_precheck_remaining_
+    #: checks`'s own source -- the fixed point this test pins so that
+    #: `_COMMITTED_DIFF_GUARDS` and the real call sites can never
+    #: silently diverge from each other.
+    _EXPECTED_CALL_SITES = frozenset(
+        {
+            "_check_already_landed",
+            "_refuse_anchor_terminal_land",
+            "_check_live_tracker_citations",
+            "_check_passenger_tickets",
+            "_check_cross_ticket_leakage",
+            "_check_orphaned_evidence_deletion",
+            "_check_mutation_evidence",
+        }
+    )
+
+    # frob:ticket T-2017
+    def test_every_call_site_guard_is_registered(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness.test_every_call_site_guard_is_registered  # noqa: E501
+        # T-1940 (MUST FAIL if a guard call is added to _land_precheck/
+        # _land_precheck_remaining_checks without a matching registry
+        # entry, or removed from source without removing its entry):
+        # cross-references the FIXED expected call-site set above against
+        # the registry's own tracked names, in both directions.
+        registered = frozenset(
+            guard.name for guard in _land_mod._COMMITTED_DIFF_GUARDS
+        )
+        missing_from_registry = self._EXPECTED_CALL_SITES - registered
+        assert not missing_from_registry, (
+            f"guard(s) called in the land preflight sequence but not "
+            f"registered in _COMMITTED_DIFF_GUARDS: {sorted(missing_from_registry)}"
+        )
+        stale_in_registry = registered - self._EXPECTED_CALL_SITES
+        assert not stale_in_registry, (
+            f"guard(s) registered in _COMMITTED_DIFF_GUARDS but no longer "
+            f"called anywhere in the land preflight sequence (stale entry, "
+            f"update _EXPECTED_CALL_SITES or remove the registry row): "
+            f"{sorted(stale_in_registry)}"
+        )
+
+    # frob:ticket T-2017
+    def test_every_registry_entry_has_a_twin_or_a_stated_reason(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness.test_every_registry_entry_has_a_twin_or_a_stated_reason  # noqa: E501
+        # T-1940: the actual acceptance-criterion enforcement -- a
+        # registry row is never allowed to have BOTH fields empty (a
+        # silent gap), only one or the other (a closed hazard, or an
+        # honestly acknowledged open one).
+        for guard in _land_mod._COMMITTED_DIFF_GUARDS:
+            has_twin = guard.post_mutation_check is not None
+            has_reason = bool(guard.exemption_reason)
+            assert has_twin or has_reason, (
+                f"{guard.name} has neither a post_mutation_check twin nor "
+                f"an exemption_reason -- every _COMMITTED_DIFF_GUARDS row "
+                f"must have one or the other"
+            )
+            if has_twin:
+                assert hasattr(_land_mod, guard.post_mutation_check), (
+                    f"{guard.name}'s registered post_mutation_check "
+                    f"{guard.post_mutation_check!r} does not exist in "
+                    f"frob.tickets._land"
+                )
+
+    # frob:ticket T-2017
+    def test_registered_twins_are_actually_wired_into_the_land_sequence(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness.test_registered_twins_are_actually_wired_into_the_land_sequence  # noqa: E501
+        # A registry entry claiming a twin exists is only meaningful if
+        # `_land_locked` actually CALLS it -- source-inspects `_land_
+        # locked` for each registered twin's own name, the same
+        # completeness spirit as the call-site test above but for the
+        # SECOND (post-mutation) call site instead of the first
+        # (preflight) one.
+        import inspect
+
+        source = inspect.getsource(_land_mod._land_locked)
+        for guard in _land_mod._COMMITTED_DIFF_GUARDS:
+            if guard.post_mutation_check is None:
+                continue
+            assert guard.post_mutation_check in source, (
+                f"{guard.name}'s registered twin {guard.post_mutation_check!r} "
+                f"is not called anywhere in _land_locked's own source"
+            )
+
+
 # frob:ticket T-0907
 class TestLandRepairMarker:
     """T-0907: `_repair_stale_land_marker` reconciles a crashed land's
