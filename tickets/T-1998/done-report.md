@@ -49,3 +49,6 @@ the sweep is a different, larger change than fixing 1 real finding.
 - tests: 2 passed (from 2 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
 - error-findings: DSL001@CHANGELOG.md, F401@/home/logan/projects/frob/.claude/worktrees/ticket-workflow/tests/unit/test_tickets_evidence_only_scope.py, SELFAUDIT001@design
+
+
+frob:no-behavior-change reason="the fix adds a frob:tests directive binding related_tickets to two ALREADY-PASSING, pre-existing tests (TestRelatedTicketsSearch) -- pure coverage-declaration metadata, no runtime behavior changed, so the designated repro test correctly passes at both the parent commit and the fix"
