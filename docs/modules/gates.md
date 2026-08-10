@@ -4045,9 +4045,9 @@ rationale:
   "always" in passing is a different failure mode than an
   enforced-contract doc with zero bound invariants at all.
 
-A file-scoped markdown `frob:waive` marker (`<!-- frob:waive INV004
-reason="..." -->` anywhere in the file, applied via
-`_file_has_reasoned_doc_waiver` from `inv004_gate`, the same helper
+A file-scoped markdown `frob:waive` marker
+(`<!-- frob:waive INV004 reason="..." -->` anywhere in the file, applied
+via `_file_has_reasoned_doc_waiver` from `inv004_gate`, the same helper
 INV003 uses) dispositions one under-specified file without a fake bound
 invariant.
 

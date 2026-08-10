@@ -475,10 +475,10 @@ on its own per-ref `sorted(_facets_for_ref(...))` call.
 Before T-1968, `markdown_anchors` never checked whether an
 `<!-- frob:<verb> ... -->` HTML-comment directive it did not itself
 recognize (only `describes`/`enumerates`/`until`) was actually read by
-ANYTHING else -- a real, deliberate waiver like `<!-- frob:waive DOC006
-reason="..." -->` was accepted as silent prose, no error, no warning,
-no suppressed finding, and no way for the author to learn it did
-nothing.
+ANYTHING else -- a real, deliberate waiver like
+`<!-- frob:waive DOC006 reason="..." -->` was accepted as silent prose,
+no error, no warning, no suppressed finding, and no way for the author
+to learn it did nothing.
 
 Several gates independently invented their own tiny per-rule regex
 reading `frob:waive <RULE> reason="..."` directly out of markdown text,

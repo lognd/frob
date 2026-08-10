@@ -1,4 +1,3 @@
-<!-- frob:doc src/frob/arch -->
 # Design-Pattern and Design-Principle Traps: A Cited Practitioner Corpus
 
 Status: living reference. Feeds T-0330 (arch SOLID / senior-designer checks),

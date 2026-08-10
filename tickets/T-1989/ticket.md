@@ -2,7 +2,7 @@
 id: T-1989
 title: 'T-1968''s land regressed the floor 0 to 105: documentation describing directives
   now raises DSL001'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,218 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/graph/dsl.py
+- docs/design/coding-performance-corpus.md
+- docs/design/design-pattern-traps-corpus.md
+- docs/design/language-adapter-tier-decision.md
+- docs/design/system-performance-corpus.md
+- docs/guides/install.md
+- docs/modules/arch.md
+- docs/modules/gates.md
+- docs/modules/graph.md
+- tests/unit/graph/test_dsl_markdown_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/coding-performance-corpus.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/design-pattern-traps-corpus.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/language-adapter-tier-decision.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/system-performance-corpus.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/install.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/arch.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: 'Widened past the ticket''s initial src/frob/graph/dsl.py declaration to
+
+    the doc files the (a)/(b) triage required touching directly: mention
+
+    sites needing a rewrap so the same-line-only code-span detector catches
+
+    them (docs/modules/graph.md, docs/modules/gates.md), one genuinely dead
+
+    directive removed (docs/guides/install.md), one prose-ified directive
+
+    example (docs/modules/arch.md), and four newly-surfaced broken frob:doc
+
+    self-anchor targets from wiring markdown frob:doc/frob:ticket into real
+
+    edges (docs/design/*.md). The accompanying test file is also in scope.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_waive_of_a_genuinely_unhonored_rule_is_reported_unparsed
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_waive_of_each_honored_rule_produces_no_finding
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_multiple_unhonored_waivers_each_reported
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_recognized_verbs_produce_no_unhandled_finding
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_unknown_verb_entirely_is_reported
+- tests/unit/graph/test_dsl_markdown_waive.py::TestMarkdownDirectiveMentionVsUse::test_unhandled_verb_inside_inline_code_span_is_a_mention_not_a_finding
+- tests/unit/graph/test_dsl_markdown_waive.py::TestMarkdownDirectiveMentionVsUse::test_unhandled_verb_outside_any_code_span_still_raises
+- tests/unit/graph/test_dsl_markdown_waive.py::TestMarkdownDirectiveMentionVsUse::test_unhandled_verb_inside_fenced_code_block_is_also_a_mention
+- tests/unit/graph/test_dsl_markdown_waive.py::TestMarkdownDirectiveMentionVsUse::test_ticket_directive_in_markdown_produces_a_ticket_edge
+- tests/unit/graph/test_dsl_markdown_waive.py::TestMarkdownDirectiveMentionVsUse::test_doc_directive_in_markdown_produces_a_doc_edge
 designated_repro_test: null
 threat: null
 component: null

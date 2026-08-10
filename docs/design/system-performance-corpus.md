@@ -1,7 +1,5 @@
 # System-performance corpus: analysis methodology, profiling, tuning
 
-<!-- frob:doc src/frob/perf -->
-
 ## Scope and reconciliation
 
 This corpus is the PERFORMANCE-ANALYSIS depth layer: methodology, resource

@@ -1,6 +1,6 @@
 # Code-level performance corpus: conceptual and mechanical-sympathy
 
-<!-- frob:doc docs/design/coding-performance-corpus.md#exhaustive-cited-performance-corpus -->
+<!-- frob:doc docs/design/coding-performance-corpus.md#code-level-performance-corpus-conceptual-and-mechanical-sympathy -->
 
 Exhaustive, cited catalogue of code-level performance knowledge, split into
 two axes:

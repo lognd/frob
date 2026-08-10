@@ -1,6 +1,6 @@
 # Next language-adapter tier: decision (T-0691)
 
-<!-- frob:doc docs/design/language-adapter-tier-decision.md#decision -->
+<!-- frob:doc docs/design/language-adapter-tier-decision.md#decision-none-for-now-stay-demand-driven -->
 
 ## Question
 

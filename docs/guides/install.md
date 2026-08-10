@@ -1,5 +1,3 @@
-<!-- frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug); file is docs/** in intent" -->
-
 # Installing frob (T-0133)
 
 frob ships as one pure-Python package (`frob`) plus two optional Rust/PyO3

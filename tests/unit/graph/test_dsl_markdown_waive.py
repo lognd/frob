@@ -15,12 +15,15 @@ DOC004/DOC006/INV003/INV004/BUG002); this test file's "unhonored"
 examples use a rule id genuinely outside that set.
 """
 # frob:ticket T-1968
+# frob:ticket T-1989
 
 from __future__ import annotations
 
+from frob.graph._models import EdgeKind
 from frob.graph.dsl import markdown_anchors
 
 
+# frob:ticket T-1989
 class TestUnhandledMarkdownWaiveDirective:
     def test_waive_of_a_genuinely_unhonored_rule_is_reported_unparsed(self) -> None:
         # frob:tests src/frob/graph/dsl.py::markdown_anchors
@@ -82,11 +85,108 @@ class TestUnhandledMarkdownWaiveDirective:
         _edges, malformed = markdown_anchors("doc.md", text)
         assert malformed == ()
 
+    # frob:ticket T-1989
     def test_unknown_verb_entirely_is_reported(self) -> None:
         # frob:tests src/frob/graph/dsl.py::markdown_anchors
         # Generic: ANY unrecognized verb, not just waive, is caught --
         # a future directive/file-type gap needs no new regex here.
-        text = '<!-- frob:invariant something reason="x" -->\n'
+        # T-1989: `invariant` moved to `_MD_HANDLED_VERBS` (a real reader,
+        # `frob.gates._inv`, exists for its markdown-side marker) so it no
+        # longer stands in for "genuinely unrecognized" here -- a verb
+        # nothing owns anywhere in the codebase is the correct fixture.
+        text = '<!-- frob:bogus-verb-xyz something reason="x" -->\n'
         _edges, malformed = markdown_anchors("doc.md", text)
         assert len(malformed) == 1
-        assert "invariant" in malformed[0].reason
+        assert "bogus-verb-xyz" in malformed[0].reason
+
+
+# frob:ticket T-1989
+class TestMarkdownDirectiveMentionVsUse:
+    """T-1989: T-1968's land took the unscoped floor from 0 to 105 DSL001
+    errors, because a `frob:` verb quoted as a worked EXAMPLE inside
+    markdown's own `` `...` ``/```` ```...``` ```` code-span syntax --
+    documentation demonstrating the DSL's own grammar, or a CHANGELOG
+    entry recording a past waiver -- was parsed exactly the same as a
+    live directive. `_blank_code_spans` fixes the mention half; this
+    class is the acceptance test named in T-1989's own body: one case
+    that must NOT raise (a mention inside an inline-code span), one that
+    still MUST (a genuinely unhandled live directive, same shape, no
+    backticks) -- proving the fix discriminates by code-span membership,
+    not by silencing DSL001 wholesale."""
+
+    # frob:ticket T-1989
+    def test_unhandled_verb_inside_inline_code_span_is_a_mention_not_a_finding(
+        self,
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # T-1989 measured shape (docs/modules/graph.md, docs/modules/
+        # gates.md, CHANGELOG.md): a doc explaining the DSL quotes an
+        # example directive inside single backticks. This must produce
+        # NO MalformedDirective -- it is prose ABOUT the syntax, not a
+        # live directive, the same mention/use distinction T-1970
+        # established for `frob:quote(...)`, here applied automatically
+        # to markdown's own code-span convention instead of requiring an
+        # author to hand-wrap every worked example.
+        text = (
+            "A real waiver looks like "
+            '`<!-- frob:waive DOC006 reason="..." -->` in this repo.\n'
+        )
+        _edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
+
+    # frob:ticket T-1989
+    def test_unhandled_verb_outside_any_code_span_still_raises(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # Same rule id, same verb, NO backticks -- a genuinely live,
+        # unhandled directive must still be reported loud. This is the
+        # class T-1968 exists to surface (docs/guides/install.md's real
+        # `frob:waive SCOPE001`, T-1989's own measured incident) --
+        # code-span masking must never become a way to silently re-hide
+        # a real defect.
+        text = '<!-- frob:waive SCOPE001 reason="..." -->\n'
+        _edges, malformed = markdown_anchors("doc.md", text)
+        assert len(malformed) == 1
+        assert "SCOPE001" in malformed[0].reason
+
+    # frob:ticket T-1989
+    def test_unhandled_verb_inside_fenced_code_block_is_also_a_mention(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # The other code-span shape: a fenced ``` block showing a
+        # directive as sample text (e.g. a "how to write a waiver"
+        # snippet) must not be parsed as live either.
+        text = (
+            "```\n"
+            '<!-- frob:waive SCOPE001 reason="example" -->\n'
+            "```\n"
+        )
+        _edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
+
+    # frob:ticket T-1989
+    def test_ticket_directive_in_markdown_produces_a_ticket_edge(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # T-1989: `<!-- frob:ticket T-#### -->` is markdown's own
+        # bare-target provenance tag (35 sites at measurement time,
+        # docs/strata/*.md and others) -- now a real TICKET edge, the
+        # same disposition `_UNTIL_RE` already gets, not an unhandled
+        # directive.
+        text = "# H\n\n<!-- frob:ticket T-0042 -->\n"
+        edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
+        assert len(edges) == 1
+        assert edges[0].kind == EdgeKind.TICKET
+        assert edges[0].target == "T-0042"
+        assert edges[0].src == "doc.md#h"
+
+    # frob:ticket T-1989
+    def test_doc_directive_in_markdown_produces_a_doc_edge(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # T-1989: `<!-- frob:doc <target> -->` is markdown's own
+        # bare-target self-anchor tag (18 sites at measurement time,
+        # mostly self-referencing `path#slug`) -- now a real DOC edge.
+        text = "# H\n\n<!-- frob:doc doc.md#h -->\n"
+        edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
+        assert len(edges) == 1
+        assert edges[0].kind == EdgeKind.DOC
+        assert edges[0].target == "doc.md#h"

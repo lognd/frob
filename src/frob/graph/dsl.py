@@ -117,6 +117,52 @@ def mask_frob_mentions(text: str) -> str:
     return _MENTION_RE.sub(lambda m: "." * len(m.group(0)), text)
 
 
+# frob:ticket T-1989
+# T-1989: fenced (```...```) code spans, matched over the WHOLE doc text
+# (DOTALL, so a fence's own multi-line body is caught in one span) --
+# fences are well-scoped (triple backticks, opened/closed in matched
+# pairs almost by construction) so a file-wide regex is safe. Inline
+# (`...`) spans are deliberately kept SAME-LINE ONLY (`_INLINE_CODE_RE`,
+# below) rather than also spanning newlines: a whole-file inline-backtick
+# regex measured unsafe on this repo's own docs (`docs/modules/gates.md`
+# alone carries an ODD total backtick count -- 7657 at T-1989 measurement
+# time -- so file-wide non-greedy pairing silently mispairs everything
+# downstream of whichever single stray backtick breaks parity, blanking
+# the wrong spans or none at all). Matches `frob.gates.invariants.
+# _INLINE_CODE_RE`'s same same-line-only precedent for the identical
+# reason.
+_FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
+# frob:ticket T-1989
+_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+
+
+# frob:ticket T-1989
+def _blank_code_spans(text: str) -> str:
+    """T-1989: replace every fenced code span, and every SAME-LINE inline
+    code span, in `text` with same-length `.` filler (newlines preserved
+    verbatim, so every OTHER line's number stays correct) -- documentation
+    quoting `frob:` syntax as a worked example (a DSL grammar table, a
+    directive shown inside backticks to teach its shape) is exactly where
+    a doc naturally writes syntax it does not intend to be live, mirroring
+    code's own `# frob:describes ...` doctest/example convention of never
+    being inside a real triple-quoted docstring by accident. Applied
+    BEFORE `mask_frob_mentions` and the per-line directive scan in
+    `markdown_anchors`, the same earliest-insertion-point pattern T-1970
+    established: masking here can only ever REMOVE a would-be
+    `MalformedDirective`/edge match, never manufacture a new one, since
+    the filler contains no `frob:`-shaped text of its own. A directive
+    example broken across multiple lines by prose wrapping is NOT caught
+    by this pass (see `_INLINE_CODE_RE`'s own docstring note above) --
+    the doc author's own explicit `frob:quote(...)` escape (T-1970) is
+    the correct tool for that shape instead."""
+
+    def _blank(match: re.Match[str]) -> str:
+        return "".join("\n" if ch == "\n" else "." for ch in match.group(0))
+
+    text = _FENCED_CODE_RE.sub(_blank, text)
+    return _INLINE_CODE_RE.sub(_blank, text)
+
+
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
 _ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
 # T-0757: "property" joins the existing three kinds -- a `frob:tests`
@@ -205,6 +251,23 @@ _ENUMERATES_RE = re.compile(
 # binding the doc section it appears under to the ticket that will build
 # the not-yet-built thing the section describes.
 _UNTIL_RE = re.compile(r"<!--\s*frob:until\s+(?P<ticket>T-\d+)\s*-->")
+# frob:ticket T-1989
+# T-1989: `frob:ticket T-####`'s markdown-side form -- the same bare-target
+# provenance tag code comments already carry (`_VERB_TABLE["ticket"]`),
+# now recognized in markdown too. Measured need: `<!-- frob:ticket T-#### -->`
+# is an established doc-authoring convention (docs/strata/*.md and others,
+# 35 sites at T-1989 measurement time) marking which ticket a doc section
+# belongs to -- consistently well-formed, never prose-shaped, so treating
+# it as a real TICKET edge (mirroring `_UNTIL_RE` exactly) rather than an
+# unhandled directive is the correct disposition, not a mention to quote.
+_TICKET_MD_RE = re.compile(r"<!--\s*frob:ticket\s+(?P<ticket>T-\d+)\s*-->")
+# frob:ticket T-1989
+# T-1989: `frob:doc <target>`'s markdown-side form -- a doc section
+# self-declaring its own `path#slug` as a valid `frob:doc` target for code
+# comments to point at (bare-target shape, same as `_UNTIL_RE`/
+# `_TICKET_MD_RE`). Measured need: 18 sites at T-1989 measurement time, all
+# well-formed self-references, never prose.
+_DOC_MD_RE = re.compile(r"<!--\s*frob:doc\s+(?P<target>\S+)\s*-->")
 # T-1229: negative-existence prose heuristic (gate-gap class 3,
 # docs/audits/docs-staleness-2026-07-29.md) -- "X does not exist yet",
 # "not yet built/implemented/wired/supported/available/shipped/landed".
@@ -289,14 +352,19 @@ def _negexist_phrase_edge(
     )
 
 
+# frob:ticket T-1989
 def _directive_edge(line: str, doc_path: str, slug: str, lineno: int) -> Edge | None:
-    """One `DESCRIBES`/`ENUMERATES`/`UNTIL` edge for `line`, or `None` --
-    split out of `markdown_anchors`'s main loop (ARCH001): these three
-    directive-comment forms are mutually exclusive per line and checked
-    in this fixed order, matching the original inline loop's semantics
-    exactly (first match wins, `markdown_anchors` still short-circuits on
-    a non-`None` result before falling through to the negexist-phrase
-    check)."""
+    """One `DESCRIBES`/`ENUMERATES`/`UNTIL`/`TICKET`/`DOC` edge for `line`,
+    or `None` -- split out of `markdown_anchors`'s main loop (ARCH001):
+    these directive-comment forms are mutually exclusive per line and
+    checked in this fixed order, matching the original inline loop's
+    semantics exactly (first match wins, `markdown_anchors` still short-
+    circuits on a non-`None` result before falling through to the
+    negexist-phrase check). T-1989 adds the `TICKET`/`DOC` cases: measured
+    as the two largest classes of `_unhandled_markdown_directive` findings
+    (35 and 18 respectively) once T-1968 made unhandled markdown
+    directives loud, both consistently well-formed provenance tags (never
+    prose), so routing them to real edges is the correct disposition."""
     describes = _DESCRIBES_RE.search(line)
     if describes is not None:
         facet = describes.group("facet") or "sig"
@@ -322,6 +390,22 @@ def _directive_edge(line: str, doc_path: str, slug: str, lineno: int) -> Edge | 
             src=f"{doc_path}#{slug}",
             kind=EdgeKind.UNTIL,
             target=until.group("ticket"),
+            origin=f"{doc_path}:{lineno}",
+        )
+    ticket = _TICKET_MD_RE.search(line)
+    if ticket is not None:
+        return Edge(
+            src=f"{doc_path}#{slug}",
+            kind=EdgeKind.TICKET,
+            target=ticket.group("ticket"),
+            origin=f"{doc_path}:{lineno}",
+        )
+    doc = _DOC_MD_RE.search(line)
+    if doc is not None:
+        return Edge(
+            src=f"{doc_path}#{slug}",
+            kind=EdgeKind.DOC,
+            target=doc.group("target"),
             origin=f"{doc_path}:{lineno}",
         )
     return None
@@ -363,13 +447,29 @@ _MD_WAIVE_HONORED_RULES = frozenset(
     {"REF001", "REF002", "DOC004", "DOC006", "INV003", "INV004", "BUG002"}
 )
 # Verbs `markdown_anchors`'s OWN loop already turns into a real edge
-# (describes/enumerates/until), plus verbs a DIFFERENT module owns and
-# reads directly from markdown text (frob.gates._docblocks's
-# `frob:generated-start`/`frob:generated-end` table fences, T-1011) --
-# neither is "unhandled", so neither belongs in this ticket's new
-# diagnostic.
+# (describes/enumerates/until/ticket/doc, T-1989 adding the latter two),
+# plus verbs a DIFFERENT module owns and reads directly from markdown
+# text -- neither is "unhandled", so neither belongs in this ticket's
+# diagnostic:
+# - `generated-start`/`generated-end`: `frob.gates._docblocks`'s table
+#   fence markers (T-1011).
+# - `invariant`: `frob.gates._inv._DOC_INVARIANT_MARKER_RE` (INV002/
+#   INV003/INV004's own markdown-side anchor, T-1989 -- the code-comment
+#   form `# frob:invariant INV-###` already routes through `_VERB_TABLE`
+#   above; this is markdown's separate, independently-read form of the
+#   SAME verb, not a second directive).
+# - `claims`: `frob.gates._sys._CLAIMS_RE` (DOC003's exhaustiveness-proof
+#   marker, T-1989).
+# - `_RESERVED_MARKER_VERBS` (used-by/secret-fake/raises): already
+#   recognized as owned-elsewhere for the code-comment path above; T-1989
+#   folds the same set in here since their own scanners (frob.gates._refs,
+#   frob.gates._secrets, frob.gates._exhaustive_handling) read raw text
+#   across every tracked file type, markdown included, not just source.
+# frob:ticket T-1989
 _MD_HANDLED_VERBS = frozenset(
-    {"describes", "enumerates", "until", "generated-start", "generated-end"}
+    {"describes", "enumerates", "until", "ticket", "doc"}
+    | {"generated-start", "generated-end", "invariant", "claims"}
+    | _RESERVED_MARKER_VERBS
 )
 
 
@@ -439,6 +539,7 @@ def _unhandled_markdown_directive(
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_directive_comment_line_itself_never_matches_the_heuristic  # noqa: E501
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_plain_prose_with_no_matching_phrase_emits_nothing  # noqa: E501
 # frob:ticket T-1433
+# frob:ticket T-1989
 # frob:waive AFFECT001 reason="pure ARCH001 line-count split (extracted \
 # _directive_edge/_negexist_phrase_edge helpers, preserving match order and behavior \
 # verbatim -- tests/unit/gates/test_negexist.py's tests stay green); the documented \
@@ -467,12 +568,24 @@ def markdown_anchors(
     # single earliest insertion point `parse_directives` uses for code
     # comments.
     text = mask_frob_mentions(text)
+    # T-1989: a SECOND, directive-matching-only view with fenced/inline
+    # code spans blanked too -- kept separate from `text` (rather than
+    # reassigning `text = _blank_code_spans(text)`) because heading-slug
+    # computation must still see a heading's own backtick-formatted TEXT
+    # (`## \`markdown_anchors\``) verbatim; blanking that would corrupt
+    # every DESCRIBES/ENUMERATES target resolving against it. Both views
+    # share the exact same line count/newline positions (`_blank_code_
+    # spans` preserves newlines), so indexing them in lockstep below is
+    # safe.
+    directive_view = _blank_code_spans(text)
+    directive_lines = directive_view.splitlines()
     for lineno, line in enumerate(text.splitlines(), start=1):
         heading = _HEADING_RE.match(line)
         if heading is not None:
             slug = dedupe_slug(slugify(heading.group(2)), seen)
             continue
-        directive_edge = _directive_edge(line, doc_path, slug, lineno)
+        directive_line = directive_lines[lineno - 1]
+        directive_edge = _directive_edge(directive_line, doc_path, slug, lineno)
         if directive_edge is not None:
             edges.append(directive_edge)
             continue
@@ -480,7 +593,7 @@ def markdown_anchors(
         if negexist_edge is not None:
             edges.append(negexist_edge)
             continue
-        unhandled = _unhandled_markdown_directive(line, doc_path, lineno)
+        unhandled = _unhandled_markdown_directive(directive_line, doc_path, lineno)
         if unhandled is not None:
             malformed.append(unhandled)
     _log.debug(

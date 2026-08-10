@@ -1934,8 +1934,8 @@ defaults), but present as disclosure of the calibration decision.
 
 ## frob:tests
 
-<!-- frob:tests frob.arch.analyze_project tests/unit/test_arch.py -->
-`tests/unit/test_arch.py` exercises every category in the table above
+`tests/unit/test_arch.py` covers `frob.arch.analyze_project` -- it
+exercises every category in the table above
 against `tests/fixtures/arch_python` (issues expected) and
 `tests/fixtures/simple_python` (clean project, no false positives), plus
 `as_text`/`as_json` output-shape checks.
