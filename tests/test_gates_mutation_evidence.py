@@ -557,3 +557,44 @@ class TestBugRepro:
         ticket = _bug_ticket(evidence=("tests/test_thing.py::test_returns_new",))
         violations = bug_repro_violations(repo, ticket, "main")
         assert violations == ()
+
+    def test_repro_run_actually_uses_the_parent_refs_own_pythonpath_override(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_repro_run_actually_uses_the_parent_refs_own_pythonpath_override  # noqa: E501
+        # T-2005: `_run_designated_test` builds a PYTHONPATH override
+        # pointed at the parent-commit worktree's own `src/`, but the old
+        # `run_argv(argv, cwd=worktree, timeout_s=timeout_s)` call never
+        # passed `env=env` through (`run_argv` had no `env` parameter at
+        # all) -- the override was silently dropped and the subprocess
+        # inherited THIS process's own environment instead. `only_via_
+        # pythonpath` lives under `worktree/src/`, a directory never on
+        # this test process's own `sys.path` and never added implicitly by
+        # `python -m pytest` (which only adds `cwd`, not `cwd/src`) -- so
+        # collecting it AT ALL, let alone importing the right copy, is
+        # only possible if the PYTHONPATH override genuinely reached the
+        # spawned subprocess.
+        from frob.gates._mutation_evidence import _BugReproOutcome, _run_designated_test
+
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "src").mkdir()
+        (repo / "src" / "only_via_pythonpath.py").write_text(
+            "def marker() -> str:\n    return 'parent-src'\n", encoding="utf-8"
+        )
+        (repo / "tests").mkdir()
+        (repo / "tests" / "test_pythonpath_marker.py").write_text(
+            "import only_via_pythonpath\n\n"
+            "def test_marker():\n"
+            "    assert only_via_pythonpath.marker() == 'parent-src'\n",
+            encoding="utf-8",
+        )
+        _commit(repo, "add a module importable only via PYTHONPATH override")
+
+        outcome = _run_designated_test(
+            repo, "tests/test_pythonpath_marker.py::test_marker", 60.0
+        )
+        # Before T-2005's fix: the subprocess never saw PYTHONPATH pointed
+        # at repo/src, `import only_via_pythonpath` failed to collect, and
+        # this returned NO_VERDICT -- never a real pass.
+        assert outcome is _BugReproOutcome.PASSED_AT_PARENT

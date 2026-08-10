@@ -787,7 +787,7 @@
     "src/frob/gitio.py::git_common_dir": "e083e425d4594a33ff74d9c782b1c3bce27e468fb6e20ee67f0c6c37e70960ec",
     "src/frob/gitio.py::repo_root": "a9401b65328fdaed09960fa5fa8f012c07b2da09830c74081230620a04d9ff2b",
     "src/frob/gitio.py::reset_common_dir_cache": "3a96015ab386cf2eb703685efd89c4319499d49c5dbccc49b084be388e6e6fba",
-    "src/frob/gitio.py::run_argv": "24c128ec98484a3387c0a9490dfb2760b8c0d0dd9110e72f64a07d70f33cc32e",
+    "src/frob/gitio.py::run_argv": "610ff1fcc1d18d0d5ac0a2ab0eaf8296faed99e02b1a52b146243ec64b1b0f60",
     "src/frob/gitio.py::spawn_recorder": "30f95cc53bdae920f1c4cdca27092c5fad758442d17d8c213dbc255e37a6bdf5",
     "src/frob/gitio.py::working_diff": "0b743559c042264d89ed77be0e31ebd24532f7bb29f9ce52f03bfc3d35ca6fd3",
     "src/frob/gitlog/__init__.py::CommitEntry": "ec644ef343bda6b32ba3d8865968d81cd905197c3c7a05da945a8a031cb3adac",
@@ -2242,5 +2242,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.445.0"
+  "version": "0.446.0"
 }

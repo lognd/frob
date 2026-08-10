@@ -526,7 +526,7 @@ def _run_designated_test(
         src if not env.get("PYTHONPATH") else src + os.pathsep + env["PYTHONPATH"]
     )
     argv = (sys.executable, "-m", "pytest", test_id, "-q", "-p", "no:cacheprovider")
-    spawned = run_argv(argv, cwd=worktree, timeout_s=timeout_s)
+    spawned = run_argv(argv, cwd=worktree, timeout_s=timeout_s, env=env)
     if spawned.is_err:
         _log.warning("BUG002: repro run of %s failed to spawn -- no verdict", test_id)
         return _BugReproOutcome.NO_VERDICT

@@ -116,6 +116,24 @@
       "old_digest": null,
       "reason": "T-1891 only threads warn_if_dirty=False into the existing new_ticket(no_commit=True) call so the misleading no-commit warning is suppressed for this internal batching write -- no change to the symbolic-attribution/regression-ticket-filing behavior docs/modules/tickets.md#symbolic-attribution-t-1690 documents; the following commit_ticket_ledger_change(root, regression_id, message) call is untouched",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-10",
+      "facet": "body",
+      "new_digest": "1c4a92f260f78ebe0824248e0751f56f51cb98759b6647a369b61a317c085985",
+      "old_digest": null,
+      "reason": "T-2005: added an env= keyword-only parameter (forwarded to guarded_subprocess_run as env=dict(env) if not None else None); re-verified docs/modules/testing.md's public-api block and section describing PYO3_PYTHON env overlay both updated to reflect it; existing callers pass no env= and are unaffected (default None == inherit, unchanged behavior)",
+      "ref": "src/frob/gitio.py::run_argv"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-10",
+      "facet": "sig",
+      "new_digest": "610ff1fcc1d18d0d5ac0a2ab0eaf8296faed99e02b1a52b146243ec64b1b0f60",
+      "old_digest": "24c128ec98484a3387c0a9490dfb2760b8c0d0dd9110e72f64a07d70f33cc32e",
+      "reason": "T-2005: added an env= keyword-only parameter (forwarded to guarded_subprocess_run as env=dict(env) if not None else None); re-verified docs/modules/testing.md's public-api block and section describing PYO3_PYTHON env overlay both updated to reflect it; existing callers pass no env= and are unaffected (default None == inherit, unchanged behavior)",
+      "ref": "src/frob/gitio.py::run_argv"
     }
   ],
   "entries": [
@@ -400,7 +418,12 @@
       "ref": "src/frob/gitio.py::repo_root"
     },
     {
-      "digest": "24c128ec98484a3387c0a9490dfb2760b8c0d0dd9110e72f64a07d70f33cc32e",
+      "digest": "1c4a92f260f78ebe0824248e0751f56f51cb98759b6647a369b61a317c085985",
+      "facet": "body",
+      "ref": "src/frob/gitio.py::run_argv"
+    },
+    {
+      "digest": "610ff1fcc1d18d0d5ac0a2ab0eaf8296faed99e02b1a52b146243ec64b1b0f60",
       "facet": "sig",
       "ref": "src/frob/gitio.py::run_argv"
     },

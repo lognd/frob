@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.446.0] - unreleased
+
+- T-2005: BUG002 repro-check silently drops its own PYTHONPATH override, so it verifies against the wrong source
+
 ## [0.445.0] - unreleased
 
 - T-1927: design a population/date-projected capacity evaluator for frob sys capacity

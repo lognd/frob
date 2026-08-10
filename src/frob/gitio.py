@@ -170,6 +170,7 @@ def run_argv(
     *,
     cwd: Path | None = None,
     timeout_s: float = _DEFAULT_TIMEOUT_S,
+    env: Mapping[str, str] | None = None,
 ) -> Result[ProcResult, GitError]:
     """Spawn an already-resolved argv (never shell=True); public seam `frob.testing`
     reuses so there is exactly one process-with-timeout helper in the package.
@@ -178,7 +179,18 @@ def run_argv(
     transitively the serve daemon and tickets lease reads, which have no
     other spawn seam) would otherwise make -- returns `Err(GitError.
     GitFailed)` without ever spawning a process while the kill switch is
-    flipped."""
+    flipped.
+
+    `env`, when given, replaces the spawned process's environment entirely
+    (the same `subprocess.Popen`/`subprocess.run` semantics -- `None` means
+    "inherit the caller's environment unchanged", not "empty"). T-2005:
+    added because `guarded_subprocess_run` already forwards any kwarg
+    (including `env`) straight to `subprocess.run`, but this wrapper had no
+    parameter to accept one -- a caller building an `env` override (e.g.
+    BUG002's `_run_designated_test`, PYTHONPATH-pointed at a parent-commit
+    checkout) had no way to pass it through, and the override was silently
+    dropped, so the spawned process ran with the CALLER's own environment
+    instead."""
     full_argv = tuple(argv)
     recorder = _active_recorder.get()
     if recorder is not None:
@@ -192,6 +204,7 @@ def run_argv(
             timeout=timeout_s,
             text=True,
             check=False,
+            env=dict(env) if env is not None else None,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("gitio: spawn failed for %s: %s", full_argv, exc)

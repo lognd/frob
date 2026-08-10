@@ -177,8 +177,10 @@ Both the rust runner (`run_selected`) and rust test collection
 2. Ask that interpreter for `sysconfig.get_config_var("LIBDIR")` and prepend
    it to `LD_LIBRARY_PATH` for the subprocess only (`_env_overlay` patches
    `os.environ` for the duration of the call and restores it after --
-   `frob.gitio.run_argv` has no `env=` parameter by design, so this is the
-   one place a spawn's environment gets adjusted).
+   this predates T-2005's `run_argv(..., env=...)` parameter and has not
+   been revisited to use it; both approaches work, `_env_overlay`'s
+   process-wide patch-and-restore is just no longer the ONLY way to
+   adjust a spawn's environment, see `run_argv` below).
 3. If no interpreter clears the floor, or its libpython directory cannot be
    resolved, both call sites return `Err(TestingError.CargoEnvUnavailable)`
    **before** spawning `cargo` at all -- never a silent skip, never an
@@ -280,12 +282,15 @@ def working_diff(root: Path, base: str) -> Result[Diff, GitError]
     # merge-base(HEAD, base) .. worktree, including uncommitted changes.
 def current_branch(root: Path) -> Result[str, GitError]
 def run_argv(argv: Sequence[str], *, cwd: Path | None = None,
-             timeout_s: float = 30.0) -> Result[ProcResult, GitError]
+             timeout_s: float = 30.0,
+             env: Mapping[str, str] | None = None) -> Result[ProcResult, GitError]
     # The one process-with-timeout primitive in the package. frob.testing
     # imports THIS function for its own runner/pytest spawns instead of
     # keeping a second copy -- frob.gitio must not import frob.testing, so
     # the shared helper lives in gitio and testing depends on it, not the
-    # reverse.
+    # reverse. `env`, when given, replaces the spawned process's
+    # environment entirely (T-2005) -- `None` means inherit the caller's
+    # environment unchanged, matching subprocess.run's own semantics.
 
 @contextmanager
 def spawn_recorder() -> Iterator[SpawnRecorder]

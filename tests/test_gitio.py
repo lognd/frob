@@ -284,6 +284,32 @@ class TestRunArgv:
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
 
+    def test_env_override_reaches_the_spawned_process(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gitio.py::TestRunArgv.test_env_override_reaches_the_spawned_process  # noqa: E501
+        # T-2005: `env=` used to be silently dropped -- `run_argv` had no
+        # parameter to accept it at all, so a caller's override (e.g.
+        # BUG002's PYTHONPATH override) never reached the subprocess, which
+        # inherited the CALLING process's own environment instead. A
+        # spawned `sh -c 'echo $FROB_RUN_ARGV_ENV_PROBE'` proves the
+        # override -- not the ambient environment -- is what the child
+        # process actually sees.
+        result = run_argv(
+            ["sh", "-c", "echo $FROB_RUN_ARGV_ENV_PROBE"],
+            cwd=tmp_path,
+            env={"FROB_RUN_ARGV_ENV_PROBE": "override-value", "PATH": "/usr/bin:/bin"},
+        )
+        assert result.is_ok
+        assert result.danger_ok.stdout.strip() == "override-value"
+
+    def test_env_none_inherits_the_calling_process_environment(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_gitio.py::TestRunArgv.test_env_none_inherits_the_calling_process_environment  # noqa: E501
+        monkeypatch.setenv("FROB_RUN_ARGV_ENV_PROBE", "ambient-value")
+        result = run_argv(["sh", "-c", "echo $FROB_RUN_ARGV_ENV_PROBE"], cwd=tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.stdout.strip() == "ambient-value"
+
     def test_timeout_is_git_failed(self, tmp_path: Path) -> None:
         result = run_argv(["sleep", "5"], cwd=tmp_path, timeout_s=0.2)
         assert result.is_err

@@ -2,7 +2,7 @@
 id: T-2005
 title: BUG002 repro-check silently drops its own PYTHONPATH override, so it verifies
   against the wrong source
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,44 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_mutation_evidence.py
+- src/frob/gitio.py
+- tests/test_gitio.py
+- tests/test_gates_mutation_evidence.py
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gitio.py
+  reason: 'T-2005: the real fix lives in gitio.run_argv (it had no env param at all);
+    _mutation_evidence.py only threads env= through. Both test files carry the fail-first
+    regression evidence.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gitio.py
+  reason: 'T-2005: the real fix lives in gitio.run_argv (it had no env param at all);
+    _mutation_evidence.py only threads env= through. Both test files carry the fail-first
+    regression evidence.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: 'T-2005: the real fix lives in gitio.run_argv (it had no env param at all);
+    _mutation_evidence.py only threads env= through. Both test files carry the fail-first
+    regression evidence.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'T-2005: run_argv''s env parameter is documented there (public-api section),
+    which now needs updating to reflect the fix'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gitio.py::TestRunArgv::test_env_override_reaches_the_spawned_process
+- tests/test_gitio.py::TestRunArgv::test_env_none_inherits_the_calling_process_environment
+- tests/test_gates_mutation_evidence.py::TestBugRepro::test_repro_run_actually_uses_the_parent_refs_own_pythonpath_override
 designated_repro_test: null
 threat: null
 component: null
