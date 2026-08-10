@@ -2,7 +2,7 @@
 id: T-1664
 title: Semantic checks must report UNRESOLVED, never silently pass when they cannot
   analyse
-state: planned
+state: in-progress
 kind: security
 origin: human
 created: '2026-08-06'
