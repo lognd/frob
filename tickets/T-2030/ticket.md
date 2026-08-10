@@ -2,7 +2,7 @@
 id: T-2030
 title: A detached background sweep (T-1983-shaped) writes uncommitted ticket-file
   content directly into an unrelated agent's worktree
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,21 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: test file for the fix
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ
+- tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv::test_pins_frob_root_to_the_correct_root
+- tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv::test_strips_worktree_lease_env
+- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_a_done_ticket_body_is_byte_for_byte_untouched
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ
 threat: null
 component: null
 anchor: false

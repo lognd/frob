@@ -64,6 +64,7 @@ identity count alone be misread as a completeness claim."""
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -402,6 +403,44 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
     _log.info("rapid sweep: %s committed the deferred-sweep debt line", ticket_id)
 
 
+# frob:ticket T-2030
+# frob:tests tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv.test_pins_frob_root_to_the_correct_root  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv.test_strips_worktree_lease_env  # noqa: E501
+def _detached_sweep_env(root: Path) -> dict[str, str]:
+    """T-2030: the `env=` this module's detached `sweep-async` child MUST
+    be spawned with -- never the bare inherited `os.environ`.
+
+    MEASURED root cause: `_resolve_ticket_root` (`ticket_runner/
+    __init__.py`) resolves a `frob ticket <verb>` invocation's root by
+    checking `FROB_ROOT` in the environment BEFORE falling back to `cwd`
+    -- and `subprocess.Popen` here used to pass no `env=` at all, so the
+    detached child silently inherited whatever `FROB_ROOT` happened to be
+    set in the LANDING process's own shell. When that ambient value named
+    a DIFFERENT worktree than the `cwd=root` this call already resolved
+    correctly (T-1003's own precedent: pin explicitly, never trust
+    ambient state), the child's root resolution was silently hijacked --
+    `cwd` was right, `FROB_ROOT` overrode it anyway, and the sweep wrote
+    ticket-file content into whatever worktree that stale value named.
+    This is the single upstream mechanism T-2030 measured across all
+    three symptoms (root residue, cross-worktree writes, and the
+    double-appended drop block): every one of them is a write that
+    landed in the wrong tree because the child's OWN root resolution,
+    not `cwd`, decided where to write.
+
+    Pins `FROB_ROOT` to `root` explicitly (winning outright over any
+    ambient value, matching `_frob_root_env`'s own precedence) and strips
+    `FROB_WORKTREE`/`FROB_AGENT` (T-0574's worktree-lease env, section
+    5b's identical precedent for `tests/system/**`'s subprocess helper --
+    a detached sweep against the resolved land root is not "a dispatched
+    worktree agent" and must not inherit whichever worktree the LANDING
+    process happened to be leased to)."""
+    env = dict(os.environ)
+    env["FROB_ROOT"] = str(root)
+    env.pop("FROB_WORKTREE", None)
+    env.pop("FROB_AGENT", None)
+    return env
+
+
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn.test_exec_disabled_records_debt_and_refuses  # noqa: E501
 # frob:ticket T-1684
@@ -451,6 +490,7 @@ def spawn_deferred_post_land_sweep(
             proc = subprocess.Popen(  # noqa: S603
                 argv,
                 cwd=root,
+                env=_detached_sweep_env(root),
                 stdout=handle,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,

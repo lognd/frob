@@ -6,9 +6,9 @@
       "ticket": "T-1628"
     },
     "cli::env.read": {
-      "accepted_count": 1,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 2,
+      "reason": "T-2001 auto-baseline: this land's own diff grew env.read on cli from 0 to 2 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "cli::eval": {
       "accepted_count": 1,

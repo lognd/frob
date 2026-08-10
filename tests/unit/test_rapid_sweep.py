@@ -262,6 +262,80 @@ class TestDeferredSweepSpawn:
         assert result.danger_err is RapidSweepError.SpawnRefused
         assert debts == [("T-0001", "post-land-unscoped-sweep-deferred")]
 
+    # frob:ticket T-2030
+    def test_spawn_pins_frob_root_env_not_bare_os_environ(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2030's own repro: watch this FAIL first against the unfixed
+        code -- `Popen` used to be called with no `env=` kwarg at all
+        (bare inherited `os.environ`), so an ambient stale `FROB_ROOT` in
+        the landing process's own shell silently overrode the correctly
+        resolved `cwd=root` in the detached child's OWN root resolution.
+        This asserts the actual `Popen` call always pins `FROB_ROOT` to
+        `root`, regardless of what `os.environ` already contains."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn.test_spawn_pins_frob_root_env_not_bare_os_environ  # noqa: E501
+        import subprocess as subprocess_mod
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+
+        monkeypatch.setattr("frob.process.exec_enabled", lambda: True)
+        monkeypatch.setattr(
+            "frob.tickets._evidence.record_rapid_debt", lambda root, tid, what: None
+        )
+        monkeypatch.setattr(rapid_sweep_mod, "_commit_rapid_debt", lambda root, tid: None)
+        # A STALE FROB_ROOT in the ambient environment, naming a
+        # DIFFERENT tree than `root` -- exactly T-2030's measured shape.
+        monkeypatch.setenv("FROB_ROOT", "/some/other/worktree")
+        monkeypatch.setenv("FROB_WORKTREE", "/some/other/worktree")
+        monkeypatch.setenv("FROB_AGENT", "1")
+
+        captured: dict = {}
+
+        class _FakeProc:
+            pid = 4242
+
+        def _fake_popen(argv, **kwargs):
+            captured.update(kwargs)
+            return _FakeProc()
+
+        monkeypatch.setattr(subprocess_mod, "Popen", _fake_popen)
+
+        result = spawn_deferred_post_land_sweep(tmp_path, "T-0001", "T-0001", "abc123")
+        assert result.is_ok
+
+        env = captured.get("env")
+        assert env is not None, "Popen must be called with an explicit env= kwarg"
+        assert env["FROB_ROOT"] == str(tmp_path)
+        assert "FROB_WORKTREE" not in env
+        assert "FROB_AGENT" not in env
+
+
+# frob:ticket T-2030
+class TestDetachedSweepEnv:
+    """T-2030: `_detached_sweep_env`'s own unit-level contract."""
+
+    def test_pins_frob_root_to_the_correct_root(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv.test_pins_frob_root_to_the_correct_root  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _detached_sweep_env
+
+        monkeypatch.setenv("FROB_ROOT", "/stale/other/worktree")
+        env = _detached_sweep_env(tmp_path)
+        assert env["FROB_ROOT"] == str(tmp_path)
+
+    def test_strips_worktree_lease_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv.test_strips_worktree_lease_env  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _detached_sweep_env
+
+        monkeypatch.setenv("FROB_WORKTREE", "/some/worktree")
+        monkeypatch.setenv("FROB_AGENT", "1")
+        env = _detached_sweep_env(tmp_path)
+        assert "FROB_WORKTREE" not in env
+        assert "FROB_AGENT" not in env
+
 
 def _git(repo: Path, *args: str) -> str:
     """Run git in `repo` and return stdout (test helper, T-1698)."""
@@ -1758,6 +1832,41 @@ class TestCloseResolvedSweepTickets:
         dropped = _close_resolved_sweep_tickets(tmp_path, "T-9001", findings)
         assert dropped == ()
 
+    # frob:ticket T-2030
+    def test_a_done_ticket_body_is_byte_for_byte_untouched(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2030: a `done` ticket's own Done report was found silently
+        REPLACED in an incident this ticket investigates -- verify the
+        QUEUED/PLANNED state filter (`_close_resolved_sweep_tickets`'s
+        own scan, `ticket.state not in (QUEUED, PLANNED)`) genuinely
+        protects a terminal ticket's file content, byte for byte, rather
+        than trusting the guard exists by reading it."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_a_done_ticket_body_is_byte_for_byte_untouched  # noqa: E501
+        from frob.tickets import TicketState, drop_ticket, transition
+
+        findings = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", findings)
+        assert filed is not None
+        planned = transition(tmp_path, filed, TicketState.PLANNED)
+        assert planned.is_ok
+        started = transition(tmp_path, filed, TicketState.IN_PROGRESS)
+        assert started.is_ok
+        # DROPPED is the cheap way to reach a terminal state here (same
+        # trick `_seed_ticket`'s own docstring above uses) -- terminal is
+        # the property under test, not which terminal state.
+        dropped_result = drop_ticket(tmp_path, filed, "done for this test")
+        assert dropped_result.is_ok
+
+        ticket_path = tmp_path / "tickets" / filed / "ticket.md"
+        before = ticket_path.read_bytes()
+
+        result = _close_resolved_sweep_tickets(tmp_path, "T-9001", findings)
+        assert result == ()
+
+        after = ticket_path.read_bytes()
+        assert after == before
+
     # frob:ticket T-2034
     def test_commit_failure_restores_root_to_clean_not_left_dirty(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -1844,6 +1953,32 @@ class TestCloseResolvedSweepTickets:
         assert queue.is_ok
         reason_count = queue.danger_ok.tickets[filed].body.count("auto-dropped by")
         assert reason_count == 1
+
+
+# frob:ticket T-2038
+class TestNormalizeIdentityFile:
+    """T-2038 (DRIFT002 fix): `_normalize_identity_file`'s own `frob:tests`
+    directives were added ahead of these tests -- filling the gap."""
+
+    def test_absolute_under_root_becomes_relative(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile.test_absolute_under_root_becomes_relative  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identity_file
+
+        file = str(tmp_path / "a" / "b.py")
+        assert _normalize_identity_file(tmp_path, file) == "a/b.py"
+
+    def test_already_relative_is_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile.test_already_relative_is_unchanged  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identity_file
+
+        assert _normalize_identity_file(tmp_path, "a/b.py") == "a/b.py"
+
+    def test_absolute_outside_root_falls_back_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile.test_absolute_outside_root_falls_back_unchanged  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identity_file
+
+        other = tmp_path.parent / "elsewhere" / "c.py"
+        assert _normalize_identity_file(tmp_path, str(other)) == other.as_posix()
 
 
 # frob:ticket T-2036
