@@ -2,7 +2,7 @@
 id: T-1986
 title: 'TICK009 only warns, so a ticket can start with an umbrella scope and lease
   most of the repo: 2 caught by hand today, queue will not partition'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-10'
