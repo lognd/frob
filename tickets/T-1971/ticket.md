@@ -1,5 +1,5 @@
 ---
-id: T-draft-111e5fd2
+id: T-1971
 title: migrate all frob-wired sibling repos off v1 ledger before deleting v1 splice
   machinery
 state: queued
