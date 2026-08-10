@@ -1,7 +1,7 @@
 ---
 id: T-1925
 title: design a ThreatViolation-to-boundary join for a boundary-scoped frob sys threats
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-09'
@@ -12,6 +12,13 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/strata/_threat.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/app/sys_runner.py
+- src/frob/strata/__init__.py
+- tests/unit/strata/test_threat.py
+- docs/strata/threat.md
+- docs/commands/sys.md
+- tests/unit/test_app_sys_threats.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -31,6 +38,51 @@ scope_changes:
     sibling-draft-finalize lease-collision land bug
   actor: logan
   at: '2026-08-09'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: T-1925 CLI wiring for frob sys threats plus its own test file and affects-doc
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: T-1925 CLI wiring for frob sys threats plus its own test file and affects-doc
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: T-1925 CLI wiring for frob sys threats plus its own test file and affects-doc
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: T-1925 CLI wiring for frob sys threats plus its own test file and affects-doc
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/strata/threat.md
+  reason: T-1925 CLI wiring for frob sys threats plus its own test file and affects-doc
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/commands/sys.md
+  reason: sys threats CLI docs live here
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_app_sys_threats.py
+  reason: new integration test for the frob sys threats CLI wrapper
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/strata/test_threat.py::TestBoundaryScopeNodes::test_scope_is_flow_endpoints_plus_downstream_closure
+- tests/unit/strata/test_threat.py::TestBoundaryScopeNodes::test_scope_stops_at_the_next_boundary
+- tests/unit/strata/test_threat.py::TestBoundaryScopeNodes::test_unknown_boundary_id_fails_closed
+- tests/unit/strata/test_threat.py::TestThreatViolationsForBoundary::test_filters_to_violations_on_nodes_in_scope
+- tests/unit/strata/test_threat.py::TestThreatViolationsForBoundary::test_unknown_boundary_propagates_err
+- tests/unit/test_app_sys_threats.py::TestSysThreats::test_no_boundary_prints_every_violation
+- tests/unit/test_app_sys_threats.py::TestSysThreats::test_boundary_scopes_to_its_own_zone_only
+- tests/unit/test_app_sys_threats.py::TestSysThreats::test_clean_model_reports_no_violations_and_exits_0
+- tests/unit/test_app_sys_threats.py::TestSysThreats::test_unknown_boundary_id_exits_1
 designated_repro_test: null
 threat: null
 component: null

@@ -2,7 +2,7 @@
 id: T-1638
 title: 'land resolves root from cwd: running it from inside a worktree targets the
   wrong repository'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -253,7 +253,10 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-10'
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_root_resolution.py::TestRootResolvesToADifferentWorktree::test_refuses_when_root_is_a_different_registered_worktree
+- tests/unit/test_land_root_resolution.py::TestRootResolvesToADifferentWorktree::test_root_equal_to_the_primary_checkout_is_unaffected
+designated_repro_test: tests/unit/test_land_root_resolution.py::TestRootResolvesToADifferentWorktree::test_refuses_when_root_is_a_different_registered_worktree
 threat: null
 component: null
 anchor: false

@@ -21,13 +21,17 @@ from frob.strata import (
     OutOfScopeEntry,
     Reach,
     Rung,
+    ThreatViolation,
     WeaknessEntry,
     bind_code,
+    boundary_scope_nodes,
+    build_facts,
     check_capability_completeness,
     check_catalog_completeness,
     check_discharge_completeness,
     check_effect_completeness,
     evaluate_threats,
+    threat_violations_for_boundary,
 )
 from frob.strata._effects import _may_kind
 from frob.strata._errors import StrataError
@@ -2207,3 +2211,104 @@ class TestCheckEffectCompleteness:
         result = check_effect_completeness(model, binding, tmp_path, catalog=catalog)
         assert result.is_ok
         assert result.danger_ok == ()
+
+
+def _boundary(bid: str, flow_id: str, **kw) -> Boundary:
+    """Test helper: an ENDORSE boundary on `flow_id` (mirrors test_facts.py's
+    `_endorse` shape, kept local since that helper is private to its own
+    module)."""
+    kw.setdefault("direction", BoundaryDirection.ENDORSE)
+    kw.setdefault("from_level", "foreign")
+    kw.setdefault("to_level", "authenticated")
+    return Boundary(id=bid, flow_id=flow_id, **kw)
+
+
+# frob:ticket T-1925
+class TestBoundaryScopeNodes:
+    # frob:tests src/frob/strata/_threat.py::boundary_scope_nodes kind="unit"
+    def test_scope_is_flow_endpoints_plus_downstream_closure(self):
+        model = KernelModel(
+            nodes=(
+                Node(id="gateway", trust="foreign"),
+                Node(id="api", trust="authenticated"),
+                Node(id="db", trust="authenticated"),
+            ),
+            flows=(
+                Flow(id="f1", src="gateway", dst="api"),
+                Flow(id="f2", src="api", dst="db"),
+            ),
+            boundaries=(_boundary("b1", "f1"),),
+        )
+        facts = build_facts(model).danger_ok
+        scope = boundary_scope_nodes(facts, "b1")
+        assert scope.is_ok
+        assert scope.danger_ok == {"gateway", "api", "db"}
+
+    # frob:tests src/frob/strata/_threat.py::boundary_scope_nodes kind="unit"
+    def test_scope_stops_at_the_next_boundary(self):
+        model = KernelModel(
+            nodes=(
+                Node(id="gateway", trust="foreign"),
+                Node(id="api", trust="authenticated"),
+                Node(id="vault", trust="trusted"),
+            ),
+            flows=(
+                Flow(id="f1", src="gateway", dst="api"),
+                Flow(id="f2", src="api", dst="vault"),
+            ),
+            boundaries=(
+                _boundary("b1", "f1"),
+                _boundary("b2", "f2", to_level="trusted"),
+            ),
+        )
+        facts = build_facts(model).danger_ok
+        scope = boundary_scope_nodes(facts, "b1")
+        assert scope.is_ok
+        # "vault" sits behind the SECOND boundary (b2), not b1's own zone.
+        assert scope.danger_ok == {"gateway", "api"}
+
+    # frob:tests src/frob/strata/_threat.py::boundary_scope_nodes kind="unit"
+    def test_unknown_boundary_id_fails_closed(self):
+        model = KernelModel(
+            nodes=(Node(id="a", trust="trusted"), Node(id="b", trust="trusted")),
+            flows=(Flow(id="f1", src="a", dst="b"),),
+        )
+        facts = build_facts(model).danger_ok
+        result = boundary_scope_nodes(facts, "no-such-boundary")
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+
+# frob:ticket T-1925
+class TestThreatViolationsForBoundary:
+    # frob:tests src/frob/strata/_threat.py::threat_violations_for_boundary kind="unit"
+    def test_filters_to_violations_on_nodes_in_scope(self):
+        model = KernelModel(
+            nodes=(
+                Node(id="gateway", trust="foreign"),
+                Node(id="api", trust="authenticated"),
+                Node(id="other", trust="trusted"),
+            ),
+            flows=(Flow(id="f1", src="gateway", dst="api"),),
+            boundaries=(_boundary("b1", "f1"),),
+        )
+        facts = build_facts(model).danger_ok
+        violations = (
+            ThreatViolation(rule="THREAT002", capability="x", node="api"),
+            ThreatViolation(rule="THREAT002", capability="y", node="other"),
+            ThreatViolation(rule="THREAT001", cwe="CWE-1"),  # node=None, view-scoped
+        )
+        scoped = threat_violations_for_boundary(violations, facts, "b1")
+        assert scoped.is_ok
+        assert scoped.danger_ok == (violations[0],)
+
+    # frob:tests src/frob/strata/_threat.py::threat_violations_for_boundary kind="unit"
+    def test_unknown_boundary_propagates_err(self):
+        model = KernelModel(
+            nodes=(Node(id="a", trust="trusted"), Node(id="b", trust="trusted")),
+            flows=(Flow(id="f1", src="a", dst="b"),),
+        )
+        facts = build_facts(model).danger_ok
+        result = threat_violations_for_boundary((), facts, "no-such-boundary")
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference

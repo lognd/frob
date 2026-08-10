@@ -57,8 +57,11 @@ the false registry row was the narrower, more consistent fix.
 from __future__ import annotations
 
 import ast
+import json
 import logging
 import re
+import tarfile
+import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -1047,3 +1050,205 @@ def _waive004_target_rule(message: str) -> str | None:
     match = _WAIVE004_TARGET_RULE_RE.search(message)
     return match.group(1) if match else None
 
+
+# ---------------------------------------------------------------------------
+# SYS111 (T-2001): the capability-via-ratchet lock (`docs/design/registry/
+# capability-via-ratchet.lock.json`) is the sibling half of the SYS100
+# obligation `fix_sys100_may_via_union`/`fix_sys100_extended_whole_node_
+# grant` above already self-heal (`design/frob.strata`'s own via-lists) --
+# widening a node's grant there satisfies SYS100/SYS104 but leaves the
+# ratchet's committed ceiling stale, so the breach surfaces on a LATER,
+# unrelated land's SYS111 check instead of this one. Measured twice in one
+# hour (T-1977, T-1665) before this handler existed.
+# ---------------------------------------------------------------------------
+
+
+def _capability_counts_at_head(root: Path) -> "dict[str, int] | None":
+    """`capability_via_site_counts` computed from `design/`'s content at
+    git HEAD (T-2001) -- the BEFORE snapshot `fix_sys111_capability_
+    ratchet_sync` diffs the CURRENT working tree against, to attribute
+    ratchet growth to THIS land specifically rather than to history.
+
+    Materializes HEAD's `design/` tree into a scratch directory via `git
+    archive` (never a second, parallel strata-parsing implementation over
+    git blob text) so the EXACT SAME `load_design_ids`/`merge_models`
+    loader the live model uses also produces the historical one.
+
+    Returns `None` (skip the caller entirely) only when the archive
+    itself could not be produced at all -- no `HEAD`, not a git repo, a
+    spawn failure. An archive that succeeds but contains no `design/`
+    files correctly returns `{}` (a real, meaningful "nothing existed
+    here at HEAD," under which every currently-observed site counts as
+    this land's own growth -- e.g. a land that adds `design/` for the
+    first time)."""
+    from frob import gitio
+    from frob.strata import merge_models
+    from frob.strata._design_load import load_design_ids
+    from frob.strata._effects import capability_via_site_counts
+
+    with tempfile.TemporaryDirectory(prefix="frob-sys111-head-") as tmp_str:
+        tmp = Path(tmp_str)
+        archive_path = tmp / "head.tar"
+        archived = gitio.run_argv(
+            [
+                "git",
+                "-C",
+                str(root),
+                "archive",
+                "--format=tar",
+                "HEAD",
+                "--output",
+                str(archive_path),
+                "--",
+                "design",
+            ]
+        )
+        if archived.is_err or archived.danger_ok.returncode != 0:
+            _log.info(
+                "tier-a fixes: SYS111 ratchet sync: could not archive design/ "
+                "at HEAD (%s) -- skipping (no BEFORE baseline to attribute "
+                "growth to)",
+                archived.danger_err
+                if archived.is_err
+                else archived.danger_ok.stderr.strip(),
+            )
+            return None
+        extract_dir = tmp / "extracted"
+        extract_dir.mkdir()
+        try:
+            with tarfile.open(archive_path) as tar:
+                tar.extractall(extract_dir)  # noqa: S202 -- our own repo's own history
+        except (tarfile.TarError, OSError) as exc:
+            _log.warning(
+                "tier-a fixes: SYS111 ratchet sync: could not extract HEAD's "
+                "design/ archive: %s -- skipping",
+                exc,
+            )
+            return None
+        if not (extract_dir / "design").is_dir():
+            return {}
+        ids = load_design_ids(extract_dir, "design")
+        if ids.errors or not ids.models:
+            return {}
+        return capability_via_site_counts(merge_models(ids.models))
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_bumps_growth_this_lands_diff_caused kind="unit"  # noqa: E501
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_leaves_a_pre_existing_breach_untouched kind="unit"  # noqa: E501
+# frob:ticket T-2001
+def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
+    """Tier-A fix (T-2001): re-baseline `capability-via-ratchet.lock.json`'s
+    `accepted_count` for exactly the `(node, atom)` pairs whose scoped
+    via-list site count GREW between this land's own git-committed parent
+    (`_capability_counts_at_head`) and the CURRENT working tree -- run
+    AFTER `fix_sys100_may_via_union`/`fix_sys100_extended_whole_node_grant`
+    in `TIER_A_HANDLERS`' declared order, so the current-side count
+    already reflects whatever those two just widened in `design/
+    frob.strata`.
+
+    Never bumps unconditionally to whatever is currently observed --
+    that would turn the ratchet into a no-op that ratifies any growth,
+    the exact anti-goal T-2001's own body names. A `(node, atom)` pair
+    whose CURRENT count exceeds the committed ceiling but did NOT grow
+    since HEAD is a PRE-EXISTING breach (inherited from before this land
+    touched anything) and is deliberately left untouched -- still a
+    violation, still surfaced by SYS111 exactly as before (T-2001's own
+    acceptance criterion 3).
+
+    Every bump records WHY, verbatim in the lock entry's own `reason`
+    field (`T-2001 auto-baseline: ...`) and `ticket: "T-2001"` -- the same
+    accountability the module docstring's "explicit, recorded
+    justification" language already demands of a human-authored widening,
+    now produced mechanically for the one case that IS mechanically
+    derivable (this land's own measured diff), never for a wider one.
+
+    Known, disclosed first-cut gap: a hand-edited via-list widening the
+    agent already COMMITTED on their own worktree branch before landing
+    is invisible to this HEAD-relative diff (HEAD already includes it).
+    Both measured occurrences (T-1977, T-1665) were caused by SYS100's
+    OWN auto-fix widening an UNCOMMITTED via-list in the SAME Tier-A
+    pass, which this fully covers; a committed hand-edit would need a
+    true pre-land-tip base ref threaded through (the shape `frob.
+    tickets._land.land`'s `sync_gate_rules` callback already uses) to
+    close completely -- left as documented residue, not smuggled into
+    this fix's own scope.
+
+    Best-effort like every sibling handler in this module: any git/parse
+    failure computing the BEFORE snapshot skips this handler entirely (no
+    bump at all), matching the ratchet's own deny-by-default posture --
+    "cannot prove this land caused it" must never become "assume it
+    did"."""
+    if not (root / "design").is_dir():
+        return []
+    from frob.strata import merge_models
+    from frob.strata._design_load import load_design_ids
+    from frob.strata._effects import (
+        CAPABILITY_RATCHET_LOCK_REL,
+        _load_capability_ratchet_lock,
+    )
+    from frob.strata._effects import (
+        capability_via_site_counts as _current_counts,
+    )
+
+    current_ids = load_design_ids(root, "design")
+    if current_ids.errors or not current_ids.models:
+        return []
+    current_counts = _current_counts(merge_models(current_ids.models))
+    if not current_counts:
+        return []
+
+    before_counts = _capability_counts_at_head(root)
+    if before_counts is None:
+        return []
+
+    lock_path = root / CAPABILITY_RATCHET_LOCK_REL
+    lock_entries = _load_capability_ratchet_lock(root)
+    try:
+        raw = (
+            json.loads(lock_path.read_text(encoding="utf-8"))
+            if lock_path.is_file()
+            else {}
+        )
+    except (OSError, ValueError):
+        raw = {}
+    if not isinstance(raw, dict):
+        raw = {}
+    if not isinstance(raw.get("entries"), dict):
+        raw["entries"] = {}
+
+    applied: list[FixApplied] = []
+    for key, count in sorted(current_counts.items()):
+        entry = lock_entries.get(key)
+        accepted_raw = entry.get("accepted_count") if isinstance(entry, dict) else None
+        accepted = accepted_raw if isinstance(accepted_raw, int) else 0
+        if count <= accepted:
+            continue
+        if count <= before_counts.get(key, 0):
+            # Pre-existing breach: already this high (or higher) before
+            # this land's own diff touched anything -- not attributable
+            # here, leave it violating for a human to disposition, per
+            # T-1977's own precedent and T-2001's acceptance criterion 3.
+            continue
+        node_id, atom = key.split("::", 1)
+        raw["entries"][key] = {
+            "accepted_count": count,
+            "reason": (
+                f"T-2001 auto-baseline: this land's own diff grew {atom} on "
+                f"{node_id} from {before_counts.get(key, 0)} to {count} "
+                "site(s) (fix_sys111_capability_ratchet_sync)"
+            ),
+            "ticket": "T-2001",
+        }
+        applied.append(
+            FixApplied(
+                rule="SYS111",
+                file=CAPABILITY_RATCHET_LOCK_REL,
+                line=0,
+                detail=f"{key} accepted_count {accepted} -> {count}",
+            )
+        )
+    if not applied:
+        return []
+    _write_text(lock_path, json.dumps(raw, indent=2, sort_keys=True) + "\n")
+    return applied

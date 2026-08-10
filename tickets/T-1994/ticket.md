@@ -2,7 +2,7 @@
 id: T-1994
 title: CHANGELOG.md:1853 DSL001 residual from T-1989 is land-owned, unreachable from
   any worktree
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,19 @@ sprint: null
 runs_last: false
 scope:
 - CHANGELOG.md
+- tests/unit/graph/test_dsl_markdown_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: regression test reading the real repo CHANGELOG.md lives here, alongside
+    the other T-1989 markdown-mention tests it extends
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/graph/test_dsl_markdown_waive.py::TestChangelogMultiLineCodeSpanMention::test_real_changelog_has_no_malformed_markdown_directive
+designated_repro_test: tests/unit/graph/test_dsl_markdown_waive.py::TestChangelogMultiLineCodeSpanMention::test_real_changelog_has_no_malformed_markdown_directive
 threat: null
 component: null
 anchor: false

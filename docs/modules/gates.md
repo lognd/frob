@@ -4342,6 +4342,7 @@ site -- no new mechanism needed.
 <!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver -->
 <!-- frob:describes src/frob/gates/_fix_engine_text.py::fix_suppress001_paired_suppression -->
 <!-- frob:describes src/frob/gates/_fix_engine.py::TIER_A_HANDLERS -->
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys111_capability_ratchet_sync -->
 <!-- frob:describes src/frob/gates/_fix_engine_shared.py::FixApplied -->
 
 First concrete slice of the T-1137 `--fix` epic ("tiered auto-fix
@@ -4801,6 +4802,47 @@ to be documented in this section alongside SYS100's -- `interface=` is
 no longer synced by anything, including at land time; SYS100's `may=`
 capability sync (documented above) is a DIFFERENT, deliberate, live
 mechanism and is unaffected.
+
+**`fix_sys111_capability_ratchet_sync` (T-2001)**: the capability-ratchet
+lock (`docs/design/registry/capability-via-ratchet.lock.json`, SYS111,
+`frob.strata._effects.capability_ratchet_violations`) is the sibling
+half of the SYS100 obligation `fix_sys100_may_via_union`/`fix_sys100_
+extended_whole_node_grant` above already self-heal: widening a node's
+`may ... via [...]` grant in `design/frob.strata` satisfies SYS100/SYS104
+but used to leave the ratchet's committed ceiling stale, so the breach
+surfaced on a LATER, unrelated land's SYS111 check instead of the one
+that actually caused it -- measured twice in one hour (T-1977, T-1665)
+before this handler existed. The same "one of N parallel bookkeeping
+obligations self-heals, its sibling does not" shape `fix_docenum001_
+enumerates_sync` (T-1974) already closed for `docs/modules/gates.md`'s
+rule-catalog anchor.
+
+Registered in `TIER_A_HANDLERS` immediately AFTER `SYS100` (dict order
+is call order, `apply_tier_a_fixes`'s own docstring) so its CURRENT-side
+count already reflects whatever SYS100 just widened in the same pass.
+Never bumps the ceiling unconditionally to whatever is currently
+observed -- that would turn the ratchet into a no-op that ratifies any
+growth, T-2001's own explicit anti-goal. Instead it measures a BEFORE
+snapshot from `design/`'s content at `git show HEAD` (materialized via
+`git archive` into a scratch dir, reusing the exact same `load_design_
+ids`/`merge_models` loader the live model uses, never a second parsing
+implementation over git blob text) and only bumps a `(node, atom)` pair
+whose CURRENT count exceeds the committed ceiling AND grew since HEAD --
+a pair already in breach at HEAD is a PRE-EXISTING violation, left
+untouched (still surfaced by SYS111) rather than silently ratified,
+T-2001's own acceptance criterion. Every bump records a `reason` naming
+the before/after counts and `"ticket": "T-2001"`, the same accountability
+the lock's own module docstring already demands of a human-authored
+widening.
+
+Disclosed first-cut gap: a hand-edited via-list widening the agent
+already COMMITTED on their own worktree branch before landing is
+invisible to this HEAD-relative diff (HEAD already includes it). Both
+measured occurrences were caused by SYS100's OWN auto-fix widening an
+UNCOMMITTED via-list in the SAME Tier-A pass, which this fully covers; a
+committed hand-edit would need a true pre-land-tip base ref threaded
+through (the shape `frob.tickets._land.land`'s `sync_gate_rules` callback
+already uses) to close completely.
 
 **Remaining SYS100/land-refusal recipes (disclosed deferral, T-1531's own
 body names six; two shipped here)**: COV002 changed-symbol-without-edge

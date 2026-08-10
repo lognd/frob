@@ -156,9 +156,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 160,
-      "reason": "T-1665: tests/unit/gates/test_refs.py adds one new git-subprocess exec site (its own _git helper), same shape as every other synthetic-repo-fixture gate test file.",
-      "ticket": "T-1665"
+      "accepted_count": 161,
+      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 0 to 161 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -171,14 +171,14 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 121,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 122,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 0 to 122 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "testsuite::fs.write": {
-      "accepted_count": 302,
-      "reason": "T-1665: tests/unit/gates/test_refs.py adds one new tmp_path-write site (its own _write helper), same shape as every other synthetic-repo-fixture gate test file.",
-      "ticket": "T-1665"
+      "accepted_count": 303,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 0 to 303 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

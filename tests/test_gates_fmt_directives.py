@@ -656,47 +656,44 @@ class TestNoqaSuffixPragmaT0985:
             assert len(line) <= 88
 
 
-class TestNoqaSelfRetiresT1605:
-    """T-1605: a `noqa` pragma on an over-long `frob:` directive is only a
-    ratchet if it survives forever regardless of whether it was ever
-    load-bearing. When the pragma's logical text (minus the pragma) has a
-    clean word-boundary wrap available, `canonicalize_text` must take that
-    wrap and DROP the `noqa` -- it restores the pragma only when no such
-    wrap exists. The "genuinely unwrappable, stays byte-identical" branch
-    is already covered by `TestNoqaSuffixPragmaT0985`'s own tests above
-    (this rule reuses that exact behavior for its "else" branch), so this
-    class only adds the NEW branch: wrappable-with-noqa loses the pragma."""
+# frob:ticket T-1987
+class TestNoqaAlwaysPreservedT1987:
+    """T-1987: a `noqa`-suffixed `frob:` directive run is left byte-
+    identical UNCONDITIONALLY, even when the reason text (minus the
+    pragma) has a clean word-boundary wrap available. T-1605 previously
+    made this "self-retiring" (dropped the pragma and took the clean wrap
+    whenever one existed) -- reverted because land's Tier-A fmt auto-fix
+    used exactly that path to rewrap an already-noqa-suppressed single-
+    line WALK001 waiver into four physical lines during the T-1970 and
+    T-1968 lands, growing the enclosing function past ARCH001's line
+    threshold. Whether a clean wrap exists says nothing about whether
+    growing the physical line count is safe, so a wrappable reason with a
+    `noqa` pragma must now behave identically to an unwrappable one
+    (`TestNoqaSuffixPragmaT0985`)."""
 
-    def test_wrappable_reason_loses_its_noqa(self) -> None:
+    # frob:ticket T-1987
+    def test_wrappable_reason_keeps_its_noqa(self) -> None:
         # frob:tests \
-        # tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_wrappable_r\
-        # eason_loses_its_noqa
-        # Space-separated words throughout -- a clean wrap exists, so the
-        # noqa pragma was never load-bearing and must be dropped.
+        # tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987.test_wrappab\
+        # le_reason_keeps_its_noqa
+        # Space-separated words throughout -- a clean wrap would exist if
+        # attempted, but the noqa pragma must still suppress the rewrap.
         words = " ".join(["word"] * 20)
         src = f'    # frob:waive RULE-1 reason="{words}"  # noqa: E501\n'
         assert len(src.splitlines()[0]) > 88
         out = canonicalize_text(src, path="a.py", limit=88)
-        assert out != src
-        assert "noqa" not in out
-        for line in out.splitlines():
-            assert len(line) <= 88
-        # Round-trip: `fold_comment_runs` (T-0441's own fold) reassembles
-        # the wrapped run back into the original reason text (minus the
-        # now-dropped pragma) exactly.
-        indents, entries = _fmt_marker_entries_with_indents(out.splitlines(), "#")
-        folded = fold_comment_runs(entries)
-        assert folded[0][0] == f'frob:waive RULE-1 reason="{words}"'
+        assert out == src
 
-    def test_idempotent_after_dropping_noqa(self) -> None:
+    # frob:ticket T-1987
+    def test_idempotent_with_noqa_kept(self) -> None:
         # frob:tests \
-        # tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_idempotent_\
-        # after_dropping_noqa
+        # tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987.test_idempot\
+        # ent_with_noqa_kept
         words = " ".join(["word"] * 20)
         src = f'    # frob:waive RULE-1 reason="{words}"  # noqa: E501\n'
         once = canonicalize_text(src, path="a.py", limit=88)
         twice = canonicalize_text(once, path="a.py", limit=88)
-        assert twice == once
+        assert twice == once == src
 
 
 class TestRepoWideIdempotenceT0985:

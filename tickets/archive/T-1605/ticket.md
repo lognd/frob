@@ -32,14 +32,31 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605::test_wrappable_reason_loses_its_noqa
-- tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605::test_idempotent_after_dropping_noqa
 - tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_single_line_with_noqa_e501_is_byte_identical
 - tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_single_line_with_bare_noqa_is_byte_identical
 - tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985::test_canonicalizing_twice_over_real_repo_files_is_a_no_op
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605::test_wrappable_reason_loses_its_noqa
+  new_node: tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_single_line_with_noqa_e501_is_byte_identical
+  reason: T-1987 reverted T-1605's self-retiring noqa behavior (it caused a real ARCH001
+    land regression, T-1970/T-1968) -- the old test asserting self-retiring no longer
+    exists; rebound to the T-0985 test that now covers this exact code path's current,
+    restored behavior
+  actor: logan
+  at: '2026-08-10'
+- old_node: tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605::test_idempotent_after_dropping_noqa
+  new_node: tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985::test_over_long_single_line_with_bare_noqa_is_byte_identical
+  reason: T-1987 reverted T-1605's self-retiring noqa behavior (real ARCH001 land
+    regression, T-1970/T-1968) -- the old idempotence-after-drop test no longer applies
+    since the pragma is never dropped now; rebound to another T-0985 test covering
+    the same current byte-identical-preservation behavior
+  actor: logan
+  at: '2026-08-10'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 A frob directive that is too long today gets a trailing "# noqa: E501" and stays on one line forever. There are 3016 such directive lines in src/ and tests/ right now. They should instead be WRAPPED into the canonical backslash-continued form, and the noqa removed.
 

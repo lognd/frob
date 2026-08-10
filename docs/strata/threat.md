@@ -245,6 +245,38 @@ doc003); the check itself lives in `frob.gates.sys_gate` (opt-in on a
 standalone `docanchor`-family gate, since it needs the loaded design
 model, not just doc-to-doc anchor resolution.
 
+<a id="boundary-scoped-threats-t-1925"></a>
+## Boundary-scoped `frob sys threats` (T-1925)
+
+`frob sys threats [boundary]` (docs/strata/roadmap.md "CLI surface
+(target)") prints the full `evaluate_threats` violation set with no
+`boundary` argument, or a SCOPED subset when one is given -- the
+question "which violations sit behind THIS trust/label boundary".
+Answering it needs a real node-to-boundary join, which did not exist
+before this ticket (T-1480 built `trace` as a thin CLI wrapper over the
+already-shipped `FactBase.reachable`, but a boundary-scoped filter had
+no equivalent primitive to wrap, so it was filed separately rather than
+folded into `trace`).
+
+`frob.strata._threat.boundary_scope_nodes(facts, boundary_id)` defines a
+`Boundary`'s scope as its own flow's `src`/`dst` node ids plus every
+node `FactBase.reachable` reaches from the flow's `dst` with
+`through_barriers=False` -- the SAME endorsement-semantics closure
+THREAT003's discharge check (`_eval_noflow`) already uses to decide
+where taint stops, reused rather than reimplemented. Because
+`through_barriers=False` stops at the NEXT boundary downstream, a chain
+of boundaries each get their own scope rather than one swallowing the
+rest -- exactly what "which boundary is this violation behind" needs.
+Fails closed (`StrataError.UnknownReference`) on an unknown boundary id
+rather than degrading to an empty (vacuously "clean") scope.
+
+`threat_violations_for_boundary(violations, facts, boundary_id)` filters
+an already-evaluated violation tuple down to the ones whose `node` falls
+inside that scope; a violation with `node is None` (THREAT001, which is
+view-scoped, not node-scoped) never matches any boundary and is dropped
+rather than silently attributed to whichever boundary happens to be
+asked about.
+
 <a id="library-mode-discharge-by-absence"></a>
 ## Library-mode discharge by absence (T-0223)
 

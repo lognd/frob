@@ -2,7 +2,7 @@
 id: T-1987
 title: land's Tier-A fmt auto-fix rewraps noqa-suppressed frob:waive comments, regressing
   ARCH001
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,22 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fmt_directives.py
+- tests/test_gates_fmt_directives.py
+evidence_scope:
+- tests/test_gates_fmt_directives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_fmt_directives.py
+  reason: test-only repro/regression coverage lives here, matching src/frob/gates/_fmt_directives.py's
+    own test module
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987::test_wrappable_reason_keeps_its_noqa
+- tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987::test_idempotent_with_noqa_kept
+designated_repro_test: tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987::test_wrappable_reason_keeps_its_noqa
 threat: null
 component: null
 anchor: false

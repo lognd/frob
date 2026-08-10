@@ -189,4 +189,31 @@ class TestMarkdownDirectiveMentionVsUse:
         assert malformed == ()
         assert len(edges) == 1
         assert edges[0].kind == EdgeKind.DOC
-        assert edges[0].target == "doc.md#h"
+
+
+# frob:ticket T-1994
+class TestChangelogMultiLineCodeSpanMention:
+    """T-1994: `_blank_code_spans` only masks a SAME-LINE inline-code
+    span (its own docstring, and T-1989's own investigation into why a
+    whole-file multi-line pairing regex is unsafe -- docs/modules/
+    gates.md alone carries an odd total backtick count, so non-greedy
+    file-wide pairing silently mispairs everything downstream of one
+    stray backtick). CHANGELOG.md's T-0509 entry used to quote a
+    `frob:waive`-verb HTML-comment example as prose, wrapped across two
+    physical lines by prose-wrapping -- invisible to the same-line-only
+    mask, so it was reported as a live, unhandled directive (DSL001).
+    Fixed by rewrapping the example onto one physical line rather than
+    teaching the masker to span lines. This reads the REAL repo
+    `CHANGELOG.md` (not a fixture) so a future reflow/rewrap regressing
+    this back onto two lines is caught."""
+
+    # frob:ticket T-1994
+    def test_real_changelog_has_no_malformed_markdown_directive(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        from pathlib import Path
+
+        repo_root = Path(__file__).resolve().parents[3]
+        text = (repo_root / "CHANGELOG.md").read_text()
+        _edges, malformed = markdown_anchors("CHANGELOG.md", text)
+        waive_mentions = [m for m in malformed if "waive" in m.reason]
+        assert waive_mentions == []
