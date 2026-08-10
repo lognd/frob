@@ -1392,6 +1392,90 @@ class TestRefuseIfLandInProgress:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
 
+    # frob:ticket T-2023
+    def test_wait_budget_counts_from_the_lands_own_start_not_this_calls_start(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_budget_coun\
+        # ts_from_the_lands_own_start_not_this_calls_start
+        # T-2023 acceptance: FAILS before the fix. T-1961's wait deadline
+        # was computed from THIS CALL's own start (`monotonic() +
+        # wait_timeout_s`), ignoring how long the land it is waiting on had
+        # ALREADY been running -- the exact measured incident (a caller
+        # invoked while a land was already minutes into a multi-minute run
+        # still got a fresh full-length wait budget, then refused anyway
+        # once that budget expired). Here: a land recorded as having
+        # started 50s ago, with only a 60s total budget -- the fix must
+        # treat only the REMAINING ~10s as this call's wait, not the full
+        # 60s counted fresh from now.
+        import fcntl
+        import json
+
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            LeaseError,
+            refuse_if_land_in_progress,
+        )
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        started_at = datetime.now(UTC) - timedelta(seconds=50)
+        os.write(
+            holder_fd,
+            (
+                json.dumps(
+                    {
+                        "pid": os.getpid(),
+                        "ticket_id": "T-7777",
+                        "started_at": started_at.isoformat(),
+                    }
+                )
+                + "\n"
+            ).encode(),
+        )
+
+        clock = {"t": 0.0}
+
+        def fake_monotonic() -> float:
+            return clock["t"]
+
+        poll_count = 0
+
+        def fake_sleep(seconds: float) -> None:
+            nonlocal poll_count
+            poll_count += 1
+            clock["t"] += seconds
+            # Deliberately never releases the lock -- this test asserts
+            # WHEN the loop gives up, not that it can succeed.
+
+        try:
+            with caplog.at_level("WARNING"):
+                result = refuse_if_land_in_progress(
+                    repo,
+                    wait_timeout_s=60,
+                    poll_interval_s=1,
+                    sleep=fake_sleep,
+                    monotonic=fake_monotonic,
+                    now_wall=lambda: started_at + timedelta(seconds=50),
+                )
+            assert result.is_err
+            assert result.danger_err == LeaseError.LandInProgress
+            assert "T-7777" in caplog.text
+            # Old code (deadline relative to THIS call's own start) would
+            # poll ~60 times before giving up. The fix must give up close
+            # to the land's OWN remaining budget (~10 more seconds).
+            assert poll_count <= 11, (
+                f"expected the wait to respect the land's own 60s budget "
+                f"(~10s remaining after 50s already elapsed), got "
+                f"{poll_count} polls"
+            )
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
     @pytest.mark.skipif(
         not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
     )

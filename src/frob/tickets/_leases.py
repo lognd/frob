@@ -137,12 +137,64 @@ def _land_flock_probe(root: Path, *, quiet: bool = False) -> Result[None, LeaseE
 LAND_LOCK_REL = Path(".frob") / "land.lock"
 
 # frob:ticket T-1961
-# `refuse_if_land_in_progress`'s bounded wait: long enough to ride out a
-# routine land (this repo's own measured lands run well under a minute in
-# the common case) without blocking a ledger write indefinitely -- a lock
-# still held after this long refuses loudly exactly as before T-1961.
-_LAND_WAIT_TIMEOUT_S = 60.0
+# frob:ticket T-2023
+# `refuse_if_land_in_progress`'s bounded wait. T-1961's original 60.0 was
+# picked without measuring a real land's duration and was calibrated well
+# below it: T-2023 measured every successful `frob ticket land` invocation
+# this repo's own telemetry (`.frob/telemetry.jsonl`, `kind="cli"` events
+# with `args_head` starting `"ticket land"`, real worktrees only, exit=0)
+# recorded, n=746: median 94.6s, p75 321.8s, p90 438.3s, p95 489.4s, max
+# 1620.9s. 330.0 (just above the measured p75) is chosen deliberately, not
+# the worst observed value -- raising it to cover the ~1600s tail would
+# make every GENUINE stuck-land refusal take 27 minutes to surface, which
+# T-2023's own ticket explicitly rejects. This value only bounds a single
+# call's OWN wait; `refuse_if_land_in_progress` now also scales that wait
+# against the land's own recorded `started_at` (see its docstring) so a
+# caller arriving mid-land does not get a fresh full-length budget on top
+# of time the land has already spent -- the two mechanisms compose, not
+# duplicate. Overridable per-repo via `frob.toml`'s `[tickets]
+# land_wait_timeout_s` (`_load_land_wait_timeout_s`), so a repo whose real
+# land durations differ from this one's is not stuck with a mistuned
+# constant recompiled into the tool.
+_LAND_WAIT_TIMEOUT_S = 330.0
 _LAND_WAIT_POLL_INTERVAL_S = 2.0
+
+
+# frob:ticket T-2023
+def _load_land_wait_timeout_s(root: Path) -> float:
+    """`[tickets] land_wait_timeout_s` from `frob.toml` (T-2023), or
+    `_LAND_WAIT_TIMEOUT_S` if absent/malformed/non-positive --
+    `load_positive_int_config`'s existing degrade-quietly contract, so a
+    repo whose real `frob ticket land` durations differ from this one's
+    measured distribution can retune the wait without a code change, and a
+    misconfigured `frob.toml` can never produce an unbounded wait (it just
+    falls back to the same finite default every other caller gets)."""
+    return float(
+        load_positive_int_config(root, "land_wait_timeout_s", int(_LAND_WAIT_TIMEOUT_S))
+    )
+
+
+# frob:ticket T-2023
+def _land_lock_started_at(root: Path) -> datetime | None:
+    """Best-effort parse of the CURRENT `land.lock` holder's `started_at`
+    (T-2023), or `None` if there is no lock, no holder record, or the
+    field is missing/unparseable -- never raised. Lets a waiter scale its
+    own wait against how long the land it is waiting on has ALREADY been
+    running, instead of budgeting a fresh full-length wait from its own
+    call time regardless of the land's true age (T-2023's own incident:
+    a caller that showed up minutes into a long land got the full
+    unscaled timeout anyway, then refused once THAT expired -- wasting
+    the land's own remaining, still-plausible runway)."""
+    holder = _read_land_lock_holder_json(root / LAND_LOCK_REL)
+    if holder is None:
+        return None
+    raw = holder.get("started_at")
+    if not isinstance(raw, str):
+        return None
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        return None
 
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -1547,6 +1599,44 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
     return None
 
 
+# frob:ticket T-2023
+# frob:waive DUP001 reason="rung=r2 (generic, unnamed-hole) 95% match against \
+# src/frob/lang/_walk_python.py::_const_assignment_name and \
+# src/frob/tickets/_models.py::render_claims_block -- both are unrelated shapes (a \
+# Python-grammar constant-name check, a claims-block renderer) matched only on the \
+# generic conditional-then-arithmetic control-flow skeleton, not on domain logic; the \
+# candidate extraction the gate proposes (a bare TypeVar'd _extracted(hole_0, hole_1, \
+# hole_3) shim) would not express this function's actual behavior (a land-lock \
+# wait-budget calculation) any more clearly than the current three-line body already \
+# does"
+def _resolve_land_wait_budget(
+    root: Path,
+    wait_timeout_s: float | None,
+    now_wall: Callable[[], datetime],
+) -> tuple[float, float]:
+    """`refuse_if_land_in_progress`'s budget arithmetic, split out to keep
+    that function under the ARCH001 threshold (T-2023, mirroring how
+    `_probe_land_once` was already split out of the same function for
+    T-1961). Returns `(resolved_timeout, remaining_budget)`:
+    `resolved_timeout` is `wait_timeout_s` if given, else `_load_land_
+    wait_timeout_s(root)`'s config-or-default value (used only for the
+    caller's own log messages); `remaining_budget` is that same value
+    minus however long the CURRENT land has already been running
+    (`_land_lock_started_at`), floored at zero -- or `resolved_timeout`
+    unchanged if no `started_at` could be read (see `refuse_if_land_in_
+    progress`'s own docstring for why)."""
+    resolved_timeout = (
+        wait_timeout_s
+        if wait_timeout_s is not None
+        else _load_land_wait_timeout_s(root)
+    )
+    started_at = _land_lock_started_at(root)
+    if started_at is None:
+        return resolved_timeout, resolved_timeout
+    already_elapsed = max(0.0, (now_wall() - started_at).total_seconds())
+    return resolved_timeout, max(0.0, resolved_timeout - already_elapsed)
+
+
 # frob:ticket T-1619
 # frob:doc docs/modules/tickets.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
@@ -1556,10 +1646,11 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
 def refuse_if_land_in_progress(
     root: Path,
     *,
-    wait_timeout_s: float = _LAND_WAIT_TIMEOUT_S,
+    wait_timeout_s: float | None = None,
     poll_interval_s: float = _LAND_WAIT_POLL_INTERVAL_S,
     sleep: Callable[[float], None] = _time.sleep,
     monotonic: Callable[[], float] = _time.monotonic,
+    now_wall: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> Result[None, LeaseError]:
     """`Err(LeaseError.LandInProgress)` iff `root` currently has a LIVE
     `frob ticket land` holding its `LAND_LOCK_REL` advisory `flock`
@@ -1568,25 +1659,28 @@ def refuse_if_land_in_progress(
     `start`/`evidence`/`done-report`) must check before writing a commit
     onto `root`'s branch. `Ok(None)` otherwise. See `_land_flock_probe`
     for why a non-blocking `flock` acquire attempt is already a
-    structurally trustworthy liveness probe (crash-safe without a TTL or
-    a second liveness mechanism -- T-1619), and `_scan_for_live_land_
+    structurally trustworthy liveness probe, and `_scan_for_live_land_
     process` for the `/proc`-based belt-and-braces backstop that also
-    runs on every attempt (T-1619's explicit second requirement).
+    runs on every attempt (both T-1619).
 
-    T-1961: this used to refuse on the FIRST busy probe -- measured
-    hitting a coordinator 4x in one hour, each time forcing a hand-rolled
-    retry loop (the exact "callers responsible for retrying" anti-pattern
-    the ticket's own body names as a non-fix), and each refusal exits
-    non-zero indistinguishably from a REAL failure, so an unattended
-    script cannot tell "busy, safe to retry" from "wrong" -- a silently
-    lost finding. Now waits, bounded: on a busy probe, log ONE "waiting
-    for in-flight land..." message and poll every `poll_interval_s`
-    (`_probe_land_once`, quiet after the first) until either the lock
-    frees (`Ok(None)`) or `wait_timeout_s` elapses, at which point it
-    refuses loudly exactly as before (still `Err(LandInProgress)`, still
-    logged, still no unbounded hang) -- direction (a) from the ticket's
-    own preferred order."""
-    deadline = monotonic() + wait_timeout_s
+    T-1961: on a busy probe this waits, bounded, rather than refusing on
+    the first try -- log ONE "waiting for in-flight land..." message and
+    poll every `poll_interval_s` (`_probe_land_once`, quiet after the
+    first) until either the lock frees (`Ok(None)`) or the wait budget
+    elapses, at which point it refuses loudly exactly as before (still
+    `Err(LandInProgress)`, still logged, never an unbounded hang).
+
+    T-2023: see `_resolve_land_wait_budget` for how the wait budget
+    itself is resolved (config-or-default timeout) and scaled against
+    the in-flight land's OWN recorded start time rather than this call's
+    -- the constants block above (`_LAND_WAIT_TIMEOUT_S`) documents the
+    measured land-duration distribution the default is calibrated
+    against, and that function's own docstring documents why the budget
+    is spent relative to the land's start."""
+    resolved_timeout, remaining_budget = _resolve_land_wait_budget(
+        root, wait_timeout_s, now_wall
+    )
+    deadline = monotonic() + remaining_budget
     warned = False
     while True:
         result = _probe_land_once(root, quiet=warned)
@@ -1597,20 +1691,23 @@ def refuse_if_land_in_progress(
             if warned:
                 _log.warning(
                     "tickets: %s -- in-flight land did not finish within "
-                    "%.0fs, refusing rather than waiting indefinitely",
+                    "its %.0fs wait budget, refusing rather than waiting "
+                    "indefinitely",
                     root,
-                    wait_timeout_s,
+                    resolved_timeout,
                 )
-            # `warned=False` means never waited at all (wait_timeout_s<=0,
-            # or the deadline was already past by the first probe) -- the
+            # `warned=False` means never waited at all (remaining_budget<=0
+            # -- either an explicit non-positive timeout, or a land already
+            # at/past its own budget by the time this call started -- or
+            # the deadline was already past by the first probe) -- the
             # ORIGINAL, non-quiet refusal already logged in that case.
             return result
         if not warned:
             _log.warning(
                 "tickets: %s waiting for in-flight land to finish "
-                "(up to %.0fs) before proceeding...",
+                "(up to %.0fs more) before proceeding...",
                 root,
-                wait_timeout_s,
+                deadline - now,
             )
             warned = True
         sleep(min(poll_interval_s, deadline - now))

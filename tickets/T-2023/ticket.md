@@ -2,7 +2,7 @@
 id: T-2023
 title: T-1961s land-wait timeout is calibrated below the observed land duration, so
   ledger verbs now cost 60s and refuse anyway
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,9 +13,18 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: test file for the wait-timeout fix's failing-first repro test
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_wait_budget_counts_from_the_lands_own_start_not_this_calls_start
+designated_repro_test: tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_wait_budget_counts_from_the_lands_own_start_not_this_calls_start
 threat: null
 component: null
 anchor: false
