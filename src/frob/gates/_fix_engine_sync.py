@@ -752,8 +752,12 @@ def _waive004_verified_candidates(
     refusal), THEN (T-1942) every archgate-family candidate this run's
     per-site examined-sites substrate did not positively confirm was
     examined also filtered back OUT (`_drop_unexamined_archgate_
-    candidates`) -- a third, purely additive guard stacked on top of the
-    first two, never a replacement for either."""
+    candidates`), THEN (T-2011) the same treatment for the perf family
+    (`_drop_unexamined_perf_candidates`) -- a fourth, purely additive
+    guard stacked on top of the first three, never a replacement for any
+    of them. T-2011 investigated strata/graph/vet for the same treatment
+    and found none of the three soundly wireable (see tickets.md's T-2011
+    Done report) -- only perf is added here."""
     from frob.gates import GateConfig, run_gates
     from frob.gates._coverage_sites import attach_examined_sites
 
@@ -791,7 +795,8 @@ def _waive004_verified_candidates(
         candidates.append((violation.file, violation.line, target_rule))
 
     candidates = _drop_untrustworthy_mass_stale_candidates(root, candidates)
-    return _drop_unexamined_archgate_candidates(candidates, report.stats)
+    candidates = _drop_unexamined_archgate_candidates(candidates, report.stats)
+    return _drop_unexamined_perf_candidates(candidates, report.stats)
 
 
 def _live_waiver_counts(root: Path) -> dict[str, int]:
@@ -876,6 +881,79 @@ def _drop_untrustworthy_mass_stale_candidates(
     if not mass_rules:
         return candidates
     return [c for c in candidates if c[2] not in mass_rules]
+
+
+#: T-2011: PERF001-008 and PERF010-014 are fed exclusively from
+#: `frob.perf.perf_rules(snapshot, parsed)`, where `parsed` is exactly the
+#: file set `perf_gate`'s own `_perf_gate_candidate_paths` +
+#: `_perf_gate_parse_files` computes (same "has a registered tree-sitter
+#: grammar, and `parse_file` succeeded on it" test `frob.gates.
+#: _coverage_sites._perf_examined_sites` re-derives independently) --
+#: confirmed by reading `perf_gate`/`perf_rules` directly, not inferred
+#: from the "perf" family name. PERF009 (`frob.perf._ratchet.
+#: ratchet_violations`) is DELIBERATELY EXCLUDED: `perf_gate` reads it
+#: from `.frob/perf/ratchet_findings.json`, a precomputed `frob perf
+#: collect` artifact never derived from this run's own parse pass --
+#: `_perf_examined_sites` reports nothing about whether that artifact is
+#: fresh, so a PERF009 waiver's site being in the perf-examined set would
+#: not actually mean PERF009 itself was re-evaluated this run. Including
+#: PERF009 here would be the exact unsound "family name matches, so
+#: assume covered" mistake this ticket's brief warns against.
+_PERF_RULE_IDS = frozenset(
+    {
+        "PERF001",
+        "PERF002",
+        "PERF003",
+        "PERF004",
+        "PERF005",
+        "PERF006",
+        "PERF007",
+        "PERF008",
+        "PERF010",
+        "PERF011",
+        "PERF012",
+        "PERF013",
+        "PERF014",
+    }
+)
+
+
+# frob:ticket T-2011
+def _drop_unexamined_perf_candidates(
+    candidates: list[tuple[str, int, str]],
+    stats: "GateStats",
+) -> list[tuple[str, int, str]]:
+    """T-2011: a FOURTH, purely additive WAIVE004 guard, stacked on top of
+    (never in place of) `_drop_unexamined_archgate_candidates` and its own
+    two predecessors -- same shape as `_drop_unexamined_archgate_
+    candidates`, restricted to `_PERF_RULE_IDS` (PERF001-008/010-014,
+    deliberately excluding PERF009 -- see that constant's own docstring
+    for why). Drops any remaining candidate whose target rule is a perf
+    rule id unless `frob.gates._coverage_sites.site_examined` positively
+    confirms THIS run's perf pass actually parsed the candidate's own
+    file. Every candidate whose target rule is NOT in `_PERF_RULE_IDS`
+    passes through completely unchanged -- same "grant nothing outside
+    this family" contract `_drop_unexamined_archgate_candidates` already
+    documents, only additive, never able to re-add a candidate a prior
+    stage already dropped."""
+    from frob.gates._coverage_sites import site_examined
+
+    perf_rules = _PERF_RULE_IDS
+    kept: list[tuple[str, int, str]] = []
+    for file, line, rule in candidates:
+        if rule in perf_rules and not site_examined(stats, "perf", file):
+            _log.error(
+                "WAIVE004 auto-fix: %s waiver at %s:%d targets a perf rule, "
+                "but this run's examined-sites substrate did not confirm %s was "
+                "examined -- deleting nothing for this candidate",
+                rule,
+                file,
+                line,
+                file,
+            )
+            continue
+        kept.append((file, line, rule))
+    return kept
 
 
 def _archgate_rule_ids() -> frozenset[str]:

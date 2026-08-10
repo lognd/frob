@@ -190,7 +190,7 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
 # re-pointed to T-2011 (the open ticket that wires perf/strata/graph/vet \
 # examined-sites into WAIVE004, the next likely toucher of this call site) since \
 # WIRE002 requires a live open ticket, not because that ticket is expected to remove \
-# the waiver itself" follow_up="T-2011"
+# the waiver itself" follow_up="T-2057"
 def arch_examined_sites(root: Path) -> frozenset[str]:
     """T-1921: the per-site analysis-coverage substrate's ARCH-family
     reporter -- the repo-relative file paths `arch_gate`'s own

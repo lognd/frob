@@ -2,7 +2,7 @@
 id: T-2011
 title: Wire perf/strata/graph/vet examined-sites reporters (T-1943) into a real WAIVE004
   consumer
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,43 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fix_engine_sync.py
+- tests/unit/test_waive004_perf_guard.py
+- docs/modules/gates.md
+- src/frob/gates/_coverage_sites.py
+- src/frob/gates/_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_waive004_perf_guard.py
+  reason: 'T-2011: new standalone test file for the perf-family WAIVE004 guard (tests/test_gates.py
+    is under T-1959''s live lease)'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-2011: WAIVE004 section needs its perf-family guard documented alongside
+    T-1942''s archgate write-up'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_coverage_sites.py
+  reason: 'T-2011 close is blocked by LiveTrackerCited: the WIRE001 waivers in these
+    two files cite follow_up=T-2011 as their live tracker; must re-point to the T-2057
+    successor before this ticket can close'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: 'T-2011 close is blocked by LiveTrackerCited: the WIRE001 waivers in these
+    two files cite follow_up=T-2011 as their live tracker; must re-point to the T-2057
+    successor before this ticket can close'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard::test_examined_perf_site_is_deleted
+- tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard::test_unexamined_perf_site_refuses
+- tests/unit/test_waive004_perf_guard.py::TestWaive004PerfExaminedSitesGuard::test_perf009_is_excluded_from_the_guard
 designated_repro_test: null
 threat: null
 component: null

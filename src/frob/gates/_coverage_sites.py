@@ -123,11 +123,17 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 
 
 # frob:ticket T-1943
-# frob:waive WIRE001 reason="PERF reporter, substrate-only per T-1921's own \
-# arch_examined_sites precedent -- shipping a coverage-substrate reporter and its \
-# WAIVE004 consumer in the same diff is the exact shape the 55-waiver incident grew \
-# from, per the coordinator's standing instruction. T-2011 tracks wiring \
-# this (and its three siblings) into a real guard" follow_up="T-2011"
+# frob:ticket T-2011
+# frob:waive WIRE001 reason="T-2011 wired this as a real production caller \
+# (frob.gates._fix_engine_sync._drop_unexamined_perf_candidates reads \
+# stats.examined_sites['perf'] to decide whether a WAIVE004 PERF candidate's site was \
+# actually examined this run) -- kept as an explicit waiver rather than removed \
+# because static call-graph analysis of _load_family_reporters' dict-dispatch call \
+# site is fragile, same posture T-1942 already established for the archgate reporter's \
+# own waivers below. follow_up re-pointed to T-2057 (the open successor \
+# tracking strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 \
+# requires a live open ticket citation, not because that ticket is expected to touch \
+# this specific waiver" follow_up="T-2057"
 # frob:waive COV005 reason="T-1943: this is a brand-new private function, not a helper \
 # extracted above attach_examined_sites/site_examined -- COV005's (kind, \
 # target)=(waive, 'WIRE001') key is shared by every WIRE001 waiver in this file, so \
@@ -174,7 +180,7 @@ def _perf_examined_sites(root: Path) -> frozenset[str]:
 # frob:waive WIRE001 reason="STRATA reporter, same substrate-only posture as its three \
 # siblings in this module -- no production caller wired here, deliberately, until \
 # T-2011 (open) does the wiring the way T-1942 already did for archgate" \
-# follow_up="T-2011"
+# follow_up="T-2057"
 # frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
 # from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
 # explanation of why this file's shared WIRE001 target triggers a false rebind read"
@@ -216,8 +222,8 @@ def _strata_examined_sites(root: Path) -> frozenset[str]:
 # frob:ticket T-1943
 # frob:waive WIRE001 reason="GRAPH reporter, no production caller yet -- kept \
 # substrate-only per T-1921's own precedent rather than wiring a consumer in this same \
-# diff. Open follow-up T-2011 covers wiring this reporter (and its three \
-# siblings) into WAIVE004" follow_up="T-2011"
+# diff. Open follow-up T-2011 covers wiring this reporter (and its three siblings) \
+# into WAIVE004" follow_up="T-2057"
 # frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
 # from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
 # explanation of why this file's shared WIRE001 target triggers a false rebind read"
@@ -252,9 +258,8 @@ def _graph_examined_sites(root: Path) -> frozenset[str]:
 
 # frob:ticket T-1943
 # frob:waive WIRE001 reason="VET reporter -- last of the four T-1943 substrate-only \
-# additions, no production caller wired in this diff. T-2011 is the open \
-# ticket that wires this and its siblings into a real WAIVE004 guard" \
-# follow_up="T-2011"
+# additions, no production caller wired in this diff. T-2011 is the open ticket that \
+# wires this and its siblings into a real WAIVE004 guard" follow_up="T-2057"
 # frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
 # from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
 # explanation of why this file's shared WIRE001 target triggers a false rebind read"
@@ -298,10 +303,10 @@ def _vet_examined_sites(root: Path) -> frozenset[str]:
 # self-manufactured run_gates() report via this function before deriving WAIVE004 \
 # candidates) -- kept as an explicit waiver rather than removed because static \
 # call-graph analysis of that dynamic-report-construction call site is fragile. \
-# follow_up re-pointed to T-2011 (the open ticket wiring perf/strata/graph/ \
-# vet examined-sites into WAIVE004) since WIRE002 requires a live open ticket \
-# citation, not because that ticket is expected to remove this waiver itself" \
-# follow_up="T-2011"
+# follow_up re-pointed to T-2011 (the open ticket wiring perf/strata/graph/ vet \
+# examined-sites into WAIVE004) since WIRE002 requires a live open ticket citation, \
+# not because that ticket is expected to remove this waiver itself" \
+# follow_up="T-2057"
 def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
     """T-1921: returns a COPY of `report` whose `stats.examined_sites` is
     populated for every family `_load_family_reporters` knows how to
@@ -341,11 +346,11 @@ def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
 # frob:ticket T-1921
 # frob:waive WIRE001 reason="still substrate-only -- unlike attach_examined_sites and \
 # site_examined (both wired into frob.gates._fix_engine_sync by T-1942), no production \
-# caller has been added for this specific diagnostic accessor yet. T-2011 \
-# wires perf/strata/graph/vet examined-sites into WAIVE004 and is the most likely next \
+# caller has been added for this specific diagnostic accessor yet. T-2011 wires \
+# perf/strata/graph/vet examined-sites into WAIVE004 and is the most likely next \
 # ticket to touch this module; follow_up points there to satisfy WIRE002's \
 # live-open-ticket requirement, not because that ticket is expected to wire a caller \
-# in" follow_up="T-2011"
+# in" follow_up="T-2057"
 def is_family_instrumented(stats: "GateStats", family: str) -> bool:
     """T-1921: True iff `family` carries a real (possibly empty)
     examined-sites entry in `stats` -- distinguishes "this family reports
@@ -364,9 +369,9 @@ def is_family_instrumented(stats: "GateStats", family: str) -> bool:
 # directly to decide whether a WAIVE004 candidate's site was actually examined this \
 # run) -- kept as an explicit waiver rather than removed for the same fragile \
 # dynamic-call-site reason as attach_examined_sites above. follow_up re-pointed to \
-# T-2011 (the open ticket wiring perf/strata/graph/vet examined-sites into \
-# WAIVE004) since WIRE002 requires a live open ticket citation, not because that \
-# ticket is expected to remove this waiver itself" follow_up="T-2011"
+# T-2011 (the open ticket wiring perf/strata/graph/vet examined-sites into WAIVE004) \
+# since WIRE002 requires a live open ticket citation, not because that ticket is \
+# expected to remove this waiver itself" follow_up="T-2057"
 def site_examined(stats: "GateStats", family: str, file: str) -> bool:
     """T-1921: THE single sanctioned way to ask "did this run's gate
     FAMILY actually examine FILE" -- returns False whenever either half

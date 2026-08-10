@@ -4544,6 +4544,68 @@ its finding message, so the handler just calls that existing remedy:
   "some finding of this rule anywhere" down to "this exact file",
   reproduced and confirmed still refused.
 
+  **Fourth guard, additive only (T-2011): per-site examined-sites, perf
+  family.** T-1943 extended `frob.gates._coverage_sites`' substrate from
+  archgate-only to four more families (`perf`/`strata`/`graph`/`vet`),
+  substrate-only per the same T-1921 posture -- no consumer in that same
+  diff. T-2011 investigated each of the four for a sound WAIVE004 consumer,
+  reading the actual code path from rule to violation site rather than
+  trusting the family name, and only ONE could be wired:
+
+  - **perf: wired.** `_PERF_RULE_IDS` (`src/frob/gates/_fix_engine_sync.py`)
+    is PERF001-008 and PERF010-014 -- every one fed from `frob.perf.
+    perf_rules(snapshot, parsed)`, where `parsed` is the exact file set
+    `perf_gate`'s own candidate/parse pass computes, matching what
+    `_perf_examined_sites` independently re-derives. PERF009 is
+    deliberately EXCLUDED: `perf_gate` reads it from `.frob/perf/
+    ratchet_findings.json`, a precomputed `frob perf collect` artifact
+    never derived from this run's own parse pass, so the examined-sites
+    substrate says nothing trustworthy about it -- folding it in would
+    have been the exact "family name matches, assume covered" mistake
+    this investigation was trying to avoid.
+    `_drop_unexamined_perf_candidates` mirrors `_drop_unexamined_archgate_
+    candidates` exactly (additive-only, grants nothing outside
+    `_PERF_RULE_IDS`); `tests/unit/test_waive004_perf_guard.py::
+    TestWaive004PerfExaminedSitesGuard` is its regression lock.
+  - **strata: left unwired.** `sys_gate` folds SYS001-004 and SELFAUDIT001
+    into what this doc calls the "strata" family, but none of their
+    `Violation.file` values are `.strata` design-file paths -- SYS001/SYS003
+    report the CODE site of a directive/import (`_site_from_edge_origin`/
+    `violation.file` from `check_import_conformance`), SYS002 constructs a
+    synthetic `design/<kind>/<id>` string, and SELFAUDIT001 always reports
+    the whole `design_dir` constant, never an individual file. Only SYS004
+    reports a real `.strata` path, and it fires exactly when that file
+    FAILED to load -- by construction never a member of `_strata_examined_
+    sites`' successfully-parsed set. There is no rule in this family whose
+    violation site actually lines up with what the strata reporter tracks.
+  - **graph: left unwired.** `frob.graph.build_graph`'s `GraphSnapshot` backs
+    dozens of unrelated gate families with heterogeneous violation-site
+    semantics (some per-symbol, some per-edge-origin, some synthetic) --
+    no single rule family "owns" it the way `arch_gate`/`perf_gate` own
+    their rule ids, so there is no sound `_graph_rule_ids` to define.
+  - **vet: left unwired.** `_vet_examined_sites`' own docstring names
+    OPAQUE001 as this family's consumer, but `opaque_gate` does not call
+    `scan_file_capabilities` at all -- it uses `_opaque_indirection_
+    findings`, a deliberately DISJOINT scanner (the "runtime-opaque"
+    construct universe, `docs/design/capability-evasion-taxonomy.md`'s own
+    split from the statically-resolvable universe `scan_file_capabilities`
+    walks). `scan_file_capabilities` is actually consumed by `frob.strata.
+    _selfconform` (folded into SELFAUDIT001, same `design_dir`-constant
+    site problem as strata above) and by `frob.vet`'s dependency-package
+    scanners (`_capability_scan.py`'s `_aggregate_capabilities`, which scan
+    a THIRD-PARTY package's extracted source tree, not this repo's own
+    `root` `_vet_examined_sites` walks) -- neither corresponds to a rule
+    whose violation site matches this repo's own tracked-file candidate
+    set. This is a real inaccuracy in `_vet_examined_sites`' own docstring,
+    left uncorrected here (out of this ticket's declared scope) and filed
+    separately.
+
+  Per this repo's standing default-to-conservative posture, an ambiguous
+  family stays unwired rather than wired on a guess -- an uninstrumented-
+  for-this-guard family behaves exactly as it did before T-2011 (the first
+  two guards still apply to it), it is simply not granted this fourth,
+  more precise layer.
+
   A companion guard closes the same incident's OTHER half at the land
   layer itself, independent of which Tier-A handler is at fault: `frob
   ticket land` refuses BEFORE any git mutation (before the wip-commit
