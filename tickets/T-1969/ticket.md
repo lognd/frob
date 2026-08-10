@@ -1,7 +1,7 @@
 ---
 id: T-1969
 title: Register CLAUDE001 in _KNOWN_GATE_RULES (T-1809's gate registry entry)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,15 @@ runs_last: false
 scope:
 - src/frob/gates/_waive.py
 - docs/modules/gates.md
+evidence_scope:
+- tests/test_check_runner.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_managed_copy_absent
+- tests/test_check_runner.py::TestClaudeConfigDriftStage::test_clean_when_in_sync
+- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 designated_repro_test: null
 threat: null
 component: null

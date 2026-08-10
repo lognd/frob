@@ -974,6 +974,12 @@ _KNOWN_GATE_RULES = frozenset(
         # `code="..."` shape, outside `SCANNED_BASES`.
         "DEPLOY002",
         "DEPLOY003",
+        # T-1969: CLAUDE001 (T-1809, src/frob/app/check_runner.py::
+        # _claude_config_drift_result): same `code="..."` shape as the
+        # DEPLOY/BUDGET/CHECK/DERIVED group above, outside SCANNED_BASES.
+        # Could not be registered at T-1809 land time -- this file was
+        # under T-1937's live lease for that ticket's whole window.
+        "CLAUDE001",
         # T-1937 note, not a new entry: TIERBDEMO001
         # (src/frob/gates/_fix_engine_tier_b.py) is NOT missing -- it is
         # correctly excluded here on purpose via `_rule_id_scan.
