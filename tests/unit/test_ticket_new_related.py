@@ -216,3 +216,40 @@ class TestPossibleEnforcementSymbolsCue:
             repo_root, "add a new dashboard widget", "purely additive UI work"
         )
         assert symbols == ()
+
+
+# frob:ticket T-1995
+class TestAckRelatedFlagReachesConfigThroughRealParsing:
+    """T-1995 follow-up (TEST001 fix's own discovery): every other test in
+    this file builds `AppConfig(ticket_ack_related=True, ...)` directly,
+    which never exercises the real CLI path -- `AppConfig.from_args` goes
+    through `from_external`'s `_build_external_config_kwargs`, which only
+    copies fields listed in a STATIC allowlist
+    (`frob.app._config_external`'s `_EXTERNAL_CONFIG_FIELDS`-shaped list).
+    `--ack-related` parsed into `argparse.Namespace` correctly but was
+    silently DROPPED at that allowlist boundary, so the real CLI command
+    `frob ticket new --ack-related` never actually acknowledged anything --
+    invisible to every test that constructs `AppConfig` by hand. This test
+    goes through the real argparse parser + `AppConfig.from_args`, the
+    only path that would have caught it."""
+
+    def test_ack_related_flag_survives_real_arg_parsing(self) -> None:
+        # frob:tests tests/unit/test_ticket_new_related.py::TestAckRelatedFlagReachesConfigThroughRealParsing.test_ack_related_flag_survives_real_arg_parsing  # noqa: E501
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        ns = parser.parse_args(
+            ["ticket", "new", "--title", "x", "--kind", "bug", "--ack-related"]
+        )
+        assert ns.ticket_ack_related is True
+        cfg = AppConfig.from_args(ns)
+        assert cfg.ticket_ack_related is True
+
+    def test_omitted_flag_defaults_false_through_real_parsing(self) -> None:
+        # frob:tests tests/unit/test_ticket_new_related.py::TestAckRelatedFlagReachesConfigThroughRealParsing.test_omitted_flag_defaults_false_through_real_parsing  # noqa: E501
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        ns = parser.parse_args(["ticket", "new", "--title", "x", "--kind", "bug"])
+        cfg = AppConfig.from_args(ns)
+        assert cfg.ticket_ack_related is False

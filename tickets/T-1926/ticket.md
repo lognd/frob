@@ -2,7 +2,7 @@
 id: T-1926
 title: 'decide: drop ''frob sys check'' from roadmap.md''s CLI surface (duplicates
   ''frob sys audit'')'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-09'
@@ -32,6 +32,9 @@ scope_changes:
     sibling-draft-finalize lease-collision land bug
   actor: logan
   at: '2026-08-09'
+evidence:
+- cmd:grep -c "sys check" docs/strata/roadmap.md exit=0 sha256=4355a46b19d3
+- cmd:grep -n "sys check" docs/strata/roadmap.md exit=0 sha256=b34e291c71ce
 designated_repro_test: null
 threat: null
 component: null

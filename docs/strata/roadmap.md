@@ -24,8 +24,19 @@ always surfaces work in proof-dependency order.
 
 ## CLI surface (target)
 
+`frob sys check` is deliberately absent from this list (T-1926 decision).
+T-1480 found the premise it would have served -- "parse + elaborate +
+prove + report" -- already fully satisfied by the existing `frob sys
+audit` (`sys_runner.py::_run_audit`): it parses, elaborates, runs the
+full exhaustiveness/self-conformance/resource-contention/mode-conformance
+/reliability conjunction, and reports pass/fail with named gaps. Adding a
+second, narrower `check` verb would duplicate `audit` rather than serve a
+distinct need, cutting against the standing "prefer deleting a verb over
+adding one" directive this repo already applies elsewhere (the T-1870
+sync-interface removal). Decision: use `frob sys audit` for this role;
+do not build `check`.
+
 ```
-frob sys check                    # parse + elaborate + prove + report
 frob sys trace <from> <to>        # show the closure path(s)
 frob sys capacity [--population N | --at DATE]
 frob sys threats [boundary]       # STRIDE checklist generated per boundary
