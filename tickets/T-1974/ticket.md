@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/_fix_engine_sync.py
 - docs/modules/gates.md
 - tests/test_gates.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -54,6 +55,12 @@ scope_changes:
     resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
     scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
     touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: '_KNOWN_RULE_FIXABILITY (this file) has its own drift-lock test (TestRuleFixability)
+    requiring a DOCENUM001: auto entry paired with the new Tier-A handler'
   actor: logan
   at: '2026-08-10'
 evidence:
