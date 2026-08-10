@@ -2194,7 +2194,18 @@ entries:
     source_doc: "docs/design/structural-linter-adversarial-hardening.md"
     source_ref: "sys-evasion"
     checkability: "design-defense"
-    disposition: "out_of_scope:reasoned-deferral -- T-1870 deleted SYS104 (the bidirectional interface=-equals-real-surface mirror check) per an explicit owner directive that no code path may auto-update declared public-symbol surface; this row's exact shape (code exports more than interface= declares) has no live rule to bind handled_by to as of T-1870. T-1629 (interface= should declare INTENDED surface, not mirror every public symbol, already raised to high priority) is the follow-up that re-covers this differently -- flagging an undeclared public symbol against hand-declared intent, not a mirror-equality check -- at which point this row should be re-dispositioned to whatever rule id T-1629 ships"
+    disposition: "handled_by:SYS110"
+    # T-1629 shipped the re-coverage this row's deferral prose named: a
+    # node's real public surface must be a subset of its hand-declared
+    # interface= intent, not a bidirectional mirror-equality check.
+    # Opt-in per node (a node with no interface= attrs is not yet
+    # migrated and is silently skipped, frob.strata._selfconform module
+    # docstring's SYS110 section) -- SYS110_UNAUDITED_NODES discloses the
+    # 15 pre-T-1629 nodes whose interface= is still stale generated-
+    # mirror data pending a human curation pass; every other node
+    # (including the two pre-existing declarers that already conformed)
+    # is fully enforced today. See docs/strata/surface.md
+    # #sys110-undeclared-intended-surface-t-1629 for the full rationale.
     cross_refs: []
   - id: "SLH-SYS-EVA-04-PURPOSE-DRIFT"
     name: "Purpose drift: a logging module that opens sockets"

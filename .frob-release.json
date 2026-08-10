@@ -1682,11 +1682,13 @@
     "src/frob/strata/_secrets.py::SecretExpansion": "6aa68d5d375bd531cc218779fb4d7b2af0e7bf2826eac1c30ec5b2346d4fdf55",
     "src/frob/strata/_secrets.py::SecretSpec": "27b6fa8245796badbf4b4aa5c367767bb701757d19844aaffdbe21e744b616ce",
     "src/frob/strata/_secrets.py::elaborate_secret": "e15ed46b1be7e097c6b4d5dee074edb5fedb577d6fe47459538f1545ad7b03eb",
+    "src/frob/strata/_selfconform.py::SYS110_UNAUDITED_NODES": "bd7a098df3fe47a16c485c3fa2971fd1471d8573d4f077dac079d5f9113f3fe7",
     "src/frob/strata/_selfconform.py::SYS_BINDING_TOTALITY": "2260608eecce3d447bfb5b250b3db63ac4527387f1e7466e4e45effdedbf88f7",
     "src/frob/strata/_selfconform.py::SYS_COVERAGE_TOTALITY": "43b4bf36e49b6ddb443e2e2e61bf53f4606fb99ac37a28f3db83fbe42b52dc74",
     "src/frob/strata/_selfconform.py::SYS_DUPLICATE_INTERFACE": "4cc286cdb4b1f91dfcc4ba1e9425b5946cdb993cd1873ddef3097573957c8ed0",
     "src/frob/strata/_selfconform.py::SYS_PURPOSE_CONTRACT": "ce6d1b18e6fd6443e4de5b9b1bff99a7584e293914e38ee86799b506dc512379",
     "src/frob/strata/_selfconform.py::SYS_STALE_DESIGN": "8dc430cda31d121e654ad55c1662dbce2065f34e554abe4836f3304b0dfc6612",
+    "src/frob/strata/_selfconform.py::SYS_UNDECLARED_INTENDED_SURFACE": "5dd284bf71aadf9dcf7f4873db892c57d409bd05030b3d343b75502994a9c73e",
     "src/frob/strata/_selfconform.py::SYS_UNDECLARED_INTERFACE": "cc6603b2f1fbe548a1a4994605213ae77e9f2b3f2b25db6110510ef45c42c8b5",
     "src/frob/strata/_selfconform.py::SYS_UNMODELED_CODE": "1ac6689fe1a605248c5049aa48c47b76dc5e8ff65601cbea1520f23293268d31",
     "src/frob/strata/_selfconform.py::SYS_VIA_LESS_LARGE_NODE": "d9f8390bd0609f5490f49712e0e5cad562360f9071ecb916728a319ded511de4",
@@ -2221,5 +2223,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.432.0"
+  "version": "0.433.0"
 }

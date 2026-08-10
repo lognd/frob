@@ -683,6 +683,66 @@ recommended form for a node with more than a handful of declared
 symbols, exactly as much a permanent part of the `.strata` surface
 grammar as the single-value `KEY=V` form it complements.
 
+<a id="sys110-undeclared-intended-surface-t-1629"></a>
+## SYS110 undeclared intended surface (T-1629)
+
+<!-- frob:ticket T-1629 -->
+
+SYS104 (T-0668, deleted T-1870) required a node's declared `interface=`
+set to EXACTLY EQUAL its measured real public surface, both directions,
+kept honest only because a generator (`frob sys sync-interface`) rewrote
+`interface=` to match reality on demand. A generated mirror cannot be
+meaningfully "violated": when code and declaration disagree, the fix was
+always "regenerate the declaration", so SYS104 could only ever catch
+bookkeeping drift ("you added a symbol and forgot to run sync-interface"),
+never answer the real architectural question -- is this symbol SUPPOSED
+to be public? T-1870 deleted SYS104 and its writer on an explicit owner
+directive: no code path may auto-update declared public-symbol surface.
+
+SYS110 is the inverted, intent-not-mirror replacement `frob.strata.
+_selfconform._undeclared_intended_surface_violations` implements:
+`interface=` is read purely as HAND-DECLARED INTENT, and a node's real
+public surface must be a SUBSET of what it declares. Any real public
+symbol NOT named in `interface=` is a SYS110 finding -- adding a new
+public symbol becomes a deliberate act (edit the contract) rather than a
+silent regeneration prompt, and accidental surface growth becomes a build
+failure. Always ERROR, no advisory tier.
+
+**Opt-in, per node, by design** (not a repo-wide flag day): a node with
+ZERO `interface=` attrs has not opted into hand-declared intent yet and
+is silently skipped by SYS110 -- this is deliberately NOT the same as
+"declares an empty surface" (which would fire on every public symbol the
+moment a node is modeled at all, forcing one repo-wide big-bang migration
+of the pre-T-1629 sprawl). Migrating a node from "no `interface=`" (or a
+stale pre-T-1629 generated-mirror list) to a real, hand-curated intent
+list is a human pass, one node at a time -- exactly the sequencing T-1629
+itself calls for.
+
+**Migration boundary (`SYS110_UNAUDITED_NODES`)**: at T-1629 time, 17
+modeled nodes already carried a non-empty `interface=` block -- leftover
+generated-mirror data from the T-0668/T-1150 era, never kept in sync
+since T-1870 deleted the writer. Measuring SYS110 against `design/
+frob.strata` as it stood found 15 of those 17 had real drift (734
+findings total: new public symbols added since the mirror was last
+regenerated, with no writer left to catch up). Turning SYS110 on
+unconditionally would have broken `TestRealGateGreen`'s zero-violations
+assertion outright, for a reason with no single-diff fix (the correct fix
+is a human curation pass per node, not a mechanical one). `frob.strata.
+_selfconform.SYS110_UNAUDITED_NODES` is the disclosed, hand-typed
+exemption for exactly those 15 node ids -- SYS110 is fully LIVE and
+enforced for every other node, including the two pre-existing
+`interface=` nodes (`checker`, `fleet`) that already conformed and
+needed no exemption. Shrinking `SYS110_UNAUDITED_NODES` (never growing
+it without the same kind of audit) as each node's declared intent is
+hand-curated is the tracked migration path; it is not automated by any
+code path, per the same T-1870 directive SYS104's deletion answered to.
+
+**REG011 disposition**: `docs/design/registry/arch-checks.yaml`'s
+`SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE` row was `out_of_scope:
+reasoned-deferral` since T-1870, naming T-1629 as the ticket that would
+re-cover it. SYS110 is that re-coverage -- re-dispositioned to
+`handled_by:SYS110` in this same change.
+
 <a id="interface-canonical-order-tier-a-t-1872"></a>
 ## `interface=` canonical order (Tier-A, T-1872 -- retired T-1916)
 

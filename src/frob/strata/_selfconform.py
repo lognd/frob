@@ -204,7 +204,30 @@ independently unit-tested; GAP STATEMENT: it is not yet wired into `frob
 sys audit`'s own CLI/gate surface (`_audit.py`, `frob.gates._sys_
 selfaudit`) -- both live outside this ticket's declared scope, so the
 wiring is filed as its own follow-up ticket rather than silently folded
-in here."""
+in here.
+
+SYS110 (T-1629) undeclared intended surface -- the INTENT-not-mirror
+replacement for the deleted SYS104 (T-1870: SYS104's bidirectional
+equality against a MIRROR `interface=` list, kept in sync by an auto-
+writer, was deleted per an explicit owner directive that no code path may
+auto-update declared public-symbol surface; a generated mirror cannot be
+"violated" in any meaningful sense -- disagreement just means "the writer
+has not run yet"). SYS110 flips the relationship: `interface=` is now
+read purely as HAND-DECLARED INTENT, never written by any code path, and
+a node's REAL public surface (`_node_real_public_surface`, unchanged)
+must be a SUBSET of what it declares -- any real public symbol outside
+the declared set is a violation, an accidental surface leak turned into a
+build failure instead of a silent regeneration prompt. PHASED-MIGRATION
+DESIGN (deliberate, not a gap): a node with ZERO `interface=` attrs has
+not yet opted into hand-declared intent and is silently skipped, rather
+than treated as "declares an empty surface" (which would force one
+repo-wide big-bang migration of the current ~800-symbol sprawl into
+hand-curated lists) -- migrating each node's declared intent by hand,
+one at a time, is real follow-up work this ticket does not attempt to
+finish in one sweep. `_node_attr_values`/`_INTERFACE_PREFIX` (T-0668,
+survived T-1870's SYS104 deletion because SYS106/SYS108 also depend on
+them) are reused verbatim, so a node's declared set reads identically
+to how SYS108's duplicate-detection already reads it."""
 
 from __future__ import annotations
 
@@ -302,6 +325,56 @@ SYS_VIA_LESS_LARGE_NODE = "SYS107"
 #: declaration: a node whose `interface=` attrs name the same symbol more
 #: than once (module docstring's SYS108 section). Always ERROR.
 SYS_DUPLICATE_INTERFACE = "SYS108"
+
+# frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
+#: `frob sys audit` rule id for SYS110 (T-1629) undeclared intended
+#: surface: a node that has opted into hand-declared `interface=` intent
+#: (at least one entry) whose REAL public surface contains a symbol not
+#: named there (module docstring's SYS110 section). Always ERROR. SYS109
+#: is retired as an id (T-1627, folded into SELFAUDIT001 directly rather
+#: than through this module's own `_collect_sys_violations` aggregator);
+#: SYS110 continues the sequence here since it IS collected by that
+#: aggregator, same family as SYS100-108.
+SYS_UNDECLARED_INTENDED_SURFACE = "SYS110"
+
+# frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
+#: T-1629's OWN migration boundary, hand-typed and disclosed here rather
+#: than silently absorbed by the check: these `interface=` blocks predate
+#: T-1629 (T-0668/T-1150-era generated MIRRORS, no longer kept in sync
+#: since T-1870 deleted the writer) and have real drift against the
+#: current tree today (measured directly against this repo's own
+#: `design/frob.strata` at T-1629 time -- `frozenset(v.node for v in
+#: check_self_conformance(...).danger_ok.violations if v.rule ==
+#: SYS_UNDECLARED_INTENDED_SURFACE)`, 734 findings across these 15
+#: nodes). SYS110 is silent for exactly these node ids until a human does
+#: the per-node hand-curation pass the module docstring's phased-
+#: migration section describes -- shrink this set (never add to it
+#: without the same audit) as each node's list is brought current; SYS110
+#: is now LIVE and enforced for every node NOT named here, including the
+#: other two nodes that already carry a non-empty `interface=` and
+#: already conform today (`checker`, `fleet` -- deliberately not
+#: silenced, since enabling enforcement wherever it is already green
+#: today is the correct default, not "exempt everything with an
+#: interface= block").
+SYS110_UNAUDITED_NODES: frozenset[str] = frozenset(
+    {
+        "cli",
+        "core",
+        "deploy",
+        "gates",
+        "graphlang",
+        "mutate",
+        "natives",
+        "refactor",
+        "registry_model",
+        "security",
+        "serve",
+        "stratamod",
+        "tickets_ledger",
+        "verify",
+        "vet",
+    }
+)
 
 #: `src/` subtree self-conformance actually scans -- our own package root
 #: (module docstring: `design/frob.strata` models exactly this one tree).
@@ -1380,6 +1453,55 @@ def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViola
     return found
 
 
+# frob:ticket T-1629
+# frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
+# frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_real_symbol_outside_declared_set_fires  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_declared_superset_is_silent  # noqa: E501
+# frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_node_with_no_interface_attrs_is_skipped  # noqa: E501
+def _undeclared_intended_surface_violations(
+    model: KernelModel, binding: CodeBinding, root: Path
+) -> list[SelfConformViolation]:
+    """SYS110 (T-1629): for every node that has opted into hand-declared
+    `interface=` intent (`_node_attr_values` returns at least one entry),
+    any symbol in its REAL public surface (`_node_real_public_surface`,
+    unchanged from SYS104's era) that is NOT named in that declared set is
+    a violation -- module docstring's SYS110 section for the full
+    intent-vs-mirror rationale and the deliberate phased-migration skip
+    for a node with zero `interface=` attrs (not yet opted in, not
+    "declares an empty surface"). Also skips any node named in
+    `SYS110_UNAUDITED_NODES` -- a node whose pre-T-1629 `interface=` block
+    is a stale, un-audited mirror rather than hand-curated intent (that
+    frozenset's own docstring)."""
+    found: list[SelfConformViolation] = []
+    for node in model.nodes:
+        if node.id in SYS110_UNAUDITED_NODES:
+            continue
+        declared = frozenset(_node_attr_values(node, _INTERFACE_PREFIX))
+        if not declared:
+            continue
+        real = _node_real_public_surface(binding, root, node.id)
+        for symbol in sorted(real - declared):
+            _log.warning(
+                "selfconform: SYS110 undeclared public symbol %s on %s",
+                symbol,
+                node.id,
+            )
+            found.append(
+                SelfConformViolation(
+                    rule=SYS_UNDECLARED_INTENDED_SURFACE,
+                    node=node.id,
+                    detail=(
+                        f"{symbol} is public in code but not declared in this "
+                        "node's interface= (hand-declared intent, T-1629) -- "
+                        "add `attr interface=" + symbol + "` if this is really "
+                        "part of the contract, or make the symbol private"
+                    ),
+                    capability=symbol,
+                )
+            )
+    return found
+
+
 # frob:tests tests/unit/strata/test_selfconform.py::TestPurposeContract.test_effect_outside_profile_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestPurposeContract.test_unrecognized_profile_fires  # noqa: E501
 def _purpose_contract_violations(
@@ -2007,6 +2129,9 @@ def _collect_sys_violations(
         _coverage_totality_violations(capability_binding, root, capability_files)
     )
     violations.extend(_duplicate_interface_violations(model))
+    violations.extend(
+        _undeclared_intended_surface_violations(model, capability_binding, root)
+    )
     violations.extend(_purpose_contract_violations(model, _all_kinds_view(raw_by_node)))
     violations.extend(_binding_totality_violations(model, capability_binding, root))
     scope_config = load_strata_scope_config(root)

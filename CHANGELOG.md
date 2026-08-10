@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.433.0] - unreleased
+
+- T-1629: strata: interface= should declare INTENDED surface, not mirror every public symbol
+
 ## [0.432.0] - unreleased
 
 - T-1958: DOCENUM001: docs/modules/gates.md#rule-catalog stale after T-1937's 8 new rule ids

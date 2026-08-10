@@ -2,7 +2,7 @@
 id: T-1629
 title: 'strata: interface= should declare INTENDED surface, not mirror every public
   symbol'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -16,10 +16,12 @@ sprint: null
 runs_last: false
 scope:
 - design/frob.strata
-- src/frob/strata/**
 - tests/unit/strata/test_selfconform.py
 - docs/strata/surface.md
 - src/frob/gates/_waive.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/__init__.py
+- docs/design/registry/arch-checks.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -71,6 +73,36 @@ scope_changes:
     actually touches.
   actor: logan
   at: '2026-08-08'
+- op: remove
+  glob: src/frob/strata/**
+  reason: src/frob/strata/** matches 71 files (>25) -- narrow to the one file this
+    ticket's new SYS110 check lives in
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: src/frob/strata/** matches 71 files (>25) -- narrow to the one file this
+    ticket's new SYS110 check lives in
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: re-export SYS_UNDECLARED_INTENDED_SURFACE/SYS110_UNAUDITED_NODES for tests,
+    matching every other SYS10x rule id's existing re-export convention
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/registry/arch-checks.yaml
+  reason: re-disposition SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE to handled_by:SYS110,
+    the ticket's own bound acceptance criterion
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_real_symbol_outside_declared_set_fires
+- tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_declared_superset_is_silent
+- tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_node_with_no_interface_attrs_is_skipped
+- tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_unaudited_node_is_silenced_regardless_of_drift
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 designated_repro_test: null
 acceptance:
 - text: Given SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE (docs/design/registry/arch-checks.yaml)
@@ -80,7 +112,12 @@ acceptance:
     the deferral does not orphan -- a deferral pointing at a ticket that no longer
     exists would be the same catalogued-but-unenforced shape this repo already paid
     for once
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_real_symbol_outside_declared_set_fires
+  - tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_declared_superset_is_silent
+  - tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_node_with_no_interface_attrs_is_skipped
+  - tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_unaudited_node_is_silenced_regardless_of_drift
+  - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 threat: null
 component: null
 anchor: false

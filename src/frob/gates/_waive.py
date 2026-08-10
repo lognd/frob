@@ -919,6 +919,10 @@ _KNOWN_GATE_RULES = frozenset(
         # literal to this file; that mechanism gap is filed separately
         # (out of this ticket's own scope), not fixed here.
         "SYS108",
+        # T-1629: SYS110 undeclared intended surface -- the intent-not-
+        # mirror replacement for the deleted SYS104 (src/frob/strata/
+        # _selfconform.py's own SYS110 module-docstring section).
+        "SYS110",
         "SYS200",
         "SYS201",
         "SYS202",
