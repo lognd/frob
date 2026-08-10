@@ -1629,6 +1629,26 @@ def _land_locked(
         # `passing_ids` (the exact set D-05's own `passed()` run just
         # computed above), never a second collect+run -- halves the real
         # cost of a `run_tests`-supplying land.
+        #
+        # T-2064 instrumentation: `check_gates`/`check_gate_findings` (when
+        # supplied) spawn `frob check --ticket <id>` with `cwd=root`
+        # (`_shared_check_spawn_fn`, src/frob/app/ticket_runner/_verify.py)
+        # -- but `_land_squash_apply` a few lines below (the step this
+        # module's own comment names as "the ONLY step that mutates root")
+        # has not run yet at this point. Log root's LIVE tip immediately
+        # before triggering that spawn, alongside the pre-mutation tip this
+        # run already captured, to make that ordering fact observable from
+        # a real land's own log instead of re-derived by reading code.
+        root_tip_at_claims_check = _rev_parse(root, "HEAD")
+        _log.info(
+            "land: %s T-2064 probe: root HEAD immediately before the "
+            "check_gates() spawn is %s; this run's captured pre-mutation "
+            "tip (root_pre_land_tip) is %s -- equal means the spawn (cwd="
+            "root) observes root's PRE-land state, not a merged tree",
+            ticket_id,
+            root_tip_at_claims_check.ok,
+            root_pre_land_tip.danger_ok,
+        )
         claims_check = _reverify_done_report_claims_post_merge(
             worktree, ticket_id, passing_ids, check_gates, check_gate_findings
         )
@@ -1917,90 +1937,50 @@ _ORPHANED_NEW_TICKET_DIR_RE = re.compile(rf"^tickets/({_TICKET_ID_RE})/$")
 
 # frob:ticket T-2026
 # frob:ticket T-2046
-def _commit_orphaned_new_ticket_dir_only_drift(root: Path, ticket_id: str) -> bool:
-    """Auto-commit `root`'s orphaned NEW ticket directories (T-2026,
-    widened by T-2046 from one to N) when EVERY dirty path in the tree is
-    an orphaned `tickets/T-####/` directory -- the window `frob ticket
-    new` (`frob.app.ticket_runner._new._new`) leaves open between writing
-    `tickets/T-####/ticket.md` to disk (`write_ticket`'s v2-mode body,
-    `_write_ticket_v2_mode`) and its own final `commit_ticket_ledger_
-    change` call. If the process is killed in between -- the observed
-    2026-08-10 incident was a coordinator retry loop around `new`,
-    needed because the verb refuses under `LandInProgress` almost
-    continuously at high agent counts, killed mid-run -- the untracked
-    directory survives with no commit, and `DirtyMain` refuses every
-    subsequent land repo-wide with no agent-reachable recovery (only the
-    ROOT checkout's own owner can `git add`/`git commit` it by hand;
-    T-2017 was cleared this way, by hand, after an agent with finished,
-    gate-clean work sat blocked 7+ minutes).
-
-    T-2046: the original SOLE-dirty-path restriction (mirroring
-    `_restore_lock_version_only_drift`/`_commit_rapid_debt_only_drift`
-    above) was measured declining in exactly the load it was built for --
-    30 minutes after T-2026 landed, two independently interrupted `new`
-    invocations left TWO orphaned dirs coexisting, and the guard declined
-    because there were two, forcing the exact manual `git add`+`commit`
-    intervention it exists to remove. Unlike the two SOLE precedents --
-    each guards ONE specific named file, where "this file and nothing
-    else" is the correct shape -- this guard matches a CLASS of paths
-    (any untracked, cleanly-parsing new ticket directory), and the safety
-    argument (a freshly created untracked directory has no prior state to
-    clobber, so committing it once it parses is always safe) holds
-    identically for N such directories as for one. So the match is
-    class-wide now: EVERY dirty path (ignoring `.frob/`) must be an
-    untracked `tickets/T-####/` directory (`?? tickets/T-####/`, the
-    git-status shape for a brand-new subdirectory whose PARENT --
-    `tickets/` -- is already tracked) whose only entry is `ticket.md` and
-    which parses cleanly via `_parse_ticket_file` -- the same Result-based
-    loader every other ticket read goes through -- with the parsed id
-    matching the directory name. If ANY dirty path fails to qualify (a
-    torn/partial `ticket.md`, a modified TRACKED file, a directory holding
-    anything besides exactly `ticket.md`, or any other unmatched shape),
-    NOTHING is committed -- all-or-nothing, never a partial heal: healing
-    some of a mixed dirty tree would both leave it dirty anyway (the
-    ordinary refusal still has to fire) AND publish content under a guard
-    that had already declined to trust the tree. Scoped to the
-    untracked-NEW case only, deliberately: an interrupted write to an
-    EXISTING tracked ticket.md cannot be told apart from a genuine
-    mid-write tear without per-verb transition validation, and
-    auto-healing that case on a guess would be a strictly worse failure
-    mode than the deadlock it prevents (T-2026's own explicit scope cut,
-    not yet observed as a live incident, and unchanged by T-2046).
-
-    LOUD by design (T-2026): both the commit message and the log line
-    name this as an auto-heal of ANOTHER process's residue, never a
-    silent repair -- a quiet auto-heal would turn a visible deadlock
-    into an invisible recurring anomaly, and the whole point is keeping
-    the underlying rate measurable, the same posture `_commit_rapid_
-    debt_only_drift`'s own `_log.info` call at its call site already
-    takes."""
+# frob:ticket T-2075
+def _orphaned_new_ticket_dir_candidates(
+    root: Path, ticket_id: str
+) -> tuple[list[str], list[str]] | None:
+    """The validate half of the T-2026/T-2046 orphaned-new-ticket-dir
+    auto-heal, split out of `_commit_orphaned_new_ticket_dir_only_drift`
+    to keep that function under ARCH001's line threshold (T-2026's
+    follow-up residue) -- pure read/parse, no git mutation. `None` unless
+    EVERY dirty path in the tree (ignoring `.frob/`) is an untracked
+    `tickets/T-####/` directory (`?? tickets/T-####/`) whose only entry
+    is a `ticket.md` that parses cleanly via `_parse_ticket_file` with an
+    id matching its own directory name -- all-or-nothing, ANY unmatched
+    dirty path (a modified TRACKED file, a torn/partial `ticket.md`, an
+    extra file in the directory, or simply no dirty paths at all) means
+    `None`, never a partial list. On a match, returns `(orphan_paths,
+    orphan_ids)` in the SAME order, ready for the caller's own stage-and-
+    commit step."""
     status = run_argv(["git", "-C", str(root), "status", "--porcelain"])
     if status.is_err or status.danger_ok.returncode != 0:
-        return False
+        return None
     dirty_lines = [
         line
         for line in status.danger_ok.stdout.splitlines()
         if line.strip() and not line[3:].strip().startswith(".frob/")
     ]
     if not dirty_lines:
-        return False
+        return None
     orphan_paths: list[str] = []
     orphan_ids: list[str] = []
     for line in dirty_lines:
         if not line.startswith("??"):
-            return False
+            return None
         path = line[3:].strip()
         match = _ORPHANED_NEW_TICKET_DIR_RE.match(path)
         if match is None:
-            return False
+            return None
         orphan_id = match.group(1)
         dir_path = root / path
         try:
             entries = [p.name for p in dir_path.iterdir()]
         except OSError:
-            return False
+            return None
         if entries != ["ticket.md"]:
-            return False
+            return None
         parsed = _parse_ticket_file(dir_path / "ticket.md")
         if parsed.is_err:
             _log.error(
@@ -2013,11 +1993,62 @@ def _commit_orphaned_new_ticket_dir_only_drift(root: Path, ticket_id: str) -> bo
                 parsed.danger_err,
                 len(dirty_lines),
             )
-            return False
+            return None
         if parsed.danger_ok.id != orphan_id:
-            return False
+            return None
         orphan_paths.append(path)
         orphan_ids.append(orphan_id)
+    return orphan_paths, orphan_ids
+
+
+# frob:ticket T-2026
+# frob:ticket T-2046
+def _commit_orphaned_new_ticket_dir_only_drift(root: Path, ticket_id: str) -> bool:
+    """Auto-commit `root`'s orphaned NEW ticket directories (T-2026,
+    widened by T-2046 from one to N) when `_orphaned_new_ticket_dir_
+    candidates` finds EVERY dirty path in the tree qualifies -- the
+    window `frob ticket new` (`frob.app.ticket_runner._new._new`) leaves
+    open between writing `tickets/T-####/ticket.md` to disk (`write_
+    ticket`'s v2-mode body, `_write_ticket_v2_mode`) and its own final
+    `commit_ticket_ledger_change` call. If the process is killed in
+    between -- the observed 2026-08-10 incident was a coordinator retry
+    loop around `new`, needed because the verb refuses under
+    `LandInProgress` almost continuously at high agent counts, killed
+    mid-run -- the untracked directory survives with no commit, and
+    `DirtyMain` refuses every subsequent land repo-wide with no
+    agent-reachable recovery (only the ROOT checkout's own owner can
+    `git add`/`git commit` it by hand; T-2017 was cleared this way, by
+    hand, after an agent with finished, gate-clean work sat blocked 7+
+    minutes).
+
+    T-2046 widened the match from SOLE (one named file, mirroring
+    `_restore_lock_version_only_drift`/`_commit_rapid_debt_only_drift`
+    above) to CLASS-WIDE (any untracked, cleanly-parsing new ticket
+    directory) after the original SOLE restriction was measured
+    declining in exactly the load it was built for -- two independently
+    interrupted `new` invocations left TWO orphaned dirs coexisting 30
+    minutes after T-2026 landed. The safety argument (a freshly created
+    untracked directory has no prior state to clobber, so committing it
+    once it parses is always safe) holds identically for N directories
+    as for one. Scoped to the untracked-NEW case only, deliberately: an
+    interrupted write to an EXISTING tracked ticket.md cannot be told
+    apart from a genuine mid-write tear without per-verb transition
+    validation, and auto-healing that case on a guess would be a
+    strictly worse failure mode than the deadlock it prevents (T-2026's
+    own explicit scope cut, not yet observed as a live incident, and
+    unchanged by T-2046).
+
+    LOUD by design (T-2026): both the commit message and the log line
+    name this as an auto-heal of ANOTHER process's residue, never a
+    silent repair -- a quiet auto-heal would turn a visible deadlock
+    into an invisible recurring anomaly, and the whole point is keeping
+    the underlying rate measurable, the same posture `_commit_rapid_
+    debt_only_drift`'s own `_log.info` call at its call site already
+    takes."""
+    candidates = _orphaned_new_ticket_dir_candidates(root, ticket_id)
+    if candidates is None:
+        return False
+    orphan_paths, orphan_ids = candidates
     staged = run_argv(["git", "-C", str(root), "add", "--", *orphan_paths])
     if staged.is_err or staged.danger_ok.returncode != 0:
         return False
@@ -2077,9 +2108,30 @@ def _refuse_if_main_dirty(
     Any OTHER dirt (a real lock change, any other file, any of these
     three alongside anything else) is left alone and still refuses
     exactly as before."""
-    main_dirty = _porcelain_dirty(root)
+    main_dirty = _apply_dirty_main_auto_heals(root, ticket_id)
     if main_dirty.is_err:
         return Err(main_dirty.danger_err)
+    if main_dirty.danger_ok:
+        _log_dirty_main_refusal(root, worktree, ticket_id)
+        return Err(LandError.DirtyMain)
+    return Ok(None)
+
+
+# frob:ticket T-2026
+# frob:ticket T-2075
+def _apply_dirty_main_auto_heals(root: Path, ticket_id: str) -> Result[bool, LandError]:
+    """The auto-heal-attempt half of `_refuse_if_main_dirty`, split out to
+    keep that function under ARCH001's line threshold (T-2026's follow-up
+    residue): runs each of the three narrow guards in turn -- uv.lock
+    restore (T-0793), rapid-debt.jsonl commit (T-1699), orphaned new-
+    ticket-dir commit (T-2026/T-2046) -- re-checking dirtiness after each
+    one that actually acts, exactly as `_refuse_if_main_dirty` itself
+    used to inline. Returns the FINAL dirtiness (`True` still dirty,
+    `False` clean) for the caller to decide refuse-or-not; `Err` only on
+    a `_porcelain_dirty` git failure, never swallowed."""
+    main_dirty = _porcelain_dirty(root)
+    if main_dirty.is_err:
+        return main_dirty
     if main_dirty.danger_ok and _restore_lock_version_only_drift(root):
         _log.info(
             "land: %s auto-restored a uv.lock frob-version-only drift in "
@@ -2089,7 +2141,7 @@ def _refuse_if_main_dirty(
         )
         main_dirty = _porcelain_dirty(root)
         if main_dirty.is_err:
-            return Err(main_dirty.danger_err)
+            return main_dirty
     if main_dirty.danger_ok and _commit_rapid_debt_only_drift(root):
         _log.info(
             "land: %s auto-committed a stray rapid-debt.jsonl append in "
@@ -2099,7 +2151,7 @@ def _refuse_if_main_dirty(
         )
         main_dirty = _porcelain_dirty(root)
         if main_dirty.is_err:
-            return Err(main_dirty.danger_err)
+            return main_dirty
     if main_dirty.danger_ok and _commit_orphaned_new_ticket_dir_only_drift(
         root, ticket_id
     ):
@@ -2113,11 +2165,8 @@ def _refuse_if_main_dirty(
         )
         main_dirty = _porcelain_dirty(root)
         if main_dirty.is_err:
-            return Err(main_dirty.danger_err)
-    if main_dirty.danger_ok:
-        _log_dirty_main_refusal(root, worktree, ticket_id)
-        return Err(LandError.DirtyMain)
-    return Ok(None)
+            return main_dirty
+    return main_dirty
 
 
 # frob:ticket T-1698
