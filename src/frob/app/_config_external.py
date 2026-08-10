@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import tomllib
 from pathlib import Path
+from typing import Any
 
 # frob:ticket T-0021
 # frob:ticket T-0085
@@ -170,6 +171,17 @@ _STRING_FIELDS = (
     "verify_finding",
     "verify_dispose_reason",
     "verify_dispose_actor",
+    # frob:ticket T-2004
+    # Measured, real gaps `find_dropped_cli_flags` caught on the current
+    # tree -- each parses through argparse, has a
+    # matching `AppConfig` field, and was never forwarded by any
+    # `_apply_*_fields` loop, so it silently stayed at its field default
+    # forever. `ticket_anchor_reason` is the string half of the
+    # `--anchor`-related ticket-mutation flags (docs/modules/tickets.md);
+    # `sys_threats_boundary` is T-1925's own `frob sys threats [boundary]`
+    # positional, broken from the moment that ticket landed.
+    "ticket_anchor_reason",
+    "sys_threats_boundary",
 )
 
 _PATH_FIELDS = (
@@ -244,6 +256,10 @@ _PATH_FIELDS = (
     "coverage_path",
     # frob:ticket T-1697
     "verify_path",
+    # frob:ticket T-2004
+    # Measured, real gap -- see the _STRING_FIELDS T-2004 comment above
+    # for the finding this closes.
+    "ticket_anchor_reason_file",
 )
 
 _INT_FIELDS = (
@@ -439,6 +455,14 @@ _BOOL_FLAGS = (
     "coverage_full",
     # frob:ticket T-1697
     "verify_json",
+    # frob:ticket T-2004
+    # Measured, real gaps -- see the _STRING_FIELDS T-2004 comment above
+    # for the finding this closes. `ticket_doable_show_anchors` and
+    # `ticket_anchor_{set,clear}` are the boolean half of the same
+    # anchor-related flag family.
+    "ticket_doable_show_anchors",
+    "ticket_anchor_set",
+    "ticket_anchor_clear",
 )
 
 
@@ -583,6 +607,125 @@ def _apply_bool_flags(args: argparse.Namespace, d: dict) -> None:
     for flag in _BOOL_FLAGS:
         if getattr(args, flag, False):
             d[flag] = True
+
+
+# frob:ticket T-2004
+#: Every AppConfig field `_build_external_config_kwargs` forwards OUTSIDE
+#: the six `_apply_*_fields` type-group tuples above -- `subcommand`/
+#: `no_color` (special-cased enum/early-flag handling), `ticket_worktree`
+#: (already in `_PATH_FIELDS`, but `_resolve_ticket_worktree` also
+#: touches it -- listed here for completeness of the audit, not a second
+#: copy path), `parse_exit_code`/`check_budget` (the two ad-hoc int casts
+#: in `_apply_int_fields`), `ticket_body`/`fleet_body`/`exports_exclude`
+#: (the free-text/ad-hoc overrides in `_apply_scalar_overrides`/
+#: `_apply_list_fields`). `find_dropped_cli_flags` unions this with the
+#: six tuples to get the FULL forwarded set -- kept as one small,
+#: hand-maintained constant (not derivable from the ad-hoc `getattr`
+#: calls without parsing this module's own source) rather than a second
+#: divergence-prone allowlist of the SAME shape the six tuples already
+#: are; a name added here with no matching `_apply_*` handling is caught
+#: the same way an ad-hoc field missing from this set is: `find_dropped_
+#: cli_flags` cannot see behavior it was never told about, same as any
+#: static check.
+_AD_HOC_FORWARDED_FIELDS = frozenset(
+    {
+        "subcommand",
+        "no_color",
+        "ticket_worktree",
+        "parse_exit_code",
+        "check_budget",
+        "ticket_body",
+        "fleet_body",
+        "exports_exclude",
+    }
+)
+
+
+# frob:ticket T-2004
+def _all_forwarded_field_names() -> frozenset[str]:
+    """T-2004: every `AppConfig` field name `_build_external_config_kwargs`
+    can possibly forward from a parsed `argparse.Namespace` -- the union
+    of the six `_apply_*_fields` type-group tuples PLUS `_AD_HOC_
+    FORWARDED_FIELDS`, read directly off this module's own live tuples
+    (never a separately hand-typed mirror list -- the exact "not a third
+    hand-maintained list" acceptance criterion T-2004 names: a copy of a
+    copy is a new desync source, not a check)."""
+    return (
+        frozenset(_STRING_FIELDS)
+        | frozenset(_PATH_FIELDS)
+        | frozenset(_INT_FIELDS)
+        | frozenset(_FLOAT_FIELDS)
+        | frozenset(_LIST_FIELDS)
+        | frozenset(_BOOL_FLAGS)
+        | _AD_HOC_FORWARDED_FIELDS
+    )
+
+
+# frob:ticket T-2004
+def _all_parser_dests(parser: argparse.ArgumentParser) -> frozenset[str]:
+    """T-2004: every `dest` name any argument (at any subcommand depth)
+    on the LIVE `parser` tree resolves to, recursing into every
+    `_SubParsersAction`'s registered sub-parsers -- the actual CLI
+    surface as argparse itself will parse it, not a hand-maintained
+    mirror of subcommand names. Excludes `argparse.SUPPRESS`-dest
+    entries (already deliberately invisible to argparse's own Namespace)
+    -- `help`/`version` survive this filter (they have real dests) and
+    are dropped downstream instead, by `find_dropped_cli_flags`'s
+    intersection with `AppConfig`'s own field set, since neither name is
+    ever meant to reach a model field."""
+    dests: set[str] = set()
+
+    def _walk(p: argparse.ArgumentParser) -> None:
+        for action in p._actions:  # noqa: SLF001 -- argparse's own public introspection surface, no other API exposes this
+            if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+                for sub in action.choices.values():
+                    _walk(sub)
+            elif action.dest != argparse.SUPPRESS:
+                dests.add(action.dest)
+
+    _walk(parser)
+    return frozenset(dests)
+
+
+# frob:doc docs/modules/app.md#config
+# frob:ticket T-2004
+# frob:tests tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags  # noqa: E501
+def find_dropped_cli_flags(
+    parser: argparse.ArgumentParser,
+    config_cls: type[Any],
+    *,
+    forwarded: frozenset[str] | None = None,
+) -> frozenset[str]:
+    """T-2004 ("tested is not reached"): every argparse `dest` on `parser`
+    that (a) has a same-named field on `config_cls` (an `AppConfig`-shaped
+    pydantic model, or a test double with a `model_fields` mapping) --
+    i.e. is genuinely MEANT to reach the model, unlike a raw-argv-
+    dispatched subcommand's own flags (`bind`/`agent`/`worktree sweep`,
+    which have no matching field at all and are correctly invisible to
+    this check by construction) -- but (b) is NOT forwarded by any of
+    `_build_external_config_kwargs`'s copy loops (`_all_forwarded_field_
+    names`). A non-empty result means a flag parses, may have full unit
+    coverage on the function it configures, and STILL never reaches that
+    function through the real CLI -- T-1995's `--ack-related` incident,
+    caught only by accident.
+
+    Both sides are derived from the ACTUAL live parser and the ACTUAL
+    forwarding tuples, never a third hand-maintained list of "flags that
+    should forward" (T-2004 acceptance criterion 2) -- there is nothing
+    here for a maintainer to remember to update; adding a flag with a
+    matching field to a NEW `_apply_*_fields` tuple (or `_AD_HOC_
+    FORWARDED_FIELDS`) is the only way to keep this check green, and
+    forgetting is exactly what this function is built to catch, not to
+    trust honor of. `forwarded` overrides the real live forwarding set --
+    ONLY for reconstructing a past/hypothetical state in a test (T-2004's
+    own acceptance criterion 1 needs to prove the check fails on a
+    known-broken state, which requires a forwarding set that does not
+    match this module's own current tuples); every real caller omits it
+    and gets `_all_forwarded_field_names()`."""
+    candidates = _all_parser_dests(parser) & frozenset(config_cls.model_fields)
+    return candidates - (
+        forwarded if forwarded is not None else _all_forwarded_field_names()
+    )
 
 
 def _build_external_config_kwargs(

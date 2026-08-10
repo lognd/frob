@@ -2,7 +2,7 @@
 id: T-2004
 title: 'A CLI flag can be parsed, tested, and silently dropped by from_external''s
   allowlist: tested is not reached'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,8 +13,35 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/_config_external.py
+- tests/unit/test_app_config_flag_coverage.py
+- docs/modules/app.md
+- tests/unit/test_app_sys_capacity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_config_flag_coverage.py
+  reason: new unit test file for find_dropped_cli_flags
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/app.md
+  reason: frob:doc anchors for new symbols, plus prior FLOAT_FIELDS test edge covered
+    by an already-touched file
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_app_sys_capacity.py
+  reason: frob:doc anchors for new symbols, plus prior FLOAT_FIELDS test edge covered
+    by an already-touched file
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::test_reconstructed_t1995_state_is_caught
+- tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::test_reconstructed_state_is_clean_once_the_field_is_added
+- tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::test_flag_with_no_matching_config_field_is_not_flagged
+- tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::test_help_and_version_are_never_flagged
+- tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::test_current_tree_has_zero_dropped_flags
 designated_repro_test: null
 threat: null
 component: null

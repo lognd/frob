@@ -185,6 +185,47 @@ loops in `from_external`, same shape as `ticket_label_add`/
 `ticket_scope_reason_file`'s precedents. See docs/modules/tickets.md#frob-
 ticket-accept-t-1029 for the command itself.
 
+T-2004 ("tested is not reached"): `from_external`'s six `_apply_*_fields`
+type-group tuples (`_STRING_FIELDS`/`_PATH_FIELDS`/`_INT_FIELDS`/
+`_FLOAT_FIELDS`/`_LIST_FIELDS`/`_BOOL_FLAGS`) plus a small ad-hoc set
+(`_AD_HOC_FORWARDED_FIELDS`: `subcommand`/`no_color`/`ticket_worktree`/
+`parse_exit_code`/`check_budget`/`ticket_body`/`fleet_body`/
+`exports_exclude`) are the ONLY names `from_external` ever forwards from
+a parsed `argparse.Namespace` into `AppConfig`. A flag that parses
+correctly, has a matching `AppConfig` field, and is simply absent from
+every one of those sets is silently dropped: the field stays at its
+pydantic default forever, no error, no warning -- and a unit test that
+constructs `AppConfig` directly (bypassing argparse and `from_external`
+both) passes regardless, because it never exercises the wiring at all.
+Two real, independent incidents hit this in one week: T-1995's
+`--ack-related` (missing from `_STRING_FIELDS`) and T-1927's
+`sys_threats_boundary` positional (missing from every tuple). Both had
+full, passing unit coverage; neither worked end-to-end.
+
+`frob.app._config_external.find_dropped_cli_flags(parser, config_cls)`
+is the static check this class of bug needed: it walks the REAL argparse
+parser tree (`_all_parser_dests`, recursing through every
+`_SubParsersAction`) for every `dest`, intersects that with `config_cls.
+model_fields` (a flag with no matching model field -- e.g. `bind`/
+`agent`/`worktree sweep`'s own flags, which bypass `AppConfig` entirely
+by design, dispatched directly in `frob.__main__._dispatch`, docs/
+modules/app.md above -- was never meant to reach the model and is
+correctly invisible here), and subtracts `_all_forwarded_field_names()`
+(the union of the same six tuples plus the ad-hoc set, read directly off
+this module's own live source, never a hand-typed mirror -- a second
+list would just be a second place to forget). Both sides of the
+comparison are the ACTUAL live parser and the ACTUAL forwarding
+declarations; nothing here is a third list a maintainer must remember to
+keep in sync. `tests/unit/test_app_config_flag_coverage.py::
+TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags` runs
+this against the real `frob` parser and the real `AppConfig` as a
+ratchet -- MEASURED, not assumed: 317 CLI flags examined (every dest
+with a matching `AppConfig` field), 0 dropped, after T-2004 itself found
+and fixed 6 real, live-broken flags on the tree at measurement time
+(`ticket_anchor_reason`, `ticket_anchor_reason_file`, `ticket_anchor_
+set`, `ticket_anchor_clear`, `ticket_doable_show_anchors`, and this very
+series' own `sys_threats_boundary`).
+
 ## Runners
 
 Each runner exposes exactly one public function, `run(cfg: AppConfig) -> None`,
