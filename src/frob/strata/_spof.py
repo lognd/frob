@@ -68,7 +68,7 @@ from pydantic import BaseModel, ConfigDict
 from frob.logging import get_logger
 
 from ._models import KernelModel, Node
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
@@ -216,19 +216,7 @@ def check_spof(model: KernelModel) -> SpofReport:
     violations = _spof_violations(model)
     applied = _apply_spof_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        SpofViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, SpofViolation)
     _log.info(
         "spof: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

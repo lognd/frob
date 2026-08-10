@@ -75,26 +75,26 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
 #: `frob sys audit` rule id for REL300 missing transactional boundary: an
 #: op writing to >=2 stores with no `transaction` and no `saga` attr.
-# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650
 REL_MISSING_TXN_BOUNDARY = "REL300"
 
 #: `frob sys audit` rule id for REL301 unproven transactional boundary: an
 #: op declares `transaction`/`saga`, but its bound code has no real
 #: transaction/saga-shaped token (PROVABILITY CONSTRAINT, T-0331).
-# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650
 REL_UNPROVEN_TXN_BOUNDARY = "REL301"
 
 #: Every REL30x rule id this module can emit -- this module's own, narrow
 #: family for `_apply_txn_waivers`' `in_scope` (the "never a shared
 #: superset" discipline `_reliability.py`'s module docstring documents
 #: the real regression for).
-# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650
 TXN_RULES: frozenset[str] = frozenset(
     {REL_MISSING_TXN_BOUNDARY, REL_UNPROVEN_TXN_BOUNDARY}
 )
@@ -124,7 +124,7 @@ _TXN_TOKEN_RE = re.compile(
 )
 
 
-# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650
 class TxnBoundaryViolation(BaseModel):
     """One REL30x finding: rule id, the op node, a human-readable detail.
     `sub_target` stays `None` -- single-instance-per-op (module docstring:
@@ -140,7 +140,7 @@ class TxnBoundaryViolation(BaseModel):
     sub_target: str | None = None
 
 
-# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650
 class TxnBoundaryReport(BaseModel):
     """Every UNWAIVED REL30x finding, plus `waived` (T-0174 channel, kept
     for report visibility, never silently dropped). Mirrors `_ssot.py::
@@ -191,7 +191,8 @@ def _missing_txn_boundary_violations(
         op_node = nodes_by_id.get(op_id)
         if op_node is None or _has_txn_boundary(op_node.attrs):
             continue
-        # frob:waive PERF004 reason="written_ids is this loop's own per-op distinct set, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="written_ids is this loop's own per-op distinct \
+        # set, not a shared re-sort"
         stores = ", ".join(sorted(written_ids))
         _log.warning(
             "txn: REL300 op %s writes stores %s with no transactional boundary",
@@ -266,7 +267,7 @@ def _apply_txn_waivers(model: KernelModel, violations: list[TxnBoundaryViolation
     )
 
 
-# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650
 # frob:ticket T-0650
 # frob:enforces CHK-GATE-REL300
 # frob:enforces CHK-GATE-REL301
@@ -296,19 +297,7 @@ def check_txn_boundary_obligations(
     )
     applied = _apply_txn_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        TxnBoundaryViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, TxnBoundaryViolation)
     _log.info(
         "txn: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

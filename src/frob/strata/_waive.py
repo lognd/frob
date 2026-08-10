@@ -336,6 +336,40 @@ def _stale_detail(stale: WaiverMatch) -> str:
     )
 
 
+# T-1938: the single home for the RELWAIVE002 emit block every one of the
+# ~21 `check_X_obligations` callers used to duplicate byte-for-byte, the
+# blocks differing ONLY in which violation dataclass they constructed (a
+# DUP001 type-name blind spot -- see the ticket for the detector-generalize
+# verdict). `make` is a factory rather than a fixed dataclass because most
+# callers pass the violation type itself (its `BaseModel.__init__` already
+# accepts these four keyword names), while `_starvation.py` needs an extra
+# `resource=""` field and passes a small lambda instead -- this keeps every
+# family's distinct violation TYPE (real per-family signal, per T-1938's
+# explicit "do not collapse" instruction) while sharing the one emit rule.
+# frob:doc docs/strata/waive.md#drift-lock-stale-waivers-fail
+# frob:tests tests/unit/strata/test_waive.py::TestStaleRelwaiveViolations.test_builds_one_violation_per_stale_waiver  # noqa: E501
+# frob:tests tests/unit/strata/test_waive.py::TestStaleRelwaiveViolations.test_uses_stale_detail_message  # noqa: E501
+def stale_relwaive_violations(
+    stale: Sequence[WaiverMatch],
+    make: Callable[..., _F],
+) -> tuple[_F, ...]:
+    """One RELWAIVE002 violation per stale waiver in `stale`, built via
+    `make(rule=..., node=..., sub_target=..., detail=...)` -- the single
+    shared emit rule every `check_X_obligations` RELWAIVE002 block used to
+    duplicate. `make` is typically the caller's own violation class (its
+    constructor already accepts these four keywords); pass a lambda when a
+    family's violation type needs extra fields set."""
+    return tuple(
+        make(
+            rule="RELWAIVE002",
+            node=stale_waiver.node,
+            sub_target=stale_waiver.rule,
+            detail=_stale_detail(stale_waiver),
+        )
+        for stale_waiver in stale
+    )
+
+
 def _declared_waivers(model: KernelModel) -> list[tuple[str, Waiver]]:
     """Every `(node_id, Waiver)` pair declared anywhere in `model`, in
     node-then-declaration order -- the full waiver universe a finding
@@ -511,6 +545,7 @@ __all__ = [
     "WaiverMatch",
     "apply_waivers",
     "parse_waiver_expiry",
+    "stale_relwaive_violations",
     "_split_waiver_rule",
     "_stale_detail",
     "_validate_waiver_fields",

@@ -62,26 +62,26 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
 #: `frob sys audit` rule id for REL320 missing schema version: an
 #: `event`/`queue` node with no `schema_version` attr declared.
-# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651
 REL_MISSING_SCHEMA_VERSION = "REL320"
 
 #: `frob sys audit` rule id for REL321 unproven schema version: a node
 #: declares `schema_version`, but its bound code has no real schema-
 #: version-shaped token (PROVABILITY CONSTRAINT, T-0331).
-# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651
 REL_UNPROVEN_SCHEMA_VERSION = "REL321"
 
 #: Every REL32x rule id this module can emit -- this module's own, narrow
 #: family for `_apply_message_schema_waivers`' `in_scope` (the "never a
 #: shared superset" discipline `_reliability.py`'s module docstring
 #: documents the real regression for).
-# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651
 MESSAGE_SCHEMA_RULES: frozenset[str] = frozenset(
     {REL_MISSING_SCHEMA_VERSION, REL_UNPROVEN_SCHEMA_VERSION}
 )
@@ -115,7 +115,7 @@ _SCHEMA_VERSION_TOKEN_RE = re.compile(
 )
 
 
-# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651
 class MessageSchemaViolation(BaseModel):
     """One REL32x finding: rule id, the node, a human-readable detail.
     `sub_target` stays `None` -- single-instance-per-node (module
@@ -131,7 +131,7 @@ class MessageSchemaViolation(BaseModel):
     sub_target: str | None = None
 
 
-# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651
 class MessageSchemaReport(BaseModel):
     """Every UNWAIVED REL32x finding, plus `waived` (T-0174 channel, kept
     for report visibility, never silently dropped). Mirrors
@@ -232,7 +232,7 @@ def _apply_message_schema_waivers(
     )
 
 
-# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel32x-message-schema-version-obligation-t-0651
 # frob:ticket T-0651
 # frob:ticket T-0958
 # frob:enforces SDC-13-EVERY-SERVICE-TO-SERVICE-API-DECLARES-AN-EXPLICIT-SCHEMA-CONTRACT-WITH-A-VERSIONING  # noqa: E501
@@ -259,19 +259,7 @@ def check_message_schema_obligations(
     violations.extend(_unproven_schema_version_violations(model, owner_by_node, root))
     applied = _apply_message_schema_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        MessageSchemaViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, MessageSchemaViolation)
     _log.info(
         "message_schema: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

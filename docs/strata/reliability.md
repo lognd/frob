@@ -7,6 +7,19 @@ deliberately: a rule module (`_reliability.py`), a `Report`/`Violation`
 pydantic pair, the SAME T-0174 waiver channel, and `frob sys audit` CLI
 wiring.
 
+**T-1938 (pure de-duplication, no observable behavior change):** every
+family below used to construct its RELWAIVE002 "stale waiver" finding
+with its own byte-identical `stale = tuple(...)` block, differing only in
+which `*Violation` dataclass it built (`docs/strata/waive.md#drift-lock-
+stale-waivers-fail`'s "declared waiver that matched nothing" case). That
+block now lives once, as `_waive.py::stale_relwaive_violations`, and each
+`check_X_obligations` below calls it with its own violation type (or a
+small factory lambda where a family needs an extra field, e.g.
+`_starvation.py`) -- the emitted `RELWAIVE002` rule id, message, node,
+and sub-target are unchanged for every family; only the code that builds
+them moved. Full pre/post strata suite run identical (1379 passed / 3
+pre-existing unrelated failures, both before and after).
+
 ## REL2xx: TIMEOUT obligation (T-0640)
 
 <!-- frob:invariant INV-047 -->

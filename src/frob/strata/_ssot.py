@@ -73,27 +73,27 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
 #: `frob sys audit` rule id for REL290 missing owner/reconciliation: a
 #: multi-writer store with no `owner` and no `reconciliation` attr.
-# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649
 REL_MISSING_OWNER = "REL290"
 
 #: `frob sys audit` rule id for REL291 unproven owner: a multi-writer
 #: store declares `owner`/`reconciliation`, but its bound code has no
 #: real single-writer/reconciliation-shaped token (PROVABILITY
 #: CONSTRAINT, T-0331).
-# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649
 REL_UNPROVEN_OWNER = "REL291"
 
 #: Every REL29x rule id this module can emit -- this module's own, narrow
 #: family for `_apply_ssot_waivers`' `in_scope` (the "never a shared
 #: superset" discipline `_reliability.py`'s module docstring documents
 #: the real regression for).
-# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649
 SSOT_RULES: frozenset[str] = frozenset({REL_MISSING_OWNER, REL_UNPROVEN_OWNER})
 
 #: Node attr declaring a single-owner write-authority obligation
@@ -123,7 +123,7 @@ _OWNER_TOKEN_RE = re.compile(
 )
 
 
-# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649
 class SsotViolation(BaseModel):
     """One REL29x finding: rule id, the store node, a human-readable
     detail. `sub_target` stays `None` -- single-instance-per-store
@@ -139,7 +139,7 @@ class SsotViolation(BaseModel):
     sub_target: str | None = None
 
 
-# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649
 class SsotReport(BaseModel):
     """Every UNWAIVED REL29x finding, plus `waived` (T-0174 channel, kept
     for report visibility, never silently dropped). Mirrors
@@ -190,7 +190,8 @@ def _missing_owner_violations(
         store_node = nodes_by_id.get(store_id)
         if store_node is None or _has_owner_or_reconciliation(store_node.attrs):
             continue
-        # frob:waive PERF004 reason="writer_ids is this loop's own per-store distinct set, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="writer_ids is this loop's own per-store distinct \
+        # set, not a shared re-sort"
         writers = ", ".join(sorted(writer_ids))
         _log.warning(
             "ssot: REL290 store %s written by %s with no owner/reconciliation",
@@ -266,7 +267,7 @@ def _apply_ssot_waivers(model: KernelModel, violations: list[SsotViolation]):  #
     )
 
 
-# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel29x-single-source-of-truth-obligation-t-0649
 # frob:ticket T-0649
 # frob:enforces CHK-GATE-REL290
 # frob:enforces CHK-GATE-REL291
@@ -294,19 +295,7 @@ def check_ssot_obligations(
     violations.extend(_unproven_owner_violations(model, store_ids, owner_by_node, root))
     applied = _apply_ssot_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        SsotViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, SsotViolation)
     _log.info(
         "ssot: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

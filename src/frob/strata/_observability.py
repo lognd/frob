@@ -67,31 +67,35 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import bound_endpoints, files_evidence_token, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
 #: `frob sys audit` rule id for REL270 missing observability: a boundary
 #: flow with no `observability` attr declared.
-# frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647
 REL_MISSING_OBSERVABILITY = "REL270"
 
 #: `frob sys audit` rule id for REL271 unproven observability: a flow
 #: declares `observability`, but its bound endpoint code has no real
 #: metrics/tracing/logging-shaped token (PROVABILITY CONSTRAINT, T-0331).
-# frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647
 REL_UNPROVEN_OBSERVABILITY = "REL271"
 
 #: `frob sys audit` rule id for REL272 missing correlation propagation: a
 #: chained (non-first-hop) flow with no `correlation` attr declared.
-# frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647
 REL_MISSING_CORRELATION = "REL272"
 
 #: Every REL27x rule id this module can emit -- this module's own, narrow
 #: family for `_apply_observability_waivers`' `in_scope` (the "never a
 #: shared superset" discipline `_reliability.py`'s module docstring
 #: documents the real regression for).
-# frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647
 OBSERVABILITY_RULES: frozenset[str] = frozenset(
     {REL_MISSING_OBSERVABILITY, REL_UNPROVEN_OBSERVABILITY, REL_MISSING_CORRELATION}
 )
@@ -121,7 +125,8 @@ _OBSERVABILITY_TOKEN_RE = re.compile(
 )
 
 
-# frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647
 class ObservabilityViolation(BaseModel):
     """One REL27x finding: rule id, the reporting node, a human-readable
     detail, and `sub_target` (always the flow id -- every REL27x rule is
@@ -135,7 +140,8 @@ class ObservabilityViolation(BaseModel):
     sub_target: str | None = None
 
 
-# frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647
 class ObservabilityReport(BaseModel):
     """Every UNWAIVED REL27x finding, plus `waived` (T-0174 channel, kept
     for report visibility, never silently dropped). Mirrors
@@ -296,7 +302,8 @@ def _apply_observability_waivers(
     )
 
 
-# frob:doc docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel27x-observability--correlation-obligation-t-0647
 # frob:ticket T-0647
 # frob:ticket T-0958
 # frob:enforces SDC-6-USE-METHOD-UTILIZATION-SATURATION-ERRORS
@@ -327,19 +334,7 @@ def check_observability_obligations(
     violations.extend(_missing_correlation_violations(model))
     applied = _apply_observability_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        ObservabilityViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, ObservabilityViolation)
     _log.info(
         "observability: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

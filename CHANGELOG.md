@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.431.0] - unreleased
+
+- T-1938: 21 byte-identical copies of the RELWAIVE002 stale-waiver block across strata (DUP001 type-name blind spot)
+
 ## [0.430.0] - unreleased
 
 - T-1937: Gate rule registry is not authoritative: 10 live rule ids bypass the acceptance preflight

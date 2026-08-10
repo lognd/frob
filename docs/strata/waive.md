@@ -195,6 +195,15 @@ error class; staleness already covers it.
 - Sub-target parsing: `_waive.py::_split_waiver_rule` (`"SYS100:exec"` ->
   `("SYS100", "exec")`), `MULTI_INSTANCE_WAIVER_FAMILIES`,
   `_validate_waiver_fields` (the actual check `_validate_waivers` calls).
+- Emission (RELWAIVE002, T-1938): the ~20 `docs/strata/reliability.md`
+  `check_X_obligations` entrypoints each report their OWN family's stale
+  waivers as `RELWAIVE002` -- a sibling emit rule to this section's
+  `SYSWAIVE002`, sharing the same staleness semantics but a distinct rule
+  id per module docstring precedent. Every one of those call sites builds
+  its `RELWAIVE002` finding through the single shared
+  `_waive.py::stale_relwaive_violations` helper (factory-parameterized on
+  the caller's own violation dataclass) rather than each duplicating the
+  message-building block.
 - Matching/staleness: `_waive.py::apply_waivers` -- one generic algorithm
   shared by `check_self_conformance` (SYS100-102) and
   `evaluate_exhaustiveness` (everything else), matching on `(node, rule,

@@ -76,32 +76,32 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import bound_endpoints, files_evidence_token, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
 #: `frob sys audit` rule id for REL370 missing ordering strategy: a
 #: `clock_dependent` flow with no `ordering_strategy` attr declared.
-# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657
 REL_MISSING_ORDERING_STRATEGY = "REL370"
 
 #: `frob sys audit` rule id for REL371 unproven ordering strategy: a flow
 #: declares `ordering_strategy`, but no bound endpoint's code has a real
 #: ordering-shaped token at all (PROVABILITY CONSTRAINT, T-0331).
-# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657
 REL_UNPROVEN_ORDERING_STRATEGY = "REL371"
 
 #: `frob sys audit` rule id for REL372 wall-clock-only discharge: a flow
 #: declares `ordering_strategy` and has bound code with SOME ordering-
 #: shaped token, but the only such token is a bare wall-clock read.
-# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657
 REL_WALL_CLOCK_ONLY = "REL372"
 
 #: Every REL37x rule id this module can emit -- this module's own,
 #: narrow family for `_apply_clock_ordering_waivers`' `in_scope` (the
 #: "never a shared superset" discipline `_reliability.py`'s module
 #: docstring documents the real regression for).
-# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657
 CLOCK_ORDERING_RULES: frozenset[str] = frozenset(
     {REL_MISSING_ORDERING_STRATEGY, REL_UNPROVEN_ORDERING_STRATEGY, REL_WALL_CLOCK_ONLY}
 )
@@ -142,7 +142,7 @@ _WALL_CLOCK_TOKEN_RE = re.compile(
 )
 
 
-# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657
 class ClockOrderingViolation(BaseModel):
     """One REL37x finding: rule id, the reporting node (the flow's `src`),
     a human-readable detail, and `sub_target` (always the flow id --
@@ -157,7 +157,7 @@ class ClockOrderingViolation(BaseModel):
     sub_target: str | None = None
 
 
-# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657
 class ClockOrderingReport(BaseModel):
     """Every UNWAIVED REL37x finding, plus `waived` (T-0174 channel, kept
     for report visibility, never silently dropped). Mirrors
@@ -299,7 +299,7 @@ def _apply_clock_ordering_waivers(
     )
 
 
-# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel37x-clockordering-assumptions-obligation-t-0657
 # frob:ticket T-0657
 # frob:ticket T-0958
 # frob:enforces SDC-8-ORDERING-GUARANTEES
@@ -328,19 +328,7 @@ def check_clock_ordering_obligations(
     violations.extend(_bound_and_proven_violations(model, owner_by_node, root))
     applied = _apply_clock_ordering_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        ClockOrderingViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, ClockOrderingViolation)
     _log.info(
         "clock_ordering: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

@@ -69,26 +69,29 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
 #: `frob sys audit` rule id for REL280 missing golden-signal SLO + error
 #: budget: a service/daemon node missing `slo` and/or `error_budget`.
-# frob:doc docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648
 REL_MISSING_SLO = "REL280"
 
 #: `frob sys audit` rule id for REL281 unproven SLO: a node declares both
 #: `slo` and `error_budget`, but its bound code has no real SLO/error-
 #: budget-shaped token (PROVABILITY CONSTRAINT, T-0331).
-# frob:doc docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648
 REL_UNPROVEN_SLO = "REL281"
 
 #: Every REL28x rule id this module can emit -- this module's own, narrow
 #: family for `_apply_slo_waivers`' `in_scope` (the "never a shared
 #: superset" discipline `_reliability.py`'s module docstring documents
 #: the real regression for).
-# frob:doc docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648
 SLO_RULES: frozenset[str] = frozenset({REL_MISSING_SLO, REL_UNPROVEN_SLO})
 
 #: Node attrs marking a long-lived service/daemon node -- the IDENTICAL
@@ -125,7 +128,8 @@ _SLO_TOKEN_RE = re.compile(
 )
 
 
-# frob:doc docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648
 class SloViolation(BaseModel):
     """One REL28x finding: rule id, the node, a human-readable detail.
     `sub_target` stays `None` -- single-instance-per-node (module
@@ -141,7 +145,8 @@ class SloViolation(BaseModel):
     sub_target: str | None = None
 
 
-# frob:doc docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648
 class SloReport(BaseModel):
     """Every UNWAIVED REL28x finding, plus `waived` (T-0174 channel, kept
     for report visibility, never silently dropped). Mirrors
@@ -252,13 +257,15 @@ def _apply_slo_waivers(model: KernelModel, violations: list[SloViolation]):  # n
     )
 
 
-# frob:doc docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648  # noqa: E501
+# frob:doc \
+# docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648
 # frob:ticket T-0648
 # frob:ticket T-0958
 # frob:enforces SDC-7-SLO-BASED-ALERTING
 # frob:enforces CHK-GATE-REL280
 # frob:enforces CHK-GATE-REL281
-# frob:tests tests/unit/strata/test_slo.py::TestMissingSlo.test_service_node_without_slo_fires  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_slo.py::TestMissingSlo.test_service_node_without_slo_fires
 def check_slo_obligations(
     model: KernelModel, root: Path
 ) -> Result[SloReport, StrataError]:
@@ -279,19 +286,7 @@ def check_slo_obligations(
     violations.extend(_unproven_slo_violations(model, owner_by_node, root))
     applied = _apply_slo_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        SloViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, SloViolation)
     _log.info(
         "slo: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

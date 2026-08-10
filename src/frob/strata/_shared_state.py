@@ -52,7 +52,7 @@ from pydantic import BaseModel, ConfigDict
 from frob.logging import get_logger
 
 from ._models import KernelModel
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
@@ -149,7 +149,8 @@ def _shared_state_violations(model: KernelModel) -> list[SharedStateViolation]:
         node = nodes_by_id.get(node_id)
         if node is None or _is_shared_state_ok(node.attrs):
             continue
-        # frob:waive PERF004 reason="accessing is this loop's own per-node distinct set, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="accessing is this loop's own per-node distinct \
+        # set, not a shared re-sort"
         services = ", ".join(sorted(accessing))
         _log.warning(
             "shared_state: REL360 node %s is mutable state shared across "
@@ -203,19 +204,7 @@ def check_shared_state(model: KernelModel) -> SharedStateReport:
     violations = _shared_state_violations(model)
     applied = _apply_shared_state_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        SharedStateViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, SharedStateViolation)
     _log.info(
         "shared_state: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

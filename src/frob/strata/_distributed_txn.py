@@ -74,7 +74,7 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
@@ -183,7 +183,8 @@ def _missing_saga_violations(model: KernelModel) -> list[DistributedTxnViolation
         op_node = nodes_by_id.get(op_id)
         if op_node is None or _has_saga(op_node.attrs):
             continue
-        # frob:waive PERF004 reason="written_ids is this loop's own per-op distinct set, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="written_ids is this loop's own per-op distinct \
+        # set, not a shared re-sort"
         services = ", ".join(sorted(written_ids))
         _log.warning(
             "distributed_txn: REL350 op %s writes services %s with no "
@@ -289,19 +290,7 @@ def check_distributed_txn_obligations(
     violations.extend(_unproven_saga_violations(model, owner_by_node, root))
     applied = _apply_distributed_txn_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        DistributedTxnViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, DistributedTxnViolation)
     _log.info(
         "distributed_txn: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

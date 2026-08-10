@@ -73,14 +73,14 @@ from frob.logging import get_logger
 
 from ._crash import _ASYNC_ATTR
 from ._models import KernelModel
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
 #: `frob sys audit` rule id for REL340 sync call-chain depth exceeded: a
 #: node reachable only via `_SYNC_CHAIN_MAX_DEPTH`+ consecutive
 #: synchronous flow hops, no `deep_chain_ok` exemption.
-# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654
 REL_SYNC_CHAIN_TOO_DEEP = "REL340"
 
 #: Every REL34x rule id this module can emit -- this module's own, narrow
@@ -90,12 +90,12 @@ REL_SYNC_CHAIN_TOO_DEEP = "REL340"
 #: (REL34x is a single rule, module docstring), kept as a set (not a bare
 #: constant comparison) so a future REL34x sibling rule slots into
 #: `_apply_sync_depth_waivers` without a call-site change.
-# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654
 SYNC_DEPTH_RULES: frozenset[str] = frozenset({REL_SYNC_CHAIN_TOO_DEEP})
 
 #: Default max consecutive synchronous flow hops before REL340 fires
 #: (module docstring's GRAMMAR-DATA CEILING: not model-declarable today).
-# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654
 SYNC_CHAIN_MAX_DEPTH = 4
 
 #: Node attr exempting a node from REL340 -- an explicit modeler
@@ -103,7 +103,7 @@ SYNC_CHAIN_MAX_DEPTH = 4
 _DEEP_CHAIN_OK_ATTR = "deep_chain_ok"
 
 
-# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654
 class SyncDepthViolation(BaseModel):
     """One REL340 finding: rule id, the node, a human-readable detail.
     `sub_target` stays `None` -- single-instance-per-node (a node either
@@ -119,7 +119,7 @@ class SyncDepthViolation(BaseModel):
     sub_target: str | None = None
 
 
-# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654
 class SyncDepthReport(BaseModel):
     """Every UNWAIVED REL34x finding, plus `waived` (T-0174 channel, kept
     for report visibility, never silently dropped). Mirrors
@@ -227,10 +227,11 @@ def _apply_sync_depth_waivers(model: KernelModel, violations: list[SyncDepthViol
     )
 
 
-# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654  # noqa: E501
+# frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654
 # frob:ticket T-0654
 # frob:enforces CHK-GATE-REL340
-# frob:tests tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_chain_at_bound_fires  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_chain_at_bound_fires
 def check_sync_chain_depth(model: KernelModel) -> SyncDepthReport:
     """The REL34x SYNC-CALL-CHAIN-DEPTH-bound entrypoint (T-0654): REL340
     across every node in `model` reached by a too-deep synchronous call
@@ -242,19 +243,7 @@ def check_sync_chain_depth(model: KernelModel) -> SyncDepthReport:
     violations = _sync_depth_violations(model)
     applied = _apply_sync_depth_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        SyncDepthViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, SyncDepthViolation)
     _log.info(
         "sync_depth: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

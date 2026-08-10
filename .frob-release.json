@@ -1792,6 +1792,7 @@
     "src/frob/strata/_waive.py::WaiverMatch": "e6cd4f3e472f311d17493afda39cd039f6e3efcc271b832852ab561250de0169",
     "src/frob/strata/_waive.py::apply_waivers": "d6bb683875c3e41b4692b43b1ae788856bf0950aa9f070ae57585ff1d1c0d376",
     "src/frob/strata/_waive.py::parse_waiver_expiry": "b7c60cd82759066fb7b67ba0121592e9713314c1779cfbf34302df3f20de0621",
+    "src/frob/strata/_waive.py::stale_relwaive_violations": "08def66b917af0456eb4d07506a595b2b3e3f84d02aa2bab36f79df177ace26a",
     "src/frob/testing/_collect.py::collect_python_tests": "e1173036256e0cb104e4294d327d0b4d2427ce9df329b19e775cc048cd0172ac",
     "src/frob/testing/_collect.py::drop_collection_cache": "22f01b16e6e3d0cca3528a9b7ee2bef5e7f4a4944edc8bb6d73e29b630a30cb5",
     "src/frob/testing/_collect.py::python_collection_failure_detail": "51e78cdd1f5894f488cd05cade058e432adf9c4317c3f95bf0354f4f1589e151",
@@ -2219,5 +2220,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.430.0"
+  "version": "0.431.0"
 }

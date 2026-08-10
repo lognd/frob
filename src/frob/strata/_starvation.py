@@ -108,7 +108,7 @@ from ._access import AccessMode, node_access_declarations
 from ._ast import Module, ResourceDecl
 from ._facts import FactBase
 from ._models import KernelModel, Node
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
@@ -385,7 +385,8 @@ def _writer_starvation_violations(
         has_alpha = any(mode == AccessMode.ALPHA for _node, mode in pairs)
         if not has_reader or has_alpha:
             continue
-        # frob:waive PERF004 reason="pairs is this loop's own per-resource distinct accessor list, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="pairs is this loop's own per-resource distinct \
+        # accessor list, not a shared re-sort"
         writers = sorted(
             node_id for node_id, mode in pairs if mode in _WRITE_LIKE_MODES
         )
@@ -430,7 +431,8 @@ def _unbounded_wait_violations(
         pairs = accessors[resource_id]
         if len(pairs) < 2:
             continue
-        # frob:waive PERF004 reason="pairs is this loop's own per-resource distinct accessor list, not a shared re-sort"  # noqa: E501
+        # frob:waive PERF004 reason="pairs is this loop's own per-resource distinct \
+        # accessor list, not a shared re-sort"
         for node_id, mode in sorted(pairs):
             if mode not in _SERIALIZATION_MODES:
                 continue
@@ -510,19 +512,8 @@ def check_starvation_obligations(
     violations.extend(_unbounded_wait_violations(model))
     applied = _apply_starvation_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        StarvationViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            resource="",
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
+    stale = stale_relwaive_violations(
+        applied.stale, lambda **kw: StarvationViolation(resource="", **kw)
     )
     _log.info(
         "starvation: %d violation(s), %d waived, %d stale waiver(s)",

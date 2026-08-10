@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 293
+gate_rule_total: 301
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     fixability: "manual"
@@ -1485,6 +1485,46 @@ gate_rule_entries:
   - id: "CHK-GATE-INV051"
     name: "INV051 is a live, enforced gate rule"
     disposition: "handled_by:INV051"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-BUDGET001"
+    name: "BUDGET001 is a live, enforced gate rule"
+    disposition: "handled_by:BUDGET001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-CHECK001"
+    name: "CHECK001 is a live, enforced gate rule"
+    disposition: "handled_by:CHECK001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-CVEFP001"
+    name: "CVEFP001 is a live, enforced gate rule"
+    disposition: "handled_by:CVEFP001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-DEPLOY001"
+    name: "DEPLOY001 is a live, enforced gate rule"
+    disposition: "handled_by:DEPLOY001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-DEPLOY002"
+    name: "DEPLOY002 is a live, enforced gate rule"
+    disposition: "handled_by:DEPLOY002"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-DEPLOY003"
+    name: "DEPLOY003 is a live, enforced gate rule"
+    disposition: "handled_by:DEPLOY003"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-DERIVED001"
+    name: "DERIVED001 is a live, enforced gate rule"
+    disposition: "handled_by:DERIVED001"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-SYS109"
+    name: "SYS109 is a live, enforced gate rule"
+    disposition: "handled_by:SYS109"
     fixability: "manual"
     cross_refs: []
 concern_family_total: 13

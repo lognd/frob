@@ -77,7 +77,7 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
@@ -404,19 +404,7 @@ def check_supply_chain_boot_obligations(
     violations.extend(_unproven_boot_attestation_violations(model, owner_by_node, root))
     applied = _apply_supply_chain_boot_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        SupplyChainBootViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, SupplyChainBootViolation)
     _log.info(
         "supply_chain_boot: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),

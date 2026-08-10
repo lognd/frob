@@ -16,7 +16,20 @@ from frob.strata._waive import (
     _stale_detail,
     _validate_waiver_fields,
     parse_waiver_expiry,
+    stale_relwaive_violations,
 )
+
+
+class _DummyViolation:
+    """Minimal stand-in for a strata violation `BaseModel` (T-1938): only
+    what `stale_relwaive_violations` writes into it, so this test does not
+    depend on any one real family's dataclass shape."""
+
+    def __init__(self, *, rule: str, node: str, sub_target: str | None, detail: str):
+        self.rule = rule
+        self.node = node
+        self.sub_target = sub_target
+        self.detail = detail
 
 
 class TestStaleDetail:
@@ -30,6 +43,40 @@ class TestStaleDetail:
         assert "checker" in detail
         assert "pending T-0200" in detail
         assert "stale" in detail
+
+
+class TestStaleRelwaiveViolations:
+    # frob:tests src/frob/strata/_waive.py::stale_relwaive_violations kind="unit"
+    def test_builds_one_violation_per_stale_waiver(self):
+        stale = (
+            WaiverMatch(node="n1", rule="REL260", reason="pending T-1"),
+            WaiverMatch(node="n2", rule="REL261", reason="pending T-2"),
+        )
+        result = stale_relwaive_violations(stale, _DummyViolation)
+        assert len(result) == 2
+        assert result[0].rule == "RELWAIVE002"
+        assert result[0].node == "n1"
+        assert result[0].sub_target == "REL260"
+        assert result[1].node == "n2"
+        assert result[1].sub_target == "REL261"
+
+    # frob:tests src/frob/strata/_waive.py::stale_relwaive_violations kind="unit"
+    def test_uses_stale_detail_message(self):
+        match = WaiverMatch(node="n1", rule="REL260", reason="pending T-1")
+        result = stale_relwaive_violations((match,), _DummyViolation)
+        assert result[0].detail == _stale_detail(match)
+
+    # frob:tests src/frob/strata/_waive.py::stale_relwaive_violations kind="unit"
+    def test_empty_stale_yields_empty_tuple(self):
+        assert stale_relwaive_violations((), _DummyViolation) == ()
+
+    # frob:tests src/frob/strata/_waive.py::stale_relwaive_violations kind="unit"
+    def test_factory_lambda_can_add_extra_fields(self):
+        match = WaiverMatch(node="n1", rule="REL260", reason="pending T-3")
+        made = stale_relwaive_violations(
+            (match,), lambda **kw: _DummyViolation(**kw)
+        )
+        assert made[0].rule == "RELWAIVE002"
 
 
 class TestSplitWaiverRule:

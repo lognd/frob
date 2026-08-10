@@ -67,7 +67,7 @@ from ._code_binding import bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._obligation_proof import files_evidence_token, node_has_bound_code, owner_index
-from ._waive import apply_waivers
+from ._waive import apply_waivers, stale_relwaive_violations
 
 _log = get_logger(__name__)
 
@@ -152,7 +152,8 @@ class CircuitBreakerReport(BaseModel):
 
 # frob:doc docs/strata/reliability.md#rel23x-circuit-breaker--bulkhead-obligation-t-0642
 # frob:ticket T-0642
-# frob:tests tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_external_dependency  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_external_dependency
 def is_external_dependency(attrs: tuple[str, ...]) -> bool:
     """Whether a node's `attrs` carries the bare `external` marker --
     exported so `_fallback.py` (T-0643) can identify the same population
@@ -162,7 +163,8 @@ def is_external_dependency(attrs: tuple[str, ...]) -> bool:
 
 # frob:doc docs/strata/reliability.md#rel23x-circuit-breaker--bulkhead-obligation-t-0642
 # frob:ticket T-0642
-# frob:tests tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_critical_dependency  # noqa: E501
+# frob:tests \
+# tests/unit/strata/test_circuit_breaker.py::TestPredicates.test_is_critical_dependency
 def is_critical_dependency(attrs: tuple[str, ...]) -> bool:
     """Whether a node's `attrs` carries the bare `critical` marker --
     exported so `_fallback.py` (T-0643) reuses this exact dependency-
@@ -279,19 +281,7 @@ def check_circuit_breaker_obligations(
     violations.extend(_unproven_circuit_breaker_violations(model, owner_by_node, root))
     applied = _apply_circuit_breaker_waivers(model, violations)
     waived = tuple(wf.finding for wf in applied.waived)
-    stale = tuple(
-        CircuitBreakerViolation(
-            rule="RELWAIVE002",
-            node=stale_waiver.node,
-            sub_target=stale_waiver.rule,
-            detail=(
-                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
-                f"reason={stale_waiver.reason!r} is stale -- no matching "
-                f"finding fired this run"
-            ),
-        )
-        for stale_waiver in applied.stale
-    )
+    stale = stale_relwaive_violations(applied.stale, CircuitBreakerViolation)
     _log.info(
         "circuit_breaker: %d violation(s), %d waived, %d stale waiver(s)",
         len(applied.kept) + len(stale),
