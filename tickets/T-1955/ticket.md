@@ -2,7 +2,7 @@
 id: T-1955
 title: T-1934's unlanded detector reports 216 false positives (4 tickets x 77 branches),
   including branches cut minutes ago
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,18 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_unlanded.py
+- tests/unit/test_unlanded_branch_work.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_unlanded_branch_work.py
+  reason: acceptance tests for the criterion fix live in this file
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_fresh_branch_reports_zero_despite_main_history
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_genuine_leak_still_reported_after_the_fix
 designated_repro_test: null
 threat: null
 component: null

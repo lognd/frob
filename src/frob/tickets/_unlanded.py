@@ -140,6 +140,39 @@ def _ticket_state_on_main(root: Path, ticket_id: str) -> str | None:
     return None
 
 
+# frob:ticket T-1955
+def _branch_own_changed_files(root: Path, branch: str) -> frozenset[str]:
+    """The set of paths `branch` has COMMITTED changes to since it diverged
+    from `main`, via `git diff --name-only main...<branch>` (three-dot: the
+    merge-base diff -- T-1955's fix, mirroring `frob.tickets._land.
+    _branch_changed_files`'s identical two-dot/three-dot lesson from
+    T-1922). `_finished_signals_on_branch` used a bare `git ls-tree
+    <branch> -- tickets`, which lists everything REACHABLE from the
+    branch tip -- including every ticket ever finished on `main` before the
+    branch was cut, since that whole tree is an ancestor of the branch.
+    That produced 216 false positives (T-1955): a branch cut from main
+    MINUTES ago inherited main's entire finished-ticket history as
+    "signals it carries". Intersecting against this three-dot diff instead
+    means only paths the branch's OWN commits touched can ever count.
+    Returns an empty set (never an error) on any git failure -- the same
+    best-effort posture as every other read in this module; a caller that
+    cannot resolve its own diff reports nothing rather than guessing."""
+    spawned = run_argv(
+        ("git", "-C", str(root), "diff", "--name-only", f"main...{branch}")
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.warning(
+            "tickets: unlanded-work scan: git diff main...%s failed under %s",
+            branch,
+            root,
+        )
+        return frozenset()
+    return frozenset(
+        line.strip() for line in spawned.danger_ok.stdout.splitlines() if line.strip()
+    )
+
+
+# frob:ticket T-1955
 def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
     """`ticket_id -> signal` for every ticket `branch` carries that LOOKS
     finished, by either of T-1934's REQUIRED-A shapes: `"done-report"` (a
@@ -149,9 +182,17 @@ def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
     `"local-state-done"` (no `done-report.md`, but the branch's OWN
     `ticket.md` reads `state: done`/`state: dropped` -- covers a done
     ticket whose done-report a hand-crafted or scripted commit omitted).
-    A single `git ls-tree` lists every candidate path in one spawn; only
-    ids that need the second signal get an extra `git show` for their
+    T-1955: both shapes are additionally gated on `_branch_own_changed_
+    files` -- a `git ls-tree` alone lists every ticket path REACHABLE from
+    the branch tip, which includes everything already finished on `main`
+    before the branch was cut. Only a path the branch's OWN commits
+    touched (the three-dot `main...branch` diff) can produce a signal, so
+    a freshly-cut branch that has not touched `tickets/` at all reports
+    nothing, no matter how large main's finished-ticket history is. A
+    single `git ls-tree` still lists every candidate path in one spawn;
+    only ids that need the second signal get an extra `git show` for their
     `ticket.md` content."""
+    own_changed = _branch_own_changed_files(root, branch)
     spawned = run_argv(
         (
             "git",
@@ -170,7 +211,10 @@ def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
     done_report_ids: set[str] = set()
     ticket_md_ids: set[str] = set()
     for line in spawned.danger_ok.stdout.splitlines():
-        match = _TICKET_PATH_RE.match(line.strip())
+        path = line.strip()
+        if path not in own_changed:
+            continue
+        match = _TICKET_PATH_RE.match(path)
         if match is None:
             continue
         ticket_id, kind = match.group(1), match.group(2)

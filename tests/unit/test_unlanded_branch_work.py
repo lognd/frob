@@ -231,6 +231,60 @@ class TestUnlandedBranchWork:
         findings = _unlanded_branch_work(repo)
         assert findings == ()
 
+    # frob:ticket T-1955
+    def test_fresh_branch_reports_zero_despite_main_history(
+        self, repo: Path
+    ) -> None:
+        """T-1955: a branch cut from `main` MINUTES ago, carrying only its
+        own unrelated commit, must report ZERO unlanded tickets -- even
+        though `main` itself has a large history of finished tickets fully
+        reachable from the branch tip. The pre-fix `git ls-tree <branch>
+        -- tickets` read listed every ticket path reachable from the
+        branch, which includes everything already finished on `main`
+        before the branch existed (216 false positives across 4 tickets x
+        77 branches, T-1955's own measured repro). This is the FAIL-THEN-
+        PASS proof: before the `_branch_own_changed_files` intersection,
+        this asserted zero findings and got one (T-9101, inherited from
+        main's own history)."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_fresh_br\
+        # anch_reports_zero_despite_main_history
+        _write_ticket_md(repo, "T-9101", state="in-progress")
+        _write_done_report(repo, "T-9101")
+        _commit_all(repo, "finished work sitting directly on main, unlanded to itself")
+
+        _branch(repo, "floor-zero")
+        (repo / "unrelated.txt").write_text("fresh work\n", encoding="utf-8")
+        _commit_all(repo, "fresh, unrelated commit on a brand-new branch")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert findings == ()
+
+    # frob:ticket T-1955
+    def test_genuine_leak_still_reported_after_the_fix(self, repo: Path) -> None:
+        """T-1955 acceptance 2: fixing the false-positive shape above must
+        NOT also break the true-positive shape -- a branch whose OWN
+        commits add a done-report for a ticket that is non-terminal on
+        `main` is still flagged."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_genuine_\
+        # leak_still_reported_after_the_fix
+        _write_ticket_md(repo, "T-9102", state="in-progress")
+        _commit_all(repo, "queue T-9102 on main")
+
+        _branch(repo, "real-leak-branch")
+        _write_ticket_md(repo, "T-9102", state="in-progress")
+        _write_done_report(repo, "T-9102")
+        _commit_all(repo, "finish T-9102 on the branch, never landed")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert len(findings) == 1
+        assert findings[0].ticket_id == "T-9102"
+        assert findings[0].branch == "real-leak-branch"
+        assert findings[0].signal == "done-report"
+
     def test_findings_for_one_branch_matches_the_aggregate(self, repo: Path) -> None:
         """`_unlanded_findings_for_branch` (the single-branch entry
         `frob.tickets._leases.sweep_worktrees`'s new `kept:unlanded` gate
