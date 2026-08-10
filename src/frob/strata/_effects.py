@@ -899,11 +899,11 @@ def _load_capability_ratchet_lock(root: Path) -> dict:
 # frob:tests tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_deleting_lock_entry_does_not_bypass_the_ratchet  # noqa: E501
 # frob:tests \
 # tests/unit/strata/test_effects.py::TestCapabilityRatchet.test_empty_reason_is_flagged
-# frob:waive WIRE001 reason="wiring this into frob sys audit's own CLI/gate surface \
-# (src/frob/gates/_sys_selfaudit.py, frob.strata._selfconform's \
-# _collect_sys_violations aggregator) is out of T-1628's own declared scope \
-# (src/frob/strata/_effects.py only) -- same disclosed gap shape SYS109's own T-1627 \
-# left (check_stale_via_symbols module docstring)." follow_up="T-1977"
+# T-1977: wired into frob sys audit's own CLI/gate surface (SYS111,
+# src/frob/gates/_sys_selfaudit.py's _selfaudit_violations) -- the
+# WIRE001 waiver that used to live here (T-1628's own disclosed scope
+# cut) no longer applies now that a production Violation-producing gate
+# path actually calls this.
 def capability_ratchet_violations(
     model: KernelModel, root: Path
 ) -> tuple[CapabilityRatchetViolation, ...]:

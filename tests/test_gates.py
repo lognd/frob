@@ -14394,6 +14394,171 @@ class TestSelfAuditGate:
         assert "app" in matches[0].message
         assert "gone" in matches[0].message
 
+    # frob:ticket T-1977
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations kind="unit"
+    def test_selfaudit001_folds_capability_ratchet_violation(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1977: GIVEN a node's scoped via-list that has grown past the
+        committed ratchet lock's `accepted_count` WHEN `sys_gate` (the
+        production `frob check` entry point) runs THEN it FAILS with an
+        unwaived SELFAUDIT001 ERROR naming the underlying SYS111 finding
+        -- proving `capability_ratchet_violations` (built and unit-tested
+        by T-1628) is actually wired into `frob check`, not just
+        reachable in its own test module (the exact gap T-1977 closes,
+        same shape T-1761 closed for SYS109)."""
+        import json
+
+        from frob.strata._effects import CAPABILITY_RATCHET_LOCK_REL
+
+        design = (
+            "module m\n"
+            'node app : trusted { code "app/**"; '
+            'may "fs.write" via "app/a.py", "app/b.py", "app/c.py"; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "app/a.py", "def f():\n    pass\n")
+        _write(tmp_path, "app/b.py", "def f():\n    pass\n")
+        _write(tmp_path, "app/c.py", "def f():\n    pass\n")
+        _write(
+            tmp_path,
+            CAPABILITY_RATCHET_LOCK_REL,
+            json.dumps(
+                {
+                    "entries": {
+                        "app::fs.write": {
+                            "accepted_count": 2,
+                            "reason": "T-0001 baseline",
+                        }
+                    }
+                }
+            ),
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        matches = [v for v in selfaudit if "SYS111" in v.message]
+        assert len(matches) >= 1
+        assert matches[0].severity == Severity.ERROR
+        assert "app" in matches[0].message
+        assert "fs.write" in matches[0].message
+
+    # frob:ticket T-1977
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations kind="unit"
+    def test_selfaudit001_does_not_fire_below_the_ratchet_ceiling(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1977 re-verification: a via-list at or below the committed
+        ceiling must stay silent through the PRODUCTION gate path too,
+        not just in capability_ratchet_violations' own unit tests --
+        proves the wiring did not accidentally widen the check's own
+        silence conditions."""
+        import json
+
+        from frob.strata._effects import CAPABILITY_RATCHET_LOCK_REL
+
+        design = (
+            "module m\n"
+            'node app : trusted { code "app/**"; '
+            'may "fs.write" via "app/a.py", "app/b.py"; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "app/a.py", "def f():\n    pass\n")
+        _write(tmp_path, "app/b.py", "def f():\n    pass\n")
+        _write(
+            tmp_path,
+            CAPABILITY_RATCHET_LOCK_REL,
+            json.dumps(
+                {
+                    "entries": {
+                        "app::fs.write": {
+                            "accepted_count": 2,
+                            "reason": "T-0001 baseline",
+                        }
+                    }
+                }
+            ),
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        assert [v for v in selfaudit if "SYS111" in v.message] == []
+
+    # frob:ticket T-1977
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations kind="unit"
+    def test_selfaudit001_deleting_ratchet_lock_entry_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1977 re-verification (bypass path 1, through the PRODUCTION
+        gate): deleting a lock entry must not read as "unchecked" -- a
+        missing entry is `accepted_count=0`, the strictest ceiling, so a
+        nonzero observed via-list count fires immediately even with an
+        EMPTY lock file, exactly as it does when calling
+        `capability_ratchet_violations` directly."""
+        import json
+
+        from frob.strata._effects import CAPABILITY_RATCHET_LOCK_REL
+
+        design = (
+            "module m\n"
+            'node app : trusted { code "app/**"; '
+            'may "fs.write" via "app/a.py"; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "app/a.py", "def f():\n    pass\n")
+        _write(tmp_path, CAPABILITY_RATCHET_LOCK_REL, json.dumps({"entries": {}}))
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        matches = [v for v in selfaudit if "SYS111" in v.message]
+        assert len(matches) >= 1
+
+    # frob:ticket T-1977
+    # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violations kind="unit"
+    def test_selfaudit001_shrink_then_regrow_within_ceiling_stays_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1977 re-verification (bypass path 2, through the PRODUCTION
+        gate): re-approaching a previously-justified high-water mark
+        (never exceeding it) after an intervening shrink must stay
+        silent -- that ceiling was already earned once, so re-growing
+        back up to it is ordinary movement, not laundered growth."""
+        import json
+
+        from frob.strata._effects import CAPABILITY_RATCHET_LOCK_REL
+
+        design = (
+            "module m\n"
+            'node app : trusted { code "app/**"; '
+            'may "fs.write" via "app/a.py", "app/b.py", "app/c.py"; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "app/a.py", "def f():\n    pass\n")
+        _write(tmp_path, "app/b.py", "def f():\n    pass\n")
+        _write(tmp_path, "app/c.py", "def f():\n    pass\n")
+        # The lock's own ceiling was already justified at 3 (a prior,
+        # separately-committed widening) -- re-growing back up to it,
+        # even after an intervening shrink no longer reflected here,
+        # must not re-trigger.
+        _write(
+            tmp_path,
+            CAPABILITY_RATCHET_LOCK_REL,
+            json.dumps(
+                {
+                    "entries": {
+                        "app::fs.write": {
+                            "accepted_count": 3,
+                            "reason": "T-0002 justified widening to 3",
+                        }
+                    }
+                }
+            ),
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        assert [v for v in selfaudit if "SYS111" in v.message] == []
+
     # frob:tests src/frob/gates/_sys_selfaudit.py::_compliance_selfaudit_violations \
     # kind="unit"
     def test_selfaudit001_folds_compliance_violation(self, tmp_path: Path) -> None:

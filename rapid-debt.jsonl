@@ -674,6 +674,9 @@
 {"commit": "8370f6f1d52061b61e43d3b7cd502b4d5b4026f4", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1621"}
 {"commit": "a73f8dc4691f35360c283768e2e1e4793fe62b1a", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1981"}
 {"commit": "522fee3646c33a63f678732e62b5d09930f037f2", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1989"}
+{"commit": "a8eaea117adc71b47ac4d177ec27c0df9cdbd1a6", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1977"}
+{"commit": "7bf4cdb6f9fc0a4f3b78bac4fb470e446042337e", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1977"}
+{"commit": "9cb1507d0cdcec7991e8b21b6a4b221fa6641cde", "skipped": "land-evidence-scope-unbound", "ticket": "T-1977"}
 {"commit": "aab90614d688d63da335dfe0c231beccf50bfb74", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1993"}
 {"commit": "bb15ed14251bd4c83314da5d4b5e35d25e354c5e", "skipped": "land-evidence-scope-unbound", "ticket": "T-1993"}
 {"commit": "654acae6b7df1a16e2d92dff54ea270575d187cc", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1993"}

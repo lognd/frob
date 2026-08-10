@@ -948,6 +948,13 @@ _KNOWN_GATE_RULES = frozenset(
         # _selfaudit_violation) folds into SELFAUDIT001 exactly like its
         # SYS100-108 siblings above.
         "SYS109",
+        # T-1977: SYS111 (T-1628's capability-ratchet check, wired into
+        # SELFAUDIT001 the same way T-1761 wired SYS109 above) -- a
+        # `(node, atom)` pair's scoped via-list grew past its committed
+        # ratchet lock's accepted_count, or a lock entry has no non-empty
+        # reason. src/frob/gates/_sys_selfaudit.py, src/frob/strata/
+        # _effects.py::capability_ratchet_violations.
+        "SYS111",
         # CVEFP001 (src/frob/strata/_cve_fingerprint.py, `rule: str =
         # "CVEFP001"` typed pydantic field default) -- CVE-fingerprint
         # `cwe_id` join miss, see FingerprintViolation.

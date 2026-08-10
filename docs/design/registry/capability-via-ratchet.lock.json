@@ -101,9 +101,9 @@
       "ticket": "T-1628"
     },
     "graphlang::fs.read": {
-      "accepted_count": 6,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 7,
+      "reason": "T-1977: this ratchet was built and unit-tested by T-1628 but never wired into a live gate path until now -- the previous accepted_count was T-1628's own initial measurement, never re-baselined across the lands that landed in between (the check could not have caught them, since nothing called it). Re-measured at T-1977 wiring time via capability_via_site_counts against the current design/frob.strata + src/frob tree; this is the FIRST live enforcement point, so this is the equivalent of T-1628's own 'initial baseline' act, not a fresh justification for any individual grant.",
+      "ticket": "T-1977"
     },
     "graphlang::fs.write": {
       "accepted_count": 5,
@@ -156,9 +156,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 158,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 159,
+      "reason": "T-1977: this ratchet was built and unit-tested by T-1628 but never wired into a live gate path until now -- the previous accepted_count was T-1628's own initial measurement, never re-baselined across the lands that landed in between (the check could not have caught them, since nothing called it). Re-measured at T-1977 wiring time via capability_via_site_counts against the current design/frob.strata + src/frob tree; this is the FIRST live enforcement point, so this is the equivalent of T-1628's own 'initial baseline' act, not a fresh justification for any individual grant.",
+      "ticket": "T-1977"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -176,9 +176,9 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.write": {
-      "accepted_count": 297,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 301,
+      "reason": "T-1977: this ratchet was built and unit-tested by T-1628 but never wired into a live gate path until now -- the previous accepted_count was T-1628's own initial measurement, never re-baselined across the lands that landed in between (the check could not have caught them, since nothing called it). Re-measured at T-1977 wiring time via capability_via_site_counts against the current design/frob.strata + src/frob tree; this is the FIRST live enforcement point, so this is the equivalent of T-1628's own 'initial baseline' act, not a fresh justification for any individual grant.",
+      "ticket": "T-1977"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

@@ -129,6 +129,7 @@ def _selfaudit_violations(
     from frob.strata import (
         Module,
         bind_code,
+        capability_ratchet_violations,
         check_mode_conformance,
         check_reliability_health,
         check_reliability_timeouts,
@@ -210,6 +211,21 @@ def _selfaudit_violations(
             )
             for v in stale_via
         )
+
+    # frob:ticket T-1977
+    # T-1977: SYS111 (T-1628's capability-ratchet check) was built and
+    # unit-tested but had NO caller outside its own test module -- the
+    # SAME "catalogued but check-invisible" gap SYS109 left until T-1761
+    # wired it above, now closed the identical way. Unlike SYS109/mode-
+    # conformance, this sub-family needs only `model`/`root` (no
+    # `bind_code` binding), so it runs unconditionally here rather than
+    # inside the `binding.is_ok` branch above -- a binding failure must
+    # not silently skip a check that never depended on binding at all.
+    ratchet = capability_ratchet_violations(model, root)
+    violations.extend(
+        _selfaudit_violation("SYS111", v.node, v.detail, design_dir, root)
+        for v in ratchet
+    )
 
     timeouts = check_reliability_timeouts(model, root)
     if timeouts.is_err:
