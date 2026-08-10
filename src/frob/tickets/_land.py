@@ -61,6 +61,7 @@ from frob.tickets._land_git_ops import (
     _unstage_index_only,
     _wip_commit,
 )
+from frob.tickets._land_ledger_merge import _STATE_RANK
 from frob.tickets._land_merge import _validate_closeable
 
 # Re-exported for `frob.tickets.__init__`'s `from frob.tickets._land import
@@ -82,7 +83,7 @@ from frob.tickets._models import (
     TicketError,
 )
 from frob.tickets._provisional import is_draft_id
-from frob.tickets._store import _store_mode
+from frob.tickets._store import _store_mode, load_all
 
 # T-0577: same posix-only degradation as `frob.tickets._store`'s
 # `ledger_lock` -- `_land_lock` degrades to a documented no-op (see its
@@ -3552,6 +3553,53 @@ def _merge_main_into_worktree_v2(
     return Ok(True)
 
 
+# frob:ticket T-1914
+# frob:tests tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_pre_fix_shape_would_have_silently_reverted_sibling  # noqa: E501
+def _sibling_ticket_states(worktree: Path, landing_id: str) -> dict[str, str]:
+    """Every OTHER ticket id's current on-disk state under `worktree`,
+    excluding `landing_id` itself (T-1914). A load failure (corrupt/
+    unparseable ledger) degrades to an empty map -- the same fail-open
+    posture `_tick005_land_regressions` already uses for its own parse
+    failures, rather than blocking every land on a ledger the rest of
+    `land()` already tolerates parsing failures around elsewhere."""
+    loaded = load_all(worktree)
+    if loaded.is_err:
+        return {}
+    return {
+        tid: t.state.value for tid, t in loaded.danger_ok.items() if tid != landing_id
+    }
+
+
+# frob:ticket T-1914
+# frob:tests tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_regressed_sibling_is_detected_by_rank_comparison  # noqa: E501
+# frob:tests tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard.test_no_regression_when_sibling_state_only_improves_or_holds  # noqa: E501
+def _assert_no_sibling_state_regression(
+    worktree: Path, landing_id: str, pre_states: dict[str, str]
+) -> tuple[str, ...]:
+    """The ids in `pre_states` whose state RANK (`_STATE_RANK`, shared with
+    the v1 ledger-splice `_newer`/TICK005 machinery) has DROPPED in
+    `worktree`'s CURRENT on-disk ticket store relative to what it was
+    before this land's internal `_merge_main_into_worktree[_v2]` call
+    (T-1914) -- e.g. a sibling ticket the worktree had already closed
+    (`done`) reverting to main's stale `queued` copy. A sibling id no
+    longer present post-merge (should not happen for a v2 directory-per-
+    ticket store, which never deletes a ticket's own directory via an
+    ordinary merge) is skipped, not treated as a regression -- there is
+    nothing to compare a rank against. Sorted for a stable, grep-able log
+    line at the call site."""
+    from frob.tickets._models import TicketState
+
+    post_states = _sibling_ticket_states(worktree, landing_id)
+    regressed = []
+    for ticket_id, pre_state in pre_states.items():
+        post_state = post_states.get(ticket_id)
+        if post_state is None:
+            continue
+        if _STATE_RANK[TicketState(post_state)] < _STATE_RANK[TicketState(pre_state)]:
+            regressed.append(ticket_id)
+    return tuple(sorted(regressed))
+
+
 def _land_merge_stage(
     root: Path,
     worktree: Path,
@@ -3568,11 +3616,28 @@ def _land_merge_stage(
     T-1258: dispatches to the v2-mode merge path (`_merge_main_into_
     worktree_v2`, no ledger splice) whenever `root` is in v2-mode storage
     (`_store_mode(root) == "v2"`); a v1 (monofile) `root` keeps the
-    existing `_merge_main_into_worktree` splice path unchanged."""
+    existing `_merge_main_into_worktree` splice path unchanged.
+
+    T-1914: `_sibling_ticket_states(worktree, ticket_id)` is snapshotted
+    BEFORE the merge and re-checked immediately AFTER it
+    (`_assert_no_sibling_state_regression`) -- the v2-mode merge path has
+    no ledger splice at all (disjoint `tickets/T-####/` directories are
+    ordinary git objects) and its own out-of-scope conflict auto-resolve
+    (`_auto_resolve_out_of_scope_conflicts(..., keep="theirs")`) blindly
+    takes main's side of ANY conflicting file not in the landing ticket's
+    own scope, including a SIBLING ticket's own directory -- confirmed
+    root cause of a real incident where landing one ticket silently
+    reverted another, already-closed sibling ticket's `done` state back
+    to main's stale `queued` copy, with no conflict ever surfaced to the
+    operator. A regression here aborts the merge and refuses the land
+    (`LandError.TerminalStateRegression`) instead of committing over lost
+    sibling state."""
     wip = _wip_commit(worktree, ticket_id, dry_run=dry_run)
     if wip.is_err:
         return Err(wip.danger_err)
     wip_committed = wip.danger_ok
+
+    pre_merge_sibling_states = _sibling_ticket_states(worktree, ticket_id)
 
     merged = (
         _merge_main_into_worktree_v2(worktree, ticket, main_branch_name)
@@ -3582,6 +3647,26 @@ def _land_merge_stage(
     if merged.is_err:
         return Err(merged.danger_err)
     did_merge = merged.danger_ok
+
+    if did_merge:
+        regressed = _assert_no_sibling_state_regression(
+            worktree, ticket_id, pre_merge_sibling_states
+        )
+        if regressed:
+            _log.error(
+                "land: %s refused -- merging main into the worktree "
+                "would silently regress sibling ticket(s) %s to an "
+                "earlier state (T-1914 sibling-state-regression guard); "
+                "resolve the ledger conflict by hand (keep the newer "
+                "state per playbook section 10) before retrying "
+                "`frob ticket land %s --worktree %s`",
+                ", ".join(regressed),
+                ticket_id,
+                ticket_id,
+                worktree,
+            )
+            _abort_merge(worktree)
+            return Err(LandError.TerminalStateRegression)
 
     unowned_check = _check_unowned_deletions(
         root, worktree, ticket, ticket_id, main_branch_name, did_merge

@@ -2,7 +2,7 @@
 id: T-1914
 title: frob ticket land's internal merge-main step silently clobbers the landing worktree's
   own ledger edits
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -31,6 +31,10 @@ scope_changes:
     by T-1686)'
   actor: logan
   at: '2026-08-09'
+evidence:
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_no_regression_when_sibling_state_only_improves_or_holds
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_regressed_sibling_is_detected_by_rank_comparison
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_pre_fix_shape_would_have_silently_reverted_sibling
 designated_repro_test: null
 threat: null
 component: null
