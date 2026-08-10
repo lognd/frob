@@ -1996,7 +1996,7 @@ def _commit_orphaned_new_ticket_dir_only_drift(root: Path, ticket_id: str) -> bo
         orphan_id = match.group(1)
         dir_path = root / path
         try:
-            entries = sorted(p.name for p in dir_path.iterdir())
+            entries = [p.name for p in dir_path.iterdir()]
         except OSError:
             return False
         if entries != ["ticket.md"]:

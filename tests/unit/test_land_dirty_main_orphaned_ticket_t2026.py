@@ -142,6 +142,25 @@ class TestCommitOrphanedNewTicketDirOnlyDrift:
         healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
         assert healed is False
 
+    def test_extra_file_sorting_before_ticket_md_is_never_committed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift.test_extra_file_sorting_before_ticket_md_is_never_committed  # noqa: E501
+        """T-2046 PERF004 follow-through: the equality check `entries !=
+        ["ticket.md"]` is order-independent (a length/membership question
+        in disguise), so this asserts the guard refuses identically
+        whether the extra entry sorts alphabetically BEFORE or after
+        "ticket.md" -- pins the behavior so removing the (unnecessary)
+        `sorted()` call cannot regress it."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        _write_orphaned_ticket_dir(root, "T-2050", _TICKET_MD)
+        (root / "tickets" / "T-2050" / "aaa-before.txt").write_text("surprise\n")
+
+        healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
+        assert healed is False
+        assert "?? tickets/T-2050/" in _status(root)
+
     def test_a_second_dirty_path_blocks_the_auto_commit(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift.test_a_second_dirty_path_blocks_the_auto_commit  # noqa: E501
         """A genuinely human-dirty root (an unrelated edited/untracked
