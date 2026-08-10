@@ -2177,8 +2177,8 @@ def _check_committed_waive_deletions(
 
 # frob:ticket T-1922
 # frob:doc docs/modules/tickets.md#outofscopewaivedeletion-false-refusal-on-a-stale-worktree-t-1922  # noqa: E501
-# frob:tests tests/unit/test_land_committed_waive_deletion_own_files.py::TestRestrictToBranchOwnFiles.test_filters_out_a_finding_the_branch_never_committed_itself  # noqa: E501
-# frob:tests tests/unit/test_land_committed_waive_deletion_own_files.py::TestRestrictToBranchOwnFiles.test_keeps_a_finding_the_branch_genuinely_committed_itself  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses  # noqa: E501
 def _restrict_to_branch_own_files(
     worktree: Path,
     ticket_id: str,

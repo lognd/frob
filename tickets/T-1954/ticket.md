@@ -2,7 +2,7 @@
 id: T-1954
 title: 'DOC002: src/frob/tickets/_land.py:2179 frob:doc anchor for T-1922 does not
   resolve'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,44 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- docs/modules/tickets.md
+- tickets/T-1951/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'docs/modules/tickets.md is where T-1922''s frob:doc directive target
+
+    actually needs to live -- adding the missing anchor there is the whole
+
+    fix. tickets/T-1951/ticket.md is touched because T-1951 (the DRIFT002
+
+    sibling ticket for the same land-defect class) was started/worked in
+
+    this same worktree alongside T-1954.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-1951/**
+  reason: 'docs/modules/tickets.md is where T-1922''s frob:doc directive target
+
+    actually needs to live -- adding the missing anchor there is the whole
+
+    fix. tickets/T-1951/ticket.md is touched because T-1951 (the DRIFT002
+
+    sibling ticket for the same land-defect class) was started/worked in
+
+    this same worktree alongside T-1954.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses
 designated_repro_test: null
 threat: null
 component: null

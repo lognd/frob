@@ -3619,6 +3619,59 @@ otherwise hand a LATER guard (the next ticket's own T-1922 committed-
 waive-deletion scan, or its pre-work sweep) a half-mutated worktree to
 reason about.
 
+## OutOfScopeWaiveDeletion false-refusal on a stale worktree (T-1922)
+
+<!-- frob:describes src/frob/tickets/_land.py::_restrict_to_branch_own_files -->
+
+`_committed_waive_deletions`'s T-1550 two-dot diff (`main_branch..HEAD`)
+is a plain CONTENT diff between two commits, not an ancestry-scoped one --
+it reports a line as "deleted" whenever `main_branch`'s CURRENT tip has
+it and `HEAD` does not, regardless of WHICH side actually changed. When
+`main_branch` has moved forward (an unrelated, already-landed ticket
+edited a `frob:waive` comment's text on a file this branch never touched
+at all) while this worktree has not yet merged that forward, the two-dot
+diff reads main's own new text as though HEAD deleted it -- attributing
+an entirely unrelated, already-landed edit to whichever ticket happens to
+retry a land next, off a worktree whose last `git merge main` predates
+it.
+
+The real 2026-08 incident: T-1918 reworded an `AFFECT001` waiver's reason
+string in `_renumber_v2.py`; two UNRELATED worktrees (T-1911's, T-1904's),
+neither of which had ever touched that file, both got refused with
+`OutOfScopeWaiveDeletion` naming it, purely because their own merge-base
+predated T-1918's land. The confirmed workaround (`git merge main`
+immediately before retrying) worked every time specifically because it
+moved the two-dot diff's LEFT side forward past the unrelated edit -- it
+never touched what the check was actually measuring.
+
+T-1550's own two-dot-against-live-tip design is NOT reverted -- it is
+exactly what makes an already-landed SIBLING ticket's deletion (on this
+same branch) invisible once main independently reflects the same state
+(`_committed_waive_deletions`'s own T-1550 rationale). Replacing it with
+a naive three-dot `main_branch...HEAD` diff (ancestry-scoped, i.e.
+re-diffing from the STALE fork point) would silently UNDO that fix and
+reintroduce the T-1225/T-1444 re-attribution bug T-1550 closed -- a
+worktree that has not rebased keeps the same old merge-base either way,
+so a three-dot diff from it would show the sibling's already-landed
+commits all over again.
+
+The actual missing filter is orthogonal to both: does a finding's file
+even belong to something THIS BRANCH'S OWN COMMITS changed at all?
+`_restrict_to_branch_own_files` answers exactly that, reusing
+`_branch_changed_files(worktree, main_branch)` -- the same three-dot
+`main_branch...HEAD` --name-only diff `_check_cross_ticket_leakage`
+already uses for an identical "what did this branch itself commit"
+question -- independent of content equality. A file this branch's own
+history never touched can never appear in that set, no matter how stale
+the worktree's last merge is or how much main has moved; findings whose
+file is NOT in it are dropped. A genuine out-of-scope, undeclared
+`frob:waive` deletion the branch's OWN commits made still refuses
+normally, since its file IS in `_branch_changed_files`'s own set (proven
+by `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal
+.test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses`,
+alongside the false-positive regression test
+`.test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse`).
+
 ## Post-land unscoped error sweep (T-1456)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_unscoped_error_findings -->

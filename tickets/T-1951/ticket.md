@@ -2,7 +2,7 @@
 id: T-1951
 title: COV003 x3 (T-1351/T-1507/T-1512) + DRIFT002 x2 in src/frob/tickets/_land.py
   -- unscoped error floor regression
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -17,6 +17,9 @@ scope:
 - src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses
 designated_repro_test: null
 threat: null
 component: null
