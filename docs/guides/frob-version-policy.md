@@ -98,7 +98,7 @@ not exist at all in the 0.184.0 build**, not from an existing gate
 getting stricter on code it previously passed:
 
 - `OPAQUE001` (+5) -- container dynamic-key call sites
-  (`src/typani/result.py`), a runtime-resolved capability indirection
+  (<!-- frob:waive DOC006 reason="a path in the typani SIBLING repo cited from this cross-repo measurement, not a path in this repo -- DOC006 correctly cannot resolve it against this repo's own tracked file set" -->`src/typani/result.py`), a runtime-resolved capability indirection
   the opaque-boundary gate did not exist to catch at 0.184.0.
 - `SUPPRESS001` (+8) -- a `# type: ignore`/mypy suppression comment
   whose line `ty` (this repo's own type checker integration) now
