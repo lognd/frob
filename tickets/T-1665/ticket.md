@@ -43,3 +43,6 @@ Raise it to semantics:
 Expect the finding set to CHANGE substantially in both directions, not merely shrink. Report before/after with a classification of everything that appears and disappears -- a file that stops being flagged because it is genuinely imported is a fix; one that starts being flagged because only prose named it is the rule finally working.
 
 While here, check whether the existing REF001 waivers were compensating for the lexical gap. If most of them say some version of "reached dynamically", that is direct evidence for the semantic model and those waivers should be REMOVED, not migrated.
+
+## Failure log
+- 2026-08-10 attempt 1: investigated, not landed: no resolved-import substrate exists in frob.graph (EdgeKind is directive-edges-only; callgraph.py excludes public/exported symbols by design); measured today's REF001 findings (2, both non-code, 0 waived) -- semantic rewrite would not change either. Design + prerequisite filed as T-draft-0f83796b, blocking this ticket.
