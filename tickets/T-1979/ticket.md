@@ -1,7 +1,7 @@
 ---
 id: T-1979
 title: 'Post-land floor regression from T-1946/T-1944: ARCH001 x2, COV001, TEST001'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-10'
