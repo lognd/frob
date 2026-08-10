@@ -3838,7 +3838,21 @@ def _check_orphaned_evidence_deletion(
     treated as `Ok(None)` rather than blocking the land on an unrelated
     tooling problem -- this check is an additional safety net, not a
     replacement for COV003's own authoritative sweep, which still runs
-    at `frob check` regardless."""
+    at `frob check` regardless.
+
+    T-2060: `changed_paths` is FILE-granular
+    (`_branch_changed_files`), but a genuine "this branch deleted/renamed
+    the node" claim needs NODE granularity -- a candidate evidence node
+    whose FILE happens to be in `changed_paths` for an entirely unrelated
+    edit, but which was ALREADY missing before this branch's own commits
+    (broken by some earlier, unrelated main commit), is not this branch's
+    fault and must not refuse its land. `_orphaned_evidence_findings`
+    narrows each file-level candidate with a merge-base presence check
+    (`_test_node_existed_at_ref`) before flagging it -- see that
+    function's own docstring for the full narrowing contract. Computing
+    `merge_base` failing degrades to the OLD, more conservative
+    file-level-only behavior (never a crash, never a silent pass on a
+    tooling problem) rather than skipping the whole check."""
     changed = _branch_changed_files(worktree, base_ref)
     if changed.is_err:
         _log.debug(
@@ -3873,8 +3887,23 @@ def _check_orphaned_evidence_deletion(
         )
         return Ok(None)
 
+    merge_base = _true_merge_base(worktree, base_ref)
+    merge_base_ref = merge_base.danger_ok if merge_base.is_ok else None
+    if merge_base.is_err:
+        _log.debug(
+            "land: %s orphaned-evidence node-granularity narrowing skipped -- "
+            "merge-base unreadable (%s), falling back to file-level matching",
+            ticket.id,
+            merge_base.danger_err,
+        )
+
     orphaned = _orphaned_evidence_findings(
-        ticket.id, loaded.danger_ok.tickets, changed.danger_ok, collected.danger_ok
+        ticket.id,
+        loaded.danger_ok.tickets,
+        changed.danger_ok,
+        collected.danger_ok,
+        worktree,
+        merge_base_ref,
     )
     if not orphaned:
         return Ok(None)
@@ -3887,13 +3916,37 @@ def _orphaned_evidence_findings(
     queue: Mapping[str, Ticket],
     changed_paths: frozenset[str],
     tests: CollectedTests,
+    worktree: Path | None = None,
+    merge_base: str | None = None,
 ) -> dict[str, list[str]]:
     """`other_ticket_id -> [orphaned evidence id, ...]` for every OTHER
     ticket in `queue` whose non-cmd evidence file lies under `changed_
     paths` (T-1946's own diff-scoping) but no longer resolves against
     `tests` (`_evidence_valid_for_ticket`) -- the pure-data half of
     `_check_orphaned_evidence_deletion`, split out to keep that function
-    under ARCH001's line threshold (T-1979), zero behavior change."""
+    under ARCH001's line threshold (T-1979).
+
+    T-2060 NODE-LEVEL NARROWING: `changed_paths` only
+    proves the FILE was touched by this branch, not that THIS branch's
+    diff is what removed the specific node -- a file this branch edits
+    for an unrelated reason can share a candidate node that was already
+    missing before this branch's own commits (broken by some earlier,
+    independent main commit). When `worktree`/`merge_base` are both
+    given (the normal call path -- `None`/`None` only when the caller's
+    own merge-base lookup failed, T-1969's/etc. degrade-gracefully
+    posture), a file-level candidate is flagged ONLY if `_test_node_
+    existed_at_ref(worktree, merge_base, evidence)` is NOT `False` --
+    i.e. the node was present (or its presence could not be determined,
+    which conservatively still flags, matching this check's existing
+    prove-fresh-or-refuse posture for anything it cannot positively rule
+    out) at the point THIS branch actually diverged. A node CONFIRMED
+    absent already at merge-base is pre-existing breakage this branch
+    did not cause and is never flagged, regardless of which file it
+    lives in. `worktree`/`merge_base` both `None` reproduces the OLD,
+    strictly file-level-only behavior for a caller that has no merge-base
+    to offer (or an existing test constructing this function directly,
+    pre-T-2060) -- never a behavior change for that
+    caller, only an added narrowing when the extra context is present."""
     from frob.gates import _evidence_valid_for_ticket
     from frob.tickets._models import is_cmd_evidence
 
@@ -3909,8 +3962,47 @@ def _orphaned_evidence_findings(
                 continue
             if _evidence_valid_for_ticket(evidence, other, tests):
                 continue
+            if (
+                worktree is not None
+                and merge_base is not None
+                and _test_node_existed_at_ref(worktree, merge_base, evidence) is False
+            ):
+                continue
             orphaned.setdefault(other_id, []).append(evidence)
     return orphaned
+
+
+# frob:ticket T-2060
+def _test_node_existed_at_ref(worktree: Path, ref: str, evidence: str) -> bool | None:
+    """Best-effort, syntactic (NOT a pytest collection): whether
+    `evidence`'s own test file, as it existed AT `ref`, already contained
+    a definition matching its trailing method/function name --
+    `_orphaned_evidence_findings`'s node-level narrowing, cheap enough to
+    run on every land-time check (unlike a real `pytest --collect-only`
+    at an arbitrary ref, which needs a full isolated checkout, T-1929's
+    `_checkout_bug_repro_worktree` pattern -- far too costly to pay per
+    candidate on every single land).
+
+    `False` ONLY on a confirmed, readable absence -- the file read
+    cleanly at `ref` and the name genuinely does not appear as a `def`
+    there. `True` when the name DOES appear (present at the fork point --
+    a real candidate for this branch having removed/renamed it since).
+    `None` (git show failed, or the evidence id has no `::` split at all)
+    on anything unresolvable -- the caller treats `None` the SAME as
+    `True` (still flags), since an unreadable ref must never be silently
+    read as proof a test never existed; this function only ever narrows
+    the refusal on a POSITIVE, confirmed absence, never on ambiguity."""
+    parts = evidence.split("::")
+    if len(parts) < 2:
+        return None
+    path, name = parts[0], parts[-1]
+    shown = run_argv(["git", "-C", str(worktree), "show", f"{ref}:{path}"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    pattern = re.compile(
+        rf"^\s*(?:async\s+)?def\s+{re.escape(name)}\s*\(", re.MULTILINE
+    )
+    return bool(pattern.search(shown.danger_ok.stdout))
 
 
 # frob:ticket T-1979
