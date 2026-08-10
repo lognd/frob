@@ -1,3 +1,20 @@
+# frob:ticket T-2010
+# T-1218's stale-binary warning (`frob.app._config_meta.stale_binary_
+# warning`) reads this floor and warns loudly when the INVOKED `frob`'s
+# own version is strictly below it -- live since T-1218 landed, but
+# dormant here (and in every other repo) until a repo actually sets the
+# key. The 2026-08-02 incident this exists for: a `git` merge-driver
+# invoked a stale globally `uv tool install`ed `frob` (0.9.0) against
+# this repo's in-tree code, then at 0.277.0, and spliced tickets.md
+# using stale merge-driver logic with no warning at all. Set to this
+# repo's own current `pyproject.toml` version at the time T-2010 landed
+# -- deliberately NOT re-bumped on every REL001 version bump afterward
+# (that would make the floor chase the ceiling and never actually catch
+# anything): a floor a few releases behind the tip still catches the
+# genuinely stale case (a global install months out of date) without
+# nagging on every in-tree land.
+min_frob_version = "0.447.0"
+
 check_base = "main"
 
 # T-0399 (gates-quality audit finding 2) / T-0974: [dup] is now ON by
