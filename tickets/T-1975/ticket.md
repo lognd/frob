@@ -15,7 +15,7 @@ scope:
 - src/frob/app/ticket_runner/_mutate.py
 - tests/test_tickets_scope_mutation.py
 - src/frob/app/_config_external.py
-- tickets/T-draft-1461df22/ticket.md
+- tickets/T-2009/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -43,7 +43,7 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 - op: add
-  glob: tickets/T-draft-1461df22/ticket.md
+  glob: tickets/T-2009/ticket.md
   reason: WIRE001 requires the new CLI dest registered in _config_external.py's field-name
     tuple (T-1422's shape), matching --add/--remove's own registration; the draft
     ticket file is residue filed earlier this session, riding along in this land
