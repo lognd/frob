@@ -177,10 +177,7 @@ def _walk_repo_files(
     source_files: list[Path] = []
     doc_files: list[Path] = []
     exts = supported_extensions()
-    # frob:waive WALK001 reason="already prunes via frob.excludes._should_prune_dir \
-    # before descending (T-0239); this IS the underlying primitive walk_pruned wraps, \
-    # folded with dual source/doc classification in one pass for perf, not a naive raw \
-    # walk"
+    # frob:waive WALK001 reason="already prunes via frob.excludes._should_prune_dir before descending (T-0239); this IS the underlying primitive walk_pruned wraps, folded with dual source/doc classification in one pass for perf, not a naive raw walk"  # noqa: E501
     for dirpath, dirnames, filenames in os.walk(root):
         dir_path = Path(dirpath)
         dirnames[:] = [
