@@ -49,6 +49,8 @@ scope_changes:
     ticket file is residue filed earlier this session, riding along in this land
   actor: logan
   at: '2026-08-10'
+evidence:
+- tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_demote_to_evidence_only_releases_lease
 designated_repro_test: null
 threat: null
 component: null
