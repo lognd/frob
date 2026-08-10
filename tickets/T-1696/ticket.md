@@ -16,16 +16,91 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_profile.py
-- src/frob/app/ticket_runner/_land_cmd.py
-- src/frob/tickets/_land.py
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_land.py
+  reason: 'Coordinator sequencing: release the land-path lease T-1696 is not yet
+
+    using, so two longer-starved tickets can proceed.
+
+
+    T-1696''s seam enumeration is complete and its agent correctly stopped
+
+    before collapsing anything -- nothing is committed and no land-path file
+
+    has been edited. The collapse itself is a multi-session job (~8300 lines
+
+    across _land.py/_land_cmd.py, with a "prove behavior matches, not just
+
+    tests pass" bar), so holding these two files meanwhile blocks work that
+
+    has waited longer: T-1638 (undispatched 96h) and T-1748 (72h), both of
+
+    which need src/frob/tickets/_land.py and were blocked by this lease
+
+    today.
+
+
+    The enumeration is preserved in the ticket''s Done-report material and is
+
+    not lost by releasing the lease; re-acquiring these paths when the
+
+    collapse actually begins is a scope --add away. Keeping _profile.py and
+
+    docs/modules/tickets.md in scope since the ProfileSettings design work
+
+    lives there.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'Coordinator sequencing: release the land-path lease T-1696 is not yet
+
+    using, so two longer-starved tickets can proceed.
+
+
+    T-1696''s seam enumeration is complete and its agent correctly stopped
+
+    before collapsing anything -- nothing is committed and no land-path file
+
+    has been edited. The collapse itself is a multi-session job (~8300 lines
+
+    across _land.py/_land_cmd.py, with a "prove behavior matches, not just
+
+    tests pass" bar), so holding these two files meanwhile blocks work that
+
+    has waited longer: T-1638 (undispatched 96h) and T-1748 (72h), both of
+
+    which need src/frob/tickets/_land.py and were blocked by this lease
+
+    today.
+
+
+    The enumeration is preserved in the ticket''s Done-report material and is
+
+    not lost by releasing the lease; re-acquiring these paths when the
+
+    collapse actually begins is a scope --add away. Keeping _profile.py and
+
+    docs/modules/tickets.md in scope since the ProfileSettings design work
+
+    lives there.
+
+    '
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: verification
 labels:
 - watermark-epic
+anchor: false
+anchor_reason: null
 ---
 The payoff leaf, and deliberately LAST: this is a refactor, and it must
 land on a mechanism that already works rather than being the thing that
