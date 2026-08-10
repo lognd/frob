@@ -2,7 +2,7 @@
 id: T-1951
 title: COV003 x3 (T-1351/T-1507/T-1512) + DRIFT002 x2 in src/frob/tickets/_land.py
   -- unscoped error floor regression
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -15,8 +15,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- rapid-debt.jsonl
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: rapid-debt.jsonl
+  reason: 'rapid-debt.jsonl is auto-appended by frob ticket land''s own rapid-profile
+
+    debt bookkeeping (T-1681) during this ticket''s own land attempts/merges
+
+    in this shared worktree -- not content this ticket authored, but the
+
+    file is touched by the commits it produces.
+
+    '
+  actor: logan
+  at: '2026-08-10'
 evidence:
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse
 - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses
