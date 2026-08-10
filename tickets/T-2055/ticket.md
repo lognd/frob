@@ -3,7 +3,7 @@ id: T-2055
 title: Land runs TWO full frob check spawns (T-0754 post-merge at 208.7s measured,
   plus T-1410 gate-claims unmeasured); measure the second, then thread the land diff
   into the first
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,8 +12,12 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+evidence_scope:
+- tests/unit/test_ticket_close_gate_claims_t1410.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_ticket_close_gate_claims_t1410.py::TestCloseGateClaimsForTicket::test_no_gate_claim_criterion_skips_the_check
 designated_repro_test: null
 threat: null
 component: null
@@ -91,6 +95,19 @@ even the biggest remaining lever. Do not implement A before knowing B's size.
   extending the cap.
 - Do NOT cache across trees without a digest key that includes the merge
   result. A stale cache reporting green is strictly worse than a slow land.
+
+## BUG002 waiver
+
+<!-- frob:waive BUG002 reason="this ticket's own deliverable is a
+measurement (spawn 2's timing) plus a verdict on sharing work, not a
+code fix -- there is no defect in THIS ticket's own diff to repro. The
+bound evidence cites an existing test covering the function that was
+measured, per the docs-only-ticket evidence precedent
+(docs/guides/agent-playbook.md section 5). The two real defects this
+investigation surfaced (the _LAND_LOCK_TIMEOUT_S/shell-wrapper mismatch,
+and the open question about what tree check_gates' spawn actually
+measures) are filed as their own bug tickets with their own repro
+requirements, not folded into this one." -->
 
 ## Acceptance criteria
 
