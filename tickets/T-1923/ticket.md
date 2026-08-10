@@ -1,7 +1,7 @@
 ---
 id: T-1923
 title: 'post-land sweep regression from T-1916: 6 new error(s) (COV003, F401)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -17,8 +17,53 @@ scope:
 - tickets/T-1896
 - tickets/T-1900
 - tickets/T-1906
+- tickets/archive/T-1872/**
+- tickets/archive/T-1895/**
+- tickets/archive/T-1896/**
+- tickets/archive/T-1900/**
+- tickets/archive/T-1906/**
+- tickets/T-1935/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/archive/T-1872/**
+  reason: COV003 evidence rebinds for the 5 archived tickets live under tickets/archive/<id>/ticket.md
+    in the v2 per-ticket ledger, and the residue draft's own file needs scope too
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/archive/T-1895/**
+  reason: COV003 evidence rebinds for the 5 archived tickets live under tickets/archive/<id>/ticket.md
+    in the v2 per-ticket ledger, and the residue draft's own file needs scope too
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/archive/T-1896/**
+  reason: COV003 evidence rebinds for the 5 archived tickets live under tickets/archive/<id>/ticket.md
+    in the v2 per-ticket ledger, and the residue draft's own file needs scope too
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/archive/T-1900/**
+  reason: COV003 evidence rebinds for the 5 archived tickets live under tickets/archive/<id>/ticket.md
+    in the v2 per-ticket ledger, and the residue draft's own file needs scope too
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/archive/T-1906/**
+  reason: COV003 evidence rebinds for the 5 archived tickets live under tickets/archive/<id>/ticket.md
+    in the v2 per-ticket ledger, and the residue draft's own file needs scope too
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1935/**
+  reason: COV003 evidence rebinds for the 5 archived tickets live under tickets/archive/<id>/ticket.md
+    in the v2 per-ticket ledger, and the residue draft's own file needs scope too
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails
 designated_repro_test: null
 threat: null
 component: null
