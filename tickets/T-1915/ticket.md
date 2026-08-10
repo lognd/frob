@@ -2,7 +2,7 @@
 id: T-1915
 title: frob ticket doable lists permanent anchor tickets, so every dispatch wave re-assigns
   unworkable work
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -58,3 +58,6 @@ ACCEPTANCE
 CAUTION: do not implement 1 by closing anchors or by adding a blanket
 exclusion for the docs kind -- both break WIRE002. The filter must key
 on the anchor field itself.
+
+## Drop reason
+- 2026-08-09: Duplicate of T-1867 (in-progress@land-integrity), whose point 2 already owns 'frob ticket doable output disclosure for anchor tickets' and already declares the correct scope (src/frob/tickets/_doable.py, src/frob/app/ticket_runner/_query.py). Filed T-1915 before checking in-progress tickets -- only queued/doable were checked. The cost evidence gathered here (two dispatch waves burned re-assigning T-1820/T-1831/T-1778, T-1820 carrying a recorded 2026-08-08 attempt 1) has been forwarded to T-1867's agent, and the open design question (annotate anchors in doable vs exclude them outright) goes with it.
