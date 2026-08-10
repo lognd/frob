@@ -168,6 +168,8 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # as before this ticket.
 # frob:tests \
 # tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
+# frob:tests \
+# tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
 # frob-zone-start known-gate-rules T-1002
 # frob:ticket T-1520
 # frob:ticket T-1225
@@ -175,6 +177,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1733
 # frob:ticket T-1763
 # frob:ticket T-1843
+# frob:ticket T-1937
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -931,6 +934,41 @@ _KNOWN_GATE_RULES = frozenset(
         # gate family, but a legitimately emitted rule literal the T-1010
         # scan picks up and this registry must therefore cover).
         "E501",
+        # T-1937: eight ids `scan_emitted_rule_ids`'s own disclosed gaps
+        # (out-of-SCANNED_BASES, plus two previously-undisclosed
+        # construction shapes -- a bare positional arg and a typed const
+        # assignment) let through; found by `frob.gates._rule_id_scan.
+        # scan_candidate_rule_id_literals`'s broader, shape-agnostic net
+        # (see that module's own docstring for the full diagnosis).
+        # SYS109 (src/frob/gates/_sys_selfaudit.py, bare positional arg to
+        # _selfaudit_violation) folds into SELFAUDIT001 exactly like its
+        # SYS100-108 siblings above.
+        "SYS109",
+        # CVEFP001 (src/frob/strata/_cve_fingerprint.py, `rule: str =
+        # "CVEFP001"` typed pydantic field default) -- CVE-fingerprint
+        # `cwe_id` join miss, see FingerprintViolation.
+        "CVEFP001",
+        # BUDGET001/CHECK001/DEPLOY001/DERIVED001 (src/frob/app/**,
+        # src/frob/check/**): all constructed via `Diagnostic(code="...")`,
+        # a sibling keyword to `rule=` outside `SCANNED_BASES` entirely.
+        "BUDGET001",
+        "CHECK001",
+        "DEPLOY001",
+        "DERIVED001",
+        # DEPLOY002/DEPLOY003 (src/frob/deploy/_conform.py): same
+        # `code="..."` shape, outside `SCANNED_BASES`.
+        "DEPLOY002",
+        "DEPLOY003",
+        # T-1937 note, not a new entry: TIERBDEMO001
+        # (src/frob/gates/_fix_engine_tier_b.py) is NOT missing -- it is
+        # correctly excluded here on purpose via `_rule_id_scan.
+        # RETIRED_RULE_IDS` (a deliberately synthetic reference-handler
+        # id that must never become a real registered rule). SYS104,
+        # also flagged by this ticket's own audit prose, has ZERO live
+        # construction sites under src/ (confirmed by the T-1937 broad
+        # scan) -- deleted along with its writer per T-1870; its "390
+        # ledger references" are historical tickets.md prose, not code,
+        # and are out of this scanner's remit.
     }
 )
 # frob-zone-end known-gate-rules T-1002
