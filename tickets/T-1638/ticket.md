@@ -16,11 +16,21 @@ scope:
 - src/frob/tickets/**
 - tests/**
 - docs/**
+- src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'probe: does T-1696''s stale lease file still block this path after its
+    scope was narrowed'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 `frob ticket land <id> --worktree W` resolves its ROOT from the current working directory. Run it while cwd is inside W (or inside any other worktree), and the land treats that worktree as "main" -- merging into the wrong place, or refusing with a confusing error that names the wrong repository.
 
