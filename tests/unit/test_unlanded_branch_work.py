@@ -285,6 +285,110 @@ class TestUnlandedBranchWork:
         assert findings[0].branch == "real-leak-branch"
         assert findings[0].signal == "done-report"
 
+    # frob:ticket T-1948
+    def test_directive_anchored_code_with_queued_ticket_is_flagged(
+        self, repo: Path
+    ) -> None:
+        """T-1948's real specimen (t1552-ledger-v2/T-1691): a branch
+        commits a source file opening with a `frob:ticket T-####`
+        directive, but that ticket's OWN `ticket.md` on the branch was
+        never transitioned past `queued` -- no done-report, no `state:
+        done`/`dropped`, so neither of T-1934's original two signals see
+        it. This is the FAIL-THEN-PASS proof for T-1948: before the third
+        `"directive-anchored"` signal existed, this asserted one finding
+        and got zero."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
+        # e_anchored_code_with_queued_ticket_is_flagged
+        _branch(repo, "t1552-ledger-v2")
+        _write_ticket_md(repo, "T-1691", state="queued")
+        (repo / "src").mkdir(parents=True, exist_ok=True)
+        (repo / "src" / "_bisect.py").write_text(
+            "# frob:ticket T-1691\n"
+            "def bisect() -> None:\n"
+            '    """Real, committed, ticket-anchored work."""\n',
+            encoding="utf-8",
+        )
+        _commit_all(repo, "preserve uncommitted T-1691 bisect work")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert len(findings) == 1
+        finding = findings[0]
+        assert finding.ticket_id == "T-1691"
+        assert finding.branch == "t1552-ledger-v2"
+        assert finding.signal == "directive-anchored"
+        assert finding.state_on_main is None
+
+    # frob:ticket T-1948
+    def test_directive_anchored_code_with_in_progress_ticket_is_not_flagged(
+        self, repo: Path
+    ) -> None:
+        """The expected, healthy shape: an agent ran `ticket start`
+        (branch-local `ticket.md` reads `in-progress`) before writing the
+        anchored code -- normal in-flight work, not a ledger gap. Must
+        stay silent."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
+        # e_anchored_code_with_in_progress_ticket_is_not_flagged
+        _branch(repo, "healthy-branch")
+        _write_ticket_md(repo, "T-1700", state="in-progress")
+        (repo / "src").mkdir(parents=True, exist_ok=True)
+        (repo / "src" / "_thing.py").write_text(
+            "# frob:ticket T-1700\ndef thing() -> None: ...\n", encoding="utf-8"
+        )
+        _commit_all(repo, "still working T-1700, ticket started normally")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert findings == ()
+
+    # frob:ticket T-1948
+    def test_directive_anchor_yields_to_a_stronger_signal(self, repo: Path) -> None:
+        """A ticket that ALREADY has a `done-report` signal must not also
+        produce a duplicate `directive-anchored` finding for the same id
+        -- the stronger, more specific signal wins, exactly one finding
+        per ticket per branch."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
+        # e_anchor_yields_to_a_stronger_signal
+        _branch(repo, "both-signals-branch")
+        _write_ticket_md(repo, "T-1701", state="queued")
+        _write_done_report(repo, "T-1701")
+        (repo / "src").mkdir(parents=True, exist_ok=True)
+        (repo / "src" / "_thing.py").write_text(
+            "# frob:ticket T-1701\ndef thing() -> None: ...\n", encoding="utf-8"
+        )
+        _commit_all(repo, "finish T-1701, anchored code plus a done-report")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert len(findings) == 1
+        assert findings[0].ticket_id == "T-1701"
+        assert findings[0].signal == "done-report"
+
+    # frob:ticket T-1948
+    def test_directive_anchor_in_tickets_path_is_not_a_self_signal(
+        self, repo: Path
+    ) -> None:
+        """A ticket's OWN ledger files legitimately cite `frob:ticket
+        T-####` (its own id, or a related one) -- `tickets/**` paths must
+        never themselves be scanned as an anchor source, or every ticket
+        with a body mentioning another ticket id would falsely flag that
+        other id."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_directiv\
+        # e_anchor_in_tickets_path_is_not_a_self_signal
+        _branch(repo, "ledger-only-branch")
+        _write_ticket_md(repo, "T-1702", state="queued")
+        path = repo / "tickets" / "T-1702" / "ticket.md"
+        path.write_text(path.read_text() + "\nfrob:ticket T-1703 mentioned in prose.\n")
+        _commit_all(repo, "queue T-1702, mentioning T-1703 in its own body")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert findings == ()
+
     def test_findings_for_one_branch_matches_the_aggregate(self, repo: Path) -> None:
         """`_unlanded_findings_for_branch` (the single-branch entry
         `frob.tickets._leases.sweep_worktrees`'s new `kept:unlanded` gate

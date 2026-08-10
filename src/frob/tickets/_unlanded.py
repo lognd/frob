@@ -1,4 +1,5 @@
-"""frob.tickets._unlanded -- finished-but-unlanded branch work detector (T-1934).
+"""frob.tickets._unlanded -- finished-but-unlanded branch work detector
+(T-1934, T-1948).
 
 MEASURED LEAK (T-1934, 2026-08-09): an agent can finish a ticket, commit
 everything cleanly in its worktree, and die before ever invoking `frob
@@ -40,12 +41,34 @@ BRANCH-CONTENT-vs-main drift, a dimension neither previously read at all).
 `frob.tickets._leases.sweep_worktrees` also consults this module directly
 (a `kept:unlanded` verdict, ranked ABOVE the dirty-tree gate) so a clean,
 unlanded worktree is never swept just because it behaved.
+
+T-1948 DETECTOR GAP (measured against a real specimen, 2026-08-10): the
+two signals above both key on a "finished" marker -- a `done-report.md`
+file, or `ticket.md`'s own `state:` reading `done`/`dropped`. Neither
+exists for `frob:ticket`-ANCHORED code whose own `ticket.md` was simply
+never updated at all (real specimen: `t1552-ledger-v2`'s T-1691 carried
+525 committed lines opening with a `frob:ticket T-1691` directive
+comment, while its `ticket.md` sat at `state: queued` the whole time --
+invisible to both existing signals since neither a done-report nor a
+`state: done/dropped` was ever written). A THIRD signal,
+`"directive-anchored"` (`_directive_anchor_signals_on_branch`), closes
+this: scan the branch's OWN changed, non-`tickets/**` files for a
+`frob:ticket T-####` directive comment, then read that id's OWN
+`ticket.md` state ON THE SAME BRANCH -- if it disagrees with "real work
+is in flight" (anything other than `in-progress`, including missing
+entirely or still `queued`), the anchored code is invisible proof of
+work the ledger itself never recorded. Deliberately narrower than
+T-1934's own two signals: it only reads COMMITTED branch content (never
+the working tree) -- an uncommitted directive-anchored file is `frob
+worktree sweep`'s existing `kept:dirty` gate's job, not this module's,
+per T-1948's own explicit scope note.
 """
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import KeysView
 
 from pydantic import BaseModel
 
@@ -69,6 +92,22 @@ _STATE_RE = re.compile(r"(?m)^state:\s*(\S+)\s*$")
 # the enum, since every value here comes from a regex match against raw
 # YAML frontmatter text (a branch/main blob), never a validated `Ticket`.
 _TERMINAL_STATES = frozenset({"done", "dropped"})
+
+# frob:ticket T-1948
+# A `frob:ticket T-####` directive comment anywhere in a blob's text --
+# language-agnostic (no comment-marker prefix required), matching the
+# same bare `T-[0-9A-Za-z][0-9A-Za-z-]*` id shape `_TICKET_PATH_RE` uses.
+# Deliberately permissive rather than anchored to a specific comment
+# syntax: this module never parses source, only greps blob text, and the
+# directive DSL itself is shared verbatim across every language this repo
+# supports (docs/modules/graph.md#comment-dsl).
+_TICKET_DIRECTIVE_RE = re.compile(r"frob:ticket\s+(T-[0-9A-Za-z][0-9A-Za-z-]*)")
+
+# The one branch-local state T-1948's disagreement check treats as "real
+# work is genuinely in flight, nothing to report" -- anything else
+# (`queued`, `planned`, missing entirely) alongside a directive-anchored
+# file is the gap this signal exists to surface.
+_ACTIVE_STATE = "in-progress"
 
 
 class _UnlandedWork(BaseModel):
@@ -191,8 +230,33 @@ def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
     nothing, no matter how large main's finished-ticket history is. A
     single `git ls-tree` still lists every candidate path in one spawn;
     only ids that need the second signal get an extra `git show` for their
-    `ticket.md` content."""
+    `ticket.md` content.
+
+    T-1948 adds a THIRD shape, `"directive-anchored"`
+    (`_directive_anchor_signals_on_branch`), merged in last and only for
+    ids neither shape above already claimed: a `frob:ticket T-####`
+    directive comment anchors a non-`tickets/**` file among `branch`'s own
+    changes, but that id's OWN `ticket.md` never even reads `in-progress`
+    on this branch -- code exists that neither existing signal can see."""
     own_changed = _branch_own_changed_files(root, branch)
+    signals = _done_report_and_local_state_signals(root, branch, own_changed)
+    for ticket_id, signal in _directive_anchor_signals_on_branch(
+        root, branch, own_changed, exclude=signals.keys()
+    ).items():
+        signals[ticket_id] = signal
+    return signals
+
+
+# frob:ticket T-1955
+def _done_report_and_local_state_signals(
+    root: Path, branch: str, own_changed: frozenset[str]
+) -> dict[str, str]:
+    """`_finished_signals_on_branch`'s original two-shape scan (`"done-
+    report"`/`"local-state-done"`), split out to keep that function under
+    the ARCH001 line threshold once T-1948 added a third shape on top --
+    one `git ls-tree` for every candidate `tickets/**` path, then a
+    `git show` only for ids that need the second signal's `ticket.md`
+    content."""
     spawned = run_argv(
         (
             "git",
@@ -229,6 +293,58 @@ def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
             continue
         if _state_from_ticket_md(text) in _TERMINAL_STATES:
             signals[ticket_id] = "local-state-done"
+    return signals
+
+
+# frob:ticket T-1948
+def _directive_anchored_ticket_ids(
+    root: Path, branch: str, own_changed: frozenset[str]
+) -> frozenset[str]:
+    """Every ticket id a `frob:ticket T-####` directive comment anchors
+    inside `branch`'s OWN non-`tickets/**` changed files (T-1948) -- one
+    `git show` per candidate file, same no-checkout posture as every
+    other blob read in this module. `tickets/**` paths are excluded (a
+    ticket's own ledger files legitimately cite their own id and every
+    other id they reference; that is not a "code exists for this ticket"
+    signal, `_finished_signals_on_branch`'s existing two already own that
+    surface)."""
+    ids: set[str] = set()
+    for path in own_changed:
+        if path.startswith("tickets/"):
+            continue
+        text = _blob_text(root, branch, path)
+        if text is None:
+            continue
+        ids.update(_TICKET_DIRECTIVE_RE.findall(text))
+    return frozenset(ids)
+
+
+# frob:ticket T-1948
+def _directive_anchor_signals_on_branch(
+    root: Path,
+    branch: str,
+    own_changed: frozenset[str],
+    *,
+    exclude: KeysView[str],
+) -> dict[str, str]:
+    """`ticket_id -> "directive-anchored"` for every id T-1948's third
+    signal catches: a `frob:ticket T-####`-anchored file exists among
+    `branch`'s own changes, but that id's OWN `ticket.md` state ON THIS
+    BRANCH is not `_ACTIVE_STATE` (missing, `queued`, `planned`, ... --
+    real work the ledger never recorded as in flight, `_finished_
+    signals_on_branch`'s docstring/T-1691 specimen). `exclude` skips any
+    id `_finished_signals_on_branch` already flagged via a stronger
+    signal (`done-report`/`local-state-done` take priority; this is the
+    weakest, "code exists but the ledger disagrees" signal, not a second
+    vote on an id already known finished)."""
+    signals: dict[str, str] = {}
+    for ticket_id in _directive_anchored_ticket_ids(root, branch, own_changed):
+        if ticket_id in exclude:
+            continue
+        text = _blob_text(root, branch, f"tickets/{ticket_id}/ticket.md")
+        state = _state_from_ticket_md(text) if text is not None else None
+        if state != _ACTIVE_STATE:
+            signals[ticket_id] = "directive-anchored"
     return signals
 
 

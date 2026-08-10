@@ -2,7 +2,7 @@
 id: T-1948
 title: 'Detector gap: frob:ticket-anchored code with no done signal is invisible to
   T-1934''s unlanded-work detector'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,22 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_unlanded.py
+- tests/unit/test_unlanded_branch_work.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_unlanded_branch_work.py
+  reason: regression tests for the new directive-anchored signal live in the existing
+    T-1934 test module for this exact source file
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_directive_anchored_code_with_queued_ticket_is_flagged
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_directive_anchored_code_with_in_progress_ticket_is_not_flagged
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_directive_anchor_yields_to_a_stronger_signal
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_directive_anchor_in_tickets_path_is_not_a_self_signal
+designated_repro_test: tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_directive_anchored_code_with_queued_ticket_is_flagged
 threat: null
 component: null
 anchor: false
