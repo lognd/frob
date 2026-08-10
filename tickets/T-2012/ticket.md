@@ -2,7 +2,7 @@
 id: T-2012
 title: 'SCOPE002 closure gap: _coverage_sites.py''s docs/gates.md and _arch.py test
   citations were never in T-1921''s declared scope'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -14,6 +14,10 @@ runs_last: false
 scope:
 - src/frob/gates/_arch.py
 - src/frob/gates/_coverage_sites.py
+- tests/unit/gates/test_examined_sites.py
+- tests/test_arch_gate.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -24,6 +28,22 @@ scope_changes:
     this ticket
   actor: logan
   at: '2026-08-10'
+- op: add
+  glob: tests/unit/gates/test_examined_sites.py
+  reason: 'T-2012''s own described fix: this is the frob:tests target for _coverage_sites.py''s
+    attach_examined_sites/is_family_instrumented/site_examined, never added to T-1921''s
+    declared scope'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_arch_gate.py
+  reason: 'T-2012: closes the 4 remaining SCOPE002 ERRORS (not warnings) -- _arch.py::arch_gate''s
+    frob:tests targets in this file, pulled in because _arch.py was already in this
+    ticket''s original scope'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -67,3 +87,10 @@ symbol from this test file is even the right shape (it may be cleaner
 to move those two archgate-specific tests into a file already scoped
 alongside _arch.py, closing the edge by relocation instead of by
 widening scope).
+
+frob:waive BUG002 reason="this ticket's actual fix (once worked) is a
+scope-declaration-only ledger correction -- no production code changed,
+so there is no defect a pytest node id can genuinely fail-then-pass
+against; T-2012's bound evidence is the standard docs-only-ticket
+integration-test precedent (playbook section 5), confirmatory by
+construction, not a weakened repro"
