@@ -174,42 +174,6 @@ def _shift_cut_off_boundary_space(remaining: str, budget: int) -> int:
     return cut
 
 
-def _try_wrap_without_forced_break(
-    text: str, *, marker: str, indent: str, limit: int
-) -> list[str] | None:
-    """Like `_canonical_lines`, but returns `None` instead of ever cutting
-    mid-token: if any segment has no whitespace to break on within its
-    budget, `text` is genuinely a single unbreakable token too long for
-    `limit` and wrapping cannot help it (T-1605). Used to decide whether a
-    `# noqa`-suffixed run can lose its pragma -- a run only stays exempt
-    (`_rewrite_lines_via_runs`) when this returns `None`; whenever a clean,
-    word-boundary-only wrap exists, `noqa` was never load-bearing."""
-    prefix = f"{indent}{marker} "
-    if len(prefix) + len(text) <= limit:
-        return [prefix + text]
-
-    lines: list[str] = []
-    remaining = text
-    while True:
-        room = limit - len(prefix)
-        if len(remaining) <= room:
-            lines.append(prefix + remaining)
-            return lines
-        budget = room - 1
-        if budget <= 0:
-            return None
-        cut = remaining.rfind(" ", 0, budget)
-        if cut <= 0:
-            # No breakable space within budget -- this segment can only be
-            # split by cutting mid-token. That is exactly the case the
-            # `noqa` escape hatch exists for; report "cannot wrap cleanly"
-            # rather than forcing the break.
-            return None
-        head, tail = remaining[: cut + 1], remaining[cut + 1 :]
-        lines.append(f"{prefix}{head}\\")
-        remaining = tail
-
-
 def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list[str]:
     """Split `text` (one logical directive's delimiter-stripped content,
     e.g. `frob:waive RULE reason="..."`) into the fewest physical comment
@@ -303,7 +267,7 @@ def _fmt_marker_entries_with_indents(
     return indents, entries
 
 
-# frob:ticket T-1605
+# frob:ticket T-1987
 def _rewrite_directive_run(
     logical_text: str,
     lines: list[str],
@@ -318,38 +282,37 @@ def _rewrite_directive_run(
     per-run body of `_rewrite_lines_via_runs`, split out to keep that
     function's dispatch loop under the ARCH001 line threshold.
 
-    T-0985/T-1605: a run ending in a `# noqa`/`# noqa: CODE` pragma
-    (`_NOQA_SUFFIX_RE`) is a deliberate escape hatch for an unwrappable
-    single token. The pragma is self-retiring, not a permanent exemption:
-    with the pragma stripped, a clean word-boundary wrap is attempted
-    (`_try_wrap_without_forced_break`) -- if every resulting physical line
-    fits within `limit` without cutting mid-token, that wrap is used and
-    the `noqa` is DROPPED (it was never load-bearing). Only when no such
-    wrap exists (the genuine single-unbreakable-token case) is the run
-    passed through verbatim, byte-identical, exactly as T-0985 did."""
+    T-0985: a run ending in a `# noqa`/`# noqa: CODE` pragma
+    (`_NOQA_SUFFIX_RE`) is left byte-identical, full stop -- never
+    force-wrapped, never rewritten. T-1605 previously made this
+    "self-retiring": if the reason text (minus the pragma) had a clean
+    word-boundary wrap available, that wrap was taken and the `noqa` was
+    dropped, on the theory that the pragma was then "never load-bearing".
+    T-1987 reverted that: a `frob fmt` rewrap of an already-noqa-suppressed
+    single physical line into several physical lines is never harmless
+    just because the words happen to break cleanly -- it changes the
+    PHYSICAL LINE COUNT of the enclosing function, which line-count-
+    sensitive gates like ARCH001 see directly. Two separate real lands
+    (T-1970, T-1968) hit exactly this: a WALK001 waiver deliberately kept
+    on one noqa-suppressed physical line got auto-expanded to four lines
+    mid-land and tripped ARCH001 on the enclosing function. Whether a
+    clean wrap exists says nothing about whether physical-line-count
+    growth is safe, so `noqa` is now treated as what it always was meant
+    to be: an unconditional "leave this run alone" marker, not a ratchet
+    to be second-guessed."""
     # `fold_comment_runs` already rstrips "\r" off every constituent line
     # while folding (T-0286's own fold rule), so `logical_text` is always
     # "\r"-free regardless of the run's original convention -- reapply it
     # here, once per run, from the run's FIRST physical line.
     run_had_cr = lines[i].endswith("\r")
-    noqa_match = _NOQA_SUFFIX_RE.search(logical_text)
-    if noqa_match is None:
-        canonical = _canonical_lines(
-            logical_text, marker=marker, indent=indent, limit=limit
-        )
-        return [line + "\r" for line in canonical] if run_had_cr else canonical
-
-    stripped_text = logical_text[: noqa_match.start()].rstrip()
-    wrapped = _try_wrap_without_forced_break(
-        stripped_text, marker=marker, indent=indent, limit=limit
+    if _NOQA_SUFFIX_RE.search(logical_text) is not None:
+        # Deliberate escape hatch (T-0985): pass the run through verbatim,
+        # byte-identical, regardless of whether a clean wrap exists.
+        return lines[i : i + count]
+    canonical = _canonical_lines(
+        logical_text, marker=marker, indent=indent, limit=limit
     )
-    if wrapped is not None:
-        # The pragma was never load-bearing -- a clean, word-boundary-only
-        # wrap exists without it. Drop it.
-        return [line + "\r" for line in wrapped] if run_had_cr else wrapped
-    # Genuinely unwrappable: restore the pragma and pass the run through
-    # byte-identical, per T-0985.
-    return lines[i : i + count]
+    return [line + "\r" for line in canonical] if run_had_cr else canonical
 
 
 # frob:ticket T-0976
@@ -419,14 +382,14 @@ def _rewrite_lines_via_runs(
 # tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985.test_canonicalizing_\
 # twice_over_real_repo_files_is_a_no_op
 # frob:tests \
-# tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_wrappable_reason_lo\
-# ses_its_noqa
+# tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987.test_wrappable_reaso\
+# n_keeps_its_noqa
 # frob:tests \
-# tests/test_gates_fmt_directives.py::TestNoqaSelfRetiresT1605.test_idempotent_after_dr\
-# opping_noqa
+# tests/test_gates_fmt_directives.py::TestNoqaAlwaysPreservedT1987.test_idempotent_with\
+# _noqa_kept
 # frob:ticket T-0972
 # frob:ticket T-0985
-# frob:ticket T-1605
+# frob:ticket T-1987
 def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     """Rewrite every `frob:` directive comment run in `text` (source for
     `path`, consulted only to pick the line-comment marker via
