@@ -121,6 +121,41 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         "artifact stale, and everything downstream reads it as current.",
         None,
     ),
+    (
+        "recursive-grep",
+        re.compile(_POS + r"grep +(?:-\w*[rR]|--recursive)", re.M),
+        "Prefer `uv run frob explore xref <symbol>` for a symbol (it reports "
+        "the definition AND every file that uses it), or `git grep` for plain "
+        "text. A raw recursive `grep` walks .venv/, .git/ and the ~20 agent "
+        "worktrees under .claude/worktrees/, so its hit count is not a "
+        "statement about this codebase.",
+        None,
+    ),
+    (
+        "unscoped-symbol-search",
+        re.compile(_POS + r"git +grep\b", re.M),
+        "For a SYMBOL, prefer `uv run frob explore xref <symbol>` -- it "
+        "resolves the definition plus every referencing file through the "
+        "call graph, where grep only finds lexical matches and silently "
+        "misses re-exports and aliases. Also available: `frob explore "
+        "outline <file>` (structural skeleton), `frob explore map` "
+        "(whole-project structure), `frob explore docs-search`. If you want "
+        "literal text, scope it with `-- <path>` and this nudge stays quiet.",
+        # A `-- <path>` restriction means the caller already scoped the
+        # search -- the good case. Same design as `unscoped-pytest` above:
+        # read RAW, because stripping quotes would delete the proof.
+        re.compile(r"--\s+\S"),
+    ),
+    (
+        "raw-find-name",
+        re.compile(_POS + r"find +[.\w/][^|;&]*-name\b", re.M),
+        "Prefer `uv run frob explore map` for project structure, or "
+        "`frob explore outline <file>` for one file's symbols. A raw `find` "
+        "descends into .venv/, build artifacts and every agent worktree "
+        "unless you exclude them by hand, and the omission is invisible in "
+        "the output.",
+        None,
+    ),
 ]
 
 
