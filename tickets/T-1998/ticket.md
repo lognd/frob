@@ -2,7 +2,7 @@
 id: T-1998
 title: 'post-land sweep regression from T-1977: 5 new (rule, file) identit(ies), 8
   finding(s) (AFFECT001, COV002, REL002, TEST001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-10'
