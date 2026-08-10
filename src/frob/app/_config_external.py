@@ -103,6 +103,8 @@ _STRING_FIELDS = (
     "ticket_designate_repro",
     # frob:ticket T-1851
     "ticket_designate_repro_reason",
+    # frob:ticket T-1929
+    "ticket_check_repro",
     "ticket_review_verdict",
     "ticket_reviewer",
     "ticket_review_commit",
@@ -390,6 +392,8 @@ _BOOL_FLAGS = (
     # frob:ticket T-1369
     "ticket_allow_cross_ticket",
     "ticket_close_skip_mutation_evidence",
+    # frob:ticket T-1929
+    "ticket_designate_repro_force",
     "ticket_land_push",
     # frob:ticket T-1175
     "ticket_land_finish",

@@ -250,6 +250,16 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
     ticket_evidence_p.add_argument(
         "ticket_evidence_ids", metavar="node-id", nargs="*", default=[]
     )
+    # frob:ticket T-1929
+    ticket_evidence_p.add_argument(
+        "--base-ref",
+        dest="ticket_base_ref",
+        default="main",
+        metavar="REF",
+        help="T-1929: base ref --designate-repro/--check-repro's parent-"
+        "commit repro check diffs against (default: main), same semantics "
+        "as `close`/`reverify --base-ref`",
+    )
     ticket_evidence_p.add_argument(
         "--evidence-cmd",
         dest="ticket_evidence_cmd",
@@ -355,6 +365,36 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         help="read --designate-repro's reason verbatim from PATH instead "
         "of the shell (T-0737 precedent); mutually exclusive with "
         "--designate-repro-reason",
+    )
+    # frob:ticket T-1929
+    ticket_evidence_p.add_argument(
+        "--designate-repro-force",
+        dest="ticket_designate_repro_force",
+        action="store_true",
+        help="T-1929 loud override: let --designate-repro through even "
+        "when NODE-ID does not genuinely FAIL at the ticket's parent "
+        "commit (the validate-at-designate check still runs and logs its "
+        "verdict at WARNING; this only stops it from refusing the write). "
+        "Use for a genuine false positive (e.g. a native-extension-only "
+        "parent-commit gap), not to wave through real confirmatory-only "
+        "evidence -- mirrors --skip-mutation-evidence's posture",
+    )
+    # frob:ticket T-1929
+    ticket_evidence_p.add_argument(
+        "--check-repro",
+        dest="ticket_check_repro",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="NODE-ID",
+        help="T-1929: run BUG002's parent-commit repro classification "
+        "on demand, without mutating anything -- reports FAILED_AT_PARENT "
+        "(genuine repro) / PASSED_AT_PARENT (confirmatory-only) / "
+        "NO_VERDICT (could not even collect at the parent) / SAME_AS_HEAD "
+        "(base_ref resolves to HEAD itself) and exits nonzero unless "
+        "FAILED_AT_PARENT. NODE-ID is optional: omitted, resolves the "
+        "same test BUG002 itself would (explicit --designate-repro, else "
+        "the first pytest-node-id evidence)",
     )
 
     ticket_drop_p = ticket_sub.add_parser(

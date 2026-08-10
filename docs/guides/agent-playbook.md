@@ -64,6 +64,26 @@ WHY and the recovery recipes.
    uses the dotted `Class.method` form, never pytest `::` form. New public
    API needs the REL001 stamp via `uv run frob release` tooling -- never
    hand-edit versions. Docs move in the same change as the code.
+   **T-1929: for a `bug`/`security`-kind ticket, `--designate-repro
+   NODE-ID` now VALIDATES at designate time** -- it re-runs NODE-ID
+   against the ticket's parent commit and REFUSES (no write) unless the
+   outcome is `FAILED_AT_PARENT`; a `PASSED_AT_PARENT` (confirmatory-only)
+   or `NO_VERDICT` (could not even collect at the parent -- never treat
+   this as a pass) both refuse with a distinct message naming which case
+   fired. Check this BEFORE binding evidence you intend to designate, not
+   after: `frob ticket evidence T-#### --check-repro [NODE-ID]
+   [--base-ref REF]` runs the identical check on demand, read-only, no
+   mutation -- the cheapest possible way to ask "is my evidence
+   confirmatory-only?" at the moment the mistake would otherwise be made,
+   instead of discovering it only when `frob ticket land` refuses with
+   `EvidenceConfirmatoryOnly` (T-1907/T-1884/T-1882/T-1911 all discovered
+   this exactly that way, one of them burning 5 land attempts). The
+   escape hatch is `--designate-repro-force` (loud, logged at WARNING,
+   same posture as `--skip-mutation-evidence`) for a genuine false
+   positive -- do not reach for it to wave through real confirmatory-only
+   evidence. BUG002 itself is unchanged: this only moves the same check
+   earlier, through the same shared `frob.gates.bug_repro_outcome_at_ref`
+   entrypoint the land/close-time gate already used.
 7. NEVER `git stash` (sec 1b). NEVER remove a worktree after a failed
    land -- the branch is the recovery path. A land that dies silently may
    have SUCCEEDED: check `git log main` before retrying; after a second

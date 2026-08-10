@@ -294,7 +294,20 @@ class _BugReproOutcome(Enum):
     SAME_AS_HEAD = auto()
 
 
-# frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_reason_present_suppresses  # noqa: E501
+# frob:ticket T-1929
+# frob:doc docs/modules/tickets.md#public-api
+#: Public alias for `_BugReproOutcome` (T-1929): an on-demand caller
+#: outside this module (`frob.app.ticket_runner._verify`'s validate-at-
+#: designate check, `frob ticket evidence --check-repro`) needs to inspect
+#: which of the five outcomes `bug_repro_outcome_at_ref` returned --
+#: FAILED_AT_PARENT is the only acceptable one to treat as a genuine
+#: repro; PASSED_AT_PARENT, NO_VERDICT, and SAME_AS_HEAD must never be
+#: silently treated as a pass by any caller.
+BugReproOutcome = _BugReproOutcome
+
+
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_reason_present_suppresses
 # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_bare_directive_without_reason_does_not_suppress  # noqa: E501
 def _bug002_waiver_reason(ticket: Ticket) -> str | None:
     """The `reason="..."` text of a `frob:waive BUG002 reason="..."` line
@@ -356,7 +369,8 @@ def _designated_repro_test(ticket: Ticket) -> str | None:
     return None
 
 
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous  # noqa: E501
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous
 def _resolve_sha(root: Path, ref: str) -> str | None:
     """`git rev-parse <ref>`, trimmed, or `None` on any spawn/exit failure
     -- split out purely so `_bug_repro_outcome_at_ref`'s vacuous-comparison
@@ -371,7 +385,8 @@ def _resolve_sha(root: Path, ref: str) -> str | None:
 
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_exec_disabled_is_no_verdict  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_worktree_add_failure_is_no_verdict  # noqa: E501
-# frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous  # noqa: E501
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous
 def _bug_repro_outcome_at_ref(
     root: Path, test_id: str, base_ref: str, *, timeout_s: float = _BUG_REPRO_TIMEOUT_S
 ) -> _BugReproOutcome:
@@ -423,6 +438,44 @@ def _bug_repro_outcome_at_ref(
     finally:
         _remove_bug_repro_worktree(root, worktree)
         shutil.rmtree(scratch, ignore_errors=True)
+
+
+# frob:ticket T-1929
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_wraps_the_private_classifier  # noqa: E501
+def bug_repro_outcome_at_ref(
+    root: Path, test_id: str, base_ref: str = "main"
+) -> _BugReproOutcome:
+    """Public entrypoint (T-1929) exposing `_bug_repro_outcome_at_ref`'s
+    parent-commit repro classification to callers OUTSIDE this module --
+    `frob.app.ticket_runner._verify`'s validate-at-designate check
+    (`--designate-repro`, requirement A) and `frob ticket evidence
+    --check-repro`'s on-demand read-only path (requirement B) both call
+    this SAME function rather than reaching into the private helper
+    directly, so there remains exactly one place that spawns and
+    classifies the repro subprocess -- do not add a second copy of this
+    machinery; `bug_repro_violations` below is the land/close-time
+    consumer of the identical classification and must keep using it too.
+
+    Deliberately a thin, no-logic wrapper: it does not decide anything
+    about ticket kind, waivers, or severity -- callers get the raw
+    `_BugReproOutcome` (its public alias `BugReproOutcome`, above) and
+    decide what to do with FAILED_AT_PARENT / PASSED_AT_PARENT /
+    NO_VERDICT / SAME_AS_HEAD for their own purpose."""
+    return _bug_repro_outcome_at_ref(root, test_id, base_ref)
+
+
+# frob:ticket T-1929
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestDesignatedReproTestPublic.test_wraps_the_private_resolver  # noqa: E501
+def designated_repro_test(ticket: Ticket) -> str | None:
+    """Public wrapper (T-1929) around `_designated_repro_test`, for a
+    caller outside this module that needs to resolve WHICH evidence id
+    BUG002 would check without duplicating the "explicit designation,
+    falling back to first pytest-node-id evidence" rule -- `frob ticket
+    evidence --check-repro` (no NODE-ID given) uses this to pick the same
+    test `bug_repro_violations` would have checked at land/close time."""
+    return _designated_repro_test(ticket)
 
 
 def _checkout_bug_repro_worktree(

@@ -2,7 +2,7 @@
 id: T-1929
 title: 'Confirmatory-only evidence is only detectable at land: --designate-repro validates
   nothing and BUG002 has no on-demand path'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -11,8 +11,106 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_mutation_evidence.py
+- src/frob/gates/__init__.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/app/config.py
+- docs/guides/agent-playbook.md
+- docs/modules/tickets.md
+- tests/unit/test_ticket_runner_designate_repro.py
+- tests/gates/test_bug_repro_at_ref_public.py
+- tests/test_gates_mutation_evidence.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_ticket_runner_designate_repro.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/gates/test_bug_repro_at_ref_public.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: 'T-1929 scope: designate-time repro validation wiring + on-demand check-repro
+    flag + playbook doc update'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'T-1929: WIRE001 requires new AppConfig dest names (ticket_check_repro,
+    ticket_designate_repro_force) copied into from_external''s field-name tuples'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent::test_refuses_passed_at_parent
+- tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent::test_refuses_no_verdict
+- tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent::test_accepts_failed_at_parent
+- tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent::test_force_overrides_loudly
+- tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent::test_non_bug_kind_skips_the_check
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_reports_failed_at_parent_exit0
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_reports_passed_at_parent_exit1
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_reports_no_verdict_exit1
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_no_node_id_resolves_designated_test
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCliFlagsSurviveFromExternal::test_check_repro_and_base_ref_survive_from_external
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCliFlagsSurviveFromExternal::test_check_repro_with_no_node_id_survives_as_empty_string
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCliFlagsSurviveFromExternal::test_designate_repro_force_survives_from_external
+- tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic::test_wraps_the_private_classifier
+- tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic::test_public_alias_is_the_same_enum
+- tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic::test_default_base_ref_is_main
+- tests/gates/test_bug_repro_at_ref_public.py::TestDesignatedReproTestPublic::test_wraps_the_private_resolver
+- tests/gates/test_bug_repro_at_ref_public.py::TestDesignatedReproTestPublic::test_falls_back_to_first_pytest_node_id
+- tests/gates/test_bug_repro_at_ref_public.py::TestDesignatedReproTestPublic::test_no_evidence_is_none
 designated_repro_test: null
 threat: null
 component: null

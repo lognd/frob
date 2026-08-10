@@ -535,6 +535,29 @@ class AppConfig(BaseModel):
     #: `--designate-repro-reason-file PATH` twin of the above, same mutual-
     #: exclusion shape as `ticket_evidence_replace_reason_file`.
     ticket_designate_repro_reason_file: Path | None = None
+    # frob:ticket T-1929
+    #: `frob ticket evidence <id> --designate-repro NODE-ID --designate-
+    #: repro-force`: the loud, recorded override for the T-1929 validate-
+    #: at-designate check (requirement A) -- lets a designation through
+    #: even when NODE-ID does not genuinely FAIL at the ticket's parent
+    #: commit (PASSED_AT_PARENT/NO_VERDICT/SAME_AS_HEAD), for the rare
+    #: legitimate case (e.g. a parent-commit-only infra gap the honest
+    #: `frob:waive BUG002` directive already exists for at land time, but
+    #: the agent wants to keep working before writing that waiver). Mirrors
+    #: `--skip-mutation-evidence`'s posture: the check still runs and logs
+    #: its verdict at WARNING, this only stops it from refusing the write.
+    ticket_designate_repro_force: bool = False
+    # frob:ticket T-1929
+    #: `frob ticket evidence <id> --check-repro [NODE-ID]`: run the SAME
+    #: parent-commit repro classification `--designate-repro` validates
+    #: with, on demand, without mutating anything -- requirement B's on-
+    #: demand path. `None` means the flag was not passed at all; `""` (the
+    #: CLI's `nargs="?"` const) means it was passed with no NODE-ID, so
+    #: `_evidence` resolves the node id the same way BUG002 itself would
+    #: (`designated_repro_test`, explicit designation falling back to
+    #: first pytest-node-id evidence); any other value is an explicit
+    #: NODE-ID to check.
+    ticket_check_repro: str | None = None
     # frob:ticket T-1537
     #: `frob ticket evidence <id> --replace OLD-NODE-ID NEW-NODE-ID`: rebind
     #: one evidence id everywhere it appears (flat list + every acceptance

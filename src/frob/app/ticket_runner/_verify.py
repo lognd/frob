@@ -29,10 +29,24 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
     entry instead (docs-kind tickets only); or, with `--replace OLD NEW`
     (T-1537), rebind an existing evidence id everywhere it appears; or,
     with `--designate-repro NODE-ID` (T-1670), mark one bound evidence id
-    as BUG002's explicit repro test. Requires at least one of the four --
-    none of them is silently a no-op. Each channel's own apply-and-exit-on-
-    error step is a small helper (`_evidence_apply_*`, ARCH001 split) so
-    this dispatcher stays a thin sequence of "if given, apply" checks."""
+    as BUG002's explicit repro test (T-1929: validated against the parent
+    commit at designate time -- see `_evidence_apply_designate_repro`); or,
+    with `--check-repro [NODE-ID]` (T-1929), run that SAME parent-commit
+    classification on demand WITHOUT mutating anything and exit -- this
+    channel is read-only and handled first, before the "requires at least
+    one of" dispatch below, since it never reaches the mutating channels
+    or the ledger commit at the bottom of this function. Requires at least
+    one of the mutating four -- none of them is silently a no-op. Each
+    channel's own apply-and-exit-on-error step is a small helper
+    (`_evidence_apply_*`, ARCH001 split) so this dispatcher stays a thin
+    sequence of "if given, apply" checks."""
+    if cfg.ticket_check_repro is not None:
+        if cfg.ticket_id is None:
+            _log.error("frob ticket evidence --check-repro requires <id>")
+            sys.exit(1)
+        _evidence_check_repro(root, cfg)
+        return
+
     has_evidence = (
         cfg.ticket_evidence_ids
         or cfg.ticket_evidence_cmd
@@ -43,7 +57,8 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
         _log.error(
             "frob ticket evidence requires <id> and one of "
             "<pytest-node-id>..., --evidence-cmd 'command', "
-            "--replace OLD-NODE-ID NEW-NODE-ID, or --designate-repro NODE-ID"
+            "--replace OLD-NODE-ID NEW-NODE-ID, --designate-repro NODE-ID, "
+            "or --check-repro [NODE-ID]"
         )
         sys.exit(1)
 
@@ -144,6 +159,8 @@ def _evidence_apply_designate_repro(root: Path, cfg: AppConfig) -> None:
     assert cfg.ticket_id is not None
     from frob.tickets import set_designated_repro_test
 
+    _validate_designate_repro_at_parent(root, cfg)
+
     reason = _resolve_designate_repro_reason(cfg)
     is_redesignation = _is_genuine_redesignation(
         root, cfg.ticket_id, cfg.ticket_designate_repro
@@ -161,6 +178,214 @@ def _evidence_apply_designate_repro(root: Path, cfg: AppConfig) -> None:
     )
     if designate_result.is_err:
         sys.exit(1)
+
+
+# frob:ticket T-1929
+def _bug_repro_outcome_message(outcome, node_id: str, parent_ref: str) -> str:  # noqa: ANN001
+    """Human-readable, outcome-specific message for one `BugReproOutcome`
+    (T-1929's three(+)-way classification) -- shared by
+    `_validate_designate_repro_at_parent` (requirement A) and
+    `_evidence_check_repro` (requirement B) so the wording an agent sees
+    at designate time and on demand is identical, not two independently
+    drifting copies of the same explanation. `outcome` is typed loosely
+    (no import-time dependency on `frob.gates.BugReproOutcome`'s enum
+    identity here) but is always one of that enum's four members in
+    practice -- every call site passes a value straight from
+    `bug_repro_outcome_at_ref`."""
+    from frob.gates import BugReproOutcome
+
+    name = outcome.name
+    if outcome is BugReproOutcome.FAILED_AT_PARENT:
+        return (
+            f"FAILED_AT_PARENT: {node_id!r} genuinely fails at {parent_ref} -- "
+            f"a real repro, this is what BUG002 wants"
+        )
+    if outcome is BugReproOutcome.PASSED_AT_PARENT:
+        return (
+            f"PASSED_AT_PARENT: {node_id!r} already PASSES at {parent_ref} -- "
+            f"this is confirmatory-only evidence (proves nothing about the "
+            f"defect), the exact shape BUG002 refuses at land/close"
+        )
+    if outcome is BugReproOutcome.NO_VERDICT:
+        return (
+            f"NO_VERDICT: {node_id!r} could not even COLLECT at {parent_ref} "
+            f"(e.g. it calls a function that does not exist there yet) -- "
+            f"this is NOT a pass, it is an unresolved verdict; T-1907's "
+            f"original incident was exactly this shape"
+        )
+    if outcome is BugReproOutcome.SAME_AS_HEAD:
+        return (
+            f"SAME_AS_HEAD: {parent_ref} resolves to HEAD itself, so no "
+            f"pre-fix comparison is possible (a direct-commit-to-{parent_ref} "
+            f"shape) -- not a pass, an unresolved verdict"
+        )
+    return f"{name}: unrecognized outcome for {node_id!r} at {parent_ref}"
+
+
+# frob:ticket T-1929
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_refuses_passed_at_parent  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_refuses_no_verdict  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_accepts_failed_at_parent  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_force_overrides_loudly  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_non_bug_kind_skips_the_check  # noqa: E501
+def _validate_designate_repro_at_parent(root: Path, cfg: AppConfig) -> None:
+    """T-1929 requirement A: `--designate-repro NODE-ID` refuses (exit 1,
+    no write) unless NODE-ID genuinely `FAILED_AT_PARENT` -- the mistake
+    four incidents (T-1907/T-1884/T-1882/T-1911) each made was committed
+    at exactly this moment (nothing previously checked whether the
+    designated id actually failed at the ticket's parent commit), and
+    each one only discovered it when `frob ticket land` refused, far from
+    where the mistake happened. This closes that gap at the source.
+
+    Scoped to `bug`/`security`-kind tickets only, mirroring
+    `bug_repro_violations`'s own `_ERROR_KINDS` restriction exactly (BUG002
+    never fires for any other kind, so validating a designation nothing
+    will ever gate on would only be noise); any other kind's designation
+    is accepted unchecked, same as before this ticket.
+
+    `--designate-repro-force` is the loud, recorded override (mirroring
+    `--skip-mutation-evidence`'s posture): the check still runs and its
+    verdict is still logged at WARNING, the override only stops it from
+    refusing the write. A merge-base that cannot be resolved degrades to
+    a skipped check (logged at WARNING) rather than a refusal -- this
+    validation is additive to BUG002's own land/close-time gate, which
+    still applies regardless (T-0755's "additive, not sole gate" posture,
+    same as `_close_mutation_evidence_for_ticket`)."""
+    from frob.gates import BugReproOutcome, bug_repro_outcome_at_ref
+    from frob.gitio import _merge_base
+    from frob.tickets import TicketKind, load_queue
+
+    assert cfg.ticket_id is not None
+    assert cfg.ticket_designate_repro is not None
+    node_id = cfg.ticket_designate_repro
+
+    loaded = load_queue(root)
+    if loaded.is_err:
+        _log.warning(
+            "ticket evidence --designate-repro: %s could not load the "
+            "ticket queue (%s), skipping the T-1929 parent-commit check",
+            cfg.ticket_id,
+            loaded.danger_err,
+        )
+        return
+    ticket = loaded.danger_ok.tickets.get(cfg.ticket_id)
+    if ticket is None or ticket.kind not in (TicketKind.BUG, TicketKind.SECURITY):
+        return
+
+    resolved = _merge_base(root, cfg.ticket_base_ref)
+    if resolved.is_err:
+        _log.warning(
+            "ticket evidence --designate-repro: %s could not resolve "
+            "merge-base against %s (%s), skipping the T-1929 parent-"
+            "commit check",
+            cfg.ticket_id,
+            cfg.ticket_base_ref,
+            resolved.danger_err,
+        )
+        return
+    parent_ref = resolved.danger_ok
+
+    outcome = bug_repro_outcome_at_ref(root, node_id, parent_ref)
+    message = _bug_repro_outcome_message(outcome, node_id, parent_ref)
+    if outcome is BugReproOutcome.FAILED_AT_PARENT:
+        _log.info("ticket evidence --designate-repro: %s %s", cfg.ticket_id, message)
+        return
+
+    if cfg.ticket_designate_repro_force:
+        _log.warning(
+            "ticket evidence --designate-repro: %s %s -- FORCED through "
+            "via --designate-repro-force, designation recorded anyway "
+            "(T-1929 override, use only for a genuine false positive)",
+            cfg.ticket_id,
+            message,
+        )
+        return
+
+    _log.error(
+        "ticket evidence --designate-repro REFUSED for %s: %s -- this "
+        "would be confirmatory-only-or-unresolved evidence, exactly what "
+        "BUG002 refuses at land/close (T-1929 moves that check here, at "
+        "designate time). Bind a test that actually fails at %s, or pass "
+        "--designate-repro-force for a genuine false positive (loud, "
+        "recorded override)",
+        cfg.ticket_id,
+        message,
+        parent_ref,
+    )
+    sys.exit(1)
+
+
+# frob:ticket T-1929
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_reports_failed_at_parent_exit0  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_reports_passed_at_parent_exit1  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_no_node_id_resolves_designated_test  # noqa: E501
+def _evidence_check_repro(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket evidence <id> --check-repro [NODE-ID]` (T-1929
+    requirement B): the on-demand, read-only twin of
+    `_validate_designate_repro_at_parent` -- runs the identical parent-
+    commit classification through the SAME shared entrypoint
+    (`frob.gates.bug_repro_outcome_at_ref`) and reports the verdict,
+    mutating nothing. This exists so an agent mid-ticket can ask "is my
+    evidence confirmatory-only?" BEFORE ever calling --designate-repro or
+    reaching close/land -- T-1929's `frob ticket reverify` investigation
+    found that verb only re-runs BUG002 on an already-DONE ticket, so it
+    cannot answer this question while a ticket is still in-progress; this
+    fills that specific gap through the same shared gate machinery
+    `reverify`/`close`/`land` already use, never a second implementation
+    of the repro check itself."""
+    assert cfg.ticket_id is not None
+    from frob.gates import (
+        BugReproOutcome,
+        bug_repro_outcome_at_ref,
+        designated_repro_test,
+    )
+    from frob.gitio import _merge_base
+    from frob.tickets import load_queue
+
+    loaded = load_queue(root)
+    if loaded.is_err:
+        _log.error(
+            "ticket evidence --check-repro: could not load the ticket queue (%s)",
+            loaded.danger_err,
+        )
+        sys.exit(1)
+    ticket = loaded.danger_ok.tickets.get(cfg.ticket_id)
+    if ticket is None:
+        _log.error("ticket evidence --check-repro: no ticket %s", cfg.ticket_id)
+        sys.exit(1)
+
+    node_id = cfg.ticket_check_repro or None
+    if not node_id:
+        node_id = designated_repro_test(ticket)
+    if node_id is None:
+        _log.error(
+            "ticket evidence --check-repro: %s has no pytest-node-id "
+            "evidence bound yet and no NODE-ID was given -- bind evidence "
+            "first (`frob ticket evidence %s <node-id>`) or pass a NODE-ID "
+            "explicitly",
+            cfg.ticket_id,
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+
+    resolved = _merge_base(root, cfg.ticket_base_ref)
+    if resolved.is_err:
+        _log.error(
+            "ticket evidence --check-repro: could not resolve merge-base "
+            "against %s (%s)",
+            cfg.ticket_base_ref,
+            resolved.danger_err,
+        )
+        sys.exit(1)
+    parent_ref = resolved.danger_ok
+
+    outcome = bug_repro_outcome_at_ref(root, node_id, parent_ref)
+    message = _bug_repro_outcome_message(outcome, node_id, parent_ref)
+    if outcome is BugReproOutcome.FAILED_AT_PARENT:
+        _log.info("ticket evidence --check-repro: %s %s", cfg.ticket_id, message)
+        return
+    _log.error("ticket evidence --check-repro: %s %s", cfg.ticket_id, message)
+    sys.exit(1)
 
 
 # frob:ticket T-1851

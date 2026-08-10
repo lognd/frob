@@ -156,7 +156,10 @@ from frob.gates._models import (
     WaiverRef,
 )
 from frob.gates._mutation_evidence import (
+    BugReproOutcome,
+    bug_repro_outcome_at_ref,
     bug_repro_violations,
+    designated_repro_test,
     mutation_evidence_violations,
 )
 from frob.gates._negexist import negexist001_gate
@@ -6534,9 +6537,7 @@ def _b9_exempt_file(file: str) -> bool:
     frob's own local `.frob/` state (never real source, regardless of
     gitignore status)."""
     return (
-        file == "tickets.md"
-        or file.startswith(".frob/")
-        or file.startswith("tickets/")
+        file == "tickets.md" or file.startswith(".frob/") or file.startswith("tickets/")
     )
 
 
@@ -7718,6 +7719,9 @@ __all__ = [
     "load_invariants",
     "mutation_evidence_violations",
     "bug_repro_violations",
+    "bug_repro_outcome_at_ref",
+    "BugReproOutcome",
+    "designated_repro_test",
     "compliance_gate",
     "cve_fingerprint_scan_gate",
     "debt_gate",

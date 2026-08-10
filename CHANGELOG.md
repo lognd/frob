@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.427.0] - unreleased
+
+- T-1929: Confirmatory-only evidence is only detectable at land: --designate-repro validates nothing and BUG002 has no on-demand path
+
 ## [0.426.0] - unreleased
 
 - T-1924: Finish T-1911's Tier-A snapshot-param drop on the 5 handlers in _fix_engine_sync.py
