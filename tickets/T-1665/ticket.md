@@ -17,10 +17,31 @@ runs_last: false
 scope:
 - src/frob/gates/_refs.py
 - src/frob/graph/**
-- tests/**
 - docs/modules/gates.md
+- tests/unit/gates/test_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'narrow the tests/** umbrella to the one test file REF001''s change needs.
+    This was the last outstanding TICK009 breadth nudge and it collapses the wave
+    partition: with it present, frob ticket wave --agents 4 folds nearly every ticket
+    into one group. T-1985 (the resolved-import substrate this ticket depends on)
+    has landed, so T-1665 is now startable and the umbrella would lease the entire
+    test tree.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: 'narrow the tests/** umbrella to the one test file REF001''s change needs.
+    This was the last outstanding TICK009 breadth nudge and it collapses the wave
+    partition: with it present, frob ticket wave --agents 4 folds nearly every ticket
+    into one group. T-1985 (the resolved-import substrate this ticket depends on)
+    has landed, so T-1665 is now startable and the umbrella would lease the entire
+    test tree.'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
