@@ -156,9 +156,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 161,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 0 to 161 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 162,
+      "reason": "T-2018: one new declared exec site in tests/unit/verify/test_attribution.py (build_ad_hoc_batch's own real-git integration coverage)",
+      "ticket": "T-2018"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -176,9 +176,9 @@
       "ticket": "T-1939"
     },
     "testsuite::fs.write": {
-      "accepted_count": 303,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 0 to 303 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 304,
+      "reason": "T-2018: one new declared fs.write site in tests/unit/verify/test_attribution.py (build_ad_hoc_batch's own real-git integration coverage)",
+      "ticket": "T-2018"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

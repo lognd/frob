@@ -28,6 +28,8 @@ from frob.verify._attribution import (
     Attribution,
     AttributionError,
     attribute_batch,
+    build_ad_hoc_batch,
+    load_attribution_context,
 )
 from frob.verify._backpressure import (
     BackpressureCeilings,
@@ -76,6 +78,8 @@ __all__ = [
     "WorkerOutcome",
     "advance_watermark",
     "attribute_batch",
+    "build_ad_hoc_batch",
+    "load_attribution_context",
     "block_until_watermark_advances",
     "ceilings_for_profile",
     "compact_queue",

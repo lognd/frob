@@ -784,10 +784,12 @@
     "src/frob/gitio.py::SpawnRecorder.counts": "da456c38778d454674f3b8c4e57044382071184ba64ddc3e53bbd5b47aac1e1d",
     "src/frob/gitio.py::SpawnRecorder.duplicates": "52053d607f9b5d4ec68962fa0e467090287f4a8d14d74ebc6ffc2d13953711ec",
     "src/frob/gitio.py::SpawnRecorder.record": "293274f076eda334d177a42ddbea4cf11fe3d2e72b2dfe7bd7a07cdc169662aa",
+    "src/frob/gitio.py::commit_diff": "69246cfab8e359c0845bbfe69698982dca2c1cbb1bd810b15c5b3b327169cc2f",
     "src/frob/gitio.py::common_dir_and_branch": "ea5a178373a5861882a3d16930ddba34cc55e8981b8ad7535200b031d2f9d786",
     "src/frob/gitio.py::current_branch": "66e3ff92d2fc47068c3dd79599699c04a85b3d4696a423fed379ab6d43cbe295",
     "src/frob/gitio.py::excerpt": "86c6a80e2376cfc946627fab92d13290ba9bd0ea315ef6e8d97401a1cf37f223",
     "src/frob/gitio.py::git_common_dir": "e083e425d4594a33ff74d9c782b1c3bce27e468fb6e20ee67f0c6c37e70960ec",
+    "src/frob/gitio.py::recent_commits": "950162d6788f2ebbcdc68b377b2d04abcf5eafee31c53b22e992aa0f903d5128",
     "src/frob/gitio.py::repo_root": "a9401b65328fdaed09960fa5fa8f012c07b2da09830c74081230620a04d9ff2b",
     "src/frob/gitio.py::reset_common_dir_cache": "3a96015ab386cf2eb703685efd89c4319499d49c5dbccc49b084be388e6e6fba",
     "src/frob/gitio.py::run_argv": "610ff1fcc1d18d0d5ac0a2ab0eaf8296faed99e02b1a52b146243ec64b1b0f60",
@@ -2121,6 +2123,8 @@
     "src/frob/verify/_attribution.py::Attribution": "e9337e1b5517257fc00c8e8e2dc5d02828c73d674c3fc6c62ba6eab8c918a356",
     "src/frob/verify/_attribution.py::AttributionError": "619e8f04a6f754dd27c4f53756a3bcca914560a8957cb6d2c732a58a67c5ae8d",
     "src/frob/verify/_attribution.py::attribute_batch": "e5027957f9714379bd38ae6a58014bac13ac2e8718440551351f0e44b016c9da",
+    "src/frob/verify/_attribution.py::build_ad_hoc_batch": "aa619e38badf91645f0346e7fd6b326978b65d0c4d500e66b12b206ce6f826e3",
+    "src/frob/verify/_attribution.py::load_attribution_context": "13c35ad7dd44fc2f2292defe05c86627c5e5d857c1ec8a88351372807ebc21df",
     "src/frob/verify/_backpressure.py::BackpressureCeilings": "d45cfd34627eafb83d231b020a0e9eac09329544555f3bf42c5c0dc98da8d898",
     "src/frob/verify/_backpressure.py::BackpressureError": "7a8821c23ff47f13a5c5c15217dca685bef8e1ea8d326ff4e77b3178e5000131",
     "src/frob/verify/_backpressure.py::BackpressureStatus": "b76fb2ef9e69c749c4ce12e9c416a45a561d4d8f48c2a75e5c6a02fad2ea1e71",
@@ -2248,5 +2252,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.450.0"
+  "version": "0.451.0"
 }

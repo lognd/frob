@@ -2,7 +2,7 @@
 id: T-2018
 title: Symbolic attribution exists but is invisible where findings are reported, so
   agents attribute floor errors by unsound git-diff guessing
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,8 +13,114 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/verify/_attribution.py
+- src/frob/gitio.py
+- src/frob/app/verify_runner.py
+- tests/unit/verify/test_attribution.py
+- docs/modules/testing.md
+- src/frob/verify/__init__.py
+- tests/unit/verify/test_verify_runner.py
+- tests/test_gitio.py
+- rapid-debt.jsonl
+- tickets/T-2010/ticket.md
+- tickets/T-2010/done-report.md
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gitio.py
+  reason: ad-hoc candidate-commit batch construction needs a commit-relative diff
+    helper in gitio.py, wired into verify explain's existing refusal path
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/verify_runner.py
+  reason: ad-hoc candidate-commit batch construction needs a commit-relative diff
+    helper in gitio.py, wired into verify explain's existing refusal path
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/verify/test_attribution.py
+  reason: ad-hoc candidate-commit batch construction needs a commit-relative diff
+    helper in gitio.py, wired into verify explain's existing refusal path
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_gitio.py
+  reason: ad-hoc candidate-commit batch construction needs a commit-relative diff
+    helper in gitio.py, wired into verify explain's existing refusal path
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/testing.md
+  reason: frob:doc anchor for the new gitio commit_diff helper
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/verify/__init__.py
+  reason: export build_ad_hoc_batch so verify_runner.py can import it via the package's
+    normal frob.verify surface
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/verify/test_verify_runner.py
+  reason: unit coverage for _run_explain/_explain_batch's ad-hoc fallback
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tests/unit/test_gitio.py
+  reason: fix path typo -- the real gitio test file is tests/test_gitio.py, not tests/unit/test_gitio.py
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gitio.py
+  reason: fix path typo -- the real gitio test file is tests/test_gitio.py, not tests/unit/test_gitio.py
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: pre-existing land noise from this worktree series showing in the ticket-start
+    diff range
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-2010/ticket.md
+  reason: pre-existing land noise from this worktree series showing in the ticket-start
+    diff range
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-2010/done-report.md
+  reason: pre-existing land noise from this worktree series showing in the ticket-start
+    diff range
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: new test file's subprocess/write_text capability sites need registering
+    in the testsuite node's exec/fs.write via-lists
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump SYS111 ratchet ceiling for the one new exec + fs.write test site
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gitio.py::TestCommitDiff::test_single_commit_reports_its_own_hunk
+- tests/test_gitio.py::TestCommitDiff::test_root_commit_has_no_parent_is_an_error
+- tests/test_gitio.py::TestRecentCommits::test_since_none_returns_limit_bounded_recent_commits
+- tests/test_gitio.py::TestRecentCommits::test_since_a_sha_returns_only_commits_after_it
+- tests/unit/verify/test_attribution.py::TestBuildAdHocBatch::test_covers_a_commit_the_persisted_queue_never_saw
+- tests/unit/verify/test_attribution.py::TestBuildAdHocBatch::test_end_to_end_attributes_through_attribute_batch
+- tests/unit/verify/test_attribution.py::TestBuildAdHocBatch::test_commit_touching_no_resolvable_symbol_is_omitted
+- tests/unit/verify/test_attribution.py::TestBuildAdHocBatch::test_since_bounds_the_candidate_range
+- tests/unit/verify/test_attribution.py::TestBuildAdHocBatch::test_ambiguous_two_commits_reach_the_same_symbol_is_unattributed
+- tests/unit/verify/test_attribution.py::TestBuildAdHocBatch::test_unreadable_git_history_degrades_to_empty_batch
+- tests/unit/verify/test_attribution.py::TestLoadAttributionContext::test_returns_a_usable_snapshot_and_call_graph
+- tests/unit/verify/test_attribution.py::TestLoadAttributionContext::test_build_failure_is_graph_unavailable
+- tests/unit/verify/test_verify_runner.py::TestRunExplainAdHocFallback::test_empty_persisted_queue_still_attributes_via_ad_hoc_history
 designated_repro_test: null
 threat: null
 component: null

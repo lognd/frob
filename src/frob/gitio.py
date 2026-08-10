@@ -469,6 +469,63 @@ def working_diff(root: Path, base: str) -> Result[Diff, GitError]:
     return Ok(Diff(base=mb, hunks=tuple(hunks)))
 
 
+# frob:doc docs/modules/testing.md#public-api
+# frob:ticket T-2018
+def commit_diff(root: Path, commit_sha: str) -> Result[Diff, GitError]:
+    """The delta a single COMMIT introduced (`commit_sha^..commit_sha`),
+    tracked hunks only -- `working_diff`'s COMMIT-relative sibling, for a
+    caller that needs one already-landed commit's own touched-line spans
+    rather than the working tree's delta against a merge-base. T-2018:
+    this is the building block `frob.verify._attribution`'s ad-hoc
+    candidate-commit batch construction needs -- attributing a finding
+    against an arbitrary past commit range, not only the persisted
+    verify-queue's own recorded intents, requires computing the SAME
+    hunk-span shape `_touched_symrefs_for_intent` (`frob.tickets._land`)
+    already consumes for a land-time intent, but for a commit that may be
+    long past `HEAD`'s own merge-base. No untracked-file handling here
+    (unlike `working_diff`): an already-landed commit has no working-tree
+    concept of "untracked" -- everything in its tree is, by definition,
+    tracked at that commit."""
+    diff_result = _run_git(
+        ("diff", f"{commit_sha}^", commit_sha, "--unified=0"), cwd=root
+    )
+    if diff_result.is_err:
+        return Err(diff_result.danger_err)
+    per_file = _parse_unified_diff(diff_result.danger_ok)
+    hunks = _tracked_hunks(per_file)
+    _log.info(
+        "gitio: commit_diff(%s): %d hunk(s)",
+        commit_sha[:12],
+        len(hunks),
+    )
+    return Ok(Diff(base=f"{commit_sha}^", hunks=tuple(hunks)))
+
+
+# frob:doc docs/modules/testing.md#public-api
+# frob:ticket T-2018
+def recent_commits(
+    root: Path, *, since: str | None = None, limit: int | None = None
+) -> Result[tuple[str, ...], GitError]:
+    """Commit shas reachable from `HEAD`, oldest-candidate-range-shaped:
+    `since` given -> every commit in `since..HEAD` (a watermark sha, most
+    commonly); `since=None` -> the `limit`-bounded most recent commits on
+    `HEAD` (a cold-start range with no watermark to anchor on yet).
+    Newest-first (`git log`'s own default order). T-2018: the candidate-
+    commit enumeration `frob.verify._attribution`'s ad-hoc batch
+    construction needs when no persisted verify-queue entry covers the
+    commit that could have caused a finding."""
+    argv: list[str] = ["log", "--format=%H"]
+    if since is not None:
+        argv.append(f"{since}..HEAD")
+    if limit is not None:
+        argv.extend(("-n", str(limit)))
+    result = _run_git(tuple(argv), cwd=root)
+    if result.is_err:
+        return Err(result.danger_err)
+    shas = tuple(line.strip() for line in result.danger_ok.splitlines() if line.strip())
+    return Ok(shas)
+
+
 def _tracked_hunks(per_file: dict[str, list[tuple[int, int]]]) -> list[Hunk]:
     """Flatten the per-file span map from `_parse_unified_diff` into `Hunk`s."""
     hunks: list[Hunk] = []
@@ -513,11 +570,13 @@ __all__ = [
     "Hunk",
     "ProcResult",
     "SpawnRecorder",
+    "commit_diff",
     "common_dir_and_branch",
     "current_branch",
     "excerpt",
     "git_common_dir",
     "repo_root",
+    "recent_commits",
     "reset_common_dir_cache",
     "run_argv",
     "spawn_recorder",

@@ -53,6 +53,7 @@ some findings and silently skipping others."""
 
 from __future__ import annotations
 
+import re
 from collections import deque
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
@@ -240,6 +241,28 @@ def _load_snapshot_and_call_graph(root: Path):  # noqa: ANN201
     return snapshot, call_graph
 
 
+# frob:doc docs/modules/testing.md#ad-hoc-attribution-t-2018
+# frob:ticket T-2018
+# frob:tests tests/unit/verify/test_attribution.py::TestLoadAttributionContext.test_returns_a_usable_snapshot_and_call_graph  # noqa: E501
+def load_attribution_context(
+    root: Path,
+) -> Result[tuple, AttributionError]:
+    """T-2018: the public seam a CALLER (e.g. `frob verify explain`)
+    builds ONCE and threads through both `build_ad_hoc_batch` (needs the
+    snapshot half) and `attribute_batch`'s own `graph_and_calls=`
+    parameter (needs both halves) -- so a single `frob verify explain`
+    invocation pays for exactly one graph load/build, never two, even
+    though it now needs the graph for two different purposes (finding
+    the candidate commits' touched symbols, AND resolving the finding's
+    own symbol / walking reachability). Thin wrapper over `_load_
+    snapshot_and_call_graph`, made public rather than reaching across
+    the package boundary at a private name."""
+    loaded = _load_snapshot_and_call_graph(root)
+    if loaded is None:
+        return Err(AttributionError.GraphUnavailable)
+    return Ok(loaded)
+
+
 # frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
 # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_caller_break_attributes_to_the_caller_commit  # noqa: E501
 # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_two_reaching_commits_is_unattributed  # noqa: E501
@@ -292,6 +315,147 @@ def attribute_batch(
         for entry in findings
     )
     return Ok(results)
+
+
+#: T-2018: cold-start candidate-commit window when no watermark exists yet
+#: to anchor an ad-hoc attribution range on (this repo's own state at
+#: T-2018's own measurement time, `frob verify status` -> `watermark:
+#: (none yet)`) -- bounded the same way `_DEFAULT_MAX_DEPTH`/`_DEFAULT_
+#: MAX_NODES` bound the reachability walk above: a real-world repo's
+#: commit history is effectively unbounded, so an ad-hoc query with no
+#: better anchor must still be a bounded, best-effort probe, not an
+#: unbounded `git log`.
+_DEFAULT_AD_HOC_COMMIT_LIMIT = 50
+
+#: A `T-####`-shaped token in a commit subject line -- the same shape
+#: `frob.tickets._land._directive_ticket_ids_in_diff` and this repo's own
+#: commit-message convention (`docs(tickets): land T-1234 ...`) already
+#: use; local here rather than imported since `_land.py`'s own version is
+#: diff-body-scoped (finds directives across many lines), not a single
+#: commit-subject probe.
+_TICKET_ID_IN_SUBJECT = re.compile(r"T-[0-9]{4,}")
+
+
+def _commit_subject(root: Path, commit_sha: str) -> str:
+    """`commit_sha`'s own one-line subject, or `""` on any git failure --
+    best-effort only, `build_ad_hoc_batch`'s `ticket_id` field is
+    informational (which land this candidate came from), never load-
+    bearing for the reachability decision itself."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(("git", "-C", str(root), "log", "-1", "--format=%s", commit_sha))
+    if spawned.is_err:
+        return ""
+    return spawned.danger_ok.stdout.strip()
+
+
+# T-2018: NOT a reimplementation of `frob.tickets._land.
+# _touched_symrefs_for_intent` reached through a different import (that
+# function's own home is a good one -- land-time intent recording,
+# scoped to `frob.tickets`); this is the SAME span-overlap algorithm,
+# duplicated locally for the identical reason `_land.py`'s own
+# `frob:waive DUP001` states: a cross-package private import from
+# `frob.verify` back into `frob.tickets._land` is a worse coupling than
+# one small, stable, well-tested function living in each of its two
+# natural homes. `attribute_batch` itself is NOT duplicated anywhere --
+# this only builds its `batch` argument from a different data source.
+def _touched_symrefs(diff, snapshot) -> tuple[str, ...]:  # noqa: ANN001
+    """Every symbol in `snapshot` whose span overlaps a `diff` hunk in the
+    same file, sorted for determinism."""
+    hunks_by_file: dict[str, list[tuple[int, int]]] = {}
+    for hunk in diff.hunks:
+        hunks_by_file.setdefault(hunk.file, []).append(hunk.span)
+    touched: set[str] = set()
+    for record in snapshot.symbols.values():
+        for span in hunks_by_file.get(record.id.path, ()):
+            if span[0] <= record.span[1] and record.span[0] <= span[1]:
+                touched.add(record.symref)
+                break
+    return tuple(sorted(touched))
+
+
+# frob:doc docs/modules/testing.md#ad-hoc-attribution-t-2018
+# frob:ticket T-2018
+# frob:tests tests/unit/verify/test_attribution.py::TestBuildAdHocBatch.test_covers_a_commit_the_persisted_queue_never_saw  # noqa: E501
+def build_ad_hoc_batch(
+    root: Path,
+    *,
+    snapshot,  # noqa: ANN001 -- GraphSnapshot, deferred-import type (module docstring's own convention)
+    since: str | None = None,
+    limit: int = _DEFAULT_AD_HOC_COMMIT_LIMIT,
+) -> tuple[VerifyQueueEntry, ...]:
+    """T-2018: the answer to "the persisted verify queue is empty (or does
+    not cover the commit I need), attribute against recent git history
+    instead" -- reusing `attribute_batch` UNCHANGED, never duplicating
+    its reachability logic (module docstring's own "AMBIGUITY IS A
+    FIRST-CLASS OUTCOME" rule still applies to every `Attribution` this
+    batch feeds into `attribute_batch`).
+
+    For each commit sha `frob.gitio.recent_commits(root, since=since,
+    limit=limit)` returns (every commit since a watermark sha when
+    `since` is given, else the `limit`-bounded most recent commits on
+    `HEAD` for a cold start with no watermark), computes that commit's
+    own diff (`frob.gitio.commit_diff`, NOT `working_diff` -- this walks
+    PAST commits, not the current working tree) and the symbols it
+    touched (`_touched_symrefs`, over the SAME `snapshot` every candidate
+    is checked against, so reachability from every candidate targets the
+    identical symbol identity space). A commit whose diff fails to
+    compute, or that touches no resolvable symbol, is silently OMITTED
+    from the returned batch (logged at INFO) rather than raising --
+    matching `_record_verify_intent_for_landed_commit`'s own "an
+    unresolvable commit is a liability, never a reason to abort the
+    whole query" posture; `profile="ad-hoc"` marks every synthesized
+    entry as NOT a real recorded land intent, so a caller inspecting the
+    batch (e.g. a future audit of what fed an attribution) can tell the
+    two provenances apart."""
+    from frob.gitio import commit_diff, recent_commits
+
+    shas = recent_commits(root, since=since, limit=limit)
+    if shas.is_err:
+        _log.warning(
+            "attribution: build_ad_hoc_batch: could not list commits (since=%r): %s",
+            since,
+            shas.danger_err,
+        )
+        return ()
+
+    entries: list[VerifyQueueEntry] = []
+    for sha in shas.danger_ok:
+        diff = commit_diff(root, sha)
+        if diff.is_err:
+            _log.info(
+                "attribution: build_ad_hoc_batch: %s diff unavailable (%s), omitting",
+                sha[:12],
+                diff.danger_err,
+            )
+            continue
+        touched = _touched_symrefs(diff.danger_ok, snapshot)
+        if not touched:
+            _log.info(
+                "attribution: build_ad_hoc_batch: %s touched no resolvable "
+                "symbol, omitting",
+                sha[:12],
+            )
+            continue
+        subject = _commit_subject(root, sha)
+        match = _TICKET_ID_IN_SUBJECT.search(subject)
+        ticket_id = match.group(0) if match else "unknown"
+        entries.append(
+            VerifyQueueEntry(
+                commit_sha=sha,
+                ticket_id=ticket_id,
+                touched_symbols=touched,
+                enqueued_at="",
+                profile="ad-hoc",
+            )
+        )
+    _log.info(
+        "attribution: build_ad_hoc_batch: %d candidate commit(s) examined, "
+        "%d yielded a resolvable touched-symbol set",
+        len(shas.danger_ok),
+        len(entries),
+    )
+    return tuple(entries)
 
 
 def _parse_finding(
@@ -419,4 +583,6 @@ __all__ = [
     "Attribution",
     "AttributionError",
     "attribute_batch",
+    "build_ad_hoc_batch",
+    "load_attribution_context",
 ]

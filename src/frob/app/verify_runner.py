@@ -299,12 +299,58 @@ def _print_attribution_human(r: Renderer, attribution) -> None:  # noqa: ANN001
         sys.exit(1)
 
 
+# frob:ticket T-2018
+def _explain_batch(root: Path, snapshot) -> tuple:  # noqa: ANN001, ANN201 -- (VerifyQueueEntry, ...), deferred-import types
+    """T-2018: `_run_explain`'s candidate-commit batch, no longer just
+    the persisted verify queue (which is empty whenever a sweep has not
+    happened to enqueue the RIGHT commit, or has already compacted past
+    it once the watermark advanced -- the exact "queue is empty, nothing
+    to attribute against" refusal this ticket measured and fixed).
+    Merges the persisted queue (`queue_status`, real recorded land
+    intents, given priority on a duplicate commit sha) with an ad-hoc
+    batch built from real git history (`build_ad_hoc_batch`, anchored at
+    the current watermark's commit sha when one exists, else a bounded
+    recent-commit window for a cold start) -- so `frob verify explain`
+    can attribute a finding whether or not a sweep ever enqueued the
+    commit that caused it. A `queue_status` failure is logged and
+    degrades to ad-hoc-only, never a hard refusal -- the ad-hoc half
+    alone is still real, useful data."""
+    from frob.verify import build_ad_hoc_batch, load_watermark, queue_status
+
+    queue = queue_status(root)
+    persisted = queue.danger_ok if queue.is_ok else ()
+    if queue.is_err:
+        _log.warning(
+            "verify explain: queue unreadable (%s), falling back to ad-hoc "
+            "attribution only",
+            queue.danger_err,
+        )
+
+    watermark = load_watermark(root)
+    since = (
+        watermark.danger_ok.commit_sha
+        if watermark.is_ok and watermark.danger_ok is not None
+        else None
+    )
+    ad_hoc = build_ad_hoc_batch(root, snapshot=snapshot, since=since)
+
+    seen_shas = {entry.commit_sha for entry in persisted}
+    return tuple(persisted) + tuple(
+        entry for entry in ad_hoc if entry.commit_sha not in seen_shas
+    )
+
+
 def _run_explain(cfg: AppConfig) -> None:
     """`frob verify explain RULE:FILE[:LINE]`: print the attribution
     reachability path -- the chain of symbol references that let
     `attribute_batch` assign this finding to a commit -- so an
-    attribution is auditable evidence, not a bare assertion."""
-    from frob.verify import attribute_batch, queue_status
+    attribution is auditable evidence, not a bare assertion. T-2018: no
+    longer refuses just because the persisted verify queue is empty --
+    `_explain_batch` widens the candidate set with real git history so
+    an operator holding a single `frob check` finding (rule id + file[:
+    line]) can get it attributed, or an honest `unattributed` with named
+    candidates, without a sweep having enqueued anything first."""
+    from frob.verify import attribute_batch, load_attribution_context
 
     root = _resolve_root(cfg)
     parsed = _parse_finding_arg(cfg.verify_finding or "")
@@ -313,19 +359,25 @@ def _run_explain(cfg: AppConfig) -> None:
         sys.exit(1)
     rule_id, file, line = parsed
 
-    queue = queue_status(root)
-    if queue.is_err:
-        _log.error("verify explain: queue unreadable: %s", queue.danger_err)
+    context = load_attribution_context(root)
+    if context.is_err:
+        _log.error("verify explain: %s", context.danger_err)
         sys.exit(1)
-    batch = queue.danger_ok
+    snapshot, call_graph = context.danger_ok
+
+    batch = _explain_batch(root, snapshot)
     if not batch:
         _log.error(
-            "verify explain: verify queue is empty, nothing to attribute against"
+            "verify explain: no candidate commit(s) found -- persisted "
+            "queue and ad-hoc git history both yielded nothing to "
+            "attribute against"
         )
         sys.exit(1)
 
     finding = (rule_id, file, line) if line is not None else (rule_id, file)
-    result = attribute_batch(root, [finding], batch)
+    result = attribute_batch(
+        root, [finding], batch, graph_and_calls=(snapshot, call_graph)
+    )
     if result.is_err:
         _log.error("verify explain: %s", result.danger_err)
         sys.exit(1)

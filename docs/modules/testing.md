@@ -214,6 +214,36 @@ declares anything for `strata` at all -- T-0149's per-repo `[[test.runner]]`
 path still works for any OTHER command a repo wants, but is no longer
 required for this one.
 
+<a id="ad-hoc-attribution-t-2018"></a>
+## Ad-hoc attribution against real git history (T-2018)
+
+`frob verify explain RULE:FILE[:LINE]` used to refuse outright whenever
+`.frob/verify-queue.json` was empty -- "verify queue is empty, nothing to
+attribute against" -- even though the commit that actually caused a
+finding was often still findable in ordinary git history. `frob.verify.
+_attribution.build_ad_hoc_batch(root, snapshot=..., since=None, limit=50)`
+is the fix: it walks candidate commits via `frob.gitio.recent_commits`
+(every commit since a watermark sha when one exists, else a bounded
+recent window for a cold start), computes each candidate's OWN diff via
+`frob.gitio.commit_diff` (the commit-relative sibling of `working_diff`),
+and resolves the symbols each commit touched -- the exact same span-
+overlap join `frob.tickets._land._touched_symrefs_for_intent` already
+performs at land time, duplicated locally rather than imported across
+the `frob.verify` / `frob.tickets` package boundary (the same DUP001
+waiver precedent that function's own module already documents).
+
+The resulting `tuple[VerifyQueueEntry, ...]` feeds `frob.verify.
+attribute_batch` UNCHANGED -- `build_ad_hoc_batch` only widens WHERE the
+candidate batch comes from, never how reachability or ambiguity is
+decided; an ad-hoc entry's `profile` is stamped `"ad-hoc"` so it stays
+distinguishable from a real recorded land intent. `frob.verify.
+load_attribution_context(root)` is the public seam that loads/builds the
+graph snapshot + call graph ONCE, threaded through to both `build_ad_hoc_
+batch` (needs the snapshot) and `attribute_batch`'s own `graph_and_calls=`
+(needs both), so `frob verify explain` pays for exactly one graph
+load/build per invocation, not two, even though it now needs the graph
+for two different purposes.
+
 ## Public API
 
 T-1067: `frob.gitio.excerpt` (stdout/stderr blob -> last-N-lines truncation)
@@ -242,6 +272,10 @@ cause).
 
 <!-- frob:describes src/frob/gitio.py::repo_root -->
 <!-- frob:describes src/frob/gitio.py::working_diff -->
+<!-- frob:describes src/frob/gitio.py::commit_diff -->
+<!-- frob:describes src/frob/gitio.py::recent_commits -->
+<!-- frob:describes src/frob/verify/_attribution.py::build_ad_hoc_batch -->
+<!-- frob:describes src/frob/verify/_attribution.py::load_attribution_context -->
 <!-- frob:describes src/frob/gitio.py::current_branch -->
 <!-- frob:describes src/frob/gitio.py::run_argv -->
 <!-- frob:describes src/frob/gitio.py::spawn_recorder -->
@@ -280,6 +314,17 @@ def repo_root(start: Path) -> Result[Path, GitError]
     # worktree (.git file indirection is git's problem, not ours).
 def working_diff(root: Path, base: str) -> Result[Diff, GitError]
     # merge-base(HEAD, base) .. worktree, including uncommitted changes.
+def commit_diff(root: Path, commit_sha: str) -> Result[Diff, GitError]
+    # commit_sha^..commit_sha -- one already-landed commit's own delta,
+    # tracked hunks only (no working-tree/untracked concept for a past
+    # commit). working_diff's COMMIT-relative sibling (T-2018): built for
+    # frob.verify._attribution.build_ad_hoc_batch, which needs a PAST
+    # commit's touched-line spans, not the working tree's delta.
+def recent_commits(root: Path, *, since: str | None = None,
+                    limit: int | None = None) -> Result[tuple[str, ...], GitError]
+    # Commit shas reachable from HEAD: since given -> since..HEAD; since
+    # =None -> the limit most recent commits on HEAD. T-2018: the
+    # candidate-commit enumeration build_ad_hoc_batch walks.
 def current_branch(root: Path) -> Result[str, GitError]
 def run_argv(argv: Sequence[str], *, cwd: Path | None = None,
              timeout_s: float = 30.0,

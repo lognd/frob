@@ -11,10 +11,12 @@ import pytest
 
 from frob.gitio import (
     GitError,
+    commit_diff,
     common_dir_and_branch,
     current_branch,
     excerpt,
     git_common_dir,
+    recent_commits,
     repo_root,
     reset_common_dir_cache,
     run_argv,
@@ -488,6 +490,105 @@ class TestSpawnRecorder:
         result = run_argv(["echo", "no-recorder"], cwd=tmp_path)
         assert result.is_ok
         assert result.danger_ok.stdout.strip() == "no-recorder"
+
+
+# frob:ticket T-2018
+class TestCommitDiff:
+    """`commit_diff` (T-2018): the COMMIT-relative sibling of
+    `working_diff` -- one already-landed commit's own touched-line spans,
+    the building block `frob.verify._attribution.build_ad_hoc_batch`
+    needs to attribute a finding against past commits, not only the
+    current working tree."""
+
+    def test_single_commit_reports_its_own_hunk(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::commit_diff kind="unit"
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "a.py").write_text("def fn():\n    pass\n")
+        _commit(repo, "init")
+        sha1 = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        (repo / "a.py").write_text("def fn():\n    return 1\n")
+        _commit(repo, "change fn")
+        sha2 = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        assert sha1 != sha2
+
+        result = commit_diff(repo, sha2)
+        assert result.is_ok
+        diff = result.danger_ok
+        assert any(hunk.file == "a.py" for hunk in diff.hunks)
+
+    def test_root_commit_has_no_parent_is_an_error(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::commit_diff kind="unit"
+        # A repo's very first commit has no `^` parent -- `git diff` on it
+        # fails, and this must surface as GitFailed, never crash.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "a.py").write_text("x = 1\n")
+        _commit(repo, "init")
+        sha1 = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        result = commit_diff(repo, sha1)
+        assert result.is_err
+        assert result.danger_err is GitError.GitFailed
+
+
+# frob:ticket T-2018
+class TestRecentCommits:
+    """`recent_commits` (T-2018): the candidate-commit enumeration
+    `build_ad_hoc_batch` walks."""
+
+    def test_since_none_returns_limit_bounded_recent_commits(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gitio.py::recent_commits kind="unit"
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        for i in range(5):
+            (repo / "a.txt").write_text(f"v{i}\n")
+            _commit(repo, f"commit {i}")
+
+        result = recent_commits(repo, limit=2)
+        assert result.is_ok
+        assert len(result.danger_ok) == 2
+
+    def test_since_a_sha_returns_only_commits_after_it(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::recent_commits kind="unit"
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "a.txt").write_text("v0\n")
+        _commit(repo, "commit 0")
+        base_sha = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        (repo / "a.txt").write_text("v1\n")
+        _commit(repo, "commit 1")
+        (repo / "a.txt").write_text("v2\n")
+        _commit(repo, "commit 2")
+
+        result = recent_commits(repo, since=base_sha)
+        assert result.is_ok
+        assert len(result.danger_ok) == 2
+        assert base_sha not in result.danger_ok
 
 
 class TestExcerpt:
