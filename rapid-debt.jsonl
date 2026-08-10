@@ -802,3 +802,4 @@
 {"commit": "6ceabf2f1e3457a04460195f6f7ab0882e993df8", "skipped": "land-evidence-scope-unbound", "ticket": "T-1940"}
 {"commit": "6ceabf2f1e3457a04460195f6f7ab0882e993df8", "skipped": "land-evidence-scope-unbound", "ticket": "T-1940"}
 {"commit": "f229874932714300dabfced67f1eae0c8e4be9f0", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2019"}
+{"commit": "ddd2acfecfe6ba9e783b00240eef4ff45d97e125", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-1940"}
