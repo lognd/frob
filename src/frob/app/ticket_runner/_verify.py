@@ -602,7 +602,64 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
     whose renderer does not happen to match the assumed `file:line CODE`
     shape (`ty`'s `file:line:col` is one such miss). `--json` gives every
     consumer the same structured `CheckResult` a regex was standing in
-    for."""
+    for.
+
+    T-1344 follow-up (T-2053): this spawn was measured as the
+    single largest line item in a typical `frob ticket land` (~209s of a
+    ~95-320s land, docs/guides/agent-playbook.md section 13) and
+    investigated for a safe speedup CONFINED to this file. Conclusion: no
+    safe change exists here alone, and this docstring records why so a
+    future reader does not have to re-derive it.
+
+    - `--only`/family-skipping is NOT safe: `_parse_error_findings_from_
+      json` counts an `error`-severity diagnostic from ANY `ToolResult`
+      (ruff/ty/frob-arch/frob-exports/frob-cycle/frob-dup included, not
+      just `gate:*` families) toward the compared claim -- there is no
+      stage this spawn could skip without silently narrowing what T-0754
+      actually verifies.
+    - `--delta` does NOT reduce wall-clock at all -- confirmed by reading
+      `check/_python.py`: delta filtering happens to the already-computed
+      violation list, after every check still ran in full. It changes
+      what is REPORTED, never what is COMPUTED.
+    - The `gates/_gate_cache.py` digest-keyed per-gate cache (T-1346,
+      on by default) DOES work and DOES matter -- measured directly: two
+      consecutive runs against an IDENTICAL, unchanged tree went from
+      231s to 150s (35% faster), with the most expensive gate families
+      (archgate 32.5s->0.0s, perf 44.8s->0.0s, dead_symbols 12.8s->0.0s,
+      pii_structural 11.9s->0.0s, clones 13.0s->0.0s) dropping to
+      effectively zero on the cache hit. But this spawn NEVER gets that
+      benefit in practice: it always runs against a FRESHLY MERGED tree
+      that has never been measured before, and the highest-cost gate
+      families read broadly enough across the tree that almost any
+      land's own diff intersects their tracked file set, so the cache
+      structurally near-always misses at land time even though it is
+      genuinely warm-cache-capable in principle.
+    - The remaining ~150s floor (identical-tree run, cache fully warm)
+      is spent in the ruff/ty/frob-arch/frob-cycle/frob-dup/frob-exports
+      lint/static tool layer (`check/_python.py`), which the T-1346 gate
+      cache never covers at all -- those tools re-run in full on every
+      single invocation, cached or not.
+
+    What WOULD cheapen this, and where it lives (neither is in this
+    file, both need a decision from whoever owns them): (1) extend an
+    equivalent touched-file digest cache to the lint/static tool layer
+    in `check/_python.py`, the largest single remaining floor once the
+    existing gate cache is already warm; (2) thread the land's own diff
+    (the files actually changed between `pre_land_tip` and the squashed
+    tree, already computed inside `src/frob/tickets/_land.py`/
+    `_land_cmd.py`) into this spawn as an explicit `--only <affected
+    families>` selection, so a small diff only re-verifies the gate/tool
+    families whose tracked dependency set it could plausibly have
+    touched -- this is the one change that could turn the structural
+    near-always-cache-miss above into a near-always-cache-hit, but it
+    needs land's diff, which this closure's `root`/`ticket_id`-only
+    signature does not have and `_land.py` is out of this ticket's
+    scope to change. Separately, `_land_cmd.py`'s `_land_gate_claims_fn`
+    (T-1410) runs its OWN comparably-sized `frob check --only gates`
+    spawn against `worktree` (not `root`) for the acceptance-criteria
+    gate-claim check -- a second, independent cost this investigation
+    did not attempt to quantify or fix, since it lives outside this
+    file too."""
     cache: dict[str, subprocess.CompletedProcess | None] = {}
 
     def spawn() -> subprocess.CompletedProcess | None:
