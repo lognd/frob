@@ -178,6 +178,77 @@ class TestCommitOrphanedNewTicketDirOnlyDrift:
         assert healed is False
 
 
+class TestCommitOrphanedNewTicketDirOnlyDriftMultiple:
+    """T-2046: the SOLE-dirty-path restriction declines exactly the load
+    T-2026 was built for -- multiple interrupted `frob ticket new`
+    invocations coexisting is the NORMAL high-load state, not a rare
+    race (measured: two such directories 30 minutes after T-2026 landed).
+    The fix must heal ALL of them when EVERY dirty path is a valid
+    orphaned ticket dir, and heal NONE of them the instant any dirty path
+    fails to qualify."""
+
+    def test_two_well_formed_orphaned_dirs_are_both_committed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple.test_two_well_formed_orphaned_dirs_are_both_committed  # noqa: E501
+        """FAILS FIRST (T-2046): before the fix, two simultaneous orphaned
+        dirs are declined outright because neither is the SOLE dirty
+        path -- this asserts both get healed in one call."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        _write_orphaned_ticket_dir(root, "T-2050", _TICKET_MD)
+        other = _TICKET_MD.replace("id: T-2050", "id: T-2051")
+        _write_orphaned_ticket_dir(root, "T-2051", other)
+
+        assert _status(root) == "?? tickets/T-2050/\n?? tickets/T-2051/"
+        healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
+        assert healed is True
+        assert _status(root) == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], root).stdout
+        assert "T-2050" in log
+        assert "T-2051" in log
+
+    def test_mixed_valid_dir_plus_modified_tracked_file_commits_nothing(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple.test_mixed_valid_dir_plus_modified_tracked_file_commits_nothing  # noqa: E501
+        """All-or-nothing: one valid untracked ticket dir alongside one
+        modified TRACKED file must decline entirely and commit nothing,
+        not partially heal the valid dir."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        (root / "some_module.py").write_text("x = 1\n")
+        _run(["git", "add", "-A"], root)
+        _run(["git", "commit", "-q", "-m", "seed tracked file"], root)
+        (root / "some_module.py").write_text("x = 2\n")
+        _write_orphaned_ticket_dir(root, "T-2050", _TICKET_MD)
+
+        healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
+        assert healed is False
+        assert "?? tickets/T-2050/" in _status(root)
+        assert "M some_module.py" in _status(root)
+
+    def test_one_unparseable_dir_among_several_commits_nothing(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple.test_one_unparseable_dir_among_several_commits_nothing  # noqa: E501
+        """All-or-nothing: N directories where one fails to parse must
+        result in NO commits at all, even though the others are valid."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        _write_orphaned_ticket_dir(root, "T-2050", _TICKET_MD)
+        other = _TICKET_MD.replace("id: T-2050", "id: T-2051")
+        _write_orphaned_ticket_dir(root, "T-2051", other)
+        _write_orphaned_ticket_dir(root, "T-2052", "not even frontmatter\n")
+
+        healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
+        assert healed is False
+        status = _status(root)
+        assert "?? tickets/T-2050/" in status
+        assert "?? tickets/T-2051/" in status
+        assert "?? tickets/T-2052/" in status
+
+
 class TestRefuseIfMainDirtyOrphanedTicketHeal:
     """`_refuse_if_main_dirty` end to end: the acceptance criterion's own
     before/after shape."""

@@ -2,7 +2,7 @@
 id: T-2046
 title: T-2026's auto-heal requires a SOLE dirty path, so it declines whenever two
   interrupted ticket dirs coexist -- the normal high-load state it was built for
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -11,9 +11,60 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_land.py
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: narrow to the auto-heal guard and its unit test
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/tickets/test_land.py
+  reason: narrow to the auto-heal guard and its unit test
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tests/unit/tickets/test_land.py
+  reason: correct scope to the actual existing test file for this guard
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py
+  reason: correct scope to the actual existing test file for this guard
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_two_well_formed_orphaned_dirs_are_both_committed
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_mixed_valid_dir_plus_modified_tracked_file_commits_nothing
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_one_unparseable_dir_among_several_commits_nothing
+designated_repro_test: tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_two_well_formed_orphaned_dirs_are_both_committed
+acceptance:
+- text: A test with TWO untracked, cleanly-parsing tickets/T-####/ directories asserts
+    the guard fires and both are committed; this test must fail before the fix.
+  evidence:
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_two_well_formed_orphaned_dirs_are_both_committed
+- text: A test that a mixed dirty tree (one valid untracked ticket dir plus one modified
+    tracked file) causes the guard to decline entirely and commit nothing.
+  evidence:
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_two_well_formed_orphaned_dirs_are_both_committed
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_mixed_valid_dir_plus_modified_tracked_file_commits_nothing
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_one_unparseable_dir_among_several_commits_nothing
+- text: A test that N directories where one fails to parse results in no commits at
+    all.
+  evidence:
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_two_well_formed_orphaned_dirs_are_both_committed
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_mixed_valid_dir_plus_modified_tracked_file_commits_nothing
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_one_unparseable_dir_among_several_commits_nothing
+- text: Report whether the two precedent guards in _land_git_ops.py have the same
+    class-vs-instance mismatch, or whether SOLE is genuinely correct for them.
+  evidence:
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_two_well_formed_orphaned_dirs_are_both_committed
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_mixed_valid_dir_plus_modified_tracked_file_commits_nothing
+  - tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDriftMultiple::test_one_unparseable_dir_among_several_commits_nothing
 threat: null
 component: null
 anchor: false
