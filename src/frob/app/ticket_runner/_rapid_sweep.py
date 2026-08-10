@@ -64,6 +64,7 @@ identity count alone be misread as a completeness claim."""
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -154,6 +155,100 @@ def _read_baseline(root: Path) -> frozenset[tuple[str, str]] | None:
             exc,
         )
         return None
+
+
+# frob:ticket T-2009
+# frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_read_baseline_commit_absent_is_none  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_read_baseline_commit_round_trips  # noqa: E501
+def _read_baseline_commit(root: Path) -> str | None:
+    """T-2009: the commit the last recorded baseline was ACTUALLY
+    measured at, as opposed to the `commit_sha` a land passed to
+    `spawn_deferred_post_land_sweep`, which only names the land that
+    SPAWNED the sweep -- not necessarily the tree state the detached
+    sweep actually measured once it finally ran (other agents' lands can
+    and do land in between, since the sweep is deliberately off the land
+    critical path, T-1684). `None` under the same conditions `_read_
+    baseline` returns `None` for (absent/corrupt -- deliberately not "no
+    commits happened", the same "unmeasured is not zero" posture)."""
+    path = _baseline_path(root)
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return str(raw["commit"])
+    except Exception:  # noqa: BLE001 -- same posture as _read_baseline
+        return None
+
+
+#: T-2009: matches a `frob ticket land`-authored commit subject, e.g.
+#: "fix(tickets): land T-1977 <title...>" -- see `_land_ids_between`.
+_LAND_COMMIT_ID_RE = re.compile(r"\bland (T-\d+)\b")
+
+
+# frob:ticket T-2009
+# frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_single_land_in_range  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_multiple_lands_in_range_oldest_first  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_non_land_commits_are_ignored  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_non_repo_returns_empty_list  # noqa: E501
+def _land_ids_between(root: Path, since_commit: str, until_commit: str) -> list[str]:
+    """T-2009: every distinct `T-####` id named in a `land T-####` commit
+    subject reachable in `since_commit..until_commit` (oldest first).
+
+    This is the mechanical fix for misattribution: `run_deferred_post_
+    land_sweep`'s `fresh` measurement reflects whatever `root`'s tree
+    looks like at the moment the DETACHED sweep child actually runs, not
+    the moment it was spawned -- an arbitrary number of OTHER agents'
+    lands can land in between (the sweep is deliberately off the land
+    critical path, T-1684). Blaming `new_findings` solely on the land
+    that happened to spawn this particular sweep process is only correct
+    when exactly one land occurred in that window; this function answers
+    "how many, and which" so the caller can tell the two cases apart
+    instead of guessing. Returns `[]` on any git failure (a non-repo
+    `tmp_path` in tests, or a detached-worktree edge case) so callers
+    degrade to the pre-T-2009 single-attribution behavior rather than
+    raise -- an unmeasurable range must never crash a sweep that has
+    already found real findings to file."""
+    from frob.gitio import run_argv
+
+    result = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--reverse",
+            "--format=%s",
+            f"{since_commit}..{until_commit}",
+        ]
+    )
+    if result.is_err or result.danger_ok.returncode != 0:
+        return []
+    ids: list[str] = []
+    for line in result.danger_ok.stdout.splitlines():
+        match = _LAND_COMMIT_ID_RE.search(line)
+        if match and match.group(1) not in ids:
+            ids.append(match.group(1))
+    return ids
+
+
+# frob:ticket T-2009
+# frob:tests tests/unit/test_rapid_sweep.py::TestResolveActualHead.test_non_repo_falls_back_to_the_given_commit  # noqa: E501
+def _resolve_actual_head(root: Path, fallback: str) -> str:
+    """T-2009: the actual git HEAD of `root` at the moment this sweep's
+    `frob check` finished running, or `fallback` (the land's own
+    `commit_sha`, i.e. the pre-T-2009 assumption) when `root` is not a
+    git worktree or the resolve fails. Recording THIS as the baseline's
+    `commit` (instead of blindly trusting `commit_sha`) is what lets
+    `_land_ids_between` compute an honest window on the NEXT sweep --
+    never worse than the old behavior, since a resolve failure falls
+    straight back to it."""
+    from frob.gitio import run_argv
+
+    result = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
+    if result.is_err or result.danger_ok.returncode != 0:
+        return fallback
+    head = result.danger_ok.stdout.strip()
+    return head or fallback
 
 
 # frob:tests \
@@ -775,7 +870,12 @@ def _true_finding_count_for_identities(
 # tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
 def _file_regression_ticket(
-    root: Path, final_id: str, commit_sha: str, new_findings: frozenset[tuple[str, str]]
+    root: Path,
+    final_id: str,
+    commit_sha: str,
+    new_findings: frozenset[tuple[str, str]],
+    *,
+    attributed_ids: Sequence[str] | None = None,
 ) -> str | None:
     """File one `bug` ticket naming every newly-introduced `(rule_id,
     file)` pair NOT already owned by a still-open ticket, and return its
@@ -784,6 +884,17 @@ def _file_regression_ticket(
     unsound; also `None` when every finding attributes to an
     already-open ticket, since that finding already has a home and
     re-filing it would just be noise).
+
+    T-2009: `attributed_ids`, when given (non-empty), OVERRIDES `final_id`
+    in the filed ticket's own TITLE and first body line only -- every
+    other use of `final_id` in this function (attribution/quarantine
+    logging) is unchanged. This exists because `final_id` names the land
+    that happened to SPAWN this detached sweep, which is not necessarily
+    the same as "the land(s) that actually introduced `new_findings`"
+    when more than one land occurred between the last baseline and the
+    tree this sweep measured (`_land_ids_between`, computed by the
+    caller). `None`/empty falls back to `[final_id]`, i.e. the pre-T-2009
+    behavior, unchanged.
 
     T-1690: each pair is first run through `_partition_findings_by_
     attribution` (tier-2 symbolic reachability over the durable verify
@@ -812,6 +923,7 @@ def _file_regression_ticket(
     are different questions, and conflating them would let a red batch
     whose findings all happen to already be tracked slip past the
     breaker with deferred landing still enabled."""
+    attribution_label = ", ".join(attributed_ids) if attributed_ids else final_id
     from frob.tickets import TicketSpec, new_ticket
     from frob.tickets._models import Origin, Priority, TicketKind
 
@@ -857,8 +969,8 @@ def _file_regression_ticket(
             f"{len(unfiled_pairs)} identit(ies)."
         )
     body_lines = [
-        f"The deferred post-land unscoped sweep (T-1684) for {final_id} at "
-        f"commit {commit_sha} found {len(pairs)} new (rule, file) "
+        f"The deferred post-land unscoped sweep (T-1684) for {attribution_label} "
+        f"at commit {commit_sha} found {len(pairs)} new (rule, file) "
         "identit(ies) that were not present in the previous sweep's "
         "baseline.",
         "",
@@ -868,6 +980,20 @@ def _file_regression_ticket(
         "",
         *(f"- {rule}  {file}" for rule, file in unfiled_pairs),
     ]
+    if attributed_ids and len(attributed_ids) > 1:
+        body_lines += [
+            "",
+            f"T-2009: {len(attributed_ids)} lands ({', '.join(attributed_ids)}) "
+            "landed between the previous sweep's baseline and the commit "
+            "THIS sweep actually measured (the sweep is deliberately "
+            "detached, off the land critical path -- T-1684 -- so other "
+            "agents' lands can land in the window before it runs). Which "
+            "specific land introduced which finding below could not be "
+            "determined without re-measuring at each intermediate commit; "
+            "this ticket is filed against all of them rather than "
+            f"falsely pinned on {final_id} alone (the one that happened "
+            "to spawn this sweep process).",
+        ]
     if attribution_lines:
         body_lines += [
             "",
@@ -892,7 +1018,7 @@ def _file_regression_ticket(
     )
     spec = TicketSpec(
         title=(
-            f"{_REGRESSION_TITLE_PREFIX}{final_id}: {title_count} "
+            f"{_REGRESSION_TITLE_PREFIX}{attribution_label}: {title_count} "
             f"({', '.join(rules[:4])})"
         ),
         kind=TicketKind.BUG,
@@ -923,7 +1049,7 @@ def _file_regression_ticket(
         )
         return None
     regression_id = created.danger_ok.id
-    _commit_regression_ticket(root, regression_id, final_id)
+    _commit_regression_ticket(root, regression_id, attribution_label)
     return regression_id
 
 
@@ -1283,8 +1409,19 @@ def run_deferred_post_land_sweep(
         )
         return Err(RapidSweepError.Unmeasurable)
 
+    # T-2009: the baseline's `commit` must record what was ACTUALLY
+    # measured (this sweep's real HEAD at the moment `fresh` finished),
+    # not `commit_sha` (the land that merely SPAWNED this detached
+    # process) -- other agents' lands routinely land in between, since
+    # taking the sweep off the land critical path (T-1684) is the whole
+    # point. `prev_baseline_commit` (read BEFORE the rewrite below) is
+    # what lets the NEXT sweep compute an honest land-range via
+    # `_land_ids_between` instead of guessing.
+    prev_baseline_commit = _read_baseline_commit(root)
+    actual_head = _resolve_actual_head(root, commit_sha)
+
     baseline = _read_baseline(root)
-    _write_baseline(root, fresh, commit_sha)
+    _write_baseline(root, fresh, actual_head)
     if baseline is None:
         _log.warning(
             "rapid sweep: %s had no rolling baseline -- recorded %d "
@@ -1324,7 +1461,33 @@ def run_deferred_post_land_sweep(
         )
         return Ok(None)
 
-    filed = _file_regression_ticket(root, final_id, commit_sha, new_findings)
+    # T-2009: only trust `final_id` as the sole attribution when the
+    # window between the previous baseline and this sweep's actual HEAD
+    # contains exactly one land -- otherwise name every land that
+    # occurred in it, so the filed ticket is never pinned on the wrong
+    # (or merely coincidental) land.
+    attributed_ids: list[str] | None = None
+    if prev_baseline_commit and prev_baseline_commit != actual_head:
+        land_ids = _land_ids_between(root, prev_baseline_commit, actual_head)
+        if len(land_ids) > 1:
+            attributed_ids = land_ids
+            _log.warning(
+                "rapid sweep: %s: %d lands (%s) landed between the last "
+                "sweep baseline and the tree this sweep actually "
+                "measured -- attributing the regression to all of them "
+                "instead of just %s (T-2009)",
+                final_id,
+                len(land_ids),
+                ", ".join(land_ids),
+                final_id,
+            )
+
+    if attributed_ids is not None:
+        filed = _file_regression_ticket(
+            root, final_id, actual_head, new_findings, attributed_ids=attributed_ids
+        )
+    else:
+        filed = _file_regression_ticket(root, final_id, actual_head, new_findings)
     _log.error(
         "rapid sweep: %s deferred unscoped sweep found %d NEW (rule, "
         "file) identit(ies) at %s -- filed as %s (the commit stands; "
@@ -1333,7 +1496,7 @@ def run_deferred_post_land_sweep(
         "the filed ticket's body for the caveat)",
         final_id,
         len(new_findings),
-        commit_sha[:12],
+        actual_head[:12],
         filed or "UNFILED",
     )
     return Ok(filed)

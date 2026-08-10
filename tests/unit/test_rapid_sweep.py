@@ -14,14 +14,49 @@ from frob.app.ticket_runner._rapid_sweep import (
     _attribute_new_findings,
     _close_resolved_sweep_tickets,
     _file_regression_ticket,
+    _land_ids_between,
     _parse_sweep_ticket_identities,
     _read_baseline,
+    _read_baseline_commit,
+    _resolve_actual_head,
     _ticket_is_open,
     _true_finding_count_for_identities,
     _write_baseline,
     run_deferred_post_land_sweep,
     spawn_deferred_post_land_sweep,
 )
+
+
+def _init_git_repo(root: Path) -> None:
+    """A minimal real git repo for T-2009's `_land_ids_between`/`_resolve_
+    actual_head` tests -- these shell out to real `git log`/`rev-parse`,
+    unlike most of this module's tests which use a plain `tmp_path`."""
+    import subprocess
+
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(
+        ["git", "-C", str(root), "config", "user.email", "test@example.com"],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(root), "config", "user.name", "Test"], check=True
+    )
+
+
+def _git_commit(root: Path, message: str) -> str:
+    """One empty, real commit with `message`; returns its full sha."""
+    import subprocess
+
+    subprocess.run(
+        ["git", "-C", str(root), "commit", "--allow-empty", "-q", "-m", message],
+        check=True,
+    )
+    return subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
 
 class TestRollingBaseline:
@@ -50,6 +85,74 @@ class TestRollingBaseline:
             )
         )
         assert stored["commit"] == "deadbeef" * 5
+
+    def test_read_baseline_commit_absent_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_read_baseline_commit_absent_is_none  # noqa: E501
+        assert _read_baseline_commit(tmp_path) is None
+
+    def test_read_baseline_commit_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_read_baseline_commit_round_trips  # noqa: E501
+        _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "abc123")
+        assert _read_baseline_commit(tmp_path) == "abc123"
+
+
+class TestLandIdsBetween:
+    """T-2009: the mechanical fix for misattribution -- tell how many
+    lands (and which) actually landed in a commit range, instead of
+    assuming it was always exactly the one that spawned this sweep."""
+
+    def test_single_land_in_range(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_single_land_in_range  # noqa: E501
+        _init_git_repo(tmp_path)
+        start = _git_commit(tmp_path, "chore: init")
+        _git_commit(tmp_path, "fix(tickets): land T-1001 something")
+        end = _git_commit(tmp_path, "chore(rapid): record T-1001's deferred sweep")
+        assert _land_ids_between(tmp_path, start, end) == ["T-1001"]
+
+    def test_multiple_lands_in_range_oldest_first(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_multiple_lands_in_range_oldest_first  # noqa: E501
+        _init_git_repo(tmp_path)
+        start = _git_commit(tmp_path, "chore: init")
+        _git_commit(tmp_path, "fix(tickets): land T-1977 first fix")
+        _git_commit(tmp_path, "chore(rapid): record T-1977's deferred sweep")
+        _git_commit(tmp_path, "feat(tickets): land T-1995 second fix")
+        end = _git_commit(tmp_path, "chore(rapid): record T-1995's deferred sweep")
+        # T-1998's real misattribution shape: two lands landed in the
+        # window this sweep measured, so both must be named -- neither
+        # gets silently dropped, and order is oldest-first (git log
+        # --reverse).
+        assert _land_ids_between(tmp_path, start, end) == ["T-1977", "T-1995"]
+
+    def test_non_land_commits_are_ignored(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_non_land_commits_are_ignored  # noqa: E501
+        _init_git_repo(tmp_path)
+        start = _git_commit(tmp_path, "chore: init")
+        _git_commit(tmp_path, "chore(tickets): file T-2000")
+        _git_commit(tmp_path, "fix(tickets): land T-2001 real fix")
+        end = _git_commit(tmp_path, "chore: unrelated housekeeping")
+        assert _land_ids_between(tmp_path, start, end) == ["T-2001"]
+
+    def test_non_repo_returns_empty_list(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestLandIdsBetween.test_non_repo_returns_empty_list  # noqa: E501
+        # tmp_path is not a git repo -- degrade to [] rather than raise,
+        # so a caller falls back to the pre-T-2009 single-attribution
+        # behavior instead of crashing an otherwise-successful sweep.
+        assert _land_ids_between(tmp_path, "abc", "def") == []
+
+
+class TestResolveActualHead:
+    def test_non_repo_falls_back_to_the_given_commit(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestResolveActualHead.test_non_repo_falls_back_to_the_given_commit  # noqa: E501
+        assert _resolve_actual_head(tmp_path, "fallback-sha") == "fallback-sha"
+
+    def test_real_repo_resolves_the_true_head(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestResolveActualHead.test_real_repo_resolves_the_true_head  # noqa: E501
+        _init_git_repo(tmp_path)
+        _git_commit(tmp_path, "chore: init")
+        real_head = _git_commit(tmp_path, "chore: second commit")
+        # "fallback-sha" is deliberately NOT the real head -- proving the
+        # real HEAD is what's returned, not the caller's own guess.
+        assert _resolve_actual_head(tmp_path, "fallback-sha") == real_head
 
 
 class TestDeferredSweepRun:
@@ -1348,3 +1451,64 @@ class TestDeferredSweepClosesResolvedRegressions:
         queue = load_queue(tmp_path)
         assert queue.is_ok
         assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
+
+
+class TestDeferredSweepMultiLandAttribution:
+    """T-2009, end-to-end: the T-1998 measured shape -- two real lands
+    happen between the previous baseline and the tree THIS sweep
+    actually measures (the sweep is detached, off the land critical
+    path, so other agents' lands routinely land in the window before it
+    runs). The regression must be attributed to BOTH lands, never
+    silently pinned on whichever one happened to spawn this sweep
+    process."""
+
+    def test_two_lands_in_the_window_are_both_named_not_just_the_spawning_one(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepMultiLandAttribution.test_two_lands_in_the_window_are_both_named_not_just_the_spawning_one  # noqa: E501
+        _init_git_repo(tmp_path)
+        c0 = _git_commit(tmp_path, "chore: init")
+        _write_baseline(tmp_path, frozenset(), c0)
+
+        # Land T-1977 lands (this is the sweep that gets SPAWNED)...
+        _git_commit(tmp_path, "fix(tickets): land T-1977 first fix")
+        # ...but before its detached sweep child actually gets to run,
+        # T-1995 ALSO lands (this is exactly the T-1998 incident: the
+        # sweep is off the critical path on purpose, T-1684, so this is
+        # normal, not a race bug). The real HEAD by the time the check
+        # runs is past BOTH lands.
+        real_head = _git_commit(tmp_path, "feat(tickets): land T-1995 second fix")
+
+        # The new finding actually lives in a file T-1995 touched -- the
+        # exact T-1998 shape (misattributed to T-1977, whose files were
+        # never involved).
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset({("F401", "t1995_file.py")}),
+        )
+        # `_resolve_actual_head` reads the real git HEAD of tmp_path
+        # (real_head) -- the sweep was merely SPAWNED naming T-1977 and
+        # commit_sha=stale-spawn-sha (a stale value by the time it
+        # actually runs).
+        result = run_deferred_post_land_sweep(tmp_path, "T-1977", "stale-spawn-sha")
+        assert result.is_ok
+        filed = result.danger_ok
+        assert filed is not None
+
+        from frob.tickets import load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        ticket = queue.danger_ok.tickets[filed]
+        title = ticket.title
+        body = ticket.body
+        # Before T-2009's fix: title/body named ONLY "T-1977" -- the land
+        # that spawned the sweep, not the land whose files actually went
+        # red. Both must be named now.
+        assert "T-1977" in title
+        assert "T-1995" in title
+        assert "T-1995" in body
+        # The baseline's own recorded commit must be the REAL head this
+        # sweep measured, not the stale spawn-time commit_sha -- this is
+        # what lets the NEXT sweep compute an honest window in turn.
+        assert _read_baseline_commit(tmp_path) == real_head
