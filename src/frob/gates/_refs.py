@@ -9,31 +9,49 @@ being justified at all. This module closes that gap generically, over
 EVERY git-tracked file regardless of type (source, docs, config, data,
 assets) -- not just the languages `frob.lang` knows how to parse.
 
-Detection is two-layered:
+Detection is three-layered (T-1665 adds the first):
 
-1. AUTO-SCAN (cross-type, language-agnostic): file X counts as referenced
-   by file Y if Y names X (full repo-relative path or bare basename) in a
-   real reference SYNTACTIC position -- a markdown link, a quoted string
-   literal, a backtick-wrapped MULTI-COMPONENT path mention (contains a
-   `/` -- e.g. `` `docs/rework.md` ``, the repo's own doc convention;
-   T-0467), a `frob:doc`/`frob:describes`/`frob:used-by`/`frob:tests`
-   directive target, or a Python import (`from X import a, b, c`, a
-   parenthesized/multi-line import list, or a plain `import a, b.c`) --
-   NEVER a bare prose/table mention or a backtick-wrapped bare identifier
-   (round-2, reviewer-caught:
-   a naive whole-text substring match produced an 86% false-positive
-   rate, both false ORPHANS -- import lists only resolving their module
-   prefix, never the imported names -- and false PASSES -- a doc's prose
-   mention of a filename counted as a reference). For `.py` TARGETS ONLY,
-   a bare imported name / quoted module-name string also resolves via the
-   target's extensionless stem (`_tokens_reach`'s docstring has the full
-   reasoning for why that shortcut is restricted to Python targets).
+0. RESOLVED IMPORT (`.py` targets only, `frob.graph.imports.build_import_
+   graph`): a real AST-resolved `import`/`from ... import` edge, computed
+   over every tracked `.py` file once per `ref_gate` run. This REPLACES
+   the old text-regex Python-import parsing and, more importantly, the
+   bare-stem "quoted string / imported name matches a `.py` file's
+   extensionless stem" shortcut the AUTO-SCAN layer used to rely on for
+   Python targets (`_tokens_reach`'s old docstring called this out as the
+   riskiest heuristic in the module). That shortcut produced exactly the
+   false COMFORT T-1665 was filed to remove: a dynamic dispatch table's
+   bare quoted module-name string, or an `importlib.import_module(...)`
+   call, LOOKED like a reference (the string equals the target's stem)
+   without the substrate actually knowing whether that string is ever
+   evaluated to reach this specific file. A target reachable only through
+   one of THOSE shapes now reports `Severity.UNRESOLVED`, T-1664's third
+   outcome, instead of a silent false pass or a false REF001 (see
+   `_unresolved_python_target` below) -- honest "cannot determine",
+   never "definitely referenced" on a guess.
+1. AUTO-SCAN (cross-type, language-agnostic, all NON-.py-import cases):
+   file X counts as referenced by file Y if Y names X (full repo-relative
+   path or bare basename) in a real reference SYNTACTIC position -- a
+   markdown link, a quoted string literal, a backtick-wrapped
+   MULTI-COMPONENT path mention (contains a `/` -- e.g. `` `docs/rework.
+   md` ``, the repo's own doc convention; T-0467), a `frob:doc`/
+   `frob:describes`/`frob:used-by`/`frob:tests` directive target, or a
+   non-Python `require`/`include`/`use` statement -- NEVER a bare prose/
+   table mention or a backtick-wrapped bare identifier (round-2,
+   reviewer-caught: a naive whole-text substring match produced an 86%
+   false-positive rate, both false ORPHANS -- import lists only resolving
+   their module prefix, never the imported names -- and false PASSES -- a
+   doc's prose mention of a filename counted as a reference). This layer
+   is deliberately NARROW and stays that way for what layer 0's Python
+   substrate cannot see at all (T-1665: "non-code targets have no import
+   edges, and the substrate is Python-only, so a pure-import REF001 would
+   go blind on every other language") -- a doc, a config file, a data
+   file, or a non-Python source file.
 2. DECLARED (`frob:used-by <consumer>`): a file can name its own consumer
-   explicitly, for references the auto-scan structurally cannot see (a
-   path built at runtime, a glob loaded by a directory base). Every
+   explicitly, for references neither layer above can structurally see
+   (a path built at runtime, a glob loaded by a directory base). Every
    declaration is VERIFIED, not trusted: the named consumer must be a
-   tracked file AND must itself reach the declaring file (same
-   syntactic-position check, in reverse) -- a declaration naming a
+   tracked file AND must itself reach the declaring file (same combined
+   layer-0/layer-1 check, in reverse) -- a declaration naming a
    nonexistent or non-reaching consumer is REF003, not a silent pass.
    This is the anti-lie half of the ticket: a `frob:used-by` cannot
    manufacture a reference that isn't real.
@@ -96,9 +114,13 @@ from typing import NamedTuple
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.gates._tracked_files import tracked_files as _shared_tracked_files
+from frob.graph.imports import ImportGraph, UnresolvedImport, build_import_graph
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
+
+# frob:ticket T-1665
+_PY_SUFFIX = ".py"
 
 __all__ = ["ref_gate"]
 
@@ -352,69 +374,29 @@ def _md_waived_rules(rel_path: str, text: str | None) -> frozenset[str]:
     return frozenset(match.group(1) for match in _WAIVE_REF_RE.finditer(text))
 
 
-# T-0396 round-2 (reviewer-caught, T-0396 Done report): the FIRST version of
-# this only captured a `from X import ...`'s MODULE PREFIX, never the
-# imported NAMES -- `from frob.arch import _cpp, _python` produced only the
-# token `frob.arch`, so `src/frob/arch/_cpp.py` (reached only through that
-# multi-name import) was a false REF001 orphan. `_python_import_targets`
-# below parses every name in a `from`-import (single-line, comma-list, AND
-# parenthesized/multi-line continuation) and a plain `import a, b.c as d`,
-# producing per-name candidate tokens -- `_tokens_reach`'s stem/dotted-path
-# matching (below) is what actually resolves a bare imported name like
-# `_cpp` back to a file `_cpp.py`.
-_FROM_IMPORT_RE = re.compile(
-    r"\bfrom\s+([\w.]+)\s+import\s*(?:\((?P<paren>[^)]*)\)|(?P<line>[^\n]+))"
-)
-_PLAIN_IMPORT_RE = re.compile(r"^[ \t]*import\s+([^\n]+)", re.MULTILINE)
-
-
-def _split_import_names(blob: str) -> list[str]:
-    """Every distinct name in a comma-separated import clause, `as alias`
-    and bare `*` dropped, whitespace/parens trimmed -- shared by both the
-    `from X import ...` and plain `import ...` shapes."""
-    names: list[str] = []
-    for part in blob.split(","):
-        name = part.strip().strip("()")
-        if not name or name == "*":
-            continue
-        name = name.split(" as ")[0].strip()
-        if name:
-            names.append(name)
-    return names
-
-
-def _python_import_targets(text: str) -> list[str]:
-    """Every candidate reference token from `text`'s `from X import ...`
-    (single-line, comma-list, or parenthesized/multi-line) and plain
-    `import a, b.c as d` statements: the module path, `module.name` for
-    each imported name, and the bare name alone (so a later `from pkg
-    import _cpp` resolves against a file `_cpp.py` regardless of which
-    package re-exports it)."""
-    tokens: list[str] = []
-    for match in _FROM_IMPORT_RE.finditer(text):
-        module = match.group(1)
-        blob = (
-            match.group("paren")
-            if match.group("paren") is not None
-            else match.group("line")
-        )
-        for name in _split_import_names(blob or ""):
-            tokens.append(module)
-            tokens.append(f"{module}.{name}")
-            tokens.append(name)
-    for match in _PLAIN_IMPORT_RE.finditer(text):
-        for name in _split_import_names(match.group(1)):
-            tokens.append(name)
-    return tokens
+# T-1665: Python's own `import`/`from ... import` parsing used to live
+# here as a text regex (`_FROM_IMPORT_RE`/`_PLAIN_IMPORT_RE`/
+# `_split_import_names`/`_python_import_targets`, T-0396 round-2's fix for
+# the multi-name-import gap). Removed in favor of `frob.graph.imports.
+# build_import_graph`'s real AST-based resolver (`_python_reach`, below)
+# -- a grammar-correct parser is strictly more precise than a regex scan
+# for this one language (it finds every import regardless of nesting
+# inside `if`/`try`/`TYPE_CHECKING` guards, and never mistakes a
+# look-alike string/comment for an import) and, more importantly, it
+# NEVER produces a bare stem/dotted-suffix guess the way the old regex
+# tokens + `_tokens_reach`'s Python-only stem-matching branch used to --
+# see this module's own docstring, layer 0, for why that guess was the
+# false-comfort case T-1665 was filed to remove.
 
 
 def _candidate_tokens(text: str) -> tuple[str, ...]:
     """Every path-shaped token `text` names in a real reference position
-    (markdown link target, quoted string literal, an import statement's
-    module/name(s), a require/include/use target, or a `frob:doc`/
-    `frob:describes`/`frob:used-by` directive target) -- the universe
-    `_tokens_reach` matches against, deliberately excluding plain prose/
-    table/backtick mentions."""
+    (markdown link target, quoted string literal, a require/include/use
+    target, or a `frob:doc`/`frob:describes`/`frob:used-by` directive
+    target) -- the universe `_tokens_reach` matches against, deliberately
+    excluding plain prose/table/backtick mentions. T-1665: Python's own
+    import statements are no longer tokenized here at all -- see
+    `_python_reach`, the real AST-resolved replacement."""
     tokens: list[str] = []
     for match in _QUOTED_RE.finditer(text):
         tokens.append(match.group("tok").rstrip("`,.)\"'>"))
@@ -435,48 +417,39 @@ def _candidate_tokens(text: str) -> tuple[str, ...]:
         # never matching the bare doc path and hiding a real reference).
         raw = match.group(1).split("::", 1)[0].split("#", 1)[0]
         tokens.append(raw.rstrip("`,.)\"'>"))
-    tokens.extend(_python_import_targets(text))
     return tuple(tokens)
 
 
 def _tokens_reach(tokens: frozenset[str], target_path: str) -> bool:
     """True if `tokens` (a file's precomputed `_candidate_tokens` set)
-    names `target_path` by full repo-relative path, bare basename, or --
-    for `.py` TARGETS ONLY -- a dotted-import form that resolves to it:
-    the file's extensionless STEM appearing as a token by itself, or as
-    the final dotted component of a longer token (`frob.arch._cpp` ->
-    stem `_cpp`). This is what makes a multi-name `from X import a, b, c`
-    or a dispatch table's bare quoted module-name string (`"ack_runner"`
-    reaching `ack_runner.py`) resolve, since neither shape spells the
-    target's full path or `.py`-suffixed basename literally (T-0396
-    round-2, reviewer-caught false-orphan bug).
+    names `target_path` by full repo-relative path or bare basename
+    (exact, or as the final `/`-segment of a longer token).
 
-    Deliberately restricted to `.py` targets: a bare stem match against a
-    NON-Python target (a `.yaml`/`.md`/data file) is exactly the false
-    PASS T-0396's fix-verification round caught -- a quoted English word
-    that happens to equal a data file's stem (e.g. a test asserting
-    `g.family == "compliance"`, unrelated to `compliance.yaml`) is not a
-    reference, and treating it as one would silently un-flag the exact
-    `docs/design/registry/*.yaml` orphans this gate exists to catch. A
-    data/doc file must be named by its FULL basename (with extension) or
-    full path -- code that actually opens/loads one always spells it that
-    way (`open("some_file.yaml")`, `Path(...) / "some_file.yaml"`, a glob
-    pattern) -- so the stricter full-name-only rule loses no real
-    coverage for that class of target."""
+    T-1665: the old THIRD branch here -- for `.py` targets only, also
+    matching the file's extensionless STEM as a bare token or the final
+    DOTTED component of a longer one (`frob.arch._cpp` -> stem `_cpp`) --
+    is REMOVED. That branch was how a dispatch table's bare quoted
+    module-name string (`"ack_runner"`) or an `importlib.import_module`
+    call's argument used to "resolve" to `ack_runner.py`: the string
+    happened to equal the target's stem, with no proof it is ever
+    actually evaluated to reach that specific file. `frob.graph.imports.
+    build_import_graph` (`_python_reach`, this module) now resolves real
+    Python imports precisely via the language's own AST; a `.py` target
+    reachable only through a stem-shaped guess like this now reports
+    `Severity.UNRESOLVED` instead (see `_unresolved_python_target`) --
+    T-1665's own point: false comfort from a guess is worse than an
+    honest "cannot determine". Non-`.py` targets were never covered by
+    the removed branch (T-0396's own fix-verification round already
+    required a full basename+extension for those, precisely to avoid a
+    quoted English word colliding with a data file's bare stem, e.g.
+    `g.family == "compliance"` vs. `compliance.yaml`) -- unaffected."""
     basename = PurePosixPath(target_path).name
     if target_path in tokens or basename in tokens:
         return True
-    if any(
+    return any(
         token.endswith("/" + basename) or token.endswith("/" + target_path)
         for token in tokens
-    ):
-        return True
-    if not target_path.endswith(".py"):
-        return False
-    stem = PurePosixPath(target_path).stem
-    if stem in tokens:
-        return True
-    return any(token.endswith("." + stem) for token in tokens)
+    )
 
 
 class _ReachIndex(NamedTuple):
@@ -484,64 +457,120 @@ class _ReachIndex(NamedTuple):
     once by `_build_reach_index`, consumed by `_reaching_files`) so
     `_auto_inbound` answers "which files reach this target" via O(1)-ish
     lookups instead of an O(files) rescan per candidate (T-0831: 13.5s
-    CPU at ~994 tracked files). Fields mirror `_tokens_reach`'s three
-    match shapes -- see `_reaching_files` -- so results stay
-    byte-identical to the old pairwise scan."""
+    CPU at ~994 tracked files). Fields mirror `_tokens_reach`'s match
+    shapes -- see `_reaching_files` -- so results stay byte-identical to
+    the old pairwise scan. T-1665 drops the `dot_suffix` field (the
+    `.py`-only bare-stem index) along with `_tokens_reach`'s matching
+    branch it backed -- see that function's docstring."""
 
     exact: dict[str, frozenset[str]]
     slash_suffix: dict[str, frozenset[str]]
-    dot_suffix: dict[str, frozenset[str]]
 
 
 def _build_reach_index(tokens_by_file: dict[str, frozenset[str]]) -> _ReachIndex:
     """Build `_ReachIndex` in one O(total tokens) pass: `exact` keys every
     token verbatim; `slash_suffix` keys each token's final `/`-segment
-    (`token.endswith("/" + basename)`); `dot_suffix` keys every
-    dot-preceded trailing suffix (`token.endswith("." + stem)`, since a
-    stem may itself contain dots)."""
+    (`token.endswith("/" + basename)`)."""
     exact: dict[str, set[str]] = {}
     slash_suffix: dict[str, set[str]] = {}
-    dot_suffix: dict[str, set[str]] = {}
     for owner, tokens in tokens_by_file.items():
         for token in tokens:
             exact.setdefault(token, set()).add(owner)
             if "/" in token:
                 slash_suffix.setdefault(token.rsplit("/", 1)[1], set()).add(owner)
-            if "." in token:
-                parts = token.split(".")
-                for i in range(1, len(parts)):
-                    dot_suffix.setdefault(".".join(parts[i:]), set()).add(owner)
     return _ReachIndex(
         exact={key: frozenset(value) for key, value in exact.items()},
         slash_suffix={key: frozenset(value) for key, value in slash_suffix.items()},
-        dot_suffix={key: frozenset(value) for key, value in dot_suffix.items()},
     )
 
 
 def _reaching_files(index: _ReachIndex, target_path: str) -> frozenset[str]:
     """Every file whose token set reaches `target_path`: exact match on
-    path/basename/stem, or a `slash_suffix`/`dot_suffix` hit on the
-    basename/stem (`.py` targets only for the stem arms)."""
+    path/basename, or a `slash_suffix` hit on the basename."""
     basename = PurePosixPath(target_path).name
-    result = (
+    return frozenset(
         index.exact.get(target_path, frozenset())
         | index.exact.get(basename, frozenset())
         | index.slash_suffix.get(basename, frozenset())
     )
-    if target_path.endswith(".py"):
-        stem = PurePosixPath(target_path).stem
-        result = (
-            result
-            | index.exact.get(stem, frozenset())
-            | index.dot_suffix.get(stem, frozenset())
-        )
-    return frozenset(result)
 
 
 def _auto_inbound(candidate: str, index: _ReachIndex) -> set[str]:
     """Every OTHER tracked file whose token set reaches `candidate`, from
     the precomputed `_ReachIndex` (T-0831)."""
     return set(_reaching_files(index, candidate)) - {candidate}
+
+
+# frob:ticket T-1665
+def _build_python_reverse_edges(import_graph: ImportGraph) -> dict[str, frozenset[str]]:
+    """`target .py path -> frozenset(importer paths)`, the REVERSE of
+    `ImportGraph.edges` (`importer -> imported targets`) -- the direction
+    `ref_gate` needs (given a target, who imports it), built once per
+    `ref_gate` run rather than re-scanning `import_graph.edges` per
+    candidate file."""
+    reverse: dict[str, set[str]] = {}
+    for importer, targets in import_graph.edges.items():
+        for target in targets:
+            reverse.setdefault(target, set()).add(importer)
+    return {target: frozenset(importers) for target, importers in reverse.items()}
+
+
+# frob:ticket T-1665
+def _python_resolved_inbound(
+    candidate: str, reverse_edges: dict[str, frozenset[str]]
+) -> frozenset[str]:
+    """Every tracked `.py` file that RESOLVED-imports `candidate`, per
+    `frob.graph.imports.build_import_graph`'s real AST-based resolver --
+    T-1665's replacement for the old bare-stem text-token guess (see
+    `_tokens_reach`'s docstring). Empty for a non-`.py` candidate (the
+    substrate's own disclosed Python-only v1 scope) or one nothing
+    resolves an import to."""
+    return reverse_edges.get(candidate, frozenset())
+
+
+# frob:ticket T-1665
+def _unresolved_python_target(
+    candidate: str, unresolved: tuple[UnresolvedImport, ...]
+) -> bool:
+    """T-1664: whether `candidate` (a `.py` file with zero resolved-import
+    and zero auto-scan/declared inbound references) should report
+    `Severity.UNRESOLVED` rather than a flat REF001 -- true if ANY
+    `UnresolvedImport` in the whole-repo import graph is a `"dynamic-
+    import"` or `"relative-import-above-root"` case whose raw `module`
+    text plausibly names `candidate` (a best-effort substring match on
+    `candidate`'s own dotted module name and bare stem against the
+    unresolved call's unparsed source text, e.g. `importlib.import_module
+    (f"app.{name}")` against target `app/ack_runner.py`'s stem
+    `ack_runner` would NOT match -- string interpolation defeats even
+    this best-effort check, correctly staying UNRESOLVED-eligible only
+    for the literal-substring cases this heuristic can actually see, not
+    a claim to resolve every dynamic shape). Disclosed as a heuristic,
+    not a proof: this can both under- and over-attribute a given dynamic
+    call to a candidate whose stem happens to collide with unrelated
+    text -- deliberately still preferred over BOTH silently passing
+    (treating a real orphan as referenced) and silently firing REF001
+    (claiming certainty this substrate does not have), matching T-1664's
+    own posture that `UNRESOLVED` is for exactly this "cannot determine"
+    shape. `"parse-error"`/`"unsupported-language"` reasons are excluded
+    here -- those are about the IMPORTER'S own file being unreadable, not
+    about a specific unresolved TARGET name, so they carry no target-name
+    text to match against at all."""
+    if not candidate.endswith(_PY_SUFFIX):
+        return False
+    dotted = candidate[: -len(_PY_SUFFIX)].replace("/", ".")
+    if dotted.endswith(".__init__"):
+        dotted = dotted[: -len(".__init__")]
+    stem = PurePosixPath(candidate).stem
+    for item in unresolved:
+        if item.reason not in ("dynamic-import", "relative-import-above-root"):
+            continue
+        if not item.module:
+            continue
+        if dotted and dotted in item.module:
+            return True
+        if stem and stem in item.module:
+            return True
+    return False
 
 
 def _directive_target(line: str) -> str | None:
@@ -587,11 +616,35 @@ def _declared_line(text: str, target: str) -> int:
 
 # frob:enforces CHK-GATE-REF001
 # frob:enforces CHK-GATE-REF002
-def _ref001_or_002(rel_path: str, inbound: set[str]) -> Violation | None:
+# frob:ticket T-1665
+def _ref001_or_002(
+    rel_path: str, inbound: set[str], *, unresolved: bool
+) -> Violation | None:
     """The tier violation for `rel_path` given its deduped inbound set, or
-    `None` if it clears the 2+ pass bar."""
+    `None` if it clears the 2+ pass bar. T-1665: `unresolved=True` (only
+    possible when `inbound` is empty -- see `_unresolved_python_target`)
+    reports `Severity.UNRESOLVED` instead of REF001's `Severity.WARN` --
+    a `.py` target reachable only through a dynamic import/dispatch shape
+    this substrate cannot resolve is an honest "cannot determine", never
+    a claimed-dead REF001 finding."""
     count = len(inbound)
     if count == 0:
+        if unresolved:
+            return Violation(
+                rule="REF001",
+                severity=Severity.UNRESOLVED,
+                file=rel_path,
+                line=0,
+                message=(
+                    f"REF001: {rel_path} has no RESOLVED inbound reference, "
+                    f"but at least one dynamic import/dispatch call "
+                    f"elsewhere in the repo plausibly names it -- cannot "
+                    f"determine whether it is genuinely dead or reached "
+                    f"only dynamically; verify by hand, or add a "
+                    f'`frob:used-by <consumer>` declaration once you know '
+                    f"which caller reaches it"
+                ),
+            )
         return Violation(
             rule="REF001",
             severity=Severity.WARN,
@@ -626,22 +679,40 @@ def _ref001_or_002(rel_path: str, inbound: set[str]) -> Violation | None:
 
 
 # frob:enforces CHK-GATE-REF003
+# frob:ticket T-1665
+def _consumer_reaches(
+    consumer: str,
+    target: str,
+    tokens_by_file: dict[str, frozenset[str]],
+    python_reverse_edges: dict[str, frozenset[str]],
+) -> bool:
+    """True if `consumer` reaches `target` via EITHER the narrowed
+    auto-scan text channel OR a resolved Python import (T-1665) -- the
+    combined "does this claimed consumer actually consume it" check both
+    `_dangling_declarations` (REF003) and `_ref_gate_file_violations`'s
+    own declared-consumer verification share, so a `frob:used-by`
+    declaration can be verified by a real import edge, not just a text
+    mention."""
+    consumer_tokens = tokens_by_file.get(consumer)
+    if consumer_tokens is not None and _tokens_reach(consumer_tokens, target):
+        return True
+    return consumer in _python_resolved_inbound(target, python_reverse_edges)
+
+
 def _dangling_declarations(
     rel_path: str,
     text: str,
     tracked: frozenset[str],
     tokens_by_file: dict[str, frozenset[str]],
+    python_reverse_edges: dict[str, frozenset[str]],
 ) -> list[Violation]:
     """REF003 for every `frob:used-by` target on `rel_path` that does not
     resolve to a real, reaching consumer -- the anti-lie check: a
     declaration is a claim, and this is where the claim gets verified."""
     violations: list[Violation] = []
     for target in _declared_consumers(rel_path, text):
-        consumer_tokens = tokens_by_file.get(target)
-        valid = (
-            target in tracked
-            and consumer_tokens is not None
-            and _tokens_reach(consumer_tokens, rel_path)
+        valid = target in tracked and _consumer_reaches(
+            target, rel_path, tokens_by_file, python_reverse_edges
         )
         if valid:
             continue
@@ -665,14 +736,25 @@ def _dangling_declarations(
     return violations
 
 
+# frob:ticket T-1665
 def _build_ref_gate_indexes(
     root: Path, tracked: tuple[str, ...]
-) -> tuple[dict[str, str], dict[str, frozenset[str]], frozenset[str], _ReachIndex]:
-    """Read every tracked file once and build its candidate-token set and
-    `_ReachIndex` once, so `ref_gate`'s O(n) file loop never re-derives
-    any of them (extracted from `ref_gate` for ARCH001; T-0449's
-    native-stub pairing still resolves from `tracked_set`; `_ReachIndex`
-    is T-0831's O(files^2) -> O(files) fix for `_auto_inbound`)."""
+) -> tuple[
+    dict[str, str],
+    dict[str, frozenset[str]],
+    frozenset[str],
+    _ReachIndex,
+    dict[str, frozenset[str]],
+    tuple[UnresolvedImport, ...],
+]:
+    """Read every tracked file once and build its candidate-token set,
+    `_ReachIndex`, and the Python resolved-import substrate once, so
+    `ref_gate`'s O(n) file loop never re-derives any of them (extracted
+    from `ref_gate` for ARCH001; T-0449's native-stub pairing still
+    resolves from `tracked_set`; `_ReachIndex` is T-0831's O(files^2) ->
+    O(files) fix for `_auto_inbound`; T-1665 adds the reverse Python
+    import-edge map and the whole-repo `UnresolvedImport` tuple
+    `_unresolved_python_target` scans)."""
     texts: dict[str, str] = {}
     for rel_path in tracked:
         text = _read_text(root, rel_path)
@@ -683,9 +765,19 @@ def _build_ref_gate_indexes(
         rel_path: frozenset(_candidate_tokens(text)) for rel_path, text in texts.items()
     }
     reach_index = _build_reach_index(tokens_by_file)
-    return texts, tokens_by_file, tracked_set, reach_index
+    import_graph = build_import_graph(root, tracked)
+    python_reverse_edges = _build_python_reverse_edges(import_graph)
+    return (
+        texts,
+        tokens_by_file,
+        tracked_set,
+        reach_index,
+        python_reverse_edges,
+        import_graph.unresolved,
+    )
 
 
+# frob:ticket T-1665
 def _ref_gate_file_violations(
     rel_path: str,
     text: str | None,
@@ -694,34 +786,43 @@ def _ref_gate_file_violations(
     allowlist: dict[str, str],
     native_stub_pairs: dict[str, str],
     reach_index: _ReachIndex,
+    python_reverse_edges: dict[str, frozenset[str]],
+    unresolved_imports: tuple[UnresolvedImport, ...],
 ) -> list[Violation]:
     """REF001/002/003 violations for a single tracked file -- the per-file
-    body of `ref_gate`'s main loop, extracted for ARCH001 (line-count)."""
+    body of `ref_gate`'s main loop, extracted for ARCH001 (line-count).
+    T-1665: `inbound` now also includes the Python resolved-import
+    channel, and a `.py` file left at zero inbound may report
+    `Severity.UNRESOLVED` instead of a flat REF001 (`_unresolved_python_
+    target`)."""
     violations: list[Violation] = []
     if text is not None:
         violations.extend(
-            _dangling_declarations(rel_path, text, tracked_set, tokens_by_file)
+            _dangling_declarations(
+                rel_path, text, tracked_set, tokens_by_file, python_reverse_edges
+            )
         )
 
     if rel_path in allowlist or _is_collectible_test_filename(rel_path):
         return violations
 
     auto = _auto_inbound(rel_path, reach_index)
+    python_resolved = _python_resolved_inbound(rel_path, python_reverse_edges)
     declared = set()
     if text is not None:
         for target in _declared_consumers(rel_path, text):
-            consumer_tokens = tokens_by_file.get(target)
-            if (
-                target in tracked_set
-                and consumer_tokens is not None
-                and _tokens_reach(consumer_tokens, rel_path)
+            if target in tracked_set and _consumer_reaches(
+                target, rel_path, tokens_by_file, python_reverse_edges
             ):
                 declared.add(target)
-    inbound = auto | declared
+    inbound = auto | declared | python_resolved
     native_manifest = native_stub_pairs.get(rel_path)
     if native_manifest is not None:
         inbound = inbound | {native_manifest}
-    tier_violation = _ref001_or_002(rel_path, inbound)
+    unresolved = not inbound and _unresolved_python_target(
+        rel_path, unresolved_imports
+    )
+    tier_violation = _ref001_or_002(rel_path, inbound, unresolved=unresolved)
     if tier_violation is not None and tier_violation.rule not in _md_waived_rules(
         rel_path, text
     ):
@@ -765,10 +866,17 @@ def ref_gate(root: Path) -> tuple[Violation, ...]:
 
     # T-0449: native-extension `.pyi` stub -> build-manifest edges,
     # resolved once up front from `pyproject.toml`/`[tool.maturin]`
-    # rather than re-derived per candidate.
-    texts, tokens_by_file, tracked_set, reach_index = _build_ref_gate_indexes(
-        root, tracked
-    )
+    # rather than re-derived per candidate. T-1665: the Python
+    # resolved-import substrate (`frob.graph.imports.build_import_graph`)
+    # is likewise built once here, not per candidate.
+    (
+        texts,
+        tokens_by_file,
+        tracked_set,
+        reach_index,
+        python_reverse_edges,
+        unresolved_imports,
+    ) = _build_ref_gate_indexes(root, tracked)
     native_stub_pairs = _native_stub_pairs(tracked_set, root)
 
     violations: list[Violation] = []
@@ -784,6 +892,8 @@ def ref_gate(root: Path) -> tuple[Violation, ...]:
                 allowlist,
                 native_stub_pairs,
                 reach_index,
+                python_reverse_edges,
+                unresolved_imports,
             )
         )
 

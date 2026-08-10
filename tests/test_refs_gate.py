@@ -361,6 +361,19 @@ class TestReviewerRegressionRound2:
         # Reviewer's cited case: `_RUNNER_MODULE_NAMES` maps a bare quoted
         # string ("ack_runner") to a module file (ack_runner.py) via a
         # dynamic dispatch table, never a literal `import` statement.
+        #
+        # T-1665 UPDATE (node id/name kept -- T-0396/T-0831/T-1653 all
+        # cite this exact node id as evidence in their own archived Done
+        # reports; renaming it would break their historical record). The
+        # ASSERTION below changed, not the fixture: before T-1665, the
+        # bare-stem text-token heuristic silently treated the matching
+        # quoted string as proof of reference (a guess, not a fact) and
+        # this reported a clean pass -- false COMFORT, not a real
+        # determination. The honest answer, now that `frob.graph.
+        # imports.build_import_graph`'s real resolver cannot prove any
+        # import reaches `ack_runner.py`, is `Severity.UNRESOLVED`
+        # (T-1664's third outcome), never a silent unproven pass and
+        # never a false-dead REF001.
         _init_repo(tmp_path)
         _write(tmp_path, "app/ack_runner.py", "def run(): pass\n")
         _write(
@@ -377,7 +390,10 @@ class TestReviewerRegressionRound2:
 
         violations = ref_gate(tmp_path)
 
-        assert _rule_ids(violations, "app/ack_runner.py") == []
+        matches = [v for v in violations if v.file == "app/ack_runner.py"]
+        assert len(matches) == 1
+        assert matches[0].rule == "REF001"
+        assert matches[0].severity == Severity.UNRESOLVED
 
     def test_pytest_collected_test_file_not_flagged(self, tmp_path: Path) -> None:
         # Reviewer's cited systemic case: 197/379 (52%) of the original

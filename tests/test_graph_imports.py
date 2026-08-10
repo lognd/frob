@@ -95,6 +95,29 @@ class TestBuildImportGraph:
         graph = build_import_graph(tmp_path, ["pkg/a.py", "pkg/b.py"])
         assert graph.edges["pkg/a.py"] == ("pkg/b.py",)
 
+    def test_relative_import_inside_init_py_resolves_within_its_own_package(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-1665
+        # frob:tests src/frob/graph/imports.py::build_import_graph
+        # T-1665 bug fix: `_module_name_of` already collapses an
+        # `__init__.py` importer to its OWN package's dotted name (it
+        # strips the trailing `.__init__`) -- `_relative_module_name`
+        # used to unconditionally drop one MORE component regardless,
+        # over-walking a `level=1` relative import inside a package's own
+        # `__init__.py` to the PARENT package instead of the importer's
+        # real one. Measured in this repo: `frob._cli_parsers.__init__`'s
+        # `from ._design import ...` resolved to `frob._design` (does not
+        # exist) instead of `frob._cli_parsers._design` (the real file),
+        # silently losing 3 real import edges and turning 3 genuinely
+        # 2+-referenced CLI parser modules into false REF002s.
+        _write(tmp_path, "pkg/__init__.py", "from ._sub import thing\n")
+        _write(tmp_path, "pkg/_sub.py", "thing = 1\n")
+        graph = build_import_graph(
+            tmp_path, ["pkg/__init__.py", "pkg/_sub.py"]
+        )
+        assert graph.edges["pkg/__init__.py"] == ("pkg/_sub.py",)
+
     def test_unreadable_file_is_reported_unresolved_not_silently_skipped(
         self, tmp_path: Path
     ) -> None:

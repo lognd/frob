@@ -198,18 +198,34 @@ def _relative_module_name(
     walks above the importer's own tracked package depth (the
     `"relative-import-above-root"` UNRESOLVED case) -- second element is
     `True` exactly when that happened, so the caller can distinguish it
-    from an ordinary external miss."""
+    from an ordinary external miss.
+
+    T-1665 bug fix: an `__init__.py` importer's `_module_name_of` result
+    IS ALREADY its own package's dotted name (that function's own
+    docstring: "a `__init__.py` resolves as its OWN PACKAGE's dotted
+    name, dropping the trailing `.__init__`") -- unconditionally dropping
+    one more component below over-walked one package level for every
+    `__init__.py` importer, silently mis-resolving `level=1` relative
+    imports inside every package's own `__init__.py` to the PARENT
+    package instead of the importer's real one (measured: `frob.
+    _cli_parsers.__init__`'s own `from ._design import ...` resolved to
+    `frob._design` instead of `frob._cli_parsers._design`, losing the
+    edge entirely -- `frob._design` does not exist, so `_resolve_module`
+    correctly failed to find it, but for the WRONG reason). The drop-one
+    step belongs only to a REGULAR module importer (its trailing
+    component is the module itself, not a package)."""
     importer_dotted = _module_name_of(importer) or ""
-    # A relative import's implicit base is the IMPORTER's own enclosing
-    # package -- one dotted component per `level`, but the importer's
-    # own trailing component (the module itself, not a package) is
-    # already outside the package chain, so `level=1` means "my own
-    # package", i.e. drop the importer's last component once, then
-    # `level - 1` more times.
     parts = importer_dotted.split(".") if importer_dotted else []
     if not parts:
         return (None, True)
-    parts = parts[:-1]  # importer's own package (level == 1 base)
+    if not importer.endswith("/__init__.py") and importer != "__init__.py":
+        # A relative import's implicit base is the IMPORTER's own
+        # enclosing package -- one dotted component per `level`, but a
+        # REGULAR module's own trailing component (the module itself,
+        # not a package) is already outside the package chain, so
+        # `level=1` means "my own package", i.e. drop the importer's
+        # last component once, then `level - 1` more times.
+        parts = parts[:-1]  # importer's own package (level == 1 base)
     drop = level - 1
     if drop > len(parts):
         return (None, True)
@@ -331,10 +347,10 @@ def _file_import_edges_and_gaps(
 
 # frob:doc docs/modules/graph.md#import-graph
 # frob:ticket T-1985
-# frob:waive WIRE001 reason="this ticket builds the reusable substrate only -- wiring \
-# a real production caller (REF001's own narrowing to consume it) is the separate, \
-# already-filed follow-up ticket this substrate is a declared prerequisite for" \
-# follow_up="T-1665"
+# frob:ticket T-1665
+# T-1665 discharges the WIRE001 waiver this comment used to carry: this
+# substrate is now wired into a real production caller,
+# frob.gates._refs.ref_gate's resolved-import inbound-reference channel.
 # frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_resolves_a_real_intra_repo_import_edge  # noqa: E501
 # frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_dynamic_import_reports_unresolved_not_dropped  # noqa: E501
 # frob:tests tests/test_graph_imports.py::TestBuildImportGraph.test_non_python_file_reports_unsupported_language_unresolved  # noqa: E501

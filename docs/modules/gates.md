@@ -3138,40 +3138,55 @@ about, because every other gate reasons about SOURCE symbols
 existence being justified at all. This gate runs over EVERY git-tracked
 file, regardless of type (source, docs, config, data, assets).
 
-Two detection layers, both required to feed the same inbound-reference
-count per file:
+Three detection layers, all feeding the same inbound-reference count per
+file (T-1665 adds the first):
 
-- **Auto-scan**: file X counts as referenced by file Y when Y's text
-  names X (full repo-relative path or bare basename) in a real reference
-  SYNTACTIC position -- a markdown link (`](path)`), a quoted string
-  literal, a `frob:doc`/`frob:describes`/`frob:used-by`/`frob:tests`
-  directive target, a `require`/`include`/`use` target, or a Python
-  import (`from X import a, b, c` -- single-line, comma-list, OR
-  parenthesized/multi-line -- and plain `import a, b.c`, EVERY imported
-  name resolved, not just the module prefix). Deliberately NOT a bare
-  substring match over the whole text: a README table cell or a
-  ticket-body sentence merely NAMING a file (`` `patterns.yaml` ``) is
-  not a reference in any of these shapes, and counting it as one
-  silently defeats the gate. For `.py` targets only, a bare imported
-  name or a dispatch table's quoted bare module-name string (e.g.
-  `"ack_runner"` reaching `ack_runner.py`) also resolves via the
-  target's extensionless stem -- restricted to `.py` targets because a
-  stem match against a non-Python (data/doc) target reintroduces the
-  same false-pass failure mode (an unrelated quoted English word
-  colliding with a data file's stem).
+- **Resolved import** (`.py` targets only): a real AST-resolved import
+  edge from `frob.graph.imports.build_import_graph` (T-1985's substrate)
+  -- an `import`/`from ... import` statement Python's own grammar-correct
+  parser resolves to a tracked file, precise regardless of aliasing,
+  multi-name imports, or nesting inside `if`/`try`/`TYPE_CHECKING`
+  guards. This REPLACED an older text-regex Python-import parser and,
+  more importantly, replaced a bare-EXTENSIONLESS-STEM text-token match
+  that used to also count for `.py` targets (a dispatch table's quoted
+  module-name string, or an `importlib.import_module(...)` call argument,
+  equalling the target's stem) -- that shortcut was false COMFORT, not
+  proof: nothing verified the matching string was ever actually
+  evaluated to reach that specific file. A `.py` target left at zero
+  inbound whose emptiness MIGHT be an artifact of exactly that
+  undecidable dynamic shape reports `Severity.UNRESOLVED` (T-1664)
+  instead of a flat REF001, via a best-effort substring match against
+  the substrate's own disclosed `UnresolvedImport` records (a dynamic
+  import/dispatch call, or a relative import walking above the tracked
+  root) -- an honest "cannot determine", never a silent pass and never a
+  false-certain orphan claim.
+- **Auto-scan** (all NON-Python-import reference shapes, every target
+  type): file X counts as referenced by file Y when Y's text names X
+  (full repo-relative path or bare basename WITH extension) in a real
+  reference SYNTACTIC position -- a markdown link (`](path)`), a quoted
+  string literal, a backtick-wrapped multi-component path mention
+  (contains a `/`), a `frob:doc`/`frob:describes`/`frob:used-by`/
+  `frob:tests` directive target, or a non-Python `require`/`include`/
+  `use` target. Deliberately NOT a bare substring match over the whole
+  text: a README table cell or a ticket-body sentence merely NAMING a
+  file (`` `patterns.yaml` ``) is not a reference in any of these shapes,
+  and counting it as one silently defeats the gate. This layer is what
+  every non-`.py` target (docs, config, data, non-Python source) relies
+  on entirely, since the resolved-import substrate above is disclosed
+  Python-only.
 - **Test-discovery IMPLICIT reference**: a file `frob.excludes.
   is_test_file` recognizes (`tests/**`, `test_*.py`, `*_test.py`, ...)
   is exempt from REF001/REF002 outright -- it is referenced by the test
   RUNNER via filesystem/naming convention, which no textual scan can see.
 - **Declared** (`frob:used-by <consumer>`): a file names its own consumer
-  explicitly, for references the auto-scan structurally cannot see (a
-  path built at runtime, a glob loaded by a directory base). Every
-  declaration is VERIFIED, not trusted: the named consumer must be a
-  tracked file AND must itself reach the declaring file (same
-  syntactic-position check, in reverse) -- a declaration naming a
-  nonexistent or non-reaching consumer is REF003, not a silent pass. This
-  is the anti-lie half: a `frob:used-by` cannot manufacture a reference
-  that isn't real.
+  explicitly, for references NEITHER layer above can structurally see (a
+  path built at runtime from a variable, a glob loaded by a directory
+  base). Every declaration is VERIFIED, not trusted: the named consumer
+  must be a tracked file AND must itself reach the declaring file (same
+  combined resolved-import/auto-scan check, in reverse) -- a declaration
+  naming a nonexistent or non-reaching consumer is REF003, not a silent
+  pass. This is the anti-lie half: a `frob:used-by` cannot manufacture a
+  reference that isn't real.
 
 **Round-2 correction (reviewer-rejected the first landing, T-0396 Done
 report):** the first working version's auto-scan produced an 86%
