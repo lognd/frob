@@ -1093,6 +1093,138 @@ individually re-verifying one at a time. A raw bulk `git worktree remove`
 loop across `.claude/worktrees/*` is forbidden; `frob worktree sweep` (or
 the single-worktree recipe just described) are the only sanctioned paths.
 
+## 13. T-1344: a single land is expensive; queueing is a real but SECONDARY effect (design finding)
+
+Measured from `.frob/telemetry.jsonl` (`kind=cli`, `args_head` starting
+`"ticket land"`, real worktrees, `exit=0`, n=748): median 95.4s, p75 322.6s,
+p90 438.8s, p95 490.4s, max 1620.9s -- matches the numbers this
+investigation started from almost exactly.
+
+**CORRECTION to an earlier draft of this section (do not trust `ps aux |
+grep -c "frob ticket land"` for concurrency -- it counts the `uv run`
+wrapper, the python process, and every subprocess a land spawns, plus any
+agent's own wait-loop shell whose command string happens to contain the
+same text; a live check during this investigation read ~14 processes for
+2 genuine concurrent lands).** The real concurrency, measured from
+telemetry START/END interval overlap (not `ps`) across all 812 successful
+lands: **83.1% of lands (n=675) had NO other land in flight at all**
+(concurrency=1, i.e. solo), 15.5% overlapped with exactly one other, and
+only 1.3% ever saw 3+ concurrent. Critically, **the SAME wide spread shows
+up inside the solo bucket alone**: concurrency=1 lands measured median
+80.4s, p75 263.9s, p90 424.2s, p95 483.0s, max 1620.9s -- indistinguishable
+in shape from the aggregate. If lock queueing were the dominant driver,
+the solo bucket (which by definition waited on the lock for ~0s) should
+cluster tightly near its own low end; it does not. **The verdict is COST,
+not contention: a single land is genuinely, and highly variably,
+expensive on its own.**
+
+**Where the cost is, confirmed by reading the code and by directly timing
+the mechanism, not inferred:** `land()`'s post-merge re-verification
+(`check_gates`, T-0754) is wired in `src/frob/app/ticket_runner/_verify.
+py::_check_gates_summary_fn` (`_land_cmd.py:3355` supplies it to every
+real `frob ticket land`). Its `fn()` spawns a **fresh, synchronous
+`python -m frob check --ticket <id> --json`** against the just-merged
+tree and parses its gate-summary -- and per section 6c's own
+`gate:scope-note`, `--ticket` narrows almost nothing: every gate family
+except SCOPE/PREWORK/COV002/TODO001/FMT/AFFECT runs REPO-WIDE regardless.
+This is, for all but a handful of gate families, a full unscoped `frob
+check` running SYNCHRONOUSLY, inside `_land_lock`, on every single land.
+Timed directly in this investigation (`timeout 300 uv run frob check
+--ticket T-1344`, live fleet, comparable load to the historical
+telemetry): **total gate time 208.7s**, dominated by `sys=34.6s`,
+`archgate=29.6s`, `perf=30.9s`, `coverage=19.0s`, `refs=15.3s`,
+`dead_symbols=11.7s`, `pii_structural=11.0s`, `docblocks=7.5s`,
+`clones=7.0s`, `test=6.3s`, `tickets=5.5s`, plus ~15 smaller stages. That
+single number, ~209s, sits almost exactly between this ticket's measured
+median (95.4s, presumably a smaller/cleaner diff or a warmer gate cache)
+and its p75 (322.6s) -- strong direct evidence that this one
+re-verification spawn, not the lock queue, is the largest single line
+item in a typical land. It is not the only cost (the `main` merge, the
+Tier-A auto-fix sweep, and `collected`/`passed` test re-verification all
+also run inside the same lock, each adding its own time), but it is the
+single largest and most concretely measured one.
+
+**Lock queueing is real but secondary, and explains the tail, not the
+median.** The 15.5%+1.3% of lands that DO overlap show a heavier tail
+(concurrency=2's own p95 is 539.0s vs the solo bucket's 483.0s) --
+consistent with a ~95-320s-costed land occasionally queueing behind
+another one of similar cost, which is exactly what T-2023 (landed
+separately this session, per the coordinator) already partially addressed
+by raising the land-wait budget from 60s to 330s and timing it from the
+land's own recorded start. The `_land_lock` in `src/frob/tickets/_land.py:
+277-385` genuinely does wrap the entire precheck-through-commit body in
+one process-wide flock (T-0577, confirmed by reading `land()`'s own
+docstring at `_land.py:946-960`) -- that architecture fact is still true
+and still means two lands cannot overlap their EXPENSIVE work even when
+both are cheap -- but the measured data says this fires for under 1 in 6
+lands, not the dominant case this investigation started from.
+
+**The T-2032/T-2033 silent deaths are still explained, just by cost
+first, contention second.** `_LAND_LOCK_TIMEOUT_S = 600.0`
+(`_land.py:148`) exceeds the playbook's own mandated shell wrapper
+(`timeout 540`-`580`, section 0 item 3 / section 3b). A land whose OWN
+work (merge + Tier-A + the ~209s re-verification spawn + tests + commit)
+runs long -- which the p90/p95/max data says happens often even solo --
+can simply exceed 540-580s on its own merits and get SIGTERM'd by the
+outer wrapper with no `LAND-PROOF:` line, no `LandLockTimeout` message,
+nothing: the shell wrapper does not distinguish "doing real, slow work"
+from "stuck". **If your land dies silently at 540-580s with no output,
+the most likely explanation is that the land's own re-verification pass
+was still running, not that it hung or was queued** -- do not
+`--no-verify`/retry-in-a-loop around it (section 0 item 7): keep your
+commits, report, and let the coordinator re-run it with a longer budget
+or investigate.
+
+**Ranked proposal (not implemented here -- the mechanism lives in
+`src/frob/app/ticket_runner/_verify.py` and `src/frob/tickets/_land.py`,
+both out of this ticket's declared scope):**
+
+1. *Smallest, largest measured effect:* make the post-merge `check_gates`
+   re-verification (`_check_gates_summary_fn`) cheaper per call instead of
+   re-running every gate family from scratch every land. Section 6's own
+   T-1346 digest-keyed gate-result cache already exists and is on by
+   default for `frob check` in general -- the open question (and exactly
+   what this ticket's own acceptance criterion [1] already names) is
+   whether the land-time spawn's fresh post-merge tree digest ever gets a
+   cache HIT against gate work already done earlier in the same land
+   (e.g. the pre-merge worktree's own `--land-parity` run, section 6g,
+   computed against a tree that differs from the post-merge one only by
+   the merge itself) -- if most gate families' inputs are unaffected by a
+   given ticket's diff, a content-digest cache keyed below the whole-tree
+   level could turn most of that 209s into cache hits. This needs
+   measurement (does the cache key already work this way, or does it key
+   on something that always differs post-merge?) before any code change,
+   not a blind implementation.
+2. *What breaks if done naively:* T-0754's whole point is catching
+   `ClaimDivergence` -- a Done report's captured gate state silently going
+   stale between capture and land. Any caching/skipping scheme MUST NOT
+   let a genuinely-changed gate result get served stale (T-1436's own
+   "gate-cache staleness bug", section 6, is exactly this failure mode
+   already observed once). A narrower, safer first move than full caching:
+   profile which of the ~35 gate stages are the expensive ones for a
+   TYPICAL ticket diff (this run's own breakdown -- sys/archgate/perf/
+   coverage/refs -- is one data point, not a general answer) and confirm
+   whether any of them are structurally incapable of being affected by a
+   small, scoped diff; those are the safest candidates to skip or
+   cache-trust first.
+3. *Independent of (1)/(2):* the lock-scope narrowing this section's
+   earlier draft proposed (splitting the flock so the expensive
+   merge+verify work runs unlocked against a private preview, taking the
+   lock only for the final commit) is still valid and still worth doing
+   -- it addresses the real, measured concurrency=2 tail -- but should be
+   sequenced AFTER (1)/(2), since it defends against a SECONDARY effect
+   (1 in 6 lands) while (1)/(2) defend against the PRIMARY one (essentially
+   every land). Raising `_LAND_LOCK_TIMEOUT_S` alone, without addressing
+   either, is explicitly NOT recommended -- it only makes a genuinely slow
+   land take even longer to surface as slow.
+
+This needs an explicit decision, not a blind implementation: profiling
+which gate stages are safe to skip/cache for a land-time re-verification,
+and deciding how strict the T-0754 staleness guarantee can be relaxed
+without reopening the incident it was built to catch, is a call for
+whoever owns `_verify.py`/`_land.py`, not something to land
+opportunistically inside an investigation ticket.
+
 ## See also
 
 - `docs/modules/gates.md` -- the full gate catalog, `--delta`/baseline

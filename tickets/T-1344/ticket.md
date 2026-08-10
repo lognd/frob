@@ -1,7 +1,7 @@
 ---
 id: T-1344
 title: 'Agentic-development throughput: the land path is the bottleneck, not the work'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-31'
@@ -14,6 +14,8 @@ scope:
 - docs/guides/agent-playbook.md
 - src/frob/tickets/_land_git_ops.py
 - src/frob/gates/__init__.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -45,14 +47,18 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: given N concurrent agents finishing work, when each lands, then no agent is
     refused for DirtyMain and no agent touches another agent uncommitted state
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - text: given an unchanged file set, when frob check re-runs, then gate results are
     served from a content-digest cache rather than recomputed
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: tickets
 anchor: false
