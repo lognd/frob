@@ -1,7 +1,7 @@
 ---
 id: T-draft-46574f02
 title: 'DOCENUM001: SYS110 missing from gates.md rule-catalog enumerates list'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-10'
