@@ -49,7 +49,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _shellscan import POS as _POS  # noqa: E402
+from _shellscan import POS as _POS  # noqa: E402  # ty: ignore[unresolved-import]
 from _shellscan import strip_quoted as _strip_quoted
 
 #: Markers older than this are pruned, so a command nudged long ago is

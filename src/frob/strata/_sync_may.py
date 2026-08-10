@@ -9,16 +9,22 @@ already-granted capability kind needs a `may ... via` edit every single
 time -- the exact hand-patch this module exists to automate away instead
 of redding main.
 
-T-1870: `_NODE_HEADER_RE`/`_node_body_span` below used to live in the
+T-1870: `_NODE_HEADER_RE`/`node_body_span` below used to live in the
 sibling `_sync_interface.py` module (the SYS104 `interface=` auto-fix
 writer, deleted by T-1870 per an explicit owner directive that no code
 path may auto-update declared public-symbol surface -- `may=` capability
 sync is DIFFERENT, deliberate, live work under T-1623/T-1628, and stays).
 This module was the only OTHER importer of those two generic ".strata
-text" helpers (confirmed by search before extracting), so they are
-inlined here as this module's own private helpers rather than either
-deleted (losing this module's own working parser) or given a new
-single-importer shared module.
+text" helpers at the time (confirmed by search before extracting), so
+they were inlined here as this module's own private helpers rather than
+either deleted (losing this module's own working parser) or given a new
+single-importer shared module. T-1872 then needed its own copy of the
+brace-depth scanner for the SYS-interface-order Tier-A fixer
+(`frob.gates._fix_engine_sync`), making a THIRD independent copy of the
+same 7-line scanner and tripping DUP001 (waived at the time as out of
+that ticket's order-only scope). T-1895 resolves it: `node_body_span` is
+now public and this module's single home for it; `_fix_engine_sync.py`
+imports it instead of keeping its own copy.
 
 T-1531 handled only SYS100's CORE case (`check_capability_conformance`'s
 THREAT004 delegate, which carries a real `file`/`kind`/`component` per
@@ -96,11 +102,25 @@ _NODE_HEADER_RE = re.compile(
 )
 
 
-def _node_body_span(lines: list[str], header_idx: int) -> int:
+# frob:waive COV001 reason="a frob:doc anchor here would live in \
+# docs/modules/gates.md, whose own SCOPE002 closure (every OTHER symbol that \
+# monolithic shared doc file describes) is out of proportion to pull into T-1895's \
+# two-file extraction scope for one brace-depth scanner; docs/modules/gates.md was \
+# also under a live cross-worktree lease (T-1579) at the time this ticket ran, \
+# matching the same scope-closure tension SCANNED_BASES documents in _rule_id_scan.py \
+# -- this function's own docstring is the authoritative description"
+# frob:tests tests/unit/strata/test_sync_may.py::TestNodeBodySpan.test_flat_body_returns_closing_brace_line kind="unit"  # noqa: E501
+# frob:tests tests/unit/strata/test_sync_may.py::TestNodeBodySpan.test_nested_braces_do_not_close_early kind="unit"  # noqa: E501
+# frob:tests tests/unit/strata/test_sync_may.py::TestNodeBodySpan.test_malformed_input_returns_last_line_best_effort kind="unit"  # noqa: E501
+def node_body_span(lines: list[str], header_idx: int) -> int:
     """The line index of the `}` that closes the node body opened at
     `lines[header_idx]` (which itself ends in `{`), brace-depth matched so a
     nested `on crash { ... }`/`on breach { ... }`/`on deploy { ... }`
-    sub-block's own braces do not terminate the search early."""
+    sub-block's own braces do not terminate the search early. T-1895:
+    made public (was `_node_body_span`) so `frob.gates._fix_engine_sync`
+    can import this ONE brace-depth scanner instead of keeping its own
+    byte-identical copy -- both used to independently mirror the deleted
+    `_sync_interface.py`'s own copy of the same 7-line scanner."""
     depth = 1
     for idx in range(header_idx + 1, len(lines)):
         # frob:waive PERF002 reason="each line is a different string every iteration \
@@ -222,7 +242,7 @@ def _sync_one_file_may(
         node_additions = additions.get(node_id)
         if not node_additions:
             continue
-        close_idx = _node_body_span(lines, idx)
+        close_idx = node_body_span(lines, idx)
         before_len = len(lines)
         lines, node_diffs = _rewrite_node_may_grants(
             lines, idx, close_idx, node_id, node_additions
@@ -606,7 +626,7 @@ def _sync_one_file_may_extended(
         missing = additions.get(node_id)
         if not missing:
             continue
-        close_idx = _node_body_span(lines, idx)
+        close_idx = node_body_span(lines, idx)
         before_len = len(lines)
         lines, node_diffs = _insert_whole_node_may_grants(
             lines, idx, close_idx, node_id, missing

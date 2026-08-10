@@ -843,27 +843,6 @@ _IFACE_NAMES_PER_LINE = 6
 _IFACE_GROUP_ORDER = {"class": 0, "function": 1, "const": 2, "unresolved": 3}
 
 
-# frob:waive DUP001 reason="byte-identical to _sync_may.py::_node_body_span by \
-# construction -- both independently mirror the deleted _sync_interface.py's own \
-# _node_body_span, a tiny (7-line) brace-depth scanner with no state to share; \
-# extracting a shared helper would need a new module both _sync_may.py (SYS100, not in \
-# T-1872's scope) and this handler import from, which is a real refactor outside this \
-# order-only ticket's declared scope -- filed as a follow-up, not silently done here"
-def _iface_node_body_span(lines: list[str], header_idx: int) -> int:
-    """The line index of the `}` closing the node body opened at
-    `lines[header_idx]`, brace-depth matched (mirrors the deleted
-    `_sync_interface._node_body_span`)."""
-    depth = 1
-    for idx in range(header_idx + 1, len(lines)):
-        # frob:waive PERF002 reason="each line is a different string every iteration \
-        # -- nothing to hoist or cache; one-pass O(n) brace-depth scan, not a repeated \
-        # identical query"
-        depth += lines[idx].count("{") - lines[idx].count("}")
-        if depth == 0:
-            return idx
-    return len(lines) - 1  # malformed input: no matching close, best effort
-
-
 #: One located `interface=` declaration span: `(first_line, last_line,
 #: indent, names, is_compact)`.
 _IfaceSpan = tuple[int, int, str, list[str], bool]
@@ -1003,7 +982,9 @@ def _reorder_node_interface_block(
     handler's own span-finder misparsed. A rewriter capable of emitting
     unparseable output must verify its own output, not just its name
     set. Returns `(new_lines, changed)`."""
-    close_idx = _iface_node_body_span(lines, header_idx)
+    from frob.strata._sync_may import node_body_span
+
+    close_idx = node_body_span(lines, header_idx)
     spans = _iface_find_spans(lines, header_idx, close_idx)
     if not spans:
         return lines, False

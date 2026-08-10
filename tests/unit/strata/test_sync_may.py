@@ -11,6 +11,7 @@ from frob.strata import StrataError
 from frob.strata._sync_may import (
     apply_sync_may,
     apply_sync_may_extended,
+    node_body_span,
     sync_may_extended_report,
     sync_may_report,
 )
@@ -262,3 +263,45 @@ class TestApplySyncMayExtended:
         assert not result2.danger_ok.has_drift
         written2 = apply_sync_may_extended(tmp_path, result2.danger_ok)
         assert written2 == ()
+
+
+# frob:ticket T-1895
+class TestNodeBodySpan:
+    """`node_body_span`'s brace-depth scan (T-1895: now the single shared
+    home for this scanner -- `frob.gates._fix_engine_sync` imports it
+    instead of keeping its own byte-identical copy)."""
+
+    # frob:ticket T-1895
+    def test_flat_body_returns_closing_brace_line(self):
+        """A node body with no nested `{`/`}` closes at the first bare
+        `}` line after the header."""
+        lines = [
+            "node Foo : trusted {",
+            '    code "foo/**";',
+            "}",
+        ]
+        assert node_body_span(lines, 0) == 2
+
+    # frob:ticket T-1895
+    def test_nested_braces_do_not_close_early(self):
+        """A nested sub-block's own braces (e.g. `on crash { ... }`) must
+        not terminate the scan before the node's own closing brace."""
+        lines = [
+            "node Foo : trusted {",
+            '    code "foo/**";',
+            "    on crash {",
+            '        notify "team";',
+            "    }",
+            "}",
+        ]
+        assert node_body_span(lines, 0) == 5
+
+    # frob:ticket T-1895
+    def test_malformed_input_returns_last_line_best_effort(self):
+        """No matching close brace at all: falls back to the last line
+        index rather than raising."""
+        lines = [
+            "node Foo : trusted {",
+            '    code "foo/**";',
+        ]
+        assert node_body_span(lines, 0) == 1

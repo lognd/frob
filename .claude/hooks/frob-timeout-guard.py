@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _shellscan import strip_quoted  # noqa: E402
+from _shellscan import strip_quoted  # noqa: E402  # ty: ignore[unresolved-import]
 
 # frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 MIN_TIMEOUT_MS = 300000
