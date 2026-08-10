@@ -2,7 +2,7 @@
 id: T-2024
 title: Add the real frob:doc anchor for T-2006's revalidate_dispatchable_sweep_tickets
   once T-1696's tickets.md lease clears
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -16,6 +16,11 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- cmd:grep -n "frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::revalidate_dispatchable_sweep_tickets"
+  docs/modules/tickets.md exit=0 sha256=4773e06db8bc
+- cmd:grep -n "frob:doc docs/modules/tickets.md#doable-time-revalidation-of-sweep-filed-tickets-t-2006"
+  src/frob/app/ticket_runner/_rapid_sweep.py exit=0 sha256=0bfd28eda7a0
 designated_repro_test: null
 threat: null
 component: null

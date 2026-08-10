@@ -1,7 +1,7 @@
 ---
 id: T-2035
 title: Recovered from T-2036's phantom TICK006 citation of T-2030
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -28,3 +28,6 @@ NOT fixed here (explicitly out of scope, filed separately): T-2030,
 the sweep writing into a concurrent agent's own worktree -- a
 root-path-resolution defect the coordinator suspects shares an
 upstream cause wi
+
+## Drop reason
+- 2026-08-10: Re-measured: T-2030 exists in tickets.md with state=done, full evidence and Done report -- not a phantom citation. The TICK006 finding is stale; nothing left to implement.

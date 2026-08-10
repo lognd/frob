@@ -3079,6 +3079,24 @@ A finding refuses exactly like a held flock does, naming the ticket id
 parsed from the process's own argv (a `T-####`-shaped token) when one
 was found.
 
+**Land-wait budget config and start-relative scaling (T-2023).**
+<!-- frob:describes src/frob/tickets/_leases.py::_load_land_wait_timeout_s -->
+<!-- frob:describes src/frob/tickets/_leases.py::_land_lock_started_at -->
+<!-- frob:describes src/frob/tickets/_leases.py::_resolve_land_wait_budget -->
+A caller waiting on this lease (rather than refusing outright) no longer
+waits a fixed span measured from its OWN arrival. `_resolve_land_wait_
+budget` instead resolves the wait against the in-flight land's own
+recorded start time (`_land_lock_started_at`, read off the lock's holder
+metadata `land()` already writes): the remaining budget is `resolved_
+timeout - (now - started_at)`, floored at zero, so a caller that shows up
+partway through a long land waits only for what is actually left, not a
+fresh full timeout stacked on top of time the land had already spent.
+The base timeout itself is configurable per repo via `frob.toml`'s
+`[tickets] land_wait_timeout_s` (`_load_land_wait_timeout_s`, default
+`330` seconds when unset or when the config value is not a positive
+int) -- a repo whose real land time regularly exceeds the built-in
+default no longer has to patch source to raise it.
+
 ## Root checkout write guard (T-1779)
 
 T-1619 (above) closed the ledger-COMMIT race between `land()` and every
@@ -3196,6 +3214,45 @@ dedicated `frob doctor`-style one-line surface for this (so a
 coordinator can check before touching root without a probe command that
 also has other side effects) is not built in this pass -- filed as a
 natural, small follow-up rather than half-built here.
+
+## Shared land-path liveness authority: `is_effectively_in_progress` (T-1999)
+
+<!-- frob:describes src/frob/tickets/_leases.py::is_effectively_in_progress -->
+
+Every land-path guard T-1639 narrowed to gate on `IN_PROGRESS` must call
+`is_effectively_in_progress(root, ticket_id, ledger_state)` instead of
+trusting `root`'s own ledger `state` field directly.
+
+**Root cause this closes:** `frob ticket start` records a ticket's
+cross-worktree LEASE (`record_lease`, this module) and flips its LOCAL
+ledger to `IN_PROGRESS` in the same operation -- but the worktree that
+did this and `root`'s own checkout of `tickets.md` are two different
+files. `root` only observes the `IN_PROGRESS` transition once something
+merges/lands that worktree's ledger back in. In the window between "a
+worktree took the lease" and "main observed the state transition", a
+guard that reads only `root`'s ledger sees `state: planned`/`queued`
+for a ticket that is, in fact, actively held (T-1977's land of
+`f3257572a` carried a change into T-1665's live scope while T-1665's
+lease was held and main's copy still read `planned` -- T-1999's own
+measured repro).
+
+A ticket counts as effectively in progress if EITHER:
+
+- a live lease for `ticket_id` exists (`read_all_leases`, which already
+  prunes dead-worktree leases via `_live_leases_pruning_stale` -- the
+  real-time, cross-worktree-visible signal `record_lease`/
+  `release_lease` maintain), OR
+- `ledger_state` itself already reads `IN_PROGRESS` (the fallback for
+  the ordinary case where a lease was never taken by a different
+  worktree, or has since been released but the ledger write has not
+  landed either way).
+
+This is a strict widening of "state says IN_PROGRESS" to "state says
+IN_PROGRESS OR a live lease says so" -- it can only make a
+dormant-looking ticket refuse more correctly; it can never make a
+genuinely dormant ticket (no lease, state not IN_PROGRESS) refuse, so
+T-1639's queued/planned-does-not-block outcome is unchanged for the
+case that has neither signal.
 
 ## Orphaned-lease detection and release (T-1779 finding 7)
 
@@ -5292,6 +5349,44 @@ returns `None` and the refusal falls back to "unattributed (cannot be
 determined from staged content)" -- a deliberate refusal to report a
 plausible-but-wrong ticket id (the T-1795/T-1799 incident this guards
 against was exactly a confident wrong guess).
+
+### Doable-time revalidation of sweep-filed tickets (T-2006)
+
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::revalidate_dispatchable_sweep_tickets -->
+
+T-1983's auto-drop (`_close_resolved_sweep_tickets`, above) works
+correctly, but its call site is INSIDE a deferred sweep, which only
+runs after SOME land -- any land, not necessarily one related to the
+stale ticket. In the window between a sweep-filed ticket's identities
+getting fixed (by another agent, or a Tier-A auto-fix) and the next
+unrelated land's sweep, the ticket sits dispatchable and unverified --
+exactly when a coordinator reads `frob ticket doable` and dispatches
+it. Measured twice on 2026-08-10: T-2000 (already-fixed, no later
+sweep had run, dropped by hand) and T-1998 (misattributed AND
+mostly-already-fixed, cost a full dispatch cycle for one real line of
+work).
+
+`revalidate_dispatchable_sweep_tickets` is called from `frob ticket
+doable`'s own render path (`_query._doable`) with the full candidate
+ticket set, BEFORE the dispatchable filter runs -- deliberately NOT a
+full unscoped sweep (T-1684's whole point stays off this path) and NOT
+gated on `start` (too late -- the dispatch decision already happened by
+then). It shares the SAME drop mechanism as T-1983's
+`_close_resolved_sweep_tickets` (`_maybe_drop_resolved_ticket`), just at
+a different call-site timing:
+
+- Zero-cost when `tickets` contains no sweep-filed candidate at all
+  (`_parse_sweep_ticket_identities` returns `None` for everything) --
+  the overwhelmingly common case, so a plain `frob ticket doable` pays
+  nothing extra most of the time.
+- When at least one candidate exists, spawns exactly ONE re-check
+  (`_identities_still_reproducing`) scoped to the UNION of every
+  candidate's own recorded identities -- never a full sweep -- and
+  drops any candidate whose full identity set is now a subset of what
+  vanished.
+- An unmeasurable re-check (spawn refused, timeout) drops nothing,
+  matching T-1983's own "never treat unmeasurable as resolved" rule.
+- The measured cost of the one re-check is always logged.
 
 ## Git merge driver
 

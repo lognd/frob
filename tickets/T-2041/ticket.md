@@ -2,7 +2,7 @@
 id: T-2041
 title: 'docs/modules/tickets.md: document T-2023''s land-wait budget config + start-relative
   scaling'
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-08-10'
@@ -15,6 +15,9 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- cmd:grep -n "Land-wait budget config and start-relative scaling" docs/modules/tickets.md
+  exit=0 sha256=2b6b8f72a649
 designated_repro_test: null
 threat: null
 component: null

@@ -1,7 +1,7 @@
 ---
 id: T-2003
 title: Add docs/modules/tickets.md anchor for is_effectively_in_progress (T-1999 follow-up)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -14,6 +14,9 @@ scope:
 - docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- cmd:grep -n "frob:describes src/frob/tickets/_leases.py::is_effectively_in_progress"
+  docs/modules/tickets.md exit=0 sha256=33dfd91112af
 designated_repro_test: null
 threat: null
 component: null

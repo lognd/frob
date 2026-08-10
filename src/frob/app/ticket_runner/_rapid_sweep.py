@@ -1642,15 +1642,13 @@ def _close_resolved_sweep_tickets(
 
 
 # frob:ticket T-2006
+# frob:ticket T-2024
 # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_no_sweep_tickets_is_zero_cost  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_fully_resolved_candidate_is_dropped  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_still_reproducing_candidate_is_left_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_unmeasurable_recheck_drops_nothing  # noqa: E501
-# frob:waive COV001 reason="the natural doc home is docs/modules/tickets.md's existing \
-# deferred-post-land-sweep section (T-1684/T-1983), which is under T-1696's LIVE \
-# cross-worktree lease for the duration of this ticket (same lease T-1935/T-1791's \
-# waivers directly below in this same file cite) -- cannot be edited here without \
-# colliding; filed as follow-up residue to add the anchor once the lease clears"
+# frob:doc \
+# docs/modules/tickets.md#doable-time-revalidation-of-sweep-filed-tickets-t-2006
 def revalidate_dispatchable_sweep_tickets(
     root: Path, tickets: Sequence  # noqa: ANN401 -- Sequence[Ticket], deferred-import type
 ) -> tuple[str, ...]:
