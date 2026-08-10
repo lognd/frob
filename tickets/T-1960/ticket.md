@@ -2,7 +2,7 @@
 id: T-1960
 title: 'WIRE001 follow-ups inherit no priority, so the half that makes a fix real
   starves: 7 open, all medium, 3 from high parents'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,72 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/
+- src/frob/app/ticket_runner/_new.py
+- tests/unit/test_ticket_new_priority_inherit_t1960.py
+- tickets/T-1957/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: 'Priority inheritance (fix direction (a)) only touches frob ticket new''s
+
+    spec-building path: TicketSpec construction reads --parent''s priority
+
+    when --priority is not explicitly given. Narrowing from the whole
+
+    src/frob/tickets/ package glob to the actual files this touches.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: 'Priority inheritance (fix direction (a)) only touches frob ticket new''s
+
+    spec-building path: TicketSpec construction reads --parent''s priority
+
+    when --priority is not explicitly given. Narrowing from the whole
+
+    src/frob/tickets/ package glob to the actual files this touches.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_ticket_new_priority_inherit_t1960.py
+  reason: 'Priority inheritance (fix direction (a)) only touches frob ticket new''s
+
+    spec-building path: TicketSpec construction reads --parent''s priority
+
+    when --priority is not explicitly given. Narrowing from the whole
+
+    src/frob/tickets/ package glob to the actual files this touches.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-1957/ticket.md
+  reason: 'tickets/T-1957/ticket.md is touched because this ticket''s own third
+
+    acceptance criterion (audit + correct open WIRE001 follow-up
+
+    priorities) required a single priority bump on T-1957 -- the one live
+
+    instance of the measured priority-inversion among currently-open
+
+    follow-ups, via `frob ticket priority T-1957 high`.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_ticket_new_priority_inherit_t1960.py::TestNewTicketPriorityInheritance::test_high_priority_parent_yields_high_priority_follow_up
+- tests/unit/test_ticket_new_priority_inherit_t1960.py::TestNewTicketPriorityInheritance::test_medium_priority_parent_yields_medium_priority_follow_up
+- tests/unit/test_ticket_new_priority_inherit_t1960.py::TestNewTicketPriorityInheritance::test_explicit_priority_overrides_parent_inheritance
+- tests/unit/test_ticket_new_priority_inherit_t1960.py::TestNewTicketPriorityInheritance::test_no_parent_falls_back_to_medium_default_unchanged
+- tests/unit/test_ticket_new_priority_inherit_t1960.py::TestNewTicketPriorityInheritance::test_unresolvable_parent_falls_back_to_medium_default
 designated_repro_test: null
 threat: null
 component: null

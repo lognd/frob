@@ -11,11 +11,15 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
 from ._verify import _apply_evidence
+
+if TYPE_CHECKING:
+    from frob.tickets import Priority
 
 _log = get_logger("frob.app.ticket_runner")
 
@@ -89,16 +93,44 @@ def _resolve_new_acceptance(cfg: AppConfig) -> list[str]:
     return list(cfg.ticket_acceptance)
 
 
-def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: ANN201
+# frob:ticket T-1960
+def _resolve_new_priority(root: Path, cfg: AppConfig) -> Priority:
+    """Resolve `frob ticket new`'s priority: an explicit `--priority`
+    always wins; otherwise, if `--parent PARENT_ID` names a real ticket,
+    INHERIT that parent's priority instead of defaulting to
+    `Priority.MEDIUM` -- T-1960's own defect was that a WIRE001 follow-up
+    filed off a HIGH-priority parent's waiver silently dropped to medium
+    (three real instances measured: T-1921/T-1937/T-1938, all high,
+    each spawning a medium follow-up), so the half of a fix that makes it
+    REAL starved behind newer high-priority work. No blanket escalation:
+    a medium parent still yields a medium follow-up, same as today, and a
+    `--parent` that fails to resolve (unknown id, or none given at all)
+    falls back to the pre-existing `Priority.MEDIUM` default unchanged."""
+    from frob.tickets import Priority
+
+    if cfg.ticket_priority:
+        return Priority(cfg.ticket_priority)
+    if cfg.ticket_parent:
+        from frob.tickets import _load_one
+
+        parent = _load_one(root, cfg.ticket_parent)
+        if parent.is_ok:
+            return parent.danger_ok.priority
+    return Priority.MEDIUM
+
+
+def _ticket_spec_from_cfg(
+    root: Path, cfg: AppConfig, *, title: str, kind: str
+):  # noqa: ANN201
     """Build the `TicketSpec` `frob ticket new`'s flags describe.
 
     `title`/`kind` are taken as separate required params (not read again from
     `cfg.ticket_title`/`cfg.ticket_kind`) so the caller's None-check narrows
     them to `str` here too -- `cfg`'s fields stay `str | None` on their own.
-    """
+    `root` is threaded through only for `_resolve_new_priority`'s
+    `--parent` priority-inheritance lookup (T-1960)."""
     from frob.tickets import (
         Origin,
-        Priority,
         Stride,
         TicketKind,
         TicketSpec,
@@ -110,9 +142,8 @@ def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: AN
         kind=TicketKind(kind),
         origin=Origin(cfg.ticket_origin) if cfg.ticket_origin else Origin.HUMAN,
         # frob:ticket T-0411
-        priority=(
-            Priority(cfg.ticket_priority) if cfg.ticket_priority else Priority.MEDIUM
-        ),
+        # frob:ticket T-1960
+        priority=_resolve_new_priority(root, cfg),
         scope=tuple(cfg.ticket_scope),
         blocked_by=tuple(cfg.ticket_blocked_by),
         parent=cfg.ticket_parent,
@@ -183,7 +214,9 @@ def _new(root: Path, cfg: AppConfig) -> None:
         _log.error("frob ticket new requires --title and --kind")
         sys.exit(1)
 
-    spec = _ticket_spec_from_cfg(cfg, title=cfg.ticket_title, kind=cfg.ticket_kind)
+    spec = _ticket_spec_from_cfg(
+        root, cfg, title=cfg.ticket_title, kind=cfg.ticket_kind
+    )
     # T-1758: new_ticket now auto-commits internally by default -- opt out
     # here (no_commit=True) so THIS verb's own commit below still captures
     # the whole filed block (title/scope/body plus any --evidence ids
