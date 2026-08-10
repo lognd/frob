@@ -4401,6 +4401,17 @@ its finding message, so the handler just calls that existing remedy:
   existing `frob.release` sync functions directly, the same ones `frob
   release sync`'s CLI dispatches to. Never writes `.frob-release.json`
   itself, only the three derived artifacts.
+- **`fix_docenum001_enumerates_sync`** (T-1974): a `frob:enumerates` doc
+  anchor's claimed `members="..."` list has drifted from the real
+  collection literal it targets (DOCENUM001) -- reuses `frob.gates.
+  _docenum`'s own AST resolution to recompute the real member set and
+  rewrite the doc line's `members=` attribute in place. Covers every
+  `frob:enumerates` edge in the graph, not only the gates.md
+  rule-catalog anchor that motivated it -- that anchor alone regressed
+  the unscoped floor twice in one session (T-1937 -> T-1958, T-1629's
+  SYS110) purely because nothing mechanically kept it in sync with
+  `_KNOWN_GATE_RULES`, the same shape REG010's own auto-fix already
+  closes for check-coverage.yaml.
 
   T-1924: `fix_reg010_registry_sync` and `fix_rel002_release_sync` used
   to also declare an unused, non-Optional `GraphSnapshot` parameter
@@ -4575,10 +4586,11 @@ left on that line at all -- no separate "already fixed" tracking needed.
 promotes the prior positional-call list to this explicit table so a
 fixability-registry-field ticket has something real to scan) -- run in
 the dict's declared order (DOC007/DOC002/FMT001/
-SUPPRESS001/REG010/REL002 first, since they are pure source-text/artifact
-rewrites with no ledger interaction; TICK002 next, since it touches the
-ticket ledger; WAIVE004 last, since it re-invokes the whole gates suite
-itself and should see every other handler's rewrites already applied).
+SUPPRESS001/REG010/REL002/DOCENUM001 first, since they are pure
+source-text/artifact rewrites with no ledger interaction; TICK002 next,
+since it touches the ticket ledger; WAIVE004 last, since it re-invokes
+the whole gates suite itself and should see every other handler's
+rewrites already applied).
 SUPPRESS001 runs immediately after FMT001 specifically (see the
 precedence note above). A handler whose own signature differs from the
 uniform `(root, snapshot, queue)` call shape (four take `(root,

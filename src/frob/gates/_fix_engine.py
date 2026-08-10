@@ -47,6 +47,7 @@ from frob.gates._fix_engine_shared import (
 )
 from frob.gates._fix_engine_sync import (
     fix_cov002_ticket_directive_insertion,
+    fix_docenum001_enumerates_sync,
     fix_reg010_registry_sync,
     fix_rel002_release_sync,
     fix_sys100_extended_whole_node_grant,
@@ -474,7 +475,7 @@ def _fix_sys100_both_cases(root: Path) -> list[FixApplied]:
 #: review advisory noted this inconsistency and deferred the minimal fix
 #: to this ticket; this dict IS that minimal fix, at the call-site layer
 #: only. Order matters: DOC007/DOC002/INV006-carry/FMT001/SUPPRESS001/
-#: REG010/REL002 are pure rewrites with no ledger interaction; TICK002
+#: REG010/REL002/DOCENUM001 are pure rewrites with no ledger interaction; TICK002
 #: touches the ticket ledger; WAIVE004 runs LAST since it re-invokes the
 #: whole gates suite itself and should see every other handler's
 #: rewrites already applied, not a stale pre-fix tree. SUPPRESS001 runs
@@ -530,6 +531,11 @@ TIER_A_HANDLERS: dict[
         )
     ),
     "REG010": lambda root, snapshot, queue, ticket_id: fix_reg010_registry_sync(root),
+    "DOCENUM001": (
+        lambda root, snapshot, queue, ticket_id: fix_docenum001_enumerates_sync(
+            root, snapshot
+        )
+    ),
     "REL002": lambda root, snapshot, queue, ticket_id: fix_rel002_release_sync(root),
     "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(root),
     "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(root),

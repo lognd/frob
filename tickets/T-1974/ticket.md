@@ -2,7 +2,7 @@
 id: T-1974
 title: 'Adding one gate rule id needs three hand edits and none is checked before
   the land: DOCENUM001+REG010 regressed the floor twice'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,61 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_new_gate_rule_acceptance.py
+- src/frob/gates/_fix_engine.py
+- src/frob/gates/_fix_engine_sync.py
+- docs/modules/gates.md
+- tests/test_gates.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: '_KNOWN_RULE_FIXABILITY (this file) has its own drift-lock test (TestRuleFixability)
+    requiring a DOCENUM001: auto entry paired with the new Tier-A handler'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates.py::TestFixEngineTierABatch2::test_docenum001_fails_before_fix_and_passes_after
+- tests/test_gates.py::TestFixEngineTierABatch2::test_docenum001_already_in_sync_is_a_no_op
+- tests/test_gates.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
+- tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
 designated_repro_test: null
 threat: null
 component: null

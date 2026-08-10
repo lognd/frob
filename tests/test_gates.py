@@ -11464,6 +11464,111 @@ class TestFixEngineTierABatch2:
         applied = fix_reg010_registry_sync(root)
         assert applied == []
 
+    # -- acceptance [1b]: DOCENUM001 enumerates members resync --------------
+
+    # frob:ticket T-1974
+    def test_docenum001_fails_before_fix_and_passes_after(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # src/frob/gates/_fix_engine_sync.py::fix_docenum001_enumerates_sync kind="unit"
+        from frob.gates._docenum import docenum001_gate
+        from frob.gates._fix_engine import fix_docenum001_enumerates_sync
+        from frob.graph._models import Edge, EdgeKind, GraphSnapshot
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "rules.py").write_text(
+            '_KNOWN = frozenset({"A001", "A002", "A003"})\n', encoding="utf-8"
+        )
+        (root / "docs").mkdir()
+        doc_path = root / "docs" / "catalog.md"
+        doc_path.write_text(
+            "# catalog\n"
+            '<!-- frob:enumerates src/rules.py::_KNOWN members="A001,A002" -->\n',
+            encoding="utf-8",
+        )
+
+        def _edges() -> tuple[Edge, ...]:
+            return (
+                Edge(
+                    src="docs/catalog.md#catalog",
+                    kind=EdgeKind.ENUMERATES,
+                    target="src/rules.py::_KNOWN",
+                    origin="docs/catalog.md:2",
+                    attrs={"members": "A001,A002"},
+                ),
+            )
+
+        snapshot = GraphSnapshot(root=str(root), symbols={}, edges=_edges())
+
+        # BEFORE: the doc's claimed member list is stale (missing A003) --
+        # DOCENUM001 fires.
+        before = docenum001_gate(root, snapshot)
+        assert any(v.rule == "DOCENUM001" for v in before)
+
+        applied = fix_docenum001_enumerates_sync(root, snapshot)
+
+        assert len(applied) == 1
+        assert applied[0].rule == "DOCENUM001"
+        assert applied[0].file == "docs/catalog.md"
+        rewritten = doc_path.read_text(encoding="utf-8")
+        assert 'members="A001,A002,A003"' in rewritten
+
+        # AFTER: re-run the gate against a snapshot reflecting the fixed
+        # claim -- clean.
+        fixed_snapshot = GraphSnapshot(
+            root=str(root),
+            symbols={},
+            edges=(
+                Edge(
+                    src="docs/catalog.md#catalog",
+                    kind=EdgeKind.ENUMERATES,
+                    target="src/rules.py::_KNOWN",
+                    origin="docs/catalog.md:2",
+                    attrs={"members": "A001,A002,A003"},
+                ),
+            ),
+        )
+        after = docenum001_gate(root, fixed_snapshot)
+        assert after == ()
+
+    # frob:ticket T-1974
+    def test_docenum001_already_in_sync_is_a_no_op(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # src/frob/gates/_fix_engine_sync.py::fix_docenum001_enumerates_sync kind="unit"
+        from frob.gates._fix_engine import fix_docenum001_enumerates_sync
+        from frob.graph._models import Edge, EdgeKind, GraphSnapshot
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "rules.py").write_text(
+            '_KNOWN = frozenset({"A001", "A002"})\n', encoding="utf-8"
+        )
+        (root / "docs").mkdir()
+        doc_path = root / "docs" / "catalog.md"
+        content = (
+            "# catalog\n"
+            '<!-- frob:enumerates src/rules.py::_KNOWN members="A001,A002" -->\n'
+        )
+        doc_path.write_text(content, encoding="utf-8")
+        snapshot = GraphSnapshot(
+            root=str(root),
+            symbols={},
+            edges=(
+                Edge(
+                    src="docs/catalog.md#catalog",
+                    kind=EdgeKind.ENUMERATES,
+                    target="src/rules.py::_KNOWN",
+                    origin="docs/catalog.md:2",
+                    attrs={"members": "A001,A002"},
+                ),
+            ),
+        )
+
+        applied = fix_docenum001_enumerates_sync(root, snapshot)
+
+        assert applied == []
+        assert doc_path.read_text(encoding="utf-8") == content
+
     # -- acceptance [2]: REL002 release sync --------------------------------
 
     # frob:ticket T-1924
@@ -11625,6 +11730,7 @@ class TestFixEngineTierABatch2:
             "E501",  # T-1547
             "COV002",  # T-1548
             "TICK006",  # T-1544
+            "DOCENUM001",  # T-1974
         }
 
     def test_apply_tier_a_fixes_dispatches_through_the_handler_dict(
