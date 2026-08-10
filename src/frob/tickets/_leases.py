@@ -29,8 +29,9 @@ import json
 import os
 import re
 import threading
+import time as _time
 import tomllib
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -62,27 +63,39 @@ LEASES_DIRNAME = "frob-leases"
 
 
 # frob:ticket T-1680
-def _refuse_for_held_land_lock(root: Path, path: Path) -> Result[None, LeaseError]:
+# frob:ticket T-1961
+def _refuse_for_held_land_lock(
+    root: Path, path: Path, *, quiet: bool = False
+) -> Result[None, LeaseError]:
     """The refusal `_land_flock_probe` returns when the land lock is held
     by a live process (T-1680, split out for ARCH103): reads the holder
     record purely to NAME the landing ticket in the message, so an
     operator learns which land to wait on rather than only that some land
     exists. An unreadable holder record still refuses -- the lock being
-    held is the fact that matters; the record only improves the wording."""
+    held is the fact that matters; the record only improves the wording.
+
+    T-1961: `quiet=True` (an intermediate poll attempt inside `refuse_if_
+    land_in_progress`'s bounded wait loop) skips the warning log -- the
+    loop already logs its OWN single "waiting..." message once at the
+    start of the wait, and logging this same refusal on every poll tick
+    would spam the log once per `poll_interval_s` for the whole wait
+    window instead of once."""
     holder = _read_land_lock_holder_json(path)
     landing_ticket = holder.get("ticket_id") if holder else None
-    _log.warning(
-        "tickets: %s refused -- a land is in progress for %s "
-        "(land.lock held by %s) -- retry after it completes",
-        root,
-        landing_ticket if landing_ticket else "an unknown ticket",
-        holder if holder is not None else "an unreadable/unwritten lock",
-    )
+    if not quiet:
+        _log.warning(
+            "tickets: %s refused -- a land is in progress for %s "
+            "(land.lock held by %s) -- retry after it completes",
+            root,
+            landing_ticket if landing_ticket else "an unknown ticket",
+            holder if holder is not None else "an unreadable/unwritten lock",
+        )
     return Err(LeaseError.LandInProgress)
 
 
 # frob:ticket T-1680
-def _land_flock_probe(root: Path) -> Result[None, LeaseError]:
+# frob:ticket T-1961
+def _land_flock_probe(root: Path, *, quiet: bool = False) -> Result[None, LeaseError]:
     """The `flock` half of `refuse_if_land_in_progress` (T-1619), split out
     to keep that function under the ARCH001 threshold (T-1680).
 
@@ -106,7 +119,7 @@ def _land_flock_probe(root: Path) -> Result[None, LeaseError]:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
         os.close(fd)
-        return _refuse_for_held_land_lock(root, path)
+        return _refuse_for_held_land_lock(root, path, quiet=quiet)
     fcntl.flock(fd, fcntl.LOCK_UN)
     os.close(fd)
     return Ok(None)
@@ -122,6 +135,14 @@ def _land_flock_probe(root: Path) -> Result[None, LeaseError]:
 # independently-invented lock/lease mechanism. `frob.tickets._land`
 # imports this constant rather than keeping its own copy.
 LAND_LOCK_REL = Path(".frob") / "land.lock"
+
+# frob:ticket T-1961
+# `refuse_if_land_in_progress`'s bounded wait: long enough to ride out a
+# routine land (this repo's own measured lands run well under a minute in
+# the common case) without blocking a ledger write indefinitely -- a lock
+# still held after this long refuses loudly exactly as before T-1961.
+_LAND_WAIT_TIMEOUT_S = 60.0
+_LAND_WAIT_POLL_INTERVAL_S = 2.0
 
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -457,11 +478,29 @@ def _probe_worktree_liveness(worktree: str) -> str:
     return "confirmed_absent"
 
 
+# frob:ticket T-2007
+def _should_skip_root_lease(root: Path, common_dir: Path) -> bool:
+    """`True` iff `root` is the shared PRIMARY checkout (`common_dir`'s
+    parent -- true only for the primary, since a LINKED worktree's own
+    `common_dir` resolves to the PRIMARY's `.git`, never its own) AND at
+    least one dispatched agent worktree (`.claude/worktrees/**`) is
+    currently registered on this repo (`_list_agent_worktrees`) --
+    `record_lease`'s T-2007 guard. A solo checkout with no sibling agent
+    worktrees at all returns `False` unconditionally: the ordinary
+    single-checkout case (root and 'the only place work happens' are the
+    same thing) must record leases exactly as before."""
+    if common_dir.parent.resolve() != root.resolve():
+        return False
+    siblings = _list_agent_worktrees(root)
+    return siblings.is_ok and len(siblings.danger_ok) > 0
+
+
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_mkdir_failure kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestRecordReleaseRenameLeaseErrorBranches.test_record_lease_degrades_on_write_failure kind="unit"  # noqa: E501
 # frob:ticket T-0601
+# frob:ticket T-2007
 def record_lease(
     root: Path, ticket_id: str, scope: tuple[str, ...]
 ) -> Result[None, LeaseError]:
@@ -482,7 +521,26 @@ def record_lease(
 
     T-0784: resolves the common dir and current branch in ONE `git` spawn
     (`gitio.common_dir_and_branch`) rather than the old back-to-back
-    `rev-parse --git-common-dir` + `branch --show-current` calls."""
+    `rev-parse --git-common-dir` + `branch --show-current` calls.
+
+    T-2007: a lease recorded against the shared PRIMARY checkout, in a
+    repo that also has dispatched agent worktrees registered, is skipped
+    (still `Ok(None)`, best-effort as above) rather than written --
+    `lease_staleness_reason`'s `"holder-dead"` shape can never fire for
+    the primary checkout (it always has a live process: every
+    coordinator command, every `frob check`, every land), so a lease
+    recorded there is un-reclaimable by construction once its TTL
+    passes. `docs/guides/agent-playbook.md`'s own "coordinator never
+    dirties root" doctrine already treats ticket work happening in the
+    primary checkout as an anti-pattern to avoid, not a shape to
+    accommodate -- refusing to record the lease in the first place
+    (`_should_skip_root_lease`) closes the leak at its source instead of
+    inventing a new, weaker staleness rule just for this one shape (the
+    ticket's own explicit "do not widen holder-dead" constraint). A repo
+    with NO dispatched worktrees at all (the ordinary single-checkout
+    case, where 'root' and 'the only place work happens' are the same
+    thing) is unaffected -- the guard only engages when sibling agent
+    worktrees are actually registered."""
     combined = gitio.common_dir_and_branch(root)
     if combined.is_err:
         _log.warning(
@@ -493,6 +551,17 @@ def record_lease(
         )
         return Ok(None)
     common_dir, branch = combined.danger_ok
+    if _should_skip_root_lease(root, common_dir):
+        _log.warning(
+            "tickets: %s lease NOT recorded -- %s is the shared primary "
+            "checkout and this repo has dispatched agent worktree(s) "
+            "registered; a lease recorded here can never be reclaimed as "
+            "holder-dead (the primary checkout always has a live process) "
+            "-- work this ticket from a dedicated worktree instead (T-2007)",
+            ticket_id,
+            root,
+        )
+        return Ok(None)
     leases_root = common_dir / LEASES_DIRNAME
     try:
         leases_root.mkdir(parents=True, exist_ok=True)
@@ -1484,69 +1553,95 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
 # frob:tests \
 # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_when_no_lock_file
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
-def refuse_if_land_in_progress(root: Path) -> Result[None, LeaseError]:
+def refuse_if_land_in_progress(
+    root: Path,
+    *,
+    wait_timeout_s: float = _LAND_WAIT_TIMEOUT_S,
+    poll_interval_s: float = _LAND_WAIT_POLL_INTERVAL_S,
+    sleep: Callable[[float], None] = _time.sleep,
+    monotonic: Callable[[], float] = _time.monotonic,
+) -> Result[None, LeaseError]:
     """`Err(LeaseError.LandInProgress)` iff `root` currently has a LIVE
     `frob ticket land` holding its `LAND_LOCK_REL` advisory `flock`
     (T-0577/T-1619) -- the exclusive repository lease every OTHER ledger-
-    committing verb (`_add_and_commit_tickets_md`, so `new`/`close`/`drop`/
-    `fail`/`requeue`/`block`/`start`/`evidence`/`done-report`, every one of
-    them) must check before writing a commit onto `root`'s branch. `Ok
-    (None)` otherwise -- no lock file at all, or a lock file whose `flock`
-    this process can itself acquire (see below for why that is always safe).
+    committing verb (`new`/`close`/`drop`/`fail`/`requeue`/`block`/
+    `start`/`evidence`/`done-report`) must check before writing a commit
+    onto `root`'s branch. `Ok(None)` otherwise. See `_land_flock_probe`
+    for why a non-blocking `flock` acquire attempt is already a
+    structurally trustworthy liveness probe (crash-safe without a TTL or
+    a second liveness mechanism -- T-1619), and `_scan_for_live_land_
+    process` for the `/proc`-based belt-and-braces backstop that also
+    runs on every attempt (T-1619's explicit second requirement).
 
-    Crash-safety without a timeout or a separate liveness probe (T-1619's
-    explicit requirement: reuse this module's existing liveness machinery
-    rather than inventing a second mechanism): a POSIX advisory `flock` is
-    released by the kernel itself the instant its holding process exits,
-    by ANY means, including an uncatchable `SIGKILL` mid-land -- so a
-    non-blocking acquire attempt on `LAND_LOCK_REL` is already a
-    structurally trustworthy liveness probe, with none of the confirmed_
-    absent/ambiguous uncertainty `_probe_worktree_liveness` has to draw
-    for a plain on-disk path (a worktree directory does not vanish just
-    because the process that created it died). Failing to acquire the
-    lock here can only mean a currently-alive process holds it -- there is
-    no "dead holder, lock still held" state for `flock` to be ambiguous
-    about, so a probe-and-release attempt is both sufficient and correct
-    without polling, without a TTL, and without touching the pid-liveness
-    probing `frob.tickets._land._probe_land_lock_pid_liveness` uses purely
-    for its own RECLAIM-DISCLOSURE logging (a separate, best-effort
-    diagnostic concern this refusal check does not need).
+    T-1961: this used to refuse on the FIRST busy probe -- measured
+    hitting a coordinator 4x in one hour, each time forcing a hand-rolled
+    retry loop (the exact "callers responsible for retrying" anti-pattern
+    the ticket's own body names as a non-fix), and each refusal exits
+    non-zero indistinguishably from a REAL failure, so an unattended
+    script cannot tell "busy, safe to retry" from "wrong" -- a silently
+    lost finding. Now waits, bounded: on a busy probe, log ONE "waiting
+    for in-flight land..." message and poll every `poll_interval_s`
+    (`_probe_land_once`, quiet after the first) until either the lock
+    frees (`Ok(None)`) or `wait_timeout_s` elapses, at which point it
+    refuses loudly exactly as before (still `Err(LandInProgress)`, still
+    logged, still no unbounded hang) -- direction (a) from the ticket's
+    own preferred order."""
+    deadline = monotonic() + wait_timeout_s
+    warned = False
+    while True:
+        result = _probe_land_once(root, quiet=warned)
+        if result.is_ok:
+            return result
+        now = monotonic()
+        if now >= deadline:
+            if warned:
+                _log.warning(
+                    "tickets: %s -- in-flight land did not finish within "
+                    "%.0fs, refusing rather than waiting indefinitely",
+                    root,
+                    wait_timeout_s,
+                )
+            # `warned=False` means never waited at all (wait_timeout_s<=0,
+            # or the deadline was already past by the first probe) -- the
+            # ORIGINAL, non-quiet refusal already logged in that case.
+            return result
+        if not warned:
+            _log.warning(
+                "tickets: %s waiting for in-flight land to finish "
+                "(up to %.0fs) before proceeding...",
+                root,
+                wait_timeout_s,
+            )
+            warned = True
+        sleep(min(poll_interval_s, deadline - now))
 
-    T-1619 (repo owner's explicit second requirement, "belt and braces
-    during the transition"): even when the `flock` probe above finds no
-    live holder, this ALSO runs `_scan_for_live_land_process` -- a
-    `/proc`-based backstop that catches the two gaps a pure `flock` check
-    cannot: the narrow race window between a land PROCESS starting and its
-    first `_land_lock` acquisition, and a platform where `fcntl` degrades
-    to a no-op (in which case the flock check above never engages at all).
-    A finding there refuses exactly like a held flock does, naming the
-    ticket id parsed from the process's own argv when one was found.
 
-    Best-effort like every other lease primitive in this module: a `root`
-    where the lock file cannot even be opened (permissions, a genuinely
-    missing `.frob/` directory, `fcntl` unavailable on this platform)
-    degrades to running the process-scan backstop alone rather than
-    refusing outright over an inability to probe -- the flock file itself
-    is created by `_land_lock` on the land side, so a fresh checkout that
-    has never landed anything has no lock file to probe at all, which must
-    never block a first `frob ticket new`."""
-    probed = _land_flock_probe(root)
+# frob:ticket T-1961
+def _probe_land_once(root: Path, *, quiet: bool) -> Result[None, LeaseError]:
+    """One flock-probe-plus-process-scan attempt, `refuse_if_land_in_
+    progress`'s per-iteration body split out to keep that function under
+    the ARCH001 threshold -- `quiet` silences BOTH refusal paths' warning
+    logs (an intermediate poll tick inside the wait loop), matching
+    `_land_flock_probe`'s own `quiet` contract."""
+    probed = _land_flock_probe(root, quiet=quiet)
     if probed.is_err:
-        return Err(probed.danger_err)
+        return probed
     found = _scan_for_live_land_process(root)
-    if found is not None:
-        pid, landing_ticket = found
+    if found is None:
+        return Ok(None)
+    pid, landing_ticket = found
+    if not quiet:
         _log.warning(
-            "tickets: %s refused -- a `frob ticket land` process (pid %s) "
-            "is running against this repository for %s, even though its "
-            "land.lock is not currently held (T-1619 belt-and-braces "
-            "process scan) -- retry after it completes",
+            "tickets: %s refused -- a `frob ticket land` process "
+            "(pid %s) is running against this repository for %s, "
+            "even though its land.lock is not currently held "
+            "(T-1619 belt-and-braces process scan) -- retry after "
+            "it completes",
             root,
             pid,
             landing_ticket if landing_ticket else "an unknown ticket",
         )
-        return Err(LeaseError.LandInProgress)
-    return Ok(None)
+    return Err(LeaseError.LandInProgress)
 
 
 # frob:ticket T-1715
@@ -1992,8 +2087,8 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
 # frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_live_lease_refuses_even_when_roots_ledger_still_reads_planned kind="unit"  # noqa: E501
 # frob:waive COV001 reason="docs/modules/tickets.md (this module's own doc home) was \
 # held by a LIVE cross-worktree lease (T-1696, in-progress) at fix time and could not \
-# be added to T-1999's own scope -- filed T-2003 (renumbers on its own land) \
-# to add the frob:doc anchor once that lease clears; not silently dropped"
+# be added to T-1999's own scope -- filed T-2003 (renumbers on its own land) to add \
+# the frob:doc anchor once that lease clears; not silently dropped"
 def is_effectively_in_progress(
     root: Path, ticket_id: str, ledger_state: object
 ) -> bool:

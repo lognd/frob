@@ -46,6 +46,7 @@ from frob.tickets._leases import (
     _LeaseRecord,
     _list_agent_worktrees,
     lease_age_seconds,
+    lease_staleness_reason,
     leases_dir,
     read_all_leases,
     record_lease,
@@ -114,6 +115,21 @@ def second_worktree(repo: Path) -> Path:
     either worktree's own ledger) can tell the two apart afterward."""
     wt = repo.parent / "wt"
     _run(["git", "worktree", "add", "-b", "feature-wt", str(wt)], repo)
+    return wt
+
+
+# frob:ticket T-2007
+def _add_agent_worktree(repo: Path, name: str) -> Path:
+    """A linked `git worktree` under `repo`'s OWN `.claude/worktrees/`
+    tree (T-2007) -- the convention `_is_agent_worktree_path`/`_list_
+    agent_worktrees` actually match, unlike `second_worktree`'s sibling-
+    directory placement above (a different, older fixture shape that
+    predates the dispatch-worktree naming convention and is deliberately
+    left alone rather than repointed, since other tests already depend
+    on its exact sibling-path shape)."""
+    wt = repo / ".claude" / "worktrees" / name
+    wt.parent.mkdir(parents=True, exist_ok=True)
+    _run(["git", "worktree", "add", "-b", f"agent-{name}", str(wt)], repo)
     return wt
 
 
@@ -1214,7 +1230,11 @@ class TestRefuseIfLandInProgress:
         )
         try:
             with caplog.at_level("WARNING"):
-                result = refuse_if_land_in_progress(repo)
+                # T-1961: wait_timeout_s=0 -- the lock is held for the
+                # whole test and never releases, so waiting the default
+                # bounded window would just burn real wall-clock time for
+                # the same, immediate-refusal assertion this test wants.
+                result = refuse_if_land_in_progress(repo, wait_timeout_s=0)
             assert result.is_err
             assert result.danger_err == LeaseError.LandInProgress
             assert "T-9999" in caplog.text
@@ -1254,8 +1274,10 @@ class TestRefuseIfLandInProgress:
             line = holder.stdout.readline()
             assert line.strip() == "locked"
 
-            # While the holder is alive, the probe must refuse.
-            blocked = refuse_if_land_in_progress(repo)
+            # While the holder is alive, the probe must refuse. T-1961:
+            # wait_timeout_s=0 -- this assertion wants the IMMEDIATE
+            # refusal, not the bounded wait.
+            blocked = refuse_if_land_in_progress(repo, wait_timeout_s=0)
             assert blocked.is_err
 
             holder.kill()
@@ -1270,6 +1292,105 @@ class TestRefuseIfLandInProgress:
             if holder.poll() is None:
                 holder.kill()
                 holder.wait(timeout=5)
+
+    # frob:ticket T-1961
+    def test_waits_then_succeeds_once_the_lock_frees(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_waits_then_succe\
+        # eds_once_the_lock_frees
+        # T-1961 acceptance: hold the land lock, invoke the refusal check
+        # with a bounded wait, release the lock from a fake `sleep`
+        # callback (simulating the in-flight land finishing mid-wait), and
+        # assert it succeeds rather than exiting non-zero -- this is the
+        # FAIL-THEN-PASS proof (asserted Err before the fix existed, now
+        # asserts Ok).
+        import fcntl
+
+        from frob.tickets._leases import LAND_LOCK_REL, refuse_if_land_in_progress
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        released = False
+
+        def fake_sleep(_seconds: float) -> None:
+            nonlocal released
+            if not released:
+                fcntl.flock(holder_fd, fcntl.LOCK_UN)
+                os.close(holder_fd)
+                released = True
+
+        clock = {"t": 0.0}
+
+        def fake_monotonic() -> float:
+            return clock["t"]
+
+        with caplog.at_level("WARNING"):
+            result = refuse_if_land_in_progress(
+                repo,
+                wait_timeout_s=10,
+                poll_interval_s=1,
+                sleep=fake_sleep,
+                monotonic=fake_monotonic,
+            )
+        assert result.is_ok
+        assert "waiting for in-flight land" in caplog.text
+
+    # frob:ticket T-1961
+    def test_wait_times_out_and_still_refuses_loudly(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_times_out_a\
+        # nd_still_refuses_loudly
+        # A lock held PAST the timeout must still fail loudly -- no
+        # unbounded hang, exactly the second half of T-1961's acceptance.
+        import fcntl
+        import json
+
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            LeaseError,
+            refuse_if_land_in_progress,
+        )
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        os.write(
+            holder_fd,
+            (json.dumps({"pid": os.getpid(), "ticket_id": "T-8888"}) + "\n").encode(),
+        )
+
+        # A clock that stays under the deadline for one poll (so the loop
+        # logs its "waiting..." message and sleeps once, no real time
+        # spent) then jumps past it, forcing the final timeout refusal.
+        readings = iter([0.0, 5.0, 100.0])
+
+        def fake_monotonic() -> float:
+            return next(readings, 100.0)
+
+        try:
+            with caplog.at_level("WARNING"):
+                result = refuse_if_land_in_progress(
+                    repo,
+                    wait_timeout_s=10,
+                    poll_interval_s=1,
+                    sleep=lambda _s: None,
+                    monotonic=fake_monotonic,
+                )
+            assert result.is_err
+            assert result.danger_err == LeaseError.LandInProgress
+            assert "T-8888" in caplog.text
+            assert "did not finish within" in caplog.text
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
 
     @pytest.mark.skipif(
         not Path("/proc").is_dir(), reason="T-1619 belt-and-braces scan is Linux-only"
@@ -1308,7 +1429,9 @@ class TestRefuseIfLandInProgress:
                 time.sleep(0.1)
 
             with caplog.at_level("WARNING"):
-                result = refuse_if_land_in_progress(repo)
+                # T-1961: wait_timeout_s=0 -- this holder process runs for
+                # 30s and this assertion wants the immediate refusal.
+                result = refuse_if_land_in_progress(repo, wait_timeout_s=0)
             assert result.is_err
             assert result.danger_err == LeaseError.LandInProgress
             assert "T-4242" in caplog.text
@@ -2653,6 +2776,102 @@ class TestLeaseAgeSecondsExceptionBranch:
 
 
 # frob:ticket T-1650
+# frob:ticket T-2007
+class TestRootLeaseUnreclaimable:
+    """T-2007: a lease recorded against the shared PRIMARY checkout can
+    never go `"holder-dead"` -- `lease_staleness_reason`'s live-process
+    check always finds one (every coordinator command, every `frob
+    check`, every land runs cwd'd into root). Rather than widen
+    `holder-dead` (the ticket's own explicit "do not fix it this way"),
+    `record_lease` now refuses to WRITE such a lease in the first place
+    when this repo has dispatched agent worktrees registered -- the
+    un-reclaimable lease is never created, closing the leak at its
+    source. A solo checkout with no sibling worktrees is unaffected."""
+
+    # frob:ticket T-2007
+    def test_root_lease_skipped_when_agent_worktrees_exist(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_root_lease_skipp\
+        # ed_when_agent_worktrees_exist
+        # T-2007 acceptance 1 (adapted -- the chosen fix is prevention,
+        # not a new staleness rule): before this fix, record_lease wrote
+        # the lease unconditionally, producing exactly the un-reclaimable
+        # T-1686 shape the ticket measured live. After the fix, the lease
+        # is never written at all when a sibling agent worktree exists.
+        wt = _add_agent_worktree(repo, "some-ticket")
+        try:
+            result = record_lease(repo, "T-9010", ("src/x.py",))
+            assert result.is_ok
+            resolved = leases_dir(repo)
+            assert resolved.is_ok
+            assert not _lease_path(resolved.danger_ok, "T-9010").exists()
+        finally:
+            _run(["git", "worktree", "remove", "--force", str(wt)], repo)
+
+    # frob:ticket T-2007
+    def test_root_lease_still_recorded_with_no_sibling_worktrees(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_root_lease_still\
+        # _recorded_with_no_sibling_worktrees
+        # The ordinary, single-checkout case (no dispatched agent
+        # worktrees at all) must be unaffected -- root IS the only place
+        # work happens there, so the guard must never engage.
+        result = record_lease(repo, "T-9011", ("src/x.py",))
+        assert result.is_ok
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        assert _lease_path(resolved.danger_ok, "T-9011").exists()
+
+    # frob:ticket T-2007
+    def test_non_root_worktree_still_records_its_own_lease(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_non_root_worktre\
+        # e_still_records_its_own_lease
+        # Acceptance 2: a genuinely-live LEASE (this one, recorded from a
+        # real dispatched worktree, not root) must never be false-
+        # reclaimed/skipped by this guard -- it only ever engages for
+        # root's OWN lease.
+        wt = _add_agent_worktree(repo, "t9012-wt")
+        try:
+            result = record_lease(wt, "T-9012", ("src/x.py",))
+            assert result.is_ok
+            resolved = leases_dir(wt)
+            assert resolved.is_ok
+            assert _lease_path(resolved.danger_ok, "T-9012").exists()
+        finally:
+            _run(["git", "worktree", "remove", "--force", str(wt)], repo)
+
+    # frob:ticket T-2007
+    def test_pre_existing_root_lease_staleness_is_unchanged(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_pre_existing_roo\
+        # t_lease_staleness_is_unchanged
+        # Acceptance 2's other half: this fix only touches record-TIME
+        # behavior -- lease_staleness_reason itself (and any lease
+        # already on disk from before this fix, or written by a hand-
+        # crafted record like T-1686's real one) is untouched. A
+        # root-worktree lease younger than the TTL must still read as
+        # not stale, exactly as before.
+        # T-0001 is the `repo` fixture's own real ticket -- lease_
+        # staleness_reason's "ticket-gone" check needs an id that
+        # actually resolves in the ledger.
+        _write_lease(
+            repo,
+            "T-0001",
+            repo,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        leases = read_all_leases(repo)
+        record = next(r for r in leases if r.ticket_id == "T-0001")
+        assert lease_staleness_reason(repo, record) is None
+
+
 class TestRecordReleaseRenameLeaseErrorBranches:
     """T-draft-c74b8c63: `record_lease`/`release_lease`/`rename_lease` are
     all documented "best-effort" -- an OS-level failure writing, removing,

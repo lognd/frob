@@ -2,7 +2,7 @@
 id: T-2007
 title: A lease recorded against the shared root can never be holder-dead, so it is
   un-reclaimable by any command
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,9 +13,16 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_leases.py
+evidence_scope:
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_leases.py::TestRootLeaseUnreclaimable::test_root_lease_skipped_when_agent_worktrees_exist
+- tests/test_ticket_leases.py::TestRootLeaseUnreclaimable::test_root_lease_still_recorded_with_no_sibling_worktrees
+- tests/test_ticket_leases.py::TestRootLeaseUnreclaimable::test_non_root_worktree_still_records_its_own_lease
+- tests/test_ticket_leases.py::TestRootLeaseUnreclaimable::test_pre_existing_root_lease_staleness_is_unchanged
+designated_repro_test: tests/test_ticket_leases.py::TestRootLeaseUnreclaimable::test_root_lease_skipped_when_agent_worktrees_exist
 threat: null
 component: null
 anchor: false

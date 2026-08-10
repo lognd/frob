@@ -2,7 +2,7 @@
 id: T-1961
 title: 'Ledger verbs refuse with LandInProgress instead of waiting: hit 4x in one
   hour, forces hand-rolled retry loops'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -44,7 +44,10 @@ scope_changes:
     file. Measured: git grep -ln LandInProgress -- src/ returns exactly two files.'
   actor: logan
   at: '2026-08-10'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_waits_then_succeeds_once_the_lock_frees
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_wait_times_out_and_still_refuses_loudly
+designated_repro_test: tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_waits_then_succeeds_once_the_lock_frees
 threat: null
 component: null
 anchor: false

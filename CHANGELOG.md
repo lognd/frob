@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.448.0] - unreleased
+
+- T-1961: Ledger verbs refuse with LandInProgress instead of waiting: hit 4x in one hour, forces hand-rolled retry loops
+
 ## [0.447.0] - unreleased
 
 - T-2004: A CLI flag can be parsed, tested, and silently dropped by from_external's allowlist: tested is not reached
