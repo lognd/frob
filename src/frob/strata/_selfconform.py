@@ -346,16 +346,20 @@ SYS_UNDECLARED_INTENDED_SURFACE = "SYS110"
 #: `design/frob.strata` at T-1629 time -- `frozenset(v.node for v in
 #: check_self_conformance(...).danger_ok.violations if v.rule ==
 #: SYS_UNDECLARED_INTENDED_SURFACE)`, 734 findings across these 15
-#: nodes). SYS110 is silent for exactly these node ids until a human does
-#: the per-node hand-curation pass the module docstring's phased-
-#: migration section describes -- shrink this set (never add to it
-#: without the same audit) as each node's list is brought current; SYS110
-#: is now LIVE and enforced for every node NOT named here, including the
-#: other two nodes that already carry a non-empty `interface=` and
-#: already conform today (`checker`, `fleet` -- deliberately not
-#: silenced, since enabling enforcement wherever it is already green
-#: today is the correct default, not "exempt everything with an
-#: interface= block").
+#: nodes at T-1629 time). SYS110 is silent for exactly these node ids
+#: until a human does the per-node hand-curation pass the module
+#: docstring's phased-migration section describes -- shrink this set
+#: (never add to it without the same audit) as each node's list is
+#: brought current; SYS110 is now LIVE and enforced for every node NOT
+#: named here, including the two nodes that already carried a non-empty
+#: `interface=` and already conformed at T-1629 time (`checker`, `fleet`
+#: -- deliberately not silenced, since enabling enforcement wherever it
+#: is already green today is the correct default, not "exempt everything
+#: with an interface= block") and `natives` (T-1981: hand-audited, 1
+#: real finding -- `CARGO_CACHE_DIRNAME` was a genuine public export
+#: (in the module's own `__all__`) missing from `interface=`; added by
+#: hand, not regenerated, after confirming a real external consumer
+#: (`tests/unit/test_natives_build.py`) actually imports it).
 SYS110_UNAUDITED_NODES: frozenset[str] = frozenset(
     {
         "cli",
@@ -364,7 +368,6 @@ SYS110_UNAUDITED_NODES: frozenset[str] = frozenset(
         "gates",
         "graphlang",
         "mutate",
-        "natives",
         "refactor",
         "registry_model",
         "security",

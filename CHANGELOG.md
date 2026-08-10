@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.440.0] - unreleased
+
+- T-1981: Burn down SYS110_UNAUDITED_NODES: T-1629's rule enforces on 2 of 17 nodes until the 15 exempted mirrors are hand-audited
+
 ## [0.439.0] - unreleased
 
 - T-1968: frob:waive in markdown is silently ignored: waivers written by a burn-down suppress nothing and nothing says so

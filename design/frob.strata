@@ -903,6 +903,7 @@ node natives : trusted {
 
     attr interface=[
         BuildReport, CrateBuildResult, NativesError, build_natives,
+        CARGO_CACHE_DIRNAME,
     ];
     clearance Internal;
     code "src/frob/natives/**";

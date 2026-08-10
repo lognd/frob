@@ -1700,6 +1700,38 @@ class TestUndeclaredIntendedSurface:
             for v in result.danger_ok.violations
         )
 
+    # frob:ticket T-1981
+    # frob:tests src/frob/strata/_selfconform.py::SYS110_UNAUDITED_NODES kind="unit"
+    def test_burn_down_shrinks_the_exemption_never_widens_it(self) -> None:
+        """T-1981: the exemption set must be smaller than T-1629's
+        original 15 -- `natives` was hand-audited (its one real drift
+        finding, `CARGO_CACHE_DIRNAME`, was a genuine public export
+        missing from `interface=`, added by hand after confirming the
+        symbol is really consumed elsewhere) and removed. This must FAIL
+        at T-1629's own baseline (15) and must never regress upward."""
+        assert len(SYS110_UNAUDITED_NODES) < 15
+        assert "natives" not in SYS110_UNAUDITED_NODES
+        # Every node this ticket has NOT yet audited stays exempt --
+        # narrowing must be incremental and disclosed, never all-at-once.
+        assert SYS110_UNAUDITED_NODES == frozenset(
+            {
+                "cli",
+                "core",
+                "deploy",
+                "gates",
+                "graphlang",
+                "mutate",
+                "refactor",
+                "registry_model",
+                "security",
+                "serve",
+                "stratamod",
+                "tickets_ledger",
+                "verify",
+                "vet",
+            }
+        )
+
 
 class TestPurposeContract:
     """SYS105 (T-0669): a node's `purpose=` attr bounds its allowed

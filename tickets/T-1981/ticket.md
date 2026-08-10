@@ -2,7 +2,7 @@
 id: T-1981
 title: 'Burn down SYS110_UNAUDITED_NODES: T-1629''s rule enforces on 2 of 17 nodes
   until the 15 exempted mirrors are hand-audited'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,26 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/strata/_selfconform.py
+- design/frob.strata
+- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: per-node interface= audit fixes live in design/frob.strata, the design model
+    file itself -- the ticket's declared scope (_selfconform.py) is where the exemption
+    frozenset lives, not where the hand-declared interface= blocks being audited live
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: acceptance test for the burn-down (asserting the exemption set shrinks and
+    never widens) lives in this existing test module
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_burn_down_shrinks_the_exemption_never_widens_it
 designated_repro_test: null
 threat: null
 component: null
