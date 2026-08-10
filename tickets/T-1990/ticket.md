@@ -2,7 +2,7 @@
 id: T-1990
 title: make frob PATH-vs-repo version skew self-announcing at the repo level, not
   one machine's hook config
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -48,3 +48,6 @@ frob-wired repo running a PATH build older than the repo's own build is
 reported, with both versions named, from frob's own code (not a Claude
 Code hook). Out of scope for T-1980 itself (docs-only ticket, policy +
 measurement deliverable); this is the code follow-up.
+
+## Drop reason
+- 2026-08-10: Duplicate of already-shipped T-1218 (stale_binary_warning, src/frob/app/_config_meta.py:261, wired at src/frob/__main__.py:470 and src/frob/doctor.py:1215). T-1218 is exactly this: a repo declares frob.toml min_frob_version, and ANY invoked frob binary below that floor gets a loud warning naming both versions, from frob own code, not a Claude Code hook -- confirmed live via tests/unit/test_config.py::test_stale_binary_warning_flags_version_below_floor (0.9.0 vs 0.277.0 incident, passing today, 3/3 stale_binary_warning tests green). It explicitly targets "any repo, no dependency on [project] name = frob" (its own docstring), i.e. exactly the sibling-repo case T-1990 describes as missing. The REAL remaining gap is not code: none of the 9 repos (this one plus 8 siblings, checked directly) have ever populated min_frob_version in their own frob.toml, so the mechanism is live but dormant everywhere. That is a per-repo config/rollout task, not a src/frob/app/** code change -- out of this ticket declared scope and shape, worth a narrow follow-up (adding min_frob_version to each frob.toml) rather than reimplementing an existing, tested, wired mechanism under this id.
