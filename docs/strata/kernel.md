@@ -60,6 +60,27 @@ artifact at some ladder rung, see `evidence.md`), `ASSUMED` (ledger entry),
 quantifier. Scenario claims re-run the same procedures on the rewritten
 fact base.
 
+## Claim evaluation
+
+<!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->
+
+`evaluate_claims` is the single entrypoint that runs every claim form's
+decision procedure (the table above) against one model and returns the
+whole-model result. Its contract:
+
+- One `ClaimResult` per declared claim, in declaration order -- a report
+  can never silently drop a claim, and callers never need to re-sort.
+- Fails closed: a malformed model or a claim referencing an undeclared
+  fact returns `Err(StrataError)` before any claim is evaluated, rather
+  than a partial result set.
+- The `enables` cascade (waiving a policy that a PROVED verdict's
+  soundness depends on) downgrades affected verdicts to `ASSUMED` as part
+  of this same pass -- see `evidence.md#the-enables-cascade` for the
+  mechanism; this section only states that `evaluate_claims` is where it
+  is applied, not how it works.
+- `render_report`/`summarize` (see "Verdict report" below) consume this
+  flat output; no further evaluation happens downstream of it.
+
 ## Soundness boundaries (what "complete over the model" means)
 
 Tier-1 closure is sound and complete over declared facts. Tier-2 joins

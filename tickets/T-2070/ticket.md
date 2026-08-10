@@ -2,7 +2,7 @@
 id: T-2070
 title: 'post-land sweep regression from T-1959, T-2003, T-2016: 3 new (rule, file)
   identit(ies), 2 finding(s) (COV001, DOC002, DSL001)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -14,8 +14,20 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_query.py
 - src/frob/strata/_claims.py
+- docs/strata/kernel.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/strata/kernel.md
+  reason: DOC002 fix requires writing the missing claim-evaluation section this ticket's
+    frob:doc anchor points at
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
