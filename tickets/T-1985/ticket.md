@@ -12,9 +12,52 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/graph/**
+- src/frob/graph/imports.py
+- tests/test_graph_imports.py
+- docs/modules/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/graph/**
+  reason: 'narrow the src/frob/graph/** umbrella to the three files this ticket''s
+    committed work actually touches (verified via git diff main...HEAD in its worktree:
+    imports.py, test_graph_imports.py, docs/modules/graph.md -- it never touches dsl.py
+    or __init__.py). The umbrella was blocking T-1970/T-1968, whose fix is complete
+    and committed but needs src/frob/graph/dsl.py. Umbrella scopes cap parallelism
+    across the whole queue; this costs T-1985 nothing.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/graph/imports.py
+  reason: 'narrow the src/frob/graph/** umbrella to the three files this ticket''s
+    committed work actually touches (verified via git diff main...HEAD in its worktree:
+    imports.py, test_graph_imports.py, docs/modules/graph.md -- it never touches dsl.py
+    or __init__.py). The umbrella was blocking T-1970/T-1968, whose fix is complete
+    and committed but needs src/frob/graph/dsl.py. Umbrella scopes cap parallelism
+    across the whole queue; this costs T-1985 nothing.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_graph_imports.py
+  reason: 'narrow the src/frob/graph/** umbrella to the three files this ticket''s
+    committed work actually touches (verified via git diff main...HEAD in its worktree:
+    imports.py, test_graph_imports.py, docs/modules/graph.md -- it never touches dsl.py
+    or __init__.py). The umbrella was blocking T-1970/T-1968, whose fix is complete
+    and committed but needs src/frob/graph/dsl.py. Umbrella scopes cap parallelism
+    across the whole queue; this costs T-1985 nothing.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'narrow the src/frob/graph/** umbrella to the three files this ticket''s
+    committed work actually touches (verified via git diff main...HEAD in its worktree:
+    imports.py, test_graph_imports.py, docs/modules/graph.md -- it never touches dsl.py
+    or __init__.py). The umbrella was blocking T-1970/T-1968, whose fix is complete
+    and committed but needs src/frob/graph/dsl.py. Umbrella scopes cap parallelism
+    across the whole queue; this costs T-1985 nothing.'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
