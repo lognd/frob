@@ -51,6 +51,7 @@ scope_changes:
   at: '2026-08-10'
 evidence:
 - tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_demote_to_evidence_only_releases_lease
+- tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_demote_to_evidence_only_requires_declared_glob
 designated_repro_test: null
 threat: null
 component: null
