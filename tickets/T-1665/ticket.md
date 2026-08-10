@@ -9,6 +9,7 @@ created: '2026-08-06'
 priority: high
 blocked_by:
 - T-1663
+- T-draft-0f83796b
 parent: T-1662
 tier: ticket
 sprint: null
@@ -23,6 +24,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 REF001 decides whether a file has any inbound reference by searching other files' TEXT for its full repo-relative path or its BARE BASENAME. Its own module docstring says so: "by file Y if Y names X (full repo-relative path or bare basename) in a ... literal, a backtick-wrapped MULTI-COMPONENT path mention".
 
