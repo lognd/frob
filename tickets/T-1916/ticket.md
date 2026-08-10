@@ -2,7 +2,7 @@
 id: T-1916
 title: 'REG002 red on main: CHK-GATE-SYS-IFACE-ORDER claims an enforced gate rule,
   but SYS-IFACE-ORDER is only a Tier-A auto-fix handler'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -11,9 +11,75 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_fix_engine.py
+- src/frob/gates/_fix_engine_sync.py
+- docs/design/registry/check-coverage.yaml
+- docs/strata/surface.md
+- tests/unit/gates/test_sys_interface_canonical_order.py
+- tests/test_registry_exhaustiveness.py
+- tests/test_check_coverage_registry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/strata/surface.md
+  reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/gates/test_sys_interface_canonical_order.py
+  reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_check_coverage_registry.py
+  reason: 'T-1916: retire the unbacked SYS-IFACE-ORDER Tier-A handler + registry row'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
 designated_repro_test: null
+acceptance:
+- text: uv run frob check --only registry reports 0 errors on main
+  evidence:
+  - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+- text: The resolution is justified by what SYS-IFACE-ORDER actually is -- either
+    a real detector rule exists, or the handler and row are retired together with
+    reasoning; not a row deletion to go green
+  evidence:
+  - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+- text: A test proves a registry row dispositioned handled_by against an id that resolves
+    ONLY to a Tier-A fix handler (no gate/policy rule) is reported by REG002; it must
+    fail before the fix
+  evidence:
+  - tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails
+- text: Re-measure --only registry unscoped after landing; the pre-existing REG008/REG011
+    warnings are out of scope but must not increase
+  evidence:
+  - tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails
+  - tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
 threat: null
 component: null
 anchor: false

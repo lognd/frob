@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.423.0] - unreleased
+
+- T-1916: REG002 red on main: CHK-GATE-SYS-IFACE-ORDER claims an enforced gate rule, but SYS-IFACE-ORDER is only a Tier-A auto-fix handler
+
 ## [0.422.0] - unreleased
 
 - T-1891: frob ticket new prints a DirtyMain --no-commit warning even when it DID commit the ledger

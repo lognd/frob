@@ -10825,6 +10825,101 @@ class TestFixEngineTierA:
         applied = fix_tick002_renumber(root, queue)
         assert applied == []
 
+    def test_tick002_dropped_draft_is_exempt(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_tickets_gate.py::_tick002_draft_on_default \
+        # kind="unit"
+        # T-1917: a dropped draft archived in the SAME commit it was
+        # filed in (no live state ever existed to renumber out of --
+        # `fix_tick002_renumber` has nothing to promote) must not trip
+        # this rule forever. Real repro: tickets/archive/T-draft-d718d443
+        # on this repo's own `main`.
+        import subprocess
+
+        from frob.gates import tickets_gate
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._provisional import mint_draft_id
+
+        root = tmp_path / "repo"
+        root.mkdir()
+
+        def _git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(root), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        _git("init", "-q", "-b", "main")
+        _git("config", "user.email", "test@example.com")
+        _git("config", "user.name", "Test")
+        (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+        (root / "tickets-archive.md").write_text("# Archive\n\n", encoding="utf-8")
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "init")
+
+        draft_id = mint_draft_id()
+        draft = Ticket(
+            id=draft_id,
+            title="residue draft, dropped and archived directly",
+            state=TicketState.DROPPED,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        queue = TicketQueue(tickets={draft_id: draft})
+
+        violations = tickets_gate(root, queue)
+
+        assert not [v for v in violations if v.rule == "TICK002"]
+
+    def test_tick002_done_draft_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_tickets_gate.py::_tick002_draft_on_default \
+        # kind="unit"
+        # T-1917: the DROPPED exemption must not swallow the real
+        # promotion-failure shape -- a draft that reached `done` without
+        # ever being renumbered to a real id is exactly what TICK002
+        # exists to catch, and must keep failing loud.
+        import subprocess
+
+        from frob.gates import tickets_gate
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._provisional import mint_draft_id
+
+        root = tmp_path / "repo"
+        root.mkdir()
+
+        def _git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(root), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        _git("init", "-q", "-b", "main")
+        _git("config", "user.email", "test@example.com")
+        _git("config", "user.name", "Test")
+        (root / "tickets.md").write_text("# Tickets\n\n", encoding="utf-8")
+        (root / "tickets-archive.md").write_text("# Archive\n\n", encoding="utf-8")
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "init")
+
+        draft_id = mint_draft_id()
+        draft = Ticket(
+            id=draft_id,
+            title="never promoted before it was marked done",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        queue = TicketQueue(tickets={draft_id: draft})
+
+        violations = tickets_gate(root, queue)
+
+        assert any(v.rule == "TICK002" for v in violations)
+
     # -- acceptance: TICK006 phantom draft citation refile+renumber --------
 
     def _tick006_repo(self, tmp_path: Path):  # noqa: ANN202

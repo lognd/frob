@@ -99,6 +99,7 @@ def _tick001_duplicate_ids(
 
 
 # frob:ticket T-0162
+# frob:ticket T-1917
 # frob:enforces CHK-GATE-TICK002
 def _tick002_draft_on_default(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK002: a T-draft-* provisional id still present while `root` is on
@@ -108,6 +109,16 @@ def _tick002_draft_on_default(root: Path, queue: TicketQueue) -> tuple[Violation
     the default branch means the collision-proofing this whole mechanism
     exists for silently did not happen, so this rule is unwaivable
     (`_UNWAIVABLE_RULES`) for the same reason TEST008 is.
+
+    T-1917: a `DROPPED` draft is exempt. `queue` (T-0929, `load_queue`)
+    is active+archive MERGED, so a draft that was dropped and archived in
+    the same commit (never live/referenced going forward -- terminal,
+    same posture as any other dropped ticket) used to still trip this
+    rule forever, with no `frob ticket renumber` able to fix it (there is
+    nothing left to promote). Every OTHER state still fires, including
+    `DONE`: a draft that reached `done` without ever being renumbered to a
+    real id IS the genuine promotion-failure shape this rule exists to
+    catch, and must keep failing loud.
 
     Calls back through `frob.gates.on_default_branch` (lazy, call-time)
     rather than this module's own import so that tests patching
@@ -130,7 +141,7 @@ def _tick002_draft_on_default(root: Path, queue: TicketQueue) -> tuple[Violation
             ),
         )
         for tid in sorted(queue.tickets)
-        if is_draft_id(tid)
+        if is_draft_id(tid) and queue.tickets[tid].state is not TicketState.DROPPED
     )
 
 

@@ -88,6 +88,47 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG002" in rules
 
+    def test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails(
+        self, tmp_path: Path
+    ) -> None:
+        # T-1916: REG002's real anti-lie job is distinguishing "this id
+        # names a real gate/policy rule" from "this id merely appears
+        # SOMEWHERE in the codebase" (e.g. as a Tier-A auto-fix handler
+        # key with no detector behind it -- exactly the shape
+        # `CHK-GATE-SYS-IFACE-ORDER` was found reporting FALSE on `main`:
+        # `SYS-IFACE-ORDER` existed only as a `TIER_A_HANDLERS` entry,
+        # never in `frob.gates.known_gate_rule_ids()`). `known_rules`
+        # here is the real production set so this test would have failed
+        # (REG002 absent) before T-1916 retired that row -- proving the
+        # gate genuinely catches a fix-handler-only id, not just any
+        # made-up string.
+        from frob.gates import known_gate_rule_ids
+
+        known_rules = known_gate_rule_ids()
+        assert "SYS-IFACE-ORDER" not in known_rules, (
+            "SYS-IFACE-ORDER must never re-enter known_gate_rule_ids() without "
+            "a real detector backing it -- see _fix_engine_sync.py's module "
+            "docstring for why T-1916 retired it instead"
+        )
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    name: "Example"
+    disposition: "handled_by:SYS-IFACE-ORDER"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(tmp_path, _queue(), known_rules, registry_dir)
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG002" in rules
+
     def test_handled_by_real_rule_passes(self, tmp_path: Path) -> None:
         _write_manifest(
             tmp_path,

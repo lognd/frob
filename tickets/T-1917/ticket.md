@@ -1,7 +1,7 @@
 ---
 id: T-1917
 title: 'post-land sweep regression from T-1910: 1 new error(s) (TICK002)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-09'
@@ -12,9 +12,41 @@ sprint: null
 runs_last: false
 scope:
 - tickets.md
+- src/frob/gates/_tickets_gate.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: 'T-1917: TICK002 must exempt a dropped-and-archived draft (residue, never
+    live/referenced going forward) while still firing on a promoted-but-never-renumbered
+    (done) draft'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-1917: TICK002 must exempt a dropped-and-archived draft (residue, never
+    live/referenced going forward) while still firing on a promoted-but-never-renumbered
+    (done) draft'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
+- tests/test_gates.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
 designated_repro_test: null
+acceptance:
+- text: TICK002 exempts a dropped-and-archived draft (residue with no live state to
+    renumber out of) while still firing on a draft that reached done without ever
+    being renumbered
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
+  - tests/test_gates.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
+- text: uv run frob check --only tickets on main's HEAD (or an equivalent on-main
+    measurement) reports 0 TICK002 findings after the fix lands
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
+  - tests/test_gates.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
 threat: null
 component: null
 anchor: false
