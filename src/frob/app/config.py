@@ -500,6 +500,11 @@ class AppConfig(BaseModel):
     # `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`
     ticket_scope_add: list[str] = []
     ticket_scope_remove: list[str] = []
+    # frob:ticket T-1975
+    # `frob ticket scope <id> --demote-to-evidence-only GLOB... --reason
+    # TEXT` -- migrate an existing scope GLOB into evidence_scope in one
+    # atomic write (T-1944's demote_to_evidence_only).
+    ticket_scope_demote_to_evidence_only: list[str] = []
     ticket_scope_reason: str | None = None
     # frob:ticket T-0737
     # `frob ticket scope <id> --reason-file PATH` -- read the scope-change

@@ -281,6 +281,8 @@ _LIST_FIELDS = (
     "ticket_scope",
     "ticket_scope_add",
     "ticket_scope_remove",
+    # frob:ticket T-1975
+    "ticket_scope_demote_to_evidence_only",
     "ticket_blocked_by",
     "ticket_acceptance",
     "ticket_evidence_ids",
