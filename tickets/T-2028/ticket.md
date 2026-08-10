@@ -16,6 +16,14 @@ scope:
 - tests/unit/gates/test_examined_sites.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-2028: T-1964''s lease on docs/modules/gates.md landed (76b249405), scope
+    declaration now free -- adding the anchor target for arch_examined_sites/arch_gate/attach_examined_sites/is_family_instrumented/site_examined
+    per T-2012''s own SCOPE002 investigation'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
