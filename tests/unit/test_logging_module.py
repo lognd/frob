@@ -13,8 +13,70 @@ from frob.graph import build_graph
 from frob.logging import get_logger, quiet_stdout_logs
 from frob.logging.color import paint, should_color
 from frob.logging.filter import _BelowLevelFilter
+from frob.logging.logger import _under_pytest
 from frob.testing import CollectedTests
 from frob.tickets import TicketQueue
+
+
+# frob:ticket T-1621
+def test_under_pytest_true_in_this_process():
+    # frob:tests \
+    # tests/unit/test_logging_module.py::test_under_pytest_true_in_this_process
+    # this literally runs inside pytest, so the check must see it
+    assert _under_pytest() is True
+
+
+# frob:ticket T-1621
+def test_under_pytest_false_without_pytest_in_sys_modules(monkeypatch):
+    # frob:tests src/frob/logging/logger.py::_under_pytest kind="unit"
+    from frob.logging import logger as logger_mod
+
+    monkeypatch.setattr(
+        logger_mod.sys,
+        "modules",
+        {k: v for k, v in sys.modules.items() if k != "pytest"},
+    )
+    assert logger_mod._under_pytest() is False
+
+
+# frob:ticket T-1621
+# frob:tests tests/unit/test_logging_module.py::test_log_record_reported_via_exactly_one_channel_under_pytest  # noqa: E501
+def test_log_record_reported_via_exactly_one_channel_under_pytest(capsys, caplog):
+    """T-1621: before the fix, ONE `log.warning(...)` call reached pytest's
+    report via TWO independent paths -- frob's own `_LazyStderrHandler`
+    writing a frob-formatted line to real `sys.stderr` (visible here via
+    `capsys`), AND pytest's own logging-capture plugin independently
+    recording the same record (visible here via `caplog`) -- making any
+    occurrence count taken from the combined output silently 2x. Under
+    pytest, frob's own root handlers are now skipped entirely
+    (`logger._init`), so the record must reach `caplog` exactly once and
+    must NOT also appear in the real captured stdout/stderr text."""
+    marker = "COUNT-ONCE-MARKER-T1621"
+    log = get_logger("frob.test.count_once_t1621")
+    with caplog.at_level(logging.WARNING):
+        log.warning(marker)
+
+    matching = [r for r in caplog.records if r.getMessage() == marker]
+    assert len(matching) == 1
+
+    captured = capsys.readouterr()
+    assert marker not in captured.err
+    assert marker not in captured.out
+
+
+# frob:ticket T-1621
+def test_root_logger_has_no_frob_handlers_under_pytest():
+    # frob:tests src/frob/logging/logger.py::_init kind="unit"
+    from frob.logging.handler import _LazyStderrHandler, _LazyStdoutHandler
+    from frob.logging.logger import _init
+
+    _init()  # no-op if already initialized this process -- same real state
+    root = logging.getLogger()
+    # pytest installs its OWN handlers on root (unrelated to frob); only
+    # frob's own stdout/stderr handlers must be absent here.
+    assert not any(
+        isinstance(h, (_LazyStdoutHandler, _LazyStderrHandler)) for h in root.handlers
+    )
 
 
 def test_get_logger_returns_named_logger():

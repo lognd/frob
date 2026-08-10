@@ -2,7 +2,7 @@
 id: T-1621
 title: Every frob log record appears twice in pytest output, making occurrence counts
   unreliable
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-05'
@@ -14,6 +14,7 @@ runs_last: false
 scope:
 - src/frob/logging/**
 - tests/conftest.py
+- tests/unit/test_logging_module.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -26,7 +27,18 @@ scope_changes:
     nothing and unblocks five.'
   actor: logan
   at: '2026-08-10'
-designated_repro_test: null
+- op: add
+  glob: tests/unit/test_logging_module.py
+  reason: need to add the counting regression test alongside the existing logging
+    test module
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_logging_module.py::test_under_pytest_true_in_this_process
+- tests/unit/test_logging_module.py::test_under_pytest_false_without_pytest_in_sys_modules
+- tests/unit/test_logging_module.py::test_log_record_reported_via_exactly_one_channel_under_pytest
+- tests/unit/test_logging_module.py::test_root_logger_has_no_frob_handlers_under_pytest
+designated_repro_test: tests/unit/test_logging_module.py::test_log_record_reported_via_exactly_one_channel_under_pytest
 threat: null
 component: null
 anchor: false
