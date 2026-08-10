@@ -2,7 +2,7 @@
 id: T-1908
 title: 'test_dispatch_table_verbs_are_all_accounted_for fails: verbs debt/deprecated/wave
   unaccounted'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -15,6 +15,9 @@ scope:
 - tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable::test_dispatch_table_verbs_are_all_accounted_for
+- tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable::test_verb_leaves_repo_clean
 designated_repro_test: null
 threat: null
 component: null

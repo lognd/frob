@@ -1737,6 +1737,7 @@
     "src/frob/strata/_sync_may.py::WholeNodeMayGrantDiff": "dd9051ce194362c9cd731441b634af7eb383fc20cfe5932a647780194e5b6edf",
     "src/frob/strata/_sync_may.py::apply_sync_may": "51e98a60728e442d5120f57d4f2ec67b117e440fba14b2874fbca2641c2fa474",
     "src/frob/strata/_sync_may.py::apply_sync_may_extended": "a51197a1caa21a6d722518d0deb87dfe1f267356bbd18542b3c8977292af2062",
+    "src/frob/strata/_sync_may.py::node_body_span": "2677f3a761a64e9b83199356d83f989220f183decff1cf6c606ec74215564050",
     "src/frob/strata/_sync_may.py::sync_may_extended_report": "572595b41ab87c78339124f7965fadba987723663fcd48663deb7998221a43aa",
     "src/frob/strata/_sync_may.py::sync_may_report": "efa03b954903f904b548429d2ce651868c91884635a96d4a55d9ed5c7f24a72b",
     "src/frob/strata/_sysdoc.py::ClaimAuditResult": "e4ecc9428d9309e4d391809714bfd835be06160a7fd34ff7f189dfaef7ddcbd1",
@@ -2206,5 +2207,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.418.0"
+  "version": "0.419.0"
 }

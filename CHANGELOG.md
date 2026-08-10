@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.419.0] - unreleased
+
+- T-1893: Document T-1886 WAIVE004 proportional-check sample-size floor in gates.md
+
 ## [0.418.0] - unreleased
 
 - T-1872: Tier-A canonical ordering for interface= : group by resolved symbol kind, alphabetical within group, order-only

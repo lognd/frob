@@ -3833,6 +3833,47 @@ flags the PROPORTIONAL case -- every one of a rule's live waivers
 absolute count: 2 of 2 is the same T-1323 incident signature as 40 of 40,
 not weaker evidence for having fewer waivers to begin with.
 
+<!-- frob:describes src/frob/gates/_fix_engine_sync.py::_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT -->
+
+**T-1886 added a minimum-sample-size floor to the PROPORTIONAL check.**
+`_mass_invalidation_rules`'s proportional trigger ("every one of this
+rule's live waivers went stale together") is a sample-size argument, and
+like any sample-size argument it has no discriminating power at N=1: a
+rule with exactly one live `frob:waive` directive reads as "100% went
+stale" the instant that single waiver is genuinely dead -- indistinguishable
+from a degraded run by construction, and not a rare edge case, since a
+repo having exactly one live waiver for some rule is an entirely ordinary
+state. `_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT = 2`
+(`src/frob/gates/_fix_engine_sync.py`) mirrors the `_DEFLATION_MIN_KNOWN_
+MODULES` precedent (`frob.gates._coverage`): below the floor, the
+proportional check simply does not fire, and the deletion falls through
+to the absolute-threshold check alone (still refusing at >= 5 candidates
+for that rule, same as before). At or above the floor the check keeps its
+full bite unchanged -- 2-of-2 and up still trip it exactly as before; only
+the N=1 case is excluded.
+
+**Read the guards below as deliberate, not incomplete.** Both the
+absolute-count guard (`_WAIVE004_MASS_INVALIDATION_THRESHOLD`) and the
+proportional guard above are UNCONDITIONAL refusals once tripped -- they
+delete nothing for the flagged rule, full stop, even when a human is
+confident the waivers really are dead. That is the deliberate post-incident
+state, not an oversight to "fix" by adding an escape hatch back in.
+`_rule_has_live_finding` was exactly such an escape hatch (T-1579, "a live
+finding of the rule elsewhere in the run proves the detector ran"): it
+shipped, and during a real land it deleted 55 live waivers, because a
+partially-degraded run (stale `strata_core`, every structural health check
+reporting clean) still found some instances of a rule lexically while
+missing the exact sites the waivers covered. It was reverted (T-1592); see
+the T-1323 incident writeup below for the full history, and
+`tests/test_gates.py::TestWaive004DegradedRunGuard::
+test_mass_invalidation_with_live_finding_elsewhere_still_refuses` locks
+against its return. The N=1 floor above does not reopen that hole -- it
+only stops the proportional check from firing where it structurally
+carries no signal at all; it does not add a way past the check once it
+DOES fire. A correct escape needs per-site analysis-coverage proof, not a
+same-run elsewhere-finding proxy -- that successor design is T-1904, not
+yet built.
+
 Two-layer fix, matching the two places this gap actually bites:
 
 1. **Structural signal** (`docs/modules/perf.md#perf-reach-native-staleness-signal-t-1578`

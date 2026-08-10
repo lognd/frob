@@ -2542,8 +2542,27 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
     # `reverify` re-runs close's own verification guards against an
     # ALREADY-done ticket but never calls `transition` -- its own
     # docstring is explicit: "no write, no state change, either way."
+    # T-1908: `debt`/`deprecated` (T-1570) delegate straight into
+    # `frob.app.debt_runner.run`/`frob.app.deprecated_runner.run`, both of
+    # which their own module docstrings state explicitly never mutate
+    # anything (listing-only, no `--apply`, mirroring `frob debt`/`frob
+    # deprecated`'s standalone CLI shape). `wave` (T-1738) only calls
+    # `load_queue` and `frob.tickets._doable.wave` to render groups --
+    # no `write_ticket`/`_set_ticket_field` call anywhere in `_wave`.
     _READ_ONLY_VERBS = frozenset(
-        {"list", "show", "doable", "board", "epic", "brief", "flow", "reverify"}
+        {
+            "list",
+            "show",
+            "doable",
+            "board",
+            "epic",
+            "brief",
+            "flow",
+            "reverify",
+            "debt",
+            "deprecated",
+            "wave",
+        }
     )
 
     # Verbs that DO mutate the ledger but need a fixture/setup shape this

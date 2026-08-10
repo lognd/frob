@@ -1,7 +1,7 @@
 ---
 id: T-1893
 title: Document T-1886 WAIVE004 proportional-check sample-size floor in gates.md
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-09'
@@ -12,8 +12,19 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/gates.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: frob.lock
+  reason: acking the new docs<->code edge writes frob.lock; intrinsic to closing a
+    docs ticket
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- cmd:frob graph why src/frob/gates/_fix_engine_sync.py::_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT
+  exit=0 sha256=9ea3f2ef03b0
 designated_repro_test: null
 threat: null
 component: null
