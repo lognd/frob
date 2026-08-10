@@ -8,8 +8,11 @@ instead resolves its fix by SYNCING one generated/derived artifact back
 to its source of truth -- REG010/REL002 (registry <-> gate-rule-id and
 release notes sync), SYS100 (`.strata` `may=` grant text rewrites via
 `frob.strata._sync_may`'s writer), COV002 (insert a `frob:ticket`
-directive above an unbound symbol), and WAIVE004 (remove a waiver
-already proven dead by a fresh gate run). `TIER_A_HANDLERS` in
+directive above an unbound symbol), DOCENUM001 (T-1974, a `frob:
+enumerates` doc anchor's `members=` claim resynced from the real
+collection literal it targets, reusing `frob.gates._docenum`'s own AST
+resolution), and WAIVE004 (remove a waiver already proven dead by a
+fresh gate run). `TIER_A_HANDLERS` in
 `_fix_engine` imports every public `fix_*` symbol from both this module
 and `_fix_engine_text` and dispatches through the same uniform `(root,
 snapshot, queue, ticket_id) -> list[FixApplied]` call shape every handler
@@ -53,6 +56,7 @@ the false registry row was the narrower, more consistent fix.
 
 from __future__ import annotations
 
+import ast
 import logging
 import re
 from pathlib import Path
@@ -111,6 +115,104 @@ def fix_reg010_registry_sync(root: Path) -> list[FixApplied]:
             detail=f"filed CHK-GATE-<rule> entries for: {', '.join(added)}",
         )
     ]
+
+
+# ---------------------------------------------------------------------------
+# DOCENUM001 (T-1974): a `frob:enumerates` doc anchor's claimed
+# `members="..."` list has drifted from the real collection literal it
+# targets -- the same "registered a new id, forgot the mechanically-
+# derivable doc-side bookkeeping" shape REG010 above already self-heals
+# for check-coverage.yaml. Measured recurring TWICE on the identical
+# gates.md rule-catalog anchor (T-1937 -> T-1958, T-1629 -> this fix) --
+# a written-down "update the enumerates list too" rule did not help
+# because nothing named the second edit at the moment of the first;
+# auto-fixing it the same way REG010 already is closes the gap
+# mechanically instead of relying on a rule being remembered.
+# ---------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:ticket T-1974
+def fix_docenum001_enumerates_sync(
+    root: Path, snapshot: GraphSnapshot
+) -> list[FixApplied]:
+    """Tier-A fix (T-1974): a `frob:enumerates` doc anchor's claimed
+    `members="..."` attribute is mechanically DERIVABLE from the real
+    collection literal it targets -- reuses `frob.gates._docenum`'s own
+    AST resolution (`_extract_members`/`_parse_symref`/`_site_from_
+    origin`, the SAME functions DOCENUM001's own detector calls) to
+    recompute the real member set and rewrite the doc line's `members=`
+    attribute to match, in place, rather than requiring a hand edit at
+    land time -- the "detector in one module, fixer in a sibling module"
+    split `fix_reg010_registry_sync` above and `_sync_may`'s SYS100
+    fixer both already use. Covers EVERY `frob:enumerates` edge in the
+    graph, not only the gates.md rule-catalog anchor that motivated this
+    fix (T-1227's own shape list is anchor-agnostic), so this closes the
+    whole class rather than one instance. Idempotent: a member list
+    already correct is left untouched; multiple stale edges in the same
+    file within one run are applied against each other's rewrites, not
+    a stale on-disk read, so neither overwrites the other's fix."""
+    from frob.gates._docenum import _extract_members, _parse_symref, _site_from_origin
+    from frob.graph._models import EdgeKind
+
+    applied: list[FixApplied] = []
+    tree_cache: dict[str, ast.Module | None] = {}
+    file_lines: dict[str, list[str]] = {}
+
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.ENUMERATES:
+            continue
+        parsed = _parse_symref(edge.target)
+        if parsed is None:
+            continue
+        code_path, qualname = parsed
+        if code_path not in tree_cache:
+            try:
+                code_text = (root / code_path).read_text(encoding="utf-8")
+                tree_cache[code_path] = ast.parse(code_text, filename=code_path)
+            except (OSError, SyntaxError, UnicodeDecodeError):
+                tree_cache[code_path] = None
+        tree = tree_cache[code_path]
+        if tree is None:
+            continue
+        actual = _extract_members(tree, qualname)
+        if actual is None:
+            continue
+        claimed = frozenset(
+            m.strip() for m in edge.attrs.get("members", "").split(",") if m.strip()
+        )
+        if claimed == actual:
+            continue
+        file, line = _site_from_origin(edge.origin)
+        if file not in file_lines:
+            try:
+                doc_text = (root / file).read_text(encoding="utf-8")
+            except OSError:
+                continue
+            file_lines[file] = doc_text.split("\n")
+        lines = file_lines[file]
+        if not (1 <= line <= len(lines)):
+            continue
+        new_members = ",".join(sorted(actual))
+        new_line, n = re.subn(
+            r'members="[^"]*"', f'members="{new_members}"', lines[line - 1], count=1
+        )
+        if n == 0:
+            continue
+        lines[line - 1] = new_line
+        applied.append(
+            FixApplied(
+                rule="DOCENUM001",
+                file=file,
+                line=line,
+                detail=f"resynced enumerates members for {edge.target}",
+            )
+        )
+
+    for file, lines in file_lines.items():
+        _write_text(root / file, "\n".join(lines))
+
+    return applied
 
 
 # ---------------------------------------------------------------------------
