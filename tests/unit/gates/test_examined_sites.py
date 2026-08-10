@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from frob.gates._coverage_sites import (
     attach_examined_sites,
     is_family_instrumented,
@@ -87,6 +89,7 @@ class TestIsFamilyInstrumented:
 
 
 # frob:ticket T-1921
+# frob:ticket T-1943
 class TestAttachExaminedSites:
     """`attach_examined_sites` populates `archgate` for real against a
     fixture tree, and leaves every other family absent -- the acceptance
@@ -116,6 +119,7 @@ class TestAttachExaminedSites:
         report = attach_examined_sites(_empty_report(), tmp_path)
         assert site_examined(report.stats, "archgate", "data.bin") is False
 
+    # frob:ticket T-1943
     def test_families_this_module_does_not_know_about_stay_absent(
         self, tmp_path: Path
     ) -> None:
@@ -123,14 +127,16 @@ class TestAttachExaminedSites:
         # kind="unit"
         # The acceptance property, stated directly: a family this
         # substrate has no reporter for (today: everything except
-        # "archgate") must never be claimed examined by this call, no
-        # matter what the fixture tree contains -- an uninstrumented
-        # family reports "not examined", never "examined and clean".
+        # "archgate"/"perf"/"strata"/"graph"/"vet") must never be claimed
+        # examined by this call, no matter what the fixture tree contains
+        # -- an uninstrumented family reports "not examined", never
+        # "examined and clean".
         (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
         report = attach_examined_sites(_empty_report(), tmp_path)
-        assert is_family_instrumented(report.stats, "perf") is False
-        assert is_family_instrumented(report.stats, "strata") is False
-        assert site_examined(report.stats, "perf", "m.py") is False
+        assert is_family_instrumented(report.stats, "totally_unknown_family") is False
+        assert (
+            site_examined(report.stats, "totally_unknown_family", "m.py") is False
+        )
 
     def test_preserves_examined_sites_a_prior_caller_already_attached(
         self, tmp_path: Path
@@ -143,3 +149,82 @@ class TestAttachExaminedSites:
         pre = _empty_report(examined_sites={"future_family": frozenset({"x.py"})})
         report = attach_examined_sites(pre, tmp_path)
         assert site_examined(report.stats, "future_family", "x.py") is True
+
+
+# frob:ticket T-1943
+class TestPerfGraphVetExaminedSitesShareOneFixtureShape:
+    """`_perf_examined_sites`/`_graph_examined_sites`/`_vet_examined_sites`
+    all agree on the same two-case fixture shape (a plain `.py` file is
+    examined, an unsupported-extension file is not) -- parametrized here
+    instead of three (DUP001/DUP002-flagged) near-identical classes, one
+    per family, so the shared property reads as ONE assertion repeated
+    over families rather than three copies that could quietly drift out
+    of sync with each other."""
+
+    # frob:ticket T-1943
+    # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites kind="unit"
+    @pytest.mark.parametrize("family", ["perf", "graph", "vet"])
+    def test_a_parseable_python_file_is_examined(
+        self, tmp_path: Path, family: str
+    ) -> None:
+        (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        report = attach_examined_sites(_empty_report(), tmp_path)
+        assert site_examined(report.stats, family, "m.py") is True
+
+    # frob:ticket T-1943
+    # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites kind="unit"
+    @pytest.mark.parametrize("family", ["perf", "vet"])
+    def test_an_unsupported_extension_is_not_examined(
+        self, tmp_path: Path, family: str
+    ) -> None:
+        # graph has no extension allowlist of its own (build_graph's own
+        # extension gate is frob.lang.supported_extensions, a strict
+        # superset of perf's tree-sitter-only set) so it is exercised by
+        # its own dedicated test below instead of joining this pair.
+        (tmp_path / "data.bin").write_bytes(b"\x00\x01\x02")
+        report = attach_examined_sites(_empty_report(), tmp_path)
+        assert site_examined(report.stats, family, "data.bin") is False
+
+    # frob:ticket T-1943
+    def test_graph_reports_false_for_a_file_never_written(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites \
+        # kind="unit"
+        (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        report = attach_examined_sites(_empty_report(), tmp_path)
+        assert site_examined(report.stats, "graph", "nonexistent.py") is False
+
+
+# frob:ticket T-1943
+class TestStrataExaminedSites:
+    """`_strata_examined_sites`: a well-formed `.strata` file under
+    `design/` is examined; a malformed one that fails to parse is not --
+    the same real success/failure distinction `load_design_ids`'s own
+    `.errors` collects."""
+
+    # frob:ticket T-1943
+    def test_a_parseable_strata_file_is_examined(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites \
+        # kind="unit"
+        design = tmp_path / "design"
+        design.mkdir()
+        (design / "m.strata").write_text(
+            'module m\n'
+            'node client : foreign { clearance Public; }\n'
+            'node api : authenticated { clearance Internal; }\n'
+            'flow f_login : client -> api\n',
+            encoding="utf-8",
+        )
+        report = attach_examined_sites(_empty_report(), tmp_path)
+        assert site_examined(report.stats, "strata", "design/m.strata") is True
+
+    # frob:ticket T-1943
+    def test_an_unparseable_strata_file_is_not_examined(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites \
+        # kind="unit"
+        design = tmp_path / "design"
+        design.mkdir()
+        (design / "bad.strata").write_text("this is not valid strata {{{", encoding="utf-8")
+        report = attach_examined_sites(_empty_report(), tmp_path)
+        assert site_examined(report.stats, "strata", "design/bad.strata") is False

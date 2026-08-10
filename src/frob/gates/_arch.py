@@ -187,9 +187,10 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
 # call-graph analysis cannot trace through; genuinely wired, not dead. T-1942 landed a \
 # real production consumer (frob.gates._fix_engine_sync.fix_waive004_stale_waiver) on \
 # top of this indirect call, so this waiver's premise is permanent -- follow_up \
-# re-pointed to T-1943 (the open ticket that extends this module's family coverage and \
-# is the next likely toucher of this call site) since WIRE002 requires a live open \
-# ticket, not because T-1943 is expected to remove the waiver itself" follow_up="T-1943"
+# re-pointed to T-2011 (the open ticket that wires perf/strata/graph/vet \
+# examined-sites into WAIVE004, the next likely toucher of this call site) since \
+# WIRE002 requires a live open ticket, not because that ticket is expected to remove \
+# the waiver itself" follow_up="T-2011"
 def arch_examined_sites(root: Path) -> frozenset[str]:
     """T-1921: the per-site analysis-coverage substrate's ARCH-family
     reporter -- the repo-relative file paths `arch_gate`'s own

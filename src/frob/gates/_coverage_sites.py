@@ -29,15 +29,18 @@ an easy mistake to make once, with the exact same blast radius as the
 original incident. `site_examined` is the one sanctioned way to ask the
 question; every consumer should call it, never inline the dict lookup.
 
-FAMILIES INSTRUMENTED TODAY: `"archgate"` only (`frob.gates._arch.
+FAMILIES INSTRUMENTED TODAY (T-1943): `"archgate"` (`frob.gates._arch.
 arch_examined_sites`, keyed to the same name `--only archgate`/
-`_build_process_jobs` already use for this gate). Every other family
-(strata/perf/graph/vet and the rest of `frob.gates.__init__`'s ~40
-gates) is deliberately left uninstrumented -- T-1921's own scope cut,
-matching the coordinator's explicit instruction not to claim broader
-coverage than what is real. `attach_examined_sites` is written so adding
-a second family later is a one-line addition to `_FAMILY_REPORTERS`,
-not a redesign.
+`_build_process_jobs` already use for this gate), plus `"perf"`,
+`"strata"`, `"graph"`, and `"vet"` (this module's own `_perf_examined_
+sites`/`_strata_examined_sites`/`_graph_examined_sites`/`_vet_examined_
+sites` -- T-1904's own investigation named these four as the families
+the 55-waiver incident actually hit). Every OTHER family (the rest of
+`frob.gates.__init__`'s ~40 gates) stays deliberately uninstrumented --
+this substrate's honest "not instrumented" signal for anything not
+listed here, per T-1921's original scope cut. `attach_examined_sites` is
+written so adding one more family is a one-line addition to
+`_FAMILY_REPORTERS`, not a redesign.
 
 NOT WIRED INTO WAIVE004 (or any other auto-fix/waiver-retirement path)
 by this ticket. T-1921's brief is explicit that shipping a consumer in
@@ -102,7 +105,190 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
         from frob.gates._arch import arch_examined_sites
 
         _FAMILY_REPORTERS["archgate"] = arch_examined_sites
+        # T-1943: extend coverage from archgate-only to the four families
+        # T-1904's own investigation named as the ones the 55-waiver
+        # incident actually hit (strata/perf/graph/vet). Each reporter
+        # below is defined in THIS module rather than in its own family's
+        # gate module, matching T-1943's own narrowed scope (this file
+        # only) -- unlike arch_examined_sites (which lives beside arch_gate
+        # in frob.gates._arch), these four re-derive their family's real
+        # success/failure per-site outcome directly from that family's own
+        # public/lazy-imported primitives, never from a raw walk's
+        # candidate list.
+        _FAMILY_REPORTERS["perf"] = _perf_examined_sites
+        _FAMILY_REPORTERS["strata"] = _strata_examined_sites
+        _FAMILY_REPORTERS["graph"] = _graph_examined_sites
+        _FAMILY_REPORTERS["vet"] = _vet_examined_sites
     return _FAMILY_REPORTERS
+
+
+# frob:ticket T-1943
+# frob:waive WIRE001 reason="PERF reporter, substrate-only per T-1921's own \
+# arch_examined_sites precedent -- shipping a coverage-substrate reporter and its \
+# WAIVE004 consumer in the same diff is the exact shape the 55-waiver incident grew \
+# from, per the coordinator's standing instruction. T-2011 tracks wiring \
+# this (and its three siblings) into a real guard" follow_up="T-2011"
+# frob:waive COV005 reason="T-1943: this is a brand-new private function, not a helper \
+# extracted above attach_examined_sites/site_examined -- COV005's (kind, \
+# target)=(waive, 'WIRE001') key is shared by every WIRE001 waiver in this file, so \
+# adding a fourth, independent WIRE001 waiver on a genuinely new private symbol looks \
+# identical to a rebind even though nothing moved"
+def _perf_examined_sites(root: Path) -> frozenset[str]:
+    """T-1943: the per-site analysis-coverage substrate's PERF-family
+    reporter -- the repo-relative file paths this call's own
+    `frob.lang.parse_file` attempt actually succeeded on, restricted to
+    the same scannable-extension candidate set `frob.gates.__init__.
+    perf_gate`'s own `_perf_gate_candidate_paths` computes (files with no
+    registered tree-sitter grammar are unscannable by design and were
+    never real candidates). A file that IS a candidate but fails to parse
+    (`parse_file` returns `Err`, the same outcome `perf_gate`'s own
+    `_perf_gate_parse_files` skips with a logged warning) is excluded here
+    too -- "was in the walk" is never enough, only a real parse success
+    counts, the same honesty bar `arch_examined_sites` holds itself to.
+
+    Re-derives the candidate set from `frob.excludes.iter_files` rather
+    than threading `perf_gate`'s own `GraphSnapshot` through, so this
+    reporter stays a standalone `(root) -> frozenset[str]` call like every
+    other family reporter here -- one real parse pass per file, not a
+    cache hit off `perf_gate`'s own run, but the same cost profile
+    `arch_examined_sites`'s own docstring already accepts for an
+    out-of-band caller."""
+    from frob import excludes as _excludes
+    from frob.lang import parse_file, tree_sitter_extensions
+
+    scannable = tree_sitter_extensions()
+    examined: set[str] = set()
+    for path in _excludes.iter_files(root):
+        if path.suffix.lower() not in scannable:
+            continue
+        rel = path.relative_to(root).as_posix()
+        result = parse_file(path)
+        if result.is_err:
+            _log.debug("_perf_examined_sites: skipping unparsed %s", rel)
+            continue
+        examined.add(rel)
+    return frozenset(examined)
+
+
+# frob:ticket T-1943
+# frob:waive WIRE001 reason="STRATA reporter, same substrate-only posture as its three \
+# siblings in this module -- no production caller wired here, deliberately, until \
+# T-2011 (open) does the wiring the way T-1942 already did for archgate" \
+# follow_up="T-2011"
+# frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
+# from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
+# explanation of why this file's shared WIRE001 target triggers a false rebind read"
+def _strata_examined_sites(root: Path) -> frozenset[str]:
+    """T-1943: the per-site analysis-coverage substrate's STRATA-family
+    reporter -- the repo-relative `.strata` file paths this call's own
+    read+parse attempt actually succeeded on, out of the same candidate
+    set `frob.strata.load_design_ids` itself walks
+    (`frob.strata._design_load._strata_files`, `[graph].exclude`-filtered
+    the same way `load_design_ids` filters it). A file that fails to read
+    or parse (`_parse_one_design_file` returning a `DesignLoadError`, the
+    exact outcome `load_design_ids`'s own `.errors` collects) is excluded
+    -- being a candidate is not being examined, the same distinction every
+    other reporter in this module holds to. Cross-file elaboration
+    failures (`_load_all_design_files`'s `elaborate_merged` step) are
+    deliberately NOT treated as un-examining every file: elaboration is a
+    separate, whole-graph concern from "did this specific file's own text
+    get read and parsed", the question this substrate exists to answer."""
+    from frob.excludes import load_exclude_globs
+    from frob.strata._design_load import (
+        DEFAULT_DESIGN_DIR,
+        _parse_one_design_file,
+        _strata_files,
+    )
+
+    design_dir = root / DEFAULT_DESIGN_DIR
+    exclude_globs = load_exclude_globs(root)
+    paths = _strata_files(root, design_dir, exclude_globs)
+    examined: set[str] = set()
+    for path in paths:
+        rel, module, error = _parse_one_design_file(root, path)
+        if error is not None:
+            _log.debug("_strata_examined_sites: skipping unparsed %s", rel)
+            continue
+        examined.add(rel)
+    return frozenset(examined)
+
+
+# frob:ticket T-1943
+# frob:waive WIRE001 reason="GRAPH reporter, no production caller yet -- kept \
+# substrate-only per T-1921's own precedent rather than wiring a consumer in this same \
+# diff. Open follow-up T-2011 covers wiring this reporter (and its three \
+# siblings) into WAIVE004" follow_up="T-2011"
+# frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
+# from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
+# explanation of why this file's shared WIRE001 target triggers a false rebind read"
+def _graph_examined_sites(root: Path) -> frozenset[str]:
+    """T-1943: the per-site analysis-coverage substrate's GRAPH-family
+    reporter -- `frob.graph.build_graph`'s own `GraphSnapshot.file_hashes`
+    keys, the repo-relative paths the obligation-graph build actually
+    parsed and hashed this run. `file_hashes` is populated only for a file
+    that was successfully read/parsed/hashed (a read or parse failure is
+    tracked separately in `GraphSnapshot.parse_failures` and never gains a
+    `file_hashes` entry) -- the same real success/failure distinction
+    every other reporter in this module holds to, here for free from
+    `build_graph`'s own return shape rather than re-derived by hand.
+    `build_graph` is memoized per `frob check` run (T-0423), so a call
+    against the same `(root, cache)` `frob.gates.__init__`'s own `sys`/
+    `refs`/`registry` dispatch already made this run is a cache hit, not a
+    second graph build; a standalone caller pays one real build, the same
+    cost profile `arch_examined_sites`'s own docstring accepts for an
+    out-of-band caller. A build failure (`Result.is_err` -- unreadable or
+    corrupt cache) reports the empty set, never a stale/partial claim."""
+    from frob.graph import build_graph
+
+    cache = root / ".frob" / "cache.db"
+    result = build_graph(root, cache)
+    if result.is_err:
+        _log.warning(
+            "_graph_examined_sites: build_graph failed: %s", result.danger_err
+        )
+        return frozenset()
+    return frozenset(result.danger_ok.file_hashes)
+
+
+# frob:ticket T-1943
+# frob:waive WIRE001 reason="VET reporter -- last of the four T-1943 substrate-only \
+# additions, no production caller wired in this diff. T-2011 is the open \
+# ticket that wires this and its siblings into a real WAIVE004 guard" \
+# follow_up="T-2011"
+# frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
+# from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
+# explanation of why this file's shared WIRE001 target triggers a false rebind read"
+def _vet_examined_sites(root: Path) -> frozenset[str]:
+    """T-1943: the per-site analysis-coverage substrate's VET-family
+    reporter -- the repo-relative file paths `frob.vet._capability.
+    scan_file_capabilities` (the OPAQUE001/CVE-fingerprint gates' own
+    per-file capability scanner) could actually scan this run: a real
+    registered capability-pattern language (`frob.vet._capability.
+    language_for(path) is not None`) that exists as an ordinary file this
+    run. A file with no capability-pattern table for its language is
+    excluded -- `scan_file_capabilities`'s own docstring notes it silently
+    returns the empty token set for that case too, exactly the "was in
+    the walk but never really examined" shape this substrate exists to
+    distinguish; checking language support explicitly here rather than
+    trusting an empty return from `scan_file_capabilities` itself keeps
+    that distinction honest (an empty return is ALSO the correct, common
+    outcome for a genuinely examined file with zero capability hits).
+    Deliberately a metadata-only `is_file()` check, not a content read
+    (`scan_file_capabilities` itself is the only real reader in this
+    path) -- this reporter's job is choosing the candidate set, not
+    duplicating the scan a real caller would perform."""
+    from frob import excludes as _excludes
+    from frob.vet._capability import language_for
+
+    examined: set[str] = set()
+    for path in _excludes.iter_files(root):
+        if language_for(path) is None:
+            continue
+        if not path.is_file():
+            _log.debug("_vet_examined_sites: not a regular file: %s", path)
+            continue
+        examined.add(path.relative_to(root).as_posix())
+    return frozenset(examined)
 
 
 # frob:doc docs/modules/gates.md#data-models
@@ -112,9 +298,10 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 # self-manufactured run_gates() report via this function before deriving WAIVE004 \
 # candidates) -- kept as an explicit waiver rather than removed because static \
 # call-graph analysis of that dynamic-report-construction call site is fragile. \
-# follow_up re-pointed to T-1943 (the open ticket extending this module's family \
-# coverage) since WIRE002 requires a live open ticket citation, not because T-1943 is \
-# expected to remove this waiver itself" follow_up="T-1943"
+# follow_up re-pointed to T-2011 (the open ticket wiring perf/strata/graph/ \
+# vet examined-sites into WAIVE004) since WIRE002 requires a live open ticket \
+# citation, not because that ticket is expected to remove this waiver itself" \
+# follow_up="T-2011"
 def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
     """T-1921: returns a COPY of `report` whose `stats.examined_sites` is
     populated for every family `_load_family_reporters` knows how to
@@ -154,10 +341,11 @@ def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
 # frob:ticket T-1921
 # frob:waive WIRE001 reason="still substrate-only -- unlike attach_examined_sites and \
 # site_examined (both wired into frob.gates._fix_engine_sync by T-1942), no production \
-# caller has been added for this specific diagnostic accessor yet. T-1943 extends \
-# per-site coverage to more gate families and is the most likely next ticket to touch \
-# this module; follow_up points there to satisfy WIRE002's live-open-ticket \
-# requirement, not because T-1943 is expected to wire a caller in" follow_up="T-1943"
+# caller has been added for this specific diagnostic accessor yet. T-2011 \
+# wires perf/strata/graph/vet examined-sites into WAIVE004 and is the most likely next \
+# ticket to touch this module; follow_up points there to satisfy WIRE002's \
+# live-open-ticket requirement, not because that ticket is expected to wire a caller \
+# in" follow_up="T-2011"
 def is_family_instrumented(stats: "GateStats", family: str) -> bool:
     """T-1921: True iff `family` carries a real (possibly empty)
     examined-sites entry in `stats` -- distinguishes "this family reports
@@ -176,9 +364,9 @@ def is_family_instrumented(stats: "GateStats", family: str) -> bool:
 # directly to decide whether a WAIVE004 candidate's site was actually examined this \
 # run) -- kept as an explicit waiver rather than removed for the same fragile \
 # dynamic-call-site reason as attach_examined_sites above. follow_up re-pointed to \
-# T-1943 (the open ticket extending this module's family coverage) since WIRE002 \
-# requires a live open ticket citation, not because T-1943 is expected to remove this \
-# waiver itself" follow_up="T-1943"
+# T-2011 (the open ticket wiring perf/strata/graph/vet examined-sites into \
+# WAIVE004) since WIRE002 requires a live open ticket citation, not because that \
+# ticket is expected to remove this waiver itself" follow_up="T-2011"
 def site_examined(stats: "GateStats", family: str, file: str) -> bool:
     """T-1921: THE single sanctioned way to ask "did this run's gate
     FAMILY actually examine FILE" -- returns False whenever either half

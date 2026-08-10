@@ -1,7 +1,7 @@
 ---
 id: T-1943
 title: Extend per-site examined-sites coverage to strata/perf/graph/vet gate families
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-09'
@@ -12,8 +12,89 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_coverage_sites.py
+- tests/unit/gates/test_examined_sites.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/gates/test_examined_sites.py
+  reason: new reporters need their own tests bound in this ticket's own scope, matching
+    the existing archgate reporter tests already covered by this file
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: attach_examined_sites's own regression tests cite arch_examined_sites as
+    their frob:tests target; this ticket's own test-file addition needs that closure
+    edge
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/gates/_arch.py
+  reason: reverting -- pulls in arch_gate's whole closure (16 warnings), disproportionate
+    to this ticket's scope
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: attach_examined_sites's own pre-existing regression tests cite arch_examined_sites
+    as their frob:tests target; closing that scope edge
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/gates/_arch.py
+  reason: reverting closure cascade experiments -- back to ticket's original declared
+    scope
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tests/unit/gates/test_examined_sites.py
+  reason: reverting closure cascade experiments -- back to ticket's original declared
+    scope
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/gates/test_examined_sites.py
+  reason: new family reporter tests belong beside the existing archgate reporter tests
+    in this shared file
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: this ticket's own new fs.read call (_vet_examined_sites' path.read_bytes)
+    needs the gates node's capability via-list updated and its ratchet ceiling bumped
+    in the same diff
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: this ticket's own new fs.read call (_vet_examined_sites' path.read_bytes)
+    needs the gates node's capability via-list updated and its ratchet ceiling bumped
+    in the same diff
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: design/frob.strata
+  reason: reverting -- design/frob.strata is a giant shared hub (123 closure warnings),
+    disproportionate; reverting both file edits too
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: reverting -- design/frob.strata is a giant shared hub (123 closure warnings),
+    disproportionate; reverting both file edits too
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/gates/test_examined_sites.py::TestPerfGraphVetExaminedSitesShareOneFixtureShape::test_a_parseable_python_file_is_examined[perf]
+- tests/unit/gates/test_examined_sites.py::TestPerfGraphVetExaminedSitesShareOneFixtureShape::test_a_parseable_python_file_is_examined[graph]
+- tests/unit/gates/test_examined_sites.py::TestPerfGraphVetExaminedSitesShareOneFixtureShape::test_a_parseable_python_file_is_examined[vet]
+- tests/unit/gates/test_examined_sites.py::TestPerfGraphVetExaminedSitesShareOneFixtureShape::test_an_unsupported_extension_is_not_examined[perf]
+- tests/unit/gates/test_examined_sites.py::TestPerfGraphVetExaminedSitesShareOneFixtureShape::test_an_unsupported_extension_is_not_examined[vet]
+- tests/unit/gates/test_examined_sites.py::TestPerfGraphVetExaminedSitesShareOneFixtureShape::test_graph_reports_false_for_a_file_never_written
+- tests/unit/gates/test_examined_sites.py::TestStrataExaminedSites::test_a_parseable_strata_file_is_examined
+- tests/unit/gates/test_examined_sites.py::TestStrataExaminedSites::test_an_unparseable_strata_file_is_not_examined
+- tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_families_this_module_does_not_know_about_stay_absent
 designated_repro_test: null
 threat: null
 component: null
