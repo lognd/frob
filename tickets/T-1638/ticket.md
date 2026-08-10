@@ -12,11 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/app/ticket_runner/**
-- src/frob/tickets/**
-- tests/**
-- docs/**
 - src/frob/tickets/_land.py
+- tests/unit/test_land_root_resolution.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -24,6 +21,236 @@ scope_changes:
   glob: src/frob/tickets/_land.py
   reason: 'probe: does T-1696''s stale lease file still block this path after its
     scope was narrowed'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/app/ticket_runner/**
+  reason: 'Narrow to the files the recommended fix actually touches, and drop a
+
+    probe path added while diagnosing a lease question.
+
+
+    T-1638''s declared scope was four umbrella globs
+
+    (src/frob/app/ticket_runner/**, src/frob/tickets/**, tests/**, docs/**).
+
+    Starting it as scoped would lease essentially the whole codebase and
+
+    serialize every other agent -- the same hazard TICK009 flags and that
+
+    T-1664 was narrowed away from earlier today before it could block the
+
+    queue.
+
+
+    The investigation already done on this ticket (recorded by the
+
+    land-attribution agent) identified the concrete fix: generalize the
+
+    existing `if root == worktree: resolved_root = _resolve_primary_checkout(
+
+    worktree)` block in `land()` so `root` is corrected via
+
+    `_resolve_primary_checkout(root)` unconditionally, not only when it
+
+    happens to equal --worktree. That is one function in one file, plus a
+
+    regression test asserting SUCCESS (root silently corrected) rather than
+
+    a refusal.
+
+
+    Scope set accordingly. If implementation shows another file is genuinely
+
+    required, `scope --add` it with a reason rather than pre-claiming
+
+    umbrellas.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/tickets/**
+  reason: 'Narrow to the files the recommended fix actually touches, and drop a
+
+    probe path added while diagnosing a lease question.
+
+
+    T-1638''s declared scope was four umbrella globs
+
+    (src/frob/app/ticket_runner/**, src/frob/tickets/**, tests/**, docs/**).
+
+    Starting it as scoped would lease essentially the whole codebase and
+
+    serialize every other agent -- the same hazard TICK009 flags and that
+
+    T-1664 was narrowed away from earlier today before it could block the
+
+    queue.
+
+
+    The investigation already done on this ticket (recorded by the
+
+    land-attribution agent) identified the concrete fix: generalize the
+
+    existing `if root == worktree: resolved_root = _resolve_primary_checkout(
+
+    worktree)` block in `land()` so `root` is corrected via
+
+    `_resolve_primary_checkout(root)` unconditionally, not only when it
+
+    happens to equal --worktree. That is one function in one file, plus a
+
+    regression test asserting SUCCESS (root silently corrected) rather than
+
+    a refusal.
+
+
+    Scope set accordingly. If implementation shows another file is genuinely
+
+    required, `scope --add` it with a reason rather than pre-claiming
+
+    umbrellas.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tests/**
+  reason: 'Narrow to the files the recommended fix actually touches, and drop a
+
+    probe path added while diagnosing a lease question.
+
+
+    T-1638''s declared scope was four umbrella globs
+
+    (src/frob/app/ticket_runner/**, src/frob/tickets/**, tests/**, docs/**).
+
+    Starting it as scoped would lease essentially the whole codebase and
+
+    serialize every other agent -- the same hazard TICK009 flags and that
+
+    T-1664 was narrowed away from earlier today before it could block the
+
+    queue.
+
+
+    The investigation already done on this ticket (recorded by the
+
+    land-attribution agent) identified the concrete fix: generalize the
+
+    existing `if root == worktree: resolved_root = _resolve_primary_checkout(
+
+    worktree)` block in `land()` so `root` is corrected via
+
+    `_resolve_primary_checkout(root)` unconditionally, not only when it
+
+    happens to equal --worktree. That is one function in one file, plus a
+
+    regression test asserting SUCCESS (root silently corrected) rather than
+
+    a refusal.
+
+
+    Scope set accordingly. If implementation shows another file is genuinely
+
+    required, `scope --add` it with a reason rather than pre-claiming
+
+    umbrellas.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/**
+  reason: 'Narrow to the files the recommended fix actually touches, and drop a
+
+    probe path added while diagnosing a lease question.
+
+
+    T-1638''s declared scope was four umbrella globs
+
+    (src/frob/app/ticket_runner/**, src/frob/tickets/**, tests/**, docs/**).
+
+    Starting it as scoped would lease essentially the whole codebase and
+
+    serialize every other agent -- the same hazard TICK009 flags and that
+
+    T-1664 was narrowed away from earlier today before it could block the
+
+    queue.
+
+
+    The investigation already done on this ticket (recorded by the
+
+    land-attribution agent) identified the concrete fix: generalize the
+
+    existing `if root == worktree: resolved_root = _resolve_primary_checkout(
+
+    worktree)` block in `land()` so `root` is corrected via
+
+    `_resolve_primary_checkout(root)` unconditionally, not only when it
+
+    happens to equal --worktree. That is one function in one file, plus a
+
+    regression test asserting SUCCESS (root silently corrected) rather than
+
+    a refusal.
+
+
+    Scope set accordingly. If implementation shows another file is genuinely
+
+    required, `scope --add` it with a reason rather than pre-claiming
+
+    umbrellas.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_land_root_resolution.py
+  reason: 'Narrow to the files the recommended fix actually touches, and drop a
+
+    probe path added while diagnosing a lease question.
+
+
+    T-1638''s declared scope was four umbrella globs
+
+    (src/frob/app/ticket_runner/**, src/frob/tickets/**, tests/**, docs/**).
+
+    Starting it as scoped would lease essentially the whole codebase and
+
+    serialize every other agent -- the same hazard TICK009 flags and that
+
+    T-1664 was narrowed away from earlier today before it could block the
+
+    queue.
+
+
+    The investigation already done on this ticket (recorded by the
+
+    land-attribution agent) identified the concrete fix: generalize the
+
+    existing `if root == worktree: resolved_root = _resolve_primary_checkout(
+
+    worktree)` block in `land()` so `root` is corrected via
+
+    `_resolve_primary_checkout(root)` unconditionally, not only when it
+
+    happens to equal --worktree. That is one function in one file, plus a
+
+    regression test asserting SUCCESS (root silently corrected) rather than
+
+    a refusal.
+
+
+    Scope set accordingly. If implementation shows another file is genuinely
+
+    required, `scope --add` it with a reason rather than pre-claiming
+
+    umbrellas.
+
+    '
   actor: logan
   at: '2026-08-10'
 designated_repro_test: null
