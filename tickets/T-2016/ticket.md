@@ -1,7 +1,7 @@
 ---
 id: T-2016
 title: design a growth-rate grammar for frob sys capacity --at DATE
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-10'
