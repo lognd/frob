@@ -2,7 +2,7 @@
 id: T-1949
 title: 'ARCH001: _close_failure_hint (_close_cmd.py) exceeds the 60-line function
   threshold'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-09'
