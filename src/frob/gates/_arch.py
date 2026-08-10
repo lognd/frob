@@ -185,7 +185,7 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
 # frob.gates._coverage_sites._load_family_reporters, which stores it as a dict value \
 # and invokes it indirectly (reporters[family](root)) -- the exact shape static \
 # call-graph analysis cannot trace through; genuinely wired, not dead" \
-# follow_up="T-1942"
+# follow_up="T-1965"
 def arch_examined_sites(root: Path) -> frozenset[str]:
     """T-1921: the per-site analysis-coverage substrate's ARCH-family
     reporter -- the repo-relative file paths `arch_gate`'s own

@@ -11890,6 +11890,253 @@ class TestWaive004DegradedRunGuard:
         assert "frob:waive REF001" not in rewritten
 
 
+# frob:ticket T-1942
+class TestWaive004ExaminedSitesGuard:
+    """T-1942: the THIRD, additive WAIVE004 guard -- an archgate-family
+    candidate must not be deleted unless this run's real per-site
+    examined-sites substrate (T-1921, `frob.gates._coverage_sites`)
+    positively confirms the candidate's own file was examined.
+    `fix_waive004_stale_waiver` enriches its self-manufactured report via
+    `attach_examined_sites`, which recomputes the "archgate" entry for
+    real against `root` -- so these fixtures control examined-ness by
+    writing real, on-disk files a genuine `arch_examined_sites(root)`
+    call will (or will not) parse, not by injecting a fake
+    `GateStats.examined_sites` the real call would just overwrite."""
+
+    # frob:ticket T-1942
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    # frob:ticket T-1942
+    def test_examined_archgate_site_is_deleted(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A waiver on an archgate-rule site that a real
+        `arch_examined_sites(root)` call DOES confirm was examined this
+        run behaves exactly as before T-1942 -- the guard grants
+        deletion, it does not additionally refuse a genuinely examined
+        site."""
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        (root / "src" / "good.py").write_text(
+            '# frob:waive ARCH001 reason="fixture, T-1942"\n'
+            "def f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+
+        report = GateReport(
+            violations=(
+                Violation(
+                    rule="WAIVE004",
+                    severity=Severity.ERROR,
+                    file="src/good.py",
+                    line=1,
+                    message="WAIVE004: frob:waive ARCH001 matches 0 findings",
+                ),
+            ),
+            waived=(),
+            stats=GateStats(),
+        )
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg, **kw: Ok(report))
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
+        assert len(waive004_applied) == 1
+        rewritten = (root / "src" / "good.py").read_text(encoding="utf-8")
+        assert "frob:waive ARCH001" not in rewritten
+
+    # frob:ticket T-1942
+    def test_uninstrumented_family_is_unchanged_from_today(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A waiver targeting a rule NOT in the archgate family (e.g.
+        PERF001 -- perf is deliberately uninstrumented per T-1921) must
+        behave IDENTICALLY to pre-T-1942 -- this new guard grants nothing
+        for any family it does not instrument, it must never additionally
+        NARROW an uninstrumented family's existing behavior either. Proof
+        that the guard is gated on `rule in archgate_rule_ids()`, not on
+        an unconditional `site_examined` call that would trivially return
+        False here and wrongly block this deletion."""
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        (root / "src" / "m.py").write_text(
+            '# frob:waive PERF001 reason="fixture, T-1942, uninstrumented family"\n'
+            "def f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        snapshot = self._snap(root)
+
+        report = GateReport(
+            violations=(
+                Violation(
+                    rule="WAIVE004",
+                    severity=Severity.ERROR,
+                    file="src/m.py",
+                    line=1,
+                    message="WAIVE004: frob:waive PERF001 matches 0 findings",
+                ),
+            ),
+            waived=(),
+            stats=GateStats(),
+        )
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg, **kw: Ok(report))
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
+        assert len(waive004_applied) == 1
+        rewritten = (root / "src" / "m.py").read_text(encoding="utf-8")
+        assert "frob:waive PERF001" not in rewritten
+
+    # frob:ticket T-1942
+    def test_unexamined_archgate_site_refuses(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A degraded-shaped run: archgate IS instrumented (it always is,
+        in this handler's self-manufactured run), but the candidate's own
+        file is NOT a member of the real, freshly-computed examined set
+        this time (unparseable python source, T-1921's own
+        `_analyze_one_file` contract) -- the guard must refuse to delete
+        it, even though the WAIVE004 finding itself looks completely
+        ordinary. This is the exact shape (family instrumented, this file
+        absent from the examined set) the ticket's acceptance criterion 3
+        names."""
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        # A file with no tree-sitter grammar for its extension --
+        # `_analyze_one_file` early-returns before any parse/checks run
+        # (same "not examined" shape `test_examined_sites.py`'s own
+        # `test_archgate_examined_sites_exclude_an_unparseable_file`
+        # proves at the substrate layer), so this file never joins
+        # `ArchResult.files_examined` this run.
+        (root / "src" / "bad.bin").write_bytes(b"\x00\x01\x02")
+        snapshot = self._snap(root)
+
+        report = GateReport(
+            violations=(
+                Violation(
+                    rule="WAIVE004",
+                    severity=Severity.ERROR,
+                    file="src/bad.bin",
+                    line=1,
+                    message="WAIVE004: frob:waive ARCH001 matches 0 findings",
+                ),
+            ),
+            waived=(),
+            stats=GateStats(),
+        )
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg, **kw: Ok(report))
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        assert applied == []
+
+    # frob:ticket T-1942
+    def test_original_55_waiver_incident_shape_partial_examination_still_refuses(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The original incident's own shape, reproduced narrowly: a
+        batch of archgate-rule WAIVE004 candidates where the real
+        examined-sites substrate confirms SOME sites but not ALL of
+        them. A caller that trusted "the family fired, and some sites
+        came back clean" as proof of coverage would delete the whole
+        batch -- exactly `_rule_has_live_finding`'s falsified reasoning,
+        one layer down at the per-site level instead of per-rule. This
+        guard must keep the confirmed-examined candidate and drop the
+        unconfirmed one, never all-or-nothing on the rule as a whole (the
+        OTHER two guards already own the all-or-nothing shape; this one
+        is strictly per-site)."""
+        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver \
+        # kind="unit"
+        from typani.result import Ok
+
+        from frob.gates import GateReport, GateStats, Severity, Violation
+        from frob.gates._fix_engine_sync import fix_waive004_stale_waiver
+        from frob.tickets import TicketQueue
+
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "tickets.md").write_text("", encoding="utf-8")
+        (root / "src" / "examined.py").write_text(
+            '# frob:waive ARCH001 reason="fixture, T-1942, examined site"\n'
+            "def f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        # No tree-sitter grammar for this extension -- same "not
+        # examined" mechanism as `test_unexamined_archgate_site_refuses`
+        # above, deliberately using a bogus `frob:waive` comment so the
+        # test also demonstrates the file NEVER GETS REWRITTEN, not just
+        # that `applied` omits it.
+        (root / "src" / "unexamined.bin").write_bytes(
+            b'# frob:waive ARCH001 reason="fixture"\n'
+        )
+        snapshot = self._snap(root)
+
+        report = GateReport(
+            violations=(
+                Violation(
+                    rule="WAIVE004",
+                    severity=Severity.ERROR,
+                    file="src/examined.py",
+                    line=1,
+                    message="WAIVE004: frob:waive ARCH001 matches 0 findings",
+                ),
+                Violation(
+                    rule="WAIVE004",
+                    severity=Severity.ERROR,
+                    file="src/unexamined.bin",
+                    line=1,
+                    message="WAIVE004: frob:waive ARCH001 matches 0 findings",
+                ),
+            ),
+            waived=(),
+            stats=GateStats(),
+        )
+        monkeypatch.setattr("frob.gates.run_gates", lambda cfg, **kw: Ok(report))
+
+        applied = fix_waive004_stale_waiver(root, snapshot, TicketQueue(tickets={}))
+
+        waive004_applied = [a for a in applied if a.rule == "WAIVE004"]
+        assert [a.file for a in waive004_applied] == ["src/examined.py"]
+        assert "frob:waive ARCH001" not in (
+            root / "src" / "examined.py"
+        ).read_text(encoding="utf-8")
+        assert "frob:waive ARCH001" in (
+            root / "src" / "unexamined.bin"
+        ).read_text(encoding="utf-8")
+
+
 # frob:ticket T-0542
 # frob:ticket T-0543
 class TestCov002ScopeCoverage:

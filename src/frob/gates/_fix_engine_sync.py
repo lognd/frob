@@ -63,7 +63,7 @@ from frob.graph import GraphSnapshot
 from frob.tickets import TicketQueue
 
 if TYPE_CHECKING:
-    from frob.gates import GateReport
+    from frob.gates import GateReport, GateStats
 
 _log = logging.getLogger(__name__)
 
@@ -615,10 +615,15 @@ def _waive004_verified_candidates(
     all", per this handler's prove-fresh-or-do-nothing contract (T-1323).
     Otherwise the `(file, line, target_rule)` WAIVE004 deletion
     candidates from a verified-trustworthy run, with every rule showing a
-    mass-invalidation shape (`_mass_invalidation_rules`) filtered back
-    OUT -- see `_drop_untrustworthy_mass_stale_candidates` for why that
-    refusal is unconditional again (T-1592)."""
+    mass-invalidation shape (`_mass_invalidation_rules`) filtered back OUT
+    (`_drop_untrustworthy_mass_stale_candidates`, T-1592's unconditional
+    refusal), THEN (T-1942) every archgate-family candidate this run's
+    per-site examined-sites substrate did not positively confirm was
+    examined also filtered back OUT (`_drop_unexamined_archgate_
+    candidates`) -- a third, purely additive guard stacked on top of the
+    first two, never a replacement for either."""
     from frob.gates import GateConfig, run_gates
+    from frob.gates._coverage_sites import attach_examined_sites
 
     result = run_gates(GateConfig(root=str(root), gates=gates, ticket=ticket))
     if result.is_err:
@@ -629,7 +634,12 @@ def _waive004_verified_candidates(
         )
         return None
 
-    report = result.danger_ok
+    # T-1942: enrich with per-site examined-sites BEFORE deriving
+    # candidates -- `_drop_unexamined_archgate_candidates` below needs
+    # `report.stats.examined_sites` populated, and `run_gates` itself
+    # does not populate it (T-1921 shipped the substrate deliberately
+    # unwired; this is that wiring's own first production call site).
+    report = attach_examined_sites(result.danger_ok, root)
     degraded_reason = _degraded_verification_reason(report)
     if degraded_reason is not None:
         _log.error(
@@ -648,7 +658,8 @@ def _waive004_verified_candidates(
             continue
         candidates.append((violation.file, violation.line, target_rule))
 
-    return _drop_untrustworthy_mass_stale_candidates(root, candidates)
+    candidates = _drop_untrustworthy_mass_stale_candidates(root, candidates)
+    return _drop_unexamined_archgate_candidates(candidates, report.stats)
 
 
 def _live_waiver_counts(root: Path) -> dict[str, int]:
@@ -735,7 +746,79 @@ def _drop_untrustworthy_mass_stale_candidates(
     return [c for c in candidates if c[2] not in mass_rules]
 
 
+def _archgate_rule_ids() -> frozenset[str]:
+    """T-1942: every rule id `frob.gates._arch.arch_gate` can emit -- the
+    complete set of rule ids the "archgate" family (the only family
+    `frob.gates._coverage_sites` instruments today, T-1921) covers.
+    Re-derived from `frob.gates._arch._ARCH_CATEGORY_TO_RULE`'s own
+    values rather than hand-duplicated here, so a new ARCH1xx/CPPTHROW/
+    LARGE-shaped category added to that map is automatically covered by
+    `_drop_unexamined_archgate_candidates` below with no second edit --
+    two copies of this list desyncing silently is exactly the kind of
+    mistake that would make the new guard's "grants nothing outside
+    archgate" contract wrong by omission instead of by design."""
+    from frob.gates._arch import _ARCH_CATEGORY_TO_RULE
+
+    return frozenset(_ARCH_CATEGORY_TO_RULE.values())
+
+
+# frob:ticket T-1942
+def _drop_unexamined_archgate_candidates(
+    candidates: list[tuple[str, int, str]],
+    stats: "GateStats",
+) -> list[tuple[str, int, str]]:
+    """T-1942: a THIRD, purely additive WAIVE004 guard, stacked on top of
+    (never in place of) `_drop_untrustworthy_mass_stale_candidates` --
+    drops any remaining candidate whose target rule belongs to the
+    archgate family (`_archgate_rule_ids`) unless `frob.gates.
+    _coverage_sites.site_examined` positively confirms THIS run's
+    archgate pass actually examined the candidate's own file.
+
+    Every candidate whose target rule is NOT an archgate rule id passes
+    through completely unchanged -- archgate is the only family T-1921's
+    substrate instruments today, so this check must GRANT NOTHING for
+    any other family, never narrow a family's existing behavior just
+    because `site_examined` would trivially report False for it (that
+    would be indistinguishable, in effect, from silently treating an
+    uninstrumented family as covered by a check it never opted into --
+    the same blast radius this whole guard chain exists to prevent, just
+    inverted). This is why the filter is gated on `rule in
+    _archgate_rule_ids()` rather than calling `site_examined` for every
+    candidate unconditionally.
+
+    Can only ever REMOVE candidates a prior stage already proposed to
+    retire -- it has no path to add one back, so it cannot make the
+    overall guard chain less conservative than it already was, only
+    equal or stricter, matching T-1904's incident history and this
+    ticket's own explicit "additive-only" brief."""
+    from frob.gates._coverage_sites import site_examined
+
+    archgate_rules = _archgate_rule_ids()
+    kept: list[tuple[str, int, str]] = []
+    for file, line, rule in candidates:
+        if rule in archgate_rules and not site_examined(stats, "archgate", file):
+            _log.error(
+                "WAIVE004 auto-fix: %s waiver at %s:%d targets an archgate rule, "
+                "but this run's examined-sites substrate did not confirm %s was "
+                "examined -- deleting nothing for this candidate",
+                rule,
+                file,
+                line,
+                file,
+            )
+            continue
+        kept.append((file, line, rule))
+    return kept
+
+
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:waive AFFECT001 reason="T-1942's declared scope is \
+# src/frob/gates/_fix_engine_sync.py only; docs/modules/gates.md's WAIVE004 section is \
+# this function's affects()-closure doc target, but T-1958 (in-progress) held a lease \
+# on the whole file for T-1942's entire duration -- frob ticket scope --add refused \
+# with ScopeLeaseConflict, and per this repo's playbook a lease conflict is reported, \
+# not forced with --allow-cross-ticket. The doc write is deferred to a follow-up \
+# ticket rather than skipped silently." follow_up="T-1964"
 def fix_waive004_stale_waiver(
     root: Path,
     snapshot: GraphSnapshot,
@@ -783,7 +866,21 @@ def fix_waive004_stale_waiver(
     dropped, one rule at a time and logged by name (the
     degraded-run signature `_degraded_verification_reason` targets from
     the other, structural direction). Every other, non-mass-stale rule's
-    candidates are never affected by this check either way."""
+    candidates are never affected by this check either way.
+
+    T-1942 adds a THIRD, independent, purely additive guard on top of the
+    two above: `_drop_unexamined_archgate_candidates` drops any surviving
+    candidate that targets an archgate-family rule
+    (`frob.gates._arch.arch_gate`'s rule ids) unless this run's per-site
+    examined-sites substrate (T-1921, `frob.gates._coverage_sites`)
+    positively confirms the candidate's own file was actually examined
+    this run -- never trusting "the rule fired somewhere" as a proxy for
+    "this specific waived site was re-analyzed" (the exact unsound
+    reasoning that deleted 55 live waivers once, see `_drop_
+    untrustworthy_mass_stale_candidates`'s own docstring). Every OTHER
+    family's candidates are completely unaffected -- archgate is the
+    only family the substrate instruments today, so this guard grants
+    nothing for any other family rather than narrowing its behavior."""
     del queue  # signature uniformity only, this handler re-runs the gates itself
     if gates or ticket is not None:
         return []

@@ -1,7 +1,7 @@
 ---
 id: T-1942
 title: Wire examined-sites as a third, additive WAIVE004 mass-invalidation guard
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-09'
@@ -12,8 +12,39 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fix_engine_sync.py
+- tickets/T-1964/**
+- src/frob/gates/_arch.py
+- src/frob/gates/_coverage_sites.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-1964/**
+  reason: T-1942 filed this residue ticket (deferred docs/modules/gates.md WAIVE004
+    writeup, blocked by T-1958's lease) as part of its own Done report; its sharded-ledger
+    bookkeeping needs to be in scope like T-1942's own (T-1819's tickets/<id>/** rule
+    only covers the active ticket's own dir).
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: 'Land-time LiveTrackerCited refusal: T-1921''s WIRE001 waivers on arch_examined_sites/attach_examined_sites/is_family_instrumented/site_examined
+    cite follow_up=T-1942, fulfilled by this ticket''s wiring; re-pointing those 4
+    citations to a successor (T-1965) is required to close T-1942.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_coverage_sites.py
+  reason: 'Land-time LiveTrackerCited refusal: T-1921''s WIRE001 waivers on arch_examined_sites/attach_examined_sites/is_family_instrumented/site_examined
+    cite follow_up=T-1942, fulfilled by this ticket''s wiring; re-pointing those 4
+    citations to a successor (T-1965) is required to close T-1942.'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_examined_archgate_site_is_deleted
+- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_uninstrumented_family_is_unchanged_from_today
+- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_unexamined_archgate_site_refuses
+- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_original_55_waiver_incident_shape_partial_examination_still_refuses
 designated_repro_test: null
 threat: null
 component: null

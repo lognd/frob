@@ -111,7 +111,7 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 # caller yet, per the coordinator's explicit instruction not to wire a consumer in the \
 # same change that built the coverage substrate (the 55-waiver incident happened from \
 # doing exactly that once). The follow-up ticket that wires a real WAIVE004 consumer \
-# is the one that will call this from production code" follow_up="T-1942"
+# is the one that will call this from production code" follow_up="T-1965"
 def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
     """T-1921: returns a COPY of `report` whose `stats.examined_sites` is
     populated for every family `_load_family_reporters` knows how to
@@ -151,7 +151,7 @@ def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
 # frob:ticket T-1921
 # frob:waive WIRE001 reason="T-1921 is deliberately substrate-only -- no production \
 # caller yet, same reasoning as attach_examined_sites above; the follow-up \
-# WAIVE004-wiring ticket is the first production consumer" follow_up="T-1942"
+# WAIVE004-wiring ticket is the first production consumer" follow_up="T-1965"
 def is_family_instrumented(stats: "GateStats", family: str) -> bool:
     """T-1921: True iff `family` carries a real (possibly empty)
     examined-sites entry in `stats` -- distinguishes "this family reports
@@ -167,7 +167,7 @@ def is_family_instrumented(stats: "GateStats", family: str) -> bool:
 # frob:ticket T-1921
 # frob:waive WIRE001 reason="T-1921 is deliberately substrate-only -- no production \
 # caller yet, same reasoning as attach_examined_sites above; the follow-up \
-# WAIVE004-wiring ticket is the first production consumer" follow_up="T-1942"
+# WAIVE004-wiring ticket is the first production consumer" follow_up="T-1965"
 def site_examined(stats: "GateStats", family: str, file: str) -> bool:
     """T-1921: THE single sanctioned way to ask "did this run's gate
     FAMILY actually examine FILE" -- returns False whenever either half
