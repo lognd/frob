@@ -13,8 +13,49 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_new_gate_rule_acceptance.py
+- src/frob/gates/_fix_engine.py
+- src/frob/gates/_fix_engine_sync.py
+- docs/modules/gates.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'chose fix direction (a) from the ticket''s own preferred order: a Tier-A
+    auto-fix (fix_docenum001_enumerates_sync, mirroring REG010''s own fix_reg010_registry_sync)
+    resyncs the enumerates members= claim mechanically at land time, so the ORIGINAL
+    scope guess (_new_gate_rule_acceptance.py, direction (b)) is not what this change
+    touches'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
