@@ -2024,45 +2024,93 @@ def _refuse_if_root_is_worktree(
 ) -> Result[None, LandError]:
     """`Err(IncompleteLand)`, logged with the ACTUAL mistake named, if
     `root` and `worktree` (both already `.resolve()`d by `land`) are the
-    identical path (T-0795).
+    identical path (T-0795), OR (T-1638) if `root` -- while different from
+    `worktree` -- is itself some OTHER registered worktree of the same
+    repository rather than the true primary checkout.
 
-    Before this check, that exact condition (root == worktree) fell
-    through all the way to `_worktree_full_changeset`'s much later T-0640/
-    T-0761 diagnosis ("`--worktree` almost certainly points at the SAME
-    checkout/branch `root` has checked out ... create a real feature
-    branch") -- correct for a worktree genuinely pointed at the wrong
-    branch, but misleading for the far more common real cause: `root`
-    defaults to `cfg.ticket_path or Path(".")` (the invoker's CWD), so
-    running `frob ticket land <id> --worktree <path>` from A SHELL SITTING
-    INSIDE THE WORKTREE (rather than the shared root checkout) makes
-    `root` resolve to `worktree` for free, no misconfigured `--worktree`
-    involved. Refusing here, before `_land_merge_stage` runs any git
-    mutation, names the actual mistake immediately instead of sending an
-    agent chasing the T-0640 "create a real feature branch" remedy for a
-    worktree that was never the problem. Reuses `LandError.IncompleteLand`
-    (no new enum variant -- both are "this land cannot proceed as
-    configured, nothing was committed" outcomes; the log message, not the
-    enum tag, carries the corrected diagnosis) rather than the true-
-    same-branch check (`_worktree_full_changeset`'s merge-base-equals-HEAD
-    test), which still fires unchanged for a distinct-but-branchless
-    worktree path further down the pipeline."""
-    if root != worktree:
-        return Ok(None)
-    _log.error(
-        "land: %s refused -- root (%s) and --worktree (%s) resolve to the "
-        "IDENTICAL path. This is almost always caused by running `frob "
-        "ticket land` from a shell whose cwd is INSIDE the worktree "
-        "(`root` defaults to cwd) rather than a --worktree pointed at the "
-        "wrong branch. Run `frob ticket land %s --worktree %s` from the "
-        "ROOT checkout instead -- cd out of %s first, then retry",
-        ticket_id,
-        root,
-        worktree,
-        ticket_id,
-        worktree,
-        worktree,
-    )
-    return Err(LandError.IncompleteLand)
+    Before this check, the root==worktree condition fell through all the
+    way to `_worktree_full_changeset`'s much later T-0640/T-0761 diagnosis
+    ("`--worktree` almost certainly points at the SAME checkout/branch
+    `root` has checked out ... create a real feature branch") -- correct
+    for a worktree genuinely pointed at the wrong branch, but misleading
+    for the far more common real cause: `root` defaults to `cfg.
+    ticket_path or Path(".")` (the invoker's CWD), so running `frob
+    ticket land <id> --worktree <path>` from A SHELL SITTING INSIDE THE
+    WORKTREE (rather than the shared root checkout) makes `root` resolve
+    to `worktree` for free, no misconfigured `--worktree` involved.
+    Refusing here, before `_land_merge_stage` runs any git mutation, names
+    the actual mistake immediately instead of sending an agent chasing
+    the T-0640 "create a real feature branch" remedy for a worktree that
+    was never the problem.
+
+    T-1638: `root` defaulting to cwd has a second, more dangerous shape
+    the root==worktree check above never catches -- a shell whose cwd sat
+    inside worktree A (a DIFFERENT ticket's worktree, not the one being
+    landed) runs `frob ticket land <id> --worktree B`. `root` (A) and
+    `worktree` (B) are trivially unequal, so the check above passes clean,
+    yet `root` is still wrong: it silently treats A -- a linked worktree,
+    not the shared primary checkout -- as though it were "main", merging
+    B's branch into A's own checked-out branch instead of the real one.
+    Caught the same way T-1003 (`land`'s own caller) resolves the
+    root==worktree case: `_resolve_primary_checkout(root)` asks git's own
+    `--git-common-dir` what the TRUE primary checkout is; if that differs
+    from `root` itself, `root` is a linked worktree, not the primary, and
+    this refuses rather than silently substituting the resolved primary
+    -- unlike the T-1003 case (where cwd-inside-`worktree` unambiguously
+    means "the caller forgot to cd out", so auto-resolving is safe), a
+    root that is some THIRD worktree is genuinely ambiguous: the caller's
+    intent might have been to land into that worktree's own branch, so
+    guessing silently risks merging into the wrong repository exactly
+    like the incident this ticket records.
+
+    Reuses `LandError.IncompleteLand` for both shapes (no new enum
+    variant -- both are "this land cannot proceed as configured, nothing
+    was committed" outcomes; the log message, not the enum tag, carries
+    the corrected diagnosis) rather than the true-same-branch check
+    (`_worktree_full_changeset`'s merge-base-equals-HEAD test), which
+    still fires unchanged for a distinct-but-branchless worktree path
+    further down the pipeline."""
+    if root == worktree:
+        _log.error(
+            "land: %s refused -- root (%s) and --worktree (%s) resolve to "
+            "the IDENTICAL path. This is almost always caused by running "
+            "`frob ticket land` from a shell whose cwd is INSIDE the "
+            "worktree (`root` defaults to cwd) rather than a --worktree "
+            "pointed at the wrong branch. Run `frob ticket land %s "
+            "--worktree %s` from the ROOT checkout instead -- cd out of "
+            "%s first, then retry",
+            ticket_id,
+            root,
+            worktree,
+            ticket_id,
+            worktree,
+            worktree,
+        )
+        return Err(LandError.IncompleteLand)
+
+    # frob:ticket T-1638
+    primary = _resolve_primary_checkout(root)
+    if primary is not None and primary != root:
+        _log.error(
+            "land: %s refused -- root (%s) is not the primary checkout; "
+            "it is itself a DIFFERENT registered worktree of this "
+            "repository (its own primary checkout resolves to %s). "
+            "--worktree (%s) names yet a third path. This is almost "
+            "always caused by running `frob ticket land` from a shell "
+            "whose cwd is sitting inside ANOTHER ticket's worktree rather "
+            "than the shared root checkout -- cd to %s (or pass it as "
+            "root) first, then retry `frob ticket land %s --worktree %s`",
+            ticket_id,
+            root,
+            primary,
+            worktree,
+            primary,
+            ticket_id,
+            worktree,
+        )
+        return Err(LandError.IncompleteLand)
+
+    return Ok(None)
 
 
 # frob:ticket T-1323
