@@ -2,7 +2,7 @@
 id: T-1964
 title: docs/modules/gates.md WAIVE004 section needs T-1942 wiring writeup (blocked
   by T-1958 lease)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,21 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/gates.md
+- src/frob/gates/_fix_engine_sync.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: 'land refused to close: AFFECT001 waiver at src/frob/gates/_fix_engine_sync.py:953
+    cites T-1964 as its live follow_up tracker; must re-point to the successor ticket
+    in this same change or file one (filed T-2029)'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_original_55_waiver_incident_shape_partial_examination_still_refuses
 designated_repro_test: null
 threat: null
 component: null

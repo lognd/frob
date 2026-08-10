@@ -944,13 +944,6 @@ def _drop_unexamined_archgate_candidates(
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:waive AFFECT001 reason="T-1942's declared scope is \
-# src/frob/gates/_fix_engine_sync.py only; docs/modules/gates.md's WAIVE004 section is \
-# this function's affects()-closure doc target, but T-1958 (in-progress) held a lease \
-# on the whole file for T-1942's entire duration -- frob ticket scope --add refused \
-# with ScopeLeaseConflict, and per this repo's playbook a lease conflict is reported, \
-# not forced with --allow-cross-ticket. The doc write is deferred to a follow-up \
-# ticket rather than skipped silently." follow_up="T-1964"
 def fix_waive004_stale_waiver(
     root: Path,
     snapshot: GraphSnapshot,

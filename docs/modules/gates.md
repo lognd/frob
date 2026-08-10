@@ -3886,8 +3886,9 @@ against its return. The N=1 floor above does not reopen that hole -- it
 only stops the proportional check from firing where it structurally
 carries no signal at all; it does not add a way past the check once it
 DOES fire. A correct escape needs per-site analysis-coverage proof, not a
-same-run elsewhere-finding proxy -- that successor design is T-1904, not
-yet built.
+same-run elsewhere-finding proxy -- that successor design is T-1904; T-1942
+built its first consumer (archgate family only, see the WAIVE004 Tier-A
+fix-handler section below for the wiring writeup).
 
 Two-layer fix, matching the two places this gap actually bites:
 
@@ -4506,6 +4507,43 @@ its finding message, so the handler just calls that existing remedy:
   T-1578 does NOT yet cover. Until then, mass-stale waivers are cleaned
   by hand, deliberately, with a human reading the diff.
 
+  **Third guard, additive only (T-1942): per-site examined-sites, archgate
+  family only.** T-1904 (filed when T-1579 was reverted) named the sound
+  escape this incident's history actually needs: proof that the specific
+  WAIVED SITE, not just the rule somewhere, was re-analyzed this run --
+  never a same-run elsewhere-finding proxy like `_rule_has_live_finding`
+  again. T-1921 shipped that substrate (`GateStats.examined_sites`, see
+  `frob.gates._coverage_sites` in "Data models" below) deliberately
+  unwired from any auto-fix/waiver-retirement path, so it would get the
+  same scrutiny the original incident should have had before anything
+  consumed it. T-1942 is that first consumer: `_waive004_verified_
+  candidates` calls `attach_examined_sites` on its self-manufactured
+  `run_gates()` report BEFORE deriving WAIVE004 candidates, then
+  `_drop_unexamined_archgate_candidates` (`src/frob/gates/
+  _fix_engine_sync.py`) drops any remaining candidate whose target rule
+  is in the archgate family (`_archgate_rule_ids`, re-derived from
+  `frob.gates._arch._ARCH_CATEGORY_TO_RULE` so a new ARCH1xx/CPPTHROW/
+  LARGE category is covered automatically) unless `site_examined`
+  positively confirms THIS run's archgate pass actually examined the
+  candidate's own file.
+
+  This is a third guard STACKED on top of the two above, never a
+  replacement for either -- it can only ever REMOVE a candidate a prior
+  stage already proposed to retire, never add one back, so the overall
+  chain cannot become less conservative than before T-1942, only equal
+  or stricter. It also GRANTS NOTHING outside the archgate family:
+  `frob.gates._coverage_sites` instruments only `archgate` today (T-1921's
+  own scope cut), so the filter is gated on `rule in _archgate_rule_ids()`
+  before ever calling `site_examined` -- treating an uninstrumented
+  family as "covered" just because the check would trivially report
+  False for it would recreate the same blast radius this whole guard
+  chain exists to prevent, only inverted. `tests/test_gates.py::
+  TestWaive004ExaminedSitesGuard` is the regression lock, in particular
+  `test_original_55_waiver_incident_shape_partial_examination_still_
+  refuses` -- the T-1579/T-1592 incident's own shape, narrowed from
+  "some finding of this rule anywhere" down to "this exact file",
+  reproduced and confirmed still refused.
+
   A companion guard closes the same incident's OTHER half at the land
   layer itself, independent of which Tier-A handler is at fault: `frob
   ticket land` refuses BEFORE any git mutation (before the wip-commit
@@ -4945,10 +4983,15 @@ reference-gate) is the first concrete consumer.
   (`frob.gates._arch.arch_examined_sites`, backed by `ArchResult.
   files_examined`) reports for real, every other family deliberately
   left uninstrumented (T-1921's own scope cut -- see that module's
-  docstring). NOT wired into WAIVE004 or any other auto-fix/waiver-
-  retirement path by this substrate; that consumer is separate, later
-  work, precisely so it gets the same scrutiny the original incident
-  should have had.
+  docstring). T-1942 is the first (and, as of this writing, only)
+  consumer wiring this substrate into a WAIVE004 auto-fix/waiver-
+  retirement path -- `_drop_unexamined_archgate_candidates`, archgate
+  family only, additive on top of the two pre-existing WAIVE004 guards,
+  never granting anything for an uninstrumented family; see the WAIVE004
+  Tier-A fix-handler section above for the full wiring writeup. Any
+  OTHER family remains unwired into any waiver-retirement path by this
+  substrate; that is still separate, later work per family, precisely so
+  each one gets the same scrutiny the original incident should have had.
 - `GateReport` -- the merged result of `run_gates`: kept violations,
   waived violations, and stats.
 - `GateConfig` -- everything `run_gates` needs to load state and select
