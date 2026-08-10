@@ -1,7 +1,7 @@
 ---
 id: T-1972
 title: 'REG010: file CHK-GATE-SYS110 in docs/design/registry/check-coverage.yaml'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-10'
