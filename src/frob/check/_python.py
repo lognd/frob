@@ -732,6 +732,13 @@ def _run_gates(
     result = run_gates(cfg, use_cache=_gate_cache_enabled(no_cache))
     if result.is_err:
         return _gates_error_result(result.danger_err, GateError)
+    # T-1939: one cheap rule-level firing-counts telemetry event per real
+    # gates-stage run, best-effort (never raises, respects
+    # FROB_NO_TELEMETRY) -- see frob.telemetry's own module docstring for
+    # why this is unconditional rather than an opt-in verb.
+    from frob.telemetry import record_rule_firing_counts
+
+    record_rule_firing_counts(root, result.danger_ok)
     return _gates_success_result(
         result.danger_ok, root=root, delta=delta, ticket=ticket, gates=gates
     )

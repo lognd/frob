@@ -1,7 +1,7 @@
 ---
 id: T-1939
 title: 'No rule-level telemetry: cannot measure which of 293 gate rules ever fire'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-09'
@@ -12,8 +12,56 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/telemetry/
+- tests/unit/telemetry/**
+- src/frob/check/_python.py
+- docs/guides/agentic-time-profiling.md
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/telemetry/**
+  reason: tests for the new package belong in the ticket's scope; check/_python.py
+    is the single call site where the gates-stage GateReport is available to hook
+    rule-counts emission into
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: tests for the new package belong in the ticket's scope; check/_python.py
+    is the single call site where the gates-stage GateReport is available to hook
+    rule-counts emission into
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/agentic-time-profiling.md
+  reason: new module's frob:doc anchors live in this existing telemetry-docs page
+    (added a new section rather than a new orphan doc file)
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: the new frob.telemetry node requires design/frob.strata registration (SYS102),
+    and adding the testsuite fs.read via-list entry for the new test file requires
+    bumping its ratchet ceiling in the same diff (SELFAUDIT001/SYS111)
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: the new frob.telemetry node requires design/frob.strata registration (SYS102),
+    and adding the testsuite fs.read via-list entry for the new test file requires
+    bumping its ratchet ceiling in the same diff (SELFAUDIT001/SYS111)
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/telemetry/test_rule_counts.py::TestRuleFiringCounts::test_counts_kept_violations
+- tests/unit/telemetry/test_rule_counts.py::TestRuleFiringCounts::test_waived_violations_still_count_as_fired
+- tests/unit/telemetry/test_rule_counts.py::TestRuleFiringCounts::test_kept_and_waived_of_the_same_rule_combine
+- tests/unit/telemetry/test_rule_counts.py::TestRuleFiringCounts::test_empty_report_produces_an_empty_map
+- tests/unit/telemetry/test_rule_counts.py::TestRecordRuleFiringCounts::test_appends_one_event_with_every_fired_rule
+- tests/unit/telemetry/test_rule_counts.py::TestRecordRuleFiringCounts::test_empty_report_appends_a_zero_rule_event
+- tests/unit/telemetry/test_rule_counts.py::TestRecordRuleFiringCounts::test_respects_no_telemetry_opt_out
 designated_repro_test: null
 threat: null
 component: null

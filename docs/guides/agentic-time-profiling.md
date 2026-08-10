@@ -163,6 +163,35 @@ renders the resulting `frob.stats.dispatch_cost_report` join
 (`_dispatch_cost_lines`, `src/frob/app/stats_runner.py`) in addition to the
 existing `--json` path.
 
+## Rule-level gate firing counts (T-1939)
+
+`frob.telemetry` (a separate, gate-facing sibling of `frob.app.telemetry`
+above -- NOT diagnostics-only, since it exists to answer a real coverage
+question, though it still never fails a build on its own) appends one
+`kind="gate_rule_counts"` record to the SAME `.frob/telemetry.jsonl`
+stream, via the same `append_event`, at the end of every real `frob
+check` gates-stage run (`frob.check._python._run_gates`). Each record
+carries a `rule_counts` mapping (`rule id -> total-fired count this run`,
+kept and waived violations both counted -- a waived rule still fired) and
+`distinct_rules_fired`.
+
+This is the rule-level counterpart to the ticket-mentions proxy an
+earlier gate audit had to fall back on: "did rule X ever appear in the
+ticket ledger" measures rules that caused ARGUMENT, not rules that caused
+WORK. Aggregating this stream over time answers "which of our ~293 gate
+rules have fired at all, ever" directly, from real per-run data, no
+manual grep required.
+
+<!-- frob:describes src/frob/telemetry/__init__.py::RULE_COUNTS_KIND -->
+<!-- frob:describes src/frob/telemetry/__init__.py::rule_firing_counts -->
+<!-- frob:describes src/frob/telemetry/__init__.py::record_rule_firing_counts -->
+
+```python
+RULE_COUNTS_KIND: str                       # "gate_rule_counts"
+def rule_firing_counts(report) -> dict[str, int]
+def record_rule_firing_counts(root, report) -> None
+```
+
 ## Public API
 
 <!-- frob:describes src/frob/app/telemetry.py::TELEMETRY_REL -->

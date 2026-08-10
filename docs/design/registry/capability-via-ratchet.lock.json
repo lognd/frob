@@ -171,9 +171,9 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 123,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 0 to 123 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 124,
+      "reason": "T-1939: adds tests/unit/telemetry/test_rule_counts.py, which reads back .frob/telemetry.jsonl to assert the new gate_rule_counts event shape",
+      "ticket": "T-1939"
     },
     "testsuite::fs.write": {
       "accepted_count": 303,
