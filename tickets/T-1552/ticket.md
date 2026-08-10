@@ -1,7 +1,7 @@
 ---
 id: T-1552
 title: 'ledger v2: delete v1 splice machinery once main is migrated'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
