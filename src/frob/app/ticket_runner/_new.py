@@ -94,18 +94,35 @@ _TITLE_STOPWORDS = frozenset(
 _SCOPE_CLOSURE_WARNING_COLLAPSE_THRESHOLD = 8
 
 
+# frob:ticket T-2021
 def _resolve_new_body(cfg: AppConfig) -> str:
     """Resolve `frob ticket new`'s body: `--body-file` wins if given (read
     verbatim, byte-for-byte -- T-0737, so backticked/quoted/`$`-laden prose
     never rides the shell), else the inline `--body` string. Exits 1 if
-    both are given (ambiguous which the caller meant) or the file cannot be
-    read."""
+    both are given (ambiguous which the caller meant), the file cannot be
+    read, or the file exists but reads back EMPTY (T-2021).
+
+    T-2021: CALL THIS EXACTLY ONCE per `frob ticket new` invocation and
+    thread the result through -- `--body-file` is not guaranteed to name a
+    regular, re-readable file. A non-seekable source (`/dev/stdin` fed by a
+    heredoc, a named pipe, `<(...)` process substitution) can be read to
+    EOF exactly once; its OTHER end has typically already closed by the
+    time a second `Path.read_text()` call reopens the same path, so a
+    second read silently returns `""` with no error at all -- this is
+    EXACTLY the shape `_new` used to hit by calling this function twice
+    (once for the related-tickets duplicate check, once to build the
+    ticket spec), discarding the first (correct, non-empty) read and
+    keeping the second (silently empty) one. There is nothing this
+    function itself can do to make a one-shot source re-readable; the fix
+    is call-discipline in the caller, enforced here only by the loud
+    refusal below catching the empty-result symptom, not the double-read
+    cause."""
     if cfg.ticket_body_file is not None and cfg.ticket_body:
         _log.error("frob ticket new: --body and --body-file are mutually exclusive")
         sys.exit(1)
     if cfg.ticket_body_file is not None:
         try:
-            return cfg.ticket_body_file.read_text(encoding="utf-8")
+            text = cfg.ticket_body_file.read_text(encoding="utf-8")
         except OSError as exc:
             _log.error(
                 "ticket new: could not read --body-file %s: %s",
@@ -113,6 +130,23 @@ def _resolve_new_body(cfg: AppConfig) -> str:
                 exc,
             )
             sys.exit(1)
+        # frob:ticket T-2021
+        if text == "":
+            _log.error(
+                "ticket new: --body-file %s read back EMPTY -- refusing rather "
+                "than silently filing a body-less ticket. If %s is a pipe, "
+                "/dev/stdin, or a process substitution, it may already have "
+                "been drained by an earlier read in this same command; write "
+                "the body to a real temp file and pass that path instead. If "
+                "the file is genuinely meant to be empty, this refusal is "
+                "correct -- an intentionally terse ticket should use --body "
+                "'' explicitly, not an empty --body-file, so a later reader "
+                "can tell the two apart",
+                cfg.ticket_body_file,
+                cfg.ticket_body_file,
+            )
+            sys.exit(1)
+        return text
     return cfg.ticket_body
 
 
@@ -181,14 +215,22 @@ def _resolve_new_priority(root: Path, cfg: AppConfig) -> Priority:
     return Priority.MEDIUM
 
 
-def _ticket_spec_from_cfg(root: Path, cfg: AppConfig, *, title: str, kind: str):  # noqa: ANN201
+def _ticket_spec_from_cfg(
+    root: Path, cfg: AppConfig, *, title: str, kind: str, body: str
+):  # noqa: ANN201
     """Build the `TicketSpec` `frob ticket new`'s flags describe.
 
     `title`/`kind` are taken as separate required params (not read again from
     `cfg.ticket_title`/`cfg.ticket_kind`) so the caller's None-check narrows
     them to `str` here too -- `cfg`'s fields stay `str | None` on their own.
     `root` is threaded through only for `_resolve_new_priority`'s
-    `--parent` priority-inheritance lookup (T-1960)."""
+    `--parent` priority-inheritance lookup (T-1960). `body` is taken as an
+    ALREADY-RESOLVED string, never re-derived here via `_resolve_new_body`
+    (T-2021): the caller resolves `--body-file` exactly once and passes the
+    result down, because a second `_resolve_new_body(cfg)` call can read a
+    non-seekable `--body-file` source (a pipe, `/dev/stdin`, a process
+    substitution) a second time after its writer has already closed,
+    silently returning `""` -- see `_resolve_new_body`'s own docstring."""
     from frob.tickets import (
         Origin,
         Stride,
@@ -226,8 +268,10 @@ def _ticket_spec_from_cfg(root: Path, cfg: AppConfig, *, title: str, kind: str):
         component=cfg.ticket_component,
         labels=tuple(cfg.ticket_labels),
         # frob:ticket T-0737
-        # `_resolve_new_body` picks --body or --body-file.
-        body=_resolve_new_body(cfg),
+        # frob:ticket T-2021
+        # `body` is the caller's single already-resolved `_resolve_new_body`
+        # result -- never re-read here, see the docstring above.
+        body=body,
     )
 
 
@@ -414,13 +458,17 @@ def _new(root: Path, cfg: AppConfig) -> None:
         _log.error("frob ticket new requires --title and --kind")
         sys.exit(1)
 
+    # frob:ticket T-2021
+    # Resolved EXACTLY ONCE for this whole command and threaded through --
+    # see `_resolve_new_body`'s docstring for why a second call is unsafe
+    # for a non-seekable `--body-file` source.
+    body = _resolve_new_body(cfg)
+
     # frob:ticket T-1995
-    _refuse_unacknowledged_related_tickets(
-        root, cfg, cfg.ticket_title, _resolve_new_body(cfg)
-    )
+    _refuse_unacknowledged_related_tickets(root, cfg, cfg.ticket_title, body)
 
     spec = _ticket_spec_from_cfg(
-        root, cfg, title=cfg.ticket_title, kind=cfg.ticket_kind
+        root, cfg, title=cfg.ticket_title, kind=cfg.ticket_kind, body=body
     )
     # T-1758: new_ticket now auto-commits internally by default -- opt out
     # here (no_commit=True) so THIS verb's own commit below still captures

@@ -2,7 +2,7 @@
 id: T-2021
 title: frob ticket new --body-file with a non-seekable source silently writes an EMPTY
   body and reports success
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,9 +13,20 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_new_body_file_pipe_t2021.py
+  reason: T-2021's own repro test for the double-read --body-file bug
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestDoubleReadDrainsAPipe::test_second_read_of_a_drained_pipe_is_empty
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestBodyFileFifoSurvivesFullNew::test_pipe_body_is_not_silently_emptied
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestEmptyBodyFileRefusedLoudly::test_empty_regular_file_refused
+designated_repro_test: tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestBodyFileFifoSurvivesFullNew::test_pipe_body_is_not_silently_emptied
 threat: null
 component: null
 anchor: false
