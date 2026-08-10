@@ -1,7 +1,7 @@
 ---
 id: T-1976
 title: Recovered from T-1944's phantom TICK006 citation of T-draft-4a627425
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-10'
