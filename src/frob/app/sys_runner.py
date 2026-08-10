@@ -62,6 +62,7 @@ from frob.strata import (
     ResourceContentionReport,
     SelfConformReport,
     bind_code,
+    build_facts,
     check_mode_conformance,
     check_reliability_health,
     check_reliability_timeouts,
@@ -914,6 +915,73 @@ def _run_audit(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# ---------------------------------------------------------------------------
+# trace (T-1480)
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-1480
+def _print_trace_report(
+    paths: dict[str, tuple[str, ...]], *, to: str | None
+) -> bool:
+    """Print `frob sys trace`'s witness-path report; returns True iff the
+    requested destination (or, with no `to`, the closure itself) is
+    non-empty -- callers use this to decide the process exit code, the
+    same proved/not-proved shape `_print_audit_report` uses."""
+    if to is not None:
+        witness = paths.get(to)
+        if witness is None:
+            _log.error("sys trace: %s is not reachable", to)
+            return False
+        _log.info("sys trace: %s reachable via %s", to, " -> ".join(witness))
+        return True
+    reached = sorted(node for node in paths if paths[node])
+    if not reached:
+        _log.info("sys trace: no node reachable")
+        return False
+    for node in reached:
+        _log.info("sys trace: %s via %s", node, " -> ".join(paths[node]))
+    return True
+
+
+# frob:ticket T-1480
+# frob:tests tests/unit/test_app_sys_trace.py::TestSysTrace.test_trace_prints_witness_path_to_destination  # noqa: E501
+def _run_trace(cfg: AppConfig) -> None:
+    """`frob sys trace <from> [to]` (T-1480): load every `.strata` design
+    file under the repo's design dir (reusing `_load_audit_model`'s
+    parse+merge, same as `audit`), build a `FactBase`, and print the
+    influence-closure witness path from `cfg.sys_trace_from` -- to a
+    specific `cfg.sys_trace_to` if given, else the whole closure.
+    `--through-barriers` threads straight to `FactBase.reachable`'s own
+    flag (positive reach claims vs. the default endorsement semantics that
+    stop taint at a declared boundary). Exits 1 when the source node is
+    unknown, or when the requested destination (or, with no destination,
+    the whole closure) is unreachable -- vacuous-pass doctrine, same as
+    `_run_audit`."""
+    root = _resolve_design_root(cfg, "trace")
+    loaded = _load_audit_model(root)
+    if loaded is None:
+        sys.exit(1)
+    model, _store_ids, _resource_module = loaded
+
+    facts = build_facts(model)
+    if facts.is_err:
+        _log.error("sys trace: %s", facts.danger_err)
+        sys.exit(1)
+    fact_base = facts.danger_ok
+    src = cfg.sys_trace_from
+    assert src is not None  # required positional, enforced by argparse
+    if src not in fact_base.nodes:
+        _log.error("sys trace: %s is not a known node", src)
+        sys.exit(1)
+
+    paths = fact_base.reachable(
+        src, through_barriers=cfg.sys_trace_through_barriers
+    )
+    if not _print_trace_report(paths, to=cfg.sys_trace_to):
+        sys.exit(1)
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
@@ -925,14 +993,15 @@ def _run_audit(cfg: AppConfig) -> None:
 # frob:ticket T-0085
 # frob:ticket T-0086
 # frob:ticket T-0588
+# frob:ticket T-1480
 # frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085),
-    `export` (T-0086), and `audit` (T-0115) exist today; roadmap phase 5's
-    `check`/`trace`/`capacity`/`threats` are later tickets -- extend this
-    dispatch, never replace it. T-1870: `sync-interface` (T-1150) used to
-    be a fifth branch; deleted along with its writer, per an explicit
-    owner directive that no code path may auto-update declared
+    `export` (T-0086), `audit` (T-0115), and `trace` (T-1480) exist today;
+    roadmap phase 5's `check`/`capacity`/`threats` are later tickets --
+    extend this dispatch, never replace it. T-1870: `sync-interface`
+    (T-1150) used to be a fifth branch; deleted along with its writer, per
+    an explicit owner directive that no code path may auto-update declared
     public-symbol surface."""
     if cfg.sys_command == "plan":
         _run_plan(cfg)
@@ -946,5 +1015,8 @@ def run(cfg: AppConfig) -> None:
     if cfg.sys_command == "export":
         _run_export(cfg)
         return
-    _log.error("usage: frob sys <plan|doc|export|audit> ...")
+    if cfg.sys_command == "trace":
+        _run_trace(cfg)
+        return
+    _log.error("usage: frob sys <plan|doc|export|audit|trace> ...")
     sys.exit(1)

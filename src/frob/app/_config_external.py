@@ -142,6 +142,9 @@ _STRING_FIELDS = (
     "sys_command",
     "sys_view",
     "sys_export_format",
+    # frob:ticket T-1480
+    "sys_trace_from",
+    "sys_trace_to",
     "deploy_command",
     "deploy_vm",
     "deploy_ssh_host",
@@ -372,6 +375,8 @@ _BOOL_FLAGS = (
     "perf_smells",
     "perf_sampler",
     "sys_apply",
+    # frob:ticket T-1480
+    "sys_trace_through_barriers",
     "ticket_dry_run",
     # frob:ticket T-1561
     "ticket_evidence_archived",

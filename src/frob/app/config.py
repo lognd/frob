@@ -178,6 +178,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-1568
 # frob:ticket T-1569
 # frob:ticket T-1697
+# frob:ticket T-1480
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -847,12 +848,16 @@ class AppConfig(BaseModel):
     # sys (T-0084 plan; T-0085 doc; T-0086 export; T-0115 audit;
     # check/trace/capacity/
     # threats are later phase-5 tickets, not yet landed)
-    sys_command: str | None = None  # plan|doc|export|audit (more per phase 5)
+    sys_command: str | None = None  # plan|doc|export|audit|trace (more per phase 5)
     sys_path: Path | None = None
     sys_apply: bool = False
     sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
     sys_export_format: str | None = None
     sys_export_path: Path | None = None
+    # T-1480: `frob sys trace <from> [to]` -- influence-closure witness path.
+    sys_trace_from: str | None = None
+    sys_trace_to: str | None = None
+    sys_trace_through_barriers: bool = False
 
     # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
     # bash compiled from std.host HostManifest facts)

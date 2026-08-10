@@ -1,7 +1,7 @@
 ---
 id: T-1480
 title: build frob sys check/trace/capacity/threats verbs
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-03'
@@ -14,6 +14,9 @@ scope:
 - src/frob/app/sys_runner.py
 - docs/commands/sys.md
 - src/frob/strata/_mutation_audit.py
+- src/frob/_cli_parsers/_misc.py
+- tests/unit/test_app_sys_trace.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -38,9 +41,74 @@ scope_changes:
     with ''frob ticket scope --add'' as real work reveals more files.'
   actor: logan
   at: '2026-08-03'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: trace verb needs its argparse registration point; individual _cli_parsers
+    modules are not covered by the FEATURE CLI_WIRING_FILES grant per T-1848, structurally
+    required for a dispatch-reachable subcommand
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: T-1480's own new trace tests live here, matching the existing TestSysAudit/TestSysRunnerDispatch
+    precedent in the same file
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_app_sys_trace.py
+  reason: dedicated new test file for T-1480's trace tests, kept out of the shared
+    batch7 file to avoid its unrelated-class SCOPE002 closure noise
+  actor: logan
+  at: '2026-08-09'
+- op: remove
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: trace tests moved to a dedicated file (tests/unit/test_app_sys_trace.py);
+    this shared file's own unrelated test classes pull in SCOPE002 closure errors
+    this ticket has no business touching
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'WIRE001: new sys_trace_from/sys_trace_to/sys_trace_through_barriers argparse
+    dest fields must be copied into this file''s field-name tuples or AppConfig.from_external
+    silently drops them (T-1422 shape)'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/test_app_sys_trace.py::TestSysTrace::test_trace_prints_witness_path_to_destination
+- tests/unit/test_app_sys_trace.py::TestSysTrace::test_trace_prints_whole_closure_with_no_destination
+- tests/unit/test_app_sys_trace.py::TestSysTrace::test_unknown_source_node_exits_1
+- tests/unit/test_app_sys_trace.py::TestSysTrace::test_unreachable_destination_exits_1
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_app_runners_batch7.py::TestSysTrace::test_trace_prints_witness_path_to_destination
+  new_node: tests/unit/test_app_sys_trace.py::TestSysTrace::test_trace_prints_witness_path_to_destination
+  reason: moved trace tests to a dedicated file to avoid batch7's unrelated-class
+    SCOPE002 closure noise
+  actor: logan
+  at: '2026-08-09'
+- old_node: tests/unit/test_app_runners_batch7.py::TestSysTrace::test_trace_prints_whole_closure_with_no_destination
+  new_node: tests/unit/test_app_sys_trace.py::TestSysTrace::test_trace_prints_whole_closure_with_no_destination
+  reason: moved trace tests to a dedicated file to avoid batch7's unrelated-class
+    SCOPE002 closure noise
+  actor: logan
+  at: '2026-08-09'
+- old_node: tests/unit/test_app_runners_batch7.py::TestSysTrace::test_unknown_source_node_exits_1
+  new_node: tests/unit/test_app_sys_trace.py::TestSysTrace::test_unknown_source_node_exits_1
+  reason: moved trace tests to a dedicated file to avoid batch7's unrelated-class
+    SCOPE002 closure noise
+  actor: logan
+  at: '2026-08-09'
+- old_node: tests/unit/test_app_runners_batch7.py::TestSysTrace::test_unreachable_destination_exits_1
+  new_node: tests/unit/test_app_sys_trace.py::TestSysTrace::test_unreachable_destination_exits_1
+  reason: moved trace tests to a dedicated file to avoid batch7's unrelated-class
+    SCOPE002 closure noise
+  actor: logan
+  at: '2026-08-09'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 docs/commands/sys.md documents frob sys as having five verbs today
 (plan/doc/export/audit/sync-interface) and names check/trace/capacity/

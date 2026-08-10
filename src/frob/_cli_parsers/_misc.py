@@ -564,9 +564,9 @@ def _add_serve_parser(sub) -> None:
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_sys_parser(sub) -> None:
     """Register the `frob sys` subcommand group: `plan` (T-0084), `doc`
-    (T-0085), and `export` (T-0086) today; `check`/`trace`/`capacity`/
-    `threats` (docs/strata/roadmap.md "CLI surface (target)") are later
-    roadmap-phase-5 siblings -- extend this parser with one more
+    (T-0085), `export` (T-0086), and `trace` (T-1480) today; `check`/
+    `capacity`/`threats` (docs/strata/roadmap.md "CLI surface (target)")
+    are later roadmap-phase-5 siblings -- extend this parser with one more
     `sys_sub.add_parser` per verb as they land, never replace it. `audit`
     (T-0115) is the checking counterpart to `doc`."""
     # -- sys -------------------------------------------------------------------
@@ -580,6 +580,7 @@ def _add_sys_parser(sub) -> None:
     sys_sub = sys_p.add_subparsers(dest="sys_command")
     _add_sys_plan_and_export_parsers(sys_sub)
     _add_sys_doc_and_audit_parsers(sys_sub)
+    _add_sys_trace_parser(sys_sub)
 
 
 _SYS_EPILOG = (
@@ -650,6 +651,29 @@ def _add_sys_doc_and_audit_parsers(sys_sub) -> None:
         "nonzero exit + named gaps on any failure (T-0115)",
     )
     sys_audit_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
+
+
+# frob:ticket T-1480
+def _add_sys_trace_parser(sys_sub) -> None:
+    """Register `frob sys trace <from> [to]` (T-1480): the influence-closure
+    witness-path CLI wrapper over `frob.strata.FactBase.reachable`, the
+    roadmap-phase-5 `trace` verb (docs/strata/roadmap.md "CLI surface
+    (target)")."""
+    sys_trace_p = sys_sub.add_parser(
+        "trace",
+        help="print the influence-closure witness path from one node "
+        "(T-1480)",
+    )
+    sys_trace_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
+    sys_trace_p.add_argument("sys_trace_from", metavar="from")
+    sys_trace_p.add_argument("sys_trace_to", metavar="to", nargs="?", default=None)
+    sys_trace_p.add_argument(
+        "--through-barriers",
+        dest="sys_trace_through_barriers",
+        action="store_true",
+        help="ignore declared trust/label boundaries (positive reach claims; "
+        "default: stop taint at a boundary, the endorsement semantics)",
+    )
 
 
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \

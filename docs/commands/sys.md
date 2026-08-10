@@ -1,12 +1,19 @@
 # frob sys
 
 Applications of the strata design model (`docs/strata/roadmap.md` "CLI
-surface (target)"). Four verbs today: `plan` (T-0084, obligation ->
+surface (target)"). Five verbs today: `plan` (T-0084, obligation ->
 ticket compiler), `doc` (T-0085, threat-catalog audit matrix), `export`
-(T-0086, k8s/seccomp/IAM config skeletons), and `audit` (T-0115, the
-checking counterpart to `doc`). `check`/`trace`/`capacity`/`threats` are
-later phase-5 tickets not yet landed on `main` -- when they land, this
-doc and `src/frob/app/sys_runner.py` extend rather than get replaced.
+(T-0086, k8s/seccomp/IAM config skeletons), `audit` (T-0115, the
+checking counterpart to `doc`), and `trace` (T-1480, the influence-
+closure witness-path lookup). `check`/`capacity`/`threats` are the
+remaining phase-5 items on `docs/strata/roadmap.md`'s CLI-surface list;
+this doc and `src/frob/app/sys_runner.py` extend, rather than get
+replaced, whenever one of them is actually built. T-1480's
+own Done report has the investigation for why `check` is likely better
+resolved by deleting it from this roadmap than by building a duplicate
+of `audit`, and why `capacity`/`threats` need real design work (a
+boundary-scoped join, a population/date-projected capacity evaluator)
+before a CLI verb over either is meaningful.
 
 T-1870: `sync-interface` (T-1150, mechanical `interface=` attr
 auto-write) used to be a fifth verb here. Deleted per an explicit owner
@@ -15,7 +22,6 @@ surface -- `interface=` is now purely hand-declared, with nothing in
 this codebase writing it. T-1629 is the follow-up that makes a node's
 declared `interface=` actually ENFORCE (flag an undeclared public
 symbol); this ticket only removed the mirror.
-<!-- frob:until T-1480 -->
 
 
 ## Quickstart (T-0167)
@@ -309,4 +315,61 @@ directly in tests/unit/strata/test_audit.py instead of a third `.strata`
 file: a separate surface-grammar gap (no `.strata` source can author a
 `subject:child`-tagged flow attr today) blocks that leg specifically. See
 that test module's docstring for the full explanation.
+
+## `frob sys trace` (T-1480)
+
+Prints the influence-closure witness path from one node -- a thin CLI
+wrapper over the already-shipped `FactBase.reachable` (docs/strata/kernel
+.md#fact-base), no new detection logic. Loads every `.strata` design file
+under the repo's design dir exactly like `audit` (same `_load_audit_model`
+call), builds a `FactBase`, and either prints the path to one requested
+destination or the whole closure:
+
+<!-- frob:describes src/frob/app/sys_runner.py::_run_trace -->
+```bash
+frob sys trace some.node                    # whole closure from some.node
+frob sys trace some.node other.node         # witness path to one destination
+frob sys trace some.node other.node --through-barriers   # positive reach, ignore boundaries
+```
+
+`--through-barriers` threads straight to `FactBase.reachable`'s own flag:
+by default a flow carrying a declared trust/label boundary is a terminal
+edge (the endorsement semantics docs/strata/kernel.md#fact-base
+describes) -- pass it when asking a positive "can X ever reach Y at all"
+question rather than a taint-stops-at-a-boundary one. Exits 1 (a named
+error, never a silent empty print) when the source node is unknown, or
+when the requested destination -- or, with no destination, the whole
+closure -- is unreachable.
+
+### Public API
+
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.reachable -->
+
+```python
+from frob.strata import build_facts, load_design_ids, merge_models
+
+ids = load_design_ids(root)
+model = merge_models(ids.models)
+facts = build_facts(model).danger_ok
+paths = facts.reachable("some.node")
+```
+
+### CLI wiring
+
+<!-- frob:describes src/frob/app/sys_runner.py::_print_trace_report -->
+
+### Residue
+
+T-1480 built `trace` only; it left `check`/`capacity`/`threats` as filed
+residue rather than force them into this ticket's own scope:
+
+- `check`: likely better resolved by dropping it from
+  `docs/strata/roadmap.md`'s CLI-surface list than by building a second,
+  narrower duplicate of `frob sys audit` -- see the filed docs-decision
+  ticket.
+- `capacity`: needs a real population/date-projected capacity evaluator
+  that does not exist anywhere in `frob.strata` yet -- new modeling work,
+  not a CLI-glue gap.
+- `threats`: needs a real join from `ThreatViolation.node` to a
+  boundary's flow endpoints that does not exist anywhere yet.
 
