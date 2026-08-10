@@ -16,6 +16,7 @@ scope:
 - docs/modules/tickets.md
 evidence_scope:
 - tests/unit/test_land_orphaned_evidence.py
+- tests/unit/test_tickets_evidence_only_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -27,6 +28,7 @@ scope_changes:
   at: '2026-08-10'
 evidence:
 - tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_refuses_when_branch_deletes_evidence_bound_test
+- tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly::test_demote_releases_the_lease_and_keeps_evidence_covered
 designated_repro_test: null
 threat: null
 component: null
