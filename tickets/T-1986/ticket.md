@@ -2,7 +2,7 @@
 id: T-1986
 title: 'TICK009 only warns, so a ticket can start with an umbrella scope and lease
   most of the repo: 2 caught by hand today, queue will not partition'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -86,3 +86,6 @@ unchanged, and that the override path records its reason on the ticket.
 Finally, re-run `frob ticket wave --agents 4` on this repo and report
 whether the queue partitions into more than one group once the
 outstanding umbrellas are narrowed.
+
+## Drop reason
+- 2026-08-10: Duplicate of already-landed T-1866 (2026-08-08): _refuse_over_broad_scope_on_start already refuses frob ticket start on a mega-glob scope, naming globs+counts, overridable via scope-ack+reason -- exactly this ticket acceptance criteria a. Verified live: TestTicketStart::test_start_refuses_over_broad_scope and test_start_over_broad_scope_ack_bypasses_refusal both pass (2/2). T-1664/T-1638 both show a scope-narrowing commit BEFORE their start-transition commit in git log, so the WARN nudge preempted start and the hard refusal was never bypassed -- just never exercised. T-1665 is planned/blocked, not started; TICK009 flagging it pre-start and refusing only at actual start is designed behavior, not a gap.
