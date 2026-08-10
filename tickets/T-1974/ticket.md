@@ -2,7 +2,7 @@
 id: T-1974
 title: 'Adding one gate rule id needs three hand edits and none is checked before
   the land: DOCENUM001+REG010 regressed the floor twice'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
