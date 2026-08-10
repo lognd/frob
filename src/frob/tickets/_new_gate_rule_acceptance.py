@@ -49,7 +49,7 @@ from pathlib import Path
 
 from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.tickets._models import Ticket
+from frob.tickets._models import Ticket, scope_matches
 
 _log = get_logger(__name__)
 
@@ -294,8 +294,71 @@ def missing_acceptance_for_new_rules(
     return new_rule_ids
 
 
+# frob:ticket T-1956
+# frob:doc docs/modules/gates.md#new-gate-rule-acceptance-policy-t-0756
+# frob:tests \
+# tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_empty_when_nothing_unregistered_in_scope  # noqa: E501
+# frob:tests \
+# tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_reports_an_unregistered_id_whose_file_is_in_scope  # noqa: E501
+# frob:tests \
+# tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_excludes_an_unregistered_id_outside_scope  # noqa: E501
+def unregistered_rule_ids_in_scope(root: Path, ticket: Ticket) -> tuple[str, ...]:
+    """T-1937/T-1956: the soundness hole T-1937's audit found, made
+    concrete at close/land time -- `new_gate_rule_ids` above can only ever
+    detect a rule id that made it INTO `_KNOWN_GATE_RULES`'s literal (it
+    diffs the registry against itself), so a ticket that CONSTRUCTS a new
+    rule (`rule=`/`code=`/a typed const assignment/a bare positional arg)
+    but never adds a registry entry at all is invisible to it -- there is
+    no registry-side change to diff, so the T-0756 acceptance obligation
+    never even fires. `frob.gates._rule_id_scan.find_unregistered_rule_ids`
+    (T-1937's broad, shape-agnostic completeness net) is the production
+    caller this function threads it through: every candidate it finds
+    anywhere under `root`'s `src/`, filtered to just the ones whose
+    first-occurrence FILE falls inside `ticket`'s own declared `scope`
+    (`frob.tickets._models.scope_matches`) -- deliberately scope-limited,
+    not repo-wide, so a pre-existing gap this ticket never touched can
+    never block an unrelated ticket's close (repo-wide drift is still
+    caught, just by the T-1937 test suite drift-lock, not this preflight).
+    Reuses `_locate_known_rules_in_tree` for the CURRENT registry exactly
+    like `new_gate_rule_ids` does, so both checks fail the same loud
+    `GateRuleRegistryUnresolvable` way if the registry itself is
+    structurally missing."""
+    from frob.gates._rule_id_scan import RETIRED_RULE_IDS, find_unregistered_rule_ids
+
+    located = _locate_known_rules_in_tree(root)
+    if located is None:
+        if not _gates_candidate_files(root):
+            return ()
+        _log.error(
+            "new-gate-rule-acceptance: _KNOWN_GATE_RULES literal could not "
+            "be resolved to exactly one file under %s/ -- registry is "
+            "missing or ambiguous, refusing to silently skip detection",
+            _GATES_DIR_REL,
+        )
+        raise GateRuleRegistryUnresolvable(
+            f"_KNOWN_GATE_RULES not found in exactly one *.py file under "
+            f"{root / _GATES_DIR_REL} -- fix the registry before closing "
+            f"any ticket"
+        )
+    _, known = located
+    candidates = find_unregistered_rule_ids(root, known=known, retired=RETIRED_RULE_IDS)
+    return tuple(
+        sorted(
+            rule_id
+            for rule_id, loc in candidates.items()
+            if scope_matches(
+                loc.split(":", 1)[0],
+                ticket.scope,
+                kind=ticket.kind,
+                ticket_id=ticket.id,
+            )
+        )
+    )
+
+
 __all__ = [
     "GateRuleRegistryUnresolvable",
     "missing_acceptance_for_new_rules",
     "new_gate_rule_ids",
+    "unregistered_rule_ids_in_scope",
 ]

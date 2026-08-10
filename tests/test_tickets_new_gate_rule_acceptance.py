@@ -24,6 +24,7 @@ from frob.tickets._models import AcceptanceCriterion
 from frob.tickets._new_gate_rule_acceptance import (
     missing_acceptance_for_new_rules,
     new_gate_rule_ids,
+    unregistered_rule_ids_in_scope,
 )
 from frob.tickets._store import _serialize_ticket
 
@@ -69,6 +70,7 @@ def _ticket(
     evidence: tuple[str, ...] = ("tests/test_thing.py::test_it",),
     acceptance: tuple[AcceptanceCriterion, ...] = (),
     body: str = "## Description\nsomething\n\n## Done report\nDone.\n",
+    scope: tuple[str, ...] = (),
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
@@ -80,6 +82,7 @@ def _ticket(
         evidence=evidence,
         acceptance=acceptance,
         body=body,
+        scope=scope,
     )
 
 
@@ -227,4 +230,115 @@ class TestTransitionRefusesOnUnacceptedNewGateRule:
         _write_ticket(tmp_path, ticket)
         _commit_all(tmp_path, "base gates + ticket")
         result = transition(tmp_path, "T-0700", TicketState.DONE)
+        assert result.is_ok
+
+
+def _write_source(root: Path, rel: str, source: str) -> None:
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(source, encoding="utf-8")
+
+
+class TestUnregisteredRuleIdsInScope:
+    """T-1937/T-1956: `unregistered_rule_ids_in_scope` is the production
+    caller for `frob.gates._rule_id_scan.find_unregistered_rule_ids` --
+    the soundness hole T-1937's audit found (a rule id constructed but
+    never registered at all bypasses the T-0756 preflight entirely)
+    closed at the point of highest leverage."""
+
+    # frob:tests \
+    # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_empty_when_nothing_unregistered_in_scope  # noqa: E501
+    def test_empty_when_nothing_unregistered_in_scope(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
+        _commit_all(tmp_path, "base gates")
+        ticket = _ticket(scope=("src/frob/mod/**",))
+        assert unregistered_rule_ids_in_scope(tmp_path, ticket) == ()
+
+    # frob:tests \
+    # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_reports_an_unregistered_id_whose_file_is_in_scope  # noqa: E501
+    def test_reports_an_unregistered_id_whose_file_is_in_scope(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
+        _write_source(
+            tmp_path,
+            "src/frob/mod/_synthetic.py",
+            'def synthetic_check():\n    return Diagnostic(code="ZZZUNREG001")\n',
+        )
+        _commit_all(tmp_path, "base gates + unregistered construction")
+        ticket = _ticket(scope=("src/frob/mod/**",))
+        assert unregistered_rule_ids_in_scope(tmp_path, ticket) == ("ZZZUNREG001",)
+
+    # frob:tests \
+    # tests/test_tickets_new_gate_rule_acceptance.py::TestUnregisteredRuleIdsInScope.test_excludes_an_unregistered_id_outside_scope  # noqa: E501
+    def test_excludes_an_unregistered_id_outside_scope(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
+        _write_source(
+            tmp_path,
+            "src/frob/other/_synthetic.py",
+            'def synthetic_check():\n    return Diagnostic(code="ZZZUNREG002")\n',
+        )
+        _commit_all(tmp_path, "base gates + unregistered construction elsewhere")
+        # Ticket's own scope is a DIFFERENT package -- the unregistered id
+        # exists, but not inside a file this ticket declares ownership of.
+        ticket = _ticket(scope=("src/frob/mod/**",))
+        assert unregistered_rule_ids_in_scope(tmp_path, ticket) == ()
+
+
+class TestTransitionRefusesOnUnregisteredGateRule:
+    """`transition(..., DONE)` refuses when the ticket's own scope
+    constructs a rule id missing from `_KNOWN_GATE_RULES` entirely --
+    mirrors `TestTransitionRefusesOnUnacceptedNewGateRule` above, but for
+    the earlier, unregistered-entirely case."""
+
+    # frob:tests \
+    # tests/test_tickets_new_gate_rule_acceptance.py::TestTransitionRefusesOnUnregisteredGateRule.test_close_refused_when_scope_constructs_an_unregistered_rule_id  # noqa: E501
+    def test_close_refused_when_scope_constructs_an_unregistered_rule_id(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        _write_gates_source(tmp_path, _BASE_GATES_SOURCE)
+        _write_source(
+            tmp_path,
+            "src/frob/mod/_synthetic.py",
+            'def synthetic_check():\n    return Diagnostic(code="ZZZUNREG003")\n',
+        )
+        ticket = _ticket(
+            ticket_id="T-1956",
+            scope=("src/frob/mod/**",),
+            acceptance=(),
+        )
+        _write_ticket(tmp_path, ticket)
+        _commit_all(tmp_path, "base gates + unregistered construction + ticket")
+        result = transition(tmp_path, "T-1956", TicketState.DONE)
+        assert result.is_err
+        assert result.danger_err == TicketError.UnregisteredGateRuleConstructed
+
+    # frob:tests \
+    # tests/test_tickets_new_gate_rule_acceptance.py::TestTransitionRefusesOnUnregisteredGateRule.test_close_allowed_once_the_id_is_registered  # noqa: E501
+    def test_close_allowed_once_the_id_is_registered(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write_gates_source(
+            tmp_path,
+            _BASE_GATES_SOURCE.replace(
+                '        "TEST001",\n',
+                '        "TEST001",\n        "ZZZUNREG004",\n',
+            ),
+        )
+        _write_source(
+            tmp_path,
+            "src/frob/mod/_synthetic.py",
+            'def synthetic_check():\n    return Diagnostic(code="ZZZUNREG004")\n',
+        )
+        ticket = _ticket(
+            ticket_id="T-1956",
+            scope=("src/frob/mod/**",),
+            acceptance=(),
+        )
+        _write_ticket(tmp_path, ticket)
+        _commit_all(tmp_path, "base gates (id registered) + construction + ticket")
+        result = transition(tmp_path, "T-1956", TicketState.DONE)
         assert result.is_ok

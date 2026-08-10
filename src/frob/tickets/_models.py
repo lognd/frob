@@ -1938,6 +1938,23 @@ class TicketError(ErrorSet):
         "fixture acceptance criterion; record one proving the rule fires "
         "through the production invocation, then retry"
     )
+    # T-1937/T-1956: a ticket whose OWN declared scope constructs a rule id
+    # (`rule=`/`code=`/a typed const assignment/a bare positional arg,
+    # `frob.gates._rule_id_scan.find_unregistered_rule_ids`'s broad,
+    # shape-agnostic net) that is missing from `_KNOWN_GATE_RULES`
+    # entirely -- distinct from NewGateRuleUnaccepted above, which only
+    # fires once an id is ALREADY in the registry; this fires BEFORE that,
+    # closing the soundness hole T-1937's audit found where a constructed-
+    # but-never-registered rule id bypasses the T-0756 preflight
+    # completely (there is no registry-side diff to detect). See
+    # `frob.tickets._new_gate_rule_acceptance.unregistered_rule_ids_in_scope`.
+    UnregisteredGateRuleConstructed = (
+        "diff constructs gate rule id(s) not yet registered in "
+        "_KNOWN_GATE_RULES at all; add the entry (frob.gates._waive) before "
+        "this ticket can close -- an unregistered id cannot carry T-0756 "
+        "acceptance evidence either, since the acceptance preflight only "
+        "ever sees ids already in the registry"
+    )
     # T-0887: `frob ticket done-report --base-ref <ref>` used to spend
     # minutes discovering a typo'd/unfetched base ref indirectly (a `git
     # diff --stat` that silently returned no lines, or a downstream `frob

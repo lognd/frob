@@ -2,7 +2,7 @@
 id: T-1958
 title: 'DOCENUM001: docs/modules/gates.md#rule-catalog stale after T-1937''s 8 new
   rule ids'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -15,6 +15,8 @@ scope:
 - docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

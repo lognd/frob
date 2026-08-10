@@ -73,6 +73,7 @@ from frob.tickets._models import (
 from frob.tickets._new_gate_rule_acceptance import (
     missing_acceptance_for_new_rules,
     new_gate_rule_ids,
+    unregistered_rule_ids_in_scope,
 )
 from frob.tickets._store import ledger_lock
 from frob.tickets._worktree_guard import enforce_worktree_lease
@@ -648,6 +649,23 @@ def _done_transition_diff_derived_guard(
             list(unaccepted),
         )
         return Err(TicketError.NewGateRuleUnaccepted)
+    # T-1937/T-1956: the soundness hole T-1937's audit found, closed at the
+    # point of highest leverage -- a rule id CONSTRUCTED in this ticket's
+    # own scope but never added to _KNOWN_GATE_RULES at all is invisible
+    # to new_gate_rule_ids above (there is no registry-side diff), so it
+    # would otherwise ship with no T-0756 review ever triggered.
+    unregistered = unregistered_rule_ids_in_scope(root, ticket)
+    if unregistered:
+        _log.warning(
+            "tickets: %s cannot close, constructs gate rule id(s) %s not "
+            "yet registered in _KNOWN_GATE_RULES at all (T-1937) -- add "
+            "the entry (frob.gates._waive) before retrying; an "
+            "unregistered id cannot carry T-0756 acceptance either, since "
+            "that preflight only sees ids already in the registry",
+            ticket.id,
+            list(unregistered),
+        )
+        return Err(TicketError.UnregisteredGateRuleConstructed)
     return Ok(None)
 
 
