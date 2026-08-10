@@ -2,7 +2,7 @@
 id: T-1965
 title: Retire T-1942's WIRE001 follow_up citations in _arch.py/_coverage_sites.py
   now that the WAIVE004 consumer is wired
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -16,6 +16,9 @@ scope:
 - src/frob/gates/_coverage_sites.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- cmd:bash -c 'n=$(uv run frob check --only gates 2>&1 | grep -c "gate:WIRE\]"); echo
+  WIRE001_findings=$n; test "$n" = 0' exit=0 sha256=76944a594555
 designated_repro_test: null
 threat: null
 component: null

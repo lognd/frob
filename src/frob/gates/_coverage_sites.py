@@ -107,11 +107,14 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-1921
-# frob:waive WIRE001 reason="T-1921 is deliberately substrate-only -- no production \
-# caller yet, per the coordinator's explicit instruction not to wire a consumer in the \
-# same change that built the coverage substrate (the 55-waiver incident happened from \
-# doing exactly that once). The follow-up ticket that wires a real WAIVE004 consumer \
-# is the one that will call this from production code" follow_up="T-1965"
+# frob:waive WIRE001 reason="T-1942 wired this as a real production caller \
+# (frob.gates._fix_engine_sync._waive004_verified_candidates enriches its \
+# self-manufactured run_gates() report via this function before deriving WAIVE004 \
+# candidates) -- kept as an explicit waiver rather than removed because static \
+# call-graph analysis of that dynamic-report-construction call site is fragile. \
+# follow_up re-pointed to T-1943 (the open ticket extending this module's family \
+# coverage) since WIRE002 requires a live open ticket citation, not because T-1943 is \
+# expected to remove this waiver itself" follow_up="T-1943"
 def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
     """T-1921: returns a COPY of `report` whose `stats.examined_sites` is
     populated for every family `_load_family_reporters` knows how to
@@ -149,9 +152,12 @@ def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
 
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-1921
-# frob:waive WIRE001 reason="T-1921 is deliberately substrate-only -- no production \
-# caller yet, same reasoning as attach_examined_sites above; the follow-up \
-# WAIVE004-wiring ticket is the first production consumer" follow_up="T-1965"
+# frob:waive WIRE001 reason="still substrate-only -- unlike attach_examined_sites and \
+# site_examined (both wired into frob.gates._fix_engine_sync by T-1942), no production \
+# caller has been added for this specific diagnostic accessor yet. T-1943 extends \
+# per-site coverage to more gate families and is the most likely next ticket to touch \
+# this module; follow_up points there to satisfy WIRE002's live-open-ticket \
+# requirement, not because T-1943 is expected to wire a caller in" follow_up="T-1943"
 def is_family_instrumented(stats: "GateStats", family: str) -> bool:
     """T-1921: True iff `family` carries a real (possibly empty)
     examined-sites entry in `stats` -- distinguishes "this family reports
@@ -165,9 +171,14 @@ def is_family_instrumented(stats: "GateStats", family: str) -> bool:
 
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-1921
-# frob:waive WIRE001 reason="T-1921 is deliberately substrate-only -- no production \
-# caller yet, same reasoning as attach_examined_sites above; the follow-up \
-# WAIVE004-wiring ticket is the first production consumer" follow_up="T-1965"
+# frob:waive WIRE001 reason="T-1942 wired this as a real production caller \
+# (frob.gates._fix_engine_sync._drop_unexamined_archgate_candidates calls this \
+# directly to decide whether a WAIVE004 candidate's site was actually examined this \
+# run) -- kept as an explicit waiver rather than removed for the same fragile \
+# dynamic-call-site reason as attach_examined_sites above. follow_up re-pointed to \
+# T-1943 (the open ticket extending this module's family coverage) since WIRE002 \
+# requires a live open ticket citation, not because T-1943 is expected to remove this \
+# waiver itself" follow_up="T-1943"
 def site_examined(stats: "GateStats", family: str, file: str) -> bool:
     """T-1921: THE single sanctioned way to ask "did this run's gate
     FAMILY actually examine FILE" -- returns False whenever either half
