@@ -2,7 +2,7 @@
 id: T-1970
 title: 'No way to mention a frob directive without using it: prose blocked two lands,
   and no escape syntax exists'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,102 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/
+- src/frob/graph/dsl.py
+- src/frob/tickets/_live_tracker.py
+- design/frob.strata
+- docs/modules/graph.md
+- tests/test_tickets_live_tracker.py
+- tests/unit/graph/test_dsl_mention_escape.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/
+  reason: 'Corrected scope after implementation: the mention/use escape lives in
+
+    frob.graph.dsl and frob.tickets._live_tracker, not frob.gates. Narrowing
+
+    to the files the committed change actually touches (T-1970).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: 'Corrected scope after implementation: the mention/use escape lives in
+
+    frob.graph.dsl and frob.tickets._live_tracker, not frob.gates. Narrowing
+
+    to the files the committed change actually touches (T-1970).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_live_tracker.py
+  reason: 'Corrected scope after implementation: the mention/use escape lives in
+
+    frob.graph.dsl and frob.tickets._live_tracker, not frob.gates. Narrowing
+
+    to the files the committed change actually touches (T-1970).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: 'Corrected scope after implementation: the mention/use escape lives in
+
+    frob.graph.dsl and frob.tickets._live_tracker, not frob.gates. Narrowing
+
+    to the files the committed change actually touches (T-1970).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'Corrected scope after implementation: the mention/use escape lives in
+
+    frob.graph.dsl and frob.tickets._live_tracker, not frob.gates. Narrowing
+
+    to the files the committed change actually touches (T-1970).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_tickets_live_tracker.py
+  reason: 'Corrected scope after implementation: the mention/use escape lives in
+
+    frob.graph.dsl and frob.tickets._live_tracker, not frob.gates. Narrowing
+
+    to the files the committed change actually touches (T-1970).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/graph/test_dsl_mention_escape.py
+  reason: 'Corrected scope after implementation: the mention/use escape lives in
+
+    frob.graph.dsl and frob.tickets._live_tracker, not frob.gates. Narrowing
+
+    to the files the committed change actually touches (T-1970).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/graph/test_dsl_mention_escape.py::TestMaskFrobMentions::test_masks_a_mention_span_to_same_length_dots
+- tests/unit/graph/test_dsl_mention_escape.py::TestMaskFrobMentions::test_leaves_unwrapped_text_untouched
+- tests/unit/graph/test_dsl_mention_escape.py::TestMaskFrobMentions::test_masks_only_the_wrapped_span_not_the_whole_line
+- tests/unit/graph/test_dsl_mention_escape.py::TestMaskFrobMentions::test_idempotent
+- tests/unit/graph/test_dsl_mention_escape.py::TestParseDirectivesMentionEscape::test_escaped_waive_mention_does_not_produce_a_waive_edge_or_malformed
+- tests/unit/graph/test_dsl_mention_escape.py::TestParseDirectivesMentionEscape::test_unescaped_real_directive_on_the_same_line_still_parses
+- tests/unit/graph/test_dsl_mention_escape.py::TestParseDirectivesMentionEscape::test_escaped_mention_of_an_unknown_verb_produces_no_dsl001
+- tests/unit/graph/test_dsl_mention_escape.py::TestMarkdownAnchorsMentionEscape::test_escaped_describes_mention_produces_no_edge
+- tests/unit/graph/test_dsl_mention_escape.py::TestMarkdownAnchorsMentionEscape::test_unescaped_directive_on_same_line_as_escaped_mention_still_parses
 designated_repro_test: null
 threat: null
 component: null

@@ -536,6 +536,45 @@ Targets are stored as opaque strings. Graph does not validate that a ticket
 or doc anchor exists -- that join is `frob.gates`' job (prevents a
 graph -> tickets dependency cycle).
 
+### The `frob:quote(...)` mention escape (T-1970)
+
+<!-- frob:describes src/frob/graph/dsl.py::mask_frob_mentions -->
+
+The DSL had no mention/use distinction: prose ABOUT a directive was
+parsed AS one. Measured twice in one session: a discharge comment
+quoting `follow_up="T-1956"` verbatim while explaining the follow-up had
+already been handled was read as a still-live citation
+(`TicketError.LiveTrackerCited`); the reworded replacement, describing a
+removed `frob:waive WIRE001` directive, was then read as a malformed
+directive of its own (DSL001). Both refused real lands over pure
+English wording, with no way to write correct documentation of the DSL
+without triggering it.
+
+`frob:quote(...)` is the one explicit escape: any text a `frob:quote(`
+... `)` span wraps is a MENTION, not a directive. `mask_frob_mentions`
+replaces the WHOLE span (wrapper delimiters and contents) with
+same-length `.` filler before any directive-shaped matching runs,
+preserving every other character's column position. Single-level (no
+nested parens) -- directive attribute values in this DSL are always
+`key="value"` quoted strings, which never themselves need parens.
+
+Recognized by every scanner that reads directive-shaped text, not just
+the parser that motivated it:
+
+- `frob.graph.dsl.parse_directives` (code comments) and
+  `markdown_anchors` (markdown) both mask before matching, at the
+  single earliest point each function ever inspects text.
+- `frob.tickets._live_tracker.live_tracker_citations` (a separate `git
+  grep`-based citation scan, unrelated to this module's own parser) --
+  `_drop_escaped_mentions` re-runs each hit's matched pattern against
+  the masked text and drops the hit if the match existed only inside
+  the escape (docs/modules/tickets.md#live-tracker-citation-preflight-t-0854).
+
+An UNESCAPED real directive elsewhere on the same physical line is
+unaffected -- masking only touches the wrapped span, never the whole
+line, so escaping one mention never silently un-honors a genuine
+directive next to it.
+
 ## Digests
 
 Three per symbol, all sha256 over a normalized rendering of the tree-sitter

@@ -207,6 +207,45 @@ class TestLiveTrackerCitations:
         assert len(citations) == 1
         assert "mod.py" in citations[0]
 
+    # frob:ticket T-1970
+    def test_escaped_mention_of_follow_up_is_not_a_citation(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_escaped_mention_of_follow_up_is_not_a_citation  # noqa: E501
+        """T-1970's own measured incident: a discharge comment explaining
+        that a follow-up was already handled quoted `follow_up="T-1956"`
+        verbatim and was read as if it were still a live citation,
+        refusing the land. Escaped via `frob:quote(...)`, it must not
+        be."""
+        _init_repo(tmp_path)
+        (tmp_path / "mod.py").write_text(
+            "# discharged: frob:quote(follow_up=\"T-0605\") is done, safe to "
+            "remove\nx = 1\n",
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "discharge comment quoting the old attribute")
+        assert live_tracker_citations(tmp_path, "T-0605") == ()
+
+    # frob:ticket T-1970
+    def test_escaped_mention_does_not_weaken_an_unescaped_citation(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_escaped_mention_does_not_weaken_an_unescaped_citation  # noqa: E501
+        """The escape only masks its OWN span -- a real, unescaped
+        citation elsewhere in the tree must still be found."""
+        _init_repo(tmp_path)
+        (tmp_path / "docs.md").write_text(
+            "discharged: frob:quote(follow_up=\"T-0605\")\n", encoding="utf-8"
+        )
+        (tmp_path / "mod.py").write_text(
+            '# frob:waive WIRE001 reason="still open" follow_up="T-0605"\nx = 1\n',
+            encoding="utf-8",
+        )
+        _commit_all(tmp_path, "one mention, one real citation")
+        citations = live_tracker_citations(tmp_path, "T-0605")
+        assert len(citations) == 1
+        assert "mod.py" in citations[0]
+
     def test_finds_strata_waiver_ticket_clause(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_strata_waiver_ticket_clause  # noqa: E501
         _init_repo(tmp_path)

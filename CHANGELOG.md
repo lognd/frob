@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.438.0] - unreleased
+
+- T-1970: No way to mention a frob directive without using it: prose blocked two lands, and no escape syntax exists
+
 ## [0.437.0] - unreleased
 
 - T-1985: build a file-level resolved-import edge substrate in frob.graph (prerequisite for T-1665)

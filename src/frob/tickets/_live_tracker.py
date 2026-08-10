@@ -229,6 +229,35 @@ def _strip_revision_prefix(lines: tuple[str, ...], revision: str) -> tuple[str, 
     )
 
 
+# frob:ticket T-1970
+def _drop_escaped_mentions(lines: tuple[str, ...], pattern: str) -> tuple[str, ...]:
+    """T-1970: filter out any `git grep` hit whose match falls entirely
+    inside a `frob:quote(...)` escape span -- a MENTION of the citation
+    text (the measured incident: a discharge comment quoting
+    `follow_up="T-1956"` verbatim while EXPLAINING that the follow-up had
+    already been discharged, read as if it were still a live citation),
+    never a real one. Re-runs `pattern` (the exact same `git grep -E`
+    pattern this module's own patterns are POSIX-ERE-compatible Python
+    `re` syntax already) against the TEXT portion of each `file:line:
+    text` hit after masking (`frob.graph.dsl.mask_frob_mentions`) --
+    a hit that stops matching once masked was a mention wholly inside the
+    escape, dropped; a hit that STILL matches (an unescaped citation
+    elsewhere on the same line, or the escape did not actually cover the
+    match) is kept, unweakened, matching T-1970's own acceptance
+    criterion that an unescaped real directive on the same line stays
+    honored."""
+    from frob.graph.dsl import mask_frob_mentions
+
+    compiled = re.compile(pattern)
+    kept: list[str] = []
+    for line in lines:
+        parts = line.split(":", 2)
+        text = parts[2] if len(parts) >= 3 else line
+        if compiled.search(mask_frob_mentions(text)):
+            kept.append(line)
+    return tuple(kept)
+
+
 def _content_key(line: str) -> str:
     """The `(file, text)` identity of one `git grep -n` result line
     (`file:line:text`), dropping the line NUMBER -- an unrelated edit
@@ -307,7 +336,7 @@ def live_tracker_citations(
             result = _git_grep(root, pattern, pathspec=pathspec, revision=revision)
             if result is None:
                 return None
-            found.extend(result)
+            found.extend(_drop_escaped_mentions(result, pattern))
         return tuple(found)
 
     current = _scan(None)

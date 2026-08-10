@@ -855,6 +855,7 @@
     "src/frob/graph/dsl.py::dedupe_slug": "33cda9cd0cda63391863536999a922eca9c608fb805374dcdd62f8b02b92fba0",
     "src/frob/graph/dsl.py::fold_comment_runs": "b11a461262d019c2727672946332d2dec259046b791653b9b0eb983e8fdfc994",
     "src/frob/graph/dsl.py::markdown_anchors": "6b0e1198bce910a24a254b683732415e52d9c5c1a2b228c66c051e9df64bc335",
+    "src/frob/graph/dsl.py::mask_frob_mentions": "850ba1763be55de25d1b82d8bd4d21f69cbef5aeb9a084238209760c0fe47bad",
     "src/frob/graph/dsl.py::parse_directives": "9eda477197bb4789ba33e35fe7e24deefdb3dc534fe1ccd5209d7ac134d19f26",
     "src/frob/graph/dsl.py::slugify": "cb94dc53b3a7abbc67f122eb6213a89b8b9df9f485038c15a2bf3b20463b10b7",
     "src/frob/graph/imports.py::ImportGraph": "e5340e9cfb816ab3d6f88bdc39a210e94c11f1111b5379e2c6a777d9e916edbe",
@@ -2232,5 +2233,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.437.0"
+  "version": "0.438.0"
 }

@@ -74,6 +74,49 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     "until": EdgeKind.UNTIL,
 }
 
+# frob:ticket T-1970
+# T-1970: the DSL had no mention/use distinction -- prose ABOUT a
+# directive (a discharge comment quoting `follow_up="T-1956"` while
+# explaining it was already handled, a reworded comment describing a
+# removed `frob:waive WIRE001`) was parsed AS a live directive, refusing
+# two consecutive lands over pure English wording. `frob:quote(...)` is
+# the one explicit escape: any text a doubled-parenthesized `frob:quote(`
+# ... `)` span wraps is a MENTION, not a directive -- inert to every
+# scanner that reads directive-shaped text, whether that scanner is this
+# module's own `_LINE_RE`/`_parse_line` or an entirely separate text scan
+# (`frob.tickets._live_tracker`'s `git grep` citation check, T-1970's own
+# second incident). Deliberately NOT a doubled-colon prefix
+# (`frob::waive`) -- the live-tracker incident mentioned a bare
+# `follow_up="T-1956"` attribute with no adjacent `frob:` verb at all, so
+# an escape tied to the verb position could not have covered it; a
+# wrapper covers ANY directive-shaped substring regardless of what
+# precedes it. Single-level (no nested parens) is a documented
+# limitation, not a silent gap: directive attribute values in this DSL
+# are always `key="value"` quoted strings, which do not themselves need
+# parens.
+_MENTION_RE = re.compile(r"frob:quote\(([^()]*)\)")
+
+
+def mask_frob_mentions(text: str) -> str:
+    # frob:doc docs/modules/graph.md#comment-dsl
+    """Replace every `frob:quote(...)` escape span in `text` (wrapper
+    delimiters AND contents) with same-length `.` filler, so a mentioned
+    directive-shaped substring becomes invisible to every downstream
+    directive/citation scanner while every other character's COLUMN
+    POSITION in the line is preserved (T-1970) -- a scanner that reports
+    `file:line:col` off the masked text still points at the real source
+    location. Idempotent and order-independent: `frob:quote(...)` cannot
+    itself produce a NEW `frob:quote(...)`-shaped span once masked (the
+    filler is `.` characters, never `f`/`r`/`o`/`b`/`:`), so a caller
+    never needs to mask twice. The ONE canonical escape this DSL
+    recognizes -- every scanner reading directive-shaped text (this
+    module's own line parser, `frob.tickets._live_tracker`'s citation
+    grep, `frob.gates` DSL001/WAIVE001) must call this before matching,
+    documented once in docs/modules/graph.md#comment-dsl rather than
+    re-derived per scanner."""
+    return _MENTION_RE.sub(lambda m: "." * len(m.group(0)), text)
+
+
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
 _ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
 # T-0757: "property" joins the existing three kinds -- a `frob:tests`
@@ -302,6 +345,10 @@ def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
     edges: list[Edge] = []
     slug = "top"
     seen: dict[str, int] = {}
+    # T-1970: escape mentions BEFORE any directive-shaped matching, same
+    # single earliest insertion point `parse_directives` uses for code
+    # comments.
+    text = mask_frob_mentions(text)
     for lineno, line in enumerate(text.splitlines(), start=1):
         heading = _HEADING_RE.match(line)
         if heading is not None:
@@ -1140,7 +1187,13 @@ def parse_directives(
     for comment_id, comment in enumerate(parsed.comments):
         src = block_srcs[comment_id]
         start_line = comment.span[0]
-        physical = comment.text.splitlines() or [comment.text]
+        # T-1970: mask `frob:quote(...)` mentions BEFORE any per-line
+        # directive matching -- the single earliest point every line this
+        # module ever inspects passes through, so `_LINE_RE`/`_parse_line`/
+        # `_is_genuine_directive_start` all see the masked text uniformly
+        # with no separate wiring per call site.
+        masked_text = mask_frob_mentions(comment.text)
+        physical = masked_text.splitlines() or [masked_text]
         flat.extend(
             (start_line + offset, raw_line, src, comment_id)
             for offset, raw_line in enumerate(physical)

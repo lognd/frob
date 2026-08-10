@@ -2747,6 +2747,22 @@ instance of the underlying problem). The registry-disposition grep is
 unaffected -- a registry YAML row is structured data, not narrative
 prose, so no analogous exclusion applies there.
 
+**The `frob:quote(...)` mention escape (T-1970).** The T-1633/T-1632
+exclusions above are all POSITIONAL/STRUCTURAL narrowing (exempt the
+ledger, require left-anchoring) -- they cannot help a genuine source
+comment that legitimately DISCUSSES a citation rather than making one,
+e.g. a discharge comment explaining `follow_up="T-1956"` was already
+handled, or a reworded comment describing a removed `frob:waive
+WIRE001` directive. Both refused real lands on pure English wording
+before T-1970. `live_tracker_citations`'s `_scan` now drops any `git
+grep` hit whose matched text falls entirely inside a `frob:quote(...)`
+escape span (`_drop_escaped_mentions`, re-running the same pattern
+against `frob.graph.dsl.mask_frob_mentions`-masked text) -- the SAME
+escape `frob.graph.dsl`'s own directive parser honors
+(docs/modules/graph.md#comment-dsl), so a discharge comment can quote
+the directive text it is explaining without either scanner reading it
+as live.
+
 ## Land hardening (T-0577)
 
 Three gaps found in one real landing session, closed together:
