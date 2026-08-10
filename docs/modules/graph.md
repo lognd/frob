@@ -272,6 +272,60 @@ Resolution is best-effort (flat token stream, no scope/overload
 disambiguation) -- a triage aid, matching the rest of `frob.dup`'s posture,
 not a soundness guarantee.
 
+## Import graph
+
+<!-- frob:describes src/frob/graph/imports.py::ImportGraph -->
+<!-- frob:describes src/frob/graph/imports.py::UnresolvedImport -->
+<!-- frob:describes src/frob/graph/imports.py::build_import_graph -->
+
+`frob.graph.imports` (T-1985) is the file-level RESOLVED-import edge
+substrate REF001 needs to stop deciding inbound references from text
+mentions (T-1665, blocked on this ticket) -- answers "does file Y import
+module X, resolved to a real tracked file", which no facility in
+`frob.graph`/`frob.lang` answered before this: `EdgeKind` only models
+`frob:`-directive edges, and `callgraph` (above) deliberately excludes
+public/exported symbols and resolves CALLS, not imports.
+
+**Python only, v1** -- every other language `frob.lang` parses (Rust, C,
+C++, TypeScript, Kotlin, Strata) is disclosed out of scope: a non-`.py`
+file contributes one `UnresolvedImport(reason="unsupported-language")`
+per file, never a silent zero. Uses the stdlib `ast` module directly
+(not `frob.lang`'s tree-sitter walkers -- `RawSymbol` has no import-
+statement extraction today), which finds every import statement
+regardless of nesting (`if`/`try`/`TYPE_CHECKING` guards included) and
+never confuses a look-alike string for a real import.
+
+- `build_import_graph(root, paths)` -> `ImportGraph` -- `edges[importer]`
+  is every tracked file `importer` resolves an import to (deduplicated,
+  sorted). `from X import Y` resolves to the submodule `X.Y` when that is
+  itself a tracked file (e.g. `from . import submodule` inside a
+  package's own `__init__.py`), else falls back to resolving `X` itself
+  (`Y` is an attribute defined inside `X` -- only `frob.lang`-level
+  symbol resolution, out of scope here, could tell those apart further).
+  A star-import (`from X import *`) always resolves `X` the same way.
+- `UnresolvedImport` (T-1664's UNRESOLVED posture, not `frob.gates.
+  Severity` itself -- `frob.gates` depends on `frob.graph`, never the
+  reverse, so importing it here would be circular) -- never a silent
+  drop, for every case this module KNOWS it cannot resolve: a dynamic
+  import (`importlib.import_module(...)`, bare `__import__(...)`), a
+  relative import whose `level` walks above the tracked root, a file
+  that fails to parse (`SyntaxError`), or a non-Python file.
+- `ImportGraph.external_count` -- imports that are syntactically real but
+  name something outside the tracked file set (stdlib/third-party, e.g.
+  `import os`) -- reported for measurement transparency only, never
+  folded into either the resolved or the unresolved tally (a fully-
+  answered "not in this substrate's domain" case, not an unknown).
+
+Measured on this repo's own `src/frob` tree (630 tracked files, 531
+Python): 2522 resolved import edges across 479 files, 2480 external
+(stdlib/third-party) import statements, 110 `UnresolvedImport` records
+(99 non-Python files, 11 dynamic-import call sites) -- 0
+`relative-import-above-root`, 0 `parse-error` on this repo's own
+currently-valid tree.
+
+REF001's own narrowing onto this substrate is T-1665, not this ticket --
+this module intentionally does not change `frob.gates._refs` at all.
+
 ## Rust core
 
 <!-- frob:describes src/frob/graph/_core.py::resolve_call_edges_native -->

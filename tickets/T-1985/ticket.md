@@ -2,7 +2,7 @@
 id: T-1985
 title: build a file-level resolved-import edge substrate in frob.graph (prerequisite
   for T-1665)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -15,9 +15,18 @@ scope:
 - src/frob/graph/imports.py
 - tests/test_graph_imports.py
 - docs/modules/graph.md
+- design/frob.strata
+evidence_scope:
+- tests/test_graph_imports.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
+- op: add
+  glob: docs/modules/graph.md
+  reason: evidence tests and the new module's doc anchor land alongside the substrate
+    itself, per playbook sec 6 (docs move in the same change as the code)
+  actor: logan
+  at: '2026-08-10'
 - op: remove
   glob: src/frob/graph/**
   reason: 'narrow the src/frob/graph/** umbrella to the three files this ticket''s
@@ -58,7 +67,31 @@ scope_changes:
     across the whole queue; this costs T-1985 nothing.'
   actor: logan
   at: '2026-08-10'
-designated_repro_test: null
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires declaring the new module's fs.read capability (and
+    the new test file's fs.write) in the design model alongside the code that introduces
+    them
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_graph_imports.py::TestBuildImportGraph::test_resolves_a_real_intra_repo_import_edge
+- tests/test_graph_imports.py::TestBuildImportGraph::test_dynamic_import_reports_unresolved_not_dropped
+- tests/test_graph_imports.py::TestBuildImportGraph::test_non_python_file_reports_unsupported_language_unresolved
+- tests/test_graph_imports.py::TestBuildImportGraph::test_stdlib_import_counts_as_external_not_unresolved
+- tests/test_graph_imports.py::TestBuildImportGraph::test_relative_import_resolves_within_package
+- tests/test_graph_imports.py::TestBuildImportGraph::test_star_import_resolves_the_module_not_its_names
+- tests/test_graph_imports.py::TestBuildImportGraph::test_unreadable_file_is_reported_unresolved_not_silently_skipped
+designated_repro_test: tests/test_graph_imports.py::TestBuildImportGraph::test_resolves_a_real_intra_repo_import_edge
+designated_repro_changes:
+- old_value: tests/test_graph_imports.py::TestBuildImportGraph.test_resolves_a_real_intra_repo_import_edge
+  new_value: tests/test_graph_imports.py::TestBuildImportGraph::test_resolves_a_real_intra_repo_import_edge
+  reason: 're-point repro designation onto the pytest-native :: form after the dotted
+    Class.method form (this ticket''s own evidence-refresh residue) failed land''s
+    post-merge resolve check; same BUG002 structural NO_VERDICT as before (brand-new
+    module/tests, no version exists at parent), confirmed via --check-repro'
+  actor: logan
+  at: '2026-08-10'
 threat: null
 component: null
 anchor: false
