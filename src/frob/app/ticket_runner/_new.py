@@ -243,6 +243,8 @@ def _title_words(title: str) -> frozenset[str]:
 
 # frob:ticket T-1995
 # frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_finds_an_archived_close_title_match kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_no_match_for_a_genuinely_distinct_title kind="unit"  # noqa: E501
 def related_tickets(root: Path, title: str) -> tuple[tuple[str, str, str, float], ...]:
     """`(ticket_id, title, state, similarity)` for every ticket -- ACTIVE
     or ARCHIVED -- whose own title is a close textual match to `title`

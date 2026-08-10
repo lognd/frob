@@ -418,6 +418,8 @@ _BOOL_FLAGS = (
     "ticket_doable_by_parent",
     # frob:ticket T-1615
     "ticket_no_commit",
+    # frob:ticket T-1995
+    "ticket_ack_related",
     "deploy_check",
     "clean_all",
     "clean_deep",
