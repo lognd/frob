@@ -14,6 +14,8 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_scope.py
 - docs/modules/tickets.md
+evidence_scope:
+- tests/unit/test_land_orphaned_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -23,6 +25,8 @@ scope_changes:
     the COV001 finding for demote_to_evidence_only's frob:doc anchor
   actor: logan
   at: '2026-08-10'
+evidence:
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_refuses_when_branch_deletes_evidence_bound_test
 designated_repro_test: null
 threat: null
 component: null
