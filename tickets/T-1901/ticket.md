@@ -1,7 +1,7 @@
 ---
 id: T-1901
 title: 'post-land sweep regression from T-1892: 1 new error(s) (SYS004)'
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-08-09'
