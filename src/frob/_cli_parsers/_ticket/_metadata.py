@@ -110,6 +110,52 @@ def _add_ticket_scope_ack_parser(ticket_sub):
     return ticket_scope_ack_p
 
 
+# frob:ticket T-1867
+def _add_ticket_anchor_parser(ticket_sub):
+    """Register `frob ticket anchor <id> --set|--clear (--reason TEXT |
+    --reason-file PATH)` -- CLI wiring for T-1856's library-level
+    `set_anchor`, which existed only as a Python-callable primitive before
+    this (T-1856's own Done report named the CLI as a deliberate follow-
+    up). `--set`/`--clear` are mutually exclusive and exactly one is
+    required, same enforcement shape `--reason`/`--reason-file` already
+    use elsewhere in this module."""
+    ticket_anchor_p = ticket_sub.add_parser(
+        "anchor",
+        help="mark/unmark a ticket as a permanent anchor (T-1856) -- an "
+        "anchor ticket refuses to land to done/dropped and is excluded "
+        "from `doable`'s default list (T-1867)",
+    )
+    ticket_anchor_p.add_argument("ticket_id", metavar="id")
+    anchor_group = ticket_anchor_p.add_mutually_exclusive_group(required=True)
+    anchor_group.add_argument(
+        "--set",
+        dest="ticket_anchor_set",
+        action="store_true",
+        help="mark this ticket anchor=True",
+    )
+    anchor_group.add_argument(
+        "--clear",
+        dest="ticket_anchor_clear",
+        action="store_true",
+        help="clear this ticket's anchor marker",
+    )
+    ticket_anchor_p.add_argument(
+        "--reason",
+        dest="ticket_anchor_reason",
+        metavar="TEXT",
+        help="why this ticket is/is no longer a permanent anchor; required "
+        "unless --reason-file is given",
+    )
+    ticket_anchor_p.add_argument(
+        "--reason-file",
+        dest="ticket_anchor_reason_file",
+        metavar="PATH",
+        help="read the anchor reason verbatim from PATH instead of the "
+        "shell (T-0737 pattern); mutually exclusive with --reason",
+    )
+    return ticket_anchor_p
+
+
 # frob:ticket T-0411
 def _add_ticket_priority_parser(ticket_sub):
     """Register `frob ticket priority <id> <level>` -- reprioritize an

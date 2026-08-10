@@ -645,6 +645,7 @@ def doable(
     *,
     ignore_lease: bool = False,
     breadth: tuple[int, tuple[str, ...]] | None = None,
+    show_anchors: bool = False,
 ) -> tuple[Ticket, ...]:
     """Tickets in {queued, planned} with no open blockers, ordered by
     priority (highest first, T-0411) then oldest-first within a priority tier.
@@ -672,10 +673,28 @@ def doable(
     `doable_blocked`. This is what keeps `frob ticket doable`'s default
     render (which also needs `breadth` for its own warnings) down to a
     single `git ls-files` walk instead of two.
-    """
+
+    T-1867: `show_anchors=False` (the default) EXCLUDES any `anchor=True`
+    ticket from the result -- an anchor ticket is queued/lease-eligible by
+    DESIGN (it exists to hold a permanent WIRE001/DEPR/... waiver target
+    open forever, T-1856), and popping the top of `doable` is exactly how
+    a coordinator dispatches; a bare annotation alone was measured NOT
+    enough to stop this (two separate waves each independently dispatched
+    a full agent slot to re-discover the identical "nothing to do here"
+    conclusion an earlier attempt had already recorded on the SAME
+    anchor, `T-1820`/`T-1831`/`T-1778`'s own history). Excluding is a
+    filter on the RETURNED tuple only -- it does not touch `anchor`
+    ticket state, priority, or lease eligibility, so `frob ticket start`
+    against an anchor id explicitly, or `--show-anchors`, both still work
+    exactly as before; only the default POP-THE-TOP path stops surfacing
+    it. Pass `show_anchors=True` (`frob ticket doable --show-anchors`) to
+    include anchors in the result again, annotated at the display layer
+    (`_render_doable_dispatchable`) rather than hidden."""
     from frob.tickets import _doable_sort_key
 
     candidates = _doable_candidates(queue)
+    if not show_anchors:
+        candidates = [t for t in candidates if not t.anchor]
     if not ignore_lease:
         if root is not None and breadth is None:
             breadth = scope_breadth_context(root)

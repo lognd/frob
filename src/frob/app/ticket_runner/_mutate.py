@@ -190,6 +190,67 @@ def _scope_ack(root: Path, cfg: AppConfig) -> None:
     )
 
 
+# frob:ticket T-1867
+def _resolve_anchor_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket anchor`'s `--reason`: `--reason-file` wins if
+    given (read verbatim, T-0737 pattern), else the inline `--reason`
+    string. Exits 1 if both are given; returns `None` if neither is given
+    (the caller reports the "one is required" error)."""
+    if cfg.ticket_anchor_reason_file is not None and cfg.ticket_anchor_reason:
+        _log.error(
+            "frob ticket anchor: --reason and --reason-file are mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_anchor_reason_file is not None:
+        try:
+            return cfg.ticket_anchor_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket anchor: could not read --reason-file %s: %s",
+                cfg.ticket_anchor_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_anchor_reason
+
+
+# frob:ticket T-1867
+# frob:tests \
+# tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_set_anchor_via_cli
+# frob:tests \
+# tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_clear_anchor_via_cli
+# frob:tests tests/unit/test_ticket_anchor_cli.py::TestAnchorCli.test_requires_reason
+def _anchor(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket anchor <id> --set|--clear (--reason TEXT | --reason-file
+    PATH)`: the ONLY thing this command does is forward to
+    `frob.tickets.set_anchor` (T-1856's library-level primitive, CLI
+    wiring deferred to this ticket, T-1867) -- no validation is re-derived
+    here, same forwarding shape as `_priority`/`_kind`/T-0411."""
+    from frob.tickets._land import set_anchor
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket anchor requires <id>")
+        sys.exit(1)
+
+    reason = _resolve_anchor_reason(cfg)
+    if not reason:
+        _log.error("frob ticket anchor requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
+    anchor_value = cfg.ticket_anchor_set
+    result = set_anchor(root, cfg.ticket_id, anchor=anchor_value, reason=reason)
+    if result.is_err:
+        _log.error("anchor change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: anchor now %s -- %s",
+        cfg.ticket_id,
+        ticket.anchor,
+        ticket.anchor_reason,
+    )
+
+
 # frob:ticket T-0411
 def _priority(root: Path, cfg: AppConfig) -> None:
     """`frob ticket priority <id> <level>`: the ONLY thing this command does

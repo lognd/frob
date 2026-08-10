@@ -82,6 +82,16 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "story's remaining leaves display together instead of one flat "
         "priority/age-ordered list",
     )
+    # frob:ticket T-1867
+    ticket_doable_p.add_argument(
+        "--show-anchors",
+        dest="ticket_doable_show_anchors",
+        action="store_true",
+        help="include anchor=True tickets (T-1856) in the doable list, "
+        "annotated [ANCHOR] -- excluded by default so a coordinator "
+        "popping the top of `doable` does not keep re-dispatching a "
+        "permanent waiver-target ticket that has nothing left to do",
+    )
 
     # frob:ticket T-1738
     ticket_wave_p = ticket_sub.add_parser(

@@ -85,6 +85,7 @@ from ._lifecycle import (
 )
 from ._mutate import (
     _accept,
+    _anchor,
     _board,
     _brief,
     _component,
@@ -167,6 +168,7 @@ __all__ = [
     "guarded_subprocess_run",
     "_accept",
     "_active_large_glob_warnings",
+    "_anchor",
     "_apply_close_time_evidence",
     "_apply_cmd_evidence",
     "_apply_evidence",
@@ -351,6 +353,8 @@ def _ticket_dispatch_table() -> dict:
         "scope": _scope,
         # frob:ticket T-1484
         "scope-ack": _scope_ack,
+        # frob:ticket T-1867
+        "anchor": _anchor,
         "priority": _priority,
         "kind": _kind,
         "component": _component,

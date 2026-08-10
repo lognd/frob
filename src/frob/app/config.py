@@ -723,6 +723,17 @@ class AppConfig(BaseModel):
     # `frob ticket doable --sprint LABEL [--by-parent]`.
     ticket_doable_sprint: str | None = None
     ticket_doable_by_parent: bool = False
+    # frob:ticket T-1867
+    # `frob ticket doable --show-anchors` -- include anchor=True tickets in
+    # the result (excluded by default, T-1867's own doable()-level filter).
+    ticket_doable_show_anchors: bool = False
+    # frob:ticket T-1867
+    # `frob ticket anchor <id> --set/--clear --reason TEXT|--reason-file PATH`
+    # -- CLI wiring for T-1856's library-level `set_anchor`.
+    ticket_anchor_set: bool = False
+    ticket_anchor_clear: bool = False
+    ticket_anchor_reason: str | None = None
+    ticket_anchor_reason_file: Path | None = None
     # frob:ticket T-1738
     # `frob ticket wave --agents N [--json] [--ignore-lease]`.
     ticket_wave_agents: int | None = None

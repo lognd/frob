@@ -26,6 +26,7 @@ from ._closeout import (
 )
 from ._metadata import (
     _add_ticket_accept_parser,
+    _add_ticket_anchor_parser,
     _add_ticket_component_parser,
     _add_ticket_kind_parser,
     _add_ticket_label_parser,
@@ -50,6 +51,7 @@ from ._progress import (
 from ._query import _add_ticket_query_parsers
 
 __all__ = [
+    "_add_ticket_anchor_parser",
     "_add_ticket_attach_and_lifecycle_end_parsers",
     "_add_ticket_close_parser",
     "_add_ticket_closeout_parsers",
@@ -97,6 +99,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_scope_parser(ticket_sub),
             # frob:ticket T-1484
             _add_ticket_scope_ack_parser(ticket_sub),
+            # frob:ticket T-1867
+            _add_ticket_anchor_parser(ticket_sub),
             _add_ticket_priority_parser(ticket_sub),
             _add_ticket_kind_parser(ticket_sub),
             _add_ticket_component_parser(ticket_sub),

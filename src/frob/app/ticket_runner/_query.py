@@ -366,7 +366,13 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     # already took this kwarg; `doable` gained it for exactly this call
     # (was the spawn-budget regression: a second `git ls-files` per
     # invocation before this fix).
-    tickets = doable(queue, root, ignore_lease=cfg.ticket_ignore_lease, breadth=breadth)
+    tickets = doable(
+        queue,
+        root,
+        ignore_lease=cfg.ticket_ignore_lease,
+        breadth=breadth,
+        show_anchors=cfg.ticket_doable_show_anchors,
+    )
 
     # frob:ticket T-0715
     # `frob ticket doable --sprint LABEL` restricts the queue to one
@@ -457,6 +463,12 @@ def _doable_row(
         row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
     if t.id in landed_ids:
         row += "  [ALREADY-LANDED? frob:ticket %s marker found in scope]" % t.id
+    # frob:ticket T-1867
+    # T-1867: only reachable via `--show-anchors` (doable() excludes
+    # anchor=True by default) -- reads as intentionally permanent, not
+    # stale/forgotten, when a caller deliberately asks to see anchors.
+    if t.anchor:
+        row += "  [ANCHOR%s]" % (f": {t.anchor_reason}" if t.anchor_reason else "")
     return row
 
 

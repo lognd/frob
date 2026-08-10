@@ -1,7 +1,7 @@
 ---
 id: T-1867
 title: Wire frob ticket anchor CLI + doable-output disclosure (T-1856 follow-up)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -16,6 +16,8 @@ scope:
 - src/frob/_cli_parsers/_ticket/__init__.py
 - tests/unit/test_ticket_anchor_cli.py
 - design/frob.strata
+- src/frob/tickets/_doable.py
+- src/frob/app/ticket_runner/_query.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -55,6 +57,25 @@ scope_changes:
     new test files fs.write capability declared for testsuite.
   actor: logan
   at: '2026-08-08'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'coordinator dispatch: wire the anchor CLI verb AND the doable-output disclosure
+    in the same ticket, per the fresh cost evidence (T-1820/T-1831/T-1778 wave re-discovery)'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'coordinator dispatch: wire the anchor CLI verb AND the doable-output disclosure
+    in the same ticket, per the fresh cost evidence (T-1820/T-1831/T-1778 wave re-discovery)'
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_set_anchor_via_cli
+- tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_clear_anchor_via_cli
+- tests/unit/test_ticket_anchor_cli.py::TestAnchorCli::test_requires_reason
+- tests/unit/test_ticket_anchor_cli.py::TestDoableAnchorDisclosure::test_anchor_excluded_from_default_doable
+- tests/unit/test_ticket_anchor_cli.py::TestDoableAnchorDisclosure::test_anchor_included_and_annotated_with_show_anchors
+- tests/unit/test_ticket_anchor_cli.py::TestDoableAnchorDisclosure::test_anchor_remains_queued_and_lease_eligible_either_way
 designated_repro_test: null
 threat: null
 component: null

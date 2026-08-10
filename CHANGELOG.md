@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.421.0] - unreleased
+
+- T-1867: Wire frob ticket anchor CLI + doable-output disclosure (T-1856 follow-up)
+
 ## [0.420.0] - unreleased
 
 - T-1882: frob ticket renumber with no arguments silently renumbers EVERY ticket, destroying the whole id space

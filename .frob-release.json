@@ -1857,7 +1857,7 @@
     "src/frob/tickets/_doable.py::already_landed_markers": "41d8f001307d03fcbad73a05eda13ccbe7a22b9ddccabab0b1c2c7eeced43a53",
     "src/frob/tickets/_doable.py::dispatch_stale_hours": "a8d2c8e2d13eb84d7e3d1bce1ea0a05d720e573951d538a7cdfd42f56e25b2cd",
     "src/frob/tickets/_doable.py::display_state": "71464869fb4b50f80e1b23db14927076e0ccc7f6c0528dc175b4898c5d7b38e4",
-    "src/frob/tickets/_doable.py::doable": "88b38e4a26838495917ffeab8ecb54339efd974c3106729cb7278de8d1994825",
+    "src/frob/tickets/_doable.py::doable": "2ec3478cae49cb77d0f1e9c581b3e62c19663264884cdb6e18b77967a63bdce9",
     "src/frob/tickets/_doable.py::doable_blocked": "97670db0b238d60b8704136a45d1f9ca3c2acd71e8c765f73725a95c373e5c5e",
     "src/frob/tickets/_doable.py::has_live_lease": "6c7a795fbff203107691784607b84f1221368142eb61414eba930727c32438a3",
     "src/frob/tickets/_doable.py::large_glob_warnings": "bc81256f8895af029238f13990b30a974d685b8a6489de9b1e811cbe97079297",
@@ -2207,5 +2207,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.420.0"
+  "version": "0.421.0"
 }
