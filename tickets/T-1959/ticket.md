@@ -77,3 +77,6 @@ ACCEPTANCE: report a new detected/23 ratio against that same denominator,
 with each still-missing symbol individually characterized (no collapsing
 into name-groups). Confirm `frob check --only dead_symbols` stays at 0
 errors on the live tree. First test must fail before the fix.
+
+## Failure log
+- 2026-08-10 attempt 1: class-3 fixed-point propagation via zero-intra-package-caller detection is structurally unsound: it cannot distinguish the genuine denominator case (_merge_driver, dispatch entry deleted) from this repo's ~41 already-waived cross-package _add_parser false positives, both look identical from per-directory call-graph info alone; measured 3->117 warnings on the live tree, reverted in full; ratio stays 14/23; see evidence/class3-reverted.md
