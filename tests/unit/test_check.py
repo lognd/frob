@@ -734,7 +734,7 @@ class TestSummarySeverityHonesty:
         # T-0523: this test directly imports and calls
         # _severity_counts_summary, never _run_cycle -- the frob:tests
         # binding was stale/wrong (a COV006 finding correctly caught it).
-        # frob:tests src/frob/check/_python.py::_severity_counts_summary kind="unit"  # noqa: E501
+        # frob:tests src/frob/check/_python.py::_severity_counts_summary kind="unit"
         from frob.check._python import _severity_counts_summary
         from frob.process.parsers.common import Diagnostic
 
@@ -1517,7 +1517,7 @@ class TestScopeDisclosure:
     # frob:ticket T-1351
 
     def test_only_names_the_gate_families_it_did_not_run(self) -> None:
-        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"  # noqa: E501
+        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"
         from frob.check._python import _scope_disclosure_note
         from frob.gates import _ALL_GATES
 
@@ -1533,7 +1533,7 @@ class TestScopeDisclosure:
     def test_ticket_flag_notes_which_families_are_actually_diff_scoped(
         self,
     ) -> None:
-        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"  # noqa: E501
+        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"
         from frob.check._python import _scope_disclosure_note
         from frob.gates import _ALL_GATES
 
@@ -1544,12 +1544,33 @@ class TestScopeDisclosure:
         assert "T-1293" in note
         assert "REPO-WIDE" in note
 
-    def test_full_unfiltered_run_adds_no_disclosure(self) -> None:
-        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"  # noqa: E501
+    def test_full_run_discloses_fmt_scope(self) -> None:
+        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"
+        """T-1928: gate:FMT is diff-scoped by construction (`fmt_gate` only
+        ever inspects the current diff's touched lines), independent of
+        `--only`/`--ticket` narrowing -- so even a full, unscoped,
+        unfiltered run must disclose it rather than let a 0.00s "0 errors"
+        be misread as "the repo is formatted" (T-1928 measured a clean
+        gate:FMT next to 77/265 real files of drift `ruff format --check`/
+        `frob fmt --check` found on the very same tree)."""
         from frob.check._python import _scope_disclosure_note
         from frob.gates import _ALL_GATES
 
         note = _scope_disclosure_note(ticket=None, gates=frozenset(), ran=_ALL_GATES)
+        assert note is not None
+        assert "gate:FMT" in note
+        assert "diff" in note.lower()
+
+    def test_no_disclosure_when_fmt_did_not_run(self) -> None:
+        # frob:tests src/frob/check/_python.py::_scope_disclosure_note kind="unit"
+        """The genuine no-op case: `--only` was not used (`gates` empty), no
+        `--ticket`, and the `fmt` family itself did not run -- nothing
+        applies, so there is truly nothing to disclose."""
+        from frob.check._python import _scope_disclosure_note
+        from frob.gates import _ALL_GATES
+
+        ran = _ALL_GATES - frozenset({"fmt"})
+        note = _scope_disclosure_note(ticket=None, gates=frozenset(), ran=ran)
         assert note is None
 
 
@@ -1917,7 +1938,7 @@ class TestRunBindRealPaths:
         assert python_mod._run_bind(tmp_path) is None
 
     def test_bind_mismatch_diagnostics_maps_mismatches(self) -> None:
-        # frob:tests src/frob/check/_python.py::_bind_mismatch_diagnostics kind="unit"  # noqa: E501
+        # frob:tests src/frob/check/_python.py::_bind_mismatch_diagnostics kind="unit"
         from frob.check._python import _bind_mismatch_diagnostics
 
         class _Mismatch:
@@ -1994,7 +2015,7 @@ class TestExportsRealPaths:
     def test_unexported_symbols_result_builds_note_diagnostics(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/check/_python.py::_unexported_symbols_result kind="unit"  # noqa: E501
+        # frob:tests src/frob/check/_python.py::_unexported_symbols_result kind="unit"
         from frob.check._python import _unexported_symbols_result
 
         pkg = tmp_path / "pkg"

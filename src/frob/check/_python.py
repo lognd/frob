@@ -625,7 +625,8 @@ _NO_GATE_CACHE_ENV = "FROB_NO_GATE_CACHE"
 
 
 # frob:ticket T-1346
-# frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_default_true  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_default_true
 # frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_false_when_no_cache_true  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestRunGatesCacheWiring.test_gate_cache_enabled_false_when_env_var_set  # noqa: E501
 def _gate_cache_enabled(no_cache: bool) -> bool:
@@ -637,7 +638,8 @@ def _gate_cache_enabled(no_cache: bool) -> bool:
     built in T-0602 never actually served a real invocation)."""
     if no_cache:
         return False
-    # frob:waive SEC110 reason="FROB_NO_GATE_CACHE feature-flag read (T-1346's cache escape hatch); a boolean opt-out, carries no secret"  # noqa: E501
+    # frob:waive SEC110 reason="FROB_NO_GATE_CACHE feature-flag read (T-1346's cache \
+    # escape hatch); a boolean opt-out, carries no secret"
     return not os.environ.get(_NO_GATE_CACHE_ENV)
 
 
@@ -806,9 +808,13 @@ def _gate_summary_result(
 
 
 # frob:ticket T-1351
+# frob:ticket T-1928
 # frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_only_names_the_gate_families_it_did_not_run  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_ticket_flag_notes_which_families_are_actually_diff_scoped  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestScopeDisclosure.test_full_unfiltered_run_adds_no_disclosure  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestScopeDisclosure.test_full_run_discloses_fmt_scope
+# frob:tests \
+# tests/unit/test_check.py::TestScopeDisclosure.test_no_disclosure_when_fmt_did_not_run
 def _scope_disclosure_note(
     *, ticket: str | None, gates: frozenset[str], ran: frozenset[str]
 ) -> str | None:
@@ -838,8 +844,24 @@ def _scope_disclosure_note(
        shape (docs/guides/agent-playbook.md's "catalogued is not
        enforced" lesson, generalized here).
 
-    Returns `None` when neither condition applies (a full, unscoped,
-    unfiltered run) -- there is nothing to disclose."""
+    3. `gate:FMT` (FMT001) is diff-scoped UNCONDITIONALLY, with or without
+       `--ticket` -- it only ever inspects `frob:` directive comment lines
+       the current uncommitted diff touches (`fmt_gate`,
+       `src/frob/gates/_todo_fmt.py`). On a clean tree with no diff (the
+       common case for a bare `frob check` on `main`) it examines zero
+       files and reports 0 errors in ~0s by construction -- that 0 is
+       correct-but-misleading: it says nothing about whether `ruff format
+       --check .` or `frob fmt --check` (both unscoped, repo-wide, and
+       checking DIFFERENT things -- ruff's own code-style formatting vs.
+       `frob:` directive-comment line-wrapping) would report drift
+       (T-1928 measured 77 and 265 respectively against a "clean" gate:FMT
+       0 on the same tree). This disclosure fires whenever `fmt` is in
+       `ran` at all -- including a full, unscoped, unfiltered run -- since
+       the diff-scoping is a property of the gate itself, not of `--only`/
+       `--ticket` narrowing it further.
+
+    Returns `None` when no condition applies -- there is nothing to
+    disclose."""
     from frob.gates import _ALL_GATES
 
     lines: list[str] = []
@@ -858,6 +880,18 @@ def _scope_disclosure_note(
             "every OTHER gate family's counts above are REPO-WIDE, not "
             "filtered to this ticket; a clean count there is not proof "
             "this ticket's own package is clean."
+        )
+    if "fmt" in ran:
+        lines.append(
+            "NOTE: gate:FMT (FMT001) only examines frob: directive-comment "
+            "lines touched by the CURRENT DIFF -- it never scans the whole "
+            "tree and is not a general formatter check. A clean gate:FMT "
+            "does NOT mean the repo is `ruff format`-clean or `frob fmt`-"
+            "canonical repo-wide; those are separate, unscoped checks "
+            "(`ruff format --check .`, `frob fmt --check`) each covering a "
+            "different concern (Python code style vs. frob: directive "
+            "line-wrapping) -- run them directly to measure repo-wide "
+            "drift."
         )
     return "\n".join(lines) if lines else None
 

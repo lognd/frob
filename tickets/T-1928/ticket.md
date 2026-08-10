@@ -2,7 +2,7 @@
 id: T-1928
 title: FMT gate passes in 0.00s while frob fmt --check would rewrite 267 files on
   main
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -11,8 +11,29 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/check/_python.py
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/check/_python.py
+  reason: T-1928 was filed with an empty scope; narrowing to the files actually needed
+    to disclose gate:FMT's diff-scoping, per playbook section 4
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: T-1928 was filed with an empty scope; narrowing to the files actually needed
+    to disclose gate:FMT's diff-scoping, per playbook section 4
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/test_check.py::TestScopeDisclosure::test_only_names_the_gate_families_it_did_not_run
+- tests/unit/test_check.py::TestScopeDisclosure::test_ticket_flag_notes_which_families_are_actually_diff_scoped
+- tests/unit/test_check.py::TestScopeDisclosure::test_full_run_discloses_fmt_scope
+- tests/unit/test_check.py::TestScopeDisclosure::test_no_disclosure_when_fmt_did_not_run
 designated_repro_test: null
 threat: null
 component: null
@@ -87,3 +108,5 @@ ACCEPTANCE
    a bare 0-error FMT verdict. It must fail before the fix.
 4. Any decision to accept the current formatting of those 267 files is
    recorded explicitly, not left implicit in a passing gate.
+
+frob:waive BUG002 reason="the regression test proving this fix (tests/unit/test_check.py::TestScopeDisclosure::test_full_run_discloses_fmt_scope) is a brand-new test node added in the same commit as the fix -- frob ticket evidence --check-repro against this branch's merge-base with main (7eb99d0926713cce2a9498c03a75c8b981db54b8) reports NO_VERDICT because pytest cannot even COLLECT a node whose method name did not exist at that commit (exit 5, 'no tests collected'), not a genuine pass/fail. This is the same structural gap BUG002's own NO_VERDICT posture is designed to degrade safely on (never a false violation, never a false pass) -- there is no way to get a real FAILED_AT_PARENT verdict for a test whose whole point is exercising behavior (_scope_disclosure_note's new unconditional gate:FMT branch) that plainly did not exist before this ticket's own diff introduced it. The renamed sibling test (formerly test_full_unfiltered_run_adds_no_disclosure, whose old body asserted the OPPOSITE of the new expectation) is direct before/after documentation of the behavior change even though its own designated node id cannot serve as a --check-repro target for the same reason."
