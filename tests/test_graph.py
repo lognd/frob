@@ -521,7 +521,7 @@ class TestMarkdownAnchors:
 <!-- frob:describes src/frob/graph/lock.py::LockFile body -->
 Some text.
 """
-        edges = markdown_anchors("docs/modules/graph.md", text)
+        edges, _malformed = markdown_anchors("docs/modules/graph.md", text)
         assert len(edges) == 1
         edge = edges[0]
         assert edge.src == "docs/modules/graph.md#lock-file"
@@ -530,7 +530,7 @@ Some text.
 
     def test_default_facet_is_sig(self) -> None:
         text = "<!-- frob:describes src/foo.py::bar -->\n"
-        edges = markdown_anchors("docs/foo.md", text)
+        edges, _malformed = markdown_anchors("docs/foo.md", text)
         assert edges[0].attrs["facet"] == "sig"
 
     def test_enumerates_edge_carries_claimed_members(self) -> None:
@@ -542,7 +542,7 @@ Some text.
             '<!-- frob:enumerates src/foo.py::_STAGE_GROUPS members="a,b,c" -->\n'
             "Some prose.\n"
         )
-        edges = markdown_anchors("docs/modules/graph.md", text)
+        edges, _malformed = markdown_anchors("docs/modules/graph.md", text)
         assert len(edges) == 1
         edge = edges[0]
         assert edge.src == "docs/modules/graph.md#stage-groups"

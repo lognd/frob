@@ -153,8 +153,10 @@ _should_prune_dir = _excludes._should_prune_dir  # noqa: SLF001
 # frob:ticket T-0239
 # frob:ticket T-0245
 # frob:ticket T-0544
-# frob:tests tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config  # noqa: E501
-# frob:tests tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent  # noqa: E501
+# frob:tests \
+# tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config
+# frob:tests \
+# tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent
 # frob:tests tests/test_graph.py::TestExclude.test_walk_repo_files_classifies_top_level_readme_as_doc  # noqa: E501
 def _walk_repo_files(
     root: Path, exclude_globs: tuple[str, ...] = ()
@@ -175,7 +177,10 @@ def _walk_repo_files(
     source_files: list[Path] = []
     doc_files: list[Path] = []
     exts = supported_extensions()
-    # frob:waive WALK001 reason="already prunes via frob.excludes._should_prune_dir before descending (T-0239); this IS the underlying primitive walk_pruned wraps, folded with dual source/doc classification in one pass for perf, not a naive raw walk"  # noqa: E501
+    # frob:waive WALK001 reason="already prunes via frob.excludes._should_prune_dir \
+    # before descending (T-0239); this IS the underlying primitive walk_pruned wraps, \
+    # folded with dual source/doc classification in one pass for perf, not a naive raw \
+    # walk"
     for dirpath, dirnames, filenames in os.walk(root):
         dir_path = Path(dirpath)
         dirnames[:] = [
@@ -255,7 +260,8 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
 # frob:ticket T-0558
 # frob:ticket T-0561
 # frob:tests tests/test_graph.py::TestBuildIncremental.test_stored_hash_matches_bytes_actually_parsed  # noqa: E501
-# frob:tests tests/test_graph.py::TestParseFailures.test_parse_error_is_recorded_as_parse_failure  # noqa: E501
+# frob:tests \
+# tests/test_graph.py::TestParseFailures.test_parse_error_is_recorded_as_parse_failure
 def _parse_source_file_fresh(
     conn, rel_path: str, path: Path, stat_key: tuple[int, int]
 ) -> tuple[
@@ -419,7 +425,11 @@ def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -
         # file, keep the build alive.
         _log.warning("skipping %s: %s", rel_path, exc)
         return True
-    edges = markdown_anchors(rel_path, text)
+    # T-1968: markdown_anchors now also returns MalformedDirectives (an
+    # unhandled frob:<verb> HTML-comment directive DSL001 must see the
+    # same way it already sees a code-comment malformed directive) --
+    # previously hardcoded empty here, silently dropping every one.
+    edges, malformed = markdown_anchors(rel_path, text)
     _cache.store_file_data(
         conn,
         file_path=rel_path,
@@ -428,7 +438,7 @@ def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -
         size=stat_key[1],
         symbols=(),
         edges=edges,
-        malformed=(),
+        malformed=malformed,
     )
     return True
 
@@ -498,7 +508,8 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:doc docs/commands/check.md#run-scoped-memoization
-# frob:tests tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed  # noqa: E501
+# frob:tests \
+# tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed
 # frob:tests tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
 # frob:tests tests/test_graph.py::TestBuildIncremental.test_stats_sum_source_and_doc_counts_not_difference  # noqa: E501
 # frob:ticket T-0423
@@ -666,8 +677,8 @@ def _first_added_file(
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:ticket T-0232
-# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_file_added  # noqa: E501
-# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_doc_added  # noqa: E501
+# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_file_added
+# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_doc_added
 def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
     """Cache-only read: `Err(CacheStale)` if any on-disk hash moved, `Err(CacheCorrupt)`
     if the cache is unreadable, schema-mismatched, or has never been built.
@@ -773,7 +784,7 @@ def _load_graph_from_connection(conn, cache: Path) -> Result[GraphSnapshot, Grap
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:ticket T-0402
-# frob:tests tests/test_graph.py::TestResolve.test_exact_qualname_wins_over_suffix_match  # noqa: E501
+# frob:tests tests/test_graph.py::TestResolve.test_exact_qualname_wins_over_suffix_match
 # frob:tests tests/test_graph.py::TestResolve.test_ambiguous_suffix_match
 def resolve(snapshot: GraphSnapshot, ref: str) -> Result[SymbolRecord, GraphError]:
     """Resolve `ref`: exact `path::qualname`, else a unique qualname match,

@@ -45,7 +45,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         """`<!-- frob:until T-0042 -->` under a heading becomes an UNTIL
         edge whose target is the ticket id and src is the doc anchor."""
         text = "# Section\n<!-- frob:until T-0042 -->\n"
-        edges = markdown_anchors("doc.md", text)
+        edges, _malformed = markdown_anchors("doc.md", text)
         until_edges = [e for e in edges if e.kind == EdgeKind.UNTIL]
         assert len(until_edges) == 1
         assert until_edges[0].target == "T-0042"
@@ -55,7 +55,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         """A "does not exist yet" line under a heading becomes a
         CLAIMS_ABSENCE edge bound to that heading's anchor."""
         text = "# Section\nThe web dashboard does not exist yet.\n"
-        edges = markdown_anchors("doc.md", text)
+        edges, _malformed = markdown_anchors("doc.md", text)
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert len(claims) == 1
         assert claims[0].src == "doc.md#section"
@@ -64,7 +64,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         """The "not yet <verb>" phrasing variant is detected too, not just
         "does not exist yet"."""
         text = "# Section\nThe cache layer is not yet wired up.\n"
-        edges = markdown_anchors("doc.md", text)
+        edges, _malformed = markdown_anchors("doc.md", text)
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert len(claims) == 1
 
@@ -73,7 +73,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         if its own text happens to contain a matching phrase (defense
         against a directive's surrounding markdown prose self-matching)."""
         text = "# Section\n<!-- frob:until T-0042 does not exist yet -->\n"
-        edges = markdown_anchors("doc.md", text)
+        edges, _malformed = markdown_anchors("doc.md", text)
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert claims == []
 
@@ -81,7 +81,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
         """Ordinary prose with no negative-existence phrasing at all emits
         no CLAIMS_ABSENCE edge (the heuristic is narrow by design)."""
         text = "# Section\nThe web dashboard ships next quarter.\n"
-        edges = markdown_anchors("doc.md", text)
+        edges, _malformed = markdown_anchors("doc.md", text)
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert claims == []
 
@@ -100,7 +100,7 @@ class TestMarkdownAnchorsUntilAndClaimsAbsence:
             "## [0.1.0] - unreleased\n\n"
             "- T-0001: done-report hangs when the named ref does not exist\n"
         )
-        edges = markdown_anchors("CHANGELOG.md", text)
+        edges, _malformed = markdown_anchors("CHANGELOG.md", text)
         claims = [e for e in edges if e.kind == EdgeKind.CLAIMS_ABSENCE]
         assert claims == []
 

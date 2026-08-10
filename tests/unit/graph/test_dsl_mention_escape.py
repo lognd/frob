@@ -121,8 +121,9 @@ class TestMarkdownAnchorsMentionEscape:
             "Describing the syntax: "
             "frob:quote(<!-- frob:describes src/x.py::Y -->) is the shape.\n"
         )
-        edges = markdown_anchors("doc.md", text)
+        edges, malformed = markdown_anchors("doc.md", text)
         assert edges == ()
+        assert malformed == ()
 
     def test_unescaped_directive_on_same_line_as_escaped_mention_still_parses(
         self,
@@ -133,6 +134,7 @@ class TestMarkdownAnchorsMentionEscape:
             "<!-- frob:describes src/x.py::Y --> "
             "frob:quote(<!-- frob:describes src/z.py::W -->)\n"
         )
-        edges = markdown_anchors("doc.md", text)
+        edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
         assert len(edges) == 1
         assert edges[0].target == "src/x.py::Y"

@@ -2,7 +2,7 @@
 id: T-1968
 title: 'frob:waive in markdown is silently ignored: waivers written by a burn-down
   suppress nothing and nothing says so'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,122 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/
+- src/frob/graph/dsl.py
+- src/frob/graph/__init__.py
+- design/frob.strata
+- docs/modules/graph.md
+- tests/test_graph.py
+- tests/unit/gates/test_negexist.py
+- tests/unit/graph/test_dsl_markdown_waive.py
+- tests/unit/graph/test_dsl_mention_escape.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/graph/__init__.py
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_graph.py
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/gates/test_negexist.py
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/graph/test_dsl_mention_escape.py
+  reason: 'Corrected scope after implementation: the markdown frob:waive fix lives
+
+    in frob.graph.dsl/__init__, not frob.gates. Narrowing to the files the
+
+    committed change actually touches (T-1968).
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_waive_of_a_genuinely_unhonored_rule_is_reported_unparsed
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_waive_of_each_honored_rule_produces_no_finding
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_multiple_unhonored_waivers_each_reported
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_recognized_verbs_produce_no_unhandled_finding
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_unknown_verb_entirely_is_reported
 designated_repro_test: null
 threat: null
 component: null

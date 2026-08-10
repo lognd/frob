@@ -327,6 +327,111 @@ def _directive_edge(line: str, doc_path: str, slug: str, lineno: int) -> Edge | 
     return None
 
 
+# frob:ticket T-1968
+# A bare `<!-- frob:<verb> ... -->` shape, matched generically so a NEW
+# unhandled verb needs no new regex here to be caught -- deliberately the
+# mirror of `_LINE_RE`'s code-comment shape, but anchored to the
+# HTML-comment delimiters markdown directives always use.
+_ANY_MD_DIRECTIVE_RE = re.compile(r"<!--\s*frob:(?P<verb>\S+)")
+# The `frob:waive <RULE> reason="..."` markdown shape -- several gates
+# each independently invented their OWN tiny per-rule regex reading it
+# directly out of markdown TEXT, entirely outside `frob.graph`/this
+# module: `frob.gates._refs._md_waived_rules` (REF001/REF002, T-0466),
+# `frob.gates._docptr._WAIVE_DOC006_RE` (DOC006), `frob.gates.
+# _docblocks_refs._WAIVE_DOC004_RE` (DOC004), `frob.gates._inv.
+# _DOC_WAIVE_MARKER_RE` (INV003/INV004). T-1968's OWN measured evidence
+# (docs/modules/fuzz.md's DOC006 waivers, docs/modules/deploy.md's
+# INV003/INV004 waivers, `gate:DOC 0 waived`) undercounted: those two
+# files' waivers are almost certainly ALREADY being honored by _docptr.py/
+# _inv.py's own mechanisms -- `0 waived` undercounts because those
+# mechanisms suppress the violation BEFORE it is ever emitted (no
+# graph-edge WaiverRef to count), not because they do nothing. Verified by
+# reading each gate's own source, not re-derived from the ticket's claim
+# alone. `frob.gates._mutation_evidence`'s BUG002 waiver reads a ticket's
+# OWN body text (a different scan surface, tickets/**, not general
+# markdown docs) -- included here too since a ticket body IS markdown.
+_MD_WAIVE_RE = re.compile(r'frob:waive\s+(?P<rule>\S+)\s+reason="')
+# T-1968: every rule id SOME gate's own dedicated mechanism actually
+# reads directly out of markdown text today. Any OTHER rule id in the
+# same `frob:waive <RULE> reason="..."` shape is accepted syntactically
+# and suppresses nothing -- the silent-no-op this ticket exists to make
+# loud (T-1968's own measured incident was itself two rules this set
+# does NOT cover: a markdown `frob:waive` naming a rule with no such
+# mechanism at all is still exactly as silently inert as believed, just
+# not fuzz.md/deploy.md's specific two examples).
+_MD_WAIVE_HONORED_RULES = frozenset(
+    {"REF001", "REF002", "DOC004", "DOC006", "INV003", "INV004", "BUG002"}
+)
+# Verbs `markdown_anchors`'s OWN loop already turns into a real edge
+# (describes/enumerates/until), plus verbs a DIFFERENT module owns and
+# reads directly from markdown text (frob.gates._docblocks's
+# `frob:generated-start`/`frob:generated-end` table fences, T-1011) --
+# neither is "unhandled", so neither belongs in this ticket's new
+# diagnostic.
+_MD_HANDLED_VERBS = frozenset(
+    {"describes", "enumerates", "until", "generated-start", "generated-end"}
+)
+
+
+# frob:ticket T-1968
+def _unhandled_markdown_directive(
+    line: str, doc_path: str, lineno: int
+) -> MalformedDirective | None:
+    """T-1968: a `MalformedDirective` for a `<!-- frob:<verb> ... -->`
+    markdown directive that nothing in this repo actually reads --
+    either an unrecognized verb outright, or a `frob:waive <RULE> ...`
+    whose `RULE` is not one of the handful `frob.gates._refs` itself
+    consumes from markdown (`_MD_WAIVE_HONORED_RULES`). `None` for a
+    handled verb (`_MD_HANDLED_VERBS`) or a line with no `frob:`-shaped
+    HTML comment at all. The `.reason` text is deliberately phrased to
+    avoid the literal substrings `_dsl001_violations` excludes as
+    already-claimed-elsewhere (`frob:waive`/`frob:tests`/`frob:debt`) --
+    this finding IS meant to fall through DSL001's own generic catch-all,
+    not be mistaken for a WAIVE001 missing-`reason=` case (every
+    incident this ticket measured already carries a real `reason=`)."""
+    match = _ANY_MD_DIRECTIVE_RE.search(line)
+    if match is None:
+        return None
+    verb = match.group("verb")
+    if verb == "waive":
+        waive = _MD_WAIVE_RE.search(line)
+        if waive is None:
+            # Shape-matched "frob:waive" but not the full recognized
+            # `frob:waive <RULE> reason="..."` form -- DSL001's own
+            # code-comment-shaped malformed handling does not apply to
+            # markdown at all today, so this is reported the same
+            # generic way as any other unhandled markdown directive
+            # rather than invented as a second, markdown-only shape of
+            # WAIVE001.
+            return MalformedDirective(
+                file=doc_path,
+                line=lineno,
+                reason=(
+                    f"unhandled markdown directive (verb={verb!r}): does not "
+                    f'match the recognized "waive RULE reason=..." markdown form'
+                ),
+            )
+        rule = waive.group("rule")
+        if rule in _MD_WAIVE_HONORED_RULES:
+            return None
+        return MalformedDirective(
+            file=doc_path,
+            line=lineno,
+            reason=(
+                f"unhandled markdown directive (verb={verb!r}, rule={rule!r}): "
+                f"only {sorted(_MD_WAIVE_HONORED_RULES)} are read from "
+                f"markdown waivers -- this suppresses nothing"
+            ),
+        )
+    if verb in _MD_HANDLED_VERBS:
+        return None
+    return MalformedDirective(
+        file=doc_path,
+        line=lineno,
+        reason=f"unhandled markdown directive (verb={verb!r}): nothing reads it",
+    )
+
+
 # frob:doc docs/modules/graph.md#comment-dsl
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_until_directive_emits_until_edge  # noqa: E501
 # frob:tests tests/unit/gates/test_negexist.py::TestMarkdownAnchorsUntilAndClaimsAbsence.test_negative_existence_phrase_emits_claims_absence_edge  # noqa: E501
@@ -339,10 +444,23 @@ def _directive_edge(line: str, doc_path: str, slug: str, lineno: int) -> Edge | 
 # verbatim -- tests/unit/gates/test_negexist.py's tests stay green); the documented \
 # comment-DSL contract in docs/modules/graph.md#comment-dsl is unchanged, so it needs \
 # no update"
-def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
+def markdown_anchors(
+    doc_path: str, text: str
+) -> tuple[tuple[Edge, ...], tuple[MalformedDirective, ...]]:
     """Extract `<!-- frob:describes ... -->` and `<!-- frob:enumerates ... -->`
-    anchors bound to the nearest heading (T-1227 adds the latter)."""
+    anchors bound to the nearest heading (T-1227 adds the latter), plus
+    (T-1968) a `MalformedDirective` for any OTHER `<!-- frob:<verb> ... -->`
+    HTML-comment directive this function does not itself turn into a real
+    edge -- see `_unhandled_markdown_directive` for the exact "handled"
+    set. This is markdown's half of DSL001's own catch-all contract
+    (`_dsl001_violations`'s docstring: "no frob: comment that fails to
+    parse into a real edge goes unreported") -- before T-1968, a markdown
+    file's directive comments never even ATTEMPTED this check at all, so
+    `<!-- frob:waive DOC006 reason="..." -->` (a real, deliberate T-1023
+    burn-down waiver) was accepted as silent prose with no error, no
+    warning, and no suppressed finding."""
     edges: list[Edge] = []
+    malformed: list[MalformedDirective] = []
     slug = "top"
     seen: dict[str, int] = {}
     # T-1970: escape mentions BEFORE any directive-shaped matching, same
@@ -361,12 +479,18 @@ def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
         negexist_edge = _negexist_phrase_edge(line, doc_path, slug, lineno)
         if negexist_edge is not None:
             edges.append(negexist_edge)
+            continue
+        unhandled = _unhandled_markdown_directive(line, doc_path, lineno)
+        if unhandled is not None:
+            malformed.append(unhandled)
     _log.debug(
-        "%s: %d describes/enumerates/until/claims-absence anchor(s)",
+        "%s: %d describes/enumerates/until/claims-absence anchor(s), "
+        "%d unhandled directive(s)",
         doc_path,
         len(edges),
+        len(malformed),
     )
-    return tuple(edges)
+    return tuple(edges), tuple(malformed)
 
 
 def _enclosing_src(comment: RawComment, path: str) -> str:

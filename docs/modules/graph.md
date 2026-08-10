@@ -463,7 +463,38 @@ on its own per-ref `sorted(_facets_for_ref(...))` call.
   fails to parse).
 - `markdown_anchors` -- extracts `describes`-verb HTML-comment anchors
   (`frob:describes <symref> [facet]`) from a markdown doc, binding each to
-  the nearest preceding heading slug.
+  the nearest preceding heading slug. Also returns (T-1968) a
+  `MalformedDirective` for any other `<!-- frob:<verb> ... -->`
+  HTML-comment directive it does not itself turn into a real edge -- see
+  "Unhandled markdown directives" below.
+
+### Unhandled markdown directives (T-1968)
+
+<!-- frob:describes src/frob/graph/dsl.py::_unhandled_markdown_directive -->
+
+Before T-1968, `markdown_anchors` never checked whether an
+`<!-- frob:<verb> ... -->` HTML-comment directive it did not itself
+recognize (only `describes`/`enumerates`/`until`) was actually read by
+ANYTHING else -- a real, deliberate waiver like `<!-- frob:waive DOC006
+reason="..." -->` was accepted as silent prose, no error, no warning,
+no suppressed finding, and no way for the author to learn it did
+nothing.
+
+Several gates independently invented their own tiny per-rule regex
+reading `frob:waive <RULE> reason="..."` directly out of markdown text,
+entirely outside this module: `frob.gates._refs._md_waived_rules`
+(REF001/REF002), `frob.gates._docptr._WAIVE_DOC006_RE` (DOC006),
+`frob.gates._docblocks_refs._WAIVE_DOC004_RE` (DOC004),
+`frob.gates._inv._DOC_WAIVE_MARKER_RE` (INV003/INV004),
+`frob.gates._mutation_evidence._BUG002_WAIVER_RE` (BUG002, over a
+ticket's own body text). `_unhandled_markdown_directive` treats exactly
+that set (`_MD_WAIVE_HONORED_RULES`) as handled; a `frob:waive` naming
+any OTHER rule id, or any verb outside `_MD_HANDLED_VERBS` (the three
+`markdown_anchors` itself produces an edge for, plus `frob.gates.
+_docblocks`'s `frob:generated-start`/`frob:generated-end` table-fence
+markers, T-1011) becomes a `MalformedDirective` -- markdown's half of
+DSL001's own catch-all contract ("no frob: comment that fails to parse
+into a real edge goes unreported").
 
 Directives live in ordinary comments in any supported language (`#`, `//`,
 `/* */`). Grammar: `frob:<verb> <target> [key="value" ...]`. One directive
