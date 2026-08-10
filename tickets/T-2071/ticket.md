@@ -1,0 +1,136 @@
+---
+id: T-2071
+title: 'Agent-context root-write guard is inert: FROB_AGENT is unset in dispatched
+  agent shells'
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-10'
+priority: critical
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+acceptance:
+- text: given a shell with FROB_AGENT unset (as every dispatched agent has), when
+    it writes and commits a source file in the shared repo root, then the write is
+    refused or surfaced as agent-context root contamination -- this test MUST fail
+    against current main
+  evidence: []
+- text: given an agent has dirtied the shared root, when another agent's land is DirtyMain-refused,
+    then the refusal names the offending path AND identifies it as foreign to the
+    landing ticket, so the operator can route it without hand-diagnosis
+  evidence: []
+- text: given the fleet is running, when scripts/fleet_status.py probes ROOT, then
+    a dirty root reports the offending paths rather than a bare dirty/clean verdict
+  evidence: []
+threat: null
+component: tickets
+labels:
+- fleet-blocking
+- guard
+anchor: false
+anchor_reason: null
+---
+## Measured evidence
+
+`FROB_AGENT` is UNSET in every shell spawned by the Agent tool. Measured
+directly from a dispatched agent's shell:
+
+    echo "FROB_AGENT is: [${FROB_AGENT:-UNSET}]"
+    FROB_AGENT is: [UNSET]
+
+`.git/hooks/pre-commit` (installed by `frob scaffold
+install-worktree-lease-hook`, T-0431) opens with:
+
+    if [ -n "$FROB_AGENT" ]; then
+        echo "frob: refusing commit -- FROB_AGENT=$FROB_AGENT is set in this shell"
+        echo "frob: an agent-context shell must not commit directly in $(pwd)"
+
+So the guard whose entire purpose is "an agent-context shell must not commit
+directly in the root" never fires for the population it exists to stop. It is
+inert, not merely late.
+
+## Observed consequences, same hour, three separate agents
+
+Two agents in ONE dispatch wave edited the shared root instead of a worktree:
+
+    git -C /home/logan/projects/frob status --porcelain
+     M src/frob/app/ticket_runner/_query.py         # agent A
+     M src/frob/testing/_coverage_refresh.py        # agent B
+
+1. Agent B's uncommitted file DirtyMain-refused a THIRD agent's
+   `frob ticket land T-1226`. Finished, gate-clean work could not reach main
+   because of an unrelated agent's working-tree edit.
+
+2. Agent A's edit was half-applied when `frob ticket doable` ran from the
+   root:
+
+       ERROR: main: unhandled exception during dispatch:
+       name 'NamedTuple' is not defined
+
+   The class had been added before its import. The queue command that drives
+   the whole drain was broken repo-wide for the length of that window.
+   `git show HEAD:src/frob/app/ticket_runner/_query.py | grep -c NamedTuple`
+   returned 0, confirming main itself was never broken -- it was purely the
+   root's dirty working tree being executed live.
+
+3. Agent B then committed its fix directly onto main (`d59f1cc97`), as did
+   two ticket-filing commits (`d3c862df7`, `b607d0b94`). The hook refused
+   none of them.
+
+## Why a per-cause patch is the wrong answer
+
+This is the THIRD distinct mechanism producing the same failure class, each
+fixed individually before:
+
+  - T-2026: a killed `frob ticket new` retry loop left an untracked ticket dir
+  - T-2034: `frob ticket doable` abandoned ledger writes on lock loss
+  - this ticket: an agent edits/commits the root directly
+
+When one class recurs through three unrelated causes, the per-cause patch is
+not the fix.
+
+## DO NOT FIX IT THIS WAY
+
+- **Do not add a line to the agent brief or the playbook.** Both agents here
+  were already briefed to use a worktree and both were pointed at the
+  playbook's worktree warm-up. A brief that warns about a trap is not a fix --
+  four agents were explicitly warned about the confirmatory-only-evidence trap
+  and all four still fell in, because the tooling gave them no way to detect
+  it. If a written rule was not followed, the rule is not the fix.
+- **Do not simply export `FROB_AGENT` from the dispatch path and call it
+  done.** That makes the existing hook fire, but the hook guards COMMIT time,
+  and DirtyMain blocking begins at EDIT time -- consequences (1) and (2) above
+  both happened with nothing committed. Setting the variable is likely
+  necessary but is not sufficient, and shipping only that would leave the
+  fleet-blocking window fully open while looking fixed.
+- **Do not weaken or special-case DirtyMain** to tolerate foreign dirt. The
+  refusal is correct; it is what surfaced this at all.
+
+## Direction (the implementer decides, but weigh these)
+
+Prefer a guard that makes the hazard impossible or self-healing at the moment
+it starts, over one that reports it later:
+
+  (a) detect a dirty root caused by a non-root actor and surface it where the
+      operator already looks -- `scripts/fleet_status.py` already probes ROOT;
+      a land refusal should name the OWNING agent and file, not just refuse;
+  (b) have the dispatch path place agents in a worktree by construction, so
+      editing the root is not reachable rather than merely discouraged;
+  (c) if a commit-time refusal is kept, make its trigger a fact about WHERE
+      the shell is (root vs. worktree) rather than an env var the dispatcher
+      may or may not set -- a guard keyed on a variable nobody sets is
+      indistinguishable from no guard.
+
+Note the standing preference for automatic behaviour and surfacing over new
+commands: a command requires knowing the command.
+
+## First test must fail
+
+The first acceptance test must FAIL against current main -- i.e. it must
+demonstrate that today, with `FROB_AGENT` unset, an agent-context write to the
+shared root is accepted with no refusal and no surfacing.
