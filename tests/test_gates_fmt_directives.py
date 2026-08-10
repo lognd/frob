@@ -21,7 +21,6 @@ from hypothesis import strategies as st
 from frob.excludes import iter_files
 from frob.gates._fmt_directives import (
     _canonical_lines,
-    _fmt_marker_entries_with_indents,
     _write_formatted,
     canonicalize_text,
     format_paths,
