@@ -633,3 +633,5 @@
 {"commit": "6b87ae3f31ab82a309ddfaa6be24ecd138769efc", "skipped": "close-rel001-preflight-skipped", "ticket": "T-draft-46574f02"}
 {"commit": "6b87ae3f31ab82a309ddfaa6be24ecd138769efc", "skipped": "evidence-scope-unbound", "ticket": "T-draft-46574f02"}
 {"commit": "2a3653df78a99f278e6918ca39c10e9b87d89def", "skipped": "land-evidence-scope-unbound", "ticket": "T-draft-46574f02"}
+{"commit": "69027b77d5fa87aa0c0d753e93cb05075a34b6c2", "skipped": "close-rel001-preflight-skipped", "ticket": "T-1974"}
+{"commit": "a46bbac852343c5ba36758713c970889d3361316", "skipped": "land-evidence-scope-unbound", "ticket": "T-1974"}

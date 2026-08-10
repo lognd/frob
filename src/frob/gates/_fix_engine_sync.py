@@ -187,7 +187,8 @@ def _docenum001_resync_edge(
     lines = file_lines[file]
     if not (1 <= line <= len(lines)):
         return None
-    # frob:waive PERF004 reason="actual is this edge's own target's member set, different every iteration -- nothing to hoist across edges"  # noqa: E501
+    # frob:waive PERF004 reason="actual is this edge's own target's member set, \
+    # different every iteration -- nothing to hoist across edges"
     new_members = ",".join(sorted(actual))
     new_line, n = re.subn(
         r'members="[^"]*"', f'members="{new_members}"', lines[line - 1], count=1

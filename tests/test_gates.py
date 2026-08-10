@@ -11468,8 +11468,8 @@ class TestFixEngineTierABatch2:
 
     # frob:ticket T-1974
     def test_docenum001_fails_before_fix_and_passes_after(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_docenum001_enumerates_sync \
-        # kind="unit"
+        # frob:tests \
+        # src/frob/gates/_fix_engine_sync.py::fix_docenum001_enumerates_sync kind="unit"
         from frob.gates._docenum import docenum001_gate
         from frob.gates._fix_engine import fix_docenum001_enumerates_sync
         from frob.graph._models import Edge, EdgeKind, GraphSnapshot
@@ -11533,8 +11533,8 @@ class TestFixEngineTierABatch2:
 
     # frob:ticket T-1974
     def test_docenum001_already_in_sync_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_docenum001_enumerates_sync \
-        # kind="unit"
+        # frob:tests \
+        # src/frob/gates/_fix_engine_sync.py::fix_docenum001_enumerates_sync kind="unit"
         from frob.gates._fix_engine import fix_docenum001_enumerates_sync
         from frob.graph._models import Edge, EdgeKind, GraphSnapshot
 
