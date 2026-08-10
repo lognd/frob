@@ -3,7 +3,7 @@ id: T-2032
 title: frob coverage's xdist worker-crash retry appends -p no:xdist without removing
   -n, so the OOM recovery path always dies with a usage error and reports it as a
   REAL test failure
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,29 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/testing/_coverage_refresh.py
+- tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/_coverage_refresh.py
+  reason: narrow to the retry-argv builder in _coverage_refresh.py and its test module;
+    no other files needed for T-2032
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_coverage.py
+  reason: narrow to the retry-argv builder in _coverage_refresh.py and its test module;
+    no other files needed for T-2032
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_coverage.py::TestWorkerCrashRetryArgvStripsWorkerCount::test_retry_argv_contains_neither_n_flag_nor_its_value
+- tests/test_coverage.py::TestWorkerCrashRetryUnmeasurableExitReporting::test_retry_exit_4_is_not_reported_as_a_real_failure
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
+designated_repro_test: tests/test_coverage.py::TestWorkerCrashRetryArgvStripsWorkerCount::test_retry_argv_contains_neither_n_flag_nor_its_value
 threat: null
 component: null
 anchor: false

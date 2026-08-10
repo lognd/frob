@@ -702,7 +702,51 @@ def _run(argv: list[str], *, cwd: Path) -> Result[subprocess.CompletedProcess, U
     return Ok(proc)
 
 
+#: pytest CLI tokens that select xdist's worker-count. Both the
+#: short (`-n`) and long (`--numprocesses`) spellings take a separate
+#: value token; `--numprocesses=N` is the only spelling that folds the
+#: value into the same token. T-2032: `_strip_worker_count_flag` uses
+#: this to find and remove all of them before appending `-p no:xdist`.
+_WORKER_COUNT_FLAGS = ("-n", "--numprocesses")
+
+
+# frob:ticket T-2032
+def _strip_worker_count_flag(argv: list[str]) -> list[str]:
+    """Remove any `-n`/`--numprocesses` flag (and its value) from ARGV
+    (T-2032) -- REQUIRED before appending `-p no:xdist`: once xdist is
+    disabled, pytest no longer recognises `-n` at all, so leaving it in
+    place turns the "serial retry" into a guaranteed usage-error exit (4)
+    that never runs a single test. This was measured directly: `frob
+    coverage --full`'s retry argv was `[..., '-n', '12', '-p',
+    'no:xdist']`, and the retry died before collecting anything."""
+    stripped: list[str] = []
+    skip_next = False
+    for token in argv:
+        if skip_next:
+            skip_next = False
+            continue
+        if token in _WORKER_COUNT_FLAGS:
+            skip_next = True
+            continue
+        if token.startswith("--numprocesses="):
+            continue
+        stripped.append(token)
+    return stripped
+
+
+#: pytest exit codes that mean "no test outcome was produced at all" --
+#: 3 is an internal error, 4 is a usage error (e.g. an argv pytest does
+#: not recognise). Neither is a member of {0, 1, 2, 5}, the codes that
+#: actually describe a test run's outcome. T-2032: conflating either of
+#: these with a real test failure mis-reports "I could not run the
+#: tests" as "the tests failed" -- the same distinction T-1664 already
+#: ruled a semantic check must preserve (report UNRESOLVED/unmeasurable
+#: rather than emit a mismatched verdict when it cannot decide).
+_PYTEST_UNMEASURABLE_EXIT_CODES = frozenset({3, 4})
+
+
 # frob:ticket T-1672
+# frob:ticket T-2032
 def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
     """The ONE serial retry `_pytest_outcome` runs after matching
     `_WORKER_CRASH_SIGNATURE_RE` (T-1672), split out to keep that function
@@ -710,7 +754,16 @@ def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
     classify the pass with: the retry's own code on success, or the
     ORIGINAL `code` unchanged if the retry itself could not even
     complete (still worth keeping the original pass's data, per
-    `_pytest_outcome`'s own docstring)."""
+    `_pytest_outcome`'s own docstring).
+
+    T-2032: the retry argv strips any existing `-n`/`--numprocesses`
+    flag before appending `-p no:xdist` (`_strip_worker_count_flag`) --
+    otherwise pytest refuses the malformed combination outright. And a
+    retry that itself exits with a pytest USAGE/INTERNAL error code
+    (`_PYTEST_UNMEASURABLE_EXIT_CODES`) is reported as an inability to
+    measure, never as "a REAL failure" -- that message previously fired
+    for exit 4 too, telling the operator to go hunt a test regression
+    that never had a chance to run."""
     _log.error(
         "coverage_refresh: %s exited %d and matched the xdist "
         "worker-crash signature (T-1672: a worker process was killed, "
@@ -719,7 +772,7 @@ def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
         " ".join(argv),
         code,
     )
-    retry_argv = [*argv, "-p", "no:xdist"]
+    retry_argv = [*_strip_worker_count_flag(argv), "-p", "no:xdist"]
     respawned = _spawn(retry_argv, cwd=cwd)
     if respawned.is_err:
         _log.error(
@@ -734,6 +787,16 @@ def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
         _log.info(
             "coverage_refresh: serial retry after worker-crash "
             "succeeded -- run is no longer degraded"
+        )
+    elif retry_code in _PYTEST_UNMEASURABLE_EXIT_CODES:
+        _log.error(
+            "coverage_refresh: serial retry after worker-crash exited "
+            "%d -- a pytest usage/internal error, not a test outcome. "
+            "The suite could NOT be measured on this retry; this is "
+            "neither a pass nor a real test failure (T-1664: an "
+            "analysis that cannot decide must say so, never emit a "
+            "mismatched verdict)",
+            retry_code,
         )
     else:
         _log.error(

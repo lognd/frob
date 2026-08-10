@@ -647,6 +647,44 @@ class TestNativeCoverageRefresh:
         assert record["degraded"] is True
         assert record["pytest_exit_code"] == 1
 
+    # frob:ticket T-2032
+    def test_full_run_produces_coverage_xml_after_worker_crash_recovery(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2032 acceptance criterion 3, end-to-end through
+        `native_coverage_refresh`: the FIRST parallel pytest attempt
+        matches the worker-crash signature (exit 3, `-n 12` in its
+        argv), the serial retry then succeeds, and `coverage xml -i`
+        still runs and `coverage.xml`'s production path is reached --
+        the recovery this ticket fixes actually recovers, rather than
+        the retry dying on a leftover `-n` flag."""
+        calls: list[list[str]] = []
+        crash_output = (
+            "INTERNALERROR> Traceback (most recent call last):\n"
+            "INTERNALERROR> KeyError: <WorkerController gw15>\n"
+        )
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            calls.append(list(argv))
+            if argv[0] == "pytest" and "-n" in argv:
+                return Ok(subprocess.CompletedProcess(argv, 3, stdout=crash_output))
+            return Ok(subprocess.CompletedProcess(argv, 0, stdout="ok\n"))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+        stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
+
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
+        assert result.is_ok
+
+        pytest_calls = [c for c in calls if c[0] == "pytest"]
+        assert len(pytest_calls) == 2
+        first, retry = pytest_calls
+        assert "-n" in first
+        assert "-n" not in retry  # T-2032: the bug -- this used to still be present
+        assert retry[-2:] == ["-p", "no:xdist"]
+        assert ["coverage", "xml", "-i"] in calls
+        assert len(stamp_calls) == 1
+
     # frob:ticket T-1676
     def test_refused_spawn_is_err(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -901,6 +939,80 @@ class TestPytestOutcomeWorkerCrashRecovery:
         assert outcome.worker_crash is False
         assert outcome.degraded is True
         assert len(calls) == 1  # no retry for an ordinary red suite
+
+
+# frob:ticket T-2032
+class TestWorkerCrashRetryArgvStripsWorkerCount:
+    """T-2032: the serial retry must actually be serial. Appending `-p
+    no:xdist` to an argv that still carries `-n <N>` makes pytest refuse
+    to start at all (it no longer recognises `-n` once xdist is disabled)
+    -- the recovery path was structurally incapable of recovering."""
+
+    _CRASH_OUTPUT = (
+        "INTERNALERROR> Traceback (most recent call last):\n"
+        "INTERNALERROR> KeyError: <WorkerController gw15>\n"
+    )
+
+    def test_retry_argv_contains_neither_n_flag_nor_its_value(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestWorkerCrashRetryArgvStripsWorkerCount.test_retry_argv_contains_neither_n_flag_nor_its_value  # noqa: E501
+        """Acceptance criterion 1: built from an argv that includes
+        `-n 12`, the retry argv must contain NEITHER `-n` NOR the value
+        `12` that followed it. THIS TEST FAILS BEFORE THE FIX (observed:
+        retry argv was `[..., '-n', '12', '-p', 'no:xdist']`, `-n`/`'12'`
+        both still present)."""
+        captured: list[list[str]] = []
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            captured.append(list(argv))
+            return Ok(subprocess.CompletedProcess(argv, 0, stdout="ok\n"))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+
+        original_argv = [
+            "pytest",
+            "--cov=src/frob",
+            "--cov-report=",
+            "-n",
+            "12",
+        ]
+        _refresh_mod._retry_after_worker_crash(original_argv, cwd=tmp_path, code=3)
+
+        assert len(captured) == 1
+        retry_argv = captured[0]
+        assert "-n" not in retry_argv
+        assert "12" not in retry_argv
+        assert retry_argv[-2:] == ["-p", "no:xdist"]
+
+
+# frob:ticket T-2032
+class TestWorkerCrashRetryUnmeasurableExitReporting:
+    """T-2032 acceptance criterion 2: a pytest usage-error exit (4) from
+    the retry must be reported as an inability to measure, never as a
+    test failure and never as a pass."""
+
+    def test_retry_exit_4_is_not_reported_as_a_real_failure(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestWorkerCrashRetryUnmeasurableExitReporting.test_retry_exit_4_is_not_reported_as_a_real_failure  # noqa: E501
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            return Ok(subprocess.CompletedProcess(argv, 4, stdout="usage error\n"))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+
+        with caplog.at_level("ERROR", logger="frob.testing._coverage_refresh"):
+            retry_code = _refresh_mod._retry_after_worker_crash(
+                ["pytest", "-n", "12"], cwd=tmp_path, code=3
+            )
+
+        assert retry_code == 4
+        messages = " ".join(r.message for r in caplog.records)
+        assert "this is a REAL failure" not in messages
+        assert "could not" in messages.lower()
 
 
 # frob:ticket T-1677
