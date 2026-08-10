@@ -119,7 +119,7 @@ class TestAlreadyLandedOnMain:
     def test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
         # Content matching the ticket's OWN declared scope already exists
         # on main from before this worktree was even cut -- the exact
         # "sibling's land already carried this one's content" shape.
@@ -154,7 +154,7 @@ class TestAlreadyLandedOnMain:
     def test_no_op_when_the_ticket_has_real_changes_in_its_own_scope(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "solo-real", str(wt)], repo)
         created = new_ticket(wt, _spec("Real work", scope=("src/fix.py",)))
@@ -170,7 +170,7 @@ class TestAlreadyLandedOnMain:
         assert (repo / "src" / "fix.py").exists()
 
     def test_no_op_when_the_ticket_declares_no_scope_at_all(self, repo: Path) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "solo-scopeless", str(wt)], repo)
         created = new_ticket(wt, _spec("No scope declared", scope=()))
@@ -185,10 +185,75 @@ class TestAlreadyLandedOnMain:
         assert result.is_ok, result.err
         assert (repo / "src" / "fix.py").exists()
 
+    # frob:ticket T-1950
+    def test_refuses_when_a_sibling_carried_this_tickets_content_before_it_ever_landed(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
+        # T-1950: the case T-1675's DONE-state signal cannot see -- tid's
+        # OWN code already rode onto main under a SIBLING's earlier
+        # --allow-cross-ticket land (carrying tid's own frob:ticket
+        # directive along with it, per this repo's own convention), but
+        # tid itself was never closed anywhere, so its ledger record on
+        # main does not exist at all (not merely non-done). Measured
+        # 2026-08-10: this is exactly T-1720's real shape after T-1922's
+        # land carried it.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-carried", str(wt)], repo)
+        created = new_ticket(wt, _spec("Carried elsewhere", scope=("src/held.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # Simulate a sibling's earlier land carrying tid's own marked code
+        # onto main -- the sibling's own commit, not tid's.
+        (repo / "src" / "sibling_carried.py").write_text(
+            f"# frob:ticket {tid}\ndef carried() -> None:\n    pass\n"
+        )
+        _commit_all(repo, "seed: a sibling land already carried tid's own code")
+
+        # tid's own branch: committed, but nothing under its declared
+        # scope -- everything it would have contributed is already on
+        # main via the sibling above.
+        (wt / "src" / "unrelated.py").write_text("# unrelated bookkeeping\n")
+        _commit_all(wt, f"{tid}: nothing left to contribute, already carried")
+
+        with caplog.at_level("WARNING"):
+            result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.AlreadyLandedOnMain
+        assert "frob ticket close" in caplog.text
+        assert tid in caplog.text
+
+    # frob:ticket T-1950
+    def test_no_op_when_no_frob_ticket_directive_for_this_id_exists_on_main(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
+        # T-1950's own false-positive guard: an empty scope-diff with
+        # NEITHER positive signal (no done state, no frob:ticket directive
+        # anywhere on main) must not be refused -- the ordinary first-time
+        # land of a ticket that genuinely has nothing yet.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-no-directive", str(wt)], repo)
+        created = new_ticket(
+            wt, _spec("Nothing carried anywhere", scope=("src/held.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "unrelated.py").write_text("# unrelated bookkeeping\n")
+        _commit_all(wt, f"{tid}: ledger-only, nothing under its own scope yet")
+
+        result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+
     def test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
         """T-1675's actual regression target: a docs-only ticket whose
         declared scope legitimately has no hits on this branch (it only
         ever needed a Done-report note, never a byte inside `docs/**`)

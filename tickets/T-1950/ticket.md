@@ -2,7 +2,7 @@
 id: T-1950
 title: 'A ticket can land verified=True with an empty commit while a sibling carries
   its code: land proof checks ancestry, not content'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,43 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/
+- src/frob/tickets/_land.py
+- tests/unit/test_land_already_landed.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: T-1950 fix direction (a) touches _land.py only (a new content-verification
+    preflight before commit); T-1950 own acceptance tests will live in tests/unit
+    or tests/test_ticket_land.py, added within scope narrowing as needed once identified.
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: T-1950 fix direction (a) touches _land.py only (a new content-verification
+    preflight before commit); T-1950 own acceptance tests will live in tests/unit
+    or tests/test_ticket_land.py, added within scope narrowing as needed once identified.
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_land_already_landed.py
+  reason: T-1950 needs new regression tests in tests/unit/test_land_already_landed.py
+    per the ticket acceptance criteria.
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: The fixed function frob:describes docs/modules/tickets.md#already-landed-on-main-first-class-outcome-t-1618,
+    which needs a T-1950 addendum documenting the new second positive signal.
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_refuses_when_a_sibling_carried_this_tickets_content_before_it_ever_landed
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_no_frob_ticket_directive_for_this_id_exists_on_main
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_ticket_has_real_changes_in_its_own_scope
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed
 designated_repro_test: null
 threat: null
 component: null

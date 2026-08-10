@@ -3405,6 +3405,39 @@ even though the real work simply has not been committed yet -- the check
 is skipped entirely whenever the worktree is dirty, deferring to whatever
 the rest of the land pipeline does with that uncommitted work.
 
+**A second positive signal, for a ticket that never landed at all
+(T-1950).** T-1675's DONE-state signal only fires for a RE-land -- a
+ticket whose content is already on main because it (or an earlier attempt
+at it) closed there before. It cannot see the complementary shape: a
+ticket whose content rode onto main under a SIBLING's `--allow-cross-
+ticket` land BEFORE this ticket itself ever landed once. `ticket.id`'s
+own record on `base_ref` is still `queued`/`planned`/`in-progress` in
+that case -- not `done` -- so T-1675's check correctly stays silent, and
+the land proceeds to squash-apply an empty scope-diff, reporting `LAND-
+PROOF verified=True` and passing `scripts/verify_lands.py` for a commit
+that carries none of its own ticket's work. Measured for real, 2026-08-10:
+T-1720's land (`48f49d78b8db`) landed exactly this way -- its feature had
+already ridden onto main under T-1922's earlier `--allow-cross-ticket`
+land (`b508b0ad3eec`), including the source-linking directive this
+repo's own convention puts on every touched public symbol naming its
+owning ticket, but T-1720's
+own ledger record was never `done` on `base_ref` at land time, so T-1675's
+check never fired.
+
+`_ticket_directive_present_on_ref` supplies the missing signal: does
+`base_ref`'s CURRENT tree already contain a literal `frob:ticket <ticket.
+id>` directive anywhere under `src/`? That directive is written by this
+repo's own convention onto every touched public symbol, never by an
+external replacement, and never present for a ticket that has contributed
+no code anywhere yet -- so, like the DONE-state signal, it is positive
+evidence, not an inference from absence. A docs-only or ledger-only
+ticket landing for the first time (T-1675's own regression target) never
+carries this directive on any file, so it stays unaffected: `_check_
+already_landed` now refuses on EITHER positive signal (DONE-state OR
+directive-present), sharing the same refusal message and remedy
+(`_refuse_already_landed`) with only the naming of which signal fired
+differing.
+
 ### Already-landed markers at DISPATCH time (T-1744 case 1)
 
 T-1675's `_check_already_landed` above catches a ticket already `state:

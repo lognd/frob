@@ -3111,80 +3111,39 @@ def _check_passenger_tickets(
 
 # frob:ticket T-1618
 # frob:ticket T-1675
+# frob:ticket T-1950
 # frob:doc docs/modules/tickets.md#already-landed-on-main-first-class-outcome-t-1618
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_has_real_changes_in_its_own_scope  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_declares_no_scope_at_all  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_sibling_carried_this_tickets_content_before_it_ever_landed  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_no_frob_ticket_directive_for_this_id_exists_on_main  # noqa: E501
 def _check_already_landed(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
-    """Refuse with a DISTINCT, self-explaining outcome (T-1618's second
-    requirement) when `ticket`'s content is POSITIVELY already present on
-    `base_ref` -- the common, confusing consequence of the T-1618
-    passenger-ticket class: once one ticket's land has already carried a
-    SIBLING's code onto main (the passenger check above exists to stop
-    that going forward, but does nothing for a worktree that already
-    leaked before this fix landed), the sibling's own later `frob ticket
-    land` finds an empty diff for its own scope. Before this check, that
-    fell through into whatever the normal land path does with an empty
-    changeset -- reported in the incident as a confusing BUG002/TEST016
-    refusal the operator had to diagnose and route around by hand (verify
-    content by hand, `frob ticket close --skip-mutation-evidence`) three
-    times in one session.
+    """Refuse with a DISTINCT, self-explaining outcome (T-1618) when
+    `ticket`'s content is POSITIVELY already present on `base_ref` -- a
+    sibling's land already carried it, so this ticket's own later `frob
+    ticket land` finds an empty diff in its own scope, which otherwise
+    falls through into a confusing BUG002/TEST016 refusal.
 
-    T-1675: an empty scope-diff ALONE used to be read as "already landed"
-    -- but that signal cannot distinguish "the work is already on main"
-    from "this ticket legitimately changed only docs/the ledger" or "its
-    scope globs never matched anything it touched": all three produce the
-    identical empty-diff shape (the R1 "absence read as a negative"
-    class). That forced this check off by default, so it never ran for a
-    real land. Now the check requires a SECOND, POSITIVE signal alongside
-    the empty diff: `ticket.id`'s own ledger record, read directly off
-    `base_ref` (`_ledger_ticket_at_ref`), must ALREADY be in a terminal
-    `TicketState.DONE` state there. A ticket that has not yet landed
-    cannot already be `done` on `base_ref` -- that record is written
-    exclusively by `frob ticket close`/`land`'s own squash-apply, never by
-    an external replacement -- so this is genuine evidence the content
-    made it to main, not an inference from silence. A docs-only ticket
-    whose scope-diff is legitimately empty but that has never been closed
-    on `base_ref` before now correctly gets `Ok(None)` here: absence of a
-    diff is no longer, by itself, sufficient to refuse.
+    Requires ONE of two independent POSITIVE signals alongside the empty
+    scope-diff (never the empty diff alone -- T-1675 found that
+    indistinguishable from a legitimate docs/ledger-only first land):
+    (1) T-1675: `ticket.id`'s ledger record on `base_ref` already shows
+    `state: done`. (2) T-1950: `_ticket_directive_present_on_ref` --
+    covers a ticket carried by a SIBLING's `--allow-cross-ticket` land
+    BEFORE this ticket itself ever landed, so it has no `done` state of
+    its own yet. See that function's docstring and docs/modules/tickets.
+    md#already-landed-on-main-first-class-outcome-t-1618 for the full
+    writeup and the measured T-1720/T-1922 incident. Neither signal
+    proves the content is CORRECT on `base_ref`, only PRESENT.
 
-    This function still does NOT verify the content is CORRECT on
-    `base_ref` (an `AlreadyLandedOnMain` refusal remains a strong hint,
-    not a full proof: `frob.tickets` cannot run `base_ref`'s tests or
-    gates to confirm the content actually behaves as this ticket's
-    evidence claims -- that verification needs `frob.gates`/
-    `frob.testing`, which this package deliberately does not import,
-    docs/rework.md's cycle-avoidance rule) -- only that the ticket's OWN
-    record already claims `done` there, which is what "already landed"
-    concretely means in this ledger's own vocabulary. The refusal message
-    names the exact manual recipe: verify, then `frob ticket close`
-    directly (`--skip-mutation-evidence` if TEST016 also reports an empty
-    diff) instead of retrying the land.
-
-    ON BY DEFAULT as of T-1675 (no opt-in flag any more) -- the positive
-    on-main-state requirement above is what makes that safe: the false-
-    positive class the old empty-diff-only check had (a docs-only/ledger-
-    only ticket landing for the FIRST time) cannot also have `state:
-    done` on `base_ref` yet, so it no longer trips this refusal.
-
-    A ticket with no declared `scope` at all is a no-op here (`Ok(None)`)
-    -- an empty scope matches nothing by this repo's own `scope_matches`
-    convention, so "no changes in an empty scope" is not evidence of
-    anything; whatever other precheck normally handles a scopeless ticket
-    still runs unaffected.
-
-    Also a no-op whenever `worktree` still has UNCOMMITTED changes
-    (`_porcelain_dirty`): this check runs in `_land_precheck`, strictly
-    BEFORE `land`'s own wip-commit stage folds any uncommitted work into
-    a real commit -- `_branch_changed_files` only ever sees committed
-    history, so a ticket whose work is genuinely present but simply not
-    yet committed would otherwise look identical to "already landed" and
-    be refused incorrectly. Only a CLEAN worktree's empty scope-diff is
-    unambiguous evidence that this ticket's own scope truly has nothing
-    new relative to `base_ref`."""
+    No-op (`Ok(None)`) when `ticket.scope` is empty or `worktree` has
+    UNCOMMITTED changes (`_porcelain_dirty` -- runs before `land`'s own
+    wip-commit stage, so uncommitted real work must not look identical
+    to "already landed")."""
     from frob.tickets._models import LEDGER_PATH, TicketState, scope_matches
     from frob.tickets._store import archive_path
 
@@ -3195,15 +3154,10 @@ def _check_already_landed(
         return Ok(None)
     changed = _branch_changed_files(worktree, base_ref)
     if changed.is_err:
-        # Best-effort: a git failure here is not this check's own finding
-        # to report -- another preflight step (or the merge itself) will
-        # surface the real git problem.
+        # Best-effort: a git failure surfaces via another preflight step.
         return Ok(None)
-    # The ledger (and its archive) is implicitly in EVERY ticket's scope
-    # (`scope_matches`'s always-in-scope rule, same exclusion `_check_
-    # cross_ticket_leakage` applies) and changes on every single land --
-    # it is never evidence that the ticket's OWN declared-scope work is
-    # present on this branch, so it must not count as a "real" hit here.
+    # The ledger is implicitly in EVERY ticket's scope (scope_matches'
+    # always-in-scope rule) and changes on every land -- excluded here.
     archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
     relevant = frozenset(changed.danger_ok) - {LEDGER_PATH, archive_rel}
     hits = [
@@ -3211,36 +3165,80 @@ def _check_already_landed(
     ]
     if hits:
         return Ok(None)
-    # T-1675: the positive signal. An empty scope-diff alone is not enough
-    # -- require ticket.id's OWN record, read directly off base_ref, to
-    # already claim `done` there. A not-yet-landed ticket cannot have that
-    # state on base_ref (only close/land ever write it), so this cannot
-    # false-positive on a legitimately-empty-scope first-time land.
+    # T-1675's first positive signal.
     on_main = _ledger_ticket_at_ref(worktree, base_ref, ticket.id)
-    if on_main is None or on_main.state is not TicketState.DONE:
-        return Ok(None)
+    if on_main is not None and on_main.state is TicketState.DONE:
+        return _refuse_already_landed(ticket.id, base_ref, "T-1675's positive signal")
+    # T-1950's second positive signal (see _ticket_directive_present_on_ref).
+    if _ticket_directive_present_on_ref(worktree, base_ref, ticket.id):
+        return _refuse_already_landed(
+            ticket.id,
+            base_ref,
+            "T-1950's positive signal: a frob:ticket directive naming "
+            f"{ticket.id} already exists on {base_ref}",
+        )
+    return Ok(None)
+
+
+# frob:ticket T-1950
+def _ticket_directive_present_on_ref(
+    worktree: Path, base_ref: str, ticket_id: str
+) -> bool:
+    """Whether `base_ref`'s CURRENT tree already contains a literal
+    `frob:ticket <ticket_id>` directive line anywhere under `src/` (T-1950)
+    -- the second positive signal `_check_already_landed` needs for a
+    ticket whose content rode onto main under a SIBLING's land before this
+    ticket itself ever closed, so it has no `done` state of its own to
+    check. Uses `git grep`, degrading to `False` (never refuses, never
+    raises) on any failure -- an additional disclosure layer on top of the
+    DONE-state signal, not a replacement for it if git itself cannot
+    answer."""
+    found = run_argv(
+        [
+            "git",
+            "-C",
+            str(worktree),
+            "grep",
+            "-q",
+            "-F",
+            f"frob:ticket {ticket_id}",
+            base_ref,
+            "--",
+            "src/",
+        ]
+    )
+    if found.is_err:
+        return False
+    return found.danger_ok.returncode == 0
+
+
+# frob:ticket T-1950
+def _refuse_already_landed(
+    ticket_id: str, base_ref: str, signal: str
+) -> Result[None, LandError]:
+    """Shared refusal tail for `_check_already_landed`'s two positive
+    signals (T-1675's DONE-state check and T-1950's frob:ticket-directive
+    check) -- same message shape, same remedy, only the `signal` text
+    naming which one fired differs."""
     _log.warning(
         "land: %s refused -- this branch has NO changes inside %s's own "
-        "declared scope relative to %s (T-1618), AND %s's own record on "
-        "%s already shows state=done (T-1675's positive signal) -- its "
-        "content is very likely ALREADY on %s, most often because a "
-        "sibling ticket's earlier land already carried it there (the "
-        "passenger-ticket class T-1618's own %s check exists to stop, "
-        "going forward). Verify by hand that %s's evidence/acceptance "
-        "criteria genuinely hold against %s's current tree, then close "
-        "directly: `frob ticket close %s` (add --skip-mutation-evidence "
-        "if TEST016 also reports an empty diff) -- do not keep retrying "
-        "this land",
-        ticket.id,
-        ticket.id,
+        "declared scope relative to %s (T-1618), AND %s -- its content is "
+        "very likely ALREADY on %s, most often because a sibling ticket's "
+        "earlier land already carried it there (the passenger-ticket "
+        "class T-1618's own %s check exists to stop, going forward). "
+        "Verify by hand that %s's evidence/acceptance criteria genuinely "
+        "hold against %s's current tree, then close directly: `frob "
+        "ticket close %s` (add --skip-mutation-evidence if TEST016 also "
+        "reports an empty diff) -- do not keep retrying this land",
+        ticket_id,
+        ticket_id,
         base_ref,
-        ticket.id,
-        base_ref,
+        signal,
         base_ref,
         LandError.PassengerTickets.name,
-        ticket.id,
+        ticket_id,
         base_ref,
-        ticket.id,
+        ticket_id,
     )
     return Err(LandError.AlreadyLandedOnMain)
 
