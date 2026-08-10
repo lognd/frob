@@ -2,7 +2,7 @@
 id: T-2026
 title: An interrupted ledger verb leaves an untracked ticket dir that DirtyMain-blocks
   every agent land, with no agent-reachable recovery
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -12,10 +12,48 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/app/ticket_runner/_new.py
+- src/frob/tickets/_land.py
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: 'declared scope is wrong: _new.py never runs at the moment the torn state
+    is discovered (the process that would have run it is dead). The fix lives at the
+    DirtyMain checkpoint in _land.py/_land_git_ops.py, the same place the two existing
+    precedent auto-heal guards (uv.lock, rapid-debt.jsonl) already live.'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: the auto-heal guard belongs where _refuse_if_main_dirty lives; _land_git_ops.py
+    (the precedent functions' current home) is under T-2025's live lease right now,
+    so the new helper is defined directly in _land.py, its sole call site, instead
+    of forcing a conflict. New regression test file for the FAILS-FIRST acceptance
+    criterion.
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py
+  reason: the auto-heal guard belongs where _refuse_if_main_dirty lives; _land_git_ops.py
+    (the precedent functions' current home) is under T-2025's live lease right now,
+    so the new helper is defined directly in _land.py, its sole call site, instead
+    of forcing a conflict. New regression test file for the FAILS-FIRST acceptance
+    criterion.
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_well_formed_orphaned_dir_is_committed
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_malformed_ticket_md_is_never_committed
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_id_mismatch_between_dirname_and_frontmatter_is_never_committed
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_extra_file_in_the_directory_is_never_committed
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_a_second_dirty_path_blocks_the_auto_commit
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_a_modified_tracked_ticket_md_is_not_this_guards_shape
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestRefuseIfMainDirtyOrphanedTicketHeal::test_orphaned_ticket_dir_no_longer_refuses
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestRefuseIfMainDirtyOrphanedTicketHeal::test_genuinely_human_dirty_root_still_refuses
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestRefuseIfMainDirtyOrphanedTicketHeal::test_orphaned_dir_alongside_real_dirt_still_refuses
+designated_repro_test: tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestRefuseIfMainDirtyOrphanedTicketHeal::test_orphaned_ticket_dir_no_longer_refuses
 threat: null
 component: null
 anchor: false
