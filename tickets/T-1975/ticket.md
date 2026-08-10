@@ -12,8 +12,27 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/app/ticket_runner/_mutate.py
+- tests/test_tickets_scope_mutation.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: the CLI runner-side wiring (parsing cfg.ticket_scope_demote_to_evidence_only
+    and calling demote_to_evidence_only) lives in _mutate.py, matching --add/--remove's
+    own existing wiring in the same function; test coverage lives in the existing
+    scope-mutation CLI test module
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: the CLI runner-side wiring (parsing cfg.ticket_scope_demote_to_evidence_only
+    and calling demote_to_evidence_only) lives in _mutate.py, matching --add/--remove's
+    own existing wiring in the same function; test coverage lives in the existing
+    scope-mutation CLI test module
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
