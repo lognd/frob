@@ -12,6 +12,7 @@ from frob._cli_parsers import (
     _add_arch_parser,
     _add_bind_parser,
     _add_check_parser,
+    _add_claude_parser,
     _add_clean_parser,
     _add_coverage_parser,
     _add_cycle_parser,
@@ -315,6 +316,7 @@ def _add_analysis_subparsers(sub) -> None:
 # frob:ticket T-0441
 # frob:ticket T-1525
 # frob:ticket T-1697
+# frob:ticket T-1808
 def _add_workflow_subparsers(sub) -> None:
     """Register the workflow/CI subcommand group: check through deploy."""
     _add_check_parser(sub)
@@ -339,6 +341,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_doctor_parser(sub)
     _add_clean_parser(sub)
     _add_fmt_parser(sub)
+    _add_claude_parser(sub)
     _add_natives_parser(sub)
     _add_coverage_parser(sub)
     _add_verify_parser(sub)
@@ -383,6 +386,7 @@ def _is_quality_bind(argv: list[str]) -> bool:
 # frob:ticket T-1218
 # frob:ticket T-1483
 # frob:ticket T-1567
+# frob:ticket T-1808
 # frob:tests \
 # tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_subcommand_dispatch\
 # es_to_run_refactor_command kind="unit"  # noqa: E501
@@ -441,17 +445,39 @@ def _dispatch(argv: list[str]) -> None:
         parser = _build_parser()
         args = parser.parse_args(argv)
         pyproject = Path("pyproject.toml")
-        warning = stale_install_warning(pyproject.parent.resolve())
-        if warning is not None:
-            print(warning, file=_sys.stderr)
-        # T-1218: floor check, distinct from the exact-match check above --
-        # applies to any repo declaring frob.toml's min_frob_version, not
-        # just frob's own checkout.
-        floor_warning = stale_binary_warning(pyproject.parent.resolve())
-        if floor_warning is not None:
-            print(floor_warning, file=_sys.stderr)
+        _print_startup_warnings(pyproject.parent.resolve())
         cfg = AppConfig.from_external(args, pyproject)
         App(cfg)()
+
+
+# frob:ticket T-1808
+def _print_startup_warnings(repo_root: Path) -> None:
+    """Every loud, best-effort, read-only stderr warning `_dispatch` prints
+    ahead of a real subcommand run -- stale global/floor binary skew
+    (`stale_install_warning`/`stale_binary_warning`), plus (T-1808) Claude-
+    config drift (`frob.app.claude_runner.drift_warning`): detection only,
+    surfaced where an operator already looks, never a write. Split out of
+    `_dispatch` (ARCH001) so that dispatch function stays the pure argv
+    routing table its own docstring claims to be."""
+    import sys as _sys
+
+    warning = stale_install_warning(repo_root)
+    if warning is not None:
+        print(warning, file=_sys.stderr)
+    # T-1218: floor check, distinct from the exact-match check above --
+    # applies to any repo declaring frob.toml's min_frob_version, not
+    # just frob's own checkout.
+    floor_warning = stale_binary_warning(repo_root)
+    if floor_warning is not None:
+        print(floor_warning, file=_sys.stderr)
+    # T-1808: surfaced automatically on every invocation, where an
+    # operator already looks -- detection only, never a write (the write
+    # stays the explicit `frob claude sync` call).
+    from frob.app.claude_runner import drift_warning
+
+    claude_warning = drift_warning(repo_root)
+    if claude_warning is not None:
+        print(claude_warning, file=_sys.stderr)
 
 
 if __name__ == "__main__":

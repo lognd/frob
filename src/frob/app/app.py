@@ -17,6 +17,7 @@ _RUNNER_MODULE_NAMES = (
     "ack_runner",
     "arch_runner",
     "check_runner",
+    "claude_runner",
     "clean_runner",
     "coverage_runner",
     "cycle_runner",
@@ -105,6 +106,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.natives: "natives_runner",
     Subcommand.coverage: "coverage_runner",
     Subcommand.verify: "verify_runner",
+    Subcommand.claude: "claude_runner",
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
 mapped to the runner module name that serves it. `bind` is excluded: it takes
@@ -148,6 +150,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.arch_runner as module
     elif name == "check_runner":
         import frob.app.check_runner as module
+    elif name == "claude_runner":
+        import frob.app.claude_runner as module
     elif name == "clean_runner":
         import frob.app.clean_runner as module
     elif name == "cycle_runner":
@@ -255,6 +259,13 @@ def _resolve_runner(subcommand: Subcommand) -> Callable[[AppConfig], None] | Non
 
 # frob:doc docs/modules/app.md#entry-point
 # frob:ticket T-1697
+# frob:ticket T-1808
+# frob:waive AFFECT001 reason="T-1808 added one dict entry / one elif branch / one \
+# usage-string token for the new claude subcommand, the same shape of edit several \
+# prior tickets already carry this exact waiver for on config.py's own AppConfig class \
+# -- docs/modules/app.md is not in T-1808's declared scope and adding it opened the \
+# same scope-closure cascade those tickets' own waiver text describes; disclosed \
+# deferral, not a convention change"
 class App:
     # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:
@@ -285,7 +296,7 @@ class App:
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                 "exports|check|gitlog|graph|ack|debt|deprecated|pool|ticket|test|vet|"
                 "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|fmt|"
-                "verify>"
+                "verify|claude>"
                 " ..."
             )
             sys.exit(1)

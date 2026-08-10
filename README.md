@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-42 total commands, statically bound to the live subcommand registry
+43 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -75,6 +75,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob registry` | Unified design-knowledge registry: the REG001-010 exhaustiveness drift-lock over `docs/design/registry/*.yaml` (`audit`/`add`) |
 | `frob pool` | Ratchet-pool baseline management: freeze warn-rule findings as a tracked baseline so new findings error (`snapshot`/`clear`) |
 | `frob debt` | List outstanding `frob:debt` entries (rule, site, ticket, until) |
+| `frob claude` | Sync this repo's tracked Claude config (hooks, agent-playbook.md) to `~/.claude/` via `sync [--check]` (T-1808) |
 | `frob deprecated` | List outstanding `frob:deprecated` entries (symref, since, sunset, ticket, status) |
 | `frob fleet` | Cross-repo status/gate rollup and ticket routing over a `fleet.toml` manifest of sibling repos (`status`/`route`) |
 

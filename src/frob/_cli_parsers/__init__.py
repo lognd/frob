@@ -38,6 +38,7 @@ from ._core import (
 from ._design import _add_design_parser
 from ._explore import _add_explore_parser
 from ._misc import (
+    _add_claude_parser,
     _add_clean_parser,
     _add_coverage_parser,
     _add_deploy_audit_parser,
@@ -117,6 +118,7 @@ __all__ = [
     "_add_check_skip_args_cpp",
     "_add_check_skip_args_python",
     "_add_check_skip_args_rust_ts",
+    "_add_claude_parser",
     "_add_clean_parser",
     "_add_coverage_parser",
     "_add_cycle_parser",

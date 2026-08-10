@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.429.0] - unreleased
+
+- T-1808: Fold Claude-config sync (sync-claude-config.py) into a real frob verb
+
 ## [0.428.0] - unreleased
 
 - T-1921: Per-site analysis-coverage substrate for WAIVE004 escape (T-1904 successor)

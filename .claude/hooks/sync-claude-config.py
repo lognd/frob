@@ -14,7 +14,7 @@ read different rules and neither is wrong.
 any managed file differs. Wire it into CI or a SessionStart hook so drift is
 LOUD rather than discovered the next time a hook mysteriously does not fire.
 
-Only files listed in `_MANAGED` are touched. A destination outside that list
+Only files listed in `MANAGED` are touched. A destination outside that list
 is never read, written, or deleted -- `~/.claude/` holds plenty that this
 repo has no business owning, and a sync that cleaned "unmanaged" files would
 be a foot-gun aimed at the user's own configuration.
@@ -22,6 +22,17 @@ be a foot-gun aimed at the user's own configuration.
 NOTE ON DIRECTION: this never syncs global -> repo. If you edited the copy in
 `~/.claude/` by hand, `--check` will report it and a sync will overwrite it.
 That is intended. Edit the tracked file.
+
+T-1808: this script stays the CANONICAL, dependency-free implementation on
+purpose -- stdlib only, no `frob` import -- because the SessionStart hook in
+`.claude/settings.json` invokes it with a bare `python3` before any `frob`
+venv is necessarily on `PYTHONPATH`. `frob claude sync` (`frob.app.
+claude_runner`) is a thin CLI adapter that loads THIS file by path and calls
+`plan()`/`main()` directly, so there is exactly one implementation of the
+sync/drift logic, not two that can desync (NO DUPLICATION). `MANAGED` and
+`plan()` are public (no leading underscore) specifically so that adapter --
+and `frob check`'s own drift gate (T-1809) -- can import them without
+reaching into "private" script internals.
 """
 
 import argparse
@@ -34,8 +45,12 @@ _HOME_CLAUDE = Path.home() / ".claude"
 
 #: (repo-relative source, home-relative destination). Every managed file,
 #: enumerated explicitly -- a glob here would silently start managing a file
-#: nobody decided to manage.
-_MANAGED: list[tuple[str, str]] = [
+#: nobody decided to manage. Public (T-1808): `frob.app.claude_runner` and
+#: `frob`'s claude-config drift gate (T-1809) both read this same list, so
+#: "what is managed" can never desync between the standalone script and
+#: frob's own CLI/gate.
+# frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
+MANAGED: list[tuple[str, str]] = [
     (".claude/hooks/_shellscan.py", "hooks/_shellscan.py"),
     (".claude/hooks/frob-suggest.py", "hooks/frob-suggest.py"),
     (".claude/hooks/frob-timeout-guard.py", "hooks/frob-timeout-guard.py"),
@@ -75,16 +90,19 @@ def _rendered(source_rel: str, dest: Path) -> str | None:
     return _banner_for(source_rel, dest) + source.read_text(encoding="utf-8")
 
 
-def _plan() -> tuple[list[tuple[str, Path, str]], list[str]]:
+# frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
+def plan() -> tuple[list[tuple[str, Path, str]], list[str]]:
     """`(actions, missing)` -- what the sync would do, decided without doing
     any of it.
 
     Split from `main` so the DECISION is separable from the WRITING and the
     REPORTING (ARCH103): the same plan drives both `--check` and a real
-    sync, so the two can never disagree about what counts as drift."""
+    sync, so the two can never disagree about what counts as drift. Public
+    (T-1808): `frob.app.claude_runner`'s drift check calls this directly
+    rather than re-deriving it."""
     actions: list[tuple[str, Path, str]] = []
     missing: list[str] = []
-    for source_rel, dest_rel in _MANAGED:
+    for source_rel, dest_rel in MANAGED:
         dest = _HOME_CLAUDE / dest_rel
         want = _rendered(source_rel, dest)
         if want is None:
@@ -123,21 +141,25 @@ def _report_check(actions: list[tuple[str, Path, str]], missing: list[str]) -> i
             file=sys.stderr,
         )
         return 1
-    print(f"sync-claude-config --check: {len(_MANAGED)} file(s) in sync")
+    print(f"sync-claude-config --check: {len(MANAGED)} file(s) in sync")
     return 0
 
 
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    """Entry point for both the bare `python3 sync-claude-config.py [--check]`
+    CLI and `frob claude sync [--check]` (T-1808, `frob.app.claude_runner`,
+    which calls this with an explicit `argv` list instead of the ambient
+    `sys.argv` a bare CLI invocation reads)."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check",
         action="store_true",
         help="report drift without writing; exit 1 if any managed file differs",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    actions, missing = _plan()
+    actions, missing = plan()
     for source_rel in missing:
         print(f"MISSING canonical source: {source_rel}", file=sys.stderr)
     if args.check:
@@ -147,7 +169,7 @@ def main() -> int:
         _materialize(dest, want)
         print(f"synced ~/.claude/{entry.split(' (')[0]}")
     if not actions:
-        print(f"sync-claude-config: {len(_MANAGED)} file(s) already in sync")
+        print(f"sync-claude-config: {len(MANAGED)} file(s) already in sync")
     return 1 if missing else 0
 
 

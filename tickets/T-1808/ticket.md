@@ -1,7 +1,7 @@
 ---
 id: T-1808
 title: Fold Claude-config sync (sync-claude-config.py) into a real frob verb
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-08'
@@ -16,11 +16,87 @@ scope:
 - src/frob/app/claude_runner.py
 - .claude/hooks/sync-claude-config.py
 - docs/modules/cli.md
+- src/frob/_cli_parsers/__init__.py
+- src/frob/_cli_parsers/_misc.py
+- docs/guides/claude-hooks.md
+- src/frob/app/_config_external.py
+- tests/unit/test_claude_runner.py
+- design/frob.strata
+- README.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/**
+  reason: frob claude sync needs a new top-level argparse subparser; every existing
+    verb's parser lives in src/frob/_cli_parsers/, not app.py itself -- omitted from
+    the ticket's original declared scope
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: narrowing to specific files after closure-warning fan-out
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/_cli_parsers/__init__.py
+  reason: frob claude sync needs a new argparse subparser wired through _cli_parsers
+    (existing verbs' add_parser fns live in _misc.py/__init__.py, not app.py); claude-hooks.md
+    documents the sync script this ticket folds into a verb
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: frob claude sync needs a new argparse subparser wired through _cli_parsers
+    (existing verbs' add_parser fns live in _misc.py/__init__.py, not app.py); claude-hooks.md
+    documents the sync script this ticket folds into a verb
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: frob claude sync needs a new argparse subparser wired through _cli_parsers
+    (existing verbs' add_parser fns live in _misc.py/__init__.py, not app.py); claude-hooks.md
+    documents the sync script this ticket folds into a verb
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: AppConfig.from_external's argparse-to-kwargs mapping keys off hardcoded
+    _STRING_FIELDS/_BOOL_FLAGS tuples in this file; claude_command/claude_check need
+    entries here or the CLI-parsed values never reach AppConfig
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_claude_runner.py
+  reason: new direct-call test module for claude_runner (T-1808)
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: new test module's fs.read/fs.write capabilities need declaring in the testsuite
+    node's may clauses (SELFAUDIT001)
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: README.md
+  reason: gate:DOC005 requires the new frob claude command in README.md's own hand-maintained
+    command table alongside cli.md's generated one
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_claude_runner.py::TestDriftReport::test_reports_drifted_and_missing
+- tests/unit/test_claude_runner.py::TestDriftReport::test_none_for_repo_with_no_managed_config
+- tests/unit/test_claude_runner.py::TestDriftWarning::test_warns_when_managed_file_differs
+- tests/unit/test_claude_runner.py::TestDriftWarning::test_none_when_in_sync
+- tests/unit/test_claude_runner.py::TestDriftWarning::test_none_when_repo_has_no_managed_config
+- tests/unit/test_claude_runner.py::TestRun::test_check_mode_exits_1_on_drift
+- tests/unit/test_claude_runner.py::TestRun::test_sync_writes_managed_files
+- tests/unit/test_claude_runner.py::TestRun::test_run_rejects_unknown_action
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1719 implemented only the doctor-side global-vs-local frob binary skew
 check (its item 3). Items 1 and 2 of T-1719's original plan are still

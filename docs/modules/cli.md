@@ -227,6 +227,46 @@ Fully unifying the two surfaces (e.g. having the hook shell out to a
 the hook-loader boundary, out of this ticket's own scope -- see the
 Done report for the follow-up ticket filed for that.
 
+## `frob claude sync` (T-1808)
+
+T-1719 identified two more items past the binary-skew check above: (1)
+fold `.claude/hooks/sync-claude-config.py` into a real frob verb, and (2)
+gate its drift in `frob check` (T-1809). This section covers (1).
+
+`frob claude sync [--check]` (`src/frob/app/claude_runner.py`) materializes
+this repo's git-tracked Claude config (hooks, `docs/guides/agent-
+playbook.md`) out to the operator's `~/.claude/`, replacing the manual
+`python3 .claude/hooks/sync-claude-config.py` invocation as the frob-native
+entry point. `--check` reports drift without writing and exits 1 if
+anything differs or a managed source is missing; the default writes each
+destination behind a do-not-edit banner, atomically, and never syncs
+`~/.claude/` back into the repo.
+
+NO DUPLICATION: `.claude/hooks/sync-claude-config.py` stays the single
+canonical, dependency-free (stdlib-only) implementation of the plan/write
+logic, because the `SessionStart` hook in `.claude/settings.json` invokes
+it with a bare `python3` before any `frob` venv is necessarily on
+`PYTHONPATH`. `frob claude sync` is a thin adapter (`frob.app.
+claude_runner`) that loads that script by file path (its hyphenated name
+blocks a normal `import`) and calls its public `MANAGED`/`plan()`/`main()`
+directly -- there is exactly one implementation, not two that can drift
+apart from each other.
+
+STANDING DESIGN DIRECTIVE this verb answers to: "a command requires
+knowledge of the command." `frob claude sync` is the MECHANISM, not the
+user-facing answer -- an operator who never knew this verb existed still
+gets told about drift, because `frob.app.claude_runner.drift_warning` is
+wired into `frob.__main__.main()` next to `stale_install_warning`/
+`stale_binary_warning` (`docs/modules/app.md#entry-point`): every `frob`
+invocation runs a cheap read-only drift check and prints one loud line to
+stderr naming the exact fix if anything has drifted. Detection is
+automatic and surfaced where an operator already looks; the WRITE stays
+this explicit verb on purpose -- auto-writing into `~/.claude/` on every
+invocation would be a destructive-ish mutation of the operator's home
+directory from a command run constantly, exactly the "stupid consequence"
+the directive's own escape clause calls out. T-1809 adds the pre-land
+enforcement half of the same signal as a `frob check` gate.
+
 ## `frob ticket migrate --to v2` (T-1492)
 
 `frob ticket migrate` collapses legacy `tickets/*.md` into a single
@@ -264,6 +304,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob arch` | arch analysis: long functions, god classes, coupling |
 | `frob bind` | verify binding declarations match source signatures |
 | `frob check` | aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; errors first, easy to hand to subagents |
+| `frob claude` | sync this repo's tracked Claude config to ~/.claude/ (T-1808) |
 | `frob clean` | remove build/test/cache artifacts (tiered, dry-run by default) |
 | `frob coverage` | refresh coverage.xml / the coverage stamp via native_coverage_refresh (T-1516/T-1525) -- touched-set incremental by default |
 | `frob cycle` | detect dependency cycles |

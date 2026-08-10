@@ -76,8 +76,24 @@ Materialises the git-tracked canonical `.claude/hooks/**` /
 directory Claude Code actually reads hooks from) so every clone's hook
 behavior stays byte-identical to what is committed -- hand-editing the
 `~/.claude/` copy is explicitly the anti-pattern `_shellscan.py`'s own
-docstring warns against. `main` supports `--check` (report drift without
-writing) alongside the default sync-and-write mode.
+docstring warns against. `main(argv=None)` supports `--check` (report
+drift without writing) alongside the default sync-and-write mode; `argv`
+is accepted so a caller (see below) can drive it programmatically instead
+of only via `sys.argv`.
+
+This script stays the CANONICAL, dependency-free (stdlib-only)
+implementation on purpose (T-1808): `.claude/settings.json`'s
+`SessionStart` hook invokes it with a bare `python3` before any `frob`
+venv is necessarily importable. `MANAGED` (the managed-file manifest) and
+`plan()` (the pure decide-without-doing planner) are public, no leading
+underscore, specifically so `frob claude sync [--check]`
+(`src/frob/app/claude_runner.py`, `docs/modules/cli.md#frob-claude-sync-t-1808`)
+can load this file by path and call straight into them -- one
+implementation of the sync/drift logic, never two that can desync.
+`claude_runner.drift_warning` additionally surfaces the same drift
+automatically on every `frob` invocation (stderr, next to
+`stale_install_warning`/`stale_binary_warning`); the WRITE stays this
+script's/the verb's explicit call, never automatic.
 
 ## The `claude_hooks` design node
 

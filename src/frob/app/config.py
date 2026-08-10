@@ -143,6 +143,10 @@ class Subcommand(str, enum.Enum):
     fleet = "fleet"
     # T-0441: `frob:` directive comment canonical-form wrap/unwrap.
     fmt = "fmt"
+    # frob:ticket T-1808
+    # T-1808: materialize this repo's git-tracked Claude config out to
+    # ~/.claude/ (folds .claude/hooks/sync-claude-config.py into a verb).
+    claude = "claude"
     # T-0864: frob-owned native crate build (maturin develop per declared
     # [[native]] rust crate, shared CARGO_TARGET_DIR).
     natives = "natives"
@@ -179,6 +183,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-1569
 # frob:ticket T-1697
 # frob:ticket T-1480
+# frob:ticket T-1808
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -853,6 +858,10 @@ class AppConfig(BaseModel):
     fmt_path: Path | None = None
     fmt_check: bool = False
     fmt_json: bool = False
+
+    # claude (T-1808: fold .claude/hooks/sync-claude-config.py into a verb)
+    claude_command: str | None = None  # sync
+    claude_check: bool = False
 
     # perf
     perf_command: str | None = None  # profile|heat

@@ -40,6 +40,8 @@ _STRING_FIELDS = (
     "design_command",
     # frob:ticket T-1569
     "ops_command",
+    # frob:ticket T-1808
+    "claude_command",
     "scaffold_command",
     "scaffold_type",
     "scaffold_name",
@@ -425,6 +427,8 @@ _BOOL_FLAGS = (
     "fleet_skip_gates",
     "fmt_check",
     "fmt_json",
+    # frob:ticket T-1808
+    "claude_check",
     # frob:ticket T-1525
     "coverage_full",
     # frob:ticket T-1697
