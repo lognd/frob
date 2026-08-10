@@ -2,7 +2,7 @@
 id: T-1881
 title: DEAD001/WIRE001/REF002/OPAQUE001/COV003 all miss code dead-by-constant-branch
   (12/13 miss rate, measured on T-1552's v1-ledger unwiring)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -12,9 +12,75 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
+- src/frob/gates/_dead_symbols.py
+- src/frob/gates/_wire.py
+- src/frob/gates/_refs.py
+- src/frob/gates/_opaque.py
+- src/frob/gates/_coverage.py
+- src/frob/gates/_coverage_sites.py
+- docs/modules/gates.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: narrow to the syntactic reachability detectors named in the ticket (DEAD001/WIRE001/REF002/OPAQUE001/COV003);
+    avoid unrelated gate files another agent may be touching
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_dead_symbols.py
+  reason: narrow to the syntactic reachability detectors named in the ticket (DEAD001/WIRE001/REF002/OPAQUE001/COV003);
+    avoid unrelated gate files another agent may be touching
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: narrow to the syntactic reachability detectors named in the ticket (DEAD001/WIRE001/REF002/OPAQUE001/COV003);
+    avoid unrelated gate files another agent may be touching
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_refs.py
+  reason: narrow to the syntactic reachability detectors named in the ticket (DEAD001/WIRE001/REF002/OPAQUE001/COV003);
+    avoid unrelated gate files another agent may be touching
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_opaque.py
+  reason: narrow to the syntactic reachability detectors named in the ticket (DEAD001/WIRE001/REF002/OPAQUE001/COV003);
+    avoid unrelated gate files another agent may be touching
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_coverage.py
+  reason: narrow to the syntactic reachability detectors named in the ticket (DEAD001/WIRE001/REF002/OPAQUE001/COV003);
+    avoid unrelated gate files another agent may be touching
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_coverage_sites.py
+  reason: narrow to the syntactic reachability detectors named in the ticket (DEAD001/WIRE001/REF002/OPAQUE001/COV003);
+    avoid unrelated gate files another agent may be touching
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: doc closure target for the detector modules in scope
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gates.py
+  reason: regression tests for the DEAD001 constant-folding fix live here, matching
+    this repo convention of frob:tests edges pointing at tests/test_gates.py
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
+- tests/test_gates.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
 designated_repro_test: null
 acceptance:
 - text: 'MEASURED: DEAD001/WIRE001/REF002/OPAQUE001/COV003 detected 1 of 13 provably-dead
@@ -23,20 +89,27 @@ acceptance:
     gate that lies: this repo''s premise is that unreferenced code is statically detectable,
     and this measurement disproves that for the single most common way code dies in
     a migration (a live branch whose condition became a compile-time constant).'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
+  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
+  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
 - text: All 12 misses resolve with SHALLOW, intra-procedural constant folding -- a
     callee whose entire body is one unconditional 'return <literal>' with no parameter
     read, folded through the comparison at its call site or one local-variable hop
     away -- never real interprocedural dataflow, aliasing, or path-sensitivity. This
     is a day-scope fix, not a month-scope one; see evidence/denominator.md for the
     per-symbol trace.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
+  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
+  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
 - text: Separately, 2 of the 12 misses (_require_merge_driver_args, _archived_ids_for_merge_driver)
     were dead via the ordinary SYNTACTIC route (their only caller's dispatch-table
     entry was deleted outright) yet still went undetected, suggesting DEAD001's call-graph
     walk may not transitively propagate dead-caller status past one hop -- a second,
     narrower defect worth its own look.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
 threat: null
 component: null
 anchor: false

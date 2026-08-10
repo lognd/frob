@@ -2641,6 +2641,138 @@ class TestDeadSymbolGate:
         violations = dead_symbol_gate(tmp_path, snap)
         assert not any("_helper" in v.message for v in violations)
 
+    # frob:ticket T-1881
+    def test_call_site_in_constant_folded_dead_branch_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1881: the `_store_mode` shape from T-1552's v1-ledger
+        unwiring measurement -- a producer function collapsed to
+        unconditionally `return "v2"`, with the guarded `else` arm's call
+        site still textually present. `_helper`'s only call site sits in
+        that now-unreachable arm, so DEAD001 must still flag it even
+        though a bare token scan would see `_helper(` in the source."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _mode() -> str:\n"
+            '    return "v2"\n\n\n'
+            "def _helper() -> None:\n"
+            "    pass\n\n\n"
+            "def dispatch() -> str:\n"
+            '    if _mode() == "v2":\n'
+            '        return "v2-path"\n'
+            "    else:\n"
+            "        _helper()\n"
+            '        return "v1-path"\n',
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert any(
+            v.rule == "DEAD001" and "_helper" in v.message for v in violations
+        )
+
+    # frob:ticket T-1881
+    def test_call_site_in_constant_folded_local_var_dead_branch_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1881 acceptance [1]: the fold also covers a comparison one
+        LOCAL VARIABLE hop away from the constant-return call
+        (`mode = _mode(); if mode != "v2": ...`), not only a direct
+        `_mode() == "v2"` call-site comparison."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _mode() -> str:\n"
+            '    return "v2"\n\n\n'
+            "def _helper() -> None:\n"
+            "    pass\n\n\n"
+            "def dispatch() -> None:\n"
+            "    mode = _mode()\n"
+            '    if mode != "v2":\n'
+            "        _helper()\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert any(
+            v.rule == "DEAD001" and "_helper" in v.message for v in violations
+        )
+
+    # frob:ticket T-1881
+    def test_call_site_in_live_branch_is_not_flagged_by_constant_fold(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1881 false-positive guard: the constant-fold override must
+        never mark a symbol dead when it also has a call site OUTSIDE any
+        folded-dead branch -- here `_helper` is called unconditionally,
+        so it must stay unflagged even though `_mode` is a constant-
+        return function elsewhere in the same file."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _mode() -> str:\n"
+            '    return "v2"\n\n\n'
+            "def _helper() -> None:\n"
+            "    pass\n\n\n"
+            "def dispatch() -> str:\n"
+            "    _helper()\n"
+            '    if _mode() == "v2":\n'
+            '        return "v2-path"\n'
+            '    return "v1-path"\n',
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("_helper" in v.message for v in violations)
+
+    # frob:ticket T-1881
+    def test_dead_caller_two_hops_deep_still_misses_confirming_open_defect(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-1881 acceptance [2]: DISCLOSED, NOT FIXED here. When a
+        symbol's only caller is itself dead PURELY via the ordinary
+        SYNTACTIC route (its own dispatch-table entry was deleted
+        outright -- no constant-fold involved at all) and the target
+        symbol is a SECOND hop further out (`_leaf` is called only by
+        `_mid`, and `_mid`'s own only reference was a now-deleted
+        dispatch-table entry), DEAD001 flags the one-hop-dead `_mid` but
+        still misses the two-hop-dead `_leaf` -- confirming the real
+        repo's `_require_merge_driver_args`/`_archived_ids_for_merge_
+        driver` finding is a genuine, separate defect from this ticket's
+        constant-folding fix, not incidentally closed by it. This test
+        is evidence FOR the acceptance criterion's claim (the gap still
+        exists), not evidence the gap is fixed."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _leaf() -> None:\n"
+            "    pass\n\n\n"
+            "def _mid() -> None:\n"
+            "    _leaf()\n\n\n"
+            "def _live() -> None:\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        flagged = {(v.symref or "").rsplit("::", 1)[-1] for v in violations}
+        # `_mid` (one-hop, its own zero-caller status is directly
+        # syntactic) IS caught -- this part already worked pre-T-1881.
+        assert "_mid" in flagged
+        # `_leaf` (two hops from the nearest live root) is STILL missed
+        # -- the open defect acceptance [2] describes, confirmed, not
+        # resolved, by this fix.
+        assert "_leaf" not in flagged
+
     # frob:ticket T-1652
     def test_waiver_directly_above_symbol_suppresses_it(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"

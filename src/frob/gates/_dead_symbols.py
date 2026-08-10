@@ -62,6 +62,7 @@ dunder/test-symbol exemption logic).
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path, PurePosixPath
 
@@ -211,15 +212,404 @@ def _declared_referenced_symrefs(snapshot: GraphSnapshot) -> frozenset[str]:
     return frozenset(referenced)
 
 
+# frob:ticket T-1881
+_NESTED_SCOPE_KINDS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+
+
+def _collect_returns_skip_nested(stmts: list[ast.stmt], out: list[ast.Return]) -> bool:
+    """Collect every `ast.Return` reachable from `stmts` into `out`,
+    recursing into control-flow statements (`If`/`Try`/`With`/`For`/
+    `While`) but never crossing into a nested `FunctionDef`/
+    `AsyncFunctionDef`/`ClassDef`/`Lambda` -- a `return` inside a nested
+    `def` belongs to THAT function's own scope, not the one being
+    analyzed. Returns `False` (poison) the instant a `Yield`/`YieldFrom`
+    is seen anywhere in this scope's own statements (a generator's
+    "return value" is not a plain call-return, and this narrow analysis
+    has no business folding it) -- callers must discard the whole
+    function on a poison, not merely the offending branch."""
+    for stmt in stmts:
+        if isinstance(stmt, _NESTED_SCOPE_KINDS):
+            continue
+        if isinstance(stmt, ast.Return):
+            out.append(stmt)
+            continue
+        # Expression statements (a bare `yield` used as a statement) and
+        # any other simple statement never contain a nested block to
+        # recurse into, but MAY contain a `yield` expression directly.
+        for expr_node in ast.walk(stmt) if not hasattr(stmt, "body") else ():
+            if isinstance(expr_node, (ast.Yield, ast.YieldFrom)):
+                return False
+        for block in (
+            getattr(stmt, "body", None),
+            getattr(stmt, "orelse", None),
+            getattr(stmt, "finalbody", None),
+        ):
+            if block and not _collect_returns_skip_nested(block, out):
+                return False
+        for handler in getattr(stmt, "handlers", None) or ():
+            if not _collect_returns_skip_nested(handler.body, out):
+                return False
+    return True
+
+
+def _constant_return_functions(tree: ast.Module) -> dict[str, object]:
+    """Module-level, non-decorated function defs where EVERY `return`
+    reachable in the function's own scope (recursing through `if`/`try`/
+    `with`/loops, never into a nested `def`) evaluates to the SAME
+    literal constant -- name -> that literal value. Broader than "body is
+    textually one `return <literal>` statement": the real `_store_mode`
+    shape after T-1552 stage 1 keeps an `if <cond>: return "v2"` guard
+    ahead of a final `return "v2"`, still provably single-valued, but not
+    a single top-level statement. No calls, no dataflow across a boundary
+    -- purely "does this function's own return set collapse to one
+    value" (day-scope per the ticket's acceptance criteria, not full
+    interprocedural constant-propagation). A function with zero
+    statically-constant returns, a MIXED return set, or a `yield`
+    anywhere in its own scope is excluded (`None`/unconstrained is always
+    the safe answer -- never guess)."""
+    out: dict[str, object] = {}
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef) or node.decorator_list:
+            continue
+        returns: list[ast.Return] = []
+        if not _collect_returns_skip_nested(node.body, returns):
+            continue
+        if not returns:
+            continue
+        values = []
+        ok = True
+        for ret in returns:
+            if not isinstance(ret.value, ast.Constant):
+                ok = False
+                break
+            values.append(ret.value.value)
+        if ok and values and all(v == values[0] for v in values):
+            out[node.name] = values[0]
+    return out
+
+
+def _folded_bool(
+    test: ast.expr,
+    const_funcs: dict[str, object],
+    locals_: dict[str, object],
+    bool_locals: dict[str, bool] | None = None,
+) -> bool | None:
+    """Statically fold `test` to `True`/`False`. Two recognized shapes
+    (T-1881 acceptance [1] -- "call site or one local-variable hop
+    away"):
+
+    1. A single `<producer>() == <literal>` (or `!=`) comparison where
+       `<producer>` is either a direct call to a known constant-return
+       function or a LOCAL VARIABLE bound to such a call one assignment
+       earlier.
+    2. A bare `Name` already bound in `bool_locals` -- the real repo's
+       `v2_mode = _store_mode(root) == "v2"` shape, where the BOOLEAN
+       (not the raw producer call) is the thing later reused directly as
+       an `if`/ternary test, one further hop removed from shape 1.
+
+    `None` if neither shape is recognized, which callers must treat as
+    "cannot fold, do not touch this branch"."""
+    if (
+        bool_locals is not None
+        and isinstance(test, ast.Name)
+        and test.id in bool_locals
+    ):
+        return bool_locals[test.id]
+    if not (
+        isinstance(test, ast.Compare)
+        and len(test.ops) == 1
+        and isinstance(test.ops[0], (ast.Eq, ast.NotEq))
+    ):
+        return None
+    left, right = test.left, test.comparators[0]
+    if isinstance(right, ast.Constant) and not isinstance(left, ast.Constant):
+        producer, literal = left, right.value
+    elif isinstance(left, ast.Constant) and not isinstance(right, ast.Constant):
+        producer, literal = right, left.value
+    else:
+        return None
+    if isinstance(producer, ast.Call) and isinstance(producer.func, ast.Name) and (
+        producer.func.id in const_funcs
+    ):
+        # Whatever arguments this call passes are irrelevant: every
+        # `return` in the callee's own body already proved to fold to the
+        # SAME literal regardless of parameters (`_constant_return_
+        # functions` never reads a parameter to decide that), so the
+        # call's actual argument expressions need no inspection here.
+        produced = const_funcs[producer.func.id]
+    elif isinstance(producer, ast.Name) and producer.id in locals_:
+        produced = locals_[producer.id]
+    else:
+        return None
+    equal = produced == literal
+    return equal if isinstance(test.ops[0], ast.Eq) else not equal
+
+
+def _stmt_span(stmts: list[ast.stmt]) -> tuple[int, int]:
+    """1-indexed inclusive `(first_lineno, last_lineno)` covering every
+    statement in `stmts`, using `end_lineno` where available (falls back
+    to `lineno` for a single-line statement on interpreters that omit it,
+    which none currently supported here do)."""
+    first = min(s.lineno for s in stmts)
+    last = max(getattr(s, "end_lineno", s.lineno) or s.lineno for s in stmts)
+    return first, last
+
+
+def _expr_span(node: ast.expr) -> tuple[int, int]:
+    """`_stmt_span`'s expression-level twin, for a single `ast.expr` (a
+    ternary's dead operand, which is not itself a statement)."""
+    end = getattr(node, "end_lineno", node.lineno) or node.lineno
+    return node.lineno, end
+
+
+# frob:ticket T-1881
+def _fold_ifexps_in_stmt(
+    stmt: ast.stmt,
+    const_funcs: dict[str, object],
+    local: dict[str, object],
+    bool_locals: dict[str, bool],
+    dead_ranges: list[tuple[int, int]],
+) -> None:
+    """Fold a ternary (`ast.IfExp`) the same way `_walk_dead_ranges` folds
+    an `if` STATEMENT -- the real repo's `_land_squash.py` denominator
+    case is exactly this shape: `_squash_and_splice_ledger_v2(...) if
+    v2_mode else _squash_and_splice_ledger(...)`, a single expression, not
+    a statement `if`. Scans `stmt`'s own subexpressions (a bare
+    `ast.walk`, so this also sees a ternary nested inside a nested
+    function/lambda and folds it against the OUTER `local`/`bool_locals`
+    maps -- imprecise in that rare case, but never in the
+    false-accusation direction: it can only fold using bindings genuinely
+    established earlier in the enclosing scope)."""
+    for node in ast.walk(stmt):
+        if not isinstance(node, ast.IfExp):
+            continue
+        folded = _folded_bool(node.test, const_funcs, local, bool_locals)
+        if folded is True:
+            dead_ranges.append(_expr_span(node.orelse))
+        elif folded is False:
+            dead_ranges.append(_expr_span(node.body))
+
+
+_TERMINAL_STMT_KINDS = (ast.Return, ast.Raise, ast.Continue, ast.Break)
+
+
+def _always_exits(stmts: list[ast.stmt]) -> bool:
+    """True if `stmts`'s LAST statement unconditionally leaves the
+    enclosing block (`return`/`raise`/`continue`/`break`) -- the
+    guard-clause shape `_walk_dead_ranges` needs to fold `if <cond>:
+    <...>; return X` followed by unindented fall-through code (no
+    `else:` at all -- this repo's dominant idiom per T-1881's real
+    denominator, e.g. `_store.py`'s `if _store_mode(root) == "v2":
+    return _write_archive_v2(...)` followed by the v1 path at the same
+    indentation). Deliberately shallow: only the textually LAST
+    statement is checked, not a full CFG walk of every nested branch --
+    day-scope, matching this module's other heuristics."""
+    return bool(stmts) and isinstance(stmts[-1], _TERMINAL_STMT_KINDS)
+
+
+def _walk_dead_ranges(
+    stmts: list[ast.stmt],
+    const_funcs: dict[str, object],
+    locals_: dict[str, object],
+    dead_ranges: list[tuple[int, int]],
+) -> None:
+    """Recursively fold `if`/`else` branches (AND the guard-clause
+    fall-through shape `_always_exits` recognizes) in `stmts` in source
+    order, threading a shallow `locals_` map (`name -> literal`, single
+    assignment-hop, invalidated on any other assignment) and appending
+    every provably-unreachable span to `dead_ranges`. Everything
+    textually inside an already-dead branch (or after a folded-True
+    guard clause) is dead by construction -- no further folding needed
+    there; only the LIVE side of a resolved `if` is recursed into, so a
+    nested fold still catches a second `if` layered inside the alive
+    branch."""
+    local = dict(locals_)
+    bool_locals: dict[str, bool] = {}
+    for index, stmt in enumerate(stmts):
+        if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            # A nested scope starts with no knowledge of the enclosing
+            # scope's locals (shallow, intra-procedural only) but the
+            # module-level `const_funcs` map still applies.
+            _walk_dead_ranges(stmt.body, const_funcs, {}, dead_ranges)
+            continue
+        if (
+            isinstance(stmt, ast.Assign)
+            and len(stmt.targets) == 1
+            and isinstance(stmt.targets[0], ast.Name)
+        ):
+            target = stmt.targets[0].id
+            value = stmt.value
+            if (
+                isinstance(value, ast.Call)
+                and isinstance(value.func, ast.Name)
+                and value.func.id in const_funcs
+            ):
+                # Same "arguments don't matter" reasoning as `_folded_bool`.
+                local[target] = const_funcs[value.func.id]
+                bool_locals.pop(target, None)
+            else:
+                local.pop(target, None)
+                # T-1881: `v2_mode = _store_mode(root) == "v2"` -- the
+                # BOOLEAN result of a foldable comparison, reused bare in
+                # a later `if`/ternary test (`_folded_bool`'s shape 2).
+                folded_value = _folded_bool(value, const_funcs, local, bool_locals)
+                if folded_value is None:
+                    bool_locals.pop(target, None)
+                else:
+                    bool_locals[target] = folded_value
+        _fold_ifexps_in_stmt(stmt, const_funcs, local, bool_locals, dead_ranges)
+        if isinstance(stmt, ast.If):
+            folded = _folded_bool(stmt.test, const_funcs, local, bool_locals)
+            if folded is True:
+                if stmt.orelse:
+                    dead_ranges.append(_stmt_span(stmt.orelse))
+                _walk_dead_ranges(stmt.body, const_funcs, local, dead_ranges)
+                if not stmt.orelse and _always_exits(stmt.body):
+                    rest = stmts[index + 1 :]
+                    if rest:
+                        dead_ranges.append(_stmt_span(rest))
+                    return
+                continue
+            if folded is False:
+                dead_ranges.append(_stmt_span(stmt.body))
+                if stmt.orelse:
+                    _walk_dead_ranges(stmt.orelse, const_funcs, local, dead_ranges)
+                continue
+            _walk_dead_ranges(stmt.body, const_funcs, dict(local), dead_ranges)
+            if stmt.orelse:
+                _walk_dead_ranges(stmt.orelse, const_funcs, dict(local), dead_ranges)
+
+
+# frob:ticket T-1881
+_MAX_TRANSITIVE_ROUNDS = 10
+
+
+def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
+    """T-1881: names whose EVERY `ast.Name` occurrence across `files`
+    falls inside a provably-dead branch (`_walk_dead_ranges`) -- the
+    override signal `dead_symbol_gate` applies on top of
+    `build_reference_graph`'s purely-syntactic reachability, which
+    cannot distinguish a call site sitting in an unreachable `else` arm
+    from a live one.
+
+    T-1881 evidence item (c) -- transitive propagation: a call site can
+    sit in a DIFFERENT file than the one carrying the `_store_mode`-shaped
+    fold, inside a function whose OWN only caller is itself fold-dead (the
+    real repo's `_render_ledger`/`_splice_and_stage` shape -- called from
+    `_land_git_ops.py`, which has no local fold of its own, but whose
+    caller function is only ever invoked from a branch a DIFFERENT file's
+    fold proved dead). Handled with a bounded fixed point: once a
+    module-level function's short name is proven dead-only, its own
+    ENTIRE body is folded into `dead_lines_by_file` for its own file (a
+    dead function's call sites prove nothing about its callees' liveness
+    either) and the name scan reruns; repeats until no new name is proven
+    dead-only or `_MAX_TRANSITIVE_ROUNDS` is hit (this repo's own
+    packages are tens of symbols -- a handful of rounds always reaches a
+    fixed point in practice, the cap exists only as a hard stop against a
+    pathological input, never observed to bind).
+
+    Conservative in the same direction as this module's other heuristics:
+    a name with even ONE live occurrence is left alone, never
+    over-declared dead. Python-only, matching this gate's own file
+    filter."""
+    trees: dict[str, ast.Module] = {}
+    def_spans_by_name: dict[str, list[tuple[str, int, int]]] = {}
+    const_funcs: dict[str, object] = {}
+    for path in files:
+        if not path.endswith(".py"):
+            continue
+        try:
+            source = (root / path).read_text(encoding="utf-8")
+            tree = ast.parse(source)
+        except (OSError, UnicodeDecodeError, SyntaxError):
+            continue
+        trees[path] = tree
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                end = getattr(node, "end_lineno", node.lineno) or node.lineno
+                def_spans_by_name.setdefault(node.name, []).append(
+                    (path, node.lineno, end)
+                )
+        # T-1881: collected PACKAGE-WIDE, not per-file -- the real
+        # `_store_mode` shape is DEFINED in one file (`_store.py`) and
+        # CALLED, after an `import`, from sibling files in the same
+        # package (`_land_squash.py`'s `_store_mode(root) == "v2"`
+        # ternary guard) -- a per-file-only `const_funcs` map would never
+        # see the fold opportunity in any file that merely imports the
+        # producer. Same name-based imprecision this whole substrate
+        # already accepts elsewhere (two same-named producers in
+        # different files would collide) -- not a new soundness gap.
+        const_funcs.update(_constant_return_functions(tree))
+    if not const_funcs:
+        return frozenset()
+
+    dead_lines_by_file: dict[str, set[int]] = {}
+    any_fold = False
+    for path, tree in trees.items():
+        dead_ranges: list[tuple[int, int]] = []
+        _walk_dead_ranges(tree.body, const_funcs, {}, dead_ranges)
+        if not dead_ranges:
+            continue
+        any_fold = True
+        lines = dead_lines_by_file.setdefault(path, set())
+        for start, end in dead_ranges:
+            lines.update(range(start, end + 1))
+    if not any_fold:
+        return frozenset()
+
+    def _scan_names() -> frozenset[str]:
+        """One name-occurrence pass over the current `dead_lines_by_file`
+        state -- names whose every `ast.Name` Load occurrence across
+        `trees` lands inside a dead line."""
+        live_names: set[str] = set()
+        dead_candidate_names: set[str] = set()
+        for path, tree in trees.items():
+            dead_lines = dead_lines_by_file.get(path, frozenset())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+                    if node.lineno in dead_lines:
+                        dead_candidate_names.add(node.id)
+                    else:
+                        live_names.add(node.id)
+        return frozenset(dead_candidate_names - live_names)
+
+    dead_only = _scan_names()
+    seen_dead_defs: set[str] = set()
+    for _round in range(_MAX_TRANSITIVE_ROUNDS):
+        newly_dead_defs = dead_only - seen_dead_defs
+        if not newly_dead_defs:
+            break
+        grew = False
+        for name in newly_dead_defs:
+            for def_path, start, end in def_spans_by_name.get(name, ()):
+                lines = dead_lines_by_file.setdefault(def_path, set())
+                before = len(lines)
+                lines.update(range(start, end + 1))
+                grew = grew or len(lines) != before
+        seen_dead_defs |= newly_dead_defs
+        if not grew:
+            break
+        dead_only = _scan_names()
+    return dead_only
+
+
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:ticket T-0422
-# frob:tests tests/test_gates.py::TestDeadSymbolGate.test_unwired_private_function_is_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestDeadSymbolGate.test_called_private_helper_is_not_flagged  # noqa: E501
+# frob:ticket T-1881
+# frob:tests \
+# tests/test_gates.py::TestDeadSymbolGate.test_unwired_private_function_is_flagged
+# frob:tests \
+# tests/test_gates.py::TestDeadSymbolGate.test_called_private_helper_is_not_flagged
 # frob:tests tests/test_gates.py::TestDeadSymbolGate.test_dunder_method_is_not_flagged
 # frob:tests tests/test_gates.py::TestDeadSymbolGate.test_test_function_is_not_flagged
-# frob:tests tests/test_gates.py::TestDeadSymbolGate.test_tests_edge_target_is_not_flagged  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestDeadSymbolGate.test_tests_edge_target_is_not_flagged
 # frob:enforces CHK-GATE-DEAD001
-# frob:waive ARCH001 reason="the per-package reference-graph cache (called_by_package) is built lazily inside the loop and keyed by the record being examined; splitting the per-record body into a helper would require passing the mutable cache dict and root/package derivation across a new boundary for no reduction in branching, the same shape already accepted for this module's sibling gates"  # noqa: E501
+# frob:waive ARCH001 reason="the per-package reference-graph cache (called_by_package) \
+# is built lazily inside the loop and keyed by the record being examined; splitting \
+# the per-record body into a helper would require passing the mutable cache dict and \
+# root/package derivation across a new boundary for no reduction in branching, the \
+# same shape already accepted for this module's sibling gates"
 def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEAD001: a private (leading-underscore) function/class/method with
     no call-graph caller and no TESTS/DESCRIBES/INVARIANT edge is
@@ -244,6 +634,7 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
     follow-up."""
     referenced = _declared_referenced_symrefs(snapshot)
     called_by_package: dict[str, frozenset[str]] = {}
+    dead_only_by_package: dict[str, frozenset[str]] = {}
     violations: list[Violation] = []
 
     for record in snapshot.symbols.values():
@@ -271,7 +662,18 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
             )
             called_by_package[package] = called
         if symref in called:
-            continue
+            # T-1881: a syntactic call token can still sit inside a branch
+            # that constant-folding proves unreachable (the `_store_mode`
+            # shape) -- `called` alone cannot tell live and dead call
+            # sites apart. Only override when EVERY occurrence of this
+            # symbol's own short name in the package is dead-only.
+            dead_only = dead_only_by_package.get(package)
+            if dead_only is None:
+                files = _package_files(root, record.id.path)
+                dead_only = _dead_only_names(root, files)
+                dead_only_by_package[package] = dead_only
+            if qualname.rsplit(".", 1)[-1] not in dead_only:
+                continue
         violations.append(
             Violation(
                 rule="DEAD001",
