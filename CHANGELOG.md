@@ -1870,9 +1870,9 @@ non-FEATURE tickets still trip SCOPE001 on these files as before.
   requires a claim-verb in the same sentence as the trigger word
   (`frob.gates.invariants._is_claim_shaped`); INV003 is scoped to
   `INV003_SPEC_DIRS` (docs/modules, docs/strata) rather than all of
-  docs/**.md; markdown-side `<!-- frob:waive INV003|INV004
-  reason="..." -->` support lets a genuine-but-unprovable claim be
-  dispositioned honestly. INV003+INV004 combined warnings: 765 -> 604.
+  docs/**.md; markdown-side `<!-- frob:waive INV003|INV004 reason="..." -->`
+  support lets a genuine-but-unprovable claim be dispositioned honestly.
+  INV003+INV004 combined warnings: 765 -> 604.
 
 ## [0.50.0] - unreleased
 
