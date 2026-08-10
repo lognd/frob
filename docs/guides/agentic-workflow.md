@@ -25,7 +25,10 @@ every other ledger-mutating verb, `--no-commit` opts out.
 
 Everything downstream -- decomposition, implementation, review, proof -- is
 an agent's job, dispatched through the roles below and defined in
-`~/.claude/agents/*` (user scope) and `.claude/agents/*` (project scope).
+`~/.claude/agents/*` (user scope). This repo deliberately ships no
+project-scope `.claude/agents/`: a project copy shadows the user-scope
+definition, and the two drifted apart unnoticed until the repo copies were
+removed.
 
 ---
 

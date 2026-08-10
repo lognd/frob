@@ -297,7 +297,7 @@ def _populate_registry_actions(registry_sub) -> None:
         "check-coverage.yaml is missing one for (T-0560)",
     )
 
-    # T-0429: the exhaustive-researcher's corpus-emit mechanism -- appends
+    # T-0429: the corpus-emit mechanism -- appends
     # one new disposition:pending entry directly into the universe SSOT,
     # never assigning a real disposition itself (T-0428's derived model).
     registry_add_p = registry_sub.add_parser(

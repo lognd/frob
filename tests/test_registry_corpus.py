@@ -1,4 +1,4 @@
-"""Tests for frob.registry._corpus -- the T-0429 exhaustive-researcher
+"""Tests for frob.registry._corpus -- the T-0429
 corpus-emit mechanism (append_entry / format_entry_block)."""
 
 from __future__ import annotations

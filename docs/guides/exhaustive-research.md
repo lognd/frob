@@ -19,15 +19,18 @@ The fix is architectural, not a bigger prompt: move the frontier out of
 context into an external, checkable store, and make "done" mean "the store
 has zero pending nodes," never a judgment call.
 
-## Where it lives
+## What belongs to this repo
 
-- `.claude/agents/exhaustive-researcher.md` -- the agent definition. Wires serena (code
-  digestion), the `frob` MCP (ticket graph as the code frontier), and the
-  `fetch`/`arxiv` MCP servers (prose/paper retrieval) behind the frontier
-  loop.
-- `.claude/skills/exhaustive-research` -- the reusable skill (`SKILL.md`) any agent
-  can load to run the loop: enumerate, drain, prove. This is the operating
-  manual; the agent definition just points at it.
+This page documents a METHOD and one concrete mechanism this repo ships:
+the corpus-emit path (T-0429, below), which `frob.registry._corpus` and
+`frob.app.registry_runner` bind to by `frob:doc` anchor.
+
+No harness agent or skill definition is versioned here. Any such definition
+is operator configuration and lives at user scope; a project-scope copy
+shadows it and the two drift apart unnoticed, which is exactly what happened
+before the repo copies were removed. The `docs/design/*-corpus.md` files
+record this method as their provenance -- that provenance is a fact about
+how they were built and is deliberately left in place.
 
 ## The three phases
 
@@ -43,8 +46,8 @@ has zero pending nodes," never a judgment call.
    `done` count against the denominator and confirms `done` means
    genuinely explored, not skipped.
 
-See `.claude/skills/exhaustive-research/SKILL.md` for the full doctrine and hard
-rules.
+See `~/.claude/skills/exhaustive-research/SKILL.md` for the full doctrine and
+hard rules.
 
 ## Frontier store, by corpus
 
@@ -154,7 +157,7 @@ The design draws on two externalization/memory papers, retrievable via the
 ## Running it
 
 ```text
-Use the exhaustive-research skill (or dispatch the exhaustive-researcher agent)
+Run the frontier loop below (enumerate, drain, prove)
 for: <the thing that needs total coverage>
 ```
 

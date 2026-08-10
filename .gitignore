@@ -16,11 +16,11 @@ uv.lock
 # file whose PARENT DIRECTORY is excluded, so the directory form silently
 # defeats every negation below it.
 .claude/*
-# Versioned skills + agent definitions (T-0185)
-!.claude/skills/
-!.claude/skills/**
-!.claude/agents/
-!.claude/agents/**
+# Agent and skill definitions are NOT versioned here. They are operator
+# configuration that lives at user scope (~/.claude/agents, ~/.claude/skills);
+# the repo copies drifted from the originals actually loaded at runtime and
+# were removed. Do not re-add un-ignore rules for them -- a project-scope copy
+# shadows the user-scope definition and the divergence is invisible.
 # Shared Claude config is REVIEWED CONFIG, not local state: hooks change
 # agent behaviour repo-wide, and one that exists only in someone's home
 # directory is an undocumented behaviour change no review ever saw.

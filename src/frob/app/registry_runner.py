@@ -50,7 +50,7 @@ def _render_audit_line(audit) -> str:  # noqa: ANN001
 def _run_add(cfg: AppConfig, registry_dir: Path) -> None:
     """`frob registry add`: append one new `disposition: pending` entry to
     `cfg.registry_add_file`'s `cfg.registry_add_key` list under
-    `registry_dir` -- the exhaustive-researcher's only sanctioned write
+    `registry_dir` -- the corpus-emit path's only sanctioned write
     path into the universe corpus (T-0429)."""
     if cfg.registry_add_file is None or cfg.registry_add_id is None:
         _log.error("registry add: --file and --id and --name are required")
@@ -122,7 +122,7 @@ def run(cfg: AppConfig) -> None:
     """`frob registry audit`: per-registry-file disposition counts under
     `cfg.registry_path` (defaults to `docs/design/registry` under cwd).
     `frob registry add` (T-0429): append a new pending entry -- the
-    exhaustive-researcher's corpus-emit mechanism. `--sync-gate-rules`
+    corpus-emit mechanism. `--sync-gate-rules`
     (T-0560): auto-file check-coverage.yaml's gate-rule staleness."""
     root = Path(".").resolve()
     registry_dir = (
