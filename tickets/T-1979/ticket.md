@@ -13,8 +13,16 @@ runs_last: false
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_scope.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1944's doc section, deferred at land time, is added here as part of fixing
+    the COV001 finding for demote_to_evidence_only's frob:doc anchor
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
