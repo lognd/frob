@@ -574,7 +574,7 @@ def _run_arch(root: Path) -> ToolResult:
     )
 
 
-def _diag_severity(v) -> str:  # noqa: ANN001
+def _diag_severity(v) -> Severity:  # noqa: ANN001
     """A `Violation`'s rendered `Diagnostic.severity` string (T-1664):
     `error`/`warning` map straight across; `unresolved` maps to `info`
     (`frob.process.parsers.common.Severity` has no `unresolved` value of
