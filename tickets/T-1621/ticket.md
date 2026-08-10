@@ -14,12 +14,23 @@ runs_last: false
 scope:
 - src/frob/logging/**
 - tests/conftest.py
-- tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'the umbrella tests/** is redundant: tests/conftest.py is already declared
+    specifically and is where the duplicate-handler fix lands. Per frob ticket wave,
+    this one glob was single-handedly preventing T-1660, T-1666, T-1782, T-1783 and
+    T-1784 from partitioning into a parallel group -- narrowing it costs this ticket
+    nothing and unblocks five.'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Every frob log record appears TWICE in pytest output, in two different formats:
 
