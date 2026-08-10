@@ -1,0 +1,103 @@
+---
+id: T-2048
+title: frob worktree release-lease cannot reclaim a lease held by a terminal (dropped/done)
+  ticket -- staleness check never asks whether the holder is finished
+state: queued
+kind: bug
+origin: human
+created: '2026-08-10'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+---
+## Problem
+
+`frob worktree release-lease` refuses to reclaim a lease held by a TERMINAL
+ticket (`dropped` / `done`). Its staleness check asks three questions --
+does the worktree path exist, is the ticket in the ledger, does a process
+hold it -- and never asks whether the ticket is in a state that is allowed
+to hold a lease at all. A dropped ticket is in the ledger, so the check
+reports "still live" and refuses.
+
+## Measured evidence (2026-08-10)
+
+T-2031 was dropped (in error, by the coordinator) and its successor T-2033
+filed. T-2031 is terminal, yet:
+
+    $ uv run frob worktree release-lease T-2031
+    WARNING: tickets: /home/logan/projects/frob refused to release lease for
+      T-2031 -- it is still live (worktree exists, ticket is in the ledger,
+      and a process holds it); not orphaned
+    ERROR: frob worktree release-lease: T-2031's lease is not stale -- its
+      worktree exists, its ticket is in the ledger, and a process holds it;
+      use `frob worktree remove` (and the ordinary ticket-close path) instead
+
+Hit twice in one session, roughly an hour apart, both times on T-2031.
+`fleet_status.py` still lists the lease:
+
+    LEASES 8
+      ...
+      T-2031 -> frob-suggest-scripts
+      T-2033 -> frob-suggest-scripts
+
+Both ids leasing the same worktree, one of them terminal.
+
+## Why it matters
+
+A terminal ticket holding a scope lease suppresses the doable queue: any
+other ticket declaring those files is refused with `ScopeLeaseConflict` and
+reports as not-doable, for work that can never resume. The standing
+coordinator duty is to reclaim holder-dead leases specifically so the queue
+is not artificially suppressed, and this is a class the reclaim verb cannot
+reach.
+
+The suggested remedy in the error text (`frob worktree remove`) is wrong
+here: the worktree is legitimately live and another ticket is actively
+working in it. Removing it would destroy that agent's checkout.
+
+## Root cause
+
+`lease_staleness_reason` (`src/frob/tickets/_leases.py`) has three shapes --
+`path-gone`, `ticket-gone`, `holder-dead`. There is no `ticket-terminal`
+shape. "In the ledger" is treated as proof of liveness, but a ticket can be
+in the ledger and permanently finished.
+
+## Do NOT fix it this way
+
+- Do NOT make `release-lease` unconditional or add a `--force` that skips the
+  staleness check. The check exists because releasing a genuinely live lease
+  lets two agents write the same files; that failure is worse than a
+  suppressed queue entry.
+- Do NOT resolve it by removing the worktree, as the current error text
+  suggests. Terminal-ticket-with-live-worktree is exactly the case where
+  another ticket is legitimately working there.
+- Do NOT auto-release on every ledger read. The release should be an
+  explicit, logged action, not a silent side effect of an unrelated command.
+- Do NOT make `drop`/`close` the only fix by releasing at transition time and
+  leaving the reclaim path broken. That helps future drops but cannot recover
+  a lease already stranded, and a process killed between the state change and
+  the release recreates the problem.
+
+## Acceptance criteria
+
+1. A test where a `dropped` ticket holds a lease on a LIVE worktree, and
+   `release-lease` succeeds and releases it. THIS TEST MUST FAIL BEFORE THE
+   FIX -- watch it fail and record the observed output.
+2. The same for a `done` ticket.
+3. A test that a lease held by an `in-progress` ticket on a live worktree is
+   still REFUSED -- the existing protection must not weaken.
+4. A new distinct staleness reason (e.g. `ticket-terminal`) surfaced in the
+   log line, so the reclaim is attributable rather than indistinguishable
+   from `holder-dead`.
+5. Report how many currently-held leases in this repo belong to terminal
+   tickets. Use `scripts/fleet_status.py` plus each ticket's state; state the
+   denominator.
