@@ -407,6 +407,82 @@ def _always_exits(stmts: list[ast.stmt]) -> bool:
     return bool(stmts) and isinstance(stmts[-1], _TERMINAL_STMT_KINDS)
 
 
+def _track_assign_locals(
+    stmt: ast.stmt,
+    const_funcs: dict[str, object],
+    local: dict[str, object],
+    bool_locals: dict[str, bool],
+) -> None:
+    """T-1962: extracted from `_walk_dead_ranges`'s own loop body (pure
+    structural split, no behavior change) -- updates `local`/`bool_locals`
+    in place for a single `stmts[index]` that is a single-target-name
+    `ast.Assign`; a no-op for any other statement shape. Same "arguments
+    don't matter" const-fold reasoning as `_folded_bool`, and the same
+    T-1881 boolean-alias tracking (`v2_mode = _store_mode(root) == "v2"`,
+    a foldable comparison's result reused bare in a later `if`/ternary
+    test -- `_folded_bool`'s shape 2)."""
+    if not (
+        isinstance(stmt, ast.Assign)
+        and len(stmt.targets) == 1
+        and isinstance(stmt.targets[0], ast.Name)
+    ):
+        return
+    target = stmt.targets[0].id
+    value = stmt.value
+    if (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and value.func.id in const_funcs
+    ):
+        local[target] = const_funcs[value.func.id]
+        bool_locals.pop(target, None)
+    else:
+        local.pop(target, None)
+        folded_value = _folded_bool(value, const_funcs, local, bool_locals)
+        if folded_value is None:
+            bool_locals.pop(target, None)
+        else:
+            bool_locals[target] = folded_value
+
+
+def _fold_if_branch(
+    stmt: ast.If,
+    index: int,
+    stmts: list[ast.stmt],
+    const_funcs: dict[str, object],
+    local: dict[str, object],
+    bool_locals: dict[str, bool],
+    dead_ranges: list[tuple[int, int]],
+) -> bool:
+    """T-1962: extracted from `_walk_dead_ranges`'s own loop body (pure
+    structural split, no behavior change) -- folds one `ast.If` at
+    `stmts[index]`, recursing into whichever branch(es) the fold leaves
+    live and appending dead spans for the rest. Returns True when the
+    caller (`_walk_dead_ranges`) must stop processing `stmts` entirely
+    (a folded-True guard clause whose body `_always_exits`, folding
+    every remaining sibling statement dead too)."""
+    folded = _folded_bool(stmt.test, const_funcs, local, bool_locals)
+    if folded is True:
+        if stmt.orelse:
+            dead_ranges.append(_stmt_span(stmt.orelse))
+        _walk_dead_ranges(stmt.body, const_funcs, local, dead_ranges)
+        if not stmt.orelse and _always_exits(stmt.body):
+            rest = stmts[index + 1 :]
+            if rest:
+                dead_ranges.append(_stmt_span(rest))
+            return True
+        return False
+    if folded is False:
+        dead_ranges.append(_stmt_span(stmt.body))
+        if stmt.orelse:
+            _walk_dead_ranges(stmt.orelse, const_funcs, local, dead_ranges)
+        return False
+    _walk_dead_ranges(stmt.body, const_funcs, dict(local), dead_ranges)
+    if stmt.orelse:
+        _walk_dead_ranges(stmt.orelse, const_funcs, dict(local), dead_ranges)
+    return False
+
+
 def _walk_dead_ranges(
     stmts: list[ast.stmt],
     const_funcs: dict[str, object],
@@ -422,7 +498,9 @@ def _walk_dead_ranges(
     guard clause) is dead by construction -- no further folding needed
     there; only the LIVE side of a resolved `if` is recursed into, so a
     nested fold still catches a second `if` layered inside the alive
-    branch."""
+    branch. T-1962: the per-statement assign-tracking and if-folding
+    steps live in `_track_assign_locals`/`_fold_if_branch`; this loop
+    only sequences them."""
     local = dict(locals_)
     bool_locals: dict[str, bool] = {}
     for index, stmt in enumerate(stmts):
@@ -432,86 +510,37 @@ def _walk_dead_ranges(
             # module-level `const_funcs` map still applies.
             _walk_dead_ranges(stmt.body, const_funcs, {}, dead_ranges)
             continue
-        if (
-            isinstance(stmt, ast.Assign)
-            and len(stmt.targets) == 1
-            and isinstance(stmt.targets[0], ast.Name)
-        ):
-            target = stmt.targets[0].id
-            value = stmt.value
-            if (
-                isinstance(value, ast.Call)
-                and isinstance(value.func, ast.Name)
-                and value.func.id in const_funcs
-            ):
-                # Same "arguments don't matter" reasoning as `_folded_bool`.
-                local[target] = const_funcs[value.func.id]
-                bool_locals.pop(target, None)
-            else:
-                local.pop(target, None)
-                # T-1881: `v2_mode = _store_mode(root) == "v2"` -- the
-                # BOOLEAN result of a foldable comparison, reused bare in
-                # a later `if`/ternary test (`_folded_bool`'s shape 2).
-                folded_value = _folded_bool(value, const_funcs, local, bool_locals)
-                if folded_value is None:
-                    bool_locals.pop(target, None)
-                else:
-                    bool_locals[target] = folded_value
+        _track_assign_locals(stmt, const_funcs, local, bool_locals)
         _fold_ifexps_in_stmt(stmt, const_funcs, local, bool_locals, dead_ranges)
         if isinstance(stmt, ast.If):
-            folded = _folded_bool(stmt.test, const_funcs, local, bool_locals)
-            if folded is True:
-                if stmt.orelse:
-                    dead_ranges.append(_stmt_span(stmt.orelse))
-                _walk_dead_ranges(stmt.body, const_funcs, local, dead_ranges)
-                if not stmt.orelse and _always_exits(stmt.body):
-                    rest = stmts[index + 1 :]
-                    if rest:
-                        dead_ranges.append(_stmt_span(rest))
-                    return
-                continue
-            if folded is False:
-                dead_ranges.append(_stmt_span(stmt.body))
-                if stmt.orelse:
-                    _walk_dead_ranges(stmt.orelse, const_funcs, local, dead_ranges)
-                continue
-            _walk_dead_ranges(stmt.body, const_funcs, dict(local), dead_ranges)
-            if stmt.orelse:
-                _walk_dead_ranges(stmt.orelse, const_funcs, dict(local), dead_ranges)
+            if _fold_if_branch(
+                stmt, index, stmts, const_funcs, local, bool_locals, dead_ranges
+            ):
+                return
 
 
 # frob:ticket T-1881
 _MAX_TRANSITIVE_ROUNDS = 10
 
 
-def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
-    """T-1881: names whose EVERY `ast.Name` occurrence across `files`
-    falls inside a provably-dead branch (`_walk_dead_ranges`) -- the
-    override signal `dead_symbol_gate` applies on top of
-    `build_reference_graph`'s purely-syntactic reachability, which
-    cannot distinguish a call site sitting in an unreachable `else` arm
-    from a live one.
-
-    T-1881 evidence item (c) -- transitive propagation: a call site can
-    sit in a DIFFERENT file than the one carrying the `_store_mode`-shaped
-    fold, inside a function whose OWN only caller is itself fold-dead (the
-    real repo's `_render_ledger`/`_splice_and_stage` shape -- called from
-    `_land_git_ops.py`, which has no local fold of its own, but whose
-    caller function is only ever invoked from a branch a DIFFERENT file's
-    fold proved dead). Handled with a bounded fixed point: once a
-    module-level function's short name is proven dead-only, its own
-    ENTIRE body is folded into `dead_lines_by_file` for its own file (a
-    dead function's call sites prove nothing about its callees' liveness
-    either) and the name scan reruns; repeats until no new name is proven
-    dead-only or `_MAX_TRANSITIVE_ROUNDS` is hit (this repo's own
-    packages are tens of symbols -- a handful of rounds always reaches a
-    fixed point in practice, the cap exists only as a hard stop against a
-    pathological input, never observed to bind).
-
-    Conservative in the same direction as this module's other heuristics:
-    a name with even ONE live occurrence is left alone, never
-    over-declared dead. Python-only, matching this gate's own file
-    filter."""
+def _collect_trees_and_const_funcs(
+    root: Path, files: tuple[str, ...]
+) -> tuple[
+    dict[str, ast.Module],
+    dict[str, list[tuple[str, int, int]]],
+    dict[str, object],
+]:
+    """T-1962: extracted from `_dead_only_names`'s own body (pure
+    structural split, no behavior change) -- parses every `.py` file in
+    `files` once, collecting each file's AST (`trees`), every
+    module-level function def's own source span by short name
+    (`def_spans_by_name`, PACKAGE-WIDE -- feeds the transitive
+    fixed-point step), and the package-wide constant-return-function map
+    (`const_funcs`, T-1881: collected PACKAGE-WIDE, not per-file, since
+    the real `_store_mode` shape is DEFINED in one file and CALLED from
+    sibling files in the same package -- a per-file-only map would miss
+    the fold opportunity anywhere that merely imports the producer). A
+    file that fails to read/parse is silently skipped."""
     trees: dict[str, ast.Module] = {}
     def_spans_by_name: dict[str, list[tuple[str, int, int]]] = {}
     const_funcs: dict[str, object] = {}
@@ -530,19 +559,19 @@ def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
                 def_spans_by_name.setdefault(node.name, []).append(
                     (path, node.lineno, end)
                 )
-        # T-1881: collected PACKAGE-WIDE, not per-file -- the real
-        # `_store_mode` shape is DEFINED in one file (`_store.py`) and
-        # CALLED, after an `import`, from sibling files in the same
-        # package (`_land_squash.py`'s `_store_mode(root) == "v2"`
-        # ternary guard) -- a per-file-only `const_funcs` map would never
-        # see the fold opportunity in any file that merely imports the
-        # producer. Same name-based imprecision this whole substrate
-        # already accepts elsewhere (two same-named producers in
-        # different files would collide) -- not a new soundness gap.
         const_funcs.update(_constant_return_functions(tree))
-    if not const_funcs:
-        return frozenset()
+    return trees, def_spans_by_name, const_funcs
 
+
+def _dead_lines_by_file(
+    trees: dict[str, ast.Module], const_funcs: dict[str, object]
+) -> tuple[dict[str, set[int]], bool]:
+    """T-1962: extracted from `_dead_only_names`'s own body (pure
+    structural split, no behavior change) -- runs `_walk_dead_ranges`
+    once per file in `trees`, folding every provably-dead span into a
+    per-file line-number set. Returns `(dead_lines_by_file, any_fold)`;
+    `any_fold` lets the caller short-circuit when nothing in this
+    package folded at all."""
     dead_lines_by_file: dict[str, set[int]] = {}
     any_fold = False
     for path, tree in trees.items():
@@ -554,26 +583,46 @@ def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
         lines = dead_lines_by_file.setdefault(path, set())
         for start, end in dead_ranges:
             lines.update(range(start, end + 1))
-    if not any_fold:
-        return frozenset()
+    return dead_lines_by_file, any_fold
 
-    def _scan_names() -> frozenset[str]:
-        """One name-occurrence pass over the current `dead_lines_by_file`
-        state -- names whose every `ast.Name` Load occurrence across
-        `trees` lands inside a dead line."""
-        live_names: set[str] = set()
-        dead_candidate_names: set[str] = set()
-        for path, tree in trees.items():
-            dead_lines = dead_lines_by_file.get(path, frozenset())
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
-                    if node.lineno in dead_lines:
-                        dead_candidate_names.add(node.id)
-                    else:
-                        live_names.add(node.id)
-        return frozenset(dead_candidate_names - live_names)
 
-    dead_only = _scan_names()
+def _dead_candidate_names(
+    trees: dict[str, ast.Module], dead_lines_by_file: dict[str, set[int]]
+) -> frozenset[str]:
+    """T-1962: extracted from `_dead_only_names`'s own nested
+    `_scan_names` closure (pure structural split, no behavior change) --
+    one name-occurrence pass over the current `dead_lines_by_file` state:
+    names whose every `ast.Name` Load occurrence across `trees` lands
+    inside a dead line."""
+    live_names: set[str] = set()
+    dead_candidate_names: set[str] = set()
+    for path, tree in trees.items():
+        dead_lines = dead_lines_by_file.get(path, frozenset())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+                if node.lineno in dead_lines:
+                    dead_candidate_names.add(node.id)
+                else:
+                    live_names.add(node.id)
+    return frozenset(dead_candidate_names - live_names)
+
+
+def _transitive_dead_names(
+    trees: dict[str, ast.Module],
+    dead_lines_by_file: dict[str, set[int]],
+    def_spans_by_name: dict[str, list[tuple[str, int, int]]],
+    dead_only: frozenset[str],
+) -> frozenset[str]:
+    """T-1962: extracted from `_dead_only_names`'s own body (pure
+    structural split, no behavior change) -- T-1881 evidence item (c),
+    transitive propagation: a call site can sit in a DIFFERENT file than
+    the one carrying the `_store_mode`-shaped fold, inside a function
+    whose OWN only caller is itself fold-dead. Handled with a bounded
+    fixed point: once a module-level function's short name is proven
+    dead-only, its own ENTIRE body is folded into `dead_lines_by_file`
+    for its own file (mutated in place) and the name scan reruns;
+    repeats until no new name is proven dead-only or
+    `_MAX_TRANSITIVE_ROUNDS` is hit."""
     seen_dead_defs: set[str] = set()
     for _round in range(_MAX_TRANSITIVE_ROUNDS):
         newly_dead_defs = dead_only - seen_dead_defs
@@ -589,8 +638,41 @@ def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
         seen_dead_defs |= newly_dead_defs
         if not grew:
             break
-        dead_only = _scan_names()
+        dead_only = _dead_candidate_names(trees, dead_lines_by_file)
     return dead_only
+
+
+def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
+    """T-1881: names whose EVERY `ast.Name` occurrence across `files`
+    falls inside a provably-dead branch (`_walk_dead_ranges`) -- the
+    override signal `dead_symbol_gate` applies on top of
+    `build_reference_graph`'s purely-syntactic reachability, which
+    cannot distinguish a call site sitting in an unreachable `else` arm
+    from a live one.
+
+    Conservative in the same direction as this module's other heuristics:
+    a name with even ONE live occurrence is left alone, never
+    over-declared dead. Python-only, matching this gate's own file
+    filter. T-1962: the file-collection, per-file dead-range walk,
+    name-occurrence scan, and transitive fixed-point steps live in
+    `_collect_trees_and_const_funcs`/`_dead_lines_by_file`/
+    `_dead_candidate_names`/`_transitive_dead_names`; this function only
+    sequences them -- see those four docstrings for the T-1881
+    reasoning behind each step."""
+    trees, def_spans_by_name, const_funcs = _collect_trees_and_const_funcs(
+        root, files
+    )
+    if not const_funcs:
+        return frozenset()
+
+    dead_lines_by_file, any_fold = _dead_lines_by_file(trees, const_funcs)
+    if not any_fold:
+        return frozenset()
+
+    dead_only = _dead_candidate_names(trees, dead_lines_by_file)
+    return _transitive_dead_names(
+        trees, dead_lines_by_file, def_spans_by_name, dead_only
+    )
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
