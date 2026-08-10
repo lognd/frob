@@ -2,7 +2,7 @@
 id: T-2048
 title: frob worktree release-lease cannot reclaim a lease held by a terminal (dropped/done)
   ticket -- staleness check never asks whether the holder is finished
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -11,9 +11,60 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: narrow to the staleness-reason guard and its unit tests
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: narrow to the staleness-reason guard and its unit tests
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_dropped_ticket_lease_on_a_live_worktree
+- tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_done_ticket_lease_on_a_live_worktree
+- tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_refuses_an_in_progress_ticket_lease_on_a_live_worktree
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_terminal_done
+designated_repro_test: tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_terminal_done
+acceptance:
+- text: A test where a dropped ticket holds a lease on a LIVE worktree, and release-lease
+    succeeds and releases it. This test must fail before the fix.
+  evidence:
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_dropped_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_done_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_refuses_an_in_progress_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_terminal_done
+- text: The same for a done ticket.
+  evidence:
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_dropped_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_done_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_refuses_an_in_progress_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_terminal_done
+- text: A test that a lease held by an in-progress ticket on a live worktree is still
+    refused -- the existing protection must not weaken.
+  evidence:
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_dropped_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_done_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_refuses_an_in_progress_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_terminal_done
+- text: A new distinct staleness reason (ticket-terminal) surfaced in the log line,
+    so the reclaim is attributable rather than indistinguishable from holder-dead.
+  evidence:
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_dropped_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_releases_a_done_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestReleaseOrphanedLease::test_refuses_an_in_progress_ticket_lease_on_a_live_worktree
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_terminal_done
+- text: Report how many currently-held leases in this repo belong to terminal tickets.
+    Use scripts/fleet_status.py plus each ticket's state; state the denominator.
+  evidence:
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_ticket_terminal_done
 threat: null
 component: null
 anchor: false

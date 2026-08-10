@@ -681,28 +681,50 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
 # frob:tests \
 # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_live_lease_is_not_stale
 def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
-    """Unifies the three independent orphaned-lease shapes T-1806 found
-    (the coordinator hit all three in one session, each refusing the
-    other's recovery verb): `"path-gone"` (the recorded worktree path no
-    longer exists on disk at all, T-1789's original and only check),
-    `"ticket-gone"` (the path still exists, but `record.ticket_id` is
-    absent from `root`'s own authoritative ledger -- a DRAFT that only
-    ever lived in a retired worktree's LOCAL ledger, never promoted to
-    main; this is the shape that hard-deadlocked the T-1806 incident,
-    since `frob ticket drop` cannot release a lease for a ticket it
-    cannot find), and `"holder-dead"` (path and ticket both exist, the
-    lease has gone past `is_lease_ttl_expired`'s horizon, AND no live
-    process is cwd'd into the worktree -- `scan_for_live_worktree_
-    process`, already built for T-1739's sweep gate, just never run
-    against a HELD lease before this). Returns `None` if none of the
-    three holds -- the lease is genuinely live, by every check this repo
-    can make.
+    """Unifies the four independent orphaned-lease shapes T-1806/T-2048
+    found (the coordinator hit each one in a real session, every one
+    refusing the other's recovery verb): `"path-gone"` (the recorded
+    worktree path no longer exists on disk at all, T-1789's original and
+    only check), `"ticket-gone"` (the path still exists, but `record.
+    ticket_id` is absent from `root`'s own authoritative ledger -- a
+    DRAFT that only ever lived in a retired worktree's LOCAL ledger,
+    never promoted to main; this is the shape that hard-deadlocked the
+    T-1806 incident, since `frob ticket drop` cannot release a lease for
+    a ticket it cannot find), `"ticket-terminal"` (T-2048: the path and
+    ticket both exist, and the ticket IS in the ledger, but its own
+    `state` is `done` or `dropped` -- a ticket that has permanently
+    finished can never resume holding a lease, no matter how live its
+    worktree still is or how fresh the lease's own TTL reads; measured
+    twice in one session on the same dropped ticket, T-2031, whose
+    lease survived its own drop and suppressed the doable queue for
+    every other ticket declaring the same files), and `"holder-dead"`
+    (path and ticket both exist, the ticket is NOT terminal, the lease
+    has gone past `is_lease_ttl_expired`'s horizon, AND no live process
+    is cwd'd into the worktree -- `scan_for_live_worktree_process`,
+    already built for T-1739's sweep gate, just never run against a
+    HELD lease before this). Returns `None` if none of the four holds --
+    the lease is genuinely live, by every check this repo can make.
 
-    Deliberately ONE predicate, not three special cases bolted together
-    (T-1806's own framing): every caller that needs to know "can this
-    lease be released" asks this single question, and adding a fourth
-    staleness shape later means widening this function once rather than
-    re-auditing every caller that currently only checks path-gone.
+    Deliberately ONE predicate, not four special cases bolted together
+    (T-1806's own framing, extended by T-2048): every caller that needs
+    to know "can this lease be released" asks this single question, and
+    adding a further staleness shape later means widening this function
+    once rather than re-auditing every caller that currently only checks
+    path-gone.
+
+    `"ticket-terminal"` is checked BEFORE `"holder-dead"` and is NEVER
+    gated on `is_lease_ttl_expired`/`scan_for_live_worktree_process` --
+    unlike `"holder-dead"`, which infers deadness from absence of
+    evidence (a heuristic that must stay conservative), a terminal
+    ticket's `state` is a POSITIVE, authoritative signal straight from
+    the ledger: `done`/`dropped` are terminal by the state machine
+    itself (`frob.tickets._models.TicketState`), so there is no
+    "give it more time, it might still be live" case to protect against
+    the way there is for holder-dead. This does NOT touch the
+    `in-progress`/`queued`/`planned`/`blocked` case at all -- those stay
+    exactly as live as `holder-dead`'s own TTL+process gate judges them,
+    per this ticket's explicit "do not weaken the check for in-progress
+    tickets" constraint.
 
     `"holder-dead"` is deliberately gated on `is_lease_ttl_expired` too,
     not `scan_for_live_worktree_process` alone: a dispatched agent's own
@@ -725,16 +747,21 @@ def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     (`frob.tickets._archive.load_queue`) avoids the import cycle
     `_archive.py` already has back onto this module (it imports `read_
     all_leases` from here); an unreadable/malformed ledger degrades to
-    "cannot confirm ticket-gone" (never a false-positive release) and
-    falls through to the holder-dead check instead."""
+    "cannot confirm ticket-gone/ticket-terminal" (never a false-positive
+    release) and falls through to the holder-dead check instead."""
     if not Path(record.worktree).exists():
         return "path-gone"
 
     from frob.tickets._archive import load_queue
+    from frob.tickets._models import TicketState
 
     queue = load_queue(root)
-    if queue.is_ok and record.ticket_id not in queue.danger_ok.tickets:
-        return "ticket-gone"
+    if queue.is_ok:
+        ticket = queue.danger_ok.tickets.get(record.ticket_id)
+        if ticket is None:
+            return "ticket-gone"
+        if ticket.state in (TicketState.DONE, TicketState.DROPPED):
+            return "ticket-terminal"
 
     if (
         is_lease_ttl_expired(record)
@@ -810,11 +837,13 @@ def release_orphaned_lease(root: Path, ticket_id: str) -> Result[None, LeaseErro
     hand (`rm .git/frob-leases/T-1766.json`, the actual recovery T-1779's
     sixth incident forced) -- releases exactly ONE ticket's lease, and
     ONLY if `lease_staleness_reason` confirms it is genuinely stale, by
-    ANY of its three shapes (T-1806 generalization: this used to check
+    ANY of its four shapes (T-1806 generalization: this used to check
     only "worktree path gone"; a lease naming a ticket absent from the
     ledger -- a promoted-nowhere draft -- used to hard-deadlock here with
     `Err(NoLeaseForTicket)` from `frob ticket drop`'s own side, since
-    neither verb could resolve the id, exactly the T-1806 incident).
+    neither verb could resolve the id, exactly the T-1806 incident;
+    T-2048 added a fourth shape, `"ticket-terminal"`, for a lease still
+    held by a ticket whose own state has permanently finished).
     Unlike the unconditional `release_lease` (called internally by
     `transition` on every exit from `IN_PROGRESS`, where unconditional-
     safety is the correct contract), this refuses to touch a lease that
@@ -826,7 +855,7 @@ def release_orphaned_lease(root: Path, ticket_id: str) -> Result[None, LeaseErro
 
     `Err(NoLeaseForTicket)` if `ticket_id` has no lease at all.
     `Err(LeaseWorktreeMismatch)` (repurposed here as "not stale" -- none
-    of `lease_staleness_reason`'s three checks fired) if the lease is not
+    of `lease_staleness_reason`'s four checks fired) if the lease is not
     actually orphaned; the caller wanting to release a live worktree's
     lease anyway should use `frob worktree remove <path> --force` plus
     the ordinary ticket-close path, not this verb.

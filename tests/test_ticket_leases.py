@@ -1918,6 +1918,94 @@ class TestReleaseOrphanedLease:
         assert result.is_ok
         assert not lease_file.exists()
 
+    def test_releases_a_done_ticket_lease_on_a_live_worktree(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-2048 acceptance 1: a `done` ticket's lease on a LIVE worktree
+        (fresh TTL, worktree exists) is released -- the exact shape T-2031
+        hit twice in one session (`frob worktree release-lease T-2031`
+        refusing with "still live" for a ticket the coordinator had
+        already dropped/closed). FAILS FIRST: before the fix,
+        `lease_staleness_reason` never returns anything for this shape,
+        so `release_orphaned_lease` refuses with `LeaseWorktreeMismatch`."""
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from frob.tickets._leases import _lease_path, leases_dir, release_orphaned_lease
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        ticket_run(
+            AppConfig(
+                ticket_command="close",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_evidence_cmd="echo verified",
+            )
+        )
+        _write_lease(repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat())
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+        assert lease_file.exists()
+
+        result = release_orphaned_lease(repo, "T-0001")
+        assert result.is_ok, result
+        assert not lease_file.exists()
+
+    def test_releases_a_dropped_ticket_lease_on_a_live_worktree(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-2048 acceptance 2: same for a `dropped` ticket. FAILS FIRST
+        for the same reason as the `done` case above."""
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from frob.tickets._leases import _lease_path, leases_dir, release_orphaned_lease
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        ticket_run(
+            AppConfig(
+                ticket_command="drop",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_reason="test: T-2048 terminal-lease repro",
+            )
+        )
+        _write_lease(repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat())
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+        assert lease_file.exists()
+
+        result = release_orphaned_lease(repo, "T-0001")
+        assert result.is_ok, result
+        assert not lease_file.exists()
+
+    def test_refuses_an_in_progress_ticket_lease_on_a_live_worktree(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-2048 acceptance 3: no over-reach -- a NON-terminal
+        (`in-progress`) ticket's lease on a live worktree, fresh TTL,
+        must still refuse exactly as before this ticket."""
+        # frob:tests src/frob/tickets/_leases.py::release_orphaned_lease kind="unit"
+        from frob.tickets._leases import (
+            LeaseError,
+            _lease_path,
+            leases_dir,
+            release_orphaned_lease,
+        )
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        _write_lease(repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat())
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+        assert lease_file.exists()
+
+        result = release_orphaned_lease(repo, "T-0001")
+        assert result.is_err
+        assert result.danger_err == LeaseError.LeaseWorktreeMismatch
+        assert lease_file.exists()
+
 
 # frob:ticket T-1806
 class TestLeaseStalenessReason:
@@ -1986,6 +2074,82 @@ class TestLeaseStalenessReason:
             recorded_at=datetime.now(UTC).isoformat(),
         )
         assert lease_staleness_reason(repo, record) is None
+
+    def test_in_progress_lease_on_a_live_worktree_is_not_stale(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"
+        """T-2048 acceptance 3: the existing protection must not weaken --
+        a lease held by a NON-terminal (`in-progress`) ticket on a live
+        worktree, with a fresh (non-expired) TTL, stays live."""
+        from frob.tickets._leases import _LeaseRecord, lease_staleness_reason
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("src/feature.py",),
+            worktree=str(second_worktree),
+            branch="main",
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        assert lease_staleness_reason(repo, record) is None
+
+    def test_ticket_terminal_done(self, repo: Path, second_worktree: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"
+        """T-2048 acceptance 1/4: a lease held by a `done` ticket on an
+        otherwise LIVE worktree, with a fresh (non-expired) TTL, must
+        report the new `"ticket-terminal"` shape -- FAILS FIRST (before
+        the fix this reads `None`, since a done ticket is neither
+        path-gone, ticket-gone, nor TTL-expired)."""
+        from frob.tickets._leases import _LeaseRecord, lease_staleness_reason
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        ticket_run(
+            AppConfig(
+                ticket_command="close",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_evidence_cmd="echo verified",
+            )
+        )
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("src/feature.py",),
+            worktree=str(second_worktree),
+            branch="main",
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        assert lease_staleness_reason(repo, record) == "ticket-terminal"
+
+    def test_ticket_terminal_dropped(self, repo: Path, second_worktree: Path) -> None:
+        # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"
+        """T-2048 acceptance 2/4: same for a `dropped` ticket. FAILS FIRST
+        for the same reason as test_ticket_terminal_done."""
+        from frob.tickets._leases import _LeaseRecord, lease_staleness_reason
+
+        ticket_run(
+            AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+        )
+        ticket_run(
+            AppConfig(
+                ticket_command="drop",
+                ticket_path=repo,
+                ticket_id="T-0001",
+                ticket_reason="test: T-2048 terminal-lease repro",
+            )
+        )
+        record = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("src/feature.py",),
+            worktree=str(second_worktree),
+            branch="main",
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        assert lease_staleness_reason(repo, record) == "ticket-terminal"
 
 
 # frob:ticket T-1789
