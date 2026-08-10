@@ -36,7 +36,9 @@ DISCLOSED CUT: T-2022 itself was NOT reopened in this land. Its scope
 does not overlap this ticket's declared scope
 (`src/frob/app/ticket_runner/_rapid_sweep.py`), and this worktree's
 CLI exposed no `reopen` verb for a `dropped` ticket -- only
-`plan`/`start`/`close`/`drop`. Filed: T-2037.
+`plan`/`start`/`close`/`drop`.
+
+Filed: T-2037
 
 NOT fixed here (explicitly out of scope, filed separately): T-2030,
 the sweep writing into a concurrent agent's own worktree -- a
