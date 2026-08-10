@@ -22,6 +22,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1659 fixed CACHE001 and OPAQUE001's missing Violation.symref (both now
 symbol-exact). That symref narrowing surfaced real work this ticket's

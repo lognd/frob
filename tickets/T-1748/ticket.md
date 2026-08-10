@@ -21,6 +21,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Two tickets that share one fix mechanism cannot both be landed cleanly
 from one worktree. Both agents who hit it today reached for a different

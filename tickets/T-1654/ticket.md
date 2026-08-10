@@ -18,6 +18,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 ## Description
 T-1635 found and fixed a real cross-process shared-resource contention

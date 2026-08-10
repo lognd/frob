@@ -19,6 +19,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1611 classification: today's session produced the "root agents/
 skills/ are live-read by the dispatching harness" incident. T-1767's

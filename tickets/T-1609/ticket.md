@@ -22,6 +22,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Work to run only AFTER the rest of the queue is drained, in the stated order. Filed now so it is not forgotten, deliberately gated so it is not started early.
 

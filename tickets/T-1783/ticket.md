@@ -20,6 +20,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1611 classification: T-1610's docs-completeness sweep found `frob
 coverage` (T-1516/T-1525) has no dedicated doc section -- it is named in

@@ -21,6 +21,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1271's own declared scope (src/frob/_cli_parsers/__init__.py, src/frob/
 app/config.py, docs/modules/app.md, tests/test_app_config.py) covers only

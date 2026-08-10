@@ -21,6 +21,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Add CUDA to frob's supported languages, meeting the full adapter contract defined by the contract ticket -- not merely parsing.
 

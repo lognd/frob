@@ -23,6 +23,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 The design the repo owner specified 2026-08-06: "apart from the frob ticket commands, main's regular tickets never get overwritten by a worktree, and on land, the draft tickets are automatically converted atomically into main tickets and committed. I don't want any manual handling of tickets."
 

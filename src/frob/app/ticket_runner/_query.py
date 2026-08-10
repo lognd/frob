@@ -353,6 +353,31 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket doable failed: %s", result.danger_err)
         sys.exit(1)
     queue = result.danger_ok
+
+    # frob:ticket T-2006
+    # T-2006: re-verify any sweep-filed candidate ticket's own recorded
+    # identities RIGHT HERE, at the moment a coordinator would dispatch
+    # it -- T-1983's own auto-drop only runs inside a LATER, unrelated
+    # land's deferred sweep, which can leave an already-resolved ticket
+    # dispatchable and unverified for however long it takes some other
+    # land to happen to trigger the next sweep. Zero-cost when no
+    # sweep-filed ticket is present (the overwhelming common case).
+    from frob.app.ticket_runner._rapid_sweep import (
+        revalidate_dispatchable_sweep_tickets,
+    )
+
+    dropped = revalidate_dispatchable_sweep_tickets(root, tuple(queue.tickets.values()))
+    if dropped:
+        _log.info(
+            "ticket doable: T-2006 dropped %d stale sweep-filed ticket(s) "
+            "before dispatch (no longer reproduce): %s",
+            len(dropped),
+            ", ".join(dropped),
+        )
+        reloaded = load_queue(root)
+        if reloaded.is_ok:
+            queue = reloaded.danger_ok
+
     # T-0453 perf fix: computed ONCE per invocation and threaded through
     # every lease/warning check below -- never re-walked per candidate.
     breadth = scope_breadth_context(root)

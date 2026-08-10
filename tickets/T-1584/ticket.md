@@ -19,5 +19,7 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Filed while working T-1575: downgrade_profile_ratchet has no CLI caller yet (WIRE001-waived with this follow_up). Add a top-level 'frob profile show' / 'frob profile downgrade --reason ...' subcommand pair. The downgrade path must stay loudly logged and explicit -- the T-1575 ratchet upgrades automatically but never downgrades on its own.

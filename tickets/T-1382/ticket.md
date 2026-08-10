@@ -42,6 +42,8 @@ acceptance:
   evidence: []
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 User directive 2026-08-01: frob must be cross-project and cross-platform, so it cannot depend on a Makefile.
 

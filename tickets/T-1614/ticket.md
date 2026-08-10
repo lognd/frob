@@ -23,6 +23,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Audit every frob:waive directive in the repository and confirm each is a genuine, still-necessary exception rather than a cop-out.
 

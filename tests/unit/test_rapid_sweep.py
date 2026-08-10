@@ -14,6 +14,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _attribute_new_findings,
     _close_resolved_sweep_tickets,
     _file_regression_ticket,
+    _identities_still_reproducing,
     _land_ids_between,
     _parse_sweep_ticket_identities,
     _read_baseline,
@@ -869,6 +870,234 @@ class TestTrueFindingCount:
             _true_finding_count_for_identities(tmp_path, frozenset({("R", "f.py")}))
             is None
         )
+
+
+# frob:ticket T-2006
+class TestIdentitiesStillReproducing:
+    """T-2006: `_identities_still_reproducing` -- which of a candidate
+    set STILL reproduce right now, as an identity set (not merely a
+    count) -- what `revalidate_dispatchable_sweep_tickets` needs to
+    decide which sweep-filed tickets to drop."""
+
+    # frob:ticket T-2006
+    @staticmethod
+    def _ok_result(stdout: str):
+        from typani import Ok
+
+        class _Proc:
+            def __init__(self, stdout: str) -> None:
+                self.stdout = stdout
+                self.returncode = 1
+
+        return Ok(_Proc(stdout))
+
+    # frob:ticket T-2006
+    def test_only_reproducing_identities_returned(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing.test_only_reproducing_identities_returned  # noqa: E501
+        import json
+
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "COV003", "file": "a.py", "severity": "error"},
+                        # DOC002/b.py is in the queried `pairs` below but
+                        # NOT in this fresh measurement -- it has
+                        # resolved and must not appear in the result.
+                        {"code": "F401", "file": "unrelated.py", "severity": "error"},
+                    ],
+                }
+            ]
+        }
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result(json.dumps(payload)),
+        )
+        result = _identities_still_reproducing(
+            tmp_path, frozenset({("COV003", "a.py"), ("DOC002", "b.py")})
+        )
+        assert result == frozenset({("COV003", "a.py")})
+
+    # frob:ticket T-2006
+    def test_unmeasurable_is_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing.test_unmeasurable_is_none  # noqa: E501
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result("not json at all"),
+        )
+        assert (
+            _identities_still_reproducing(tmp_path, frozenset({("R", "f.py")})) is None
+        )
+
+
+# frob:ticket T-2006
+class TestRevalidateDispatchableSweepTickets:
+    """T-2006, end-to-end: `frob ticket doable`'s residual gap after
+    T-1983 -- a sweep-filed ticket must be re-verified at DISPATCH time,
+    not only inside the next unrelated land's own sweep."""
+
+    # frob:ticket T-2006
+    def test_no_sweep_tickets_is_zero_cost(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_no_sweep_tickets_is_zero_cost  # noqa: E501
+        called = []
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: called.append(1),
+        )
+
+        class _PlainTicket:
+            title = "some ordinary ticket"
+            body = "nothing sweep-shaped here"
+
+        dropped = _rapid_sweep.revalidate_dispatchable_sweep_tickets(
+            tmp_path, [_PlainTicket()]
+        )
+        assert dropped == ()
+        assert called == []  # no check spawn was attempted at all
+
+    # frob:ticket T-2006
+    def test_fully_resolved_candidate_is_dropped(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_fully_resolved_candidate_is_dropped  # noqa: E501
+        from frob.tickets import TicketState, load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        # Fresh measurement: COV003/a.py no longer appears at all.
+        import json
+
+        payload = {"results": [{"tool": "gate-summary", "diagnostics": []}]}
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: TestIdentitiesStillReproducing._ok_result(
+                json.dumps(payload)
+            ),
+        )
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        tickets = list(queue.danger_ok.tickets.values())
+        dropped = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert dropped == (ticket_id,)
+
+        requeried = load_queue(tmp_path)
+        assert requeried.is_ok
+        assert requeried.danger_ok.tickets[ticket_id].state == TicketState.DROPPED
+
+    # frob:ticket T-2006
+    def test_still_reproducing_candidate_is_left_untouched(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_still_reproducing_candidate_is_left_untouched  # noqa: E501
+        from frob.tickets import TicketState, load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        # Fresh measurement: COV003/a.py STILL reproduces.
+        import json
+
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "COV003", "file": "a.py", "severity": "error"}
+                    ],
+                }
+            ]
+        }
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: TestIdentitiesStillReproducing._ok_result(
+                json.dumps(payload)
+            ),
+        )
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        tickets = list(queue.danger_ok.tickets.values())
+        dropped = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert dropped == ()
+
+        requeried = load_queue(tmp_path)
+        assert requeried.is_ok
+        assert requeried.danger_ok.tickets[ticket_id].state == TicketState.QUEUED
+
+    # frob:ticket T-2006
+    def test_unmeasurable_recheck_drops_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_unmeasurable_recheck_drops_nothing  # noqa: E501
+        from frob.tickets import TicketState, load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: TestIdentitiesStillReproducing._ok_result(
+                "not json at all"
+            ),
+        )
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        tickets = list(queue.danger_ok.tickets.values())
+        dropped = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert dropped == ()
+
+        requeried = load_queue(tmp_path)
+        assert requeried.is_ok
+        assert requeried.danger_ok.tickets[ticket_id].state == TicketState.QUEUED
 
 
 # frob:ticket T-1791

@@ -18,6 +18,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Successor to T-1657 (itself successor to T-1655/T-1650/T-1273): T-1657's
 agent closed a small slice (gates/_fix_engine_shared.py clear_autofix_manifest,

@@ -795,6 +795,49 @@ def _spawn_true_count_check(root: Path, budget: int):  # noqa: ANN201 -- Result[
 
 
 # frob:ticket T-1935
+# frob:ticket T-2006
+def _matching_error_diagnostics(
+    root: Path, pairs: frozenset[tuple[str, str]], budget: int
+) -> list[dict] | None:
+    """T-2006 (ARCH001 split, extracted from the pre-T-2006 body of
+    `_true_finding_count_for_identities`): the shared low-level fetch
+    both that function (T-1935, raw per-finding count) and
+    `_identities_still_reproducing` (T-2006, which IDENTITIES are still
+    live) build on -- ONE independent `frob check --budget --json` spawn
+    (`_spawn_true_count_check`) and parse, never two, for callers that
+    both want "what does `pairs` look like right now". Returns every
+    `severity == "error"` diagnostic dict whose `(code, file)` is in
+    `pairs`, or `None` on any unmeasurable outcome (spawn refused,
+    timeout, unparsable/budget-truncated output) -- never an empty list
+    standing in for "could not measure"."""
+    from frob.app.ticket_runner._verify import _parse_check_json
+
+    proc = _spawn_true_count_check(root, budget)
+    if proc is None:
+        return None
+    data = _parse_check_json(proc.stdout)
+    if data is None:
+        _log.warning(
+            "rapid sweep: true-finding re-measure produced unparsable "
+            "output -- treating as unmeasurable"
+        )
+        return None
+    results = data.get("results")
+    if not isinstance(results, list):
+        return None
+    matched: list[dict] = []
+    for r in results:
+        if not isinstance(r, dict):
+            continue
+        for d in r.get("diagnostics", ()):
+            if not isinstance(d, dict) or d.get("severity") != "error":
+                continue
+            if (d.get("code") or "", d.get("file") or "") in pairs:
+                matched.append(d)
+    return matched
+
+
+# frob:ticket T-1935
 # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_counts_every_diagnostic_matching_an_identity  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_unparsable_json_is_none_not_zero  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_spawn_refused_is_none_not_zero  # noqa: E501
@@ -804,50 +847,41 @@ def _true_finding_count_for_identities(
     """T-1935: the TRUE per-finding count restricted to `pairs` -- as
     opposed to `len(pairs)`, which is only ever a count of DISTINCT
     `(rule, file)` IDENTITIES, never a raw finding count (this module's
-    docstring). Spawns its own independent `frob check --budget --json`
-    (`_spawn_true_count_check`) and counts every `severity == "error"`
-    diagnostic whose `(code, file)` is in `pairs`, WITHOUT deduping by
-    identity -- so several findings sharing one `(rule, file)` pair are
-    each counted, unlike `_land_cmd._unscoped_error_findings`'s own
-    identity set.
+    docstring). WITHOUT deduping by identity -- so several findings
+    sharing one `(rule, file)` pair are each counted, unlike `_land_cmd.
+    _unscoped_error_findings`'s own identity set.
 
-    Returns `None` (never a wrong number) when unmeasurable: spawn
-    refused, a timeout, or output that does not decode as a `frob check
-    --json` payload (including a `--budget`-truncated run that deferred a
-    stage group -- `_parse_check_json` alone cannot detect that case, so
-    an unparsable/budget-truncated `results` list is treated the same as
-    "could not measure"). The caller degrades gracefully to reporting the
-    identity count alone when this returns `None`.
+    Returns `None` (never a wrong number) when unmeasurable (see
+    `_matching_error_diagnostics`). The caller degrades gracefully to
+    reporting the identity count alone when this returns `None`.
 
     Deliberately a SECOND check spawn, paid only by
     `_file_regression_ticket`'s red-batch path (a clean sweep never calls
     this) -- see the module docstring for why that does not reopen T-
     1684's "one check per land" cost concern."""
-    from frob.app.ticket_runner._verify import _parse_check_json
+    matched = _matching_error_diagnostics(root, pairs, budget)
+    if matched is None:
+        return None
+    return len(matched)
 
-    proc = _spawn_true_count_check(root, budget)
-    if proc is None:
+
+# frob:ticket T-2006
+# frob:tests tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing.test_only_reproducing_identities_returned  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing.test_unmeasurable_is_none  # noqa: E501
+def _identities_still_reproducing(
+    root: Path, pairs: frozenset[tuple[str, str]], budget: int = _TRUE_COUNT_BUDGET_S
+) -> frozenset[tuple[str, str]] | None:
+    """T-2006: which of `pairs` (rule, file) identities STILL reproduce
+    right now, restricted to exactly `pairs` (never a full unscoped
+    sweep) -- what `revalidate_dispatchable_sweep_tickets` needs to
+    decide which candidate sweep-filed tickets are resolved vs. still
+    live. `None` on the same unmeasurable conditions `_matching_error_
+    diagnostics` returns `None` for -- an unmeasurable re-check must
+    never be read as "resolved"."""
+    matched = _matching_error_diagnostics(root, pairs, budget)
+    if matched is None:
         return None
-    data = _parse_check_json(proc.stdout)
-    if data is None:
-        _log.warning(
-            "rapid sweep: T-1935 true-finding-count re-measure produced "
-            "unparsable output -- reporting the identity count alone"
-        )
-        return None
-    results = data.get("results")
-    if not isinstance(results, list):
-        return None
-    count = 0
-    for r in results:
-        if not isinstance(r, dict):
-            continue
-        for d in r.get("diagnostics", ()):
-            if not isinstance(d, dict) or d.get("severity") != "error":
-                continue
-            if (d.get("code") or "", d.get("file") or "") in pairs:
-                count += 1
-    return count
+    return frozenset((d.get("code") or "", d.get("file") or "") for d in matched)
 
 
 # frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
@@ -1366,6 +1400,92 @@ def _close_resolved_sweep_tickets(
     return tuple(dropped)
 
 
+# frob:ticket T-2006
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_no_sweep_tickets_is_zero_cost  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_fully_resolved_candidate_is_dropped  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_still_reproducing_candidate_is_left_untouched  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_unmeasurable_recheck_drops_nothing  # noqa: E501
+# frob:waive COV001 reason="the natural doc home is docs/modules/tickets.md's existing \
+# deferred-post-land-sweep section (T-1684/T-1983), which is under T-1696's LIVE \
+# cross-worktree lease for the duration of this ticket (same lease T-1935/T-1791's \
+# waivers directly below in this same file cite) -- cannot be edited here without \
+# colliding; filed as follow-up residue to add the anchor once the lease clears"
+def revalidate_dispatchable_sweep_tickets(
+    root: Path, tickets: Sequence  # noqa: ANN401 -- Sequence[Ticket], deferred-import type
+) -> tuple[str, ...]:
+    """T-2006: the residual gap T-1983 left open. T-1983's own auto-drop
+    (`_close_resolved_sweep_tickets`, this module) works correctly, but
+    its call site is INSIDE a deferred sweep, which only runs after SOME
+    land -- any land, not necessarily one related to the stale ticket.
+    In the window between a sweep-filed ticket's identities getting fixed
+    (by another agent, or a Tier-A auto-fix) and the next unrelated
+    land's sweep, the ticket sits dispatchable and unverified -- exactly
+    when a coordinator reads `frob ticket doable` and dispatches it.
+    Measured twice on 2026-08-10: T-2000 (already-fixed, no later sweep
+    had run, dropped BY HAND) and T-1998 (misattributed AND
+    mostly-already-fixed, cost a full dispatch cycle for one real line of
+    work, `git show 917ba8e92 --stat`).
+
+    Called from `frob ticket doable`'s own render path
+    (`_query._doable`) with the FULL candidate ticket set, BEFORE the
+    dispatchable filter runs -- deliberately NOT a full unscoped sweep
+    (T-1684's whole point stays off this path) and NOT gated on `start`
+    (too late -- the dispatch decision already happened by then, per
+    this ticket's own body). Zero-cost when `tickets` contains no
+    sweep-filed candidate at all (`_parse_sweep_ticket_identities`
+    returns `None` for everything) -- the overwhelmingly common case, so
+    a plain `frob ticket doable` pays nothing extra most of the time.
+    When at least one candidate exists, spawns exactly ONE re-check
+    (`_identities_still_reproducing`) scoped to the UNION of every
+    candidate's own recorded identities (never a full sweep), and drops
+    (via the same `_maybe_drop_resolved_ticket` T-1983 already built)
+    any whose full identity set is now a subset of what vanished. The
+    measured cost of that one re-check is always logged, matching this
+    ticket's own acceptance criterion #2. An unmeasurable re-check (spawn
+    refused, timeout) drops nothing -- matching T-1983's own "never treat
+    unmeasurable as resolved" rule."""
+    candidates: list[tuple[object, frozenset[tuple[str, str]]]] = []
+    for ticket in tickets:
+        identities = _parse_sweep_ticket_identities(ticket)
+        if identities:
+            candidates.append((ticket, identities))
+    if not candidates:
+        return ()
+
+    all_pairs: frozenset[tuple[str, str]] = frozenset().union(
+        *(identities for _, identities in candidates)
+    )
+    started = time.monotonic()
+    reproducing = _identities_still_reproducing(root, all_pairs)
+    elapsed_s = time.monotonic() - started
+    if reproducing is None:
+        _log.warning(
+            "rapid sweep: T-2006: doable-time re-verification of %d "
+            "sweep-filed candidate ticket(s) (%d total identit(ies)) was "
+            "UNMEASURABLE after %.1fs -- leaving them dispatchable, "
+            "never treating unmeasurable as resolved",
+            len(candidates),
+            len(all_pairs),
+            elapsed_s,
+        )
+        return ()
+    _log.info(
+        "rapid sweep: T-2006: doable-time re-verification of %d "
+        "sweep-filed candidate ticket(s) (%d total identit(ies)) took "
+        "%.1fs",
+        len(candidates),
+        len(all_pairs),
+        elapsed_s,
+    )
+    vanished = all_pairs - reproducing
+    dropped: list[str] = []
+    for ticket, identities in candidates:
+        result = _maybe_drop_resolved_ticket(root, "doable", ticket, vanished)
+        if result is not None:
+            dropped.append(result)
+    return tuple(dropped)
+
+
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:waive AFFECT001 reason="T-1935 changed only this function's own log-line \
 # wording (identity vs finding count caveat), not the deferred-sweep-mechanism doc \
@@ -1521,6 +1641,7 @@ def _sweep_async(root: Path, cfg) -> None:  # noqa: ANN001 -- AppConfig, deferre
 
 __all__ = [
     "RapidSweepError",
+    "revalidate_dispatchable_sweep_tickets",
     "run_deferred_post_land_sweep",
     "spawn_deferred_post_land_sweep",
 ]

@@ -55,6 +55,8 @@ acceptance:
   evidence: []
 threat: null
 component: tickets
+anchor: false
+anchor_reason: null
 ---
 Filed 2026-07-31 from direct observation of a 7-agent parallel drive (T-1334/1336/1337/1338/1340/1327/1276/1293/1294/1296).
 

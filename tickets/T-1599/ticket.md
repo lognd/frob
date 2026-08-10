@@ -23,6 +23,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Make the language adapter contract explicit and statically enforced before the batch work begins.
 

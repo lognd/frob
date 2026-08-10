@@ -19,6 +19,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1611 classification: T-1610's docs-completeness sweep found
 FROB_WORKER_STDOUT_LOG_LEVEL (T-0806) undocumented anywhere in docs/ for

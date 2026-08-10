@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.450.0] - unreleased
+
+- T-2006: T-1983's auto-drop only runs inside the next sweep, so a stale sweep ticket stays dispatchable until an unrelated land happens
+
 ## [0.449.0] - unreleased
 
 - T-1939: No rule-level telemetry: cannot measure which of 293 gate rules ever fire

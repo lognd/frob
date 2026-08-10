@@ -19,6 +19,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 `docs/modules/tickets.md` is the single largest throughput limiter on
 this repo's queue. Measured: **35 open tickets name it in their scope.**

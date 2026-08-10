@@ -147,3 +147,114 @@ ACCEPTANCE
    reported by REG002. It must fail before the fix.
 4. Re-measure `--only registry` unscoped after landing; the 7 REG008/
    REG011 warnings are out of scope but must not increase.
+
+## Done report
+
+REG002 was red because docs/design/registry/check-coverage.yaml's
+CHK-GATE-SYS-IFACE-ORDER row asserted "SYS-IFACE-ORDER is a live,
+enforced gate rule" (disposition handled_by:SYS-IFACE-ORDER) while
+SYS-IFACE-ORDER only ever existed as a Tier-A auto-fix handler
+(fix_sys_interface_canonical_order, T-1872) -- confirmed absent from
+frob.gates._waive._KNOWN_GATE_RULES and from frob.gates.
+_KNOWN_RULE_FIXABILITY (grep across src/ and both known-rule registries
+before making any change).
+
+Checked the hypothesis in the ticket body directly: every OTHER id in
+TIER_A_HANDLERS is backed by a real detector somewhere -- REG010/DOC002/
+FMT001/COV002/TICK002/TICK006/REL002/SUPPRESS001/SYS100 all appear as
+`rule="<ID>"` in a real gate/audit module outside the fix-engine files
+(SYS100's detector lives in frob.strata._selfconform, the SYS100/SYS108
+detector-in-strata/fixer-in-gates split); E501 is checked by ruff itself.
+SYS-IFACE-ORDER was the one exception: a code path silently mutating a
+design/*.strata file's declared interface= presentation on every `frob
+ticket land`, with zero detector a human could see, waive, or
+investigate first.
+
+Building the missing detector properly would mean sharing the ~150 lines
+of parsing/kind-resolution logic this handler already carries (bind_code,
+_node_symbol_kinds, _iface_find_spans, _canonical_interface_key) with a
+NEW self-conformance rule following the SYS100/SYS108 detector/fixer
+split, wired into check_self_conformance's existing SYS100-108 pipeline,
+plus new entries in _KNOWN_GATE_RULES/_KNOWN_RULE_FIXABILITY and new
+waiver/doc/test coverage. That is a genuine new feature, not a bug fix,
+and it multiplies the exact class of machinery (auto-mutating design/
+interface= presentation with no prior human-visible signal) the standing
+owner directive already ruled out once for the membership side of the
+same attribute (T-1870). Retiring the handler and the false row together
+is the narrower, more consistent fix -- explicitly permitted by the
+ticket's acceptance criterion 2 -- and it does not touch the T-1872
+land-time Tier-A absorption machinery itself (data-driven off
+TIER_A_HANDLERS, unaffected by removing one entry).
+
+Retired together:
+- src/frob/gates/_fix_engine.py: TIER_A_HANDLERS["SYS-IFACE-ORDER"] entry
+  + the now-dead import, with the retirement reasoning recorded in the
+  comment block above TIER_A_HANDLERS.
+- src/frob/gates/_fix_engine_sync.py: the whole SYS-interface-canonical-
+  order section (_IFACE_* regexes/constants, _iface_find_spans,
+  _node_symbol_kinds, _canonical_interface_key, _render_interface_block,
+  _reorder_node_interface_block, _iface_rewrite_parses,
+  _reorder_iface_one_file, fix_sys_interface_canonical_order) plus the
+  now-unused `ast`/`Counter` imports; retirement reasoning added to the
+  module docstring.
+- docs/design/registry/check-coverage.yaml: CHK-GATE-SYS-IFACE-ORDER row
+  deleted, gate_rule_total 294 -> 293 (matches the real gate_rule_entries
+  count).
+- docs/strata/surface.md: the T-1872 section rewritten to record the
+  retirement (kept, not deleted -- explains what the handler was and why
+  it is gone, per the playbook's "a disclosed cut with no record is a
+  finding" posture).
+- tests/unit/gates/test_sys_interface_canonical_order.py: deleted (tested
+  only the removed handler; confirmed no other file imports from it).
+- tests/test_registry_exhaustiveness.py: added
+  TestDisposition.test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails
+  (acceptance criterion 3) -- asserts SYS-IFACE-ORDER is absent from the
+  REAL production known_gate_rule_ids() (so this can't silently
+  regress) and that a synthetic handled_by:SYS-IFACE-ORDER row is
+  reported by REG002 against the real known-rules set.
+
+Side effect (not separately scoped, not touched beyond what removing the
+dict entry naturally fixed): tests/test_gates.py::TestFixEngineTierABatch2
+.test_tier_a_handlers_dict_covers_every_batch_rule was ALREADY red on
+main (its hardcoded expected set never included "SYS-IFACE-ORDER", so
+main's TIER_A_HANDLERS containing that key already failed it) --
+removing the key makes the dict match the test's pre-existing expected
+set again, with no edit to the test needed. Measured directly: red on
+main, green in this worktree.
+
+Pre-existing, unrelated red confirmed NOT caused or touched by this
+ticket: tests/test_registry_exhaustiveness.py::
+TestCheckCoverageReg008BurnDown.test_no_reg008_findings_for_check_coverage_yaml
+fails identically on main and in this worktree (9 violations on main,
+7 here after this fix -- the assertion itself, that check-coverage.yaml
+carries zero REG008 findings, was already false on main against
+PERF012/TEST018/SYS108/INV051/GITIGNORED-TRUST, none of which this
+ticket's scope touches). Left alone; out of scope.
+
+Fail-then-pass proof (acceptance 3), read directly:
+- On main: tests/test_check_coverage_registry.py::
+  TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+  FAILS -- AssertionError: assert 294 == 293 (293 = len(known_gate_rule_ids())
+  on main too, since SYS-IFACE-ORDER was never registered there either;
+  294 = the check-coverage.yaml row count including the false row).
+- In this worktree (fix applied): same test PASSES.
+
+Measured `uv run frob check --only registry` in this worktree: 0 errors,
+6 warnings (was 7 REG008/REG011 warnings on main -- decreased by one,
+since the retired row itself no longer needs a frob:enforces edge to
+avoid a REG008 candidate; does not increase per acceptance 4).
+
+### Changed
+```
+ tickets/T-1916/ticket.md | 66 +++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 65 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_a_tier_a_fix_handler_with_no_detector_fails` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 8 error(s), 968 warning(s), 696 waived
+- error-findings: COV003@tickets/T-1872, COV003@tickets/T-1895, COV003@tickets/T-1896, COV003@tickets/T-1900, COV003@tickets/T-1906, F401@/home/logan/projects/frob/.claude/worktrees/reg-enforce/src/frob/gates/_fix_engine_sync.py, PARSE001@tests/unit/gates/test_sys_interface_canonical_order.py, PRE001@tickets/T-1916

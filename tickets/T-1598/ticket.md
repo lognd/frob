@@ -18,6 +18,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Produce the evidence base for the expansion, so the language set is defensible rather than a guess.
 

@@ -17,6 +17,8 @@ scope_breadth_ack_reason: null
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 T-1855 added reason-disclosure (declared vs implicit-cli-wiring) to the
 CrossTicketLeakage refusal in _check_cross_ticket_leakage/_report_leaked_
