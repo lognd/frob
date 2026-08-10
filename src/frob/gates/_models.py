@@ -114,14 +114,44 @@ class Violation(BaseModel):
 
 
 # frob:doc docs/modules/gates.md#data-models
+# frob:ticket T-1921
 class GateStats(BaseModel):
-    """Per-gate counters: how many violations, how long, and whether it ran."""
+    """Per-gate counters: how many violations, how long, and whether it ran.
+
+    T-1921: `examined_sites` is the per-site analysis-coverage substrate
+    T-1904 filed this ticket to build, in response to the falsified
+    `_rule_has_live_finding` WAIVE004 escape (T-1579) that deleted 55 live
+    waivers by proving only "the rule fired somewhere", never "the
+    specific waived site was re-analyzed". Keyed by gate FAMILY name
+    (the same string `--only <family>` accepts, e.g. `"archgate"`), each
+    value is the frozenset of repo-relative file paths that family's own
+    implementation actually walked/parsed this run. A family key ABSENT
+    from this mapping means "not instrumented" -- this substrate makes NO
+    claim about that family's coverage, honest by omission. A family key
+    PRESENT but a given file NOT a member of its set means "instrumented,
+    and this run did not examine that file". Only `frob.gates._coverage_
+    sites.site_examined` may report a site "examined": querying this dict
+    directly and treating a missing key as `False` (rather than
+    `unknown`) would silently reintroduce the same false-confidence shape
+    the incident named -- always go through that helper, never inline
+    `file in stats.examined_sites.get(family, frozenset())`, which cannot
+    distinguish "not instrumented" from "instrumented, found nothing".
+    Populated additively by `frob.gates._coverage_sites.attach_examined_
+    sites` as a post-`run_gates` enrichment step (not baked into
+    `_assemble_gate_report` itself, so this substrate never has to touch
+    every gate family's own dispatch plumbing to exist) -- see that
+    module's docstring for which families are wired today and which are
+    deliberately left uninstrumented. NOT used by any auto-fix or waiver-
+    retirement path yet (T-1921's own explicit scope cut, per the
+    standing WAIVE004 hardening this repo already carries) -- building
+    that consumer is separate, later, more carefully reviewed work."""
 
     model_config = ConfigDict(frozen=True)
 
     counts: Mapping[str, int] = {}
     timing_s: Mapping[str, float] = {}
     skipped: tuple[str, ...] = ()
+    examined_sites: Mapping[str, frozenset[str]] = {}
 
 
 # frob:doc docs/modules/gates.md#data-models

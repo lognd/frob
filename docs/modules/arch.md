@@ -1858,10 +1858,28 @@ class ArchSuggestion(BaseModel):
 class ArchResult(BaseModel):
     root: str
     suggestions: list[ArchSuggestion]
+    files_examined: tuple[str, ...] = ()   # T-1921, see below
 
     def as_text(self) -> str: ...   # human-readable report
     def as_json(self) -> str: ...   # machine-readable, `frob arch --json`
 ```
+
+**`files_examined` (T-1921).** The repo-relative paths (same form
+`ArchSuggestion.file` uses) that `analyze_project` actually reached far
+enough to parse and check, NOT merely every path its walk collected as a
+candidate -- a file skipped early (unreadable, no tree-sitter grammar for
+its extension, or a parse failure) is deliberately excluded, even though
+`_analyze_one_file` was called on it. This backs `frob.gates.
+_coverage_sites`'s per-site analysis-coverage substrate
+(docs/modules/gates.md#data-models's `GateStats.examined_sites`), filed
+from T-1904's investigation of the falsified T-1579 WAIVE004 escape that
+deleted 55 live waivers by proving only "the rule fired somewhere",
+never "this specific site was re-analyzed" -- reporting a file examined
+here that `_analyze_one_file` actually skipped would repeat that same
+unsound shape one layer down, so this reflects `_analyze_one_file`'s own
+real per-file success/failure return value, not its candidate list.
+`frob.gates._arch.arch_examined_sites` is the reader that turns this
+into the `"archgate"` entry of `GateStats.examined_sites`.
 
 <!-- frob:describes src/frob/arch/_models.py::ArchResult.as_text -->
 <!-- frob:describes src/frob/arch/_models.py::ArchResult.as_json -->

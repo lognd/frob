@@ -238,6 +238,16 @@ def memoize_per_run(func) -> Callable
     # stage, any gate) benefits automatically without call-site edits.
 ```
 
+T-1921: `analyze_project` grew a `files_examined` field on its return
+value (`ArchResult`, docs/modules/arch.md#public-api) -- the per-site
+analysis-coverage substrate's ARCH-family source of truth
+(`frob.gates._arch.arch_examined_sites`). This memoization contract is
+unaffected: the decorator still keys purely on call arguments, so a
+second `analyze_project(root, ...)` call within the same run-memo scope
+(e.g. `arch_gate`'s own call, then `arch_examined_sites`' second call
+against the identical `root`/config) is a cache hit and returns the SAME
+`ArchResult`, `files_examined` included -- not a second tree walk.
+
 Correctness boundary: the memo is keyed on arguments only (no content
 hash), so it must NEVER be active outside a real `frob check` run -- a
 caller invoking `build_graph` directly (a CLI runner, or a test exercising

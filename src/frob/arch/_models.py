@@ -242,12 +242,29 @@ class ArchSuggestion(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#arch-result
+# frob:ticket T-1921
 class ArchResult(BaseModel):
+    """T-1921: `files_examined` lists the repo-relative paths (same
+    `str(path.relative_to(scan_root))` form `ArchSuggestion.file` already
+    uses) that `analyze_project` actually reached far enough to run real
+    checks on -- a file skipped early (unreadable, no tree-sitter grammar
+    for its extension, or a parse failure) is deliberately NOT a member,
+    even though it was walked/collected. This backs
+    `frob.gates._coverage_sites`' per-site analysis-coverage substrate
+    (T-1921, filed from the falsified T-1579 WAIVE004 escape that proved
+    only "the rule fired somewhere" and deleted 55 live waivers) --
+    reporting a file "examined" that was never actually parsed would
+    repeat exactly that mistake one layer down, so this is populated from
+    `_analyze_one_file`'s own real success/failure outcome, not from the
+    walk's candidate list."""
+
     root: str
     suggestions: list[ArchSuggestion]
+    files_examined: tuple[str, ...] = ()
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_arch.py::TestArchResultFormat.test_as_text_clean_project  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_arch.py::TestArchResultFormat.test_as_text_clean_project
     def as_text(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         if not self.suggestions:
@@ -264,7 +281,8 @@ class ArchResult(BaseModel):
         return "\n".join(lines)
 
     # frob:ticket T-0588
-    # frob:tests tests/unit/test_arch.py::TestArchResultFormat.test_as_json_has_suggestions_key  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_arch.py::TestArchResultFormat.test_as_json_has_suggestions_key
     def as_json(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         return json.dumps(self.model_dump(), indent=2)

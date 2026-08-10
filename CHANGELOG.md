@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.428.0] - unreleased
+
+- T-1921: Per-site analysis-coverage substrate for WAIVE004 escape (T-1904 successor)
+
 ## [0.427.0] - unreleased
 
 - T-1929: Confirmatory-only evidence is only detectable at land: --designate-repro validates nothing and BUG002 has no on-demand path

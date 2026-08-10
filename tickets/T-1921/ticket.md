@@ -1,7 +1,7 @@
 ---
 id: T-1921
 title: Per-site analysis-coverage substrate for WAIVE004 escape (T-1904 successor)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-09'
@@ -10,6 +10,17 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_models.py
+- src/frob/gates/_arch.py
+- src/frob/gates/_coverage_sites.py
+- src/frob/arch/__init__.py
+- src/frob/arch/_models.py
+- tests/test_gates.py
+- tests/unit/gates/test_examined_sites.py
+- docs/modules/gates.md
+- docs/modules/arch.md
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -41,6 +52,90 @@ scope_changes:
     at start time per normal workflow
   actor: logan
   at: '2026-08-09'
+- op: add
+  glob: src/frob/gates/_models.py
+  reason: 'per-site analysis-coverage substrate: GateStats gains examined_sites; populated
+    for the ARCH family via analyze_project/arch_gate; a new gates/_coverage_sites.py
+    enrichment module + query helper (avoids touching gates/__init__.py, leased by
+    T-1929); new regression test file'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: 'per-site analysis-coverage substrate: GateStats gains examined_sites; populated
+    for the ARCH family via analyze_project/arch_gate; a new gates/_coverage_sites.py
+    enrichment module + query helper (avoids touching gates/__init__.py, leased by
+    T-1929); new regression test file'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/gates/_coverage_sites.py
+  reason: 'per-site analysis-coverage substrate: GateStats gains examined_sites; populated
+    for the ARCH family via analyze_project/arch_gate; a new gates/_coverage_sites.py
+    enrichment module + query helper (avoids touching gates/__init__.py, leased by
+    T-1929); new regression test file'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/arch/__init__.py
+  reason: 'per-site analysis-coverage substrate: GateStats gains examined_sites; populated
+    for the ARCH family via analyze_project/arch_gate; a new gates/_coverage_sites.py
+    enrichment module + query helper (avoids touching gates/__init__.py, leased by
+    T-1929); new regression test file'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/arch/_models.py
+  reason: 'per-site analysis-coverage substrate: GateStats gains examined_sites; populated
+    for the ARCH family via analyze_project/arch_gate; a new gates/_coverage_sites.py
+    enrichment module + query helper (avoids touching gates/__init__.py, leased by
+    T-1929); new regression test file'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'per-site analysis-coverage substrate: GateStats gains examined_sites; populated
+    for the ARCH family via analyze_project/arch_gate; a new gates/_coverage_sites.py
+    enrichment module + query helper (avoids touching gates/__init__.py, leased by
+    T-1929); new regression test file'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tests/unit/gates/test_examined_sites.py
+  reason: 'per-site analysis-coverage substrate: GateStats gains examined_sites; populated
+    for the ARCH family via analyze_project/arch_gate; a new gates/_coverage_sites.py
+    enrichment module + query helper (avoids touching gates/__init__.py, leased by
+    T-1929); new regression test file'
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001/COV001 doc-anchor closure for the changed ArchResult/GateStats/arch_gate
+    public symbols
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/modules/arch.md
+  reason: AFFECT001/COV001 doc-anchor closure for the changed ArchResult/GateStats/arch_gate
+    public symbols
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/commands/check.md
+  reason: AFFECT001 closure for analyze_project's memoization doc anchor
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/gates/test_examined_sites.py::TestSiteExaminedSoundness::test_uninstrumented_family_reports_not_examined
+- tests/unit/gates/test_examined_sites.py::TestSiteExaminedSoundness::test_instrumented_family_reports_true_for_a_known_site
+- tests/unit/gates/test_examined_sites.py::TestSiteExaminedSoundness::test_instrumented_family_reports_false_for_an_unexamined_site
+- tests/unit/gates/test_examined_sites.py::TestSiteExaminedSoundness::test_instrumented_but_empty_family_still_reports_false_for_any_site
+- tests/unit/gates/test_examined_sites.py::TestIsFamilyInstrumented::test_absent_family_is_not_instrumented
+- tests/unit/gates/test_examined_sites.py::TestIsFamilyInstrumented::test_present_empty_family_is_instrumented
+- tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_archgate_examined_sites_include_a_real_python_file
+- tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_archgate_examined_sites_exclude_an_unparseable_file
+- tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_families_this_module_does_not_know_about_stay_absent
+- tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_preserves_examined_sites_a_prior_caller_already_attached
 designated_repro_test: null
 threat: null
 component: null

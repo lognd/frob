@@ -4789,6 +4789,10 @@ guessed at inside this ticket's own budget.
 <!-- frob:describes src/frob/gates/_models.py::Violation -->
 <!-- frob:describes src/frob/gates/_models.py::GateStats -->
 <!-- frob:describes src/frob/gates/_models.py::GateReport -->
+<!-- frob:describes src/frob/gates/_arch.py::arch_examined_sites -->
+<!-- frob:describes src/frob/gates/_coverage_sites.py::attach_examined_sites -->
+<!-- frob:describes src/frob/gates/_coverage_sites.py::is_family_instrumented -->
+<!-- frob:describes src/frob/gates/_coverage_sites.py::site_examined -->
 <!-- frob:describes src/frob/gates/_models.py::GateConfig -->
 <!-- frob:describes src/frob/gates/_models.py::PreworkSweep -->
 <!-- frob:describes src/frob/gates/_models.py::SystemSpec -->
@@ -4802,7 +4806,26 @@ guessed at inside this ticket's own budget.
 - `Violation` -- one gate finding: rule id, severity, site, and a message
   that always embeds its own remedy command.
 - `GateStats` -- per-gate counters (violation counts, timing, skipped
-  gates) attached to every `GateReport`.
+  gates) attached to every `GateReport`. T-1921: also carries
+  `examined_sites`, the per-site analysis-coverage substrate filed from
+  T-1904's investigation of the falsified T-1579 WAIVE004 escape
+  (`_rule_has_live_finding`, reverted after deleting 55 live waivers --
+  proving only "the rule fired somewhere" is unsound proof that a
+  specific waived SITE was re-analyzed). Keyed by gate family name, each
+  value is the frozenset of repo-relative paths that family examined
+  this run; a family absent from the mapping means "not instrumented",
+  never silently "examined and clean". `frob.gates._coverage_sites`
+  (`site_examined`/`is_family_instrumented`/`attach_examined_sites`) is
+  the sanctioned way to read it -- never inline the dict lookup at a
+  call site. `attach_examined_sites` populates it as a post-`run_gates`
+  enrichment step; today only the `archgate` family
+  (`frob.gates._arch.arch_examined_sites`, backed by `ArchResult.
+  files_examined`) reports for real, every other family deliberately
+  left uninstrumented (T-1921's own scope cut -- see that module's
+  docstring). NOT wired into WAIVE004 or any other auto-fix/waiver-
+  retirement path by this substrate; that consumer is separate, later
+  work, precisely so it gets the same scrutiny the original incident
+  should have had.
 - `GateReport` -- the merged result of `run_gates`: kept violations,
   waived violations, and stats.
 - `GateConfig` -- everything `run_gates` needs to load state and select

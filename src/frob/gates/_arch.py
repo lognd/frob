@@ -112,13 +112,16 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
 # frob:enforces CHK-GATE-LARGE001
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_two_cluster_class_fires_arch101  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_cohesive_class_does_not_fire_arch101  # noqa: E501
-# frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_god_module_fires_arch102  # noqa: E501
+# frob:tests \
+# tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_god_module_fires_arch102
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_mixed_concern_function_fires_arch103  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_arch101_respects_explicit_frob_toml_override  # noqa: E501
 # frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppthrow001_error  # noqa: E501
 # frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_not_fire_cppthrow001  # noqa: E501
-# frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_warn  # noqa: E501
-# frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001  # noqa: E501
+# frob:tests \
+# tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_warn
+# frob:tests \
+# tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001
 # frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
 def arch_gate(root: Path) -> tuple[Violation, ...]:
     """ARCH001: one `Violation` per long-AND-complex python/C++ function
@@ -174,4 +177,40 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
-__all__ = ["arch_gate"]
+# frob:doc docs/modules/gates.md#data-models
+# frob:ticket T-1921
+# frob:tests tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites.test_archgate_examined_sites_include_a_real_python_file  # noqa: E501
+# frob:tests tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites.test_archgate_examined_sites_exclude_an_unparseable_file  # noqa: E501
+# frob:waive WIRE001 reason="already called at runtime from \
+# frob.gates._coverage_sites._load_family_reporters, which stores it as a dict value \
+# and invokes it indirectly (reporters[family](root)) -- the exact shape static \
+# call-graph analysis cannot trace through; genuinely wired, not dead" \
+# follow_up="T-1942"
+def arch_examined_sites(root: Path) -> frozenset[str]:
+    """T-1921: the per-site analysis-coverage substrate's ARCH-family
+    reporter -- the repo-relative file paths `arch_gate`'s own
+    `analyze_project(root, ...)` call actually parsed and checked this
+    run (`ArchResult.files_examined`, itself built from `_analyze_one_
+    file`'s real success/failure outcome, never merely "was in the
+    walk's candidate list" -- see that function's own docstring).
+
+    Calls `analyze_project` a SECOND time rather than threading the
+    first call's result through `arch_gate`'s own return value, so
+    `arch_gate`'s public `(root) -> tuple[Violation, ...]` contract stays
+    exactly what every other Tier-A/dispatch consumer already expects --
+    `analyze_project` is memoized per `frob check` run (T-0423,
+    `frob.check._memo.memoize_per_run`, see its own docstring), so this
+    second call is a cache hit, not a second tree walk, PROVIDED it is
+    called with the identical `**load_arch_config(root)` kwargs
+    `arch_gate` used; a caller invoking this standalone (outside the
+    same `frob check` run `arch_gate` ran in) pays one real walk, same
+    cost as any other on-demand `frob.gates._coverage_sites.attach_
+    examined_sites` call."""
+    from frob.app.config import load_arch_config
+    from frob.arch import analyze_project
+
+    result = analyze_project(root, **load_arch_config(root))
+    return frozenset(result.files_examined)
+
+
+__all__ = ["arch_examined_sites", "arch_gate"]

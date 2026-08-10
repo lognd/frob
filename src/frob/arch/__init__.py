@@ -373,24 +373,35 @@ def _analyze_one_file(
     all_py_sigs: list[tuple[str, str, tuple[str, ...], str, str]],
     all_dispatch_refs: dict[str, set[str]],
     all_constructions: dict[str, set[str]],
-) -> None:
+) -> bool:
     """Run every applicable check on one file, appending to `suggestions`,
     accumulating python signatures for the cross-file pass, (for eligible
     python files) accumulating structural dispatch references for
     `_is_dispatch_family`'s corpus (T-0360), and accumulating class-
     construction sites for `_patterns._check_scattered_construction`'s
-    cross-file corpus (T-0332)."""
+    cross-file corpus (T-0332).
+
+    T-1921: returns whether `path` was actually examined (reached a real
+    parse and had its checks run) -- False for every early-return branch
+    below (unreadable, no path-relative form, no tree-sitter grammar, or
+    a parse failure), never just "was in the walk's candidate list".
+    `analyze_project` folds True results into `ArchResult.files_examined`,
+    the source of truth `frob.gates._coverage_sites` reads for the ARCH
+    family's per-site analysis-coverage claim -- reporting a file
+    examined that this function actually skipped would be the same
+    unsound shape the T-1579 WAIVE004 escape incident already proved
+    dangerous, one layer down."""
     from frob.lang import raw_tree
 
     try:
         rel = str(path.relative_to(root))
     except ValueError:
-        return
+        return False
     try:
         raw = path.read_bytes()
     except OSError as exc:
         _log.debug("arch: cannot read %s: %s", rel, exc)
-        return
+        return False
 
     is_test = is_test_file(rel)
     if not _has_tree_sitter_grammar(path, rel):
@@ -399,7 +410,7 @@ def _analyze_one_file(
         # etc.) is not source arch can even parse, so it is not "an
         # over-large module" -- skip the size check along with everything
         # else that requires a parse tree.
-        return
+        return False
     _check_large_file(
         rel, raw.splitlines(), limits.max_file_lines, suggestions, is_test=is_test
     )
@@ -407,7 +418,7 @@ def _analyze_one_file(
     parsed = raw_tree(path)
     if parsed.is_err:
         _log.debug("arch: %s not parsed (%s)", rel, parsed.err)
-        return
+        return False
     tree, _source, language = parsed.danger_ok
 
     if language == "python":
@@ -437,6 +448,7 @@ def _analyze_one_file(
             _cpp_mayraise.check_cpp_noexcept_violations(
                 raw.decode("utf-8", errors="replace"), rel, suggestions
             )
+    return True
 
 
 # frob:ticket T-0617
@@ -669,11 +681,16 @@ def analyze_project(
     scan_root = root.parent if root.is_file() else root
     files = [root] if root.is_file() else _collect_files(root)
 
+    # T-1921: files this call actually parsed/checked, not just walked --
+    # see `_analyze_one_file`'s own docstring for why that distinction
+    # matters (ArchResult.files_examined's per-site coverage contract).
+    files_examined: list[str] = []
+
     # frob.lang logs at INFO/DEBUG per parse; CLI callers piping `--json`
     # need that off stdout, same reasoning as frob.logging.quiet's docstring.
     with quiet_stdout_logs():
         for path in files:
-            _analyze_one_file(
+            examined = _analyze_one_file(
                 path,
                 scan_root,
                 limits,
@@ -682,6 +699,11 @@ def analyze_project(
                 all_dispatch_refs,
                 all_constructions,
             )
+            if examined:
+                try:
+                    files_examined.append(str(path.relative_to(scan_root)))
+                except ValueError:
+                    pass
 
     _python._check_abstraction_opportunities(
         all_py_sigs, all_dispatch_refs, suggestions
@@ -693,4 +715,8 @@ def analyze_project(
     # snapshot (list(suggestions)) so appending the paired escape finding
     # does not mutate the list being iterated.
     _patterns._check_god_object_escape(list(suggestions), suggestions)
-    return ArchResult(root=str(root), suggestions=suggestions)
+    return ArchResult(
+        root=str(root),
+        suggestions=suggestions,
+        files_examined=tuple(files_examined),
+    )
