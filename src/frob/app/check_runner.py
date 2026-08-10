@@ -436,6 +436,77 @@ def _opt_in_deploy_stage_result(
     return wrap_fn(violations)
 
 
+# frob:ticket T-1809
+# frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
+# frob:tests \
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_manage\
+# d_copy_absent
+# frob:tests \
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_clean_when_in_sync
+# frob:tests \
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_has_no\
+# _managed_config
+def _claude_config_drift_result(root: Path) -> ToolResult | None:
+    """CLAUDE001 (T-1809, T-1719 item 2): fails `frob check` when a
+    `.claude/hooks/sync-claude-config.py`-managed file (T-1808's `MANAGED`
+    manifest) differs from its materialized `~/.claude/` copy, or a
+    managed source is missing entirely.
+
+    Not wired into `frob.gates`'s pluggable job table (`src/frob/gates/**`
+    sat under another ticket's live cross-worktree lease for the whole of
+    this ticket's dispatch window) -- instead this is one more opt-in
+    extra stage `run()` folds into `CheckResult`, the identical shape
+    `_deploy_drift_result`/`_deploy_conformance_result` above already use
+    for the same reason (their own docstrings note `src/frob/gates/**`
+    was out of THEIR ticket's scope too). Opt-in on `.claude/hooks/sync-
+    claude-config.py` existing (`frob.app.claude_runner.drift_report`'s own
+    `None`-when-absent convention) -- a repo that does not own this repo's
+    managed Claude config sees no `claude-config-drift` line at all, same
+    posture as `deploy-drift` on a repo with no `deploy/`.
+
+    Detection only, never a write -- the WRITE stays `frob claude sync`
+    (T-1808), run by hand or from CI; this stage is what makes silent
+    drift a `frob check` failure instead of something only discovered the
+    next time a hook mysteriously does not fire."""
+    from frob.app.claude_runner import drift_report
+
+    report = drift_report(root)
+    if report is None:
+        return None
+    drifted, missing = report
+    diagnostics = [
+        Diagnostic(
+            file=str(root / ".claude" / "hooks" / "sync-claude-config.py"),
+            severity="error",
+            code="CLAUDE001",
+            message=f"managed file drifted from ~/.claude/: {entry} -- "
+            "reconcile with `frob claude sync`",
+        )
+        for entry in drifted
+    ]
+    diagnostics.extend(
+        Diagnostic(
+            file=str(root / ".claude" / "hooks" / "sync-claude-config.py"),
+            severity="error",
+            code="CLAUDE001",
+            message=f"managed source missing: {source_rel}",
+        )
+        for source_rel in missing
+    )
+    n_bad = len(diagnostics)
+    summary = (
+        f"{n_bad} managed Claude-config file(s) drifted or missing"
+        if n_bad
+        else "Claude config in sync with ~/.claude/"
+    )
+    return ToolResult(
+        tool="claude-config-drift",
+        exit_code=1 if n_bad else 0,
+        diagnostics=diagnostics,
+        summary=summary,
+    )
+
+
 def _deploy_drift_result(root: Path) -> ToolResult | None:
     """DEPLOY001: `deploy/{install,status,uninstall}.sh` vs. regeneration
     from the current design model (`frob.deploy.deploy_drift_violations`,
@@ -748,13 +819,14 @@ def _append_deploy_stages(
     base: int = 0,
     total: int = 0,
 ) -> CheckResult:
-    """Fold the opt-in `deploy-drift`/`deploy-conformance` stages (each
-    `None` when `deploy/` is absent) onto `result`.
+    """Fold the opt-in `deploy-drift`/`deploy-conformance`/`claude-config-
+    drift` stages (each `None` when its own opt-in condition is absent)
+    onto `result`.
 
     `progress`/`base`/`total` (T-0419) advance the same live task-list
     `_run_all_detected` feeds, continuing its count rather than restarting
-    at zero, so the deploy stages read as the tail of one list, not a
-    second one."""
+    at zero, so these stages read as the tail of one list, not a second
+    one."""
     if progress is not None:
         progress.update("check: deploy-drift", base, total)
     deploy_result = _deploy_drift_result(root)
@@ -768,6 +840,13 @@ def _append_deploy_stages(
             path=result.path,
             results=[*result.results, deploy_conform_result],
         )
+    n_deploy_actual = 2 if (root / "deploy").is_dir() else 0
+    if progress is not None:
+        progress.update("check: claude-config-drift", base + n_deploy_actual, total)
+    # frob:ticket T-1809
+    claude_result = _claude_config_drift_result(root)
+    if claude_result is not None:
+        result = CheckResult(path=result.path, results=[*result.results, claude_result])
     if progress is not None:
         progress.update("check: done", total, total)
     return result
@@ -1188,7 +1267,9 @@ def _stage_total(cfg: AppConfig, root: Path) -> int:
     else:
         n_lang = 1
     n_deploy = 2 if (root / "deploy").is_dir() else 0
-    return n_lang + n_deploy
+    claude_hook = root / ".claude" / "hooks" / "sync-claude-config.py"
+    n_claude = 1 if claude_hook.is_file() else 0
+    return n_lang + n_deploy + n_claude
 
 
 # frob:ticket T-0419

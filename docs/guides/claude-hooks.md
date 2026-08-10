@@ -95,6 +95,17 @@ automatically on every `frob` invocation (stderr, next to
 `stale_install_warning`/`stale_binary_warning`); the WRITE stays this
 script's/the verb's explicit call, never automatic.
 
+T-1809 gates this drift as a `frob check` stage (`claude-config-drift`,
+CLAUDE001, `src/frob/app/check_runner.py::_claude_config_drift_result`):
+opt-in on this script existing, it fails `frob check` outright when a
+managed file differs from its `~/.claude/` copy or a managed source is
+missing -- the pre-land enforcement half of the same signal T-1808's
+`drift_warning` already surfaces on every `frob` invocation. Not wired
+into `frob.gates`'s pluggable job table (out of scope for that ticket's
+dispatch window) -- it is one more opt-in extra stage `check_runner.run`
+folds into `CheckResult`, the identical shape `_deploy_drift_result`/
+`_deploy_conformance_result` already use for a repo with no `deploy/`.
+
 ## The `claude_hooks` design node
 
 T-1838 declared a `claude_hooks : trusted` node (`code ".claude/hooks/**"`)

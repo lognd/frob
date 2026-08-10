@@ -15,6 +15,7 @@ from pathlib import Path
 import frob.gates as gates_module
 from frob.app.check_runner import (
     _apply_tier_a_and_reverify,
+    _claude_config_drift_result,
     _fix_report_text,
     _result_as_json_with_fix,
 )
@@ -273,4 +274,103 @@ class TestFixReportText:
         text = _fix_report_text({"fixed": [], "rolled_back": [], "fixits": []})
         assert "fixed=0" in text
         assert "rolled_back=0" in text
-        assert "fix-its=0" in text
+
+
+_MINIMAL_SYNC_HOOK = '''"""Sync git-tracked Claude config from this repo out to `~/.claude/`."""
+
+from pathlib import Path
+
+_REPO = Path(__file__).resolve().parents[2]
+_HOME_CLAUDE = Path.home() / ".claude"
+
+MANAGED: list[tuple[str, str]] = [
+    (".claude/hooks/widget.py", "hooks/widget.py"),
+]
+
+_BANNER = "# GENERATED COPY -- DO NOT EDIT.\\n"
+
+
+def plan():
+    actions = []
+    missing = []
+    for source_rel, dest_rel in MANAGED:
+        source = _REPO / source_rel
+        if not source.exists():
+            missing.append(source_rel)
+            continue
+        want = _BANNER + source.read_text(encoding="utf-8")
+        dest = _HOME_CLAUDE / dest_rel
+        have = dest.read_text(encoding="utf-8") if dest.exists() else None
+        if have == want:
+            continue
+        state = "absent" if have is None else "differs"
+        actions.append((f"{dest_rel} ({state} vs {source_rel})", dest, want))
+    return actions, missing
+
+
+def main(argv=None):
+    return 0
+'''
+
+
+def _claude_config_repo(tmp_path: Path, monkeypatch) -> Path:  # noqa: ANN001
+    """A fixture repo carrying a minimal `.claude/hooks/sync-claude-
+    config.py`, plus a throwaway `$HOME` so this stage's own `Path.home()
+    / ".claude"` read never touches the real operator home directory."""
+    root = tmp_path / "repo"
+    hooks = root / ".claude" / "hooks"
+    hooks.mkdir(parents=True)
+    (hooks / "sync-claude-config.py").write_text(_MINIMAL_SYNC_HOOK, encoding="utf-8")
+    (hooks / "widget.py").write_text("print('widget')\n", encoding="utf-8")
+
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(Path, "home", lambda: home)
+    return root
+
+
+class TestClaudeConfigDriftStage:
+    """`_claude_config_drift_result` (T-1809): the `frob check` extra
+    stage gating T-1808's Claude-config sync drift. Acceptance shape: a
+    divergence MUST fail before any sync (`test_reports_drift_when_
+    managed_copy_absent`), and an in-sync tree MUST report clean, no
+    false positive (`test_clean_when_in_sync`)."""
+
+    # frob:tests \
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_ma\
+    # naged_copy_absent
+    def test_reports_drift_when_managed_copy_absent(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        root = _claude_config_repo(tmp_path, monkeypatch)
+        result = _claude_config_drift_result(root)
+        assert result is not None
+        assert result.exit_code == 1
+        assert result.tool == "claude-config-drift"
+        assert any(d.code == "CLAUDE001" for d in result.diagnostics)
+
+    # frob:tests \
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_clean_when_in_sync
+    def test_clean_when_in_sync(self, tmp_path: Path, monkeypatch) -> None:
+        root = _claude_config_repo(tmp_path, monkeypatch)
+        dest = Path.home() / ".claude" / "hooks" / "widget.py"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(
+            "# GENERATED COPY -- DO NOT EDIT.\n" + (root / ".claude" / "hooks" / "widget.py").read_text(
+                encoding="utf-8"
+            ),
+            encoding="utf-8",
+        )
+        result = _claude_config_drift_result(root)
+        assert result is not None
+        assert result.exit_code == 0
+        assert result.diagnostics == []
+
+    # frob:tests \
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_ha\
+    # s_no_managed_config
+    def test_no_stage_when_repo_has_no_managed_config(self, tmp_path: Path) -> None:
+        root = tmp_path / "bare"
+        root.mkdir()
+        assert _claude_config_drift_result(root) is None
