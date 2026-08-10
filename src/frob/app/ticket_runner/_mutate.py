@@ -64,28 +64,58 @@ def _resolve_scope_reason(cfg: AppConfig) -> str | None:
 
 # frob:ticket T-0455
 # frob:ticket T-0737
+# frob:ticket T-1975
 # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path
 # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_leased_path_exits_nonzero  # noqa: E501
-def _scope(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket scope <id> --add GLOB... --remove GLOB... (--reason
-    TEXT | --reason-file PATH)`: the ONLY thing this command does is
-    resolve the reason (`_resolve_scope_reason`, T-0737) and forward to
-    `frob.tickets.mutate_scope` -- all lease-conflict/evidence-orphan
-    validation lives there (T-0455), never re-derived here."""
+# frob:tests \
+# tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_demote_to_evidence_only_releases_lease  # noqa: E501
+def _apply_demote_to_evidence_only(root: Path, cfg: AppConfig, reason: str) -> None:
+    """T-1975 (ARCH001 split of `_scope`, zero behavior change): dispatch
+    `--demote-to-evidence-only GLOB...` to `frob.tickets.demote_to_
+    evidence_only` -- its own library call, not folded into `mutate_
+    scope`'s add/remove pair (see that function's own docstring for why
+    a plain remove+add round-trip cannot do this atomically). `sys.exit
+    (1)` on failure, matching every other scope-mutation failure mode in
+    this module."""
+    from frob.tickets import demote_to_evidence_only
+
+    if cfg.ticket_id is None:
+        # Unreachable in practice -- `_scope` (the only caller) already
+        # refused a missing ticket_id before calling this. Guarded
+        # explicitly rather than asserted so a future direct caller
+        # fails the same loud, typed way every other missing-id path in
+        # this module does, not a bare AssertionError.
+        _log.error("frob ticket scope requires <id>")
+        sys.exit(1)
+    demoted = demote_to_evidence_only(
+        root, cfg.ticket_id, cfg.ticket_scope_demote_to_evidence_only, reason=reason
+    )
+    if demoted.is_err:
+        _log.error("demote-to-evidence-only failed: %s", demoted.danger_err)
+        sys.exit(1)
+    _log.info(
+        "%s: demoted %d scope glob(s) to evidence-only (write lease "
+        "released, evidence coverage kept): %s",
+        cfg.ticket_id,
+        len(cfg.ticket_scope_demote_to_evidence_only),
+        list(cfg.ticket_scope_demote_to_evidence_only),
+    )
+
+
+def _apply_add_remove(root: Path, cfg: AppConfig, reason: str) -> None:
+    """T-1975 (ARCH001 split of `_scope`, zero behavior change): the
+    `--add`/`--remove` half -- forward to `frob.tickets.mutate_scope`,
+    then run the T-1855 still-implicitly-covered warning and the T-0998
+    scope-closure warnings, exactly as `_scope` did inline before this
+    split."""
     from frob.tickets import mutate_scope
 
     if cfg.ticket_id is None:
+        # Unreachable in practice -- `_scope` (the only caller) already
+        # refused a missing ticket_id before calling this; narrowed
+        # explicitly so `ty` sees `str`, not `str | None`, below.
         _log.error("frob ticket scope requires <id>")
         sys.exit(1)
-    if not cfg.ticket_scope_add and not cfg.ticket_scope_remove:
-        _log.error("frob ticket scope requires --add and/or --remove GLOB")
-        sys.exit(1)
-
-    reason = _resolve_scope_reason(cfg)
-    if not reason:
-        _log.error("frob ticket scope requires --reason TEXT or --reason-file PATH")
-        sys.exit(1)
-
     result = mutate_scope(
         root,
         cfg.ticket_id,
@@ -122,6 +152,45 @@ def _scope(root: Path, cfg: AppConfig) -> None:
     _emit_scope_closure_warnings(
         "ticket scope", ticket.id, _scope_closure_warnings(root, ticket.scope)
     )
+
+
+def _scope(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket scope <id> --add GLOB... --remove GLOB...
+    --demote-to-evidence-only GLOB... (--reason TEXT | --reason-file
+    PATH)`: the ONLY thing this command does is resolve the reason
+    (`_resolve_scope_reason`, T-0737) and forward to `frob.tickets.
+    mutate_scope`/`demote_to_evidence_only` -- all lease-conflict/
+    evidence-orphan validation lives there (T-0455/T-1944), never
+    re-derived here. T-1975: `--demote-to-evidence-only`
+    (`_apply_demote_to_evidence_only`) is dispatched FIRST and
+    separately when given; `--add`/`--remove` (`_apply_add_remove`)
+    still run afterward in the same invocation if also given, so all
+    three can combine in one call."""
+    if cfg.ticket_id is None:
+        _log.error("frob ticket scope requires <id>")
+        sys.exit(1)
+    if (
+        not cfg.ticket_scope_add
+        and not cfg.ticket_scope_remove
+        and not cfg.ticket_scope_demote_to_evidence_only
+    ):
+        _log.error(
+            "frob ticket scope requires --add and/or --remove and/or "
+            "--demote-to-evidence-only GLOB"
+        )
+        sys.exit(1)
+
+    reason = _resolve_scope_reason(cfg)
+    if not reason:
+        _log.error("frob ticket scope requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
+    if cfg.ticket_scope_demote_to_evidence_only:
+        _apply_demote_to_evidence_only(root, cfg, reason)
+        if not cfg.ticket_scope_add and not cfg.ticket_scope_remove:
+            return
+
+    _apply_add_remove(root, cfg, reason)
 
 
 # frob:ticket T-1855

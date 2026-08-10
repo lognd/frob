@@ -57,6 +57,22 @@ def _add_ticket_scope_parser(ticket_sub):
         metavar="GLOB",
         help="release GLOB from scope + lease (repeatable)",
     )
+    # frob:ticket T-1975
+    ticket_scope_p.add_argument(
+        "--demote-to-evidence-only",
+        dest="ticket_scope_demote_to_evidence_only",
+        action="append",
+        default=[],
+        metavar="GLOB",
+        help="migrate an EXISTING scope GLOB (T-1944's demote_to_evidence_"
+        "only, repeatable) into evidence_scope in ONE atomic write -- the "
+        "remedy for a ticket holding a write lease it never uses purely "
+        "because a pre-existing test cited as evidence needed `scope "
+        "--add` to satisfy D-02; unlike a plain `--remove`, this can never "
+        "hit ScopeRemoveOrphansEvidence, since evidence coverage is never "
+        "momentarily false. Mutually combinable with --add/--remove in the "
+        "same call.",
+    )
     ticket_scope_p.add_argument(
         "--reason",
         dest="ticket_scope_reason",

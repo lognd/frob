@@ -420,6 +420,57 @@ class TestScopeCli:
             _scope(tmp_path, cfg)
         assert exc_info.value.code == 1
 
+    # frob:ticket T-1975
+    def test_cli_demote_to_evidence_only_releases_lease(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_demote_to_evidence_only_releases_lease  # noqa: E501
+        # T-1975: GIVEN a ticket whose scope carries a glob it only ever
+        # needed for evidence coverage WHEN `frob ticket scope --demote-
+        # to-evidence-only` (the CLI entry point) runs THEN the glob
+        # moves atomically into evidence_scope and OUT of scope -- the
+        # write lease is released while D-02 coverage is never
+        # momentarily false. Proves the CLI wiring reaches T-1944's
+        # library function, not just that the library function itself
+        # works (its own unit tests already cover that).
+        ticket = _make_ticket(
+            tmp_path,
+            scope=("src/frob/other/**", "tests/test_widely_used.py"),
+            state=TicketState.IN_PROGRESS,
+        )
+        cfg = AppConfig(
+            ticket_command="scope",
+            ticket_id=ticket.id,
+            ticket_path=tmp_path,
+            ticket_scope_demote_to_evidence_only=["tests/test_widely_used.py"],
+            ticket_scope_reason="cites an existing test, never writes it",
+        )
+        _scope(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        updated = queue.tickets[ticket.id]
+        assert "tests/test_widely_used.py" not in updated.scope
+        assert "tests/test_widely_used.py" in updated.evidence_scope
+        assert "src/frob/other/**" in updated.scope
+
+    # frob:ticket T-1975
+    def test_cli_demote_to_evidence_only_requires_declared_glob(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_demote_to_evidence_only_requires_declared_glob  # noqa: E501
+        ticket = _make_ticket(
+            tmp_path, scope=("src/frob/other/**",), state=TicketState.IN_PROGRESS
+        )
+        cfg = AppConfig(
+            ticket_command="scope",
+            ticket_id=ticket.id,
+            ticket_path=tmp_path,
+            ticket_scope_demote_to_evidence_only=["tests/never_declared.py"],
+            ticket_scope_reason="not actually in scope",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _scope(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
     # frob:ticket T-0995
     def test_cli_requires_reason(self, tmp_path: Path) -> None:
         # frob:tests \
