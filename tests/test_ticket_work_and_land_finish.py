@@ -26,6 +26,7 @@ from frob.app.ticket_runner._land_cmd import (
     _drop_checkpoint_exempt_findings,
     _finish_land_after_success,
     _finish_worktree,
+    _land,
     _post_land_unscoped_error_sweep,
     _pre_commit_unscoped_error_sweep,
     _print_land_proof,
@@ -459,6 +460,72 @@ class TestAssertTouchedFilesTypeCheckPreLand:
         _assert_touched_files_type_check_pre_land(
             repo, "T-1907", None
         )  # must not raise
+
+    # frob:ticket T-1907
+    def test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error  # noqa: E501
+        # T-1907's DESIGNATED REPRO (BUG002): unlike the unit test above
+        # (which calls the new guard function directly -- a function that
+        # does not exist at all before this ticket, so a parent-commit
+        # repro run of it is vacuous, not a real "did the defect exist"
+        # check), this calls `_land` -- the CLI entrypoint that exists at
+        # BOTH revisions -- end to end against a worktree whose OWN
+        # touched file carries a real `ty` error. At the parent commit
+        # (no guard wired into `_land_core_prepare`), this land would
+        # PROCEED (no refusal from the type family at all, precisely the
+        # T-1894/T-1896 gap T-1907 measured); at this fix, it REFUSES
+        # with `SystemExit(1)` before ever reaching the merge.
+        from frob.app.config import AppConfig
+
+        created = new_ticket(repo, _spec("Land with a real ty error"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        work_cfg = AppConfig(
+            ticket_command="work", ticket_id=tid, ticket_foreground=True
+        )
+        _work(repo, work_cfg)
+        worktree = _default_work_worktree(repo, tid)
+
+        # This ticket's own touched file carries a genuine, unambiguous
+        # `ty` error -- the exact T-1894/T-1896 shape (a real static type
+        # defect, not a runtime bug).
+        (worktree / "src" / "bad_types.py").write_text(
+            'def f(x: int) -> int:\n    return "not an int"\n'
+        )
+        (worktree / "tests").mkdir(exist_ok=True)
+        (worktree / "tests" / "test_ok.py").write_text(
+            "def test_ok():\n    assert True\n"
+        )
+        loaded = load_all(worktree)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_ok.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(worktree, ticket).is_ok
+        _run(["git", "add", "-A"], worktree)
+        _run(["git", "commit", "-q", "-m", "wt: bad_types.py + done report"], worktree)
+
+        land_cfg = AppConfig(
+            ticket_command="land",
+            ticket_id=tid,
+            ticket_worktree=worktree,
+            ticket_dry_run=False,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _land(repo, land_cfg)
+        assert exc_info.value.code == 1
+        # The land must genuinely not have merged: main's own tip is
+        # unchanged (no commit for this ticket landed onto it).
+        loaded_main = load_all(repo)
+        assert loaded_main.is_ok
+        assert loaded_main.danger_ok[tid].state != TicketState.DONE
 
 
 # frob:ticket T-1907
@@ -968,6 +1035,75 @@ class TestLandProofAndFinish:
         result = land(repo, tid, worktree, dry_run=False)
         assert result.is_ok, result.err
         return tid, worktree, result.danger_ok
+
+    # frob:ticket T-1884
+    def test_cli_land_invoked_with_root_equal_to_worktree_still_verifies(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_cli_land_invoked_with_root_equal_to_worktree_still_verifies  # noqa: E501
+        # T-1884's second, non-anchor reproduction (T-1895): `_land` (the
+        # CLI wrapper `frob ticket land` dispatches to) is called with its
+        # own `root` argument -- when a caller invokes it with `root`
+        # equal to `--worktree` (the common "cwd defaulted to inside the
+        # worktree" shape T-1003 names), the CLI's OWN `root` local used
+        # to stay pointed at the worktree for every post-land step,
+        # including `_print_land_proof`'s `is_ancestor_of_main` check --
+        # which then queried the WRONG checkout (the worktree branch the
+        # commit was merged FROM, not the primary checkout it was merged
+        # ONTO) and always read False, even on a fully successful land.
+        # Calling `_land` directly with `root=worktree` reproduces that
+        # exact shape without needing a real `--worktree`-flag CLI
+        # invocation.
+        from frob.app.config import AppConfig
+
+        created = new_ticket(repo, _spec("CLI land root-equals-worktree"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        work_cfg = AppConfig(
+            ticket_command="work", ticket_id=tid, ticket_foreground=True
+        )
+        _work(repo, work_cfg)
+        worktree = _default_work_worktree(repo, tid)
+
+        # T-0398: the CLI `_land` wrapper (unlike `land()` called directly)
+        # ALWAYS supplies real `collected`/`passed` closures that re-verify
+        # evidence against the merged tree -- a fake, never-collectable
+        # node id (`_land_a_real_ticket`'s own shortcut) would fail real
+        # evidence re-verification here, so this needs a genuinely
+        # collectable, passing test.
+        (worktree / "tests").mkdir(exist_ok=True)
+        (worktree / "tests" / "test_ok.py").write_text(
+            "def test_ok():\n    assert True\n"
+        )
+        loaded = load_all(worktree)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_ok.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(worktree, ticket).is_ok
+        _run(["git", "add", "-A"], worktree)
+        _run(["git", "commit", "-q", "-m", "wt: done report"], worktree)
+
+        land_cfg = AppConfig(
+            ticket_command="land",
+            ticket_id=tid,
+            ticket_worktree=worktree,
+            ticket_dry_run=False,
+        )
+        with caplog.at_level("INFO"):
+            _land(worktree, land_cfg)  # root == worktree, the bug shape
+
+        proof_lines = [
+            rec.message for rec in caplog.records if rec.message.startswith("LAND-PROOF:")
+        ]
+        assert len(proof_lines) == 1
+        assert "verified=True" in proof_lines[0]
+        assert "is_ancestor_of_main=True" in proof_lines[0]
 
     def test_proof_verifies_a_real_land(self, repo: Path) -> None:
         # frob:tests \

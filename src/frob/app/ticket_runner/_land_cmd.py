@@ -2439,6 +2439,8 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
 # frob:ticket T-1495
 # frob:ticket T-1444
 # frob:ticket T-1518
+# frob:ticket T-1884
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_cli_land_invoked_with_root_equal_to_worktree_still_verifies  # noqa: E501
 def _land(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
     merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
@@ -2512,6 +2514,34 @@ def _land(root: Path, cfg: AppConfig) -> None:
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     assert cfg.ticket_worktree is not None
     worktree = cfg.ticket_worktree
+
+    # frob:ticket T-1884
+    # T-1884: resolve `root` HERE, once, before `_land_core` runs -- NOT
+    # after. `_resolve_land_root`'s own docstring already documented the
+    # intent ("this CLI wrapper's own `root` local is used AGAIN after
+    # `land()` returns ... resolving it here too keeps those post-land
+    # steps pointed at the real primary checkout"), but no call site at
+    # this level ever actually existed: `_land_core_prepare` resolves its
+    # OWN internal `root` local for the merge/commit itself, and that
+    # resolved value was never threaded back out to this function. When
+    # `root` starts out equal to `worktree` (a `frob ticket land`
+    # invoked with cwd inside the worktree, or `--worktree` doubling as
+    # the effective root), this function's `root` stayed pointed at the
+    # worktree for every step below -- `_report_land_result`, an
+    # optional `_push_after_land`, and (T-1884's own measured incident,
+    # T-1895) `_finish_land_after_success`'s `_print_land_proof` call,
+    # which computes `is_ancestor_of_main` via `git -C root merge-base
+    # --is-ancestor <sha> main` against the WRONG checkout -- the
+    # worktree branch the commit was merged FROM, not the primary
+    # checkout it was merged ONTO. That checkout never receives the
+    # commit under its own `main` ref, so the ancestry check reads
+    # `False` even though the land fully succeeded -- not a ref-update
+    # visibility race, a query against the wrong directory entirely.
+    # Resolving once, up front, and reusing the SAME value for
+    # `_land_core` and every post-land step below closes this: there is
+    # only one `root` for the whole call, and it is always the real
+    # primary checkout.
+    root = _resolve_land_root(root, worktree, cfg.ticket_id)
 
     result = _land_core(root, cfg)
     if result.is_err:
@@ -2641,6 +2671,7 @@ def _ty_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_type_error_in_a_touched_file_refuses_the_land  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error  # noqa: E501
 # frob:waive ARCH103 reason="this IS _assert_design_loads_pre_land's own established \
 # guard shape one function up in this same module (filter/spawn/decide-refuse-or-not, \
 # three short-circuit returns): the decision points are early-outs for 'nothing to \

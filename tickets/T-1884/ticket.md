@@ -2,7 +2,7 @@
 id: T-1884
 title: LAND-PROOF verified=False for a correctly-landed anchor ticket (state_on_main
   queued/blocked)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -13,8 +13,20 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: T-1884's regression tests (anchor carve-out plus the T-1003 CLI root-resolution
+    fix) live in this shared land-finish test module
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_verifies_an_anchor_ticket_left_queued_on_main
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_still_refuses_a_non_anchor_ticket_left_queued
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies
 designated_repro_test: null
 threat: null
 component: null
@@ -39,6 +51,39 @@ the ticket's `anchor` field is True` (mirroring the T-1874 skip-close
 condition in `_skip_close_for_anchor_no_close_requested`), not just
 done/dropped. Needs the ticket's `anchor` field threaded into
 `_land_proof_checks`'s already-loaded `ticket` object.
+
+ADDITIONAL MEASUREMENT, 2026-08-09, coordinator. Reproduced on a NON-anchor
+ticket, which widens this ticket's scope beyond the anchor case in the title.
+
+`frob ticket land T-1895 --worktree .../t1895-t1893` printed:
+
+  land T-1895: landed as T-1895 at 18b82c8cab4c74d2f5457b738486a129321602e8 (14 file(s) changed)
+  land T-1895: REL001 bumped to 0.419.0
+  LAND-PROOF: ticket=T-1895 commit=18b82c8... is_ancestor_of_main=False state_on_main=done verified=False
+
+The land had in fact FULLY SUCCEEDED. Verified independently, immediately after:
+  - `git merge-base --is-ancestor 18b82c8... HEAD` -> true (it IS on main)
+  - tickets/T-1895/ticket.md on main reads `state: done`
+  - the actual code change is present (node_body_span defined once in
+    src/frob/strata/_sync_may.py; zero occurrences of the deleted
+    _iface_node_body_span in src/frob/gates/_fix_engine_sync.py)
+
+So LAND-PROOF reported is_ancestor_of_main=False about a commit that IS an
+ancestor of main -- a FALSE NEGATIVE, most likely evaluating the ancestry
+before the commit/ref update it is checking has become visible to the query.
+
+WHY THIS MATTERS MORE THAN A COSMETIC WRONG FLAG. LAND-PROOF is the one
+line an operator reads to decide whether a land is trustworthy. A false
+NEGATIVE trains the reader to disregard verified=False -- and the moment
+that habit forms, a genuine verified=False (a land that really did not
+reach main) reads as noise and gets waved through. This is the same
+false-signal erosion as T-1891's spurious DirtyMain warning, and it
+degrades the credibility of the repo's most load-bearing assertion.
+
+FIX must make the ancestry check observe the post-land state (re-query
+after the ref update, or order the check after whatever publishes the
+commit), and add a regression test asserting verified=True for a land
+that demonstrably reached main.
 
 RETRACTED MEASUREMENT, 2026-08-09, coordinator. An earlier block appended
 here claimed LAND-PROOF produced a FALSE NEGATIVE on T-1895's land

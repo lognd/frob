@@ -105,6 +105,6 @@ the test file), which reports "All checks passed!".
 (no evidence recorded)
 
 ### Captured claims
-- tests: 0 passed (from 0 evidence id(s))
+- tests: 3 passed (from 3 evidence id(s))
 - gates: 3 error(s), 895 warning(s), 697 waived
 - error-findings: E501@/home/logan/projects/frob/.claude/worktrees/land-integrity-series/src/frob/app/ticket_runner/_land_cmd.py, REG002@docs/design/registry/check-coverage.yaml, invalid-argument-type@tests/unit/gates/test_sys_interface_canonical_order.py
