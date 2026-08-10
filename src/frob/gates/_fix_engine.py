@@ -444,7 +444,8 @@ def _tick006_refile_for_ticket(
 
 
 # frob:ticket T-1545
-def _fix_sys100_both_cases(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+# frob:ticket T-1924
+def _fix_sys100_both_cases(root: Path) -> list[FixApplied]:
     """SYS100 has two disjoint fixers (T-1531 CORE, T-1545 EXTENDED) that
     both resolve findings under the same rule id -- run both and
     concatenate rather than let a dict literal's single `"SYS100"` key
@@ -452,10 +453,12 @@ def _fix_sys100_both_cases(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
     per-file `via` widen is the more targeted fix; running it before the
     whole-node EXTENDED insertion means a file that already tripped a
     CORE widening this same pass does not also need a broader EXTENDED
-    grant re-derived against stale text)."""
+    grant re-derived against stale text). T-1924: both callees dropped
+    their unused `snapshot` parameter, so this wrapper no longer takes
+    or forwards one either."""
     return [
-        *fix_sys100_may_via_union(root, snapshot),
-        *fix_sys100_extended_whole_node_grant(root, snapshot),
+        *fix_sys100_may_via_union(root),
+        *fix_sys100_extended_whole_node_grant(root),
     ]
 
 
@@ -499,6 +502,7 @@ def _fix_sys100_both_cases(root: Path, snapshot: GraphSnapshot) -> list[FixAppli
 #: `_fix_engine_sync.py`'s own module docstring for the retirement
 #: reasoning in full.
 # frob:ticket T-1531
+# frob:ticket T-1924
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 #: T-1548: every handler now takes a 4th `ticket_id: str | None` argument
 #: (the landing ticket's id, when `apply_tier_a_fixes` is called from a
@@ -525,15 +529,9 @@ TIER_A_HANDLERS: dict[
             root, snapshot
         )
     ),
-    "REG010": lambda root, snapshot, queue, ticket_id: fix_reg010_registry_sync(
-        root, snapshot
-    ),
-    "REL002": lambda root, snapshot, queue, ticket_id: fix_rel002_release_sync(
-        root, snapshot
-    ),
-    "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(
-        root, snapshot
-    ),
+    "REG010": lambda root, snapshot, queue, ticket_id: fix_reg010_registry_sync(root),
+    "REL002": lambda root, snapshot, queue, ticket_id: fix_rel002_release_sync(root),
+    "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(root),
     "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(root),
     "COV002": (
         lambda root, snapshot, queue, ticket_id: fix_cov002_ticket_directive_insertion(

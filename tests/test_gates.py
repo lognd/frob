@@ -11210,6 +11210,7 @@ class TestTierAAutofixCrashSafety:
 # frob:ticket T-1261
 # frob:ticket T-1341
 # frob:ticket T-1763
+# frob:ticket T-1924
 class TestFixEngineTierABatch2:
     """`frob.gates._fix_engine`'s Tier-A batch-2 `--fix` handlers
     (T-1261): fmt/registry-regen/release-sync/WAIVE004. Each is a
@@ -11262,6 +11263,7 @@ class TestFixEngineTierABatch2:
 
     # -- acceptance [1]: REG010 missing gate_rule_entries regeneration ------
 
+    # frob:ticket T-1924
     def test_reg010_files_missing_entries_and_reverifies_clean(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -11290,7 +11292,7 @@ class TestFixEngineTierABatch2:
             lambda: frozenset({"REF001", "DOC007"}),
         )
 
-        applied = fix_reg010_registry_sync(root, self._snap(root))
+        applied = fix_reg010_registry_sync(root)
 
         assert len(applied) == 1
         assert applied[0].rule == "REG010"
@@ -11302,6 +11304,7 @@ class TestFixEngineTierABatch2:
             == frozenset()
         )
 
+    # frob:ticket T-1924
     def test_reg010_already_in_sync_is_a_no_op(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -11326,11 +11329,12 @@ class TestFixEngineTierABatch2:
             "frob.gates._waive.known_gate_rule_ids", lambda: frozenset({"REF001"})
         )
 
-        applied = fix_reg010_registry_sync(root, self._snap(root))
+        applied = fix_reg010_registry_sync(root)
         assert applied == []
 
     # -- acceptance [2]: REL002 release sync --------------------------------
 
+    # frob:ticket T-1924
     def test_rel002_resyncs_pyproject_and_uv_lock_from_manifest(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -11350,13 +11354,14 @@ class TestFixEngineTierABatch2:
         # lockfile does not already exist, so this test stays hermetic
         # (no real subprocess spawn).
 
-        applied = fix_rel002_release_sync(root, self._snap(root))
+        applied = fix_rel002_release_sync(root)
 
         rules_files = {(a.rule, a.file) for a in applied}
         assert ("REL002", "pyproject.toml") in rules_files
         rewritten = (root / "pyproject.toml").read_text(encoding="utf-8")
         assert 'version = "1.2.3"' in rewritten
 
+    # frob:ticket T-1924
     def test_rel002_already_in_sync_touches_nothing(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine_sync.py::fix_rel002_release_sync \
         # kind="unit"
@@ -11370,7 +11375,7 @@ class TestFixEngineTierABatch2:
         original = '[project]\nname = "demo"\nversion = "1.2.3"\n'
         (root / "pyproject.toml").write_text(original, encoding="utf-8")
 
-        applied = fix_rel002_release_sync(root, self._snap(root))
+        applied = fix_rel002_release_sync(root)
 
         assert not [a for a in applied if a.file == "pyproject.toml"]
         assert (root / "pyproject.toml").read_text(encoding="utf-8") == original

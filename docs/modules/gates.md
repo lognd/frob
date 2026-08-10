@@ -4401,6 +4401,15 @@ its finding message, so the handler just calls that existing remedy:
   existing `frob.release` sync functions directly, the same ones `frob
   release sync`'s CLI dispatches to. Never writes `.frob-release.json`
   itself, only the three derived artifacts.
+
+  T-1924: `fix_reg010_registry_sync` and `fix_rel002_release_sync` used
+  to also declare an unused, non-Optional `GraphSnapshot` parameter
+  purely for `TIER_A_HANDLERS` dispatch-shape uniformity (immediately
+  `del`-ed in the body, never read) -- the same too-strict-for-purpose
+  shape T-1911 fixed on `fix_fmt001_directive_wrap`/
+  `fix_e501_merge_introduced`. Dropped entirely rather than retyped to
+  `GraphSnapshot | None`; `TIER_A_HANDLERS`' lambda wrappers in
+  `_fix_engine.py` stop forwarding `snapshot` to these two handlers.
 - **`fix_waive004_stale_waiver`**: a `frob:waive` directive matching zero
   findings (WAIVE004) -- ONLY ever trustworthy from a genuine full,
   unscoped run (mirroring `frob.gates._waive`'s own disclaimer), so this
@@ -4732,11 +4741,11 @@ already exists to close mechanically. T-1531 wired SYS100's two cases in:
   CORE first since it can narrow to a real `via` list, EXTENDED second)
   since they resolve disjoint violation shapes under the same rule id.
 
-Both handlers follow the same `(root: Path, snapshot: GraphSnapshot) ->
-list[FixApplied]` shape as every other pure-`.strata`-rewrite handler in
-this module (`snapshot` unused -- each reads the design tree itself, same
-as `fix_reg010_registry_sync`/`fix_rel002_release_sync`) and are no-ops
-(empty list, nothing written) when `root` has no `design/` directory at
+Both handlers follow the same `(root: Path) -> list[FixApplied]` shape as
+every other pure-`.strata`-rewrite handler in this module (each reads the
+design tree itself, same as `fix_reg010_registry_sync`/
+`fix_rel002_release_sync`) and are no-ops (empty list, nothing written)
+when `root` has no `design/` directory at
 all, or when their respective `sync_*_report` call errors (a design file
 that fails to parse, an ambiguous code binding) -- logged and skipped,
 never raised, matching every other handler's "an auto-fix convenience is
@@ -4748,6 +4757,15 @@ absorption step, its pre-commit unscoped sweep
 (`_post_land_unscoped_error_sweep`) all call `apply_tier_a_fixes`
 already; T-1545 needed no changes to `src/frob/app/ticket_runner/
 _land_cmd.py` at all.
+
+T-1924: both handlers used to also declare an unused, non-Optional
+`snapshot: GraphSnapshot` parameter purely for `TIER_A_HANDLERS`
+dispatch-shape uniformity, immediately `del`-ed in the body -- the same
+too-strict-for-purpose shape T-1911 fixed on
+`fix_fmt001_directive_wrap`/`fix_e501_merge_introduced`. Dropped
+entirely (never retyped to `GraphSnapshot | None`); `_fix_sys100_both_
+cases`, the `TIER_A_HANDLERS["SYS100"]` lambda wrapper, no longer takes
+or forwards a `snapshot` to either callee.
 
 T-1870 (owner directive: no code path may auto-update declared
 public-symbol surface) deleted SYS104's own writer/handler

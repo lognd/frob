@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.426.0] - unreleased
+
+- T-1924: Finish T-1911's Tier-A snapshot-param drop on the 5 handlers in _fix_engine_sync.py
+
 ## [0.425.0] - unreleased
 
 - T-1556: cli hygiene remainder: warning collapse, read-only check --ticket, close porcelain, cli-hygiene principles doc (T-1271 split)

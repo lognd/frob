@@ -64,7 +64,6 @@ from frob.tickets import TicketQueue
 
 if TYPE_CHECKING:
     from frob.gates import GateReport
-    from frob.strata._code_binding import CodeBinding
 
 _log = logging.getLogger(__name__)
 
@@ -77,7 +76,8 @@ _log = logging.getLogger(__name__)
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-def fix_reg010_registry_sync(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+# frob:ticket T-1924
+def fix_reg010_registry_sync(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-1261): REG010 already names its own remedy verbatim
     (`frob registry audit --sync-gate-rules`) -- calls `sync_gate_rule_
     entries` (`frob.registry._staleness`, the exact function that command
@@ -89,10 +89,10 @@ def fix_reg010_registry_sync(root: Path, snapshot: GraphSnapshot) -> list[FixApp
     a rule with no matching `frob:enforces` edge in CODE) is a different,
     genuinely Tier-C shape -- which rule's code should carry that
     directive is a judgment call this handler does not guess at, so only
-    REG010 is wired here."""
+    REG010 is wired here. T-1924: dropped the unused `snapshot` parameter
+    this handler never read (T-1911's dispatch-shape fix, applied here)."""
     from frob.registry._staleness import sync_gate_rule_entries
 
-    del snapshot  # signature uniformity only, this handler reads the yaml itself
     registry_path = root / "docs" / "design" / "registry" / "check-coverage.yaml"
     if not registry_path.is_file():
         return []
@@ -121,7 +121,8 @@ def fix_reg010_registry_sync(root: Path, snapshot: GraphSnapshot) -> list[FixApp
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+# frob:ticket T-1924
+def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-1261): REL002 already names its own remedy verbatim
     (`frob release sync`) -- regenerates `pyproject.toml`'s version,
     `uv.lock`, and CHANGELOG.md's skeleton entry FROM `.frob-release.
@@ -131,7 +132,9 @@ def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixAppl
     `changelog_skeleton_entry`, plus `uv lock` via `frob.gitio.run_argv`).
     Never writes `.frob-release.json` itself, only the three derived
     artifacts -- T-1137's anti-goal that no handler treats the manifest
-    (or `frob.toml`/ratchet state) as a target it may write."""
+    (or `frob.toml`/ratchet state) as a target it may write. T-1924:
+    dropped the unused `snapshot` parameter this handler never read
+    (T-1911's dispatch-shape fix, applied here)."""
     from frob.gitio import run_argv
     from frob.release import (
         authoritative_version,
@@ -139,7 +142,6 @@ def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixAppl
         rewrite_pyproject_version,
     )
 
-    del snapshot  # signature uniformity only, this handler reads the manifest itself
     version_result = authoritative_version(root)
     if version_result.is_err:
         return []
@@ -193,7 +195,8 @@ def fix_rel002_release_sync(root: Path, snapshot: GraphSnapshot) -> list[FixAppl
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierA.test_sys100_no_design_dir_is_a_no_op
 # frob:ticket T-1531
-def fix_sys100_may_via_union(root: Path, snapshot: GraphSnapshot) -> list[FixApplied]:
+# frob:ticket T-1924
+def fix_sys100_may_via_union(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-1531): widen a node's `may "<kind>" via [...]` grant
     (or insert a brand-new via-scoped grant) to cover a file
     `check_capability_conformance` (SYS100 core) observed exercising an
@@ -201,10 +204,11 @@ def fix_sys100_may_via_union(root: Path, snapshot: GraphSnapshot) -> list[FixApp
     `frob.strata._sync_may.sync_may_report`/`apply_sync_may`, this
     handler's own writer (T-1531, module docstring there for the scope
     cut: SYS100 EXTENDED is not handled). A design root that does not
-    resolve is logged and treated as no fixes applied."""
+    resolve is logged and treated as no fixes applied. T-1924: dropped
+    the unused `snapshot` parameter this handler never read (T-1911's
+    dispatch-shape fix, applied here)."""
     from frob.strata._sync_may import apply_sync_may, sync_may_report
 
-    del snapshot  # signature uniformity only, this handler reads the design tree itself
     if not (root / "design").is_dir():
         return []
     report = sync_may_report(root, "design")
@@ -252,9 +256,8 @@ def fix_sys100_may_via_union(root: Path, snapshot: GraphSnapshot) -> list[FixApp
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierA.test_sys100_extended_no_design_dir_is_a_no_op
 # frob:ticket T-1545
-def fix_sys100_extended_whole_node_grant(
-    root: Path, snapshot: GraphSnapshot
-) -> list[FixApplied]:
+# frob:ticket T-1924
+def fix_sys100_extended_whole_node_grant(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-1545): insert a bare, via-less `may "<kind>";` grant
     for a node `_extended_kind_violations` (SYS100 EXTENDED) observed
     exercising an undeclared eval/process-control/ffi/... capability --
@@ -263,10 +266,11 @@ def fix_sys100_extended_whole_node_grant(
     docstring there for the deliberately-conservative whole-node
     rationale: EXTENDED carries no per-file evidence to narrow a `via`
     list to). A design root that does not resolve is logged and treated
-    as no fixes applied."""
+    as no fixes applied. T-1924: dropped the unused `snapshot` parameter
+    this handler never read (T-1911's dispatch-shape fix, applied
+    here)."""
     from frob.strata._sync_may import apply_sync_may_extended, sync_may_extended_report
 
-    del snapshot  # signature uniformity only, this handler reads the design tree itself
     if not (root / "design").is_dir():
         return []
     report = sync_may_extended_report(root, "design")

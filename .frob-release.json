@@ -615,7 +615,7 @@
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
     "src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate": "6c7ec22130f8c90cb92b90d3fce38a0199edfb4b091febd3589ca43fcd1008d1",
     "src/frob/gates/_ffi_boundary.py::ffi_boundary_gate": "57923ca6fb8c668ab7741001a25337f6bf5d0a682f72388274002baad2bd4eac",
-    "src/frob/gates/_fix_engine.py::TIER_A_HANDLERS": "07cf296cd6ea9fdb5f610c1be3c27621f3b0ca4243501d68bd38ee1be54f61e8",
+    "src/frob/gates/_fix_engine.py::TIER_A_HANDLERS": "c9fa7c8045b08c08e483a6845d086c72e974dd3f46b9a63a92a25844774a4941",
     "src/frob/gates/_fix_engine.py::apply_tier_a_fixes": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
     "src/frob/gates/_fix_engine.py::fix_doc002_unique_slug": "7ef8d8ae7a08a3d93bc18dc16223b448c204ff22108ce82b571ff3a9bd779892",
     "src/frob/gates/_fix_engine.py::fix_doc007_dotted_form": "327da98ed7d5183d7687e61242a3ef58b030cd5fb58e4eb335b441e918bb0024",
@@ -625,10 +625,10 @@
     "src/frob/gates/_fix_engine_shared.py::clear_autofix_manifest": "b3dfeb490f20ededd6f239d9d9cee29df254d6e05eacf47b0e8b54c721866d66",
     "src/frob/gates/_fix_engine_shared.py::write_autofix_manifest": "8785d11019d9a8d702c7bf96707d07ced9b87c631c72e9a9923b505bf1ae5104",
     "src/frob/gates/_fix_engine_sync.py::fix_cov002_ticket_directive_insertion": "569e7a2538f9b10bd2d0b0c6f5314bcc5fa2baab7963f9093e9115a17c440cc7",
-    "src/frob/gates/_fix_engine_sync.py::fix_reg010_registry_sync": "2d012f73d3d94915a44e8f0a7731e07833df2fa6a2cdba6b8566b8600e1922ff",
-    "src/frob/gates/_fix_engine_sync.py::fix_rel002_release_sync": "31181170771dc605319e24b5efa733bb487cde4c1c8d94b306e353229f63618a",
-    "src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant": "37c66e1b6fb1f6f1d86a70087abf026e1eda9f177c0974108d88291a5967ffa0",
-    "src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union": "c6a9b3c90b232c668317f4b940651c166043ea7b5e0d72670ad3de3736e26c14",
+    "src/frob/gates/_fix_engine_sync.py::fix_reg010_registry_sync": "dd706087f9e4cc07f435f9d34775c402e7eb9175ac03b87ef46dc0641ff60965",
+    "src/frob/gates/_fix_engine_sync.py::fix_rel002_release_sync": "b5d61fce95284b840a6c95821981cf7fd4ba25433e326a465e639f8f9ddeba31",
+    "src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant": "beecd1c23bfe5d1f687050dafd3ae41adc49d0b322cbfc10bad82f85b12ff847",
+    "src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union": "6145d92ec0425edb817b8b2a624484d8ea4a0bd050a4bdeeb46ec5101cb8464c",
     "src/frob/gates/_fix_engine_sync.py::fix_waive004_stale_waiver": "29954815721f74b05183fc11779adf23391411d7ec01f1119ba4f4e0df6d97dd",
     "src/frob/gates/_fix_engine_text.py::fix_e501_merge_introduced": "81c79358948cdf4751ef9d247c019c7fdb0badb73c97a13d77fbb88ab30df161",
     "src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap": "77cce94e90ba9a5a36954f62773e258eab089fda6359b431dd15ff1f23c005ad",
@@ -2206,5 +2206,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.425.0"
+  "version": "0.426.0"
 }
