@@ -300,6 +300,42 @@ class TestEvidenceCheckRepro:
                 _evidence(tmp_path, cfg)
         assert exc.value.code == 1
 
+    # frob:ticket T-2025
+    def test_reports_test_absent_at_parent_exit1_with_explanatory_message(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_reports_test_absent_at_parent_exit1_with_explanatory_message  # noqa: E501
+        """T-2025: `TEST_ABSENT_AT_PARENT` refuses (exit 1, same as
+        `NO_VERDICT`) but with the squash-history explanation, not the
+        generic 'e.g. it calls a function that does not exist there yet'
+        wording -- an agent reading this message should not conclude the
+        failure might be transient/retryable."""
+        ticket_id = _test_make_bug_ticket(tmp_path, monkeypatch)
+        with (
+            patch(
+                "frob.gitio._merge_base",
+                return_value=Ok("deadbeef"),
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                return_value=_BugReproOutcome.TEST_ABSENT_AT_PARENT,
+            ),
+        ):
+            cfg = AppConfig(
+                ticket_command="evidence",
+                ticket_id=ticket_id,
+                ticket_path=tmp_path,
+                ticket_check_repro="tests/x.py::test_a",
+            )
+            with pytest.raises(SystemExit) as exc:
+                _evidence(tmp_path, cfg)
+        assert exc.value.code == 1
+        assert "TEST_ABSENT_AT_PARENT" in caplog.text
+        assert "squash" in caplog.text.lower()
+
     def test_no_node_id_resolves_designated_test(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

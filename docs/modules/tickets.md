@@ -2672,6 +2672,109 @@ merge-base computation `working_diff` already performs internally.
 being landed), so `current_branch(root)` correctly resolves to `main`
 itself, not to the ticket's own branch.
 
+### `--check-repro` cannot verify a squashed ticket's repro test after it lands (T-2025)
+
+<!-- frob:describes src/frob/gates/_mutation_evidence.py::_BugReproOutcome -->
+
+**This is a permanent, by-construction limitation, not a bug to be fixed
+later.** `frob ticket evidence <id> --check-repro [NODE-ID] [--base-ref
+REF]` (the on-demand read-only twin of `--designate-repro`'s validation,
+T-1929) re-runs the designated test against `REF`'s checked-out tree and
+classifies the result. This is a genuine, meaningful check WHILE a
+ticket is still in-progress, inside its own worktree, before it lands --
+`REF` (or the default merge-base against `main`) points at a real commit
+that predates the ticket's own work, and the check runs the ticket's
+new test against that pre-fix code.
+
+**Once a ticket lands, this stops being true for any test the ticket
+itself added or modified.** `frob ticket land` squashes every commit a
+worktree accumulated (`ticket new`'s own scope/evidence/Done-report
+commits, the actual code+test commits, everything) into ONE commit on
+`main`. Confirmed directly (T-2019/T-2025): a landed ticket's own
+worktree commits are provably NOT ancestors of `main` --
+`git merge-base --is-ancestor <worktree-commit> main` returns false for
+every one of them; only the single squash commit is. This means main's
+history NEVER contains a commit where a landed ticket's own repro test
+exists WITHOUT that ticket's fix already applied -- the test and the fix
+are, by definition, in the exact same commit. Running `--check-repro`
+against ANY ref in main's history for such a test -- including the
+squash commit's own immediate parent, main's tip right before the land
+-- cannot produce a real verdict: pytest exits 5 ("no tests collected"),
+because the specific test method does not exist yet at that ref, and
+`bug_repro_outcome_at_ref` reports this as `TEST_ABSENT_AT_PARENT`
+(T-2025; a prior, less specific `NO_VERDICT` covered this same case
+before T-2025 gave it its own outcome and an honest message pointing
+back here instead of the generic "e.g. it calls a function that does
+not exist there yet" wording, which read like a possibly-transient
+failure rather than a permanent one).
+
+**Measured, not theoretical**: T-2019 attempted exactly this --
+re-verifying 9 already-landed BUG002 repro designations against main's
+own history, post-land. All 9 returned `TEST_ABSENT_AT_PARENT`/
+`NO_VERDICT`. Confirmed by directly inspecting the git blob at two of
+the chosen parent refs (T-1546, T-1907): the designated test method is
+textually absent from the test file at that commit, while the
+surrounding test class is present -- exactly the squash-history shape,
+not a per-ticket anomaly, and not fixable by choosing a different
+`--base-ref` from main's own history, because no such ref exists.
+
+**Two options were weighed and rejected in favor of documenting this
+(T-2025's own decision):**
+
+1. *Record the pre-squash test-only commit at land time* (e.g. tag it
+   under a `refs/frob-repro/<id>` namespace so `--check-repro` has a
+   real ref to check post-land) was rejected as not worth its cost:
+   - It only works if the implementer split their work into a
+     test-alone commit followed by a separate fix commit -- most
+     tickets do not (the common case is one commit with both), so this
+     would require a NEW, universally-enforced commit-discipline rule
+     across every dispatched agent, plus a gate to catch a ticket that
+     skipped it -- ceremony added to literally every land, for a
+     capability (post-land re-verification) that is rarely exercised.
+   - The recorded ref would need active retention (a real branch/tag,
+     not a bare sha in ticket metadata) or it becomes unreachable and
+     gets garbage-collected the moment the worktree is removed --
+     permanent extra ref-namespace bookkeeping and repo object growth,
+     forever, per bug/security-kind ticket.
+   - It does not actually restore the property people rely on `frob
+     ticket land` for: "one clean, atomic commit per ticket on `main`."
+     The squash guarantee stays intact; this option only threads a
+     side-channel around it, which is exactly the kind of fragile
+     mechanism that LOOKS like it gives a verdict while depending on a
+     discipline nobody can see failing until the day it does.
+2. *Keep the generic `NO_VERDICT` wording* was rejected because it
+   reads like a possibly-transient infrastructure failure (the existing
+   message's own phrasing: "a native extension the parent commit's
+   isolated checkout never built") when, for a post-land ticket, it is
+   actually a PERMANENT, always-reproducible outcome -- worth a distinct
+   name and an explicit explanation rather than lumping it in with a
+   genuinely-retryable spawn/collection failure.
+
+**What T-2025 actually shipped instead**: `TEST_ABSENT_AT_PARENT`, a
+`_BugReproOutcome` member distinct from `NO_VERDICT`
+(`src/frob/gates/_mutation_evidence.py`), fired specifically on pytest's
+exit 5, with a message that names the structural cause and points here
+-- refuse loudly and explain why, rather than emit a verdict-shaped
+"no verdict" that reads as ambiguous or retryable. Every existing
+caller (`bug_repro_violations`, `--designate-repro`'s synchronous
+validation, `--check-repro`'s own refusal) already treats any non-
+`FAILED_AT_PARENT` outcome identically for gating purposes (`is not
+FAILED_AT_PARENT`/`is not PASSED_AT_PARENT` checks), so this is a
+messaging refinement, not a new gating behavior -- no caller needed to
+change to stay correct.
+
+**What still works, and is the actual answer for a ticket that genuinely
+needs a provable pre-fix repro**: commit the repro test ALONE first (a
+real, separate commit, before the production fix), confirm it fails
+against the still-unfixed code, THEN commit the fix, and pass the
+test-only commit's own sha as `--designate-repro`'s `--base-ref` --
+T-2021's own evidence used exactly this technique and produced a
+genuine `FAILED_AT_PARENT` verdict. This works because the test-only
+commit is a REAL commit reachable from the worktree's own branch history
+at the moment `--designate-repro` runs (before land squashes anything);
+it stops working the moment the ticket lands and the worktree is
+removed, for the same reason described above.
+
 ## Live-tracker citation preflight (T-0854)
 
 <!-- frob:describes src/frob/tickets/_live_tracker.py::live_tracker_citations -->

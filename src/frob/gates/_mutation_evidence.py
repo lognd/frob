@@ -258,7 +258,7 @@ _NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"
 
 
 class _BugReproOutcome(Enum):
-    """The five possible outcomes of running BUG002's single designated
+    """The six possible outcomes of running BUG002's single designated
     reproduction test against the ticket's parent commit."""
 
     #: The test genuinely FAILED at the parent commit (pytest exit 1) --
@@ -292,6 +292,35 @@ class _BugReproOutcome(Enum):
     #: `NO_VERDICT` by every violation-producing caller (never a false
     #: PASSED_AT_PARENT violation, never a false FAILED_AT_PARENT pass).
     SAME_AS_HEAD = auto()
+    #: `test_id` does not exist AT ALL in `base_ref`'s checked-out tree --
+    #: pytest's own exit 5 ("no tests ran": collection succeeded, zero
+    #: items matched the node id), never confused with the generic
+    #: infra-failure NO_VERDICT (T-2025). This is the structural,
+    #: BY-CONSTRUCTION consequence of `frob ticket land` squashing every
+    #: worktree commit into ONE commit on main: once a ticket is landed,
+    #: no ref in main's history ever contains that ticket's repro test
+    #: WITHOUT its own fix already applied, because the test and the fix
+    #: land together, atomically, in the same commit. Re-running
+    #: `--check-repro` against any post-land ref for a newly-added test is
+    #: therefore not merely inconclusive, it is IMPOSSIBLE by
+    #: construction -- distinct from `NO_VERDICT` (a genuine infra
+    #: failure that a retry or a different environment might resolve) so
+    #: the caller can say exactly that instead of the generic "could not
+    #: even collect" wording, which reads like a transient, maybe-
+    #: retryable failure when it is actually a permanent one for this
+    #: `test_id`/`base_ref` pair. Treated identically to `NO_VERDICT` by
+    #: every violation-producing caller (never a false PASSED_AT_PARENT
+    #: violation, never a false FAILED_AT_PARENT pass) -- this is a
+    #: messaging refinement, not a new gating behavior. A caller with a
+    #: genuinely earlier commit where the test predates the fix (e.g. a
+    #: worktree branch's own pre-land, pre-squash commit, still reachable
+    #: before the worktree is removed -- see T-2021's own evidence for the
+    #: technique) passes that commit as an explicit `--base-ref` and gets
+    #: a real `FAILED_AT_PARENT`/`PASSED_AT_PARENT` verdict as before;
+    #: this outcome only fires when no such commit is reachable, which is
+    #: unconditionally true for `base_ref="main"` (the default) against
+    #: any ticket that has already landed.
+    TEST_ABSENT_AT_PARENT = auto()
 
 
 # frob:ticket T-1929
@@ -299,10 +328,11 @@ class _BugReproOutcome(Enum):
 #: Public alias for `_BugReproOutcome` (T-1929): an on-demand caller
 #: outside this module (`frob.app.ticket_runner._verify`'s validate-at-
 #: designate check, `frob ticket evidence --check-repro`) needs to inspect
-#: which of the five outcomes `bug_repro_outcome_at_ref` returned --
+#: which of the six outcomes `bug_repro_outcome_at_ref` returned --
 #: FAILED_AT_PARENT is the only acceptable one to treat as a genuine
-#: repro; PASSED_AT_PARENT, NO_VERDICT, and SAME_AS_HEAD must never be
-#: silently treated as a pass by any caller.
+#: repro; PASSED_AT_PARENT, NO_VERDICT, SAME_AS_HEAD, and (T-2025)
+#: TEST_ABSENT_AT_PARENT must never be silently treated as a pass by any
+#: caller.
 BugReproOutcome = _BugReproOutcome
 
 
@@ -517,9 +547,31 @@ def _run_designated_test(
     to the checked-out parent-commit source rather than the current
     editable install -- `_bug_repro_outcome_at_ref`'s spawn-and-classify
     half. Exit 0 -> `PASSED_AT_PARENT`; exit 1 (a genuine assertion/error
-    failure) -> `FAILED_AT_PARENT`; anything else (collection error,
-    missing native extension, timeout) -> `NO_VERDICT`, never guessed at
-    as a pass or a fail."""
+    failure) -> `FAILED_AT_PARENT`; any other exit whose output shows
+    ZERO tests were collected (`test_id` does not exist in this tree at
+    all, T-2025) -> `TEST_ABSENT_AT_PARENT`; anything else (collection
+    error, missing native extension, timeout) -> `NO_VERDICT`, never
+    guessed at as a pass or a fail.
+
+    T-2025: the "test does not exist here" case does NOT map to one fixed
+    exit code -- measured directly, pytest 9.0.3 returns 4 ("not found:
+    NODEID, no match in any of [...]") for a missing method on an
+    existing class in a minimal synthetic repo, but this repo's own real
+    historical commits (T-1546, T-1907, ...) measured exit 5 for the
+    identical shape (class exists, method does not) once this repo's own
+    `tests/conftest.py`/plugin set are involved. Branching on the exit
+    code alone would silently miss one or the other depending on
+    environment. Checked instead, in priority order: (1) this repo's own
+    `tests/conftest.py::pytest_sessionfinish` always prints
+    `SUITE-RESULT: exitstatus=N collected=0 ...` when nothing was
+    collected -- present and confirmed in the checked-out worktree
+    whenever that hook exists at `base_ref` (which every real historical
+    ref this function is ever called against does, T-1596 predates
+    BUG002 itself); (2) pytest's own builtin "no tests ran" summary line,
+    kept as a fallback for the rare checkout that predates T-1596's hook
+    or otherwise lacks it -- confirmed present alongside the custom line
+    in the same measured run, so this is genuinely a fallback, not a
+    guess."""
     env = dict(os.environ)
     src = str(worktree / "src")
     env["PYTHONPATH"] = (
@@ -530,11 +582,29 @@ def _run_designated_test(
     if spawned.is_err:
         _log.warning("BUG002: repro run of %s failed to spawn -- no verdict", test_id)
         return _BugReproOutcome.NO_VERDICT
-    rc = spawned.danger_ok.returncode
+    result = spawned.danger_ok
+    rc = result.returncode
     if rc == 0:
         return _BugReproOutcome.PASSED_AT_PARENT
     if rc == 1:
         return _BugReproOutcome.FAILED_AT_PARENT
+    # frob:ticket T-2025
+    combined_output = result.stdout + result.stderr
+    zero_collected = bool(re.search(r"\bcollected=0\b", combined_output))
+    if zero_collected or "no tests ran" in combined_output:
+        _log.warning(
+            "BUG002: repro run of %s exited %d at parent -- pytest reports "
+            "'no tests ran': %s does not exist in this tree at all (T-2025: "
+            "systematically true for EVERY already-landed ticket's own "
+            "post-land history, since `frob ticket land` squashes the "
+            "repro test and its fix into one atomic commit -- see "
+            "docs/modules/tickets.md#check-repro-post-land-limitation-t-2025) "
+            "-- no verdict",
+            test_id,
+            rc,
+            test_id,
+        )
+        return _BugReproOutcome.TEST_ABSENT_AT_PARENT
     _log.warning(
         "BUG002: repro run of %s exited %d at parent (not a plain pass/fail -- "
         "likely a collection error, e.g. a native extension the parent commit's "

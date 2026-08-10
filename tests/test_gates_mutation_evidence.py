@@ -374,6 +374,48 @@ class TestBugReproAtRef:
         outcome = _bug_repro_outcome_at_ref(repo, "tests/test_x.py::test_x", "main")
         assert outcome is _BugReproOutcome.SAME_AS_HEAD
 
+    # frob:ticket T-2025
+    def test_test_absent_at_parent_is_distinct_from_no_verdict(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_test_absent_at_parent_is_distinct_from_no_verdict  # noqa: E501
+        """T-2025: the squashed-land shape, reproduced directly -- a test
+        FILE exists at the parent commit (with an unrelated test), but the
+        specific node id under check was added in a LATER commit. pytest
+        collects the file cleanly and finds zero matching items (exit 5),
+        which must classify as `TEST_ABSENT_AT_PARENT`, never the generic
+        `NO_VERDICT` a native-extension/spawn failure produces -- these are
+        different situations (one is permanent and explainable, the other
+        may be transient) and must not share a bucket."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tests_dir = repo / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "test_x.py").write_text(
+            "def test_other():\n    assert True\n",
+            encoding="utf-8",
+        )
+        _commit(repo, "parent: test_x.py exists, but not the repro test")
+        parent_sha = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+        (tests_dir / "test_x.py").write_text(
+            "def test_other():\n    assert True\n\n\n"
+            "def test_added_later():\n    assert True\n",
+            encoding="utf-8",
+        )
+        _commit(repo, "fix: adds the repro test in the SAME commit as the fix")
+
+        outcome = _bug_repro_outcome_at_ref(
+            repo, "tests/test_x.py::test_added_later", parent_sha
+        )
+        assert outcome is _BugReproOutcome.TEST_ABSENT_AT_PARENT
+        assert outcome is not _BugReproOutcome.NO_VERDICT
+
 
 class TestBugReproViolations:
     def test_non_bug_kind_never_checked(self, tmp_path: Path) -> None:

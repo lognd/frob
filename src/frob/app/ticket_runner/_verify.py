@@ -189,9 +189,9 @@ def _bug_repro_outcome_message(outcome, node_id: str, parent_ref: str) -> str:  
     at designate time and on demand is identical, not two independently
     drifting copies of the same explanation. `outcome` is typed loosely
     (no import-time dependency on `frob.gates.BugReproOutcome`'s enum
-    identity here) but is always one of that enum's four members in
-    practice -- every call site passes a value straight from
-    `bug_repro_outcome_at_ref`."""
+    identity here) but is always one of that enum's six members in
+    practice (T-2025 added `TEST_ABSENT_AT_PARENT`) -- every call site
+    passes a value straight from `bug_repro_outcome_at_ref`."""
     from frob.gates import BugReproOutcome
 
     name = outcome.name
@@ -218,6 +218,28 @@ def _bug_repro_outcome_message(outcome, node_id: str, parent_ref: str) -> str:  
             f"SAME_AS_HEAD: {parent_ref} resolves to HEAD itself, so no "
             f"pre-fix comparison is possible (a direct-commit-to-{parent_ref} "
             f"shape) -- not a pass, an unresolved verdict"
+        )
+    # frob:ticket T-2025
+    if outcome is BugReproOutcome.TEST_ABSENT_AT_PARENT:
+        return (
+            f"TEST_ABSENT_AT_PARENT: {node_id!r} does not exist AT ALL in "
+            f"{parent_ref}'s tree (pytest collected cleanly, zero items "
+            f"matched) -- not a pass, not a transient/retryable failure "
+            f"either. If {parent_ref} is (or descends from) an already-"
+            f"landed ticket's own history, this is PERMANENT and BY "
+            f"CONSTRUCTION: `frob ticket land` squashes a ticket's repro "
+            f"test and its fix into one atomic commit, so no ref in main's "
+            f"history ever contains the test without the fix already "
+            f"applied -- retroactive post-land verification against main "
+            f"alone is not achievable for a newly-added test, no matter "
+            f"which commit is chosen. See "
+            f"docs/modules/tickets.md#check-repro-post-land-limitation-t-2025. "
+            f"If this check is running BEFORE land (inside the ticket's own "
+            f"worktree, evidence not yet a squash commit), a real verdict is "
+            f"still reachable -- commit the repro test ALONE first, confirm "
+            f"it fails against the still-unfixed code, then pass that "
+            f"commit's own sha as --base-ref (T-2021's own evidence used "
+            f"exactly this technique)."
         )
     return f"{name}: unrecognized outcome for {node_id!r} at {parent_ref}"
 

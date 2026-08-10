@@ -2,7 +2,7 @@
 id: T-2025
 title: 'Post-land --check-repro cannot verify a squashed ticket''s repro test: no
   ref in main history has test-without-fix'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -15,9 +15,34 @@ scope:
 - src/frob/gates/_mutation_evidence.py
 - src/frob/tickets/_land_git_ops.py
 - docs/modules/tickets.md
+- src/frob/app/ticket_runner/_verify.py
+- tests/test_gates_mutation_evidence.py
+- tests/unit/test_ticket_runner_designate_repro.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: the message function for the new outcome lives in _verify.py; both existing
+    test files cover the new outcome's classification and message
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: the message function for the new outcome lives in _verify.py; both existing
+    test files cover the new outcome's classification and message
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_ticket_runner_designate_repro.py
+  reason: the message function for the new outcome lives in _verify.py; both existing
+    test files cover the new outcome's classification and message
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates_mutation_evidence.py::TestBugReproAtRef::test_test_absent_at_parent_is_distinct_from_no_verdict
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_reports_test_absent_at_parent_exit1_with_explanatory_message
+designated_repro_test: tests/test_gates_mutation_evidence.py::TestBugReproAtRef::test_test_absent_at_parent_is_distinct_from_no_verdict
 threat: null
 component: null
 anchor: false
