@@ -161,6 +161,12 @@ class Subcommand(str, enum.Enum):
     # T-1697: surface + operate the T-1686 unverified window (depth, age,
     # quarantine, attribution) -- status/now/explain/dispose.
     verify = "verify"
+    # frob:ticket T-1584
+    # T-1584: `frob profile show`/`frob profile downgrade` -- the CLI
+    # surface `frob.tickets._profile.effective_profile`/
+    # `downgrade_profile_ratchet` had no caller for (T-1575's own
+    # WIRE001-waived follow-up).
+    profile = "profile"
 
 
 # frob:doc docs/modules/app.md#config
@@ -408,6 +414,13 @@ class AppConfig(BaseModel):
     # deprecated (T-0638)
     deprecated_path: Path | None = None
     deprecated_json: bool = False
+
+    # profile (T-1584)
+    profile_command: str | None = None  # show|downgrade
+    profile_path: Path | None = None
+    profile_json: bool = False
+    profile_downgrade_reason: str | None = None
+    profile_downgrade_reason_file: Path | None = None
 
     # registry (T-0407)
     registry_command: str | None = None  # audit|add

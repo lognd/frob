@@ -74,6 +74,7 @@ from ._reporting import (
     _add_gitlog_range_args,
     _add_graph_parser,
     _add_pool_parser,
+    _add_profile_parser,
     _add_registry_parser,
 )
 from ._ticket import (
@@ -155,6 +156,7 @@ __all__ = [
     "_add_perf_parser",
     "_add_perf_profile_parser",
     "_add_pool_parser",
+    "_add_profile_parser",
     "_add_registry_parser",
     "_add_release_parser",
     "_add_scaffold_parser",

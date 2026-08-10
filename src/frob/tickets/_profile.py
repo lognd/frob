@@ -352,12 +352,11 @@ def effective_profile(root: Path) -> Result[ProfileName, ProfileError]:
     return Ok(ProfileName.STANDARD)
 
 
+# frob:ticket T-1584
 # frob:doc docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575
 # frob:tests tests/unit/test_profile.py::TestDowngrade.test_downgrade_clears_persisted_ratchet  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestDowngrade.test_downgrade_is_noop_when_nothing_ratcheted  # noqa: E501
-# frob:waive WIRE001 reason="T-1575's own scope excludes a new CLI subcommand surface \
-# -- this is the public API a follow-up 'frob profile downgrade' CLI verb will call; \
-# no production caller exists yet by design of this increment" follow_up="T-1584"
+# frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerDowngrade.test_downgrade_clears_a_real_ratchet  # noqa: E501
 def downgrade_profile_ratchet(root: Path, *, reason: str) -> Result[bool, ProfileError]:
     """Clear a persisted auto-ratchet -- the ONLY way `effective_profile`
     can go back to reading `rapid` off `frob.toml` after an auto-upgrade.

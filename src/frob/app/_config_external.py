@@ -68,6 +68,9 @@ _STRING_FIELDS = (
     "ack_facet",
     # frob:ticket T-1317
     "ack_reason",
+    # frob:ticket T-1584
+    "profile_command",
+    "profile_downgrade_reason",
     "registry_command",
     "registry_add_file",
     "registry_add_key",
@@ -205,6 +208,9 @@ _PATH_FIELDS = (
     "debt_path",
     "deprecated_path",
     "pool_path",
+    # frob:ticket T-1584
+    "profile_path",
+    "profile_downgrade_reason_file",
     "registry_path",
     "ticket_path",
     "ticket_attach_path",
@@ -381,6 +387,8 @@ _BOOL_FLAGS = (
     "registry_sync_gate_rules",
     "debt_json",
     "deprecated_json",
+    # frob:ticket T-1584
+    "profile_json",
     "registry_json",
     "ticket_json",
     # frob:ticket T-1528

@@ -37,6 +37,7 @@ from frob._cli_parsers import (
     _add_parse_parser,
     _add_perf_parser,
     _add_pool_parser,
+    _add_profile_parser,
     _add_quality_parser,
     _add_registry_parser,
     _add_release_parser,
@@ -326,6 +327,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_debt_parser(sub)
     _add_deprecated_parser(sub)
     _add_pool_parser(sub)
+    _add_profile_parser(sub)
     _add_registry_parser(sub)
     _add_ticket_parser(sub)
     _add_test_parser(sub)

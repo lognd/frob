@@ -89,6 +89,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.debt: "debt_runner",
     Subcommand.deprecated: "deprecated_runner",
     Subcommand.pool: "pool_runner",
+    Subcommand.profile: "profile_runner",
     Subcommand.registry: "registry_runner",
     Subcommand.ticket: "ticket_runner",
     Subcommand.test: "test_runner",
@@ -198,6 +199,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.perf_runner as module
     elif name == "pool_runner":
         import frob.app.pool_runner as module
+    elif name == "profile_runner":
+        import frob.app.profile_runner as module
     elif name == "quality_runner":
         import frob.app.quality_runner as module
     elif name == "registry_runner":

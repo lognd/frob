@@ -21,9 +21,9 @@
       "ticket": "T-1628"
     },
     "cli::fs.read": {
-      "accepted_count": 13,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 14,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on cli from 0 to 14 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "cli::fs.write": {
       "accepted_count": 18,

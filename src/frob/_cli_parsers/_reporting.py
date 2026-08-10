@@ -261,6 +261,56 @@ def _add_pool_parser(sub) -> None:
     pool_clear_p.add_argument("--path", dest="pool_path", metavar="DIR", default=".")
 
 
+# frob:ticket T-1584
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
+# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
+# does not trace this cross-package private import -- same class of gap as this repo's \
+# other cross-package DEAD001 waivers (T-1024 precedent)"
+def _add_profile_parser(sub) -> None:
+    """Register the `frob profile` subcommand and its `show`/`downgrade`
+    actions (T-1584) -- the CLI surface `frob.tickets._profile.
+    effective_profile`/`downgrade_profile_ratchet` had no caller for
+    (T-1575's own WIRE001-waived follow-up)."""
+    profile_p = sub.add_parser(
+        "profile",
+        help="development profile (rapid/standard/fortress) status and "
+        "the one-way auto-ratchet's explicit downgrade (T-1575)",
+    )
+    profile_sub = profile_p.add_subparsers(dest="profile_command")
+    _populate_profile_actions(profile_sub)
+
+
+# frob:ticket T-1584
+def _populate_profile_actions(profile_sub) -> None:
+    """Add `frob profile`'s `show`/`downgrade` actions onto `profile_sub`."""
+    show_p = profile_sub.add_parser(
+        "show",
+        help="report the configured profile, the effective profile "
+        "(after the auto-ratchet), and any persisted ratchet state",
+    )
+    show_p.add_argument("--path", dest="profile_path", metavar="DIR", default=".")
+    show_p.add_argument("--json", dest="profile_json", action="store_true")
+
+    downgrade_p = profile_sub.add_parser(
+        "downgrade",
+        help="explicitly clear a persisted rapid->standard auto-ratchet "
+        "(T-1575: the ONLY way back -- never automatic)",
+    )
+    downgrade_p.add_argument(
+        "--path", dest="profile_path", metavar="DIR", default="."
+    )
+    downgrade_p.add_argument(
+        "--reason", dest="profile_downgrade_reason", metavar="TEXT"
+    )
+    downgrade_p.add_argument(
+        "--reason-file",
+        dest="profile_downgrade_reason_file",
+        metavar="PATH",
+        type=Path,
+    )
+    downgrade_p.add_argument("--json", dest="profile_json", action="store_true")
+
+
 # frob:ticket T-0407
 # frob:ticket T-0429
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
