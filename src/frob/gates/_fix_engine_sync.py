@@ -653,6 +653,7 @@ def _live_waiver_counts(root: Path) -> dict[str, int]:
     }
 
 
+# frob:ticket T-1904
 def _drop_untrustworthy_mass_stale_candidates(
     root: Path,
     candidates: list[tuple[str, int, str]],
@@ -673,7 +674,26 @@ def _drop_untrustworthy_mass_stale_candidates(
     a land. T-1578 (frob_core-only) did not cover this; T-1620 extends the
     degraded-run signal to `strata_core` too (`_perf_reach_degraded_marker`
     in `frob.gates`) and adds the proportional check below, so a rule with
-    few live waivers is no longer invisible to this guard either."""
+    few live waivers is no longer invisible to this guard either.
+
+    T-1579 re-measured (2026-08-09) after T-1620/T-1886 closed the two
+    structural gaps those tickets named: neither reintroduces a live-
+    finding-shaped escape from this refusal, and `TestWaive004
+    DegradedRunGuard.test_mass_invalidation_with_live_finding_elsewhere_
+    still_refuses` (`tests/test_gates.py`) is a standing regression lock
+    proving one still does not exist -- the exact "one live finding
+    elsewhere proves the detector ran" argument this docstring's own
+    T-1592 paragraph describes and measured unsafe. A sound escape would
+    need proof that the specific WAIVED SITE (not just the rule, some-
+    where) was actually re-analyzed this run -- per-site analysis-
+    coverage tracking through every gate's optional native substrate --
+    which is a materially larger undertaking than a live-finding check
+    and is not implemented here; T-1579 closed on this finding (filing
+    T-1904 as the successor for the coverage-tracking substrate itself)
+    rather than shipping an escape already known to be unsound by
+    reintroducing the one this module's own history already falsified.
+    A genuinely mass-stale rule's waivers still require manual review
+    and deletion; only the AUTOMATED batch delete stays refused."""
     live_counts = _live_waiver_counts(root)
     mass_rules = _mass_invalidation_rules(candidates, live_counts)
     for mass_rule, count in mass_rules.items():

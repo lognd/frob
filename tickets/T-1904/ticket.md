@@ -2,7 +2,7 @@
 id: T-1904
 title: Sound WAIVE004 escape needs per-site analysis-coverage tracking, not rule-level
   liveness (T-1579 successor)
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-09'
@@ -11,8 +11,55 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_fix_engine_sync.py
+- tickets/T-1904/ticket.md
+- tickets/T-1904/done-report.md
+- tickets/T-1921/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: docstring reapply per ticket ALSO OWED note; own ticket dir files
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1904/ticket.md
+  reason: docstring reapply per ticket ALSO OWED note; own ticket dir files
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1904/done-report.md
+  reason: docstring reapply per ticket ALSO OWED note; own ticket dir files
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: docstring reapply per ticket ALSO OWED note; own ticket dir files
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1904/ticket.md
+  reason: docstring reapply per ticket ALSO OWED note; own ticket dir files
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1904/done-report.md
+  reason: docstring reapply per ticket ALSO OWED note; own ticket dir files
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: tickets/T-1921/ticket.md
+  reason: residue draft filed from this ticket's own investigation (SCOPE001 precedent)
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/test_gates.py::TestWaive004DegradedRunGuard::test_native001_degraded_run_deletes_nothing
+- tests/test_gates.py::TestWaive004DegradedRunGuard::test_skipped_stage_degraded_run_deletes_nothing
+- tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_of_one_rule_deletes_nothing
+- tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_still_refuses
+- tests/test_gates.py::TestWaive004DegradedRunGuard::test_healthy_run_below_threshold_still_deletes
 designated_repro_test: null
 threat: null
 component: null
