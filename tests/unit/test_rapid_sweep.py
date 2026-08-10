@@ -594,6 +594,147 @@ class TestCommitRegressionTicket:
         assert "DIRTY" in errors[0]
 
 
+# frob:ticket T-2034
+class TestCommitOrDiscardLedgerWrite:
+    """T-2034: the shared retry-then-discard shape every sweep
+    ledger write path (regression-ticket filing, auto-drop, and whatever
+    comes next) must go through."""
+
+    def test_returns_true_on_first_success(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite.test_returns_true_on_first_success  # noqa: E501
+        from typani.result import Ok
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda root, ticket_id, message: Ok(None),
+        )
+        discarded: list[str] = []
+        ok = rapid_sweep_mod._commit_or_discard_ledger_write(
+            tmp_path,
+            "T-1234",
+            "msg",
+            max_attempts=3,
+            retry_delay_s=0,
+            discard=lambda: discarded.append("T-1234"),
+            label="T-9000",
+        )
+        assert ok is True
+        assert discarded == []
+
+    def test_retries_then_succeeds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite.test_retries_then_succeeds  # noqa: E501
+        from typani.result import Err, Ok
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+
+        attempts: list[int] = []
+
+        def _flaky(root, ticket_id, message):
+            attempts.append(1)
+            if len(attempts) < 3:
+                return Err(LeaseError.LandInProgress)
+            return Ok(None)
+
+        monkeypatch.setattr("frob.tickets._leases.commit_ticket_ledger_change", _flaky)
+        monkeypatch.setattr(rapid_sweep_mod.time, "sleep", lambda _s: None)
+        discarded: list[str] = []
+        ok = rapid_sweep_mod._commit_or_discard_ledger_write(
+            tmp_path,
+            "T-1234",
+            "msg",
+            max_attempts=5,
+            retry_delay_s=0,
+            discard=lambda: discarded.append("T-1234"),
+            label="T-9000",
+        )
+        assert ok is True
+        assert len(attempts) == 3
+        assert discarded == []
+
+    def test_exhausted_retries_calls_discard_exactly_once_and_returns_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite.test_exhausted_retries_calls_discard_exactly_once_and_returns_false  # noqa: E501
+        from typani.result import Err
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda root, ticket_id, message: Err(LeaseError.LandInProgress),
+        )
+        monkeypatch.setattr(rapid_sweep_mod.time, "sleep", lambda _s: None)
+        discarded: list[str] = []
+        ok = rapid_sweep_mod._commit_or_discard_ledger_write(
+            tmp_path,
+            "T-1234",
+            "msg",
+            max_attempts=2,
+            retry_delay_s=0,
+            discard=lambda: discarded.append("T-1234"),
+            label="T-9000",
+        )
+        assert ok is False
+        assert discarded == ["T-1234"]
+
+
+# frob:ticket T-2034
+class TestDiscardUncommittedTicketDrop:
+    """T-2034: the auto-drop write path's discard action must
+    RESTORE the existing ticket file to its last committed state (not
+    rmtree it -- it is real, already-landed history, unlike a fresh
+    regression ticket's brand-new directory)."""
+
+    def test_v2_store_restores_the_ticket_file_to_head(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDiscardUncommittedTicketDrop.test_v2_store_restores_the_ticket_file_to_head  # noqa: E501
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+
+        repo = _seed_repo(tmp_path)
+        ticket_dir = repo / "tickets" / "T-1234"
+        ticket_dir.mkdir(parents=True)
+        original = "id: T-1234\nstate: queued\n"
+        (ticket_dir / "ticket.md").write_text(original, encoding="utf-8")
+        _git(repo, "add", "tickets/T-1234/ticket.md")
+        _git(repo, "commit", "-qm", "seed ticket")
+
+        # Simulate the never-committed drop mutation.
+        (ticket_dir / "ticket.md").write_text(
+            "id: T-1234\nstate: dropped\n", encoding="utf-8"
+        )
+        assert _git(repo, "status", "--porcelain").strip()
+
+        rapid_sweep_mod._discard_uncommitted_ticket_drop(repo, "T-1234")
+
+        assert not _git(repo, "status", "--porcelain", "--", "tickets").strip()
+        assert (ticket_dir / "ticket.md").read_text(encoding="utf-8") == original
+
+    def test_v1_store_logs_and_leaves_root_alone(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDiscardUncommittedTicketDrop.test_v1_store_logs_and_leaves_root_alone  # noqa: E501
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+
+        monkeypatch.setattr("frob.tickets._store._store_mode", lambda root: "v1")
+        errors: list[str] = []
+        monkeypatch.setattr(
+            rapid_sweep_mod._log, "error", lambda msg, *a: errors.append(msg % a)
+        )
+
+        rapid_sweep_mod._discard_uncommitted_ticket_drop(tmp_path, "T-1234")
+
+        assert len(errors) == 1
+        assert "v1" in errors[0]
+        assert "DIRTY" in errors[0]
+
+
 def _seed_ticket(tmp_path: Path, *, state=None) -> str:
     """A minimal ticket for T-1690's attribution-filing tests. `state`
     (a `TicketState`), when given, transitions the ticket there -- `DONE`
@@ -1616,6 +1757,140 @@ class TestCloseResolvedSweepTickets:
 
         dropped = _close_resolved_sweep_tickets(tmp_path, "T-9001", findings)
         assert dropped == ()
+
+    # frob:ticket T-2034
+    def test_commit_failure_restores_root_to_clean_not_left_dirty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2034's own repro: `_maybe_drop_resolved_ticket`'s
+        `drop_ticket()` write must never survive an exhausted commit retry
+        uncommitted in `root` -- that is exactly the DirtyMain-blocking
+        defect this ticket exists to close. Before the fix this asserted
+        root DIRTY; after the fix root must be CLEAN and the ticket
+        restored to QUEUED (droppable again on the next sweep, not
+        silently lost)."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_commit_failure_restores_root_to_clean_not_left_dirty  # noqa: E501
+        from typani.result import Err
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+
+        repo = _seed_repo(tmp_path)
+        findings = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(repo, "T-9000", "deadbeef", findings)
+        assert filed is not None
+        assert not _git(repo, "status", "--porcelain", "--", "tickets").strip()
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda root, ticket_id, message: Err(LeaseError.LandInProgress),
+        )
+        monkeypatch.setattr(rapid_sweep_mod.time, "sleep", lambda _s: None)
+
+        dropped = rapid_sweep_mod._close_resolved_sweep_tickets(
+            repo, "T-9001", findings
+        )
+        assert dropped == ()  # commit failed -- not reported as dropped
+
+        # THE FIX: root must be clean, never left with an uncommitted
+        # drop write DirtyMain-blocking every concurrent land.
+        assert not _git(repo, "status", "--porcelain", "--", "tickets").strip()
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(repo)
+        assert queue.is_ok
+        assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
+
+    # frob:ticket T-2034
+    def test_retry_after_commit_failure_does_not_duplicate_the_reason(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2034: T-2000/T-2008/T-2022 each carried the SAME
+        auto-drop reason line TWICE because the never-discarded write let
+        the NEXT sweep pass see the ticket as still QUEUED and drop it
+        again. Restoring on discard (this test's first sweep) must leave
+        the ticket genuinely droppable, and the SECOND, successful sweep
+        must append the reason exactly once."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_retry_after_commit_failure_does_not_duplicate_the_reason  # noqa: E501
+        from typani.result import Err
+
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.tickets._leases import LeaseError
+
+        repo = _seed_repo(tmp_path)
+        findings = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(repo, "T-9000", "deadbeef", findings)
+        assert filed is not None
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda root, ticket_id, message: Err(LeaseError.LandInProgress),
+        )
+        monkeypatch.setattr(rapid_sweep_mod.time, "sleep", lambda _s: None)
+        monkeypatch.setattr(rapid_sweep_mod, "_TICKET_DROP_COMMIT_MAX_ATTEMPTS", 1)
+        rapid_sweep_mod._close_resolved_sweep_tickets(repo, "T-9001", findings)
+        monkeypatch.undo()
+
+        # Second sweep, this time the commit succeeds for real.
+        dropped = rapid_sweep_mod._close_resolved_sweep_tickets(
+            repo, "T-9002", findings
+        )
+        assert dropped == (filed,)
+
+        from frob.tickets import load_queue
+
+        queue = load_queue(repo)
+        assert queue.is_ok
+        reason_count = queue.danger_ok.tickets[filed].body.count("auto-dropped by")
+        assert reason_count == 1
+
+
+# frob:ticket T-2036
+class TestAbsoluteVsRelativePathIdentityMismatch:
+    """T-2036's own repro: T-2022 was auto-dropped while its
+    findings were still live because the identity it was FILED with
+    (absolute path, from an earlier sweep's measurement) never matched a
+    LATER sweep's fresh measurement of the SAME still-broken file
+    reported in repo-relative form -- a plain string-tuple diff cannot
+    see these as the same identity. Watch this fail first: before the
+    fix, the still-broken ticket ends up DROPPED."""
+
+    def test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestAbsoluteVsRelativePathIdentityMismatch.test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket  # noqa: E501
+        _write_baseline(tmp_path, frozenset(), "c0")
+        abs_path = str(tmp_path / "a.py")
+
+        # Land 1: the tool reports an ABSOLUTE path for the broken file.
+        # A ticket gets filed naming that identity.
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset({("RULE1", abs_path)}),
+        )
+        first = run_deferred_post_land_sweep(tmp_path, "T-1001", "c1")
+        assert first.is_ok
+        filed = first.danger_ok
+        assert filed is not None
+
+        # Land 2: the SAME file, SAME rule, genuinely STILL broken -- but
+        # this time the tool reports it REPO-RELATIVE (format drift
+        # between runs, T-2022's measured shape). The ticket must NOT
+        # read as resolved just because the raw strings differ.
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset({("RULE1", "a.py")}),
+        )
+        second = run_deferred_post_land_sweep(tmp_path, "T-1002", "c2")
+        assert second.is_ok
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        # THE FIX: still QUEUED, never falsely auto-dropped.
+        assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
 
 
 # frob:ticket T-1983

@@ -69,7 +69,7 @@ import shutil
 import subprocess
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from typani.error_set import ErrorSet
@@ -130,11 +130,63 @@ def _baseline_path(root: Path) -> Path:
     return root / _BASELINE_REL
 
 
+# frob:ticket T-2036
+# frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile.test_absolute_under_root_becomes_relative  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile.test_already_relative_is_unchanged  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile.test_absolute_outside_root_falls_back_unchanged  # noqa: E501
+def _normalize_identity_file(root: Path, file: str) -> str:
+    """T-2036: collapse an identity's `file` component to
+    repo-relative POSIX form, so an absolute-path finding and a
+    repo-relative finding for the SAME file are never treated as two
+    different `(rule, file)` identities by the plain tuple-equality
+    comparison `vanished`/`reproducing`/`identities <= vanished` all
+    rely on.
+
+    MEASURED root cause (T-2022, 2026-08-10): a ticket filed with an
+    ABSOLUTE-path identity (`/home/.../tests/x.py`) was later compared
+    against a fresh measurement reporting the SAME file REPO-RELATIVE
+    (`tests/x.py`) -- the two strings never matched, the identity read
+    as "vanished", and the ticket was auto-dropped while its finding was
+    still live. Different callers of `frob check` in this repo's history
+    have not agreed on which form a diagnostic's own `file` field takes,
+    so normalizing at every point `_rapid_sweep.py` constructs or reads
+    an identity (not just one) is what actually closes the gap -- the
+    module's own "no false drops" invariant only holds if both sides of
+    every comparison went through the SAME normalization.
+
+    Falls back to the ORIGINAL string, unchanged, when `file` cannot be
+    resolved relative to `root` at all (already relative, or absolute
+    but outside `root` entirely) -- this can never make two genuinely
+    different files collide, since an unresolvable absolute path is
+    left exactly as unique as it already was."""
+    path = Path(file)
+    if not path.is_absolute():
+        return path.as_posix()
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _normalize_identities(
+    root: Path, identities: frozenset[tuple[str, str]]
+) -> frozenset[tuple[str, str]]:
+    """T-2036: apply `_normalize_identity_file` across a whole
+    `(rule, file)` identity set -- the single call every producer/
+    consumer of an identity set in this module should route through."""
+    return frozenset(
+        (rule, _normalize_identity_file(root, file)) for rule, file in identities
+    )
+
+
 # frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_absent_baseline_reads_as_none_not_empty  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_corrupt_baseline_reads_as_none_not_empty  # noqa: E501
 def _read_baseline(root: Path) -> frozenset[tuple[str, str]] | None:
-    """The last recorded absolute `(rule_id, file)` error set, or `None`
-    when there is no usable baseline yet (absent or corrupt file).
+    """The last recorded `(rule_id, file)` error set (file components
+    normalized repo-relative, T-2036 -- an older baseline
+    written before this fix may still carry an absolute path on disk,
+    normalized again here on read), or `None` when there is no usable
+    baseline yet (absent or corrupt file).
 
     `None` is deliberately NOT an empty set: comparing a fresh scan
     against an assumed-clean baseline would report every pre-existing
@@ -145,7 +197,9 @@ def _read_baseline(root: Path) -> frozenset[tuple[str, str]] | None:
         return None
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-        return frozenset((str(rule), str(file)) for rule, file in raw["findings"])
+        return _normalize_identities(
+            root, frozenset((str(rule), str(file)) for rule, file in raw["findings"])
+        )
     except Exception as exc:  # noqa: BLE001 -- json/shape, any corruption
         _log.warning(
             "rapid sweep: baseline %s unreadable (%s) -- treating as NO "
@@ -1153,6 +1207,75 @@ def _discard_uncommitted_regression_ticket(root: Path, regression_id: str) -> No
     )
 
 
+# frob:ticket T-2034
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite.test_returns_true_on_first_success  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite.test_retries_then_succeeds  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite.test_exhausted_retries_calls_discard_exactly_once_and_returns_false  # noqa: E501
+def _commit_or_discard_ledger_write(
+    root: Path,
+    ticket_id: str,
+    message: str,
+    *,
+    max_attempts: int,
+    retry_delay_s: float,
+    discard: Callable[[], None],
+    label: str,
+) -> bool:
+    """T-2034: the SHARED retry-then-discard shape every sweep
+    ledger write (a fresh regression-ticket file, an auto-drop, and
+    whatever the next one turns out to be) must go through: attempt
+    `commit_ticket_ledger_change` up to `max_attempts` times, `retry_delay_s`
+    apart, and call `discard()` exactly once -- only after every attempt is
+    exhausted -- so a sweep write can never return with `root` left dirty.
+
+    T-1841 first shipped this shape for the regression-ticket write path
+    alone (`_discard_uncommitted_regression_ticket`); T-1983's newer
+    auto-drop write path (`_maybe_drop_resolved_ticket`) never inherited
+    it, which is exactly how a half-committed `drop_ticket()` write started
+    DirtyMain-blocking every concurrent land again (measured 2026-08-10:
+    6 dirty `tickets/*/ticket.md`, duplicate reason lines on T-2000/T-2008/
+    T-2022 from the same un-discarded write being retried by the next
+    sweep). Routing every write path through ONE retry loop means the next
+    one added here inherits the guarantee for free instead of re-earning
+    it per T-2034's own body.
+
+    `discard` is injected rather than hardcoded because what "undo" means
+    genuinely differs by write shape: a brand-new, never-committed
+    `tickets/<id>/` directory is safe to `rmtree` outright (nothing else
+    has touched git's index for it yet), while an EXISTING, already-landed
+    ticket being mutated in place must instead be restored to its last
+    committed content (`git checkout HEAD -- <path>`) -- `rmtree` there
+    would destroy real ticket history. Only the retry/backoff/give-up
+    SHAPE is shared; the two discard actions stay distinct callers below."""
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    for attempt in range(1, max_attempts + 1):
+        # frob:waive PERF008 reason="deliberate retry with identical arguments, not an \
+        # accidental loop-invariant call -- root's exclusive land lock held by a \
+        # DIFFERENT concurrent agent is the routine case for a detached sweep \
+        # (T-1841), so freshness under concurrency (does the lock still block?) is \
+        # exactly the reason this must re-run every iteration rather than being \
+        # hoisted or memoized"
+        committed = commit_ticket_ledger_change(root, ticket_id, message)
+        if committed.is_ok:
+            return True
+        if attempt < max_attempts:
+            _log.warning(
+                "rapid sweep: %s: committing ledger write for %s failed "
+                "(%s) on attempt %d/%d -- retrying in %.0fs (a concurrent "
+                "land holding root's lock is the routine case, T-1841)",
+                label,
+                ticket_id,
+                committed.danger_err,
+                attempt,
+                max_attempts,
+                retry_delay_s,
+            )
+            time.sleep(retry_delay_s)
+    discard()
+    return False
+
+
 # frob:ticket T-1755
 # frob:ticket T-1791
 # frob:ticket T-1841
@@ -1205,37 +1328,27 @@ def _commit_regression_ticket(
     return type stays `None` (best-effort, matching `_commit_rapid_debt`'s
     identical "must never fail an already-succeeded sweep" posture
     immediately below it in this module) -- a land it degraded is already
-    published either way; only whether ROOT stays clean is at stake."""
-    from frob.tickets._leases import commit_ticket_ledger_change
+    published either way; only whether ROOT stays clean is at stake.
 
+    T-2034: the retry/backoff/give-up loop itself now lives in
+    the SHARED `_commit_or_discard_ledger_write` (this function just
+    supplies the message and the regression-ticket-specific discard
+    action); behavior is unchanged, this is the same retry shape as
+    before, just no longer re-derived independently of the drop path
+    below."""
     message = (
         f"chore(tickets): file {regression_id} "
         f"(post-land sweep regression from {final_id})"
     )
-    for attempt in range(1, max_attempts + 1):
-        # frob:waive PERF008 reason="deliberate retry with identical arguments, not an \
-        # accidental loop-invariant call -- root's exclusive land lock held by a \
-        # DIFFERENT concurrent agent is the routine case for a detached sweep \
-        # (T-1841), so freshness under concurrency (does the lock still block?) is \
-        # exactly the reason this must re-run every iteration rather than being \
-        # hoisted or memoized"
-        committed = commit_ticket_ledger_change(root, regression_id, message)
-        if committed.is_ok:
-            return
-        if attempt < max_attempts:
-            _log.warning(
-                "rapid sweep: %s: committing regression ticket %s failed "
-                "(%s) on attempt %d/%d -- retrying in %.0fs (a concurrent "
-                "land holding root's lock is the routine case, T-1841)",
-                final_id,
-                regression_id,
-                committed.danger_err,
-                attempt,
-                max_attempts,
-                retry_delay_s,
-            )
-            time.sleep(retry_delay_s)
-    _discard_uncommitted_regression_ticket(root, regression_id)
+    _commit_or_discard_ledger_write(
+        root,
+        regression_id,
+        message,
+        max_attempts=max_attempts,
+        retry_delay_s=retry_delay_s,
+        discard=lambda: _discard_uncommitted_regression_ticket(root, regression_id),
+        label=final_id,
+    )
 
 
 # frob:ticket T-1983
@@ -1282,7 +1395,83 @@ def _parse_sweep_ticket_identities(ticket) -> frozenset[tuple[str, str]] | None:
     return frozenset(identities) if identities else None
 
 
+#: T-2034: retry budget for the auto-drop ledger commit, same
+#: values as the regression-ticket path's own budget -- both face the
+#: identical "a concurrent land holds root's lock" contention (T-1841),
+#: so there is no reason to tune them independently absent evidence they
+#: behave differently under load.
+_TICKET_DROP_COMMIT_MAX_ATTEMPTS = _REGRESSION_TICKET_COMMIT_MAX_ATTEMPTS
+_TICKET_DROP_COMMIT_RETRY_DELAY_S = _REGRESSION_TICKET_COMMIT_RETRY_DELAY_S
+
+
+# frob:ticket T-2034
+# frob:tests tests/unit/test_rapid_sweep.py::TestDiscardUncommittedTicketDrop.test_v1_store_logs_and_leaves_root_alone  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDiscardUncommittedTicketDrop.test_v2_store_restores_the_ticket_file_to_head  # noqa: E501
+# frob:waive ARCH103 reason="mirrors the sibling \
+# _discard_uncommitted_regression_ticket's exact shape (store-mode check, one \
+# filesystem/git undo action, one log line per branch) -- the store-mode branch and \
+# the git-checkout-failure branch are both real, distinct terminal outcomes that must \
+# each be logged with a DIFFERENT message (dirty-for-a-known-reason vs restored vs \
+# restore-itself-failed), so splitting them apart would scatter one coherent decision \
+# (what happened to this write, how do I tell the operator) across multiple functions \
+# rather than separating an unrelated concern"
+def _discard_uncommitted_ticket_drop(root: Path, ticket_id: str) -> None:
+    """T-2034: undo `ticket_id`'s just-written, never-committed
+    `drop_ticket()` mutation so an exhausted commit retry leaves `root`
+    CLEAN rather than DirtyMain-blocking every concurrent land -- the same
+    tradeoff T-1841 already made for the sibling regression-ticket write
+    path (`_discard_uncommitted_regression_ticket`), applied here to close
+    the gap that let this exact write path re-dirty root (measured
+    2026-08-10: duplicate reason lines on T-2000/T-2008/T-2022 from the
+    same un-discarded drop being retried by the next sweep).
+
+    Unlike a freshly-filed regression ticket, the ticket being dropped
+    here is an EXISTING, already-committed ticket -- `drop_ticket()`
+    rewrote its `ticket.md` in place, it did not create a new directory.
+    `rmtree` would therefore destroy real ticket history; the correct
+    undo is `git checkout HEAD -- tickets/<id>/`, restoring the directory
+    to its last-committed content (same content, plus whatever was there
+    before the never-committed drop write -- nothing is lost)."""
+    from frob.tickets._store import _store_mode
+
+    if _store_mode(root) != "v2":
+        _log.error(
+            "rapid sweep: auto-drop of %s could not be committed after "
+            "exhausted attempts and this is a v1 (monofile) store -- "
+            "cannot safely auto-restore a shared tickets.md write, root "
+            "stays DIRTY; a human must resolve tickets.md by hand",
+            ticket_id,
+        )
+        return
+    ticket_dir = root / "tickets" / ticket_id
+    proc = subprocess.run(
+        ["git", "checkout", "HEAD", "--", str(ticket_dir)],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if proc.returncode != 0:
+        _log.error(
+            "rapid sweep: auto-drop of %s could not be committed and the "
+            "git-checkout restore itself failed (%s) -- root may still be "
+            "DIRTY, a human must resolve tickets/%s by hand",
+            ticket_id,
+            proc.stderr.strip(),
+            ticket_id,
+        )
+        return
+    _log.error(
+        "rapid sweep: auto-drop of %s could not be committed after "
+        "exhausted attempts -- RESTORED tickets/%s to its last committed "
+        "state rather than left dirty (T-2034, mirrors T-1841)",
+        ticket_id,
+        ticket_id,
+    )
+
+
 # frob:ticket T-1983
+# frob:ticket T-2034
 def _maybe_drop_resolved_ticket(
     root: Path,
     final_id: str,
@@ -1297,11 +1486,25 @@ def _maybe_drop_resolved_ticket(
     wiring) and returns its id. Best-effort: a `drop_ticket`/commit
     failure is logged and returns `None`, never raised -- one
     un-droppable stale ticket must not abort the sweep's real job
-    (recording the fresh baseline) for every other ticket."""
+    (recording the fresh baseline) for every other ticket.
+
+    T-2034: the commit is now attempted through the SHARED
+    `_commit_or_discard_ledger_write` retry loop, and a fully-exhausted
+    commit now RESTORES `ticket_id`'s file to its last-committed state
+    (`_discard_uncommitted_ticket_drop`) instead of leaving the dropped-
+    but-uncommitted write behind -- previously the write stayed dirty in
+    root, DirtyMain-blocking every concurrent land AND making the ticket
+    non-idempotent (the next sweep still saw it as QUEUED/PLANNED and
+    dropped it again, appending a duplicate reason block)."""
     from frob.tickets import drop_ticket
-    from frob.tickets._leases import commit_ticket_ledger_change
 
     identities = _parse_sweep_ticket_identities(ticket)
+    if identities:
+        # T-2036: a ticket filed before this fix may still
+        # carry an absolute-path identity in its body -- normalize on
+        # read so it compares correctly against `vanished` (already
+        # normalized by the caller).
+        identities = _normalize_identities(root, identities)
     if not identities or not identities <= vanished:
         return None
     # frob:waive PERF004 reason="this function itself runs once per candidate ticket \
@@ -1327,18 +1530,16 @@ def _maybe_drop_resolved_ticket(
             result.danger_err,
         )
         return None
-    committed = commit_ticket_ledger_change(
-        root, ticket.id, f"chore(tickets): auto-drop {ticket.id} (resolved, T-1983)"
+    committed = _commit_or_discard_ledger_write(
+        root,
+        ticket.id,
+        f"chore(tickets): auto-drop {ticket.id} (resolved, T-1983)",
+        max_attempts=_TICKET_DROP_COMMIT_MAX_ATTEMPTS,
+        retry_delay_s=_TICKET_DROP_COMMIT_RETRY_DELAY_S,
+        discard=lambda: _discard_uncommitted_ticket_drop(root, ticket.id),
+        label=final_id,
     )
-    if committed.is_err:
-        _log.error(
-            "rapid sweep: %s: dropped %s but could not commit the ledger "
-            "change (%s) -- ticket is dropped in this worktree's tree "
-            "but not yet recorded on disk for other agents",
-            final_id,
-            ticket.id,
-            committed.danger_err,
-        )
+    if not committed:
         return None
     _log.info(
         "rapid sweep: %s: auto-dropped resolved regression ticket %s (%d "
@@ -1448,7 +1649,8 @@ def revalidate_dispatchable_sweep_tickets(
     for ticket in tickets:
         identities = _parse_sweep_ticket_identities(ticket)
         if identities:
-            candidates.append((ticket, identities))
+            # T-2036: normalize on read, same as the sweep path.
+            candidates.append((ticket, _normalize_identities(root, identities)))
     if not candidates:
         return ()
 
@@ -1457,6 +1659,8 @@ def revalidate_dispatchable_sweep_tickets(
     )
     started = time.monotonic()
     reproducing = _identities_still_reproducing(root, all_pairs)
+    if reproducing is not None:
+        reproducing = _normalize_identities(root, reproducing)
     elapsed_s = time.monotonic() - started
     if reproducing is None:
         _log.warning(
@@ -1528,6 +1732,11 @@ def run_deferred_post_land_sweep(
             commit_sha[:12],
         )
         return Err(RapidSweepError.Unmeasurable)
+    # T-2036: normalize BEFORE any comparison/baseline-write
+    # below -- everything downstream (new_findings, vanished, the
+    # persisted baseline, the recorded ticket identities) must see the
+    # SAME repo-relative form the parsed/read sides already normalize to.
+    fresh = _normalize_identities(root, fresh)
 
     # T-2009: the baseline's `commit` must record what was ACTUALLY
     # measured (this sweep's real HEAD at the moment `fresh` finished),
