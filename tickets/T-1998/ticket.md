@@ -15,8 +15,12 @@ scope:
 - .frob-release.json
 - src/frob/_cli_parsers/_ticket/_new.py
 - src/frob/app/ticket_runner/_new.py
+evidence_scope:
+- tests/unit/test_ticket_new_related.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch::test_finds_an_archived_close_title_match
 designated_repro_test: null
 threat: null
 component: null
