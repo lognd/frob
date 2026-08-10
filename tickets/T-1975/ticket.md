@@ -1,7 +1,7 @@
 ---
 id: T-1975
 title: Wire frob ticket scope --demote-to-evidence-only to T-1944's demote_to_evidence_only
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-10'
