@@ -6,7 +6,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-10'
-priority: critical
+priority: high
 parent: null
 tier: ticket
 sprint: null
