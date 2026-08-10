@@ -412,7 +412,7 @@ def _doable(root: Path, cfg: AppConfig) -> None:
 
     ordered, alarm_by_id = _order_dispatchable_with_alarms(dispatchable, root)
     _render_doable_dispatchable(ordered, alarm_by_id, queue, cfg, landed_ids=landed_ids)
-    _render_doable_in_flight(in_flight)
+    _render_doable_in_flight(in_flight, _stale_lease_reasons(root))
 
 
 # frob:ticket T-0976
@@ -524,14 +524,56 @@ def _render_doable_dispatchable(
 
 
 # frob:ticket T-0976
-def _render_doable_in_flight(in_flight: list) -> None:
+# frob:ticket T-1876
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_dead_holder_flagged_with_reason  # noqa: E501
+# frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_live_holder_not_flagged  # noqa: E501
+def _stale_lease_reasons(root: Path | None) -> dict[str, str]:
+    """`ticket_id -> lease_staleness_reason` for every held lease under
+    `root` that `frob.tickets._leases.lease_staleness_reason` judges
+    orphaned (T-1876) -- path-gone, ticket-gone, or holder-dead (a lease
+    whose `recorded_at` is past `is_lease_ttl_expired`'s horizon AND has
+    no live process cwd'd into its worktree, T-1739/T-1806's own
+    liveness signals, reused here rather than re-derived). This is the
+    read-only surfacing half of T-1876: it FLAGS a dead-looking lease so
+    `frob ticket doable`'s in-flight section can say so, and never
+    releases or alters anything itself -- reclamation stays an explicit
+    `frob worktree release-lease TICKET-ID` call (T-1789/T-1806), the
+    conservative posture T-1876 calls for (auto-releasing a merely-slow
+    agent's lease would let two worktrees edit the same scope at once,
+    the exact T-1868 failure mode). `root=None` (no repo to consult)
+    returns an empty map, matching every other lease helper's `root=None`
+    convention in this module."""
+    if root is None:
+        return {}
+    from frob.tickets._leases import lease_staleness_reason, orphaned_leases
+
+    reasons: dict[str, str] = {}
+    for record in orphaned_leases(root):
+        reason = lease_staleness_reason(root, record)
+        if reason is not None:
+            reasons[record.ticket_id] = reason
+    return reasons
+
+
+# frob:ticket T-1876
+def _render_doable_in_flight(
+    in_flight: list, stale_reasons: dict[str, str] | None = None
+) -> None:
     """Print the "In-flight (leased, already being worked)" section of
-    `frob ticket doable`, if any dispatchable-but-leased rows exist."""
+    `frob ticket doable`, if any dispatchable-but-leased rows exist.
+    T-1876: a row whose lease `stale_reasons` (`_stale_lease_reasons`)
+    judges orphaned gets an extra warning line naming the reason and the
+    `frob worktree release-lease` recovery command, instead of being
+    presented identically to genuinely live work -- the exact gap T-1876
+    measured (`doable` listing a dead agent's lease the same as a live
+    one, with no signal a coordinator could act on)."""
     if not in_flight:
         return
     from frob.app.ticket_runner import _stdout_color
 
     color = _stdout_color()
+    stale_reasons = stale_reasons if stale_reasons is not None else {}
     _log.info("In-flight (leased, already being worked):")
     for t in in_flight:
         _log.info(
@@ -541,6 +583,15 @@ def _render_doable_in_flight(in_flight: list) -> None:
             t.kind.value,
             t.priority.value,
         )
+        reason = stale_reasons.get(t.id)
+        if reason is not None:
+            _log.warning(
+                "    lease looks abandoned (%s) -- if the agent is "
+                "genuinely dead, run `frob worktree release-lease %s` "
+                "to reclaim it",
+                reason,
+                t.id,
+            )
 
 
 # frob:ticket T-1738

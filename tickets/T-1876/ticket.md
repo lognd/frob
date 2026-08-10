@@ -2,7 +2,7 @@
 id: T-1876
 title: A lease survives its agent's death with no liveness check, blocking every ticket
   in its scope indefinitely
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-08'
@@ -14,6 +14,8 @@ runs_last: false
 scope:
 - src/frob/tickets/_leases.py
 - src/frob/app/ticket_runner/_query.py
+- tests/unit/test_app_runners_doable_stale_lease.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -22,6 +24,21 @@ scope_changes:
   reason: 'T-1876: lease liveness reaping lives here'
   actor: logan
   at: '2026-08-08'
+- op: add
+  glob: tests/unit/test_app_runners_doable_stale_lease.py
+  reason: T-1876 fix lives in _query.py/_leases.py; new test file covers _stale_lease_reasons
+    behavior
+  actor: logan
+  at: '2026-08-09'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1876 adds a doc section for the doable staleness surfacing
+  actor: logan
+  at: '2026-08-09'
+evidence:
+- tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons::test_dead_holder_flagged_with_reason
+- tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons::test_live_holder_not_flagged
+- tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons::test_no_root_returns_empty
 designated_repro_test: null
 threat: null
 component: null

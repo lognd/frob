@@ -932,6 +932,37 @@ means the two call sites cannot answer "does this scope collide?"
 differently again, the same discipline T-1883's `same_worktree_lease`
 extraction already applied to the doable/`--add` pairing above.
 
+<!-- frob:describes src/frob/app/ticket_runner/_query.py::_stale_lease_reasons -->
+<!-- frob:describes src/frob/app/ticket_runner/_query.py::_render_doable_in_flight -->
+**`frob ticket doable` now FLAGS a lease that looks dead, in its own
+in-flight section (T-1876).** Everything above this paragraph already
+built the pieces this closes: `is_lease_ttl_expired` (T-0782), the
+worktree-liveness probe (`scan_for_live_worktree_process`, T-1739), and
+`lease_staleness_reason`/`orphaned_leases` (T-1789/T-1806), which unify
+both into the three-shape "path-gone / ticket-gone / holder-dead"
+verdict `frob worktree release-lease` already acts on. What was still
+missing: `doable`'s own "In-flight (leased, already being worked)"
+section rendered a dead agent's lease identically to a live one, with no
+signal at the point a coordinator actually decides what to dispatch --
+measured for real, 2026-08-08: a lease recorded hours after its own
+worktree's last commit blocked five other tickets the entire time, and
+`doable` never said so.
+
+`_stale_lease_reasons(root)` (`frob.app.ticket_runner._query`) builds a
+`ticket_id -> reason` map from `orphaned_leases(root)` and
+`lease_staleness_reason`, reusing both wholesale rather than inventing a
+fourth liveness signal (T-1876's own explicit design constraint: a
+liveness check that is too eager would let two worktrees mutate the same
+scope at once, T-1868's exact failure class). `_render_doable_in_flight`
+prints an extra warning line under any in-flight row this map covers,
+naming the reason and the `frob worktree release-lease TICKET-ID`
+recovery command -- and does nothing else: the row still appears
+in-flight, `doable`'s own dispatchable/blocked partition is completely
+unchanged, and no lease is ever released automatically. FLAG, never
+auto-release, is the deliberate, conservative posture T-1876 calls for;
+reclamation stays an explicit human/coordinator decision via the
+existing verb.
+
 ## Start-transition auto-commit (T-1054)
 
 `frob.tickets.transition` writes `tickets.md` straight to `root`'s working
