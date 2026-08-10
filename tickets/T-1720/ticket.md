@@ -2,7 +2,7 @@
 id: T-1720
 title: frob ticket land should auto-rebase the worktree onto main after a successful
   land
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-07'
