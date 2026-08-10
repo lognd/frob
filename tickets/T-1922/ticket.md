@@ -2,7 +2,7 @@
 id: T-1922
 title: OutOfScopeWaiveDeletion false-refuses a land whose merge-base is stale relative
   to an unrelated upstream waiver reword
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-09'
@@ -15,6 +15,10 @@ scope:
 - src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses
+- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted
 designated_repro_test: null
 threat: null
 component: null

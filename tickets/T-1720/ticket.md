@@ -2,7 +2,7 @@
 id: T-1720
 title: frob ticket land should auto-rebase the worktree onto main after a successful
   land
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -18,9 +18,14 @@ scope:
 - docs/guides/agent-playbook.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_land_auto_rebase.py::TestAutoRebaseWorktreeOntoMain::test_rebases_the_worktree_onto_the_new_main_tip
+- tests/unit/test_land_auto_rebase.py::TestAutoRebaseWorktreeOntoMain::test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land
 designated_repro_test: null
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 ## Description
 

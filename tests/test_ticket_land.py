@@ -2186,6 +2186,97 @@ class TestCommittedWaiveDeletionRefusal:
 
         assert result_b.is_ok, result_b.err
 
+    # frob:ticket T-1922
+    def test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse(  # noqa: E501
+        self, repo: Path
+    ) -> None:
+        """T-1922's own live incident: main REWORDS a `frob:waive` line's
+        reason text (an unrelated, already-landed ticket's own edit, on a
+        file this branch NEVER committed to at all) while this worktree's
+        branch forked from an OLDER commit and has not re-merged main
+        since. `_committed_waive_deletions`'s T-1550 two-dot content diff
+        (`main_branch..HEAD`) reads the OLD text as "deleted" purely
+        because main's current tip has the NEW text and this branch's own
+        stale copy still has the OLD one -- even though the branch's own
+        commits never touched the file. Before the T-1922 fix this
+        refused with `OutOfScopeWaiveDeletion`; after it, the finding is
+        filtered out because the file never appears in this branch's own
+        `_branch_changed_files` set."""
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="old wording"\n' "def g():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py with a live PERF001 waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-1922", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # This branch's OWN commit never touches other.py at all.
+        (wt / "src" / "feature.py").write_text("# unrelated feature work\n")
+        _commit_all(wt, "unrelated feature work, never touches other.py")
+
+        # main independently REWORDS the same waiver line -- standing in
+        # for T-1918's own real edit -- WITHOUT this worktree ever
+        # merging it forward.
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="new wording, unrelated edit"\n'
+            "def g():\n    pass\n"
+        )
+        _commit_all(repo, "main-side: reword the waiver's reason text, unrelated")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_ok, result.err
+
+    # frob:ticket T-1922
+    def test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses(
+        self, repo: Path
+    ) -> None:
+        """T-1922's own fix must not weaken the guard for the case it
+        still needs to catch: a `frob:waive` deletion the landing
+        branch's OWN commits made, out of scope and undeclared -- this is
+        `test_committed_out_of_scope_undeclared_waive_deletion_refuses_
+        before_merge` again, but run alongside an UNRELATED upstream
+        reword on a different file, to prove the T-1922 filter narrows
+        correctly rather than accidentally suppressing the whole check."""
+        (repo / "src" / "other.py").write_text(
+            '# frob:waive PERF001 reason="genuinely needed, not this ticket"\n'
+            "def g():\n    pass\n"
+        )
+        (repo / "src" / "third.py").write_text(
+            '# frob:waive DUP001 reason="old wording"\n' "def h():\n    pass\n"
+        )
+        _commit_all(repo, "add other.py and third.py, each with a live waiver")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-1922-genuine", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Unrelated ticket", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # The branch's OWN commit genuinely deletes other.py's waiver,
+        # out of scope and undeclared.
+        (wt / "src" / "other.py").write_text("def g():\n    pass\n")
+        _commit_all(wt, "unrelated cleanup that happens to drop a waiver")
+
+        # main independently rewords third.py's waiver -- a file this
+        # branch never touches -- so the filter has something real to
+        # narrow away alongside the genuine finding.
+        (repo / "src" / "third.py").write_text(
+            '# frob:waive DUP001 reason="new wording, unrelated edit"\n'
+            "def h():\n    pass\n"
+        )
+        _commit_all(repo, "main-side: reword third.py's waiver, unrelated")
+
+        result = land(repo, tid, wt, dry_run=True)
+
+        assert result.is_err
+        assert result.danger_err == LandError.OutOfScopeWaiveDeletion
+
 
 # frob:ticket T-1799
 class TestCommitsTouchingPath:

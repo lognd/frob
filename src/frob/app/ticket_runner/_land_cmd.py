@@ -1728,6 +1728,15 @@ def _finish_land_after_success(
         sys.exit(1)
     wants_finish = cfg.ticket_land_finish or cfg.ticket_land_retire_on_proof
     if not wants_finish:
+        # T-1720: auto-rebase the worktree's own branch onto the main tip
+        # this land just produced -- skipped when `wants_finish` is set,
+        # since `_finish_worktree` below is about to remove the checkout
+        # entirely and rebasing a worktree seconds before deleting it is
+        # pure wasted git work with the same (small) conflict-abort risk
+        # for no benefit. The common series-worktree case (no `--finish`,
+        # more tickets to land in the same worktree next) is exactly the
+        # case this closes.
+        _auto_rebase_worktree_onto_main(root, worktree, cfg.ticket_id)
         return
     # T-1910: `verified` is always True by this point -- the unconditional
     # `sys.exit(1)` above already handled the False case for every caller,
@@ -1763,6 +1772,87 @@ def _finish_land_after_success(
             _delete_worktree_branch(root, branch, cfg.ticket_id)
     finally:
         _clear_land_finish_pending_marker(root, cfg.ticket_id)
+
+
+# frob:ticket T-1720
+# frob:doc docs/modules/tickets.md#auto-rebase-after-a-successful-land-t-1720
+# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoRebaseWorktreeOntoMain.test_rebases_the_worktree_onto_the_new_main_tip  # noqa: E501
+# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoRebaseWorktreeOntoMain.test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land  # noqa: E501
+def _auto_rebase_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) -> None:
+    """T-1720: `git rebase <main>` `worktree`'s own branch onto the main
+    tip THIS land just produced, best-effort -- closes the repeated,
+    by-hand `git rebase main` every multi-ticket series worktree agent
+    performed after each successful land in this session (T-1720's own
+    evidence: six for six lands, same manual recipe every time), before
+    starting the next ticket in the same worktree.
+
+    ORDERING (T-1932's own finding, applied here): this MUST run only
+    AFTER `_finish_land_after_success` has already confirmed `verified=
+    True` from `_print_land_proof` -- never before. `_print_land_proof`'s
+    ancestry/state check reads `root`'s own `main` ref and the just-
+    landed commit; this rebase only rewrites `worktree`'s OWN branch
+    history and never touches `root` at all, so it cannot retroactively
+    invalidate that already-run guard's verdict. Nothing inside THIS same
+    `frob ticket land` invocation re-reads the worktree's rewritten
+    history afterward, so the rebase introduces no NEW guard for a LATER
+    mutation in this call to defeat either -- it is the last thing this
+    function does. A future caller that adds a check AFTER this point
+    that re-reads `worktree`'s branch state must reason about this
+    mutation the same way T-1932 asks every land-path guard to.
+
+    Best-effort, never fails the overall `frob ticket land` invocation
+    (the land itself already succeeded and is durable on `main` by the
+    time this runs) -- a real conflict aborts the rebase immediately
+    (`git rebase --abort`), restoring `worktree` to its exact pre-rebase
+    state, and logs a WARNING naming the ticket and worktree for manual
+    resolution, rather than leaving the branch mid-rebase (a half-
+    mutated worktree is exactly the kind of state a LATER guard -- e.g.
+    the next ticket's own T-1922 committed-waive-deletion scan, or its
+    pre-work sweep -- could misread). A worktree not on a real branch
+    (detached HEAD) or with no resolvable `main` branch name is skipped
+    silently -- neither is this function's problem to fix."""
+    branch = _worktree_branch_name(root, worktree)
+    if branch is None:
+        _log.debug(
+            "ticket land: %s auto-rebase skipped -- %s is not on a "
+            "named branch (detached HEAD)",
+            ticket_id,
+            worktree,
+        )
+        return
+    main_ref = run_argv(["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"])
+    if main_ref.is_err or main_ref.danger_ok.returncode != 0:
+        _log.warning(
+            "ticket land: %s auto-rebase skipped -- could not resolve "
+            "%s's current branch name",
+            ticket_id,
+            root,
+        )
+        return
+    main_branch = main_ref.danger_ok.stdout.strip()
+    rebased = run_argv(["git", "-C", str(worktree), "rebase", main_branch])
+    if rebased.is_ok and rebased.danger_ok.returncode == 0:
+        _log.info(
+            "ticket land: %s auto-rebased %s (branch %s) onto %s (T-1720)",
+            ticket_id,
+            worktree,
+            branch,
+            main_branch,
+        )
+        return
+    _log.warning(
+        "ticket land: %s auto-rebase onto %s failed or conflicted in %s -- "
+        "aborting the rebase (T-1720 is best-effort, never fails an "
+        "already-successful land) and leaving the worktree exactly as it "
+        "was before this attempt; resolve with a manual `git rebase %s` "
+        "in %s before starting the next ticket there",
+        ticket_id,
+        main_branch,
+        worktree,
+        main_branch,
+        worktree,
+    )
+    run_argv(["git", "-C", str(worktree), "rebase", "--abort"])
 
 
 # frob:ticket T-1619

@@ -2139,7 +2139,10 @@ def _check_committed_waive_deletions(
     found = _committed_out_of_scope_waive_deletions(worktree, ticket, main_branch)
     if found.is_err:
         return Err(found.danger_err)
-    if found.danger_ok:
+    own_findings = _restrict_to_branch_own_files(
+        worktree, ticket_id, main_branch, found.danger_ok
+    )
+    if own_findings:
         from frob.tickets._land_git_ops import _commits_touching_path
 
         # frob:ticket T-1799
@@ -2149,7 +2152,7 @@ def _check_committed_waive_deletions(
         # reconstruct it by hand.
         attribution = {
             file: _commits_touching_path(worktree, main_branch, file)
-            for file, _rule in found.danger_ok
+            for file, _rule in own_findings
         }
         _log.error(
             "land: %s refused -- branch history (commits since merge-base "
@@ -2162,7 +2165,7 @@ def _check_committed_waive_deletions(
             ticket_id,
             merge_base.danger_ok,
             list(ticket.scope),
-            [f"{file}:{rule}" for file, rule in found.danger_ok],
+            [f"{file}:{rule}" for file, rule in own_findings],
             main_branch,
             attribution,
             ticket_id,
@@ -2170,6 +2173,89 @@ def _check_committed_waive_deletions(
         )
         return Err(LandError.OutOfScopeWaiveDeletion)
     return Ok(None)
+
+
+# frob:ticket T-1922
+# frob:doc docs/modules/tickets.md#outofscopewaivedeletion-false-refusal-on-a-stale-worktree-t-1922  # noqa: E501
+# frob:tests tests/unit/test_land_committed_waive_deletion_own_files.py::TestRestrictToBranchOwnFiles.test_filters_out_a_finding_the_branch_never_committed_itself  # noqa: E501
+# frob:tests tests/unit/test_land_committed_waive_deletion_own_files.py::TestRestrictToBranchOwnFiles.test_keeps_a_finding_the_branch_genuinely_committed_itself  # noqa: E501
+def _restrict_to_branch_own_files(
+    worktree: Path,
+    ticket_id: str,
+    main_branch: str,
+    findings: tuple[tuple[str, str], ...],
+) -> tuple[tuple[str, str], ...]:
+    """T-1922: `_committed_waive_deletions`'s T-1550 two-dot diff
+    (`main_branch..HEAD`) is a plain CONTENT diff between two commits, not
+    an ancestry-scoped one -- it reports a line as "deleted" whenever
+    `main_branch`'s CURRENT tip has it and `HEAD` does not, regardless of
+    WHICH side actually changed. When `main_branch` has moved forward
+    (an unrelated, already-landed ticket edited a `frob:waive` comment's
+    text on a file this branch never touched at all) while this worktree
+    has not yet merged that forward, the two-dot diff reads main's own
+    new text as though HEAD deleted it -- attributing an entirely
+    unrelated, already-landed edit to whichever ticket happens to retry a
+    land next, off a worktree whose last `git merge main` predates it.
+    The real 2026-08 incident: T-1918 reworded an `AFFECT001` waiver's
+    reason string in `_renumber_v2.py`; two UNRELATED worktrees
+    (T-1911's, T-1904's), neither of which had ever touched that file,
+    both got refused with `OutOfScopeWaiveDeletion` naming it, purely
+    because their own merge-base predated T-1918's land. The confirmed
+    workaround (`git merge main` immediately before retrying) worked
+    every time specifically because it moved the two-dot diff's LEFT side
+    forward past the unrelated edit -- it never touched what the check
+    was actually measuring.
+
+    T-1550's own two-dot-against-live-tip design is NOT reverted here --
+    it is exactly what makes an already-landed SIBLING ticket's deletion
+    (on this same branch) invisible once main independently reflects the
+    same state (`_committed_waive_deletions`'s own T-1550 docstring).
+    Replacing it with a naive three-dot `main_branch...HEAD` diff
+    (ancestry-scoped, i.e. re-diffing from the STALE fork point) would
+    silently UNDO that fix and reintroduce the T-1225/T-1444 re-
+    attribution bug T-1550 closed -- a worktree that has not rebased
+    keeps the same old merge-base either way, so a three-dot diff from it
+    would show the sibling's already-landed commits all over again.
+
+    The actual missing filter is orthogonal to both: does `findings`'
+    file even belong to something THIS BRANCH'S OWN COMMITS changed at
+    all? `_branch_changed_files(worktree, main_branch)` (the same
+    three-dot `main_branch...HEAD` --name-only diff `_check_cross_ticket_
+    leakage` already uses for an identical "what did this branch itself
+    commit" question) answers exactly that, independent of content
+    equality -- a file this branch's own history never touched can never
+    appear in it, no matter how stale the worktree's last merge is or how
+    much main has moved. `findings` entries whose file is NOT in that set
+    are dropped here: they are provably not this branch's own doing, only
+    an artifact of the two-dot diff's content-comparison semantics
+    picking up main's independent evolution. A finding whose file DOES
+    appear in `_branch_changed_files` is kept unchanged -- this never
+    weakens the check for a deletion the branch genuinely committed
+    itself, including the T-1550 already-landed-sibling case (which is
+    still excluded upstream, by the two-dot diff itself showing no delta
+    once main already reflects it, not by this filter).
+
+    Best-effort: a `_branch_changed_files` failure (git spawn error, no
+    merge-base) degrades to the pre-T-1922 UNFILTERED findings, logged at
+    WARNING -- this filter can only ever narrow a refusal, never widen
+    one, so failing open here means "fall back to the old, occasionally
+    over-broad behavior", never "silently drop a real finding this branch
+    committed itself"."""
+    if not findings:
+        return findings
+    own_changed = _branch_changed_files(worktree, main_branch)
+    if own_changed.is_err:
+        _log.warning(
+            "land: %s could not compute this branch's own touched-file "
+            "set (%s) to narrow the T-1922 committed-waive-deletion scan "
+            "-- falling back to the unfiltered (possibly stale-merge-base "
+            "over-broad) finding set",
+            ticket_id,
+            own_changed.danger_err,
+        )
+        return findings
+    changed = own_changed.danger_ok
+    return tuple((file, rule) for file, rule in findings if file in changed)
 
 
 # frob:ticket T-1681

@@ -3578,6 +3578,47 @@ preflight sequence should copy this same shape (self-delegating
 re-invocation, called after `_land_merge_stage`, pinned by an equivalent
 source-order test) until the generic registry exists.
 
+## Auto-rebase after a successful land (T-1720)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_auto_rebase_worktree_onto_main -->
+
+Every land performed across two multi-ticket series worktrees in one
+measured session hit the same sequence: land a ticket successfully
+(`LAND-PROOF: ... verified=True`), then the NEXT `frob check --ticket
+<next-id>` in the SAME worktree reports spurious SCOPE001/COV002 findings
+on files the just-landed ticket touched -- the worktree's own step-by-
+step commits for that already-landed work are still present on its
+branch, and the branch has not moved to `main`'s new (squashed) tip, so
+`git diff main` for those files looks non-empty even though the content
+is byte-identical. Resolved by hand, every single time (six for six),
+with `git rebase main` before starting the next ticket.
+
+`frob ticket land` now does this automatically: `_auto_rebase_worktree_
+onto_main` runs `git rebase <main>` in the worktree right after a real
+(non-`--dry-run`) land, but only when `--finish`/`--retire-on-proof` was
+NOT passed (a worktree about to be removed by `_finish_worktree` gains
+nothing from being rebased first, and only takes on the same small
+conflict-abort risk for no benefit).
+
+ORDERING (T-1932's own finding, applied here): the rebase runs strictly
+AFTER `_print_land_proof` has already confirmed `verified=True`. That
+check reads `root`'s own `main` ref and the just-landed commit sha,
+neither of which a rebase of the WORKTREE's own branch touches -- so
+placing the mutation after that guard means it cannot retroactively
+invalidate a verdict the guard already reached. Nothing later in the same
+`frob ticket land` invocation re-reads the worktree's rewritten history,
+so this mutation introduces no new guard for a later step to defeat
+either -- it is the last thing the successful-land path does.
+
+Best-effort, never fails an already-successful land: a real conflict
+(not merely "patch already upstream", which `git rebase` drops on its
+own) aborts immediately (`git rebase --abort`), restores the worktree to
+its exact pre-rebase state, and logs a WARNING naming the ticket and
+worktree for manual resolution -- never left mid-rebase, which would
+otherwise hand a LATER guard (the next ticket's own T-1922 committed-
+waive-deletion scan, or its pre-work sweep) a half-mutated worktree to
+reason about.
+
 ## Post-land unscoped error sweep (T-1456)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_unscoped_error_findings -->
