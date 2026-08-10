@@ -2,7 +2,7 @@
 id: T-2007
 title: A lease recorded against the shared root can never be holder-dead, so it is
   un-reclaimable by any command
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -95,3 +95,5 @@ recovery path at all.
 3. Report, as measurement, how many CURRENT leases across this repo record
    the shared root as their worktree, with the denominator of leases
    examined.
+
+frob:waive BUG002 reason="the fix's own committed diff genuinely reproduces-then-passes (verified directly: tests/test_ticket_leases.py::TestRootLeaseUnreclaimable::test_root_lease_skipped_when_agent_worktrees_exist fails at commit 14aa21fad, the test-only commit, and passes at the fix commit b5f3c57ad -- see T-2007's own Done report). This ticket's fix commit landed as a PASSENGER of T-1961's joint land (2066bc189be1, --allow-cross-ticket, both tickets committed on the same series worktree) -- main's tip already contains this fix by the time this land runs to close T-2007's own ticket state, so BUG002's land-time parent-vs-fix comparison against CURRENT main necessarily reports the designated test PASSING at the parent too, indistinguishable from confirmatory-only evidence. Same documented ledger/doc-correction shape as T-1901: no new code is landing under this ticket id, only recording that the fix (which did happen, and was verified to genuinely reproduce-then-fix at the time it was made) is attributed and closed out."
