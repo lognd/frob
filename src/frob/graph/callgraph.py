@@ -475,6 +475,138 @@ def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     return CallGraph(calls=refs)
 
 
+# frob:doc docs/modules/graph.md#call-graph
+# frob:ticket T-2156
+def build_reference_graph_module_scoped(root: Path, paths: Sequence[str]) -> CallGraph:
+    """Attribution-safe counterpart to `build_reference_graph` (T-2156).
+
+    `build_reference_graph`'s resolution rule is DELIBERATELY over-
+    inclusive: `_ordered_private_callees`/`_resolve_edges` match a called
+    name against `by_name`'s codebase-wide short-name index and add an
+    edge to EVERY private candidate sharing that name, in ANY file,
+    discarding the candidate's own `_cand_path` the index already carries
+    (`_short_name_index`'s `(symref, path, is_private)` tuples). That is
+    correct and safe for `build_reference_graph`'s original consumer,
+    T-0422's dead-symbol gate ("is this symbol referenced anywhere at
+    all") -- an extra edge there only means fewer false dead-code
+    positives, never a false accusation.
+
+    `frob.verify._attribution` (T-1690) reuses the SAME graph shape for a
+    different question -- CAUSAL reachability, "did commit X's touched
+    symbols reach finding F" -- where an edge that does not correspond to
+    a real reference manufactures a false positive attribution. This was
+    observed directly (T-2156): a private helper named `_run` is
+    independently defined, with the identical name, in 17 different test
+    files across this repo (`_commit_all` in 18) -- a deliberate, common
+    convention for git-fixture test helpers, not a naming accident -- so
+    `build_reference_graph`'s blanket short-name match wired a fabricated
+    edge from an unrelated test's `_run` caller straight to
+    `tests/test_ticket_leases.py::_run`, attributing an E402 finding
+    there to a completely unrelated land. The SAME over-matching also
+    explains the `commit=None` findings T-2156 was originally (and
+    wrongly) filed against: `_attribution.py`'s own documented "zero or
+    MORE THAN ONE candidate reaching = unattributed" rule fired correctly
+    once collisions inflated the reaching-candidate count past one -- the
+    rule was right, its input (this graph) was wrong for this consumer.
+
+    This function keeps `_parse_package`/`_short_name_index`/
+    `_referenced_names`'s shared extraction and by-name indexing exactly
+    as `build_reference_graph` does (no duplicated parsing logic), but
+    restricts which same-named PRIVATE candidate a caller may resolve to:
+    a candidate in the caller's OWN file always resolves (ordinary local
+    reference, the overwhelming majority case); a candidate in a
+    DIFFERENT file resolves only when the caller's file actually IMPORTS
+    that candidate's file (`frob.lang.extract_imports` +
+    `frob.lang.resolve_local_import`, best-effort -- a file whose imports
+    cannot be extracted just contributes no cross-file edges, the same
+    degrade-to-narrower posture the rest of this module already uses
+    rather than a hard failure). A same-named collision between two
+    files with no import relationship -- exactly the `_run`/`_commit_all`
+    shape above -- now correctly resolves to NO edge instead of a
+    fabricated one.
+
+    `build_reference_graph` itself is UNCHANGED by this function's
+    existence -- T-0422's dead-symbol gate keeps calling it directly, and
+    must keep its broader recall; narrowing the shared graph globally
+    would risk resurrecting dead-symbol false positives repo-wide to fix
+    an attribution-only problem. Two consumers with genuinely different
+    correctness requirements getting two resolutions here is deliberate,
+    not the T-1966 'one rule, two homes' defect -- the difference is
+    documented, in one shared module, not independently reinvented."""
+    parsed_by_path = _parse_package(root, paths)
+    by_name = _short_name_index(parsed_by_path)
+    imports_by_path = _local_imports_by_path(root, parsed_by_path)
+    calls: dict[str, tuple[str, ...]] = {}
+    for path, symbols in parsed_by_path.items():
+        importable = imports_by_path.get(path, frozenset())
+        for sym in symbols:
+            caller_symref = f"{path}::{sym.qualname}"
+            callees: list[str] = []
+            for name in _referenced_names(sym):
+                for symref, cand_path, is_private in by_name.get(name, ()):
+                    if symref == caller_symref or not is_private:
+                        continue
+                    if cand_path != path and cand_path not in importable:
+                        continue
+                    callees.append(symref)
+            if callees:
+                calls[caller_symref] = tuple(callees)
+    return CallGraph(calls=calls)
+
+
+# frob:ticket T-2156
+def _local_imports_by_path(
+    root: Path, parsed_by_path: Mapping[str, list]
+) -> dict[str, frozenset[str]]:
+    """`path -> the set of root-relative files it locally imports`, for
+    `build_reference_graph_module_scoped`'s cross-file resolution.
+    Best-effort per file (`frob.lang.extract_imports` failing, or a
+    specifier `frob.lang.resolve_local_import` cannot resolve under
+    `root`, both just narrow that file's set rather than erroring the
+    whole build -- consistent with this module's existing degrade-to-
+    narrower posture elsewhere).
+
+    Language detection is by suffix, matching the one other caller in
+    this codebase doing the identical extract+resolve pairing outside a
+    single already-known-Python context (`frob.arch._python._check_high_
+    coupling`): `resolve_local_import` itself only actually resolves
+    `"python"`/`"c"`/`"cpp"` specifiers (its own body returns `None` for
+    every other language string), so a Rust/TypeScript file's imports
+    degrade to an empty set here -- same-file resolution still applies to
+    those files, only cross-file resolution is narrower for them, which
+    is a smaller gap than this ticket's own reported incident (a
+    same-named collision across PYTHON test files) and not something this
+    ticket's scope closes."""
+    from frob.lang import extract_imports, resolve_local_import
+
+    suffix_language = {
+        ".py": "python",
+        ".c": "c",
+        ".h": "c",
+        ".cpp": "cpp",
+        ".cc": "cpp",
+        ".hpp": "cpp",
+    }
+    result: dict[str, frozenset[str]] = {}
+    for path in parsed_by_path:
+        language = suffix_language.get(Path(path).suffix)
+        if language is None:
+            result[path] = frozenset()
+            continue
+        specs = extract_imports(root / path)
+        if specs.is_err:
+            result[path] = frozenset()
+            continue
+        resolved = {
+            resolve_local_import(
+                spec, language, file_dir=(root / path).parent, root=root
+            )
+            for spec in specs.danger_ok
+        }
+        result[path] = frozenset(r for r in resolved if r is not None)
+    return result
+
+
 # frob:ticket T-0361
 # frob:ticket T-0841
 def _short_name_index(

@@ -221,8 +221,19 @@ def _load_snapshot_and_call_graph(root: Path):  # noqa: ANN201
 
     Returns `None` on any build failure -- callers translate that to
     `Err(AttributionError.GraphUnavailable)` rather than this helper
-    raising or returning a half-built pair."""
-    from frob.graph import build_graph, build_reference_graph, load_graph
+    raising or returning a half-built pair.
+
+    T-2156: uses `build_reference_graph_module_scoped`, NOT
+    `build_reference_graph` -- the latter's blanket short-name resolution
+    (deliberately over-inclusive for its original consumer, T-0422's
+    dead-symbol gate) fabricates a reachability edge between any two
+    same-named private symbols in unrelated files, which for THIS
+    consumer manufactures false attributions rather than false
+    UNATTRIBUTEDs. See `build_reference_graph_module_scoped`'s own
+    docstring for the incident and the module/import-scoped resolution
+    rule that replaces it here."""
+    from frob.graph import build_graph, load_graph
+    from frob.graph.callgraph import build_reference_graph_module_scoped
 
     cache = root / _GRAPH_CACHE_REL
     loaded = load_graph(cache)
@@ -237,7 +248,7 @@ def _load_snapshot_and_call_graph(root: Path):  # noqa: ANN201
             return None
         snapshot = built.danger_ok
     paths = tuple(snapshot.file_hashes.keys())
-    call_graph = build_reference_graph(root, paths)
+    call_graph = build_reference_graph_module_scoped(root, paths)
     return snapshot, call_graph
 
 

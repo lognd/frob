@@ -865,6 +865,7 @@
     "src/frob/graph/callgraph.py::build_call_graph": "2295866498ea9baabfe25bf0628904a37c8e9c3181310914f32075dfb45274e3",
     "src/frob/graph/callgraph.py::build_ordered_call_graph": "8f6d93f73fd1b694ee476aca10091678339d231af06551d639ab155bfd9f302d",
     "src/frob/graph/callgraph.py::build_reference_graph": "1796c447d7ff18e1a6711193fed68b8b746479050264429ed1a056c0852ef6cc",
+    "src/frob/graph/callgraph.py::build_reference_graph_module_scoped": "1fec5afbff615148376389cfc83249c83d7ab95b1e3036d5df4fb55cd7746cab",
     "src/frob/graph/callgraph.py::closure": "03a5762b12fa785c4d7b4237e2c9f326ba68d1e047b1f5524b6a8edfbe3af3e2",
     "src/frob/graph/callgraph.py::is_symref": "7bf72a8972aca0af67822c4c55799bf9b4c3357326dcfeac0b5142889378beb8",
     "src/frob/graph/callgraph.py::scope_private_helper_gaps": "b4cc2456f266be84802a397d72925908470bac16a518223b52b536b3b74d9bba",
@@ -2267,5 +2268,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.463.0"
+  "version": "0.464.0"
 }

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.464.0] - unreleased
+
+- T-2156: Sweep finding identities carry ABSOLUTE paths so commit attribution always fails, every finding reads unattributed, and that raises the quarantine which switches deferred landing off fleet-wide
+
 ## [0.463.0] - unreleased
 
 - T-2157: A land killed by its shell timeout leaves its staged merge in the shared root index, DirtyMain-blocking every other agent until someone lands or clears it by hand
