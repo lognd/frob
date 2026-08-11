@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.457.0] - unreleased
+
+- T-2107: argparse suggests flags from a different subparser: 'unrecognized arguments: --set X (did you mean: --set?)' names a flag the invoked subcommand does not have
+
 ## [0.456.0] - unreleased
 
 - T-2079: Ledger ownership: refuse a main-side write to a leased tickets/T-#### path

@@ -66,15 +66,28 @@ _INVALID_CHOICE_RE = re.compile(
 _UNRECOGNIZED_RE = re.compile(r"^unrecognized arguments: (.+)$")
 # frob:ticket T-0578
 # Populated once by `_build_parser` after the whole subcommand tree exists:
-# every `--flag` string registered anywhere in the CLI, the candidate pool
-# an unrecognized-flag suggestion draws from. Deliberately global rather
-# than per-subcommand -- T-0578's own point is one flag name per concept
-# across subcommands, so a cross-subcommand suggestion is not a false
-# positive, it is the intended behavior.
+# every `--flag` string registered anywhere in the CLI. Used only as the
+# LAST-RESORT candidate pool (T-2107) when no more specific subparser could
+# be identified as the one actually invoked -- see `_INVOKED_PARSERS` and
+# `_option_pool_for` below for the normal, scoped case.
 _ALL_OPTION_STRINGS: frozenset[str] = frozenset()
+
+# frob:ticket T-2107
+# The chain of `_SuggestingArgumentParser` instances argparse has recursed
+# into during the CURRENT `parse_args`/`parse_known_args` call, root first,
+# most-specific-subcommand-reached last. argparse's own `parse_args` always
+# invokes `self.error(...)` on the ROOT parser for a leftover-arguments
+# ("unrecognized arguments: ...") failure -- even when the actual mistake
+# was made three levels down (`frob ticket doable --limit`) -- so without
+# this, both the suggestion pool and the printed usage block default to the
+# root's, not the invoked subcommand's (T-2107's own bug). Reset per
+# top-level parse by `_build_parser` so state never leaks between separate
+# CLI invocations inside one process (tests build a fresh parser per case).
+_INVOKED_PARSERS: list["_SuggestingArgumentParser"] = []
 
 
 # frob:ticket T-0578
+# frob:ticket T-2107
 class _SuggestingArgumentParser(argparse.ArgumentParser):
     """`ArgumentParser` subclass that appends a "did you mean" suggestion to
     argparse's own error message for an unknown subcommand/choice or an
@@ -82,27 +95,61 @@ class _SuggestingArgumentParser(argparse.ArgumentParser):
     `--help`. The root parser is built as this class and `add_subparsers`
     defaults `parser_class` to `type(self)`, so every nested subparser
     (`frob ticket <cmd>`, `frob perf <cmd>`, ...) inherits the behavior with
-    no per-parser wiring."""
+    no per-parser wiring. T-2107: both the suggestion candidates and the
+    usage block printed on error are scoped to the actually-invoked
+    subcommand (`_INVOKED_PARSERS[-1]`), never the whole CLI tree -- a
+    flag that exists only on a DIFFERENT subcommand is neither suggested
+    nor implied by the shown usage."""
+
+    # frob:ticket T-2107
+    def parse_known_args(self, args=None, namespace=None):  # noqa: ANN001,ANN201
+        """Records `self` onto `_INVOKED_PARSERS` before delegating (T-2107)
+        -- argparse recurses into a chosen subparser's own
+        `parse_known_args`, so by the time a leftover-arguments error
+        reaches the root's `error()`, this chain's last entry is the most
+        specific subcommand parser actually reached."""
+        _INVOKED_PARSERS.append(self)
+        return super().parse_known_args(args, namespace)
 
     # frob:doc docs/commands/cli-vocabulary.md#did-you-mean
     # frob:ticket T-0578
+    # frob:ticket T-2107
+    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_error_shows_invoked_subcommand_usage kind="unit"  # noqa: E501
     def error(self, message: str) -> NoReturn:
         """Append `(did you mean: X?)` to `message` when a suggestion is
-        found, then defer to the base class (which prints and exits
-        nonzero) -- never swallows or downgrades the original error."""
-        suggestion = _did_you_mean(message)
+        found, scoped to the actually-invoked subcommand (T-2107), then
+        print THAT subcommand's own usage (not necessarily `self`'s, since
+        argparse always calls this on the root for a leftover-arguments
+        error) and exit nonzero -- never swallows or downgrades the
+        original error."""
+        import sys as _sys
+
+        target = _INVOKED_PARSERS[-1] if _INVOKED_PARSERS else self
+        suggestion = _did_you_mean(message, target)
         if suggestion is not None:
             message = f"{message} (did you mean: {suggestion}?)"
-        super().error(message)
+        if target is self:
+            super().error(message)
+        # T-2107: replicate argparse.ArgumentParser.error's own body, but
+        # against `target`'s usage/prog instead of `self`'s (the root) --
+        # `error()` always exits, so this mirrors that contract exactly.
+        target.print_usage(_sys.stderr)
+        self.exit(2, f"{target.prog}: error: {message}\n")
 
 
 # frob:ticket T-0578
-def _did_you_mean(message: str) -> str | None:
+# frob:ticket T-2107
+def _did_you_mean(
+    message: str, target: argparse.ArgumentParser | None = None
+) -> str | None:
     """Best-effort suggestion for two argparse error shapes (T-0578): an
     invalid subcommand/choice (candidates come straight out of argparse's
     own message text) and an unrecognized optional flag (candidates are
-    `_ALL_OPTION_STRINGS`). `None` if neither shape matches or no candidate
-    is close enough (`difflib.get_close_matches`' default-ish 0.6 cutoff)."""
+    `target`'s own `--flag`s, T-2107 -- falls back to the global
+    `_ALL_OPTION_STRINGS` pool only when no `target` is known). `None` if
+    neither shape matches or no candidate is close enough
+    (`difflib.get_close_matches`' default-ish 0.6 cutoff)."""
     choice_match = _INVALID_CHOICE_RE.match(message)
     if choice_match is not None:
         bad, choices_blob = choice_match.groups()
@@ -116,7 +163,11 @@ def _did_you_mean(message: str) -> str | None:
         ]
         if not bad_tokens:
             return None
-        return _closest(bad_tokens[0], sorted(_ALL_OPTION_STRINGS))
+        if target is not None:
+            pool = _collect_option_strings(target)
+        else:
+            pool = _ALL_OPTION_STRINGS
+        return _closest(bad_tokens[0], sorted(pool))
     return None
 
 
@@ -252,7 +303,12 @@ class _GroupedHelpFormatter(argparse.HelpFormatter):
 def _build_parser() -> argparse.ArgumentParser:
     # frob:ticket T-0021
     # frob:ticket T-0231
+    # frob:ticket T-2107
     global _ALL_OPTION_STRINGS
+    # T-2107: a fresh parser tree means any prior parse's invocation chain
+    # is stale -- clear it so an earlier CLI call (or an earlier test's
+    # `_build_parser()`) can never leak its target parser into this one.
+    _INVOKED_PARSERS.clear()
     p = _SuggestingArgumentParser(
         prog="frob",
         description="Developer workflow tools -- optimized for agentic use",

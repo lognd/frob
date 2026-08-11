@@ -123,6 +123,7 @@
     "scripts/verify_lands.py::resolve": "1e729cd6197014cda1f0c351fa9ad948c6fa3f4dc2b32e7b1cd0af66db83bda0",
     "scripts/verify_lands.py::subject": "bd658519ebebabcac151b91b1145861df2e013865438435215268a5332820d03",
     "src/frob/__main__.py::_SuggestingArgumentParser.error": "53b25f4073b9c9cce74e1dbecd2fa27854cbfb9f06a7345555c38af52dc33fb3",
+    "src/frob/__main__.py::_SuggestingArgumentParser.parse_known_args": "29a3b1567f8f4824daf1538e8ab1c038978e6f2b7334f2250cc9ebdd4ed87702",
     "src/frob/__main__.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
     "src/frob/app/_config_external.py::find_dropped_cli_flags": "8555c5d67da96bb0f65d7cb9641e1ada9b02bf4add6d77e86558c06e5a84f5ad",
     "src/frob/app/_config_meta.py::ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS": "31fdb441802a66340dc5ab46f07322c242bc13b0e1aff2b95dd1dd5aa940fc0e",
@@ -2256,5 +2257,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.456.0"
+  "version": "0.457.0"
 }

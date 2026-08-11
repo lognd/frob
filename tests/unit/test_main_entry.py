@@ -174,6 +174,36 @@ class TestDidYouMean:
             parser.parse_args(["ticket", "list", "--zzzzzzzzzzz"])
         assert "did you mean" not in capsys.readouterr().err
 
+    # frob:ticket T-2107
+    def test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand(
+        self, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand  # noqa: E501
+        """`--limit` exists on `frob ticket list` but NOT on `frob ticket
+        doable` (T-2107): passing it to `doable` must not "suggest" the
+        exact flag that just failed, since that flag does not exist on
+        this subcommand either -- a suggestion drawn from the whole CLI
+        tree is actively misleading, not merely unhelpful."""
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["ticket", "doable", "--limit", "25"])
+        assert "did you mean: --limit?" not in capsys.readouterr().err
+
+    # frob:ticket T-2107
+    def test_unrecognized_flag_error_shows_invoked_subcommand_usage(
+        self, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_error_shows_invoked_subcommand_usage  # noqa: E501
+        """The usage block printed on an unrecognized-flag error must be
+        the INVOKED subcommand's own (`frob ticket doable`), not the
+        top-level `frob` usage listing every verb group (T-2107)."""
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["ticket", "doable", "--limit", "25"])
+        err = capsys.readouterr().err
+        assert "usage: frob ticket doable" in err
+        assert "{scaffold,cycle,explore" not in err
+
 
 # frob:ticket T-0578
 class TestVocabularyAliases:
