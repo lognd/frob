@@ -25,7 +25,7 @@ separate engineering scope -- filed as a follow-up ticket per this ticket's
 own instructions, with today's session evidence cited. acceptance[1]/[2]
 removed via `frob ticket accept --remove` with that reasoning recorded.
 
-Filed: T-2104
+Filed: T-2105
 
 ## Two further occurrences, reported by the coordinator mid-session (2026-08-10)
 
@@ -101,6 +101,42 @@ fix for silent id collisions was itself blocked from landing by exactly
 the defect it fixes, three times over across today's session (T-2090,
 T-2096/T-2098/T-2100's landing sequence, and this one).
 
+## Occurrence 9: the SAME land's own internal merge lost the half-2 follow-up AGAIN
+
+After landing T-2092 itself (verified: LAND-PROOF verified=True, content
+confirmed via `git show --stat`), `frob ticket land --finish`'s cleanup
+retry and then `git worktree remove` surfaced that `tickets/T-2104/ticket.md`
+on main held a DIFFERENT, unrelated ticket's content ("A stale blocked_by
+does not self-heal..."), not the half-2 follow-up filed and promoted to
+T-2104 earlier in this session. Root-caused: after `frob ticket promote
+T-draft-a77b91fb -> T-2104`, T-2092's own declared scope still listed
+`tickets/T-2101/**` (the id BEFORE that promotion) -- `tickets/T-2104/**`
+was never added. Land's own internal `merge main into worktree` step
+(visible in the branch history as commits `c4d2b820c`/`7520ab473`) pulled
+in a concurrently-filed, unrelated real T-2104 from main and the merge
+silently took main's side for that path, because the file was outside
+T-2092's declared scope and so was never protected/carried by the squash.
+This is the SAME defect class as the whole T-2092 lineage, one level
+removed: an out-of-scope ticket file, silently overwritten by an
+in-process merge, no conflict, no warning -- caught only because I
+happened to `grep` the content on main after landing instead of trusting
+the id. My earlier content was still recoverable from the pre-merge branch
+commit (`75dcc6a58:tickets/T-2104/ticket.md`, the worktree branch was NOT
+deleted by `git worktree remove` even with `--force`, only the checkout
+was) and refiled fresh, this time directly via `frob ticket new` from the
+clean root main (no draft/promote step, so no scope-glob staleness window)
+-- landed cleanly as **T-2105**, verified by content (`grep -m1 '^title:'
+tickets/T-2105/ticket.md`) and a clean `git status --porcelain` on the
+root both before and after.
+
+Lesson for anyone renumbering/promoting a ticket file that a ticket's OWN
+scope references by path: the scope glob must be updated to the NEW id
+before land, or the renamed file falls outside the squash's protection
+and an unrelated concurrent write can silently take it. This ticket did
+not fix that generally (out of scope for T-2092's own file list) --
+T-2105 is exactly the ticket to fix it, and this occurrence is now part
+of its own evidence trail.
+
 ## `frob check --land-parity` gap for this land
 
 `frob check --land-parity` did not complete during this session (spawn
@@ -120,16 +156,7 @@ test-order flakiness unrelated to renumber/allocator_lock, recorded here for
 visibility.
 
 ### Changed
-```
- rapid-debt.jsonl                         |   4 +
- src/frob/tickets/_new_renumber.py        |  36 ++++-
- src/frob/tickets/_renumber_v2.py         |  99 ++++++++-----
- tests/test_tickets_ledger_concurrency.py | 125 +++++++++++++++++
- tickets/T-2092/done-report.md            | 160 +++++++++++++++++++++
- tickets/T-2092/ticket.md                 | 229 +++++++++++++++++++++++++++++--
- tickets/T-draft-a77b91fb/ticket.md       |  89 ++++++++++++
- 7 files changed, 692 insertions(+), 50 deletions(-)
-```
+(no changed files detected)
 
 ### Evidence
 - `tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace::test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id` (pytest node id, verified passing when recorded)
