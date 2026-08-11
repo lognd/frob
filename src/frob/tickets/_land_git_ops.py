@@ -38,12 +38,14 @@ here.
 from __future__ import annotations
 
 import fnmatch
+import importlib
 import json
 import os
 import re
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 from typani.result import Err, Ok, Result
@@ -59,6 +61,7 @@ from frob.tickets._land_merge_zones import (
     _resolve_union_zone_conflicts,
     _zone_for_path,
 )
+from frob.tickets._leases import LAND_LOCK_REL
 from frob.tickets._models import (
     LandError,
     Ticket,
@@ -75,6 +78,16 @@ from frob.tickets._store import (
 )
 
 _log = get_logger(__name__)
+
+# T-2157: same posix-only degradation as `frob.tickets._land`'s own
+# `_land_lock` -- see `reclaim_orphaned_squash_residue`'s docstring for why
+# this module reads (never writes) that module's `LAND_LOCK_REL` constant
+# instead of inventing a second lock file.
+_fcntl: ModuleType | None
+try:
+    _fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    _fcntl = None
 
 
 @contextmanager
@@ -249,6 +262,109 @@ def _verified_reset_root(
     if clean.is_err or clean.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)
     return Ok(None)
+
+
+# frob:ticket T-2157
+def reclaim_orphaned_squash_residue(
+    root: Path, ticket_id: str
+) -> Result[bool, LandError]:
+    """Safely unwind a SIGKILL-orphaned squash-merge staged in `root`'s real
+    index/working tree -- the T-2157 fix for the DirtyMain trap a killed
+    land used to leave behind with no safe recovery short of a coordinator
+    manually checking `/proc` for the holder pid.
+
+    Every squash-merge onto `root` (`_squash_and_splice_ledger[_v2]`,
+    `_land_plan_merge_worktree`) runs strictly inside `frob.tickets._land.
+    _land_lock`'s critical section for the WHOLE window between staging and
+    the final commit -- so a NON-BLOCKING, exclusive `flock` on that exact
+    lock file (`LAND_LOCK_REL`, read here from `frob.tickets._leases` --
+    the single home T-1619 already established for this path, never a
+    second copy) either:
+
+    - SUCCEEDS, which proves no live land process currently holds it, which
+      in turn proves any staged-but-uncommitted content sitting in `root`'s
+      index right now belongs to a process that died without releasing the
+      lock cleanly (the kernel frees an `flock` the instant its holder
+      exits, SIGKILL included -- `_land_lock`'s own docstring, T-1515) --
+      i.e. PROVABLY orphaned, never a guess from a recorded pid (pid reuse
+      makes a bare pid comparison unsafe in both directions: a dead land's
+      pid can later be reused by an unrelated live process, and this
+      process never even records or compares one).
+    - FAILS, which means a land is genuinely in flight holding the lock
+      right now -- this returns `Ok(False)` and touches NOTHING, per this
+      ticket's explicit constraint against a later land blindly `git
+      reset`-ing residue it cannot tell apart from a live concurrent land's
+      own staging.
+
+    Returns `Ok(True)` only in the orphan case (root was dirty, the lock
+    was free, and the reset+clean via `_verified_reset_root` succeeded).
+    `Ok(False)` covers both "nothing to do" (`root` was already clean) and
+    "a live land holds the lock" (nothing to do YET, not an error). `Err`
+    only on a genuine git failure during the reset/clean itself.
+
+    Degrades to a documented no-op (`Ok(False)`, logged at WARNING) on a
+    platform without `fcntl`, matching `_land_lock`'s own degradation --
+    without a real `flock`, this module cannot safely tell a live land's
+    staging apart from orphaned residue, so it must refuse to touch `root`
+    rather than guess.
+
+    NOT yet wired into `land()`'s own startup sequence -- that call site
+    lives in `frob.tickets._land`, which this ticket does not hold (T-2155
+    holds it as of this ticket's own land). Wiring an automatic call here
+    at the start of every `land()` attempt (immediately before
+    `_refuse_if_main_dirty`'s own DirtyMain check) is the natural next
+    step and is left as a follow-up for whoever next holds that file,
+    rather than expanding this ticket's scope to reach it."""
+    dirty = _porcelain_dirty(root)
+    if dirty.is_err:
+        return Err(dirty.danger_err)
+    if not dirty.danger_ok:
+        return Ok(False)
+    if _fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
+        _log.warning(
+            "land: %s reclaim_orphaned_squash_residue: fcntl unavailable on "
+            "this platform -- cannot safely distinguish a live land's own "
+            "staging from orphaned residue in %s, refusing to touch it",
+            ticket_id,
+            root,
+        )
+        return Ok(False)
+    lock_path = root / LAND_LOCK_REL
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        _fcntl.flock(fd, _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+    except OSError:
+        _log.warning(
+            "land: %s root %s has staged/dirty content but land.lock is "
+            "currently HELD by a live process -- this is a live land's own "
+            "staging, not orphaned residue; leaving it untouched",
+            ticket_id,
+            root,
+        )
+        os.close(fd)
+        return Ok(False)
+    try:
+        current = _rev_parse(root, "HEAD")
+        if current.is_err:
+            return Err(current.danger_err)
+        pre_land_tip = current.danger_ok
+        _log.warning(
+            "land: %s reclaiming orphaned squash-merge residue in %s -- "
+            "land.lock was free (no live land process holds it) while "
+            "root's index/working tree carried uncommitted content; "
+            "resetting to HEAD (%s) and cleaning untracked files",
+            ticket_id,
+            root,
+            pre_land_tip,
+        )
+        reset = _verified_reset_root(root, pre_land_tip, ticket_id)
+        if reset.is_err:
+            return Err(reset.danger_err)
+        return Ok(True)
+    finally:
+        _fcntl.flock(fd, _fcntl.LOCK_UN)
+        os.close(fd)
 
 
 def _porcelain_dirty(root: Path) -> Result[bool, LandError]:
@@ -925,9 +1041,9 @@ def _read_text_at_commit_or_none(cwd: Path, commit: str, path: str) -> str | Non
 # st_ignores_an_id_that_already_existed_at_the_merge_base
 # frob:waive COV001 reason="docs/modules/tickets.md (this module's own doc home) was \
 # under live contention from multiple concurrent tickets (T-1780's own subject) at fix \
-# time and could not be added to this scope -- filed a follow-up (draft \
-# T-2116, renumbers to a real id at its own land) to add the frob:doc anchor \
-# once the file frees, per the same T-2003/T-1999 precedent \
+# time and could not be added to this scope -- filed a follow-up (draft T-2116, \
+# renumbers to a real id at its own land) to add the frob:doc anchor once the file \
+# frees, per the same T-2003/T-1999 precedent \
 # (src/frob/tickets/_leases.py::is_effectively_in_progress); not silently dropped"
 def detect_duplicate_ticket_id_collisions(
     worktree: Path, root: Path, landing_ticket_id: str, main_branch: str

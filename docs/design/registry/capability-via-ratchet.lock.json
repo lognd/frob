@@ -171,8 +171,8 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 125,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 0 to 125 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 126,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 125 to 126 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::fs.write": {

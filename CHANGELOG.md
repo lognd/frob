@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.463.0] - unreleased
+
+- T-2157: A land killed by its shell timeout leaves its staged merge in the shared root index, DirtyMain-blocking every other agent until someone lands or clears it by hand
+
 ## [0.462.0] - unreleased
 
 - T-2129: LAND-PROOF reports verified=SKIPPED-UNMEASURED/ERROR for a successful QUEUED-with-failure-log land (is_ancestor_of_main=True contradicts its own ERROR)
