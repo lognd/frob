@@ -2,7 +2,7 @@
 id: T-2084
 title: 'Ticket-state palette: dropped and queued are both DIM, so terminal work is
   indistinguishable from waiting work'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-10'
