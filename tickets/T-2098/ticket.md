@@ -2,7 +2,7 @@
 id: T-2098
 title: 'make -n coverage-fast is not a dry run: the recursive-make line really executes
   frob ticket reconcile --apply against the shared root, and hangs'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -16,20 +16,28 @@ scope:
 - tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_coverage.py::TestMakeDryRunDoesNotExecuteMutatingCommands::test_dry_run_coverage_fast_completes_quickly
+- tests/test_coverage.py::TestMakefileNoCompoundRecursiveMake::test_no_recipe_line_combines_dollar_make_with_other_commands
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
+designated_repro_test: tests/test_coverage.py::TestMakeDryRunDoesNotExecuteMutatingCommands::test_dry_run_coverage_fast_completes_quickly
 acceptance:
 - text: given make -n is invoked on any target, when it completes, then no mutating
     frob command has run against the shared root -- verified by comparing git status
     --porcelain before and after; this test MUST fail against current main
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestMakeDryRunDoesNotExecuteMutatingCommands::test_dry_run_coverage_fast_completes_quickly
+  - tests/test_coverage.py::TestMakefileNoCompoundRecursiveMake::test_no_recipe_line_combines_dollar_make_with_other_commands
 - text: given tests/test_coverage.py runs, when the natives-guard test executes, then
     the whole file completes and reports a pass/fail summary rather than stalling
     -- all 44 tests measured
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
 - text: given the _dry_run helper docstring claims none of the commands are executed,
     when the claim is re-read after the fix, then it is true or has been corrected
     to state the $(MAKE) exception
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestMakefileNoCompoundRecursiveMake::test_no_recipe_line_combines_dollar_make_with_other_commands
 threat: null
 component: testing
 labels:

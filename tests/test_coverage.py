@@ -173,9 +173,19 @@ class TestCoverageTargetNativesGuard:
     playbook's 6b) real recipe."""
 
     def _dry_run(self, target: str) -> str:
-        """`make -n <target>` output: the exact shell commands `make` WOULD
-        run, in order, with none of them actually executed -- safe to call
-        from a test."""
+        """`make -n <target>` output: the shell commands `make` WOULD run,
+        in order. T-2098: GNU make's one real exception is any recipe line
+        containing the literal `$(MAKE)` -- that line genuinely EXECUTES
+        even under `-n`, so a recursive sub-make's own trace can be shown
+        (the sub-invocation still receives `-n` itself, so it does not
+        execute ITS OWN recipe lines in turn). That is safe as long as such
+        a line contains only the recursive `$(MAKE)` call and nothing else
+        -- `TestMakefileNoCompoundRecursiveMake` statically guards that no
+        recipe line in this repo's Makefile ever combines `$(MAKE)` with
+        another shell command via `&&`/`||`/`;`/`|`, which is what used to
+        let a mutating command (`frob ticket reconcile --apply`) actually
+        run under a supposed dry run. With that invariant held, calling
+        this helper is safe from a test."""
         result = subprocess.run(
             ["make", "-n", target],
             cwd=_REPO_ROOT,
@@ -199,11 +209,12 @@ class TestCoverageTargetNativesGuard:
         )
 
     # frob:ticket T-1595
+    # frob:ticket T-2098
     def _assert_guard_precedes_coverage_cli(self, output: str) -> None:
-        """`make core` and `frob doctor` must both appear, in that relative
-        order, strictly before the `frob coverage .` invocation -- the same
-        T-0538 guard shape as `_assert_guard_precedes_pytest`, but for the
-        `coverage-fast` target specifically (T-1595): T-1525 moved
+        """`frob natives build` and `frob doctor` must both appear, in that
+        relative order, strictly before the `frob coverage .` invocation --
+        the same T-0538 guard shape as `_assert_guard_precedes_pytest`, but
+        for the `coverage-fast` target specifically (T-1595): T-1525 moved
         `coverage-fast`'s own coverage orchestration out of a literal
         `pytest --cov` Makefile line and into the frob-native `frob
         coverage` CLI verb (`src/frob/app/coverage_runner.py`), so
@@ -211,13 +222,19 @@ class TestCoverageTargetNativesGuard:
         expansion at all -- asserting for it here was stale, not a real
         regression (`frob coverage` still exercises pytest internally, via
         `run_coverage_wait`/`native_coverage_refresh`, just not as a
-        Makefile-visible subprocess line)."""
-        core_idx = output.index("make core")
+        Makefile-visible subprocess line). T-2098: the natives restore used
+        to read as a recursive `make core` sub-invocation trace; it is now
+        a direct `uv run frob natives build` line (no `$(MAKE)` at all),
+        which is what fixed `make -n coverage-fast` genuinely executing
+        `frob ticket reconcile --apply` -- so this checks for the literal
+        command, not the old recursive-make text."""
+        core_idx = output.index("frob natives build")
         doctor_idx = output.index("frob doctor")
         coverage_idx = output.index("frob coverage .")
         assert core_idx < doctor_idx < coverage_idx, (
-            f"expected 'make core' < 'frob doctor' < 'frob coverage .', "
-            f"got indices {core_idx}, {doctor_idx}, {coverage_idx} in:\n{output}"
+            f"expected 'frob natives build' < 'frob doctor' < "
+            f"'frob coverage .', got indices {core_idx}, {doctor_idx}, "
+            f"{coverage_idx} in:\n{output}"
         )
 
     def test_coverage_target_restores_and_verifies_natives_before_pytest(
@@ -239,6 +256,97 @@ class TestCoverageTargetNativesGuard:
         moved this target off a literal `pytest --cov` Makefile line), not
         `pytest --cov` -- see `_assert_guard_precedes_coverage_cli`."""
         self._assert_guard_precedes_coverage_cli(self._dry_run("coverage-fast"))
+
+
+class TestMakefileNoCompoundRecursiveMake:
+    """T-2098: GNU make executes any recipe line containing the literal
+    `$(MAKE)` EVEN UNDER `make -n` (a dry run) -- intended, documented
+    behaviour, needed so a recursive sub-make's own trace can be shown.
+    That is only safe when such a line contains NOTHING else: a compound
+    line chaining `$(MAKE)` together with other shell commands via
+    `&&`/`||`/`;`/`|` genuinely runs those other commands too, dry run or
+    not (the exact defect this ticket fixed in `coverage-fast`, which
+    chained a mutating `frob ticket reconcile --apply` onto its
+    `$(MAKE) core` line). This statically scans the real Makefile source
+    for that shape -- no `make -n` invocation, no subprocess, so it can
+    never itself hang or mutate anything -- to catch the NEXT such line
+    before it ships, since the ticket's own analysis is that a narrower
+    fix leaves this general trap open for someone else to walk into."""
+
+    #: Shell operators that indicate more than one command shares a
+    #: recipe line. `$(MAKE)` combined with any of these is the hazard.
+    _COMPOUND_OPERATORS = ("&&", "||", ";", "|")
+
+    def test_no_recipe_line_combines_dollar_make_with_other_commands(
+        self,
+    ) -> None:
+        """Every Makefile recipe line (tab-indented) containing the
+        literal `$(MAKE)` must contain nothing else chaining another
+        shell command onto it."""
+        makefile_text = (_REPO_ROOT / "Makefile").read_text()
+        offenders: list[tuple[int, str]] = []
+        for lineno, line in enumerate(makefile_text.splitlines(), start=1):
+            if not line.startswith("\t"):
+                continue
+            if "$(MAKE)" not in line:
+                continue
+            if any(op in line for op in self._COMPOUND_OPERATORS):
+                offenders.append((lineno, line.strip()))
+        assert not offenders, (
+            "recipe line(s) combine the literal $(MAKE) with another "
+            "shell command via &&/||/;/| -- `make -n` EXECUTES any line "
+            "containing $(MAKE) (T-2098), so a compound chain like this "
+            "really runs its OTHER commands too, even under a dry run. "
+            "Split $(MAKE) onto its own recipe line, e.g. inline the "
+            "sub-target's own command(s) directly instead of recursing. "
+            f"Offending line(s): {offenders}"
+        )
+
+
+class TestMakeDryRunDoesNotExecuteMutatingCommands:
+    """T-2098: GNU make executes any recipe line containing the literal
+    `$(MAKE)` EVEN UNDER `make -n` (a dry run), so the sub-make call
+    itself can be traced -- documented, intended behaviour. But
+    `coverage-fast`'s recipe used to put `$(MAKE) core` on the SAME
+    compound `&&` shell line as `uv run frob ticket reconcile --apply`
+    (a MUTATING ledger write) and `uv run frob doctor`, so `make -n
+    coverage-fast` genuinely ran the whole chain, not just the intended
+    sub-make trace. A real dry run performs no slow, blocking, or
+    mutating work, so it must complete near-instantly; a dry run that
+    actually spawns `frob ticket reconcile --apply` can hang (observed:
+    it blocks inside `refuse_if_land_in_progress`, T-2093) or mutate a
+    shared checkout's ticket ledger -- either way, `make -n` no longer
+    behaves like a dry run at all."""
+
+    #: Comfortably above what a genuine dry run (no subprocess actually
+    #: spawned beyond `make` itself tracing its own recipe) should ever
+    #: take, and comfortably below the many-minutes hang this guards
+    #: against (T-2098's own repro measured >120s before being killed).
+    _DRY_RUN_TIMEOUT_S = 15
+
+    def test_dry_run_coverage_fast_completes_quickly(self) -> None:
+        """`make -n coverage-fast` must return well within
+        `_DRY_RUN_TIMEOUT_S` -- a genuine dry run never blocks on a real
+        subprocess, so a timeout here means a recipe line under
+        `coverage-fast` is doing real (mutating, or lock-waiting) work
+        instead of merely being traced."""
+        try:
+            result = subprocess.run(
+                ["make", "-n", "coverage-fast"],
+                cwd=_REPO_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=self._DRY_RUN_TIMEOUT_S,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise AssertionError(
+                "`make -n coverage-fast` did not complete within "
+                f"{self._DRY_RUN_TIMEOUT_S}s -- a genuine dry run cannot "
+                "block; this means a recipe line is performing real work "
+                "under -n (T-2098). Captured so far:\n"
+                f"stdout={exc.stdout!r}\nstderr={exc.stderr!r}"
+            ) from exc
+        assert result.returncode == 0, result.stdout + result.stderr
 
 
 class TestCoverageTargetFlakeTolerance:

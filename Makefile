@@ -387,9 +387,26 @@ coverage: $(STAMP)
 # subject to the exact same natives-clobber hazard as `make coverage`
 # above whenever it takes the incremental (non-fallback) branch -- the
 # `$(MAKE) coverage` fallback branch already inherits the guard from
-# `coverage:` itself. `$(MAKE) core && uv run frob doctor || exit 1`
-# restores the natives and fails the whole recipe on one clear `frob
-# doctor` line before any pytest collection is attempted.
+# `coverage:` itself. The recipe restores the natives (`uv run frob
+# natives build`, same command `core:` itself runs) and verifies them
+# (`frob doctor`) on their own lines, before any pytest collection is
+# attempted.
+# T-2098: this recipe used to read `$(MAKE) core && uv run frob ticket
+# reconcile --apply && uv run frob doctor || exit 1` -- a SINGLE compound
+# shell line. GNU make executes any recipe line containing the literal
+# `$(MAKE)` even under `make -n` (a dry run), so the sub-make call itself
+# is meant to recurse and trace; but because the line was a compound `&&`
+# chain, `make -n coverage-fast` genuinely ran EVERYTHING on it, including
+# `uv run frob ticket reconcile --apply` -- a MUTATING ledger write --
+# against a real checkout, not just the intended sub-make trace. The fix
+# is not a narrower `&&` split (that leaves the general trap: the next
+# `$(MAKE)`-containing compound line reintroduces the same hazard); it is
+# removing this target's dependence on a recursive `$(MAKE)` line
+# entirely, per the standing direction to move workflows off recursive
+# Makefile calls (T-1382). `TestMakefileNoCompoundRecursiveMake`
+# (tests/test_coverage.py) statically guards that no recipe line in this
+# file ever again combines `$(MAKE)` with another shell command via
+# `&&`/`||`/`;`/`|`.
 # T-1526: `coverage-fast` had no xdist-crash-recovery/rerun-deadline
 # resilience of its own -- it was ~15 lines re-deriving exactly what
 # `frob.testing._coverage_refresh.native_coverage_refresh` (T-1516) now
@@ -404,7 +421,9 @@ coverage: $(STAMP)
 # resilience as deliberately not re-derived in Python).
 BASE ?= main
 coverage-fast: $(STAMP)
-	$(MAKE) core && uv run frob ticket reconcile --apply && uv run frob doctor || exit 1
+	uv run frob natives build
+	uv run frob ticket reconcile --apply
+	uv run frob doctor
 	uv run frob coverage .
 
 # VirtualBox snapshot-diff harness proving artifact-free install/uninstall
