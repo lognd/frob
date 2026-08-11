@@ -2,7 +2,7 @@
 id: T-2101
 title: SYS111 capability-ratchet BEFORE snapshot drops frob.toml, litmus fixtures
   leak into merged design and fail closed with DuplicateId
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -16,14 +16,17 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
+designated_repro_test: tests/test_gates.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
 acceptance:
 - text: Given design/litmus/** fixture files declaring colliding node ids across files,
     when fix_sys111_capability_ratchet_sync computes its BEFORE snapshot via git archive
     of HEAD, then frob.toml's [graph].exclude travels with the archive so litmus is
     excluded and load_design_ids reports 0 errors, matching the live/current-tree
     load_design_ids call
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
 threat: null
 component: null
 anchor: false

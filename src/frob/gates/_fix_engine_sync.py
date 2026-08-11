@@ -1134,17 +1134,47 @@ def _waive004_target_rule(message: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 
+def _frob_toml_tracked_at_head(root: Path) -> bool:
+    """Whether `root/frob.toml` exists as a tracked file at git `HEAD`
+    (T-2101): `git archive` fails its ENTIRE run (nonzero exit, no
+    output) the moment any one of its pathspecs matches nothing, so
+    `_archive_design_dir_at_head` must only add `frob.toml` to its
+    pathspec when it is actually tracked -- never assumed present, since
+    a repo bootstrap commit (or a consumer library repo with no
+    `frob.toml` at all) must still fall back to archiving `design/`
+    alone rather than losing the BEFORE snapshot entirely."""
+    from frob import gitio
+
+    probe = gitio.run_argv(["git", "-C", str(root), "cat-file", "-e", "HEAD:frob.toml"])
+    return probe.is_ok and probe.danger_ok.returncode == 0
+
+
 def _archive_design_dir_at_head(root: Path, dest: Path) -> bool:
-    """Materialize `root`'s `design/` tree AT GIT HEAD into `dest` via `git
-    archive` (T-2001, split out of `_capability_counts_at_head` to keep
-    both under ARCH001's threshold, zero behavior change). Returns
-    whether the archive+extract actually succeeded -- `False` (never
-    raises) on any git spawn failure, non-zero exit, or extraction
-    error, the caller's own signal to give up on a BEFORE snapshot
-    entirely rather than guess."""
+    """Materialize `root`'s `design/` tree (plus `frob.toml`, T-2101) AT
+    GIT HEAD into `dest` via `git archive` (T-2001, split out of
+    `_capability_counts_at_head` to keep both under ARCH001's
+    threshold). Returns whether the archive+extract actually succeeded
+    -- `False` (never raises) on any git spawn failure, non-zero exit,
+    or extraction error, the caller's own signal to give up on a BEFORE
+    snapshot entirely rather than guess.
+
+    T-2101: `frob.toml` travels alongside `design/` now (when tracked at
+    HEAD, `_frob_toml_tracked_at_head`) so the scratch extraction the
+    caller's `load_design_ids(extract_dir, "design")` call reads carries
+    the SAME `[graph].exclude` configuration the live/current-tree call
+    already has -- without it, `frob.excludes.load_exclude_globs` finds
+    no `frob.toml` at all and returns `()`, so `design/litmus/**`'s
+    fixture files (deliberately id-colliding across files, T-0130) leak
+    into the merged elaboration and fail closed with `DuplicateId`
+    (observed live: an ERROR log line naming a dozen litmus node ids on
+    every land, and the BEFORE snapshot silently going empty every
+    time)."""
     from frob import gitio
 
     archive_path = dest / "head.tar"
+    pathspec = (
+        ["design", "frob.toml"] if _frob_toml_tracked_at_head(root) else ["design"]
+    )
     archived = gitio.run_argv(
         [
             "git",
@@ -1156,7 +1186,7 @@ def _archive_design_dir_at_head(root: Path, dest: Path) -> bool:
             "--output",
             str(archive_path),
             "--",
-            "design",
+            *pathspec,
         ]
     )
     if archived.is_err or archived.danger_ok.returncode != 0:

@@ -11377,6 +11377,52 @@ class TestFixEngineTierA:
         self._commit_all(root, "init")
         assert fix_sys111_capability_ratchet_sync(root) == []
 
+    # frob:ticket T-2101
+    def test_sys111_before_snapshot_excludes_litmus_like_the_live_tree(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_before_snapshot_excludes_litmus_like_the_live_tree  # noqa: E501
+        """T-2101: `_capability_counts_at_head`'s `git archive`-based BEFORE
+        snapshot only archived `design/`, never `frob.toml` -- so the
+        scratch extraction had no `[graph].exclude` configuration and
+        `design/litmus/**` (deliberately id-colliding fixture pairs, e.g.
+        two files both declaring node `dup`) leaked into the merged
+        `load_design_ids` call and failed closed with `DuplicateId`,
+        logged at ERROR on every land. The live/current-tree
+        `load_design_ids` call (used elsewhere, e.g. the running handler's
+        own `current_ids`) already excludes `design/litmus/**` correctly
+        via the SAME `frob.toml` sitting at the real repo root -- the
+        scratch BEFORE snapshot must match that, not silently drop the
+        config. Reproduces the exact defect shape (two design files
+        sharing a node id, `frob.toml` declaring them excluded) rather
+        than frob's own real litmus fixtures, to stay a minimal, fast,
+        hermetic unit test."""
+        from frob.gates._fix_engine_sync import _capability_counts_at_head
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "app").mkdir()
+        (root / "app" / "a.py").write_text('open("x", "w")\n', encoding="utf-8")
+        self._write_strata(root, ("app/a.py",))
+        (root / "design" / "litmus").mkdir(parents=True)
+        (root / "design" / "litmus" / "one.strata").write_text(
+            'module one\nnode dup : trusted {\n    code "one/**";\n}\n',
+            encoding="utf-8",
+        )
+        (root / "design" / "litmus" / "two.strata").write_text(
+            'module two\nnode dup : trusted {\n    code "two/**";\n}\n',
+            encoding="utf-8",
+        )
+        (root / "frob.toml").write_text(
+            '[graph]\nexclude = ["design/litmus/**"]\n', encoding="utf-8"
+        )
+        self._init_git_repo(root)
+        self._commit_all(root, "init: excluded litmus pair shares a node id")
+
+        counts = _capability_counts_at_head(root)
+        assert counts is not None
+        assert counts != {}
+
 
 # frob:ticket T-1348
 # frob:ticket T-1548
