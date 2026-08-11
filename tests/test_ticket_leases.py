@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import threading
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -63,6 +64,49 @@ def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         argv, cwd=str(cwd), check=True, capture_output=True, text=True
     )
+
+
+def _run_with_bound(fn, *, bound_s: float) -> None:
+    """Run `fn()` on a daemon thread and assert it returns within
+    `bound_s` seconds (T-2093). A regression in `refuse_if_land_in_
+    progress`'s poll loop turns "the guard eventually refuses" into "the
+    guard blocks for its whole ~330s default wait budget (or longer, if
+    the deadline math itself is broken)" -- a bare, unbounded call would
+    just make the TEST hang instead of failing, which is itself a hazard
+    (playbook: "a test that would hang forever on regression is itself a
+    hazard"). `fn` must catch/record any exception it wants to assert on
+    itself and re-raise it after this returns -- this only bounds wall-
+    clock time, it does not swallow the underlying result."""
+    exc_box: list[BaseException] = []
+
+    def _target() -> None:
+        try:
+            fn()
+        except BaseException as exc:  # noqa: BLE001 - re-raised by the caller below
+            exc_box.append(exc)
+
+    thread = threading.Thread(target=_target, daemon=True)
+    thread.start()
+    thread.join(timeout=bound_s)
+    assert not thread.is_alive(), (
+        f"did not return within the asserted {bound_s}s bound -- "
+        "refuse_if_land_in_progress's poll loop is hanging (T-2093)"
+    )
+    if exc_box:
+        raise exc_box[0]
+
+
+def _expect_system_exit(fn) -> SystemExit:
+    """Call `fn()` and return the `SystemExit` it raises, or fail loudly
+    if it returns normally instead -- the thread-safe equivalent of
+    `pytest.raises(SystemExit)` for use inside `_run_with_bound`'s target
+    (a `pytest.raises` context manager is tied to the thread that opens
+    it, not portable across the boundary `_run_with_bound` introduces)."""
+    try:
+        fn()
+    except SystemExit as exc:
+        return exc
+    raise AssertionError("expected SystemExit, but the call returned normally")
 
 
 def _git_init(root: Path, *, branch: str = "main") -> None:
@@ -1542,18 +1586,35 @@ class TestRefuseIfLandInProgress:
 
         pre_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
+        # T-2093: `_land_lock` holds the flock IN-PROCESS for the whole
+        # `with` block below -- `refuse_if_land_in_progress`'s exit
+        # condition (the lock coming free) can therefore never fire
+        # before this call itself returns, so without a short per-repo
+        # wait budget it blocks for the full production default (~330s,
+        # `_LAND_WAIT_TIMEOUT_S`) every time. Give this repo a short
+        # `land_wait_timeout_s` (the same override mechanism
+        # `test_refuses_while_land_lock_held` already uses directly) so
+        # the guard's own correct "wait, then refuse" behavior completes
+        # quickly instead of relying on `_run_with_bound`'s external
+        # bound alone.
+        (repo / "frob.toml").write_text("[tickets]\nland_wait_timeout_s = 1\n")
+
         with _land_lock(repo, "T-0001"):
-            with pytest.raises(SystemExit):
-                ticket_run(
-                    AppConfig(
-                        ticket_command="new",
-                        ticket_path=repo,
-                        ticket_title="racing ticket",
-                        ticket_kind="bug",
-                        ticket_scope=["src/feature.py"],
-                        ticket_body="## Done report\n\nDone.\n",
+            _run_with_bound(
+                lambda: _expect_system_exit(
+                    lambda: ticket_run(
+                        AppConfig(
+                            ticket_command="new",
+                            ticket_path=repo,
+                            ticket_title="racing ticket",
+                            ticket_kind="bug",
+                            ticket_scope=["src/feature.py"],
+                            ticket_body="## Done report\n\nDone.\n",
+                        )
                     )
-                )
+                ),
+                bound_s=10.0,
+            )
 
         post_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         assert post_tip == pre_tip, (
@@ -1586,10 +1647,26 @@ class TestDispatchLandGuard:
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
         fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # T-2093: this fd holds the flock for the whole `try` block below
+        # -- `refuse_if_land_in_progress`'s exit condition can never fire
+        # before this call returns, so without a short per-repo wait
+        # budget it blocks for the full production default (~330s) every
+        # time. Same override as the sibling repo-level fixes above.
+        (repo / "frob.toml").write_text("[tickets]\nland_wait_timeout_s = 1\n")
         try:
-            with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
-                _refuse_if_land_in_progress_for_dispatch(repo, "priority")
-            assert exc.value.code == 1
+            caplog.set_level("ERROR")
+            captured: list[SystemExit] = []
+            _run_with_bound(
+                lambda: captured.append(
+                    _expect_system_exit(
+                        lambda: _refuse_if_land_in_progress_for_dispatch(
+                            repo, "priority"
+                        )
+                    )
+                ),
+                bound_s=10.0,
+            )
+            assert captured[0].code == 1
             assert "priority" in caplog.text
         finally:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
@@ -1633,16 +1710,28 @@ class TestDispatchLandGuard:
         assert before.is_ok
         assert before.danger_ok["T-0001"].runs_last is False
 
+        # T-2093: `_land_lock` holds the flock IN-PROCESS for the whole
+        # `with` block below -- `refuse_if_land_in_progress`'s exit
+        # condition can never fire before this call returns, so without a
+        # short per-repo wait budget it blocks for the full production
+        # default (~330s) every time. Same override as the sibling
+        # repo-level fixes above.
+        (repo / "frob.toml").write_text("[tickets]\nland_wait_timeout_s = 1\n")
+
         with _land_lock(repo, "T-9999"):
-            with pytest.raises(SystemExit):
-                ticket_run(
-                    AppConfig(
-                        ticket_command="runs-last",
-                        ticket_path=repo,
-                        ticket_id="T-0001",
-                        ticket_runs_last_value="on",
+            _run_with_bound(
+                lambda: _expect_system_exit(
+                    lambda: ticket_run(
+                        AppConfig(
+                            ticket_command="runs-last",
+                            ticket_path=repo,
+                            ticket_id="T-0001",
+                            ticket_runs_last_value="on",
+                        )
                     )
-                )
+                ),
+                bound_s=10.0,
+            )
 
         after = load_all(repo)
         assert after.is_ok

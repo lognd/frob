@@ -2,7 +2,7 @@
 id: T-2093
 title: refuse_if_land_in_progress poll loop never observes its exit condition; three
   tests hang and it runs on the live dispatch path
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,20 +13,56 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: 'Root cause is a test-authoring gap, not a src defect: the three hanging
+
+    tests never override refuse_if_land_in_progress''s 330s production default
+
+    wait budget (frob.toml [tickets] land_wait_timeout_s), and each holds
+
+    land.lock IN-PROCESS for the whole assertion, so the deadline is
+
+    structurally unreachable before the full budget elapses. The fix and its
+
+    bounded repro both live in the test file alongside the existing sibling
+
+    test (test_refuses_while_land_lock_held) that already uses this exact
+
+    override pattern.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_refuses_mutating_verb_while_land_in_progress
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_refused_verb_never_writes_the_ticket_file_at_all
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_refuses_while_land_lock_held
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_land_verb_itself_is_exempt
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_read_only_verb_runs_while_land_in_progress
+designated_repro_test: tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger
 acceptance:
 - text: given no land is actually in progress, when refuse_if_land_in_progress is
     called on the dispatch path, then it returns within an asserted upper bound rather
     than polling indefinitely -- this test MUST fail (hang) against current main
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_concurrent_land_and_ticket_new_cannot_corrupt_the_ledger
 - text: given the three named tests in tests/test_ticket_leases.py, when the suite
     runs, then all three complete rather than hanging
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestDispatchLandGuard::test_refuses_mutating_verb_while_land_in_progress
+  - tests/test_ticket_leases.py::TestDispatchLandGuard::test_refused_verb_never_writes_the_ticket_file_at_all
 - text: given a land genuinely IS in flight, when a mutating ticket verb is dispatched,
     then it still refuses or waits as before -- the guard is not weakened
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_refuses_while_land_lock_held
+  - tests/test_ticket_leases.py::TestDispatchLandGuard::test_land_verb_itself_is_exempt
+  - tests/test_ticket_leases.py::TestDispatchLandGuard::test_read_only_verb_runs_while_land_in_progress
 threat: null
 component: tickets
 labels:
