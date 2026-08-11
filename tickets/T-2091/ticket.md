@@ -2,7 +2,7 @@
 id: T-2091
 title: LAND-PROOF prints verified=True for lands whose claims re-verification was
   skipped as unmeasured
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -14,21 +14,54 @@ runs_last: false
 scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_land_proof_claims.py
+evidence_scope:
+- tests/test_ticket_land_proof_claims.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: the claims-reverify outcome must cross the land()->LandReport->_print_land_proof
+    boundary; LandReport (extra=forbid, frozen) is the only channel, so adding one
+    field there is required to thread the existing T-2083 outcome through per this
+    ticket's own instruction
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/tickets/_models.py
+  reason: 'reconsidered: LandReport is constructed in _land_squash.py (also out of
+    scope) at both call sites, so extending it would require touching a third file;
+    a module-level side-channel confined to the two declared scope files (_land.py
+    writes, _land_cmd.py reads) avoids widening the write lease'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_ticket_land_proof_claims.py
+  reason: new repro/evidence test file added for this ticket's own bug fix
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_skipped_unmeasured_is_not_printed_as_verified_true
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_no_recorded_outcome_leaves_verified_unaffected
+designated_repro_test: tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_skipped_unmeasured_is_not_printed_as_verified_true
 acceptance:
 - text: given a land whose claims re-verification returns SKIPPED_UNMEASURED, when
     LAND-PROOF is printed, then it does NOT read verified=True and instead names the
     skip as its own distinct state -- this test MUST fail against current main
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_skipped_unmeasured_is_not_printed_as_verified_true
 - text: given a land whose claims re-verification returns PASSED, when LAND-PROOF
     is printed, then it reads verified=True exactly as before -- no behaviour change
     on the healthy path
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
+  - tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_no_recorded_outcome_leaves_verified_unaffected
 - text: given the change, when land wall-clock is measured, then no additional frob
     check subprocess has been introduced
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
 threat: null
 component: tickets
 anchor: false

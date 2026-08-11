@@ -1247,8 +1247,36 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     completely correct land, because this check predates T-1856's anchor
     marker and T-1874's land-time skip-close path -- observed landing
     T-1820 (2026-08-08): `is_ancestor_of_main=True state_on_main=queued
-    verified=False`."""
+    verified=False`.
+
+    T-2091: also consults `frob.tickets._land._LAST_CLAIMS_OUTCOME`, the
+    process-local record of what T-2083's post-merge Done-report-claims
+    re-verification actually did for this same `land()` call, and prints
+    it as its own `claims_reverify=` field. A `SKIPPED_UNMEASURED` outcome
+    means the claims re-verification never ran at all (it could not be
+    measured, not that it passed) -- silently printing `verified=True`
+    right next to it would repeat exactly the "could not measure" read as
+    "found nothing" defect T-2076 already fixed once elsewhere (the
+    confirmed mechanism behind T-1584 landing 8 error-severity findings
+    under a Done report claiming "land-parity: clean"). This ticket is
+    surfacing, not refusal (see its own Done report / origin ticket for
+    the measured rarity of the skip path): the RETURNED bool -- what
+    `--finish`/`--retire-on-proof`'s worktree-removal gate and T-1910's
+    nonzero-exit-on-unverified check both act on -- stays exactly the
+    ancestor+state computation it always was, so a skip cannot newly turn
+    a real, correct land into a refusal. Only the PRINTED `verified=`
+    token changes for a skip: neither the string `True` (would overclaim,
+    the original defect) nor `False` (would assert a negative
+    verification RESULT the skip never establishes either -- a skip is a
+    third state, not "verified and found unsound") but the word
+    `SKIPPED-UNMEASURED` itself, naming the skip directly rather than
+    collapsing it onto either boolean spelling. No entry (a healthy
+    `PASSED`, or a dry run / recovered-marker call that never went through
+    `land()`'s own claims-check step in this process) leaves the printed
+    token as the plain `True`/`False` of the unchanged bool, exactly as
+    before -- the healthy path has no behavior change."""
     from frob.tickets import TicketState
+    from frob.tickets._land import _LAST_CLAIMS_OUTCOME, _ClaimsReverifyOutcome
 
     ancestor_ok, state_desc, is_anchor = _land_proof_checks(
         root, report.final_id, report.commit_sha
@@ -1259,14 +1287,19 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     )
     verified = ancestor_ok and state_ok
 
+    claims_outcome = _LAST_CLAIMS_OUTCOME.pop(report.ticket_id, None)
+    claims_skipped = claims_outcome is _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
+    printed_verified = "SKIPPED-UNMEASURED" if claims_skipped else verified
+
     _log.info(
         "LAND-PROOF: ticket=%s commit=%s is_ancestor_of_main=%s "
-        "state_on_main=%s verified=%s",
+        "state_on_main=%s claims_reverify=%s verified=%s",
         report.final_id,
         report.commit_sha,
         ancestor_ok,
         state_desc,
-        verified,
+        claims_outcome.value if claims_outcome is not None else "unknown",
+        printed_verified,
     )
     return verified
 

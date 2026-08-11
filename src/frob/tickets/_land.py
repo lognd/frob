@@ -77,6 +77,7 @@ from frob.tickets._land_merge import _validate_closeable
 from frob.tickets._land_merge import splice_ledger as splice_ledger  # noqa: E402
 from frob.tickets._land_squash import _land_squash_apply, _v2_effective_scope
 from frob.tickets._land_verify import (
+    _ClaimsReverifyOutcome,
     _reverify_done_report_claims_post_merge,
     _reverify_evidence_post_merge,
 )
@@ -128,6 +129,27 @@ def _land_lock_path(root: Path) -> Path:
     """The advisory lock file path `_land_lock` holds, serializing every
     `land()` call against `root` (T-0577)."""
     return root / _LAND_LOCK_REL
+
+
+# frob:ticket T-2091
+# frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_skipped_unmeasured_is_not_printed_as_verified_true  # noqa: E501
+# frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_passed_healthy_path_is_unchanged  # noqa: E501
+_LAST_CLAIMS_OUTCOME: dict[str, _ClaimsReverifyOutcome] = {}
+"""T-2091: the most recent `_ClaimsReverifyOutcome` `land()` observed for a
+given `ticket_id`, in THIS process. `LandReport` (`frob.tickets._models`)
+is frozen/`extra=forbid` and constructed inside `_land_squash.py` at both
+its call sites -- neither file is in this ticket's scope, and the ticket's
+own directive is to thread the value T-2083 ALREADY computes through
+without spawning a new subprocess or widening the write lease onto a third
+file. This process-local side channel does that: `land()` writes it the
+moment `_reverify_done_report_claims_post_merge` returns `Ok(...)`, and
+`_print_land_proof` (`frob.app.ticket_runner._land_cmd`, same process,
+called synchronously after `land()` returns) reads and pops it by
+`report.ticket_id` to decide whether `LAND-PROOF:` may say
+`verified=True` at all. Never persisted to disk and never read across a
+process boundary -- a land that crashes before printing loses the entry
+same as it loses the rest of the tail, no different from any other
+in-memory land state."""
 
 
 # frob:ticket T-1515
@@ -1662,6 +1684,13 @@ def _land_locked(
             if did_merge:
                 _abort_merge(worktree)
             return Err(claims_check.danger_err)
+        # T-2091: record the outcome T-2083 already computed so
+        # `_print_land_proof` can surface a SKIPPED_UNMEASURED claims
+        # re-verification on the LAND-PROOF line instead of silently
+        # discarding it here as before -- see `_LAST_CLAIMS_OUTCOME`'s own
+        # docstring for why this is a process-local dict rather than a new
+        # `LandReport` field.
+        _LAST_CLAIMS_OUTCOME[ticket_id] = claims_check.danger_ok
 
         # T-1410: re-verify any "0 <RULE> findings under <glob>" acceptance
         # criterion (`_gate_claim_criteria`) against the SAME post-merge
