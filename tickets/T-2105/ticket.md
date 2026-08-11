@@ -2,7 +2,7 @@
 id: T-2105
 title: Detect a duplicate ticket id after a merge silently resolves two records (T-2092
   half 2)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -15,19 +15,41 @@ scope:
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land_squash.py
 - src/frob/tickets/_land.py
-- docs/modules/tickets.md
+- tests/unit/test_land_duplicate_ticket_id.py
+evidence_scope:
+- tests/unit/test_land_duplicate_ticket_id.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: T-1860 holds live lease on docs/modules/tickets.md; narrowing to code-only
+    scope
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_land_duplicate_ticket_id.py
+  reason: repro/coverage test for the T-2105 fix
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_flags_id_with_genuinely_different_content_on_both_sides
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_the_landing_tickets_own_id
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_identical_content_on_both_sides
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_an_id_that_already_existed_at_the_merge_base
+- tests/unit/test_land_duplicate_ticket_id.py::TestLandRefusesOnDuplicateTicketIdCollision::test_land_refuses_instead_of_silently_discarding_a_colliding_record
+designated_repro_test: tests/unit/test_land_duplicate_ticket_id.py::TestLandRefusesOnDuplicateTicketIdCollision::test_land_refuses_instead_of_silently_discarding_a_colliding_record
 acceptance:
 - text: given two ticket records that once briefly both existed at the same id, when
     the ledger/history is inspected, then this is detectable/flagged rather than silently
     invisible
-  evidence: []
+  evidence:
+  - tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_flags_id_with_genuinely_different_content_on_both_sides
 - text: given a git merge that would resolve two DIFFERENT ticket.md contents onto
     the same tickets/<id>/ticket.md path, when the merge happens, then it is refused
     or loudly flagged instead of silently picking one side
-  evidence: []
+  evidence:
+  - tests/unit/test_land_duplicate_ticket_id.py::TestLandRefusesOnDuplicateTicketIdCollision::test_land_refuses_instead_of_silently_discarding_a_colliding_record
 threat: null
 component: tickets
 anchor: false

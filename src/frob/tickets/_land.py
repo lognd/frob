@@ -58,6 +58,7 @@ from frob.tickets._land_git_ops import (
     _commit_rapid_debt_only_drift,
     _committed_out_of_scope_waive_deletions,
     _merge_main_into_worktree,
+    detect_duplicate_ticket_id_collisions,
     _porcelain_dirty,
     _restore_lock_version_only_drift,
     _rev_parse,
@@ -4460,7 +4461,7 @@ def _land_precheck_remaining_checks(
 # architecture-doc precedent every other COV007 waiver in this repo already carries, \
 # not accidental drift onto a private helper"
 def _merge_main_into_worktree_v2(
-    worktree: Path, ticket: Ticket, main_branch: str
+    root: Path, worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[bool, LandError]:
     """v2-mode counterpart to `_merge_main_into_worktree` (design section
     5): a plain `git merge --no-commit --no-ff` -- no `tickets.md`/
@@ -4472,7 +4473,40 @@ def _merge_main_into_worktree_v2(
     `_merge_main_into_worktree`'s `keep="theirs"` convention); a conflict
     INSIDE the ticket's own directory (two branches both editing the SAME
     ticket) is left conflicted and surfaced loudly (AC3), never
-    resolved by picking a side."""
+    resolved by picking a side.
+
+    T-2105: BEFORE the merge runs, `detect_duplicate_ticket_id_
+    collisions` compares every `tickets/<id>/ticket.md` blob directly
+    between `worktree` and `root`. This is the v2-mode counterpart's own
+    version of the exact field incident this ticket exists to close --
+    a v2-mode `tickets/<id>/` directory is disjoint from every OTHER
+    ticket's directory, so a same-id collision here never even reaches
+    `git merge` as a textual conflict at all (add/add on two DIFFERENT
+    paths never conflicts); the old code had no mechanism that could ever
+    catch it, silently letting `_auto_resolve_out_of_scope_conflicts`
+    (or, for a clean add/add, git's own merge) keep whichever side it
+    keeps. Refusing here, ahead of the merge, closes that gap."""
+    collisions = detect_duplicate_ticket_id_collisions(worktree, root, ticket.id, main_branch)
+    if collisions:
+        _log.error(
+            "land: %s refusing to merge %s into %s -- ticket id(s) %s have "
+            "DIFFERENT tickets/<id>/ticket.md content on the worktree's "
+            "side vs %s's (T-2105 duplicate-id collision, v2 mode: two "
+            "distinct records were independently written at the same id) "
+            "-- resolve by hand (compare `git -C %s show "
+            "HEAD:tickets/<id>/ticket.md` against `git -C %s show "
+            "HEAD:tickets/<id>/ticket.md` for each id above, then "
+            "renumber whichever record should not have this id via "
+            "`frob ticket renumber`) before retrying",
+            ticket.id,
+            main_branch,
+            worktree,
+            sorted(collisions),
+            main_branch,
+            worktree,
+            root,
+        )
+        return Err(LandError.MergeConflict)
     merged = run_argv(
         ["git", "-C", str(worktree), "merge", "--no-commit", "--no-ff", main_branch]
     )
@@ -4597,7 +4631,7 @@ def _land_merge_stage(
     pre_merge_sibling_states = _sibling_ticket_states(worktree, ticket_id)
 
     merged = (
-        _merge_main_into_worktree_v2(worktree, ticket, main_branch_name)
+        _merge_main_into_worktree_v2(root, worktree, ticket, main_branch_name)
         if _store_mode(root) == "v2"
         else _merge_main_into_worktree(root, worktree, ticket, main_branch_name)
     )

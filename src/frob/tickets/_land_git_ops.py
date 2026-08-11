@@ -860,6 +860,133 @@ def _resolve_merge_base_texts(
 
 
 # frob:ticket T-1721
+# frob:ticket T-2105
+_TICKET_DIR_TICKET_MD_RE = re.compile(r"^tickets/([^/]+)/ticket\.md$")
+
+
+# frob:ticket T-2105
+def _ticket_dir_ticket_md_paths(cwd: Path) -> set[str]:
+    """Every `tickets/<id>/ticket.md` path tracked at `cwd`'s current HEAD
+    (v2-mode ticket store layout, `frob.tickets._store.v2_ticket_dir`)."""
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(cwd),
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "HEAD",
+            "--",
+            "tickets/",
+        ]
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return set()
+    return {
+        line.strip()
+        for line in spawned.danger_ok.stdout.splitlines()
+        if _TICKET_DIR_TICKET_MD_RE.match(line.strip())
+    }
+
+
+# frob:ticket T-2105
+def _read_tracked_text_or_none(cwd: Path, path: str) -> str | None:
+    """`git show HEAD:<path>` in `cwd`, or `None` if that path does not
+    exist at `cwd`'s current HEAD."""
+    spawned = run_argv(["git", "-C", str(cwd), "show", f"HEAD:{path}"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    return spawned.danger_ok.stdout
+
+
+# frob:ticket T-2105
+def _read_text_at_commit_or_none(cwd: Path, commit: str, path: str) -> str | None:
+    """`git show <commit>:<path>` in `cwd`, or `None` if that path does not
+    exist at `commit` (T-2105's merge-base existence check)."""
+    spawned = run_argv(["git", "-C", str(cwd), "show", f"{commit}:{path}"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    return spawned.danger_ok.stdout
+
+
+# frob:ticket T-2105
+# frob:tests \
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
+# st_flags_id_with_genuinely_different_content_on_both_sides
+# frob:tests \
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
+# st_ignores_the_landing_tickets_own_id
+# frob:tests \
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
+# st_ignores_identical_content_on_both_sides
+# frob:tests \
+# tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
+# st_ignores_an_id_that_already_existed_at_the_merge_base
+def detect_duplicate_ticket_id_collisions(
+    worktree: Path, root: Path, landing_ticket_id: str, main_branch: str
+) -> frozenset[str]:
+    """T-2105 (half 2 of T-2092): compare every `tickets/<id>/ticket.md`
+    path tracked on BOTH `worktree`'s pre-merge HEAD and `root`'s (main's)
+    HEAD, by raw blob content -- BEFORE any `git merge` runs. Exactly one
+    writer ever owns a given ticket id's record under normal operation, so
+    any such path whose content genuinely differs between the two sides
+    means two DISTINCT records were independently written at the same id:
+    the T-2083/T-2090 field incident's exact shape, where a landing
+    worktree's finalized draft and a concurrent `frob ticket new` direct on
+    main collided on the same id and the land machinery's own internal
+    merge-main-into-worktree step (`_auto_resolve_out_of_scope_conflicts`,
+    treating the other record as out-of-scope) silently discarded one
+    side's content entirely -- caught only by grepping ticket CONTENT on
+    main post-land, since the id itself looked perfectly fine throughout.
+
+    Checking blob content directly, ahead of the merge, catches this
+    regardless of whether git's own line-based merge would ever have
+    flagged a textual conflict for it (the two sides' edits need not
+    overlap on the same lines to still be two unrelated records).
+
+    An id whose `tickets/<id>/ticket.md` already existed at
+    `worktree`/`main_branch`'s merge-base is NOT a collision -- it is an
+    ORDINARY ticket that both sides independently edited (e.g. a sibling
+    ticket the worktree closed while main also touched it), which is a
+    real conflict of a different, already-handled kind (T-1914's sibling-
+    state-regression guard, or an ordinary git merge conflict inside the
+    landing ticket's own scope). Only a `tickets/<id>/ticket.md` ABSENT at
+    the merge-base but present with genuinely different content on both
+    sides afterward means two independent id ALLOCATIONS collided --
+    exactly this ticket's own subject. Returns the set of colliding ticket
+    ids -- never `landing_ticket_id` itself, since that record's
+    difference from main is exactly what this land exists to carry
+    forward, not a collision."""
+    base = _true_merge_base(worktree, main_branch)
+    base_commit = base.danger_ok if base.is_ok else None
+    collisions: set[str] = set()
+    for path in sorted(
+        _ticket_dir_ticket_md_paths(worktree) | _ticket_dir_ticket_md_paths(root)
+    ):
+        match = _TICKET_DIR_TICKET_MD_RE.match(path)
+        if match is None:
+            continue
+        ticket_id = match.group(1)
+        if ticket_id == landing_ticket_id:
+            continue
+        ours = _read_tracked_text_or_none(worktree, path)
+        theirs = _read_tracked_text_or_none(root, path)
+        if ours is None or theirs is None:
+            continue
+        if ours == theirs:
+            continue
+        if base_commit is not None:
+            at_base = _read_text_at_commit_or_none(worktree, base_commit, path)
+            if at_base is not None:
+                # Existed before the two sides diverged -- an ordinary
+                # edit conflict on a pre-existing ticket, not a
+                # duplicate-id allocation collision.
+                continue
+        collisions.add(ticket_id)
+    return frozenset(collisions)
+
+
 def _merge_main_into_worktree(
     root: Path, worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[bool, LandError]:
@@ -898,6 +1025,32 @@ def _merge_main_into_worktree(
     base_ledger_text, base_archive_text = _resolve_merge_base_texts(
         worktree, main_branch
     )
+
+    # frob:ticket T-2105
+    collisions = detect_duplicate_ticket_id_collisions(
+        worktree, root, ticket.id, main_branch
+    )
+    if collisions:
+        _log.error(
+            "land: %s refusing to merge %s into %s -- ticket id(s) %s have "
+            "DIFFERENT tickets/<id>/ticket.md content on the worktree's side "
+            "vs %s's (T-2105 duplicate-id collision: two distinct records "
+            "were independently written at the same id) -- an ordinary git "
+            "merge could resolve this with no textual conflict at all and "
+            "silently discard one side's content; resolve by hand (compare "
+            "`git -C %s show HEAD:tickets/<id>/ticket.md` against "
+            "`git -C %s show HEAD:tickets/<id>/ticket.md` for each id above, "
+            "then renumber whichever record should not have this id via "
+            "`frob ticket renumber`) before retrying",
+            ticket.id,
+            main_branch,
+            worktree,
+            sorted(collisions),
+            main_branch,
+            worktree,
+            root,
+        )
+        return Err(LandError.MergeConflict)
 
     merged = run_argv(
         ["git", "-C", str(worktree), "merge", "--no-commit", "--no-ff", main_branch]
