@@ -278,28 +278,60 @@ member tables as listed in the sweep transcripts.
 
 ## Gate-gap classes (each becomes a mechanism ticket)
 
-1. ENUMERATION: prose tables/lists restating a code collection's
-   members carry no anchor edge; DRIFT001 only covers the one anchored
-   symbol's digest. Fix: frob:enumerates directive + DOCENUM001
-   AST-diff of claimed vs actual members. Dominant class (~40 stale +
-   ~40 at-risk instances).
-2. POINTER SHAPES: bare backticked identifiers, file.py::symbol,
-   rust path.rs::fn, and line-wrapped backtick spans are invisible to
-   DOC006 (src/frob/gates/_docptr.py:8-33,103,220). Fix: extend the
-   pointer grammar; resolve bare identifiers within the doc's anchored
-   module scope; private-name awareness.
-3. NEGATIVE-EXISTENCE: an "X is absent / unwired" style claim is
-   unanchorable and rots when X ships. Fix: a frob:until T-#### (or
-   similar) directive binding absence-claims to a ticket; claim goes
-   stale when the ticket closes; unbound absence-claims flagged.
-4. NON-PYTHON TARGETS: Makefile recipes/deps, frob.toml severities,
-   pyproject entries, Rust file layout, tmLanguage lists have no graph
-   nodes; surviving files keep path checks green while symbol-location
-   claims rot. Fix: extend doc edges to the multi-language graph
-   (T-1193's python-only theme) plus recipe/config anchor kinds.
-5. LINK/FRAGMENT VALIDATION: doclink does not verify relative link
-   basenames or #fragments in guides. Fix: DOCLNK rule for
-   basename+fragment resolution.
+Status re-measured 2026-08-10 against current `main` (T-1226): classes 1,
+2, 3, 5, and 6 are DONE -- each mechanism shipped, is wired into the
+`docblocks`/`doclink`/`docanchor`/`docstatus`/`docmake` gate registry
+(`src/frob/gates/__init__.py`), and is not dead code (confirmed by reading
+the registry, not by the module existing on disk alone -- two of these
+were nearly mis-reported as unwired on a first pass that grepped the
+wrong exported function name, e.g. `docenum_gate` instead of the real
+`docenum001_gate`; corrected before reporting). Class 4 is PARTIAL: its
+one shipped sub-case (Makefile target citations, DOC010) is wired; the
+frob.toml-severity and non-Makefile config/tmLanguage sub-cases named in
+the original finding remain open (the Rust file-layout sub-case is now
+covered incidentally by class 2's T-1228 FILE::SYMBOL kind, not by a
+dedicated class-4 mechanism).
+
+1. ENUMERATION: DONE (T-1227). prose tables/lists restating a code
+   collection's members carry no anchor edge; DRIFT001 only covers the
+   one anchored symbol's digest. Fixed by a `frob:enumerates` directive +
+   DOCENUM001 AST-diff of claimed vs actual members
+   (`src/frob/gates/_docenum.py::docenum001_gate`, wired under the
+   `docblocks` gate name). Dominant class (~40 stale + ~40 at-risk
+   instances) -- the mechanism now catches new drift; the ~140-instance
+   content fix campaign itself is separate, ongoing work, out of this
+   ticket's own scope.
+2. POINTER SHAPES: DONE (T-1228). bare backticked identifiers,
+   file.py::symbol, rust path.rs::fn, and line-wrapped backtick spans
+   were invisible to DOC006 (src/frob/gates/_docptr.py:8-33,103,220).
+   Fixed: `_docptr.py` gained a FILE::SYMBOL kind (Python and Rust,
+   `_file_symbol_violations`) and a bare-identifier kind
+   (`_bare_identifier_violations`) with private-name awareness, three
+   rounds (round-2/round-3 fixed real-corpus false positives from the
+   first cut) -- see `_docptr.py`'s own T-1228 comments for the shape
+   grammar and exclusions (ticket-ledger files, ambiguous shorthand
+   basenames).
+3. NEGATIVE-EXISTENCE: DONE (T-1229). an "X is absent / unwired" style
+   claim is unanchorable and rots when X ships. Fixed by a `frob:until
+   T-####` directive binding absence-claims to a ticket
+   (`src/frob/gates/_negexist.py::negexist001_gate`, wired under the
+   `docblocks` gate name); an unbound claim or one whose bound ticket has
+   since closed both fire.
+4. NON-PYTHON TARGETS: PARTIAL (T-1230 shipped the Makefile sub-case
+   only). Makefile recipes/deps, frob.toml severities, pyproject
+   entries, Rust file layout, tmLanguage lists have no graph nodes;
+   surviving files keep path checks green while symbol-location claims
+   rot. T-1230 closed the Makefile-recipe-citation sub-case specifically
+   (`` `make <target>` `` prose against real Makefile targets, DOC010,
+   `src/frob/gates/_doclink_docanchor.py::docmake_gate`, wired). The
+   frob.toml-severity and remaining non-Makefile config/tmLanguage
+   sub-cases named in the original finding are still open -- no dedicated
+   mechanism ticket has been filed for them yet.
+5. LINK/FRAGMENT VALIDATION: DONE (T-1231). doclink did not verify
+   relative link basenames or #fragments in guides. Fixed: DOC008
+   basename+fragment resolution
+   (`src/frob/gates/_doclink_docanchor.py`, wired under the `doclink`
+   gate name).
 6. STATUS/CURRENCY: audit docs need a dated status/superseded-by
    header (gate-checkable); ticket-state prose (T-#### mentions) can
    be checked against the ledger; index completeness checkable against
