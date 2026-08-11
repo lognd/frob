@@ -14,8 +14,16 @@ runs_last: false
 scope:
 - src/frob/app/_style.py
 - src/frob/logging/color.py
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/app.md
+  reason: the palette is documented in docs/modules/app.md#shared-styling-helper-t-0179
+    and the doc must change with the code
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 acceptance:
 - text: given a listing containing both a queued and a dropped ticket, when it is
