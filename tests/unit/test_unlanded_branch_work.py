@@ -407,3 +407,66 @@ class TestUnlandedBranchWork:
         assert len(one) == 1
         assert one[0].ticket_id == "T-9006"
         assert one == _unlanded_branch_work(repo)
+
+
+class TestUnlandedBranchWorkMainStateSpawnScaling:
+    """T-2125: a `PYTHONFAULTHANDLER=1` stack sample of a stuck shared-root
+    `doable` landed inside `_ticket_state_on_main` -> `_blob_text` ->
+    `guarded_subprocess_run` -- up to two `git show` spawns PER TICKET ID
+    PER BRANCH, an O(branches x tickets) product that a worktree's much
+    smaller branch/ticket count hides completely (this repo alone: ~644
+    branches x ~2100 ticket directories). The fix resolves every ticket's
+    main-side state in ONE `git grep` call
+    (`_all_ticket_states_on_main`), shared across every branch, instead of
+    re-resolving it per (branch, ticket) pair."""
+
+    # frob:tests \
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkMainStateSpawnScal\
+    # ing.test_main_state_resolution_does_not_scale_with_branch_times_ticket
+    def test_main_state_resolution_does_not_scale_with_branch_times_ticket(
+        self, repo: Path
+    ) -> None:
+        """FAIL before this fix: total git-spawn count scaled with the
+        branch x ticket product (up to 2 `git show` calls per pair, just
+        for main-state resolution). PASS after: total spawns stay well
+        below the product regardless of how many (branch, ticket) pairs
+        exist, because main-state resolution is a single `git grep` call
+        no matter how many pairs there are."""
+        from frob.gitio import spawn_recorder
+
+        num_branches = 4
+        tickets_per_branch = 5
+        for b in range(num_branches):
+            branch_name = f"agent-branch-{b}"
+            _branch(repo, branch_name)
+            for t in range(tickets_per_branch):
+                tid = f"T-90{b}{t}"
+                _write_ticket_md(repo, tid, state="in-progress")
+                _write_done_report(repo, tid)
+            _commit_all(repo, f"finish tickets on {branch_name}")
+            _back_to_main(repo)
+
+        product = num_branches * tickets_per_branch
+
+        with spawn_recorder() as recorder:
+            findings = _unlanded_branch_work(repo)
+
+        # Sanity: the fixture's own shape really does surface one finding
+        # per (branch, ticket) pair -- if this assertion ever fails, the
+        # spawn-count assertion below would be meaningless (comparing
+        # against a product the run never actually processed).
+        assert len(findings) == product
+
+        total_spawns = sum(recorder.counts().values())
+        # The pre-fix implementation alone would spawn up to 2 * product
+        # `git show` calls for main-state resolution (40, here), on top
+        # of every other per-branch cost -- so total_spawns would be
+        # AT LEAST the product, scaling linearly with it. The fix bounds
+        # main-state resolution to exactly one spawn total, so overall
+        # cost must stay strictly below the product, not scale with it.
+        assert total_spawns < product, (
+            f"expected total git spawn count ({total_spawns}) to stay "
+            f"below the branch x ticket product ({product}) -- main-state "
+            "resolution must not multiply per (branch, ticket) pair "
+            f"(spawned argvs: {recorder.counts()!r})"
+        )

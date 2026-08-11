@@ -161,6 +161,129 @@ def _state_from_ticket_md(text: str) -> str | None:
     return match.group(1) if match else None
 
 
+# T-2125: `<ref>:tickets/[archive/]T-####/ticket.md:state: <value>` -- one
+# line of `git grep`'s own `<ref>:<path>:<line-content>` output. Group 1
+# is `"archive/"` (or empty for the active path), group 2 the ticket id,
+# group 3 the state value. `<ref>` is filled in per call (`main`, or a
+# branch name -- branch names can contain regex metacharacters, so the
+# caller builds this via `re.escape`, never a bare f-string interpolation).
+_STATE_GREP_RE_TEMPLATE = r"^{ref}:tickets/(archive/)?(T-[0-9A-Za-z][0-9A-Za-z-]*)/ticket\.md:state:\s*(\S+)"
+
+
+# frob:ticket T-2125
+def _ticket_states_on_ref(
+    root: Path, ref: str, globs: tuple[str, ...]
+) -> dict[str, str]:
+    """Every ticket id's `state:` value found under `globs` at `ref`, in
+    ONE `git grep` invocation -- the shared primitive both
+    `_all_ticket_states_on_main` (globs cover active AND archive) and
+    `_ticket_states_on_branch` (active only, matching this module's
+    deliberate archive exclusion for branch-local checks) build on.
+
+    T-2125: this is the general form of the fix over the original
+    per-ticket `_ticket_state_on_main`/per-ticket `_blob_text` calls that
+    used to run once PER TICKET ID PER BRANCH inside `_unlanded_findings_
+    for_branch` (main-side state), `_done_report_and_local_state_signals`
+    (branch-side state for the second signal), AND
+    `_directive_anchor_signals_on_branch` (branch-side state for the
+    third signal) -- three separate per-(branch, ticket) loops, all
+    resolving the exact same kind of fact (a `ticket.md`'s `state:` line
+    at some ref) one blob at a time. With ~644 branches and ~2100 ticket
+    directories in this repo, EACH of those three loops was independently
+    capable of dominating a `doable` run in the shared root (confirmed
+    directly: fixing only the main-side loop still left a real run stuck
+    cycling through hundreds of `git show <branch>:tickets/<id>/ticket.md`
+    calls for the branch-side loops, on branches carrying many
+    directive-anchored or locally-finished ticket ids) -- a worktree's
+    much smaller branch/ticket count hides all three costs equally,
+    which is why measuring only there previously made a partial fix look
+    complete.
+
+    `git grep -e '^state:' <ref> -- <globs...>` reads every matching
+    `ticket.md`'s state line in one process (measured ~0.1s for this
+    repo's full ~2100-ticket ledger at `main` in the shared root) instead
+    of one `git show`/`_blob_text` spawn per ticket id -- the same "one
+    invocation replaces a per-item loop" shape `git cat-file --batch`/
+    `git ls-tree` give for other per-blob loops, applied via `git grep`
+    here since the actual need is one field (`state:`) out of each blob,
+    not the whole blob text. Exit code 1 (git grep's own "no match
+    anywhere" signal, not a failure) is treated as a valid empty result,
+    matching `git grep`'s own documented exit-status contract -- distinct
+    from a genuine spawn failure or a nonzero-for-some-other-reason exit,
+    both of which still degrade to `{}` with a warning like every other
+    best-effort read in this module.
+
+    Active-path matches win over archive-path matches for the same id on
+    a collision (mirrors the original per-ticket lookups' active-first,
+    archive-second check order) -- should never actually collide (a
+    healthy ledger keeps one id in exactly one of the two locations), but
+    the precedence is preserved rather than left to dict-insertion-order
+    luck. Returns `{}` (never raises) on any git failure, the same
+    best-effort posture as every other read in this module; a caller
+    unable to resolve `ref`'s ticket states treats every id as
+    unresolvable (`.get(ticket_id)` -> `None`) rather than crashing."""
+    spawned = run_argv(
+        ("git", "-C", str(root), "grep", "--no-color", "-e", "^state:", ref, "--", *globs)
+    )
+    if spawned.is_err:
+        _log.warning(
+            "tickets: unlanded-work scan: git grep failed for ref %s under %s", ref, root
+        )
+        return {}
+    result = spawned.danger_ok
+    # Exit 1 is git grep's own "the pattern matched nothing" contract, not
+    # a failure -- an empty (or near-empty, mid-drain) ledger/branch is a
+    # real, valid state, not something to warn about.
+    if result.returncode not in (0, 1):
+        _log.warning(
+            "tickets: unlanded-work scan: git grep exited %d for ref %s under %s",
+            result.returncode,
+            ref,
+            root,
+        )
+        return {}
+    line_re = re.compile(_STATE_GREP_RE_TEMPLATE.format(ref=re.escape(ref)))
+    active: dict[str, str] = {}
+    archive: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        match = line_re.match(line)
+        if match is None:
+            continue
+        is_archive, ticket_id, state = match.group(1), match.group(2), match.group(3)
+        bucket = archive if is_archive else active
+        # First match wins per id, mirroring `_state_from_ticket_md`'s own
+        # `re.search` (first-occurrence) semantics.
+        bucket.setdefault(ticket_id, state)
+    merged = dict(archive)
+    merged.update(active)
+    return merged
+
+
+# frob:ticket T-2125
+def _all_ticket_states_on_main(root: Path) -> dict[str, str]:
+    """Every ticket id's `state:` value on `main`, active and archived
+    alike, in ONE `git grep` invocation -- see `_ticket_states_on_ref`'s
+    own docstring for the full rationale/measurement."""
+    return _ticket_states_on_ref(
+        root, "main", ("tickets/*/ticket.md", "tickets/archive/*/ticket.md")
+    )
+
+
+# frob:ticket T-2125
+def _ticket_states_on_branch(root: Path, branch: str) -> dict[str, str]:
+    """Every ticket id's `state:` value on `branch`, active paths ONLY
+    (archive is deliberately excluded for branch-local checks -- see this
+    module's own top docstring: a resolved-and-done ticket is ARCHIVED on
+    a HEALTHY branch, never a signal of unlanded work on that branch
+    itself), in ONE `git grep` invocation -- see `_ticket_states_on_ref`'s
+    own docstring for the full rationale/measurement. Replaces what used
+    to be a `_blob_text(root, branch, f"tickets/{tid}/ticket.md")` spawn
+    per candidate ticket id inside BOTH `_done_report_and_local_state_
+    signals` and `_directive_anchor_signals_on_branch` -- computed ONCE
+    per branch in `_finished_signals_on_branch` and shared between them."""
+    return _ticket_states_on_ref(root, branch, ("tickets/*/ticket.md",))
+
+
 def _ticket_state_on_main(root: Path, ticket_id: str) -> str | None:
     """`ticket_id`'s `state:` on `main`, checking the ACTIVE path first and
     the ARCHIVE path second (T-1934's core fix over the first, path-only
@@ -168,7 +291,13 @@ def _ticket_state_on_main(root: Path, ticket_id: str) -> str | None:
     ticket.md` on main, not left at `tickets/<id>/ticket.md` -- checking
     active existence alone produced 186 false positives, every one of them
     an archived-done ticket misread as "not on main at all"). `None` if
-    neither path resolves on `main`."""
+    neither path resolves on `main`.
+
+    T-2125: kept as a single-id fallback/reference implementation (still
+    exercised directly by its own unit tests) -- `_unlanded_findings_for_
+    branch`/`_unlanded_branch_work` no longer call this per ticket id;
+    they call `_all_ticket_states_on_main` ONCE per run instead (see its
+    own docstring for why)."""
     for path in (
         f"tickets/{ticket_id}/ticket.md",
         f"tickets/archive/{ticket_id}/ticket.md",
@@ -237,11 +366,21 @@ def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
     ids neither shape above already claimed: a `frob:ticket T-####`
     directive comment anchors a non-`tickets/**` file among `branch`'s own
     changes, but that id's OWN `ticket.md` never even reads `in-progress`
-    on this branch -- code exists that neither existing signal can see."""
+    on this branch -- code exists that neither existing signal can see.
+
+    T-2125: `branch_states` (`_ticket_states_on_branch`, one `git grep`
+    covering every ticket id's state on `branch`) is resolved ONCE here
+    and shared between the two helper calls below -- both used to spawn
+    their own `_blob_text(root, branch, ...)` call per candidate ticket
+    id; see `_ticket_states_on_ref`'s own docstring for the full
+    measurement."""
     own_changed = _branch_own_changed_files(root, branch)
-    signals = _done_report_and_local_state_signals(root, branch, own_changed)
+    branch_states = _ticket_states_on_branch(root, branch)
+    signals = _done_report_and_local_state_signals(
+        root, branch, own_changed, branch_states
+    )
     for ticket_id, signal in _directive_anchor_signals_on_branch(
-        root, branch, own_changed, exclude=signals.keys()
+        root, branch, own_changed, branch_states, exclude=signals.keys()
     ).items():
         signals[ticket_id] = signal
     return signals
@@ -249,14 +388,17 @@ def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
 
 # frob:ticket T-1955
 def _done_report_and_local_state_signals(
-    root: Path, branch: str, own_changed: frozenset[str]
+    root: Path,
+    branch: str,
+    own_changed: frozenset[str],
+    branch_states: dict[str, str],
 ) -> dict[str, str]:
     """`_finished_signals_on_branch`'s original two-shape scan (`"done-
     report"`/`"local-state-done"`), split out to keep that function under
     the ARCH001 line threshold once T-1948 added a third shape on top --
-    one `git ls-tree` for every candidate `tickets/**` path, then a
-    `git show` only for ids that need the second signal's `ticket.md`
-    content."""
+    one `git ls-tree` for every candidate `tickets/**` path, then (T-2125)
+    a `branch_states` dict lookup (no further spawn) for the second
+    signal instead of a `git show`/`_blob_text` call per candidate id."""
     spawned = run_argv(
         (
             "git",
@@ -288,10 +430,7 @@ def _done_report_and_local_state_signals(
             ticket_md_ids.add(ticket_id)
     signals: dict[str, str] = dict.fromkeys(done_report_ids, "done-report")
     for ticket_id in ticket_md_ids - done_report_ids:
-        text = _blob_text(root, branch, f"tickets/{ticket_id}/ticket.md")
-        if text is None:
-            continue
-        if _state_from_ticket_md(text) in _TERMINAL_STATES:
+        if branch_states.get(ticket_id) in _TERMINAL_STATES:
             signals[ticket_id] = "local-state-done"
     return signals
 
@@ -324,6 +463,7 @@ def _directive_anchor_signals_on_branch(
     root: Path,
     branch: str,
     own_changed: frozenset[str],
+    branch_states: dict[str, str],
     *,
     exclude: KeysView[str],
 ) -> dict[str, str]:
@@ -336,13 +476,14 @@ def _directive_anchor_signals_on_branch(
     id `_finished_signals_on_branch` already flagged via a stronger
     signal (`done-report`/`local-state-done` take priority; this is the
     weakest, "code exists but the ledger disagrees" signal, not a second
-    vote on an id already known finished)."""
+    vote on an id already known finished). T-2125: `branch_states` is a
+    dict lookup (no spawn) replacing what used to be a `_blob_text` call
+    per candidate id here too."""
     signals: dict[str, str] = {}
     for ticket_id in _directive_anchored_ticket_ids(root, branch, own_changed):
         if ticket_id in exclude:
             continue
-        text = _blob_text(root, branch, f"tickets/{ticket_id}/ticket.md")
-        state = _state_from_ticket_md(text) if text is not None else None
+        state = branch_states.get(ticket_id)
         if state != _ACTIVE_STATE:
             signals[ticket_id] = "directive-anchored"
     return signals
@@ -364,23 +505,34 @@ def _is_ticket_lease_live(
 
 
 def _unlanded_findings_for_branch(
-    root: Path, branch: str, leases: tuple[_LeaseRecord, ...] | None = None
+    root: Path,
+    branch: str,
+    leases: tuple[_LeaseRecord, ...] | None = None,
+    main_states: dict[str, str] | None = None,
 ) -> tuple[_UnlandedWork, ...]:
     """`_UnlandedWork` for every ticket `branch` carries a finished signal
     for (`_finished_signals_on_branch`) whose state on `main` is NOT
-    terminal (`_ticket_state_on_main` not in `_TERMINAL_STATES`, including
-    `None` -- unresolvable is reported, not assumed safe) and whose lease
-    is not currently live (`_is_ticket_lease_live`). `leases` is
-    injectable so a caller already holding `read_all_leases(root)` (a
-    sweep pass iterating many candidate worktrees) never re-reads it once
-    per branch."""
+    terminal (not in `_TERMINAL_STATES`, including unresolvable -- reported,
+    not assumed safe) and whose lease is not currently live
+    (`_is_ticket_lease_live`). `leases` is injectable so a caller already
+    holding `read_all_leases(root)` (a sweep pass iterating many candidate
+    worktrees) never re-reads it once per branch; `main_states` is the
+    same idea for `_all_ticket_states_on_main`'s single-`git grep` result
+    (T-2125) -- `_unlanded_branch_work` computes it ONCE and passes it to
+    every branch's call here, rather than each branch call re-resolving
+    every ticket id's main-side state itself. Both default to `None` so
+    this function is still independently callable (as its own unit tests,
+    and `frob.tickets._leases`'s per-worktree sweep call, both do) without
+    a caller needing to know about either precomputation."""
     if leases is None:
         leases = read_all_leases(root)
+    if main_states is None:
+        main_states = _all_ticket_states_on_main(root)
     findings: list[_UnlandedWork] = []
     for ticket_id, signal in sorted(_finished_signals_on_branch(root, branch).items()):
         if _is_ticket_lease_live(root, ticket_id, leases):
             continue
-        state_on_main = _ticket_state_on_main(root, ticket_id)
+        state_on_main = main_states.get(ticket_id)
         if state_on_main in _TERMINAL_STATES:
             continue
         findings.append(
@@ -404,12 +556,23 @@ def _unlanded_branch_work(root: Path) -> tuple[_UnlandedWork, ...]:
     T-1934's own brief: unattended landing of a dead agent's branch is how
     unreviewed work would reach `main`, so this stops at reporting.
 
-    Cheap: a `git branch` spawn plus one `git ls-tree` per branch, and one
-    `git show` only for ids that need the second signal or a main-side
-    state resolution -- no checkout, no test run, matching the ticket's own
-    working prototype exactly."""
+    T-2125: `main_states` (`_all_ticket_states_on_main`, one `git grep`
+    covering every ticket id on `main`) is resolved ONCE here and passed
+    to every branch's `_unlanded_findings_for_branch` call, replacing what
+    used to be up to two `git show` subprocess spawns PER TICKET ID PER
+    BRANCH (`_ticket_state_on_main`) -- with ~644 branches and ~2100
+    ticket directories in this repo, that product was the measured
+    shared-root `doable` hotspot (a `PYTHONFAULTHANDLER=1` stack sample
+    landed inside this exact call chain at the 180s mark). Still one
+    `git branch` spawn, one `git grep` spawn, plus one `git ls-tree`/`git
+    diff` pair per branch (`_finished_signals_on_branch`'s own cost, not
+    touched by this change) -- no checkout, no test run, matching the
+    ticket's own working prototype's original cost shape, just without the
+    per-(branch, ticket) multiplication on the main-state resolution
+    specifically."""
     leases = read_all_leases(root)
+    main_states = _all_ticket_states_on_main(root)
     findings: list[_UnlandedWork] = []
     for branch in _local_branch_names(root):
-        findings.extend(_unlanded_findings_for_branch(root, branch, leases))
+        findings.extend(_unlanded_findings_for_branch(root, branch, leases, main_states))
     return tuple(findings)
