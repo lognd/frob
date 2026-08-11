@@ -57,6 +57,7 @@ from frob.tickets._leases import (
     sweep_worktrees,
     warn_if_worktree_stale,
 )
+from frob.tickets._models import Origin, TicketKind, TicketSpec
 
 # frob:ticket T-2099
 #: Real git fixture repos and real lease files throughout (module docstring
@@ -65,7 +66,6 @@ from frob.tickets._leases import (
 #: `pytest_collection_modifyitems`) so they run on one worker instead of
 #: scattering and contending over real git across workers.
 pytestmark = pytest.mark.heavy_subprocess
-from frob.tickets._models import Origin, TicketKind, TicketSpec
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
