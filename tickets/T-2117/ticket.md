@@ -2,7 +2,7 @@
 id: T-2117
 title: 'COV001/TEST001: _SuggestingArgumentParser.parse_known_args public with no
   doc/test edge (T-2107 regression)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-11'
