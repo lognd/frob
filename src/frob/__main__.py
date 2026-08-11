@@ -102,6 +102,17 @@ class _SuggestingArgumentParser(argparse.ArgumentParser):
     nor implied by the shown usage."""
 
     # frob:ticket T-2107
+    # frob:waive COV001 reason="overrides argparse.ArgumentParser's own public method \
+    # by NAME -- argparse's internal subparser-action machinery calls parse_known_args \
+    # by this exact name on every parser it recurses into, so it cannot be renamed \
+    # private without breaking the override contract; behavior is exercised via \
+    # frob:tests below (every parse_args call reaches this), and the class already \
+    # carries the did-you-mean doc anchor -- docs/commands/cli-vocabulary.md is under \
+    # a live T-1382 cross-worktree lease and cannot be extended with a dedicated \
+    # anchor for this method right now (T-2112 tracks refreshing that doc once the \
+    # lease frees)"
+    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand kind="unit"  # noqa: E501
+    # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_error_shows_invoked_subcommand_usage kind="unit"  # noqa: E501
     def parse_known_args(self, args=None, namespace=None):  # noqa: ANN001,ANN201
         """Records `self` onto `_INVOKED_PARSERS` before delegating (T-2107)
         -- argparse recurses into a chosen subparser's own

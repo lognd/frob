@@ -116,6 +116,23 @@ _REGRESSION_IDENTITY_HEADING = "New (rule, file) identit(ies) filed here:"
 #: values in sync by hand if either changes.
 _TRUE_COUNT_BUDGET_S = 300
 
+#: T-2106: the check budget (seconds) `revalidate_dispatchable_sweep_
+#: tickets` passes to ITS OWN re-measure, deliberately much SMALLER than
+#: `_TRUE_COUNT_BUDGET_S`. MEASURED (T-2106's own filing, coordinator
+#: telemetry): a `frob ticket doable` invocation with sweep-filed
+#: candidates present spawns this exact re-measure with the deferred-
+#: sweep-sized budget (300) and it routinely runs the full 300s+ --
+#: `_TRUE_COUNT_BUDGET_S`'s value and the measured 301.2s doable-time
+#: cost line up almost exactly, meaning this call was in practice ALWAYS
+#: paying close to the full budget, not a bounded fast path. A DEFERRED
+#: sweep (this module's other caller, `_land_cmd.py`, off any
+#: interactive path) can reasonably afford 300s; a coordinator or agent
+#: waiting on `frob ticket doable` at the terminal cannot -- unmeasurable
+#: is handled safely already (never treats a timeout as "resolved",
+#: drops nothing), so trading a lower budget for bounded latency loses
+#: nothing but revalidation confidence on the rare timeout case.
+_DOABLE_REVALIDATION_BUDGET_S = 20
+
 #: T-2089: `revalidate_dispatchable_sweep_tickets`'s doable-time
 #: revalidation cache. MEASURED (T-2089's own filing): the uncached spawn
 #: this function pays on every `frob ticket doable` call while any
@@ -1929,7 +1946,13 @@ def _reproducing_identities_cached(
     spawn otherwise (logged as a fresh measurement, writing the cache for
     the NEXT call). `None` on an unmeasurable re-check (matching T-1983's
     "never treat unmeasurable as resolved" rule) -- the caller must never
-    read `None` as an empty reproducing set."""
+    read `None` as an empty reproducing set. T-2106: the re-measure spawn
+    (when the cache misses) is budgeted at `_DOABLE_REVALIDATION_BUDGET_S`
+    (20s), not `_TRUE_COUNT_BUDGET_S` (300s) -- this call sits on an
+    interactive query path (`frob ticket doable`), not the deferred sweep
+    `_TRUE_COUNT_BUDGET_S` was sized for; an unmeasurable-after-20s result
+    is handled exactly like any other unmeasurable outcome (drops
+    nothing, never read as resolved)."""
     started = time.monotonic()
     tree_key = _tree_state_key(root)
     cached = (
@@ -1951,7 +1974,10 @@ def _reproducing_identities_cached(
         )
         return reproducing
 
-    reproducing = _identities_still_reproducing(root, all_pairs)
+    # frob:ticket T-2106
+    reproducing = _identities_still_reproducing(
+        root, all_pairs, budget=_DOABLE_REVALIDATION_BUDGET_S
+    )
     if reproducing is not None:
         reproducing = _normalize_identities(root, reproducing)
     elapsed_s = time.monotonic() - started

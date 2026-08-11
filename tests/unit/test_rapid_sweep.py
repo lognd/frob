@@ -1412,6 +1412,63 @@ class TestRevalidateDispatchableSweepTickets:
         assert requeried.is_ok
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.QUEUED
 
+    # frob:ticket T-2106
+    def test_uncached_recheck_uses_the_doable_budget_not_the_sweep_budget(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_uncached_recheck_uses_the_doable_budget_not_the_sweep_budget  # noqa: E501
+        """T-2106: measured, `frob ticket doable`'s own sweep re-
+        verification took 301.2s -- almost exactly `_TRUE_COUNT_BUDGET_S`
+        (300), the constant sized for the deferred POST-LAND sweep, not
+        an interactive query. The doable-time path (this function, via
+        `_reproducing_identities_cached`) must spawn its own re-check with
+        `_DOABLE_REVALIDATION_BUDGET_S` (20), never the 300s sweep
+        budget -- verified here by capturing the actual spawned argv
+        rather than trusting a wall-clock proxy."""
+        from frob.tickets import load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+
+        captured_argv: list[list[str]] = []
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN201, ARG001
+            captured_argv.append(list(argv))
+            return TestIdentitiesStillReproducing._ok_result(
+                '{"results": [{"tool": "gate-summary", "diagnostics": []}]}'
+            )
+
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run", _fake_run
+        )
+        # T-2089's cache is content-keyed on tree state; a non-repo
+        # tmp_path makes `_tree_state_key` return None (git spawn fails),
+        # so this exercises the uncached spawn path deterministically.
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        tickets = list(queue.danger_ok.tickets.values())
+        _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+
+        assert len(captured_argv) == 1
+        argv = captured_argv[0]
+        assert "--budget" in argv
+        budget_value = argv[argv.index("--budget") + 1]
+        assert budget_value == str(_rapid_sweep._DOABLE_REVALIDATION_BUDGET_S)
+        assert budget_value != str(_rapid_sweep._TRUE_COUNT_BUDGET_S)
+
     # frob:ticket T-2078
     def test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition(
         self,
