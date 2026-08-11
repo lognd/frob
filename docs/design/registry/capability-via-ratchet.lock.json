@@ -156,9 +156,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 165,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 0 to 165 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 166,
+      "reason": "T-2083: raised 164->165 for new tests/test_land_verify_claims_outcome.py real-git fixture (subprocess.run, same established idiom as tests/test_ticket_work_and_land_finish.py's own repo fixture); merged with main's own independent 164->165 raise (T-2001 auto-baseline, another new exec site landed concurrently) for a combined 166",
+      "ticket": "T-2083"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

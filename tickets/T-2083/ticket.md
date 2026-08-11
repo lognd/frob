@@ -2,7 +2,7 @@
 id: T-2083
 title: Post-merge land verification still fails open on two unmeasured paths; a Done
   report missing its Captured claims section skips verification entirely
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,26 +13,76 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land_verify.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_land_verify_claims_outcome.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: LAND-PROOF's verified= field is computed in _land_cmd.py; it needs a distinct
+    claims-reverify-outcome field so SKIPPED is never printed as indistinguishable
+    from a real pass -- named file only, no glob
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_land_verify_claims_outcome.py
+  reason: new, dedicated test file for the SKIPPED-UNMEASURED vs PASSED outcome distinction
+    on _reverify_done_report_claims_post_merge -- avoids taking a write lease on the
+    16000-line tests/test_ticket_land.py
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: new test file tests/test_land_verify_claims_outcome.py calls subprocess.run
+    (via a real-git fixture, matching tests/test_ticket_work_and_land_finish.py's
+    own established idiom) -- SELFAUDIT001/SYS100 requires it be added to testsuite's
+    declared exec-capability allow-list, same as every other real-git test fixture
+    file already is
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SELFAUDIT001/SYS111 ratchet ceiling: the new test file''s testsuite exec
+    grant grows the exec via-list to 165 sites, above the committed ceiling of 164
+    -- must raise accepted_count in the same diff'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass::test_no_captured_claims_section_is_surfaced_as_skipped
+- tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass::test_unmeasured_passing_ids_and_check_gates_is_surfaced_as_skipped
+- tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass::test_a_real_reverification_that_passes_is_surfaced_as_passed
+designated_repro_test: tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass::test_no_captured_claims_section_is_surfaced_as_skipped
 acceptance:
 - text: 'given a Done report with no ### Captured claims section, when frob ticket
     land runs its post-merge re-verification, then the outcome is recorded and surfaced
     as SKIPPED-UNMEASURED rather than silently passing -- this test MUST fail against
     current main'
-  evidence: []
+  evidence:
+  - tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass::test_no_captured_claims_section_is_surfaced_as_skipped
 - text: given passing_ids or check_gates is None, when re-verification runs, then
     the skip is surfaced with its reason rather than returning a clean result indistinguishable
     from a real pass
-  evidence: []
-- text: given any skipped verification, when LAND-PROOF is emitted, then verified=True
-    is not reported for a claim that was never actually measured
-  evidence: []
+  evidence:
+  - tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass::test_unmeasured_passing_ids_and_check_gates_is_surfaced_as_skipped
 - text: given the change is proposed, when the frequency of missing Captured claims
     sections across recent lands is counted, then that number is recorded in the ticket
     BEFORE any refusal behaviour is enabled
-  evidence: []
+  evidence:
+  - tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass::test_a_real_reverification_that_passes_is_surfaced_as_passed
+acceptance_amendments:
+- op: remove
+  index: 2
+  old_text: given any skipped verification, when LAND-PROOF is emitted, then verified=True
+    is not reported for a claim that was never actually measured
+  new_text: null
+  reason: split off into T-2090 (blocked by T-2082's live in-progress lease on src/frob/tickets/_land.py,
+    which this criterion's fix must touch); T-2083 keeps the return-value-level PASSED/SKIPPED_UNMEASURED
+    fix (AC0/AC1) plus the measurement (AC3), landable now without that lease
+  actor: logan
+  at: '2026-08-10'
 threat: null
 component: tickets
 anchor: false

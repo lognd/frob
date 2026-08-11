@@ -17,6 +17,7 @@ explicit import.
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from enum import StrEnum
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -33,6 +34,24 @@ from frob.tickets._models import (
 from frob.tickets._store import write_ticket
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-2083
+class _ClaimsReverifyOutcome(StrEnum):
+    """T-2083: `_reverify_done_report_claims_post_merge`'s return value
+    distinguishes a re-verification that actually RAN (`PASSED`) from one
+    that could not run at all (`SKIPPED_UNMEASURED`) -- the two used to
+    collapse to the identical `Ok(None)`, indistinguishable to any caller
+    that only branches on `.is_err` (as `frob.tickets._land`'s own call
+    site does). That equivalence was the defect class T-2076 already fixed
+    one instance of for `_reverify_gate_state_claim`'s internal skips (an
+    unmeasured check reading as a clean one, the confirmed mechanism
+    behind T-1584 landing 8 error-severity findings under a Done report
+    claiming "land-parity: clean"); this closes the two sites T-2076 left
+    open, one level up, at this function's own early-outs."""
+
+    PASSED = "passed"
+    SKIPPED_UNMEASURED = "skipped-unmeasured"
 
 
 def _reverify_evidence_post_merge(
@@ -100,6 +119,28 @@ def _reverify_evidence_post_merge(
     return Ok(passing_ids)
 
 
+# frob:ticket T-2083
+# frob:tests tests/test_land_verify_claims_outcome.py::TestClaimsReverifyOutcomeDistinguishesSkipFromPass.test_unmeasured_passing_ids_and_check_gates_is_surfaced_as_skipped  # noqa: E501
+def _skipped_unmeasured_top_level(
+    ticket_id: str,
+    passing_ids: frozenset[str] | None,
+    check_gates: Callable[[], tuple[int, int, int] | None] | None,
+) -> Result[_ClaimsReverifyOutcome, LandError]:
+    """T-2083: `_reverify_done_report_claims_post_merge`'s own top-level
+    early-out (`passing_ids is None or check_gates is None`) -- split out
+    so that function's own complexity/length stays under ARCH001's
+    budget. Used to be a fully silent `Ok(None)`; now logs and returns a
+    distinguishable `SKIPPED_UNMEASURED` outcome."""
+    _log.warning(
+        "land: %s claims re-verification SKIPPED-UNMEASURED "
+        "(passing_ids=%s check_gates=%s) -- treat as UNKNOWN, not clean",
+        ticket_id,
+        "measured" if passing_ids is not None else "unmeasured",
+        "measured" if check_gates is not None else "unmeasured",
+    )
+    return Ok(_ClaimsReverifyOutcome.SKIPPED_UNMEASURED)
+
+
 # frob:ticket T-0754
 # frob:ticket T-0832
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds kind="integration"  # noqa: E501
@@ -114,7 +155,7 @@ def _reverify_done_report_claims_post_merge(
     passing_ids: frozenset[str] | None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
-) -> Result[None, LandError]:
+) -> Result[_ClaimsReverifyOutcome, LandError]:
     """T-0754's land-side half: re-load `ticket_id` from the POST-MERGE
     worktree ledger, recover any `### Captured claims` section its Done
     report carries (`parse_claims_from_done_report`), and -- when BOTH
@@ -179,9 +220,15 @@ def _reverify_done_report_claims_post_merge(
     moved. Either side missing an identity set (an old capture, or a
     caller that only ever wired `check_gates`) falls back to the count-only
     `>` comparison unchanged -- this is strictly additive, never a
-    behavior change for a claim that never captured identities."""
+    behavior change for a claim that never captured identities.
+
+    T-2083: returns a `_ClaimsReverifyOutcome`, never a bare `None` -- see
+    that enum's own docstring for why. `passing_ids is None or check_gates
+    is None` used to be a fully silent early-out (no log line at all);
+    it now logs too, matching the no-Captured-claims-section early-out a
+    few lines below (already loud since T-1907)."""
     if passing_ids is None or check_gates is None:
-        return Ok(None)
+        return _skipped_unmeasured_top_level(ticket_id, passing_ids, check_gates)
     from frob.tickets import _load_one
     from frob.tickets._models import parse_claims_from_done_report
 
@@ -218,16 +265,20 @@ def _reverify_done_report_claims_post_merge(
             "it separately",
             ticket_id,
         )
-        return Ok(None)
+        return Ok(_ClaimsReverifyOutcome.SKIPPED_UNMEASURED)
 
     test_count_check = _reverify_test_count_claim(
         worktree, ticket, claims, passing_ids, ticket_id
     )
     if test_count_check.is_err:
-        return test_count_check
-    return _reverify_gate_state_claim(
+        return Err(test_count_check.danger_err)
+    gate_state_check = _reverify_gate_state_claim(
         ticket, claims, ticket_id, check_gates, check_gate_findings
     )
+    if gate_state_check.is_err:
+        return Err(gate_state_check.danger_err)
+    # T-2083: the only path that actually compared the recorded claim.
+    return Ok(_ClaimsReverifyOutcome.PASSED)
 
 
 # frob:ticket T-0976
