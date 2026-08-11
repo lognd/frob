@@ -657,18 +657,25 @@ class TestDesignRunner:
     # precedent) -- one member of this verb group needs a real end-to-end check (not a \
     # monkeypatch) to prove the delegation path actually works, and that necessarily \
     # reads like the sibling group's own version of the same proof"
-    def test_exports_subcommand_delegates_to_exports_runner(self, tmp_path, capsys):
+    # frob:ticket T-2097
+    def test_exports_subcommand_delegates_to_exports_runner(self, tmp_path, caplog):
         """`design_command="exports"` produces the same output as `frob
         exports` (a real end-to-end check rather than a monkeypatch, to
         prove the delegation path actually works end to end for at least
-        one member)."""
+        one member).
+
+        T-2097: asserted via `caplog`, not `capsys` -- see
+        `TestRunBudgetedCheck.test_budget_json_stdout_is_pure_parsable_json`
+        in `tests/unit/test_check_budget.py` for the full T-1621 root
+        cause; this test's own waive comment above already names the
+        "real-fixture-plus-caplog shape" this brings it in line with."""
         _make_py_project(tmp_path)
         cfg = AppConfig(
             design_command="exports", exports_path=tmp_path / "pkg", exports_json=True
         )
+        caplog.set_level("INFO")
         design_run(cfg)
-        out = capsys.readouterr().out
-        assert "hello" in out
+        assert any("hello" in r.message for r in caplog.records)
 
     def test_unknown_subcommand_exits_1(self, caplog):
         """No `design_command` at all (bare `frob design`) errors cleanly

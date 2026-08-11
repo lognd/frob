@@ -2,7 +2,7 @@
 id: T-2097
 title: Two --json CLI tests assert capsys instead of caplog, broken by T-1621's pytest
   handler skip
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -16,16 +16,21 @@ scope:
 - tests/unit/test_app_runners.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_budget_json_stdout_is_pure_parsable_json
+- tests/unit/test_app_runners.py::TestDesignRunner::test_exports_subcommand_delegates_to_exports_runner
+designated_repro_test: tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_budget_json_stdout_is_pure_parsable_json
 acceptance:
 - text: Given frob check --budget --json's payload logged via _log.info, when test_budget_json_stdout_is_pure_parsable_json
     runs under pytest, then it asserts against caplog (matching the repo's established
     --json-via-logger convention) and parses cleanly as JSON
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_budget_json_stdout_is_pure_parsable_json
 - text: Given frob design --command exports --json's payload logged via _log.info,
     when test_exports_subcommand_delegates_to_exports_runner runs under pytest, then
     it asserts against caplog and finds the expected content
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners.py::TestDesignRunner::test_exports_subcommand_delegates_to_exports_runner
 threat: null
 component: null
 anchor: false

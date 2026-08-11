@@ -155,8 +155,9 @@ class TestRunBudgetedCheck:
         assert json.loads(state_path.read_text()) == ["g2"]
 
     # frob:ticket T-1703
+    # frob:ticket T-2097
     def test_budget_json_stdout_is_pure_parsable_json(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_budget_json_stdout_is_pure_parsable_json  # noqa: E501
         """T-1703: `--budget SECONDS --json`'s stdout must be valid JSON
@@ -170,7 +171,19 @@ class TestRunBudgetedCheck:
         (the live break: `_unscoped_error_findings`,
         `frob.app.ticket_runner._land_cmd`, spawns exactly this shape).
         A caller monkeypatching `--budget`'s own selection to defer one
-        group proves the SAME contract holds even on a partial run."""
+        group proves the SAME contract holds even on a partial run.
+
+        T-2097: asserted via `caplog`, not `capsys` -- T-1621 (landed after
+        T-1703) makes `src/frob/logging/logger.py::_init` skip installing
+        frob's own root stdout/stderr handlers under pytest entirely (to
+        stop every record printing twice in pytest's own report), so a
+        `--json` payload routed through `_log.info` (RENDER001) is only
+        ever observable via `caplog` inside a test process -- the same
+        `--json`-via-logger convention `TestGitlogRunner.
+        test_json_mode_prints_json` and ~15 other tests already follow.
+        Production is unaffected: outside pytest the payload still reaches
+        real stdout (verified directly against this ticket's own repro,
+        both via a real subprocess spawn and a bare in-process call)."""
         import json
 
         monkeypatch.setattr(check_mod, "available_stages", lambda: ["g1", "g2"])
@@ -182,9 +195,13 @@ class TestRunBudgetedCheck:
         monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
         check_chunking_mod._save_budget_timing(tmp_path, {"g1": 10.0})
         cfg = AppConfig(check_path=tmp_path, check_budget=15, check_json=True)
+        caplog.set_level("INFO")
         check_run(cfg)
-        stdout = capsys.readouterr().out
-        data = json.loads(stdout)
+        data = next(
+            json.loads(r.message)
+            for r in caplog.records
+            if r.message.strip().startswith("{")
+        )
         assert data["results"][0]["tool"] == "g1"
         tool_names = [r["tool"] for r in data["results"]]
         assert "budget" in tool_names
