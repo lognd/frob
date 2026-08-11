@@ -90,3 +90,43 @@ test that blocks on an unresolvable lock/queue) should:
 
 Do not commit a hanging test as a permanent fixture; verify with a
 throwaway test file, confirm the behavior above, then delete it.
+
+## Heavy real-subprocess files: the `heavy_subprocess` marker (T-2099)
+
+A file whose tests spawn real `git`/subprocesses against real temp repos
+(`tests/test_ticket_land.py`, 275 such tests) has a different failure
+shape than a per-test deadlock: xdist's default `-n auto --dist=loadgroup`
+scatters that file's tests across several workers, each spawning real
+git, and the workers CONTEND rather than parallelize. Measured: the file
+exceeds the 540s foreground budget under the repo default, while the same
+file finishes well under it run fully serially (`-o addopts=""`).
+
+`--dist=loadgroup` only serializes tests it has been told belong together
+-- `pytest.mark.xdist_group`. `tests/conftest.py` already had one such
+mechanism (T-1433's `_SELF_SCAN_HEAVY_NAME_SUBSTRINGS`, a hardcoded list
+of five full-repo-scan test NAMES), but it does not generalize: a new
+heavy file has to be individually added to that list by someone who
+remembers to, and `tests/test_ticket_land.py` never was.
+
+T-2099 adds a second, declarative path instead of growing that list: a
+test MODULE that spawns real subprocesses self-declares
+`pytestmark = pytest.mark.heavy_subprocess` at module scope (see
+`tests/test_ticket_land.py`'s own top-of-file marker for the pattern).
+`tests/conftest.py`'s `pytest_collection_modifyitems` groups every item in
+a marked module into its OWN `xdist_group`, keyed by that module's
+`__name__` -- so:
+
+- every test in ONE heavy module lands on a single worker, run serially
+  against each other (no more cross-worker git contention within that
+  file); and
+- DIFFERENT heavy modules get DIFFERENT groups, so they can still run in
+  parallel with each other and with the rest of the suite -- this does
+  NOT concentrate every heavy file's peak resource cost onto one worker
+  the way a single shared group across all of them would (the same OOM
+  concern T-1433's own docstring names for its own grouping).
+
+Add the marker to any new test module whose tests spawn real git/
+subprocess work at meaningful volume; a module with only one or two
+incidental `subprocess.run` calls does not need it -- the marker is for
+files whose PARALLEL execution mode is measurably slower than serial, not
+for merely using `subprocess` somewhere.

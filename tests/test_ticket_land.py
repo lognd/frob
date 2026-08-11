@@ -69,6 +69,19 @@ from frob.tickets._store import (
 )
 from tests._write_unchecked import _write_ticket_unchecked  # noqa: E402
 
+# frob:ticket T-2099
+#: This module's 275 tests spawn real `git`/subprocesses against real temp
+#: repos (module docstring above). Under the repo default `-n auto
+#: --dist=loadgroup` they scatter across xdist workers and contend rather
+#: than parallelise -- measured exceeding the 540s foreground budget where
+#: the same file finishes serially in well under it. `heavy_subprocess`
+#: (registered in `pyproject.toml`, consumed by `tests/conftest.py`'s
+#: `pytest_collection_modifyitems`) puts every test in this module into
+#: one `xdist_group` keyed on this module's own name, so xdist runs them
+#: serially on a single worker instead of scattering them -- while still
+#: leaving that worker free to run in parallel with every OTHER file.
+pytestmark = pytest.mark.heavy_subprocess
+
 
 def _failing_run_argv(
     monkeypatch: pytest.MonkeyPatch,
@@ -1408,6 +1421,34 @@ class TestLand:
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
 
 
+def _t2114_concurrent_new_ticket(repo: Path, result_path: Path) -> None:
+    """Multiprocessing target (module-level so `fork` can spawn it, T-2114
+    -- mirrors `_t0907_child_land`'s own pattern below): calls `new_ticket`
+    against `repo` from a genuinely SEPARATE process, not an in-process
+    monkeypatch hook. This is the fix for a self-referential deadlock a
+    prior version of this test had: calling `new_ticket` synchronously
+    IN-PROCESS from inside a hook `land()` itself invokes meant the
+    concurrent write's own `refuse_if_land_in_progress` wait could never
+    observe the outer land as finished, because the outer land was
+    blocked waiting for that very call to return (T-2114 traced this and
+    confirmed no PRODUCTION code path ever does this -- only this test's
+    old construction did). A genuinely separate process has no such
+    problem: it waits on `repo`'s real land lock exactly the way a real
+    concurrent writer would, and proceeds once `land()` actually finishes
+    and releases it -- which is the real-world shape T-1036 exercises."""
+    import json
+
+    from frob.tickets import new_ticket as _new_ticket_fn
+
+    result = _new_ticket_fn(repo, _spec("Concurrent sibling"))
+    if result.is_ok:
+        result_path.write_text(json.dumps({"ok": True, "id": result.danger_ok.id}))
+    else:
+        result_path.write_text(
+            json.dumps({"ok": False, "error": str(result.danger_err)})
+        )
+
+
 # frob:ticket T-1036
 class TestSquashSpliceLedgerChurn:
     """T-1036 regression: a concurrent single-ticket write against `root`
@@ -1431,7 +1472,8 @@ class TestSquashSpliceLedgerChurn:
         # T-1334: `git merge --squash` now runs inside
         # `_land_squash._squash_and_splice_ledger`, not `_land.py`.
         real_run_argv = _land_squash_mod.run_argv
-        injected: dict[str, Any] = {"done": False, "sibling_id": None}
+        result_path = repo.parent / "t2114-concurrent-result.json"
+        injected: dict[str, Any] = {"done": False, "proc": None}
 
         def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
             result = real_run_argv(argv, **kwargs)
@@ -1440,7 +1482,12 @@ class TestSquashSpliceLedgerChurn:
             # worktree's finalized branch content, and (before this
             # ticket's fix) exactly the window `_squash_and_splice_ledger`
             # used to build its splice from a snapshot taken BEFORE this
-            # point, silently discarding anything written here.
+            # point, silently discarding anything written here. T-2114:
+            # spawn the concurrent write in a SEPARATE PROCESS and return
+            # immediately (non-blocking) instead of calling `new_ticket`
+            # synchronously in-process -- see `_t2114_concurrent_new_
+            # ticket`'s own docstring for why the synchronous, in-process
+            # version deadlocked.
             if (
                 not injected["done"]
                 and "merge" in argv
@@ -1448,10 +1495,13 @@ class TestSquashSpliceLedgerChurn:
                 and result.is_ok
                 and result.danger_ok.returncode == 0
             ):
-                sibling = new_ticket(repo, _spec("Concurrent sibling"))
-                assert sibling.is_ok
-                injected["sibling_id"] = sibling.danger_ok.id
                 injected["done"] = True
+                ctx = multiprocessing.get_context("fork")
+                proc = ctx.Process(
+                    target=_t2114_concurrent_new_ticket, args=(repo, result_path)
+                )
+                proc.start()
+                injected["proc"] = proc
             return result
 
         monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
@@ -1460,9 +1510,17 @@ class TestSquashSpliceLedgerChurn:
         assert result.is_ok, result.err
         assert injected["done"] is True
 
+        proc = injected["proc"]
+        assert proc is not None
+        proc.join(timeout=60)
+        assert not proc.is_alive(), "concurrent new_ticket() child never finished"
+        payload = json.loads(result_path.read_text())
+        assert payload["ok"], payload
+        sibling_id = payload["id"]
+
         landed = load_all(repo)
         assert landed.is_ok
-        assert injected["sibling_id"] in landed.danger_ok
+        assert sibling_id in landed.danger_ok
         assert landed.danger_ok[result.danger_ok.final_id].state == TicketState.DONE
 
 

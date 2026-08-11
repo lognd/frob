@@ -172,6 +172,7 @@ addopts = "-q -n auto --dist=loadgroup --timeout=120 --timeout-method=thread"
 pythonpath = ["."]
 markers = [
     "slow: long-running system tests excluded from quick loops",
+    "heavy_subprocess: real git/subprocess-heavy module (T-2099) -- tests/conftest.py's pytest_collection_modifyitems groups every test in the module into its OWN xdist_group so they run serially on one worker instead of scattering and contending over real git across workers",
 ]
 
 # T-0464: most frob code is exercised only via CLI SUBPROCESS system tests

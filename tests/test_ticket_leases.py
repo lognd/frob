@@ -57,6 +57,14 @@ from frob.tickets._leases import (
     sweep_worktrees,
     warn_if_worktree_stale,
 )
+
+# frob:ticket T-2099
+#: Real git fixture repos and real lease files throughout (module docstring
+#: above) -- same profile as `tests/test_ticket_land.py`. Groups this
+#: module's tests into their own `xdist_group` (see `tests/conftest.py`'s
+#: `pytest_collection_modifyitems`) so they run on one worker instead of
+#: scattering and contending over real git across workers.
+pytestmark = pytest.mark.heavy_subprocess
 from frob.tickets._models import Origin, TicketKind, TicketSpec
 
 

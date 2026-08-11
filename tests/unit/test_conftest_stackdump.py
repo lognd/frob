@@ -120,6 +120,69 @@ class TestSelfScanHeavyGrouping:
         assert items[3].own_markers == []
 
 
+class TestHeavySubprocessGrouping:
+    """T-2099: `pytest_collection_modifyitems`'s `heavy_subprocess` marker
+    handling -- the fix for `tests/test_ticket_land.py` (275 real-git tests,
+    NO xdist grouping at all) scattering across workers under the repo
+    default `-n auto --dist=loadgroup` and exceeding the 540s foreground
+    budget from cross-worker git contention, while the same file finishes
+    well under that budget run serially."""
+
+    # frob:tests tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subprocess_marker_groups_per_file  # noqa: E501
+    def test_heavy_subprocess_marker_groups_per_file(self) -> None:
+        """A collected item whose module carries the `heavy_subprocess`
+        marker gets its OWN `xdist_group`, keyed by module name -- so two
+        different heavy modules land in DIFFERENT groups (they may still
+        run on different workers, in parallel with each other) while every
+        item within ONE heavy module shares the SAME group (that module's
+        own tests are pinned to a single worker, serialized against each
+        other, matching `--dist=loadgroup` scheduling semantics)."""
+        module = _load_conftest()
+
+        class _FakeMarker:
+            def __init__(self, name: str) -> None:
+                self.name = name
+
+        class _FakeItem:
+            def __init__(self, name: str, module_path: str, heavy: bool) -> None:
+                self.name = name
+                self.own_markers: list = []
+                self.nodeid = f"{module_path}::{name}"
+                self._heavy = heavy
+
+            def get_closest_marker(self, name: str):  # noqa: ANN001
+                if name == "heavy_subprocess" and self._heavy:
+                    return _FakeMarker(name)
+                return None
+
+            def add_marker(self, marker) -> None:  # noqa: ANN001
+                self.own_markers.append(marker)
+
+        items = [
+            _FakeItem("test_a", "tests/test_ticket_land.py", heavy=True),
+            _FakeItem("test_b", "tests/test_ticket_land.py", heavy=True),
+            _FakeItem("test_c", "tests/test_ticket_leases.py", heavy=True),
+            _FakeItem("test_d", "tests/test_something_light.py", heavy=False),
+        ]
+        module.pytest_collection_modifyitems(config=None, items=items)
+
+        def group_name(item) -> str:  # noqa: ANN001
+            assert len(item.own_markers) == 1, item.name
+            marker = item.own_markers[0]
+            assert marker.name == "xdist_group"
+            return marker.kwargs["name"]
+
+        land_group_a = group_name(items[0])
+        land_group_b = group_name(items[1])
+        leases_group = group_name(items[2])
+
+        assert land_group_a == land_group_b
+        assert land_group_a != leases_group
+        assert "tests/test_ticket_land.py" in land_group_a
+        assert "tests/test_ticket_leases.py" in leases_group
+        assert items[3].own_markers == []
+
+
 class TestSuiteResultLine:
     """T-1596: `pytest_sessionfinish`'s always-visible `SUITE-RESULT:` line
     -- the fix for a confirmed, reproduced (not hypothetical) bug: doubling

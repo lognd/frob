@@ -81,8 +81,31 @@ _SELF_SCAN_HEAVY_NAME_SUBSTRINGS = (
 )
 
 
+# frob:ticket T-2099
+#: Marker a HEAVY test module self-declares (`pytestmark = pytest.mark.
+#: heavy_subprocess` at module scope) when its tests spawn real `git`/
+#: subprocesses against real temp repos -- the T-2099 root cause was
+#: `tests/test_ticket_land.py` (275 tests) having NO grouping at all, so
+#: its tests scattered across xdist workers that then contended over real
+#: git processes and exceeded the 540s foreground budget even though the
+#: SAME file finishes in ~420s run serially. T-1433's
+#: `_SELF_SCAN_HEAVY_NAME_SUBSTRINGS` list solved one instance of this by
+#: hardcoding five test NAMES here in conftest -- deliberately NOT
+#: repeated for this case, because a remote name list is exactly the kind
+#: of enforcement that has to be individually remembered per file (T-2099
+#: traced the same repo-wide pattern to four unrelated defects the same
+#: day: a primitive wired into too few call sites). A `pytestmark` is
+#: declared IN the heavy file itself, next to the real-subprocess code
+#: that justifies it, so the next author adding a heavy file discovers
+#: the convention by reading a sibling file rather than by remembering to
+#: edit conftest.
+_HEAVY_SUBPROCESS_MARKER = "heavy_subprocess"
+
+
 # frob:ticket T-1433
+# frob:ticket T-2099
 # frob:tests tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy_tests_share_one_xdist_group  # noqa: E501
+# frob:tests tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subprocess_marker_groups_per_file  # noqa: E501
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
@@ -94,10 +117,28 @@ def pytest_collection_modifyitems(
     moment -- the scheduling shape the live incident capture points at as
     the OOM-kill trigger behind "node down: Not properly terminated". A
     no-op under plain `pytest` (no `-n`/`--dist`): `xdist_group` is inert
-    without `pytest-xdist` actually distributing the run."""
+    without `pytest-xdist` actually distributing the run.
+
+    Also (T-2099): any item in a module carrying the `heavy_subprocess`
+    marker is grouped by its OWN MODULE NAME, one `xdist_group` per file
+    rather than one shared group across every heavy file -- keeping each
+    file's real-git tests on a single worker (no cross-worker contention
+    within the file) without concentrating every heavy file's peak memory
+    onto the same worker at once (the OOM constraint T-1433's docstring
+    above warns about)."""
     for item in items:
         if any(needle in item.name for needle in _SELF_SCAN_HEAVY_NAME_SUBSTRINGS):
             item.add_marker(pytest.mark.xdist_group(name="frob_self_scan_heavy"))
+        elif item.get_closest_marker(_HEAVY_SUBPROCESS_MARKER) is not None:
+            # `item.nodeid`'s file-path prefix (before the first `::`) is
+            # declared on the base `pytest.Item` type, unlike `.module`
+            # (only present on the `Function`/`Module`-derived subclasses
+            # pytest actually constructs at runtime) -- statically typed
+            # and just as unique per file for grouping purposes.
+            module_path = item.nodeid.split("::", 1)[0]
+            item.add_marker(
+                pytest.mark.xdist_group(name=f"heavy_subprocess::{module_path}")
+            )
 
 
 # frob:ticket T-0885

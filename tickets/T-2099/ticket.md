@@ -2,19 +2,90 @@
 id: T-2099
 title: The heaviest test files are unrunnable under the default -n auto but pass serially,
   so agents land land-path changes with their test file unrun
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-10'
 priority: high
+blocked_by:
+- T-2093
+- T-2140
 parent: null
 tier: ticket
 sprint: null
 runs_last: false
 scope:
 - pyproject.toml
+- tests/conftest.py
+- tests/test_ticket_land.py
+- docs/guides/testing.md
+- tests/unit/test_conftest_stackdump.py
+- tests/test_ticket_leases.py
+- tickets/T-2140/ticket.md
+evidence_scope:
+- tests/unit/test_conftest_stackdump.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/conftest.py
+  reason: grouping fix needs a self-declared marker on the heavy file plus conftest
+    wiring to turn it into a per-file xdist group
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: grouping fix needs a self-declared marker on the heavy file plus conftest
+    wiring to turn it into a per-file xdist group
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/testing.md
+  reason: document the new heavy_subprocess marker convention (per-file xdist grouping)
+    alongside the existing per-test timeout override docs
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: unit coverage for the heavy_subprocess -> per-file xdist_group grouping
+    rule (lost in an earlier soft-reset splice, redone here)
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-2093 done and its lease on this file released; apply the same heavy_subprocess
+    marker now that acceptance index 1 is unblocked
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-2114/ticket.md
+  reason: the ticket file created by filing T-2114, cited as the new blocker
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tickets/T-2114/ticket.md
+  reason: T-2114 collided with main and my ticket was renumbered to T-2130 after a
+    second collision at T-2118; fix the stale scope reference
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: tickets/T-2130/ticket.md
+  reason: T-2114 collided with main and my ticket was renumbered to T-2130 after a
+    second collision at T-2118; fix the stale scope reference
+  actor: logan
+  at: '2026-08-11'
+- op: remove
+  glob: tickets/T-2130/ticket.md
+  reason: T-2130 collided with main too; my fix ticket's content is now at T-2140
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: tickets/T-2140/ticket.md
+  reason: T-2130 collided with main too; my fix ticket's content is now at T-2140
+  actor: logan
+  at: '2026-08-11'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping::test_heavy_subprocess_marker_groups_per_file
 designated_repro_test: null
 acceptance:
 - text: given tests/test_ticket_land.py, when run through the repo default invocation
