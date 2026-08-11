@@ -20,11 +20,14 @@ from frob.app.ticket_runner._rapid_sweep import (
     _parse_sweep_ticket_identities,
     _read_baseline,
     _read_baseline_commit,
+    _read_revalidation_cache,
     _regression_count_line,
     _resolve_actual_head,
     _ticket_is_open,
+    _tree_state_key,
     _true_finding_count_for_identities,
     _write_baseline,
+    _write_revalidation_cache,
     run_deferred_post_land_sweep,
     spawn_deferred_post_land_sweep,
 )
@@ -156,6 +159,97 @@ class TestResolveActualHead:
         # "fallback-sha" is deliberately NOT the real head -- proving the
         # real HEAD is what's returned, not the caller's own guess.
         assert _resolve_actual_head(tmp_path, "fallback-sha") == real_head
+
+
+# frob:ticket T-2089
+class TestTreeStateKey:
+    """T-2089: the cheap tree-state signature the doable-time revalidation
+    cache is keyed on -- HEAD sha plus a dirty-tree signal, never a
+    full-content hash."""
+
+    # frob:ticket T-2089
+    def test_non_repo_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_non_repo_is_none  # noqa: E501
+        assert _tree_state_key(tmp_path) is None
+
+    # frob:ticket T-2089
+    def test_real_repo_returns_a_key(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_real_repo_returns_a_key  # noqa: E501
+        _init_git_repo(tmp_path)
+        _git_commit(tmp_path, "chore: init")
+        key = _tree_state_key(tmp_path)
+        assert key is not None
+        # Same tree state, called twice: identical key.
+        assert _tree_state_key(tmp_path) == key
+
+    # frob:ticket T-2089
+    def test_dirty_tree_changes_the_key(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_dirty_tree_changes_the_key  # noqa: E501
+        _init_git_repo(tmp_path)
+        _git_commit(tmp_path, "chore: init")
+        clean_key = _tree_state_key(tmp_path)
+        (tmp_path / "new_file.txt").write_text("dirty", encoding="utf-8")
+        dirty_key = _tree_state_key(tmp_path)
+        assert dirty_key is not None
+        assert dirty_key != clean_key
+
+
+# frob:ticket T-2089
+class TestRevalidationCache:
+    """T-2089: the doable-time revalidation cache -- content-keyed on tree
+    state plus the exact identity set, with a TTL as a defense-in-depth
+    bound on top."""
+
+    # frob:ticket T-2089
+    def test_absent_cache_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_absent_cache_is_none  # noqa: E501
+        assert _read_revalidation_cache(tmp_path, "key", frozenset()) is None
+
+    # frob:ticket T-2089
+    def test_corrupt_cache_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_corrupt_cache_is_none  # noqa: E501
+        path = tmp_path / ".frob" / "doable-revalidation-cache.json"
+        path.parent.mkdir(parents=True)
+        path.write_text("{not json", encoding="utf-8")
+        assert _read_revalidation_cache(tmp_path, "key", frozenset()) is None
+
+    # frob:ticket T-2089
+    def test_write_then_read_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_write_then_read_round_trips  # noqa: E501
+        pairs = frozenset({("COV003", "a.py")})
+        reproducing = frozenset({("COV003", "a.py")})
+        _write_revalidation_cache(tmp_path, "key", pairs, reproducing)
+        cached = _read_revalidation_cache(tmp_path, "key", pairs)
+        assert cached is not None
+        got_reproducing, age_s = cached
+        assert got_reproducing == reproducing
+        assert age_s >= 0.0
+
+    # frob:ticket T-2089
+    def test_mismatched_tree_key_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_mismatched_tree_key_is_none  # noqa: E501
+        pairs = frozenset({("COV003", "a.py")})
+        _write_revalidation_cache(tmp_path, "key-a", pairs, pairs)
+        assert _read_revalidation_cache(tmp_path, "key-b", pairs) is None
+
+    # frob:ticket T-2089
+    def test_mismatched_pairs_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_mismatched_pairs_is_none  # noqa: E501
+        written = frozenset({("COV003", "a.py")})
+        queried = frozenset({("COV003", "b.py")})
+        _write_revalidation_cache(tmp_path, "key", written, written)
+        assert _read_revalidation_cache(tmp_path, "key", queried) is None
+
+    # frob:ticket T-2089
+    def test_expired_ttl_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_expired_ttl_is_none  # noqa: E501
+        pairs = frozenset({("COV003", "a.py")})
+        _write_revalidation_cache(tmp_path, "key", pairs, pairs)
+        path = tmp_path / ".frob" / "doable-revalidation-cache.json"
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw["timestamp"] = 0.0  # far in the past -- well past the TTL
+        path.write_text(json.dumps(raw), encoding="utf-8")
+        assert _read_revalidation_cache(tmp_path, "key", pairs) is None
 
 
 class TestDeferredSweepRun:
@@ -1154,6 +1248,7 @@ class TestIdentitiesStillReproducing:
 
 # frob:ticket T-2006
 # frob:ticket T-2078
+# frob:ticket T-2089
 class TestRevalidateDispatchableSweepTickets:
     """T-2006, end-to-end: `frob ticket doable`'s residual gap after
     T-1983 -- a sweep-filed ticket must be re-verified at DISPATCH time,
@@ -1400,6 +1495,71 @@ class TestRevalidateDispatchableSweepTickets:
         requeried = load_queue(tmp_path)
         assert requeried.is_ok
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.DROPPED
+
+    # frob:ticket T-2089
+    def test_second_call_same_tree_reuses_cache_no_second_spawn(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_second_call_same_tree_reuses_cache_no_second_spawn  # noqa: E501
+        # T-2089's own measured regression: `revalidate_dispatchable_
+        # sweep_tickets` used to spawn a fresh, uncached full check on
+        # EVERY call while a sweep-filed candidate existed, even when the
+        # tree had not moved between calls (207.5s for 21 candidates / 265
+        # identities, measured live). Two calls in a row against the same
+        # unchanged tree must pay for exactly ONE spawn, not two.
+        from frob.tickets import load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        _init_git_repo(tmp_path)
+        _git_commit(tmp_path, "chore: init")
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "COV003", "file": "a.py", "severity": "error"}
+                    ],
+                }
+            ]
+        }
+        spawn_calls: list[int] = []
+
+        def _fake_spawn(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN202
+            spawn_calls.append(1)
+            return TestIdentitiesStillReproducing._ok_result(json.dumps(payload))
+
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run", _fake_spawn
+        )
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        tickets = list(queue.danger_ok.tickets.values())
+
+        first = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert first == ()  # still reproducing, left dispatchable
+        assert len(spawn_calls) == 1
+
+        second = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert second == ()
+        # The tree did not move between the two calls -- the second call
+        # must reuse the cached result rather than spawning again.
+        assert len(spawn_calls) == 1
 
 
 # frob:ticket T-2077

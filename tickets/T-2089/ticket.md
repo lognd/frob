@@ -2,7 +2,7 @@
 id: T-2089
 title: frob ticket doable's T-2006 sweep-candidate revalidation spawns an uncached
   full check (207.5s measured)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -16,7 +16,18 @@ scope:
 - tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn
+- tests/unit/test_rapid_sweep.py::TestTreeStateKey::test_non_repo_is_none
+- tests/unit/test_rapid_sweep.py::TestTreeStateKey::test_real_repo_returns_a_key
+- tests/unit/test_rapid_sweep.py::TestTreeStateKey::test_dirty_tree_changes_the_key
+- tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_absent_cache_is_none
+- tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_corrupt_cache_is_none
+- tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_write_then_read_round_trips
+- tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_mismatched_tree_key_is_none
+- tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_mismatched_pairs_is_none
+- tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_expired_ttl_is_none
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn
 threat: null
 component: null
 labels:

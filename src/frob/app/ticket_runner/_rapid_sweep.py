@@ -116,6 +116,31 @@ _REGRESSION_IDENTITY_HEADING = "New (rule, file) identit(ies) filed here:"
 #: values in sync by hand if either changes.
 _TRUE_COUNT_BUDGET_S = 300
 
+#: T-2089: `revalidate_dispatchable_sweep_tickets`'s doable-time
+#: revalidation cache. MEASURED (T-2089's own filing): the uncached spawn
+#: this function pays on every `frob ticket doable` call while any
+#: sweep-filed candidate exists took 207.5s for 21 candidates / 265
+#: identities -- comparable to the land lock's own ~210s ceiling, on a
+#: QUERY verb run routinely, often several times in a row against a tree
+#: that has not moved. Content-keyed on tree state (`_tree_state_key`)
+#: plus the exact identity set re-checked (never a superset match), so a
+#: real source or ticket change always invalidates it -- see
+#: `_tree_state_key`'s own docstring for why a cache-unavailable signal
+#: degrades to the old uncached behavior, never to a false HIT. Under
+#: `.frob/` -- a measurement cache, not a record, same posture as
+#: `_BASELINE_REL` above.
+_REVALIDATION_CACHE_REL = Path(".frob") / "doable-revalidation-cache.json"
+
+#: T-2089: defense-in-depth TTL bound layered on top of the content key
+#: above. The content key alone should already be sound (any real source
+#: or ticket-queue change moves HEAD or dirties the tree), but a TTL caps
+#: how long one cache entry can be trusted if the tree-state signal ever
+#: turns out to miss something the underlying check result actually
+#: depends on (e.g. an external env/tool-version change) -- a stale clean
+#: verdict must never be reachable purely by the tree happening to sit
+#: still for a long session.
+_REVALIDATION_CACHE_TTL_S = 300.0
+
 
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:ticket T-1684
@@ -978,6 +1003,126 @@ def _identities_still_reproducing(
     return frozenset((d.get("code") or "", d.get("file") or "") for d in matched)
 
 
+# frob:ticket T-2089
+# frob:tests tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_real_repo_returns_a_key  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_dirty_tree_changes_the_key  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_non_repo_is_none  # noqa: E501
+def _tree_state_key(root: Path) -> str | None:
+    """T-2089: a cheap signature of `root`'s current tree state -- the
+    committed HEAD sha plus a hash of `git status --porcelain`'s output
+    (which changes the instant ANY file starts/stops differing from HEAD,
+    without this function itself hashing any file's content) -- so two
+    `revalidate_dispatchable_sweep_tickets` calls against the exact SAME
+    tree state can be told apart from two calls where the tree genuinely
+    moved in between, cheaply (two git spawns, not a full check).
+
+    `None` when either git call fails -- not a git repo (a test's
+    `tmp_path`), or a spawn failure. Callers must treat `None` as "cache
+    unavailable this call", never as a cache HIT: a git failure can only
+    ever fall back to the pre-T-2089 uncached behavior, never produce a
+    stale or wrong verdict."""
+    import hashlib
+
+    from frob.gitio import run_argv
+
+    head = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
+    if head.is_err or head.danger_ok.returncode != 0:
+        return None
+    status = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if status.is_err or status.danger_ok.returncode != 0:
+        return None
+    status_digest = hashlib.sha256(
+        status.danger_ok.stdout.encode("utf-8")
+    ).hexdigest()
+    return f"{head.danger_ok.stdout.strip()}:{status_digest}"
+
+
+def _revalidation_cache_path(root: Path) -> Path:
+    """`.frob/doable-revalidation-cache.json` for a checkout rooted at
+    `root` -- T-2089's doable-time revalidation cache file."""
+    return root / _REVALIDATION_CACHE_REL
+
+
+# frob:ticket T-2089
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_write_then_read_round_trips  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_absent_cache_is_none  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_corrupt_cache_is_none  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_mismatched_tree_key_is_none  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_mismatched_pairs_is_none  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_expired_ttl_is_none  # noqa: E501
+def _read_revalidation_cache(
+    root: Path, tree_key: str, pairs: frozenset[tuple[str, str]]
+) -> tuple[frozenset[tuple[str, str]], float] | None:
+    """T-2089: the last cached `(reproducing, age_seconds)` for exactly
+    `(tree_key, pairs)`, or `None` when there is no USABLE cache entry --
+    absent, corrupt, a different tree state, a different identity set (no
+    superset/subset matching, exact only -- a caller re-checking a
+    different candidate set always re-measures), or older than
+    `_REVALIDATION_CACHE_TTL_S`. Every one of those is "cache miss, spawn
+    for real", never a wrong or stale reuse."""
+    path = _revalidation_cache_path(root)
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if raw.get("tree_key") != tree_key:
+            return None
+        cached_pairs = frozenset((str(r), str(f)) for r, f in raw.get("pairs", []))
+        if cached_pairs != pairs:
+            return None
+        age_s = time.time() - float(raw["timestamp"])
+        if age_s < 0 or age_s > _REVALIDATION_CACHE_TTL_S:
+            return None
+        reproducing = frozenset(
+            (str(r), str(f)) for r, f in raw.get("reproducing", [])
+        )
+        return reproducing, age_s
+    except Exception as exc:  # noqa: BLE001 -- json/shape, any corruption
+        _log.warning(
+            "rapid sweep: T-2089: revalidation cache %s unreadable (%s) -- "
+            "treating as no cache, this call re-measures for real",
+            path,
+            exc,
+        )
+        return None
+
+
+# frob:ticket T-2089
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_write_then_read_round_trips  # noqa: E501
+def _write_revalidation_cache(
+    root: Path,
+    tree_key: str,
+    pairs: frozenset[tuple[str, str]],
+    reproducing: frozenset[tuple[str, str]],
+) -> None:
+    """T-2089: record `reproducing` (the outcome of a real, just-completed
+    re-measure of `pairs` at `tree_key`) so the NEXT `revalidate_
+    dispatchable_sweep_tickets` call against the same unchanged tree state
+    and identity set can reuse it instead of spawning a second full check.
+    Best-effort: a write failure is logged and swallowed -- a caller that
+    just paid for a real measurement must never have ITS result blocked by
+    a cache-write problem."""
+    path = _revalidation_cache_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "tree_key": tree_key,
+        "pairs": sorted([rule, file] for rule, file in pairs),
+        "reproducing": sorted([rule, file] for rule, file in reproducing),
+        "timestamp": time.time(),
+    }
+    try:
+        path.write_text(
+            json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+        )
+    except OSError as exc:
+        _log.warning(
+            "rapid sweep: T-2089: could not write revalidation cache %s (%s) "
+            "-- the NEXT doable call will simply re-measure for real",
+            path,
+            exc,
+        )
+
+
 # frob:ticket T-2077
 # frob:tests tests/unit/test_rapid_sweep.py::TestRegressionCountLine.test_true_count_known  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRegressionCountLine.test_true_count_unmeasurable  # noqa: E501
@@ -1760,7 +1905,52 @@ def revalidate_dispatchable_sweep_tickets(
     all_pairs: frozenset[tuple[str, str]] = frozenset().union(
         *(identities for _, identities in candidates)
     )
+    reproducing = _reproducing_identities_cached(root, len(candidates), all_pairs)
+    if reproducing is None:
+        return ()
+    vanished = all_pairs - reproducing
+    dropped: list[str] = []
+    for ticket, identities in candidates:
+        result = _maybe_drop_resolved_ticket(root, "doable", ticket, vanished)
+        if result is not None:
+            dropped.append(result)
+    return tuple(dropped)
+
+
+# frob:ticket T-2089
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_second_call_same_tree_reuses_cache_no_second_spawn  # noqa: E501
+def _reproducing_identities_cached(
+    root: Path, n_candidates: int, all_pairs: frozenset[tuple[str, str]]
+) -> frozenset[tuple[str, str]] | None:
+    """T-2089 (ARCH001 split of `revalidate_dispatchable_sweep_tickets`):
+    which of `all_pairs` still reproduce right now, reusing T-2089's
+    tree-state-keyed cache when available (logged as a HIT, `%.3fs`, 0
+    spawns) and falling back to a real `_identities_still_reproducing`
+    spawn otherwise (logged as a fresh measurement, writing the cache for
+    the NEXT call). `None` on an unmeasurable re-check (matching T-1983's
+    "never treat unmeasurable as resolved" rule) -- the caller must never
+    read `None` as an empty reproducing set."""
     started = time.monotonic()
+    tree_key = _tree_state_key(root)
+    cached = (
+        _read_revalidation_cache(root, tree_key, all_pairs)
+        if tree_key is not None
+        else None
+    )
+    if cached is not None:
+        reproducing, cache_age_s = cached
+        _log.info(
+            "rapid sweep: T-2089: doable-time re-verification of %d "
+            "sweep-filed candidate ticket(s) (%d total identit(ies)) "
+            "reused a %.1fs-old cached result for this exact, unchanged "
+            "tree state -- 0 check spawn(s) (%.3fs)",
+            n_candidates,
+            len(all_pairs),
+            cache_age_s,
+            time.monotonic() - started,
+        )
+        return reproducing
+
     reproducing = _identities_still_reproducing(root, all_pairs)
     if reproducing is not None:
         reproducing = _normalize_identities(root, reproducing)
@@ -1771,26 +1961,22 @@ def revalidate_dispatchable_sweep_tickets(
             "sweep-filed candidate ticket(s) (%d total identit(ies)) was "
             "UNMEASURABLE after %.1fs -- leaving them dispatchable, "
             "never treating unmeasurable as resolved",
-            len(candidates),
+            n_candidates,
             len(all_pairs),
             elapsed_s,
         )
-        return ()
+        return None
     _log.info(
         "rapid sweep: T-2006: doable-time re-verification of %d "
         "sweep-filed candidate ticket(s) (%d total identit(ies)) took "
         "%.1fs",
-        len(candidates),
+        n_candidates,
         len(all_pairs),
         elapsed_s,
     )
-    vanished = all_pairs - reproducing
-    dropped: list[str] = []
-    for ticket, identities in candidates:
-        result = _maybe_drop_resolved_ticket(root, "doable", ticket, vanished)
-        if result is not None:
-            dropped.append(result)
-    return tuple(dropped)
+    if tree_key is not None:
+        _write_revalidation_cache(root, tree_key, all_pairs, reproducing)
+    return reproducing
 
 
 # frob:ticket T-2077
