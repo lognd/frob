@@ -2,7 +2,7 @@
 id: T-2088
 title: 'post-land sweep regression from T-2086: 1 new (rule, file) identit(ies), 4
   finding(s) (PII012)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -34,3 +34,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - PII012  src/frob/testing/_coverage_refresh.py  -> attributed to T-2086 (commit f843ad7ed5ff, already closed/dropped -- filed below) via src/frob/testing/_coverage_refresh.py::_XDIST_DIST_FLAGS
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-10: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (PII012 src/frob/testing/_coverage_refresh.py) is absent from the fresh unscoped measurement at T-2069's deferred sweep, i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
