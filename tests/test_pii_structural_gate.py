@@ -520,14 +520,20 @@ class TestKeywordSweep:
     def test_standalone_comment_matching_in_scope_identifier_fires(self) -> None:
         """T-1411 round 2: a standalone comment also fires (without needing
         backticks) when its keyword matches a real identifier bound
-        elsewhere in the same file -- "the token is stored unencrypted"
-        next to a real `token` variable is exactly what this rule should
-        catch."""
+        elsewhere in the same file -- "the secret is stored unencrypted"
+        next to a real `secret` variable is exactly what this rule should
+        catch. Uses "secret" rather than "token" (T-2069's original T-1411
+        fixture): "token" is now a value-gated keyword (see
+        `TestTokenValueGating` below) and this test's own `secret = fetch()`
+        shape carries no literal-value evidence, so it would not
+        demonstrate the in-scope-identifier mechanism this test exists to
+        cover if left on "token"."""
         src = (
             "def handler():\n"
-            "    token = fetch()\n"
-            "    # the token is stored unencrypted\n"
-            "    return token\n"
+            "    secret = fetch()\n"
+            "    log.debug('fetched')\n"
+            "    # careful: the secret is stored unencrypted downstream\n"
+            "    return secret\n"
         )
         tree = ast.parse(src)
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
@@ -542,6 +548,85 @@ class TestKeywordSweep:
         tree = ast.parse(src)
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
         assert violations == ()
+
+
+class TestTokenValueGating:
+    """T-2069: PII012's `token` keyword additionally requires VALUE
+    evidence (an actual string-literal assignment, or a literal-value-
+    shaped comment pattern) before firing -- the bare word alone is not
+    proof of a credential, it is this codebase's own overwhelmingly common
+    lexer/parser/CLI-token vocabulary. Measured regression that motivated
+    this: three sites in `src/frob/testing/_coverage_refresh.py` were
+    cleared by RENAMING `token` to `arg`, then regressed back to four new
+    findings on the SAME rule the moment ordinary new code
+    (`_strip_xdist_tokens`) used the ordinary word again -- renaming
+    identifiers is not a durable fix, so the detector itself is narrowed
+    here instead."""
+
+    def test_cli_argv_tokenizer_parameter_does_not_fire(self) -> None:
+        """A function parameter and loop variable named `token`/`tokens`,
+        with an explanatory (but value-free) comment -- the exact shape of
+        `_strip_xdist_tokens` (T-2032/T-2086, T-2069's own repro): a pytest
+        CLI argv tokenizer, never a credential. MUST NOT fire."""
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_python_keyword_sweep  # noqa: E501
+        src = (
+            "def strip_xdist_tokens(tokens):\n"
+            "    # pytest CLI argv words that select xdist's worker-count;\n"
+            "    # both spellings take a separate value token.\n"
+            "    stripped = []\n"
+            "    for token in tokens:\n"
+            "        stripped.append(token)\n"
+            "    return stripped\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert not any(v.rule == "PII012" for v in violations)
+
+    @pytest.mark.parametrize(
+        "src",
+        [
+            pytest.param(
+                'def handler():\n    api_token = "sk-fake-XXXXXXXXXXXX"\n'
+                "    return api_token\n",
+                id="compound-api_token",
+            ),
+            pytest.param(
+                'def handler():\n    token = "changeme"\n    return token\n',
+                id="bare-token",
+            ),
+        ],
+    )
+    def test_token_assigned_a_string_literal_still_fires(self, src: str) -> None:
+        """A genuinely credential-shaped case -- an identifier whose name
+        signals a credential AND is assigned an actual string-literal
+        value -- must still fire, for both a compound name (`api_token`)
+        and the bare word alone (`token`): `token = "<literal>"` is
+        exactly the shape a real captured credential would take in
+        source. Placeholder values only, never a real secret (module
+        docstring)."""
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_python_keyword_sweep  # noqa: E501
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII012" for v in violations)
+
+    def test_token_comment_with_no_value_shape_does_not_fire(self) -> None:
+        """A comment naming "token" in ordinary prose, with no literal-
+        value-shaped pattern in the comment text, does not fire -- the
+        `_coverage_refresh.py` false positives were exactly this shape
+        ("value token", "distribution-mode ... token")."""
+        src = "def handler():\n    # a CLI argv token, not a credential\n    pass\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert not any(v.rule == "PII012" for v in violations)
+
+    def test_token_comment_with_value_shape_fires(self) -> None:
+        """A comment that IS written in a literal-value-assignment shape
+        (`token = "..."`) reads as documenting an actual captured value,
+        not a lexical concept -- this still fires."""
+        src = 'x = 1  # leftover debug line: token = "abc123"\n'
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII012" for v in violations)
 
 
 class TestDeclaredSurfaceJoin:

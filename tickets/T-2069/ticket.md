@@ -1,7 +1,7 @@
 ---
 id: T-2069
 title: PII012 over-matches the bare word 'token' as credentials category-wide
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,34 @@ runs_last: false
 scope:
 - src/frob/gates/_pii.py
 - src/frob/gates/**pii**
+- tests/test_pii_structural_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: add repro/fix test coverage for PII012 bare-word 'token' over-match fix
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_pii_structural_gate.py::TestTokenValueGating::test_cli_argv_tokenizer_parameter_does_not_fire
+- tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_assigned_a_string_literal_still_fires[compound-api_token]
+- tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_assigned_a_string_literal_still_fires[bare-token]
+- tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_comment_with_no_value_shape_does_not_fire
+- tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_comment_with_value_shape_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_standalone_comment_matching_in_scope_identifier_fires
+designated_repro_test: tests/test_pii_structural_gate.py::TestTokenValueGating::test_cli_argv_tokenizer_parameter_does_not_fire
+evidence_changes:
+- old_node: tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_assigned_a_string_literal_still_fires
+  new_node: tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_assigned_a_string_literal_still_fires[compound-api_token]
+  reason: 'T-2069: parametrized to dedupe with the bare-token case (DUP002)'
+  actor: logan
+  at: '2026-08-10'
+- old_node: tests/test_pii_structural_gate.py::TestTokenValueGating::test_bare_token_assigned_a_string_literal_still_fires
+  new_node: tests/test_pii_structural_gate.py::TestTokenValueGating::test_token_assigned_a_string_literal_still_fires[bare-token]
+  reason: 'T-2069: parametrized to dedupe with the compound-token case (DUP002)'
+  actor: logan
+  at: '2026-08-10'
 threat: null
 component: null
 anchor: false

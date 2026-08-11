@@ -30,6 +30,75 @@ _log = get_logger(__name__)
 #: does via `str.split("_")` for identifiers.
 _COMMENT_WORD_RE = re.compile(r"[A-Za-z_]+")
 
+#: T-2069: keywords whose NAME/COMMENT match alone is too weak a signal to
+#: fire PII012 on -- the bare English/lexical word is legitimately common
+#: enough in this codebase's own domain vocabulary (a parser/CLI/AST/git-ref
+#: "token", never an auth token) that `_PII012_REVIEWED_NON_PII`'s
+#: one-site-at-a-time allowlist above was measurably not durable: three
+#: sites cleared via T-2032's identifier rename regressed back to FOUR new
+#: findings the moment ordinary new code (`_strip_xdist_tokens`, T-2086)
+#: used the same ordinary word again (T-2069 ticket body). Renaming
+#: identifiers dodges today's finding, not tomorrow's -- so for exactly
+#: this keyword, PII012 additionally requires VALUE evidence before firing:
+#: an assignment target actually bound to a string-literal value
+#: (`_token_literal_assignment_target_ids`) for an identifier hit, or a
+#: literal-value-shaped pattern (`_TOKEN_VALUE_SHAPE_RE`) for a comment hit
+#: -- the same "adjacent to an actual value, not just a name" distinction
+#: that separates a real captured credential from a lexer/parser token by
+#: construction. Deliberately NOT applied to every `FIELD_SIGNATURES`
+#: keyword: this is a targeted fix for the one keyword T-2069 measured as
+#: over-broad, not a blanket weakening of PII012 (T-1967's lesson: an
+#: exemption matching the normal case disables the guard -- this one only
+#: narrows what counts as "the normal case" for "token" specifically, it
+#: does not exempt any file, site, or category).
+_VALUE_GATED_KEYWORDS = frozenset({"token"})
+
+#: T-2069: a comment word this shape looks like it is annotating an actual
+#: VALUE, not just naming a concept -- `token = "..."`, `token: "..."`,
+#: `api_token="..."` -- the comment-side analogue of
+#: `_token_literal_assignment_target_ids`'s identifier-side literal-RHS
+#: check. Matches loosely on purpose (any `\w*` run before "token", either
+#: `:` or `=`, then a quote) since a comment is prose, not source the
+#: detector can parse structurally the way it can an `ast.Assign`.
+_TOKEN_VALUE_SHAPE_RE = re.compile(r"\btoken\w*\s*[:=]\s*['\"]", re.IGNORECASE)
+
+
+def _requires_value_evidence(keyword: str) -> bool:
+    """Whether PII012 must see actual VALUE evidence (not just a name/word
+    match) before firing on `keyword` (T-2069, `_VALUE_GATED_KEYWORDS`'s
+    docstring) -- narrows one measurably over-broad keyword's identifier/
+    comment sweep signal, leaves every other `FIELD_SIGNATURES` keyword's
+    existing name-only signal unchanged."""
+    return keyword in _VALUE_GATED_KEYWORDS
+
+
+def _token_literal_assignment_target_ids(index: _NodeIndex) -> frozenset[int]:
+    """`id()`s of every `ast.Name` Store-context assignment target in this
+    file's AST that is bound directly to a string-literal value (a plain
+    `Assign` or `AnnAssign` whose RHS is an `ast.Constant` string) -- the
+    "assignment to a literal" evidence `_requires_value_evidence` keywords
+    need before PII012 fires on an identifier hit (T-2069). A loop variable,
+    bare function parameter, or a name assigned the RESULT of a call/
+    expression (`token = fetch()`) is deliberately NOT literal-value
+    evidence -- a real captured credential value would appear as `token =
+    "<the actual string>"` in source, not as an opaque call result."""
+    ids: set[int] = set()
+    for assign in index.assigns:
+        value = assign.value
+        if isinstance(value, ast.Constant) and isinstance(value.value, str):
+            for target in assign.targets:
+                if isinstance(target, ast.Name) and isinstance(target.ctx, ast.Store):
+                    ids.add(id(target))
+    for ann in index.ann_assigns:
+        if (
+            ann.value is not None
+            and isinstance(ann.value, ast.Constant)
+            and isinstance(ann.value.value, str)
+            and isinstance(ann.target, ast.Name)
+        ):
+            ids.add(id(ann.target))
+    return frozenset(ids)
+
 
 def _pii012_violation(
     rel_path: str, lineno: int, token: str, sig: _FieldSignature
@@ -388,6 +457,7 @@ def _scan_identifier_keywords(index: _NodeIndex, rel_path: str) -> list[Violatio
         for node in index.ann_assigns
         if _is_data_structure_field_target(node)
     }
+    literal_target_ids = _token_literal_assignment_target_ids(index)
     seen: set[tuple[int, str]] = set()
     violations: list[Violation] = []
     for node in index._ordered(index.args, index.function_defs, index.names):
@@ -405,6 +475,8 @@ def _scan_identifier_keywords(index: _NodeIndex, rel_path: str) -> list[Violatio
         if sig is None:
             continue
         if _is_pii012_reviewed_non_pii(rel_path, name):
+            continue
+        if _requires_value_evidence(sig.keyword) and id(node) not in literal_target_ids:
             continue
         key = (lineno, name)
         if key in seen:
@@ -565,6 +637,9 @@ def _scan_comment_keywords(
             if sig is None:
                 continue
             if _is_pii012_reviewed_non_pii(rel_path, token):
+                continue
+            requires_value = _requires_value_evidence(sig.keyword)
+            if requires_value and not _TOKEN_VALUE_SHAPE_RE.search(comment):
                 continue
             if not is_trailing:
                 token_lower = _camel_to_snake(token).lower()
