@@ -1490,6 +1490,7 @@ def _land_plan_finish(
 # frob:ticket T-1410
 # frob:ticket T-1495
 # frob:ticket T-1736
+# frob:ticket T-2076
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -1630,25 +1631,30 @@ def _land_locked(
         # computed above), never a second collect+run -- halves the real
         # cost of a `run_tests`-supplying land.
         #
-        # T-2064 instrumentation: `check_gates`/`check_gate_findings` (when
-        # supplied) spawn `frob check --ticket <id>` with `cwd=root`
-        # (`_shared_check_spawn_fn`, src/frob/app/ticket_runner/_verify.py)
-        # -- but `_land_squash_apply` a few lines below (the step this
-        # module's own comment names as "the ONLY step that mutates root")
-        # has not run yet at this point. Log root's LIVE tip immediately
-        # before triggering that spawn, alongside the pre-mutation tip this
-        # run already captured, to make that ordering fact observable from
-        # a real land's own log instead of re-derived by reading code.
-        root_tip_at_claims_check = _rev_parse(root, "HEAD")
-        _log.info(
-            "land: %s T-2064 probe: root HEAD immediately before the "
-            "check_gates() spawn is %s; this run's captured pre-mutation "
-            "tip (root_pre_land_tip) is %s -- equal means the spawn (cwd="
-            "root) observes root's PRE-land state, not a merged tree",
-            ticket_id,
-            root_tip_at_claims_check.ok,
-            root_pre_land_tip.danger_ok,
-        )
+        # T-2064/T-2076 CORRECTION: the T-2064 probe that used to sit here
+        # compared `root`'s live HEAD against `root_pre_land_tip` and read
+        # "equal" as proof the check_gates() spawn observes root's
+        # PRE-land tree via `cwd=root`. That comparison is a tautology --
+        # `root` is never mutated before `_land_squash_apply` runs (this
+        # module's own comment, a few lines below, names it as the ONLY
+        # step that touches `root`), so `root`'s HEAD is trivially
+        # unchanged here NO MATTER what `cwd` the spawn actually uses; the
+        # "equal" reading proved nothing about the spawn itself and was a
+        # false positive. T-2076 traced the real caller wiring
+        # (`_land_core_invoke`, src/frob/app/ticket_runner/_land_cmd.py)
+        # and confirmed directly (a probe on a real spawn, plus a fixture-
+        # repo reproduction) that `check_gates`/`check_gate_findings`
+        # already spawn with `cwd=worktree` -- the correctly-merged tree
+        # -- by the time this point in `_land_locked` runs. The real
+        # defect was a DIFFERENT silent failure mode entirely: `frob
+        # check`'s own `_refuse_full_check_for_agent` (T-0627) refuses
+        # this spawn's unchunked shape whenever the caller's shell carries
+        # `FROB_AGENT` (true for every dispatched worktree agent), which
+        # made `check_gates()` return `None` ("unmeasured") on every land
+        # run from an agent shell -- see `_shared_check_spawn_fn`'s own
+        # docstring (`src/frob/app/ticket_runner/_verify.py`) for the full
+        # account and the fix (`FROB_ALLOW_FULL_CHECK=1` in the spawn's
+        # own child env, unconditionally).
         claims_check = _reverify_done_report_claims_post_merge(
             worktree, ticket_id, passing_ids, check_gates, check_gate_findings
         )

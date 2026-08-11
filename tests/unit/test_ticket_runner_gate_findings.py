@@ -19,6 +19,7 @@ import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -554,6 +555,7 @@ class TestPythonForTree:
         assert captured_argv[0] != sys.executable
 
 
+# frob:ticket T-2076
 class TestSharedCheckSpawnFn:
     """T-0919: `_shared_check_spawn_fn` spawns `frob check --ticket <id>`
     AT MOST ONCE, caching the result for every later call -- the fix for
@@ -671,3 +673,61 @@ class TestSharedCheckSpawnFn:
         gates_fn()
         findings_fn()
         assert spawn_count == 2
+
+    # frob:ticket T-2076
+    def test_spawn_env_survives_caller_frob_agent_flag(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_spawn_env_survives_caller_frob_agent_flag  # noqa: E501
+        """T-2076: this closure's spawned `frob check --ticket <id> --json`
+        carries NO `--only`/`--budget` selection -- exactly the shape
+        `frob.app.check_runner._refuse_full_check_for_agent` (T-0627)
+        refuses outright, with EMPTY stdout, whenever `FROB_AGENT` is set
+        in the environment (true for every dispatched worktree agent, per
+        docs/guides/agent-playbook.md section 1b -- and true for `frob
+        ticket land` itself, since it inherits its own caller's shell env
+        unchanged). Confirmed directly against a real fixture repo (T-2076
+        investigation): under `FROB_AGENT=1` the spawn exits 1 with EMPTY
+        stdout instead of running; `_parse_check_json` cannot parse empty
+        output, `check_gates()`/`check_gate_findings()` both return `None`
+        (unmeasured), and `_reverify_done_report_claims_post_merge`
+        (`frob.tickets._land_verify`) treats `None` as "nothing to compare,
+        permissive skip" -- so a branch that introduces a brand-new
+        error-severity gate finding after done-report capture lands
+        completely unblocked whenever the landing shell happens to carry
+        `FROB_AGENT`. This is the actual mechanism behind T-1584's Done
+        report divergence, NOT a wrong spawn `cwd` (a direct probe on this
+        checkout confirmed the spawn already runs with `cwd=worktree`, the
+        correctly-merged tree -- see this ticket's Done report).
+
+        The fix: this internal, machinery-driven re-verification spawn is
+        not a sub-agent's own discretionary "bare `frob check`" call (T-
+        0627's actual target) -- it must run to completion regardless of
+        the calling shell's own `FROB_AGENT` flag. `spawn()` therefore
+        passes `FROB_ALLOW_FULL_CHECK=1` (T-0627's own documented override
+        env var) in the child's environment unconditionally, so the
+        refusal can never fire for this specific, internal call site no
+        matter what the parent shell carries."""
+        captured: dict[str, object] = {}
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            captured.update(kwargs)
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        # A distinctive marker set BEFORE spawn(), to prove the child env
+        # is the caller's real environment overridden, not a fresh/empty
+        # dict -- this is an additive override, never a wholesale wipe.
+        monkeypatch.setenv("T2076_MARKER", "present")
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        monkeypatch.setenv("FROB_AGENT", "1")
+        spawn = ticket_runner._shared_check_spawn_fn(tmp_path, "T-0001")
+        spawn()
+        env_raw = captured.get("env")
+        assert env_raw is not None, (
+            "spawn() must pass an explicit overriding environment, not "
+            "inherit the caller's raw process environment unchanged"
+        )
+        assert isinstance(env_raw, dict)
+        env_items = cast("dict[str, str]", env_raw)
+        assert env_items.get("FROB_ALLOW_FULL_CHECK") == "1"
+        assert env_items.get("T2076_MARKER") == "present"

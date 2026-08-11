@@ -595,6 +595,36 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
     default on both consumers), which makes each build its own private,
     unshared spawn closure exactly as before this ticket.
 
+    T-2076 CORRECTION to this docstring's own prior implicit claim: every
+    paragraph below assumed the spawn either runs a real `frob check` or
+    is cleanly REFUSED via `guarded_subprocess_run`'s own `FROB_DISABLE_
+    EXEC=1` gate (`ProcessGuardError.ExecDisabled`, logged and returned as
+    `None`). That is not the only way this spawn can fail to run: `frob
+    check`'s OWN `_refuse_full_check_for_agent` (T-0627,
+    `frob.app.check_runner`) independently refuses any unchunked (no
+    `--only`/`--budget`) invocation -- exactly this spawn's shape --
+    whenever `FROB_AGENT` is set in the environment, with exit 1 and EMPTY
+    stdout. `frob ticket land` inherits its caller's shell env unchanged,
+    and `FROB_AGENT=1` is set for every dispatched worktree agent
+    (docs/guides/agent-playbook.md section 1b) -- so before this fix, a
+    land run from a standard agent shell had this spawn refuse SILENTLY
+    on every call: `_parse_check_json` cannot parse empty stdout, this
+    closure returned `None` ("unmeasured"), and `_reverify_done_report_
+    claims_post_merge` (`frob.tickets._land_verify`) treats an unmeasured
+    `check_gates()` as a permissive skip by design (T-0832) -- so a
+    branch introducing a brand-new error-severity gate finding after
+    done-report capture landed completely unblocked. Confirmed directly
+    against a real fixture repo, and NOT a stale/pre-merge `cwd` bug (a
+    direct probe on this checkout confirmed the spawn's `cwd` is already
+    the correctly-merged `worktree` tree by the time it runs) -- this is
+    the actual mechanism behind T-1584's Done report divergence
+    (docs/guides/agent-playbook.md's T-2064 citation). Fixed by passing
+    `FROB_ALLOW_FULL_CHECK=1` (T-0627's own documented override) in the
+    child's environment unconditionally: this spawn is frob's OWN
+    internal, machinery-driven re-verification step, never a sub-agent's
+    discretionary bare `frob check` call, so it must run to completion
+    regardless of the calling shell's own `FROB_AGENT` flag.
+
     T-1703: spawns `--json` now, not plain text -- see
     `_parse_error_findings_from_stdout`'s docstring for why: a regex over
     rendered console prose cannot distinguish "this gate ran and found
@@ -667,6 +697,34 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
             return cache["result"]
         from frob.app import ticket_runner as _ticket_runner
 
+        # T-2076: this spawn carries no `--only`/`--budget` selection, so
+        # `frob.app.check_runner._refuse_full_check_for_agent` (T-0627)
+        # refuses it outright -- exit 1, EMPTY stdout -- whenever
+        # `FROB_AGENT` is set in the environment. `frob ticket land`
+        # inherits its own caller's shell env unchanged, and every
+        # dispatched worktree agent carries `FROB_AGENT=1` (playbook
+        # section 1b), so in that (extremely common) case this spawn used
+        # to refuse silently every time: `_parse_check_json` cannot parse
+        # empty stdout, this closure returns `None` ("unmeasured"), and
+        # `_reverify_done_report_claims_post_merge`
+        # (`frob.tickets._land_verify`) treats an unmeasured `check_gates()`
+        # as "nothing to compare, permissive skip" by design (T-0832) --
+        # so a branch that introduced a brand-new error-severity gate
+        # finding after done-report capture landed completely unblocked.
+        # Confirmed directly against a real fixture repo (T-2076
+        # investigation) -- this is the actual escape mechanism T-1584's
+        # Done report divergence traces to, not a stale/pre-merge `cwd`
+        # (a direct probe on this checkout confirmed this spawn's `cwd`
+        # is already the correctly-merged worktree tree). This spawn is
+        # frob's OWN internal, machinery-driven re-verification step, not
+        # a sub-agent's discretionary "bare `frob check`" call -- T-0627's
+        # actual target -- so it must run to completion regardless of the
+        # calling shell's own `FROB_AGENT` flag: pass `FROB_ALLOW_FULL_
+        # CHECK=1` (T-0627's own documented override) in the child's
+        # environment unconditionally, overriding just that one var on
+        # top of the caller's real environment (never a wholesale env
+        # wipe -- PATH, venv vars, etc. all still pass through).
+        child_env = {**os.environ, "FROB_ALLOW_FULL_CHECK": "1"}
         guarded = _ticket_runner.guarded_subprocess_run(
             [
                 _python_for_tree(root),
@@ -682,6 +740,7 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
             text=True,
             timeout=600,
             check=False,
+            env=child_env,
         )
         if guarded.is_err:
             _log.warning(

@@ -2,7 +2,7 @@
 id: T-2076
 title: check_gates() land-time spawn reads root's PRE-land tree, not the merged tree
   (T-2064 confirmed)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -14,9 +14,16 @@ runs_last: false
 scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner/_verify.py
+evidence_scope:
+- tests/unit/test_ticket_runner_gate_findings.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_env_survives_caller_frob_agent_flag
+- tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+designated_repro_test: tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_env_survives_caller_frob_agent_flag
 threat: null
 component: null
 anchor: false
