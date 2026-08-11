@@ -790,9 +790,33 @@ worktree). `<common-dir>/frob-leases/<ticket-id>.json` holds one
 `LeaseRecord` (scope, worktree path, branch, timestamp) per currently
 `IN_PROGRESS` ticket -- `frob.tickets.transition` writes it on entering
 `IN_PROGRESS` and removes it on leaving, and `mutate_scope` re-writes it
-when an in-progress ticket's scope changes, so it never drifts from the
-ledger's own `state:`/`scope:` fields, which remain the sole source of
-truth for anything the local `tickets.md` already knows about.
+when an in-progress ticket's scope changes. The local `tickets.md`
+`state:`/`scope:` fields remain the sole source of truth for anything
+this worktree already knows about; the lease record is a DERIVED mirror
+of that, kept in sync by `mutate_scope`, never the other way around.
+
+**T-1993: the re-write is a delta-reconciliation against the lease's own
+prior state, not a wholesale overwrite from the caller's local ledger
+snapshot.** Before T-1993, `mutate_scope` re-wrote the lease as the
+calling worktree's OWN freshly-computed `updated_scope` -- which is only
+correct when that worktree's local ledger is fully up to date. A worktree
+that never merged a sibling's narrowing commit still holds the OLD,
+broader scope in its own checkout; blindly re-recording it clobbered a
+narrower lease another, more-current worktree had already written,
+purely by writing last. `_lease_scope_to_record` (`src/frob/tickets/
+_scope.py`) fixes this: it re-applies the SAME `add`/`remove` delta
+`mutate_scope` (or `demote_to_evidence_only`) just validated, but onto
+whatever scope is CURRENTLY recorded in the shared lease file
+(`read_all_leases`), not onto the calling worktree's possibly-stale
+snapshot. A fully up-to-date worktree computes the identical result
+either way; a stale worktree's legitimate delta now lands on top of the
+lease's true current state instead of reverting it. Falls back to the
+pre-T-1993 wholesale-overwrite behavior when no lease is recorded yet for
+the ticket, or when the lease side channel cannot be read at all
+(best-effort, same posture as `record_lease` itself). This does not make
+the lease authoritative over the ledger -- the ledger write already
+happened and is unaffected; only the derived side-channel mirror is
+reconciled differently.
 
 `leased_by` (and therefore `doable`) now unions the local ledger's own
 `IN_PROGRESS` rows with every OTHER worktree's recorded lease
@@ -6586,6 +6610,12 @@ overwrite an existing hook file without `force=True`.
   status alone; those kinds still require real pytest node ids via
   `--evidence`/`evidence`. A failing command (nonzero exit, or one that
   fails to launch) is `Err(EvidenceCmdFailed)` and never gets recorded.
+  T-1892: a command whose captured stdout+stderr is EMPTY is also
+  refused (`Err(EvidenceCmdSilent)`), even on exit 0 -- closes the hole
+  where `true`/`grep -q`/`: ` all silently satisfied `--evidence-cmd`
+  with the sha256-of-empty-string digest, a passing check that never
+  actually observed anything. Prefer a chatty check (`grep -c`/`grep
+  -n`) over a silent one (`grep -q`) when authoring a `--evidence-cmd`.
 - `done-report <id> (--why TEXT | --why-file PATH | stdin) [--base-ref REF]`
   (T-0458): atomically writes/updates a ticket's Done report via
   `set_done_report` -- the caller supplies ONLY the narrative why; the

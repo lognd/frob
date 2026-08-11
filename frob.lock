@@ -134,6 +134,78 @@
       "old_digest": "24c128ec98484a3387c0a9490dfb2760b8c0d0dd9110e72f64a07d70f33cc32e",
       "reason": "T-2005: added an env= keyword-only parameter (forwarded to guarded_subprocess_run as env=dict(env) if not None else None); re-verified docs/modules/testing.md's public-api block and section describing PYO3_PYTHON env overlay both updated to reflect it; existing callers pass no env= and are unaffected (default None == inherit, unchanged behavior)",
       "ref": "src/frob/gitio.py::run_argv"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "body",
+      "new_digest": "dad54219834b00c9d5426b53e2e3faeaf2dde5fa4ef6a4e0882cf087d6058563",
+      "old_digest": null,
+      "reason": "T-1899: documented T-1892's EvidenceCmdSilent refusal in docs/modules/tickets.md's cmd: evidence section",
+      "ref": "src/frob/tickets/_evidence.py::run_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "sig",
+      "new_digest": "7540fe0d267ed2143caab5f18f360d7a02a07a1a641d9ecca7180d0d46c7efaf",
+      "old_digest": null,
+      "reason": "T-1899: documented T-1892's EvidenceCmdSilent refusal in docs/modules/tickets.md's cmd: evidence section",
+      "ref": "src/frob/tickets/_evidence.py::run_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "body",
+      "new_digest": "3c120238016cf05200cd68ffc499514e99152520a5a2fabbf6865b1b4ab697c4",
+      "old_digest": null,
+      "reason": "T-1899: documented T-1892's EvidenceCmdSilent refusal in docs/modules/tickets.md's cmd: evidence section",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "sig",
+      "new_digest": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
+      "old_digest": null,
+      "reason": "T-1899: documented T-1892's EvidenceCmdSilent refusal in docs/modules/tickets.md's cmd: evidence section",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "body",
+      "new_digest": "d1dfb4a2b6c94a0ae96e2d4f70f67ac87ad14c262226e72b629348fb8d232749",
+      "old_digest": "1bf504dc206c40291f8bf1c03e3d44a897007d181daa1dfdef231fdbc0f67519",
+      "reason": "T-1952: T-1720's lease has freed; digests re-verified, doc content already matches T-1935's wording change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "eb316f5abf5c291d4a575be9b2dbc868729350319d64f6a867e707ef5b3add3c",
+      "reason": "T-1952: T-1720's lease has freed; digests re-verified, doc content already matches T-1935's wording change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "body",
+      "new_digest": "f8dc3d8b3b8f93c1a383789fb57761176956f5f0de01c9d500c6f6c35c110f9f",
+      "old_digest": null,
+      "reason": "T-1952: T-1720's lease has freed; digests re-verified, doc content already matches T-1935's wording change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "sig",
+      "new_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "old_digest": null,
+      "reason": "T-1952: T-1720's lease has freed; digests re-verified, doc content already matches T-1935's wording change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     }
   ],
   "entries": [
@@ -173,14 +245,24 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "1bf504dc206c40291f8bf1c03e3d44a897007d181daa1dfdef231fdbc0f67519",
+      "digest": "d1dfb4a2b6c94a0ae96e2d4f70f67ac87ad14c262226e72b629348fb8d232749",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },
     {
-      "digest": "eb316f5abf5c291d4a575be9b2dbc868729350319d64f6a867e707ef5b3add3c",
+      "digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
       "facet": "sig",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "digest": "f8dc3d8b3b8f93c1a383789fb57761176956f5f0de01c9d500c6f6c35c110f9f",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     },
     {
       "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",
@@ -786,6 +868,26 @@
       "digest": "293a635f950f8eeee5e6ffd7deb087add2f53d732fc93164d424a78829bb2a45",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::transition"
+    },
+    {
+      "digest": "3c120238016cf05200cd68ffc499514e99152520a5a2fabbf6865b1b4ab697c4",
+      "facet": "body",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "digest": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "digest": "dad54219834b00c9d5426b53e2e3faeaf2dde5fa4ef6a4e0882cf087d6058563",
+      "facet": "body",
+      "ref": "src/frob/tickets/_evidence.py::run_cmd_evidence"
+    },
+    {
+      "digest": "7540fe0d267ed2143caab5f18f360d7a02a07a1a641d9ecca7180d0d46c7efaf",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_evidence.py::run_cmd_evidence"
     },
     {
       "digest": "7737f16597759159bbb7870c0061491de6944237178c51d65d7c8e38a1914bd4",

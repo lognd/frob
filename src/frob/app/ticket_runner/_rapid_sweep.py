@@ -1247,16 +1247,7 @@ def _build_regression_body(
 # frob:ticket T-1690
 # frob:ticket T-1791
 # frob:ticket T-2077
-# frob:waive AFFECT001 reason="T-1935 changed this function's own count/ wording logic \
-# only, not its (rule, file) attribution/filing behavior the affects()-closure doc \
-# docs/modules/tickets.md#symbolic-attribution-t-1690 describes; \
-# docs/modules/tickets.md is under T-1720's live lease at the time of this fix and \
-# cannot be edited here -- filed as follow-up residue"
-# frob:waive DRIFT001 reason="same T-1720 live-lease block as the AFFECT001 waiver \
-# directly above -- docs/modules/tickets.md cannot be acked here; the underlying \
-# attribution/filing behavior this doc describes is unchanged by T-1935, only the \
-# reported count/wording, so the doc's own content is still accurate -- filed as \
-# follow-up residue to re-ack once the lease frees"
+# frob:ticket T-1952
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_no_attribution_files_everything_as_before  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_closed_ticket_is_refiled  # noqa: E501
@@ -2063,11 +2054,8 @@ def _resolve_regression_attribution(
 
 
 # frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
-# frob:waive AFFECT001 reason="T-1935 changed only this function's own log-line \
-# wording (identity vs finding count caveat), not the deferred-sweep-mechanism doc \
-# (see the frob:doc target directly above); that doc is under T-1720's live lease at \
-# the time of this fix and cannot be edited here -- filed as follow-up residue"
 # frob:ticket T-2077
+# frob:ticket T-1952
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
 # frob:tests \

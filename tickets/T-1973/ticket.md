@@ -2,7 +2,7 @@
 id: T-1973
 title: Add T-1946/T-1944 doc sections to docs/modules/tickets.md once T-1967's lease
   frees
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,12 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

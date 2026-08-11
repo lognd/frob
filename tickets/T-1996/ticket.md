@@ -2,7 +2,7 @@
 id: T-1996
 title: docs/modules/tickets.md's cross-worktree lease section is stale after T-1993's
   delta-reconciliation fix
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,12 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

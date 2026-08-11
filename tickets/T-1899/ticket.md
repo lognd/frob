@@ -1,7 +1,7 @@
 ---
 id: T-1899
 title: 'docs: document T-1892''s EvidenceCmdSilent refusal in docs/modules/tickets.md'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-09'
@@ -12,8 +12,12 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
