@@ -1344,8 +1344,12 @@ class TestEvidence:
     ) -> None:
         # frob:ticket T-0445
         # T-0292 sibling: the warning must NOT point at the nonexistent
-        # `frob test --collect` flag; it must name the real content-hash
-        # auto-refresh + cache-file fallback instead.
+        # `frob test --collect` flag.
+        # T-2090: with no `missing_natives` supplied (the default -- every
+        # declared native was already built), the warning must say the
+        # test does not exist, NOT advise deleting the collection cache --
+        # the cache was never the cause in this case (T-2090's own measured
+        # incident: two wasted cycles following that exact advice).
         # frob:tests src/frob/tickets/_evidence.py::add_evidence
         _write(tmp_path, _ticket())
         collected = frozenset({"tests/test_x.py::test_a"})
@@ -1355,7 +1359,35 @@ class TestEvidence:
             )
         messages = " ".join(r.message for r in caplog.records)
         assert "frob test --collect to refresh" not in messages
-        assert "self-refreshes" in messages
+        assert "does not exist in this tree" in messages
+        assert ".frob/pytest-collect.json" not in messages
+
+    def test_unresolvable_id_with_missing_native_names_it_and_build_cmd(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:ticket T-2090
+        # T-2090 acceptance criterion 1's other branch: when the caller's
+        # already-computed `missing_natives` says a declared native is
+        # still not built, the rejection must name it and its `build_cmd`
+        # instead of treating the id as simply absent.
+        # frob:tests src/frob/tickets/_evidence.py::add_evidence
+        from frob.testing import NativeSpec
+
+        _write(tmp_path, _ticket())
+        collected = frozenset({"tests/test_x.py::test_a"})
+        spec = NativeSpec(name="frob_no_such_native_xyz", build_cmd="make core")
+        with caplog.at_level(logging.WARNING):
+            add_evidence(
+                tmp_path,
+                "T-0001",
+                ["tests/test_x.py::test_missing"],
+                collected,
+                missing_natives=(spec,),
+            )
+        messages = " ".join(r.message for r in caplog.records)
+        assert "frob_no_such_native_xyz" in messages
+        assert "make core" in messages
+        assert "does not exist in this tree" not in messages
 
     def test_mixed_batch_rejected_wholesale(self, tmp_path: Path) -> None:
         _write(tmp_path, _ticket())

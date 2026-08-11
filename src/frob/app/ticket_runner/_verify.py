@@ -1588,12 +1588,27 @@ def _apply_evidence(
     and `add_evidence` keeps the two normalization paths from silently
     diverging again."""
     from frob.app import ticket_runner as _ticket_runner
+    from frob.testing import (
+        python_collection_failure_detail,
+        python_collection_missing_natives,
+    )
     from frob.tickets import add_evidence, normalize_evidence_separator
 
     collected = _ticket_runner._collect_python_and_rust_ids(root)
     if collected.is_err:
+        # T-2090: `collect_python_tests` already attempted an autorebuild of
+        # any missing declared native before failing (see
+        # `_collect.py::_autorebuild_missing_natives`) and, if one is still
+        # missing, folded its name + build_cmd into the recorded failure
+        # detail -- surface THAT here instead of the bare error enum, so
+        # this CLI path names the real remedy instead of sending an agent
+        # to `.frob/pytest-collect.json` for a cache that was never the
+        # cause.
+        detail = python_collection_failure_detail()
         _log.error(
-            "ticket evidence: pytest collection failed: %s", collected.danger_err
+            "ticket evidence: pytest collection failed: %s%s",
+            collected.danger_err,
+            f" ({detail})" if detail else "",
         )
         return collected
     python_ids, rust_ids, runners = collected.danger_ok
@@ -1607,7 +1622,13 @@ def _apply_evidence(
     )
 
     result = add_evidence(
-        root, ticket_id, normalized_ids, collected_ids, passed=passing, accepts=accepts
+        root,
+        ticket_id,
+        normalized_ids,
+        collected_ids,
+        passed=passing,
+        accepts=accepts,
+        missing_natives=python_collection_missing_natives(),
     )
     _log_evidence_result(ticket_id, result)
     return result

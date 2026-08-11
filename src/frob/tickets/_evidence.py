@@ -50,6 +50,7 @@ import subprocess
 import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from typani.result import Err, Ok, Result
 
@@ -77,6 +78,17 @@ from frob.tickets._new_gate_rule_acceptance import (
 )
 from frob.tickets._store import ledger_lock
 from frob.tickets._worktree_guard import enforce_worktree_lease
+
+if TYPE_CHECKING:
+    # T-2090: deferred/type-only -- a runtime module-level import of
+    # `frob.testing._models` here cycles back into `frob.tickets` (this
+    # module is itself pulled in by `frob.tickets.__init__`, which
+    # `frob.testing`'s own import chain eventually reaches via
+    # `frob.graph`/`frob.check`/`frob.doctor`). `from __future__ import
+    # annotations` (already active in this module) means the annotations
+    # below are never evaluated at runtime, so this import is safe only
+    # under `TYPE_CHECKING`.
+    from frob.testing._models import NativeSpec
 
 _log = get_logger(__name__)
 
@@ -919,6 +931,7 @@ def add_evidence(
     collected: frozenset[str] | None = None,
     passed: frozenset[str] | None = None,
     accepts: Sequence[int] | None = None,
+    missing_natives: Sequence[NativeSpec] = (),
 ) -> Result[Ticket, TicketError]:
     """Validate `node_ids` against `collected` pytest node ids and (D-01)
     against `passed` -- the ids a caller has actually observed PASS on a
@@ -972,7 +985,9 @@ def add_evidence(
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
 
-    resolution = _check_evidence_resolution(ticket_id, normalized_ids, collected)
+    resolution = _check_evidence_resolution(
+        ticket_id, normalized_ids, collected, missing_natives
+    )
     if resolution.is_err:
         return Err(resolution.danger_err)
 
@@ -1132,12 +1147,29 @@ def _warn_bind_time_mutation_sweep_cost(root: Path, ticket: Ticket) -> None:
 
 
 def _check_evidence_resolution(
-    ticket_id: str, node_ids: Sequence[str], collected: frozenset[str] | None
+    ticket_id: str,
+    node_ids: Sequence[str],
+    collected: frozenset[str] | None,
+    missing_natives: Sequence[NativeSpec] = (),
 ) -> Result[None, TicketError]:
     """`Err(UnknownEvidence)` if any of `node_ids` fails to resolve against
     `collected`; `collected=None` skips resolution entirely (D-08: this is
     the "unresolved" path -- always logged at WARNING so a `collected=None`
-    call is never silent about the gap, even though it cannot reject)."""
+    call is never silent about the gap, even though it cannot reject).
+
+    T-2090: `missing_natives` (the caller's already-computed
+    `CollectedTests.missing_natives`, post-autorebuild-attempt) picks which
+    of two, deliberately DIFFERENT warning messages fires on an unresolved
+    id -- collapsing them was the root cause this ticket fixed. Non-empty
+    means a declared native is still not built (an `importorskip`-gated
+    test for it can never collect), so the id's own missing-ness may be
+    fully explained by that, not by a stale id or stale cache; naming the
+    native + its `build_cmd` is the honest remedy. Empty means every
+    declared native IS built, collection ran against a complete tree, and
+    the id still did not resolve -- that can only mean the test genuinely
+    does not exist here, so the message says exactly that and drops the
+    cache-deletion advice, which was never the actual fix for this case
+    (T-2090's own measured incident: two wasted cycles following it)."""
     if collected is None:
         _log.warning(
             "tickets: %s evidence %s recorded UNRESOLVED -- no collector "
@@ -1149,15 +1181,27 @@ def _check_evidence_resolution(
         return Ok(None)
     unresolved = [nid for nid in node_ids if not matches_collected(nid, collected)]
     if unresolved:
-        _log.warning(
-            "tickets: %s evidence rejected, unresolved id(s) %s "
-            "(the collection cache self-refreshes on the next `frob test` "
-            "/ `frob check` run; if it still does not resolve, delete "
-            ".frob/pytest-collect.json (or .frob/cargo-collect.json for "
-            "rust) to force a rebuild, or fix the id)",
-            ticket_id,
-            unresolved,
-        )
+        if missing_natives:
+            remedy = ", ".join(
+                f"{spec.name} (run: {spec.build_cmd})" for spec in missing_natives
+            )
+            _log.warning(
+                "tickets: %s evidence rejected, unresolved id(s) %s -- a "
+                "declared native extension is still not built, which "
+                "skips its tests: %s -- build it, then re-run",
+                ticket_id,
+                unresolved,
+                remedy,
+            )
+        else:
+            _log.warning(
+                "tickets: %s evidence rejected, unresolved id(s) %s -- "
+                "every declared native is built and collection ran "
+                "against the full tree, so this test does not exist in "
+                "this tree (not a stale cache; fix the id)",
+                ticket_id,
+                unresolved,
+            )
         return Err(TicketError.UnknownEvidence)
     return Ok(None)
 

@@ -712,6 +712,140 @@ class TestCollectPythonTests:
         assert result2.danger_ok.node_ids == node_ids
         assert len(calls) == 1
 
+    def test_autorebuild_attempted_and_failure_names_native_when_still_missing(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests
+        # frob:ticket T-2090
+        """T-2090: a declared-but-unbuilt native must trigger an autorebuild
+        ATTEMPT before collection is given up on (main never attempted
+        one at all), and if it is still missing afterward, the recorded
+        failure detail must NAME it and its `build_cmd` -- not just the raw
+        `pytest --collect-only exited N`, which told an agent nothing about
+        the real, already-known cause (this ticket's own measured
+        incident)."""
+        import frob.testing._collect as collect_mod
+        from frob.testing import NativeSpec
+
+        _write(
+            tmp_path,
+            "tests/test_thing.py",
+            """
+            def test_a() -> None:
+                assert True
+            """,
+        )
+        spec = NativeSpec(name="frob_no_such_native_xyz", build_cmd="make core")
+        monkeypatch.setattr(collect_mod, "_load_natives_or_empty", lambda root: (spec,))
+
+        rebuild_calls: list[Path] = []
+
+        def fake_autorebuild(root: Path) -> None:
+            # Simulates an autorebuild ATTEMPT that could not actually
+            # produce the artifact (no toolchain, say) -- the native stays
+            # missing afterward since `spec.name` can never resolve via
+            # `find_spec` regardless.
+            rebuild_calls.append(root)
+
+        monkeypatch.setattr("frob.gates._maybe_autorebuild_natives", fake_autorebuild)
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=2,
+                    stdout="",
+                    stderr="ModuleNotFoundError: frob_no_such_native_xyz",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_python_tests(tmp_path)
+
+        assert rebuild_calls == [tmp_path], "autorebuild was never attempted"
+        assert result.is_err
+        detail = collect_mod.python_collection_failure_detail()
+        assert detail is not None
+        assert "frob_no_such_native_xyz" in detail
+        assert "make core" in detail
+
+    def test_no_autorebuild_attempted_when_natives_already_built(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests
+        # frob:ticket T-2090
+        """T-2090 acceptance criterion 3: when `_missing_natives` reports
+        nothing missing, `collect_python_tests` must NEVER attempt an
+        autorebuild -- a native build is slow and land cost is already the
+        fleet's throughput ceiling, so this must stay off the common,
+        already-healthy path."""
+        import frob.testing._collect as collect_mod
+
+        _write(
+            tmp_path,
+            "tests/test_thing.py",
+            """
+            def test_a() -> None:
+                assert True
+            """,
+        )
+        monkeypatch.setattr(collect_mod, "_missing_natives", lambda natives: ())
+        _stub_collect_only(monkeypatch, collect_mod)
+
+        def fail_if_called(root: Path) -> None:
+            raise AssertionError(
+                "autorebuild must not be attempted when nothing is missing"
+            )
+
+        monkeypatch.setattr("frob.gates._maybe_autorebuild_natives", fail_if_called)
+
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.missing_natives == ()
+
+    def test_python_collection_missing_natives_reflects_last_call(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::python_collection_missing_natives
+        # frob:ticket T-2090
+        """`python_collection_missing_natives()` mirrors `python_collection_
+        failure_detail()`'s existing module-state pattern: it reflects
+        whatever the most recent `collect_python_tests` call found, AFTER
+        its own autorebuild attempt."""
+        import frob.testing._collect as collect_mod
+        from frob.testing import NativeSpec, python_collection_missing_natives
+
+        _write(
+            tmp_path,
+            "tests/test_thing.py",
+            """
+            def test_a() -> None:
+                assert True
+            """,
+        )
+
+        # A run with nothing missing: the accessor reports empty.
+        _stub_collect_only(monkeypatch, collect_mod)
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        assert python_collection_missing_natives() == ()
+
+        # A subsequent run with a declared-but-unbuildable native: the
+        # accessor now reflects that native, even though the call itself
+        # returns Ok (an importorskip-gated collection failure, not a hard
+        # collect failure).
+        spec = NativeSpec(name="frob_no_such_native_xyz", build_cmd="make core")
+        monkeypatch.setattr(collect_mod, "_load_natives_or_empty", lambda root: (spec,))
+        monkeypatch.setattr(
+            "frob.gates._maybe_autorebuild_natives", lambda root: None
+        )
+        result2 = collect_mod.collect_python_tests(tmp_path)
+        assert result2.is_ok
+        assert [s.name for s in python_collection_missing_natives()] == [
+            "frob_no_such_native_xyz"
+        ]
+
 
 class TestCollectPythonTestsNestedRunner:
     def test_nested_test_runner_cwd_is_collected_and_rerooted(

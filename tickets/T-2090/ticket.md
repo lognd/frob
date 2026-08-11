@@ -3,7 +3,7 @@ id: T-2090
 title: Evidence collection discards the missing_natives it already computed, so a
   fresh worktree reports UnknownEvidence and advises deleting the cache instead of
   building natives
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -14,22 +14,85 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/testing/_collect.py
+- src/frob/tickets/_evidence.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/testing/__init__.py
+- docs/modules/testing.md
+- tests/test_tickets.py
+- tests/test_testing.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: AC2 requires the UnknownEvidence message to distinguish missing-natives
+    from genuinely-absent test, which is only surfaced from _check_evidence_resolution
+    in this file
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: AC1 requires 'frob ticket evidence' CLI path to surface the missing-native+build_cmd
+    detail on a collection failure; _apply_evidence's error log currently prints only
+    the enum, discarding python_collection_failure_detail()
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/testing/__init__.py
+  reason: export python_collection_missing_natives, the new public accessor collect_python_tests
+    writes on every return path
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/testing.md
+  reason: COV001 doc-edge requirement for new public symbol python_collection_missing_natives
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_tickets.py
+  reason: unit-level repro/regression coverage for AC0-2, and test_unresolvable_id_warning_names_no_nonexistent_flag
+    in test_tickets.py asserts the exact 'self-refreshes' wording this ticket intentionally
+    changes for the natives-present case
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_testing.py
+  reason: unit-level repro/regression coverage for AC0-2, and test_unresolvable_id_warning_names_no_nonexistent_flag
+    in test_tickets.py asserts the exact 'self-refreshes' wording this ticket intentionally
+    changes for the natives-present case
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_testing.py::TestCollectPythonTests::test_autorebuild_attempted_and_failure_names_native_when_still_missing
+- tests/test_testing.py::TestCollectPythonTests::test_no_autorebuild_attempted_when_natives_already_built
+- tests/test_tickets.py::TestEvidence::test_unresolvable_id_warning_names_no_nonexistent_flag
+- tests/test_tickets.py::TestEvidence::test_unresolvable_id_with_missing_native_names_it_and_build_cmd
+designated_repro_test: tests/test_testing.py::TestCollectPythonTests::test_autorebuild_attempted_and_failure_names_native_when_still_missing
 acceptance:
 - text: given a worktree whose declared natives are unbuilt, when frob ticket evidence
     is given a valid node id, then it either builds the missing natives and resolves
     the id, or fails naming the missing native and its build_cmd -- this test MUST
     fail against current main
-  evidence: []
+  evidence:
+  - tests/test_testing.py::TestCollectPythonTests::test_autorebuild_attempted_and_failure_names_native_when_still_missing
+  - tests/test_testing.py::TestCollectPythonTests::test_no_autorebuild_attempted_when_natives_already_built
+  - tests/test_tickets.py::TestEvidence::test_unresolvable_id_warning_names_no_nonexistent_flag
+  - tests/test_tickets.py::TestEvidence::test_unresolvable_id_with_missing_native_names_it_and_build_cmd
 - text: given natives are present and the node id genuinely does not exist in the
     tree, when evidence binding fails, then the message says the test is absent and
     does NOT advise deleting the collection cache
-  evidence: []
+  evidence:
+  - tests/test_testing.py::TestCollectPythonTests::test_autorebuild_attempted_and_failure_names_native_when_still_missing
+  - tests/test_testing.py::TestCollectPythonTests::test_no_autorebuild_attempted_when_natives_already_built
+  - tests/test_tickets.py::TestEvidence::test_unresolvable_id_warning_names_no_nonexistent_flag
+  - tests/test_tickets.py::TestEvidence::test_unresolvable_id_with_missing_native_names_it_and_build_cmd
 - text: given natives are already built, when frob ticket evidence runs, then no native
     rebuild is triggered -- the build happens only when missing_natives is non-empty
-  evidence: []
+  evidence:
+  - tests/test_testing.py::TestCollectPythonTests::test_autorebuild_attempted_and_failure_names_native_when_still_missing
+  - tests/test_testing.py::TestCollectPythonTests::test_no_autorebuild_attempted_when_natives_already_built
+  - tests/test_tickets.py::TestEvidence::test_unresolvable_id_warning_names_no_nonexistent_flag
+  - tests/test_tickets.py::TestEvidence::test_unresolvable_id_with_missing_native_names_it_and_build_cmd
 threat: null
 component: testing
 anchor: false

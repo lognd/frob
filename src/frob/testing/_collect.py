@@ -130,6 +130,45 @@ def python_collection_failure_detail() -> str | None:
     return _last_python_collection_failure_detail
 
 
+# frob:ticket T-2090
+#: T-2090: the most recent `collect_python_tests` call's `missing_natives`
+#: (post-autorebuild-attempt), mirroring `_last_python_collection_failure_
+#: detail`'s module-state pattern above. Lets a caller that only has a
+#: pytest node-id frozenset in hand (`add_evidence`'s `collected` param
+#: predates `CollectedTests` and cannot be widened without breaking every
+#: existing caller) still ask "was an unresolved id's absence explained by
+#: a still-missing native, or is the test genuinely gone" -- the
+#: distinction `_check_evidence_resolution` needs to stop advising a cache
+#: deletion for a case the cache was never responsible for.
+_last_missing_natives: tuple[NativeSpec, ...] = ()
+
+
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests \
+# tests/test_testing.py::TestCollectPythonTests.test_python_collection_missing_natives_\
+# reflects_last_call
+def python_collection_missing_natives() -> tuple[NativeSpec, ...]:
+    """The most recent `collect_python_tests` call's `missing_natives`,
+    AFTER its own autorebuild attempt (T-2090) -- `()` if every declared
+    native was already built, or if none has run yet in this process.
+    Read by evidence-resolution wiring right after an unresolved id to
+    tell "a native is still missing, name it" apart from "this test
+    genuinely does not exist", which look identical from a bare node-id
+    frozenset alone."""
+    return _last_missing_natives
+
+
+def _set_collection_missing_natives(missing: tuple[NativeSpec, ...]) -> None:
+    """T-2090: record `missing` as the current `python_collection_missing_
+    natives()` value -- the single write point `collect_python_tests`
+    goes through on every return path (cache hit, fresh collection success,
+    and collection failure alike), mirroring `_set_collection_failure_
+    detail`'s existing single-write-point discipline so this value can
+    never linger stale across two different calls."""
+    global _last_missing_natives
+    _last_missing_natives = missing
+
+
 _NO_TESTS_COLLECTED_EXIT = 5
 
 
@@ -283,6 +322,34 @@ def _missing_natives(natives: tuple[NativeSpec, ...]) -> tuple[NativeSpec, ...]:
         if found is None or not _compiled_artifacts(found):
             missing.append(spec)
     return tuple(missing)
+
+
+def _autorebuild_missing_natives(
+    root: Path, natives: tuple[NativeSpec, ...], missing: tuple[NativeSpec, ...]
+) -> tuple[NativeSpec, ...]:
+    """T-2090: when `missing` (from `_missing_natives`) is non-empty, attempt
+    `_maybe_autorebuild_natives(root)` and re-scan -- so a fresh worktree's
+    FIRST collection call builds the natives itself instead of failing with
+    an opaque `pytest --collect-only exited 2` that sent an agent chasing
+    the collection cache instead of the actual missing artifact (T-2090's
+    root cause). Called ONLY when `missing` is already non-empty (never on
+    the common already-built path), matching this ticket's acceptance
+    criterion that a rebuild is never triggered speculatively -- a native
+    build is slow and land cost is already the fleet's throughput ceiling.
+    Deferred import: `frob.gates` imports this module at ITS OWN top level,
+    so importing it back here at module scope would cycle; mirrors
+    `_maybe_autorebuild_natives`'s own documented precedent for the same
+    hazard against `frob.strata`/`frob.natives`."""
+    from frob.gates import _maybe_autorebuild_natives
+
+    _log.warning(
+        "collect_python_tests: %d declared native(s) missing (%s), attempting "
+        "autorebuild before collection",
+        len(missing),
+        sorted(spec.name for spec in missing),
+    )
+    _maybe_autorebuild_natives(root)
+    return _missing_natives(natives)
 
 
 def _load_natives_or_empty(root: Path) -> tuple[NativeSpec, ...]:
@@ -456,6 +523,9 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     result, rather than failing the whole call."""
     natives = _load_natives_or_empty(root)
     missing = _missing_natives(natives)
+    if missing:
+        missing = _autorebuild_missing_natives(root, natives, missing)
+    _set_collection_missing_natives(missing)
     key = _collection_cache_key(root, natives)
     cache_path = root / _CACHE_REL
     cached = _load_cache(cache_path, key)
@@ -466,6 +536,24 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
 
     collected = _run_collect_only(root)
     if collected.is_err:
+        if missing:
+            # T-2090: collection failed AND at least one declared native is
+            # still missing after the autorebuild attempt above -- name it
+            # and its build_cmd explicitly rather than letting the raw
+            # `pytest --collect-only exited N` detail (still recorded by
+            # `_run_collect_only`) stand alone; that raw detail says nothing
+            # about the actual, already-known cause.
+            remedy = ", ".join(
+                f"{spec.name} (run: {spec.build_cmd})" for spec in missing
+            )
+            # `_run_collect_only` (called just above) always sets a detail
+            # before returning its own Err, so `python_collection_failure_
+            # detail()` is never None here -- no `or ''` fallback needed.
+            _set_collection_failure_detail(
+                f"{python_collection_failure_detail()}\n"
+                f"declared native extension(s) not built: {remedy} -- build "
+                f"it, then re-run"
+            )
         return Err(collected.danger_err)
     _set_collection_failure_detail(None)
     node_ids = set(collected.danger_ok)

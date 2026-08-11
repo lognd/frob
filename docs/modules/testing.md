@@ -270,6 +270,28 @@ pytest` shim -- see `docs/guides/install.md#venv-shim-shebang-scan-t-1161`
 each independently "failed to resolve" with no hint at the shared root
 cause).
 
+T-2090: `collect_python_tests` used to COMPUTE `missing_natives` (the
+declared-but-unbuilt native extensions, T-0333) and then discard the
+information at the exact point an agent hit it -- a fresh worktree's first
+`frob ticket evidence` call failed with an opaque `pytest --collect-only
+exited N` and a generic `UnknownEvidence` suggestion to delete the
+collection cache, which was never the actual cause. `collect_python_tests`
+now attempts `frob.gates._maybe_autorebuild_natives` (the same rebuild
+already used on the land/gates path) whenever `missing_natives` is
+non-empty, and re-scans afterward -- never speculatively, only when a
+native is already known to be missing, since a native build is slow and
+land cost is already the fleet's throughput ceiling. If collection still
+fails with a native missing after that attempt, the recorded failure
+detail names the native and its `build_cmd` explicitly. A new
+`python_collection_missing_natives()` accessor mirrors
+`python_collection_failure_detail()`'s existing module-state pattern,
+letting `frob.tickets.add_evidence`'s frozenset-only `collected=` param
+stay unchanged while still learning, via its new `missing_natives=`
+param, whether an unresolved evidence id's absence is explained by a
+still-missing native (name it + `build_cmd`) or the test genuinely does
+not exist in the tree (say so plainly, and drop the cache-deletion
+advice, which is not the remedy for that case).
+
 <!-- frob:describes src/frob/gitio.py::repo_root -->
 <!-- frob:describes src/frob/gitio.py::working_diff -->
 <!-- frob:describes src/frob/gitio.py::commit_diff -->
@@ -290,6 +312,7 @@ cause).
 <!-- frob:describes src/frob/testing/_collect_rust.py::collect_rust_tests -->
 <!-- frob:describes src/frob/testing/_collect.py::drop_collection_cache -->
 <!-- frob:describes src/frob/testing/_collect.py::python_collection_failure_detail -->
+<!-- frob:describes src/frob/testing/_collect.py::python_collection_missing_natives -->
 <!-- frob:describes src/frob/testing/_runners.py::load_natives -->
 <!-- frob:describes src/frob/strata/_native_test.py::run_native_sys_audit -->
 <!-- frob:describes src/frob/strata/_native_test.py::NativeAuditOutcome -->

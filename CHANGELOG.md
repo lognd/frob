@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.455.0] - unreleased
+
+- T-2090: Evidence collection discards the missing_natives it already computed, so a fresh worktree reports UnknownEvidence and advises deleting the cache instead of building natives
+
 ## [0.454.0] - unreleased
 
 - T-2084: Ticket-state palette: dropped and queued are both DIM, so terminal work is indistinguishable from waiting work

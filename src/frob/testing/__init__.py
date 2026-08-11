@@ -17,6 +17,7 @@ from frob.testing._collect import (
     collect_ts_tests,
     drop_collection_cache,
     python_collection_failure_detail,
+    python_collection_missing_natives,
 )
 from frob.testing._coverage_cache import (
     fill_from_cache,
@@ -53,11 +54,6 @@ from frob.testing._runners import (
     run_selected,
 )
 from frob.testing._select import extension_language, select_tests
-from frob.testing._stackdump import (
-    STACKDUMP_ENV,
-    dump_all_thread_stacks,
-    install_stackdump_handler,
-)
 from frob.testing._stability import (
     DEFAULT_REGRESSION_TAIL_K,
     FlakeError,
@@ -75,6 +71,11 @@ from frob.testing._stability import (
     quarantined_node_ids,
     record_outcomes,
     track_python_stability,
+)
+from frob.testing._stackdump import (
+    STACKDUMP_ENV,
+    dump_all_thread_stacks,
+    install_stackdump_handler,
 )
 
 __all__ = [
@@ -117,6 +118,7 @@ __all__ = [
     "load_stability",
     "native_coverage_refresh",
     "python_collection_failure_detail",
+    "python_collection_missing_natives",
     "python_coverage_targets",
     "quarantine",
     "quarantine_alarms",
