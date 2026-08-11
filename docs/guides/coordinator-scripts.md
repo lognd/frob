@@ -202,20 +202,46 @@ signal this ticket exists to add), `worktrees_with_commits`, and
 already carries commits for this ticket, or `main` shows a
 `done`/`dropped`/`in-progress` state; `True` otherwise).
 
+### `_ticket_readiness_lines`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_ticket_readiness_lines -->
+
+T-2172 (ARCH001/ARCH103 split). Renders one `TICKET <id>`
+readiness block (lease, main state/scope, scope divergence,
+sibling-branch commits, final verdict) as plain text lines -- the
+pure-compute half of what used to be a single function that mixed I/O,
+string-formatting, and 4 decision points in one body. No `print` call
+anywhere in this function.
+
+### `_print_ticket_readiness`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_ticket_readiness -->
+
+Prints `_ticket_readiness_lines`'s rendered block and returns
+`readiness["dispatchable"]` -- the I/O-only half of the same split, so
+neither half re-triggers the mixed-concern signal alone.
+
+### `_print_fleet_report`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_fleet_report -->
+
+Prints the ROOT/QUARANTINE/LEASES/WORKTREES sections `main` used to
+print inline, taking `dirt` (already computed by `main`) and
+`idle_seconds` as arguments -- the other half of `main`'s ARCH001/
+ARCH103 decomposition, alongside `_print_ticket_readiness` above.
+
 ### fleet_status-main
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#fleet_status-main -->
 
-CLI entry point: prints root dirt, quarantine state, held leases, and
-worktree idle ages; exits 1 when the root is dirty, 0 otherwise (the
-quarantine line does not itself change the exit code -- it is a
-visibility fix, not a new dispatch-refusal gate). `--idle-minutes N`
-(default 20) sets the idle threshold. T-2133: `--ticket T-####` also
-prints `ticket_readiness`'s report (lease, main state/scope, scope
-divergence, sibling-branch commits, and the final `dispatchable`
-verdict) and folds `not dispatchable` into the exit code alongside root
-dirt, so this can gate a dispatch loop mechanically instead of a human
-reading prose.
+CLI entry point: parses `--idle-minutes`/`--ticket`, then (T-draft-
+354a6b64) delegates the actual printing to `_print_ticket_readiness`
+(when `--ticket` is given -- printed FIRST, ahead of the general
+report, so "is T-#### dispatchable" is the first thing read) and
+`_print_fleet_report`; exits 1 when the root is dirty OR (T-2133) a
+given `--ticket` is not dispatchable. `--idle-minutes N` (default 20)
+sets the idle threshold. The quarantine line does not itself change the
+exit code -- it is a visibility fix, not a new dispatch-refusal gate.
 
 Usage:
 

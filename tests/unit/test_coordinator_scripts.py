@@ -407,6 +407,7 @@ class TestTicketReadiness:
         assert readiness["dispatchable"] is False
 
 
+# frob:ticket T-2172
 class TestFleetStatusMain:
     """`fleet_status.main`."""
 
@@ -489,6 +490,115 @@ class TestFleetStatusMain:
         monkeypatch.setattr(sys, "argv", ["fleet_status.py", "--ticket", "T-2114"])
         assert fleet_status.main() == 0
         assert "dispatchable: True" in capsys.readouterr().out
+
+    # frob:ticket T-2172
+    def test_ticket_readiness_prints_before_the_general_report(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """`TICKET <id>` prints FIRST, ahead of `ROOT` -- the coordinator's
+        own report that a per-ticket answer was buried below the general
+        fleet report; `--ticket` exists precisely to be the first thing
+        read."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_readiness",
+            lambda tid: {
+                "ticket_id": tid,
+                "lease": None,
+                "main": {"state": "queued", "scope": ["src/a.py"]},
+                "scope_diverges": False,
+                "worktrees_with_commits": [],
+                "dispatchable": True,
+            },
+        )
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py", "--ticket", "T-2114"])
+        fleet_status.main()
+        out = capsys.readouterr().out
+        assert out.index("TICKET T-2114") < out.index("ROOT")
+
+
+# frob:ticket T-2172
+class TestPrintTicketReadiness:
+    """`fleet_status._print_ticket_readiness` (ARCH001/ARCH103 split,
+    T-2172)."""
+
+    # frob:ticket T-2172
+    def test_prints_dispatchable_true(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A dispatchable, no-lease readiness dict prints the plain shape
+        and returns True."""
+        readiness = {
+            "ticket_id": "T-2114",
+            "lease": None,
+            "main": {"state": "queued", "scope": ["src/a.py"]},
+            "scope_diverges": False,
+            "worktrees_with_commits": [],
+            "dispatchable": True,
+        }
+        assert fleet_status._print_ticket_readiness(readiness) is True
+        out = capsys.readouterr().out
+        assert "TICKET T-2114" in out
+        assert "lease: none" in out
+        assert "dispatchable: True" in out
+
+    # frob:ticket T-2172
+    def test_prints_lease_scope_divergence_and_sibling_commits(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A held lease, a scope divergence, and sibling-branch commits
+        each print their own dedicated line, and the function returns
+        False (not dispatchable)."""
+        readiness = {
+            "ticket_id": "T-2114",
+            "lease": {
+                "recorded_at": "2026-08-01T00:00:00+00:00",
+                "worktree": "/w",
+                "scope": ["src/a.py"],
+            },
+            "main": {"state": "in-progress", "scope": ["src/a.py", "src/b.py"]},
+            "scope_diverges": True,
+            "worktrees_with_commits": ["sibling"],
+            "dispatchable": False,
+        }
+        assert fleet_status._print_ticket_readiness(readiness) is False
+        out = capsys.readouterr().out
+        assert "lease: recorded_at=2026-08-01T00:00:00+00:00" in out
+        assert "SCOPE DIVERGES" in out
+        assert "ALREADY IMPLEMENTED on: sibling" in out
+        assert "dispatchable: False" in out
+
+
+# frob:ticket T-2172
+class TestPrintFleetReport:
+    """`fleet_status._print_fleet_report` (ARCH001/ARCH103 split,
+    T-2172)."""
+
+    # frob:ticket T-2172
+    def test_prints_all_four_sections(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """ROOT, QUARANTINE, LEASES, and WORKTREES each print their own
+        section, in that order."""
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
+        monkeypatch.setattr(
+            fleet_status,
+            "leases",
+            lambda: [{"ticket_id": "T-2114", "worktree": "/w/t-2114"}],
+        )
+        monkeypatch.setattr(
+            fleet_status, "worktrees", lambda idle_seconds: [("one", 10, False)]
+        )
+        fleet_status._print_fleet_report([" M x.py"], idle_seconds=1200)
+        out = capsys.readouterr().out
+        assert out.index("ROOT") < out.index("QUARANTINE") < out.index("LEASES")
+        assert out.index("LEASES") < out.index("WORKTREES")
+        assert "DIRTY" in out and " M x.py" in out
+        assert "T-2114 -> t-2114" in out
+        assert "one" in out
 
 
 class TestQuarantineState:

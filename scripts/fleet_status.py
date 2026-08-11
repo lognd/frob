@@ -338,41 +338,82 @@ def quarantine_state() -> tuple[str, int]:
     return "raised", undisposed
 
 
-# frob:doc docs/guides/coordinator-scripts.md#fleet_status-main
-# frob:ticket T-1863
+# frob:doc docs/guides/coordinator-scripts.md#_ticket_readiness_lines
+# frob:ticket T-2172
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestFleetStatusMain.test_exit_zero_when_clean
+# tests/unit/test_coordinator_scripts.py::TestPrintTicketReadiness.test_prints_dispatch\
+# able_true
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestFleetStatusMain.test_exit_one_when_dirty
-# frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine.test_prints_rai\
-# sed_with_undisposed_count_and_consequence
-# frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine.test_prints_cle\
-# ar
-# frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine.test_prints_unk\
-# nown_as_unsafe
-def main() -> int:
-    """Print root/lease/worktree/quarantine state; exit 1 when root is
-    dirty OR (T-2133) `--ticket T-####` was given and `ticket_readiness`
-    says it is not dispatchable. T-2049: the quarantine line is printed
-    unconditionally (not just on --verbose or similar) because this is
-    the ONE place a coordinator already looks before dispatching a wave
-    -- see `quarantine_state`'s own docstring for the incident this
-    answers."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--idle-minutes", type=int, default=20)
-    parser.add_argument(
-        "--ticket",
-        default=None,
-        help="T-2133: also print per-ticket readiness (lease, main scope/"
-        "state divergence, sibling-branch commits) and gate the exit code "
-        "on ticket_readiness()['dispatchable'], not just root cleanliness.",
-    )
-    args = parser.parse_args()
+# tests/unit/test_coordinator_scripts.py::TestPrintTicketReadiness.test_prints_lease_sc\
+# ope_divergence_and_sibling_commits
+def _ticket_readiness_lines(readiness: dict) -> list[str]:
+    """Render one `TICKET <id>` readiness block (lease, main state/scope,
+    scope divergence, sibling-branch commits, final verdict) as plain
+    text lines, doing none of the actual printing -- the PURE-COMPUTE
+    half of what used to be one function (ARCH103, T-2172: the
+    combined shape mixed I/O, string-formatting, and 4 decision points in
+    one body, which is exactly the three-concerns-in-one-function smell
+    this gate exists to catch). Keeping the formatting/branching logic
+    here, with no `print` call anywhere in this function, is what lets
+    `_print_ticket_readiness` below stay I/O-only."""
+    ticket_id = readiness["ticket_id"]
+    lines = [f"TICKET {ticket_id}"]
+    lease = readiness["lease"]
+    if lease is None:
+        lines.append("  lease: none")
+    else:
+        lines.append(
+            f"  lease: recorded_at={lease.get('recorded_at')} "
+            f"worktree={lease.get('worktree')} scope={lease.get('scope')}"
+        )
+    main_info = readiness["main"]
+    if main_info is None:
+        lines.append("  main: ticket does not exist on main")
+    else:
+        lines.append(f"  main: state={main_info['state']} scope={main_info['scope']}")
+    if readiness["scope_diverges"]:
+        lines.append(
+            "  SCOPE DIVERGES -- the live lease's scope differs from "
+            "main's declared scope; trust the lease, not the ticket file"
+        )
+    commits = readiness["worktrees_with_commits"]
+    if commits:
+        lines.append(f"  ALREADY IMPLEMENTED on: {', '.join(commits)}")
+    lines.append(f"  dispatchable: {readiness['dispatchable']}")
+    return lines
 
-    dirt = root_dirt()
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_ticket_readiness
+# frob:ticket T-2172
+def _print_ticket_readiness(readiness: dict) -> bool:
+    """Print `_ticket_readiness_lines`'s rendered block and return
+    `readiness["dispatchable"]` -- the I/O-ONLY half of the ARCH103 split
+    above: this function does no string formatting and no branching of
+    its own beyond the one loop over already-rendered lines, so it never
+    re-triggers the mixed-concern signal `_ticket_readiness_lines` was
+    split out to fix. T-2133: printed FIRST, ahead of the general ROOT/
+    QUARANTINE/LEASES/WORKTREES report, so "is T-#### dispatchable" --
+    the whole reason `--ticket` exists -- is the first thing a
+    coordinator's eye lands on rather than buried below unrelated
+    fleet-wide state."""
+    for line in _ticket_readiness_lines(readiness):
+        print(line)
+    return readiness["dispatchable"]
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_fleet_report
+# frob:ticket T-2172
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_prints_all_four_sec\
+# tions
+def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
+    """Print the ROOT/QUARANTINE/LEASES/WORKTREES sections `main` used to
+    print inline -- split out (ARCH001/ARCH103, T-2172) as the
+    other half of `main`'s decomposition, alongside
+    `_print_ticket_readiness` above. `dirt` is passed in rather than
+    recomputed so `main` (the caller) stays the single place that calls
+    `root_dirt()` and can reuse the result for its own exit-code
+    decision."""
     print(f"ROOT {'DIRTY -- do not dispatch' if dirt else 'CLEAN'}")
     for line in dirt:
         print(f"  {line}")
@@ -399,37 +440,62 @@ def main() -> int:
         print(f"  {record.get('ticket_id')} -> {name}")
 
     print("WORKTREES")
-    for name, age, idle in worktrees(args.idle_minutes * 60):
+    for name, age, idle in worktrees(idle_seconds):
         mins = "unknown" if age < 0 else f"{age // 60}m"
         print(f"  {name:28} last-commit {mins:>9}{'  IDLE?' if idle else ''}")
 
+
+# frob:doc docs/guides/coordinator-scripts.md#fleet_status-main
+# frob:ticket T-1863
+# frob:ticket T-2172
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestFleetStatusMain.test_exit_zero_when_clean
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestFleetStatusMain.test_exit_one_when_dirty
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine.test_prints_rai\
+# sed_with_undisposed_count_and_consequence
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine.test_prints_cle\
+# ar
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine.test_prints_unk\
+# nown_as_unsafe
+def main() -> int:
+    """Print (T-2172: ticket readiness FIRST, when `--ticket` is
+    given, ahead of the general fleet report) root/lease/worktree/
+    quarantine state; exit 1 when root is dirty OR (T-2133) `--ticket
+    T-####` was given and `ticket_readiness` says it is not dispatchable.
+    T-2049: the quarantine line is printed unconditionally (not just on
+    --verbose or similar) because this is the ONE place a coordinator
+    already looks before dispatching a wave -- see `quarantine_state`'s
+    own docstring for the incident this answers.
+
+    T-2172 (ARCH001/ARCH103): this function used to inline all
+    of ROOT/QUARANTINE/LEASES/WORKTREES/TICKET printing itself (78
+    lines, 14 decision points) -- now it only parses args, calls
+    `root_dirt()` once, and delegates the two print blocks to
+    `_print_ticket_readiness` and `_print_fleet_report`, keeping the
+    ordering/exit-code decision (the actual logic worth reading in one
+    place) as the only thing left here."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--idle-minutes", type=int, default=20)
+    parser.add_argument(
+        "--ticket",
+        default=None,
+        help="T-2133: also print per-ticket readiness (lease, main scope/"
+        "state divergence, sibling-branch commits) FIRST, ahead of the "
+        "general report, and gate the exit code on "
+        "ticket_readiness()['dispatchable'], not just root cleanliness.",
+    )
+    args = parser.parse_args()
+
     ticket_ok = True
     if args.ticket is not None:
-        readiness = ticket_readiness(args.ticket)
-        ticket_ok = readiness["dispatchable"]
-        print(f"TICKET {args.ticket}")
-        lease = readiness["lease"]
-        if lease is None:
-            print("  lease: none")
-        else:
-            print(
-                f"  lease: recorded_at={lease.get('recorded_at')} "
-                f"worktree={lease.get('worktree')} scope={lease.get('scope')}"
-            )
-        main_info = readiness["main"]
-        if main_info is None:
-            print("  main: ticket does not exist on main")
-        else:
-            print(f"  main: state={main_info['state']} scope={main_info['scope']}")
-        if readiness["scope_diverges"]:
-            print(
-                "  SCOPE DIVERGES -- the live lease's scope differs from "
-                "main's declared scope; trust the lease, not the ticket file"
-            )
-        commits = readiness["worktrees_with_commits"]
-        if commits:
-            print(f"  ALREADY IMPLEMENTED on: {', '.join(commits)}")
-        print(f"  dispatchable: {readiness['dispatchable']}")
+        ticket_ok = _print_ticket_readiness(ticket_readiness(args.ticket))
+
+    dirt = root_dirt()
+    _print_fleet_report(dirt, args.idle_minutes * 60)
 
     return 1 if (dirt or not ticket_ok) else 0
 
