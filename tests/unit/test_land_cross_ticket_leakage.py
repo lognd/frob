@@ -29,6 +29,7 @@ from frob.tickets import (
 )
 from frob.tickets._land import land
 from frob.tickets._models import LandError
+from frob.tickets._scope import mutate_scope
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
 
 
@@ -422,6 +423,75 @@ class TestCrossTicketLeakage:
         assert result.danger_err == LandError.CrossTicketLeakage
         assert not (repo / "src" / "fix.py").exists()
         assert not (repo / "src" / "held.py").exists()
+
+    # frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_a_narrowing_published_to_the_live_lease_releases_the_file_before_that_tickets_own_land  # noqa: E501
+    def test_a_narrowing_published_to_the_live_lease_releases_the_file_before_that_tickets_own_land(  # noqa: E501
+        self, repo: Path
+    ) -> None:
+        # T-2111 (MUST FAIL on the pre-fix code): the landing worktree
+        # forks from root BEFORE sibling S is even filed, so S never
+        # appears in the landing worktree's OWN ledger history at all --
+        # `_ledger_ticket_at_merge_base` returns None for it, so the
+        # T-1390 "unchanged since fork" exemption cannot apply (this is
+        # deliberate: it is exactly what makes the real T-2083/T-2090
+        # field shape possible -- a ticket the landing branch never even
+        # knew about). S is then filed, started (taking a broad lease),
+        # and NARROWED, all in a DIFFERENT worktree -- the narrowing
+        # publishes to the shared .git/frob-leases/ side channel
+        # immediately (T-2095), long before S's own land could ever
+        # merge that narrowing back into root's ledger. Pre-fix,
+        # `_find_leaked_tickets` falls back to root's STALE, still-broad
+        # declared scope for S and refuses L's land over a path S's live
+        # lease has already released; post-fix, the live lease's
+        # narrower scope is authoritative and L lands cleanly.
+        wt_land = repo.parent / "wt-land"
+        _run(["git", "worktree", "add", "-b", "independent-fix", str(wt_land)], repo)
+
+        sibling = new_ticket(repo, _spec("Held work, broad scope", scope=("src/**",)))
+        assert sibling.is_ok
+        sibling_id = sibling.danger_ok.id
+        # new_ticket already auto-commits the ledger write -- nothing
+        # further to commit here.
+
+        # Sibling's OWN worktree starts it (broad lease) then narrows,
+        # via the real `mutate_scope` entrypoint (the same one `frob
+        # ticket scope --remove` drives) so the live lease is actually
+        # re-recorded, not just the on-disk ticket.md.
+        wt_sibling = repo.parent / "wt-sibling"
+        _run(
+            ["git", "worktree", "add", "-b", "sibling-narrows", str(wt_sibling)],
+            repo,
+        )
+        assert transition(wt_sibling, sibling_id, TicketState.PLANNED).is_ok
+        assert transition(wt_sibling, sibling_id, TicketState.IN_PROGRESS).is_ok
+        narrowed = mutate_scope(
+            wt_sibling,
+            sibling_id,
+            remove=("src/**",),
+            add=("src/sibling_only.py",),
+            reason="narrow to the real touched file",
+        )
+        assert narrowed.is_ok
+
+        landing = new_ticket(
+            wt_land, _spec("Independent fix, unrelated to S", scope=("src/fix.py",))
+        )
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt_land, landing_id)
+        (wt_land / "src").mkdir(exist_ok=True)
+        (wt_land / "src" / "fix.py").write_text(
+            "# touches a path S's OLD broad scope matched, but its\n"
+            "# NARROWED live-lease scope does not\n"
+        )
+        _commit_all(wt_land, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt_land, dry_run=False)
+
+        assert result.is_ok, (
+            "land refused on a path S's live lease had already released "
+            f"(T-2111): {result.err if result.is_err else None}"
+        )
 
 
 # frob:ticket T-1618

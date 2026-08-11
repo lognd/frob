@@ -923,6 +923,12 @@ def _read_text_at_commit_or_none(cwd: Path, commit: str, path: str) -> str | Non
 # frob:tests \
 # tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
 # st_ignores_an_id_that_already_existed_at_the_merge_base
+# frob:waive COV001 reason="docs/modules/tickets.md (this module's own doc home) was \
+# under live contention from multiple concurrent tickets (T-1780's own subject) at fix \
+# time and could not be added to this scope -- filed a follow-up (draft \
+# T-2116, renumbers to a real id at its own land) to add the frob:doc anchor \
+# once the file frees, per the same T-2003/T-1999 precedent \
+# (src/frob/tickets/_leases.py::is_effectively_in_progress); not silently dropped"
 def detect_duplicate_ticket_id_collisions(
     worktree: Path, root: Path, landing_ticket_id: str, main_branch: str
 ) -> frozenset[str]:

@@ -58,7 +58,6 @@ from frob.tickets._land_git_ops import (
     _commit_rapid_debt_only_drift,
     _committed_out_of_scope_waive_deletions,
     _merge_main_into_worktree,
-    detect_duplicate_ticket_id_collisions,
     _porcelain_dirty,
     _restore_lock_version_only_drift,
     _rev_parse,
@@ -67,6 +66,7 @@ from frob.tickets._land_git_ops import (
     _unowned_deletions,
     _unstage_index_only,
     _wip_commit,
+    detect_duplicate_ticket_id_collisions,
 )
 from frob.tickets._land_ledger_merge import _STATE_RANK
 from frob.tickets._land_merge import _validate_closeable
@@ -82,7 +82,7 @@ from frob.tickets._land_verify import (
     _reverify_done_report_claims_post_merge,
     _reverify_evidence_post_merge,
 )
-from frob.tickets._leases import LAND_LOCK_REL
+from frob.tickets._leases import LAND_LOCK_REL, read_all_leases
 from frob.tickets._models import (
     LandError,
     LandPlanReport,
@@ -3113,9 +3113,42 @@ def _explicitly_used_wiring_path(other: Ticket, path: str) -> bool:
     return False
 
 
+# frob:ticket T-2111
+def _effective_leakage_scope(
+    root: Path, other_id: str, other: Ticket
+) -> tuple[str, ...]:
+    """T-2111: the scope `_leaked_hits_for_candidate` should test against
+    for sibling `other_id` -- `other`'s DECLARED scope, unless a LIVE
+    cross-worktree lease (`read_all_leases`, T-0473) for the same id is
+    currently recorded, in which case the lease's own scope wins.
+
+    T-2095 already established this precedent for `_scope_add_conflicts`
+    (a narrowing published to the live lease side-channel takes effect
+    for the fleet immediately, without waiting for that ticket's own
+    land) -- this check answered the SAME question ("which files does
+    `other_id` claim?") from a DIFFERENT, stale source: `worktree`'s (or
+    `root`'s) copy of `other`'s ledger record, which only reflects a
+    narrowing once something merges it back in. Measured 2026-08-11: a
+    ticket narrowed its scope, the narrowing published to its lease file
+    immediately, and `frob ticket land` for an UNRELATED ticket touching
+    the released path still refused with `CrossTicketLeakage` naming the
+    stale declared scope -- a narrowing that already freed a file still
+    blocked every other ticket on it until the narrowing ticket's own
+    land, exactly defeating the reason to narrow at all. The live lease
+    is authoritative when present (it is the single side-channel every
+    OTHER `frob ticket` verb already trusts for "what does this ticket
+    currently claim") -- never unioned with the declared scope, since a
+    union could only ever keep the stale, broader path alive."""
+    for lease in read_all_leases(root):
+        if lease.ticket_id == other_id:
+            return lease.scope
+    return other.scope
+
+
 # frob:ticket T-1390
 # frob:ticket T-1855
 def _leaked_hits_for_candidate(
+    root: Path,
     worktree: Path,
     landing_id: str,
     other_id: str,
@@ -3167,10 +3200,12 @@ def _leaked_hits_for_candidate(
     sibling's land whether or not it had ever touched them."""
     from frob.tickets._models import scope_matches
 
+    # frob:ticket T-2111
+    effective_scope = _effective_leakage_scope(root, other_id, other)
     hits = [
         path
         for path in changed_paths
-        if scope_matches(path, other.scope, kind=other.kind)
+        if scope_matches(path, effective_scope, kind=other.kind)
     ]
     kept: list[str] = []
     for path in hits:
@@ -3318,10 +3353,11 @@ def _find_leaked_tickets(
         )
         if ledger_state in (TicketState.DONE, TicketState.DROPPED):
             continue
-        if not other.scope:
+        # frob:ticket T-2111
+        if not _effective_leakage_scope(root, other_id, other):
             continue
         hits = _leaked_hits_for_candidate(
-            worktree, landing_id, other_id, other, changed_paths, base_ref
+            root, worktree, landing_id, other_id, other, changed_paths, base_ref
         )
         if not hits:
             continue
@@ -4486,7 +4522,9 @@ def _merge_main_into_worktree_v2(
     catch it, silently letting `_auto_resolve_out_of_scope_conflicts`
     (or, for a clean add/add, git's own merge) keep whichever side it
     keeps. Refusing here, ahead of the merge, closes that gap."""
-    collisions = detect_duplicate_ticket_id_collisions(worktree, root, ticket.id, main_branch)
+    collisions = detect_duplicate_ticket_id_collisions(
+        worktree, root, ticket.id, main_branch
+    )
     if collisions:
         _log.error(
             "land: %s refusing to merge %s into %s -- ticket id(s) %s have "
