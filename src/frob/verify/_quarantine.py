@@ -284,7 +284,9 @@ def raise_quarantine(
     candidates) is NEVER in this set and always passes through unchanged
     -- see `_NATURALLY_UNATTRIBUTABLE_RULES`'s own docstring for exactly
     where that line is drawn."""
-    exempted = tuple(f for f in findings if f.rule_id in _NATURALLY_UNATTRIBUTABLE_RULES)
+    exempted = tuple(
+        f for f in findings if f.rule_id in _NATURALLY_UNATTRIBUTABLE_RULES
+    )
     if exempted:
         _log.info(
             "quarantine: %d naturally-unattributable finding(s) dropped from "
