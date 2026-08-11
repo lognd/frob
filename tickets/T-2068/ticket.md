@@ -16,6 +16,32 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: Operator-side reproduction (2026-08-10), stronger evidence than this ticket's
+  evidence: []
+- text: 'original static reading: `uv run pytest tests/unit/test_app_style.py -q -p'
+  evidence: []
+- text: 'no:xdist` failed with `error: unrecognized arguments: -n --dist=loadgroup`'
+  evidence: []
+- text: even though `-p no:xdist` was passed explicitly on the CLI -- pyproject.toml's
+  evidence: []
+- text: addopts still injected -n auto/--dist=loadgroup, confirming this ticket's
+  evidence: []
+- text: root-cause claim end to end. `-o addopts=""` instead worked (15 passed).
+  evidence: []
+- text: 'NOTE: T-2086 (landed f843ad7ed5ffb32fac8ab304d42fe2f0a5af55ca, successor
+    to'
+  evidence: []
+- text: T-2031/T-draft-4aa27f0c) already fixes this exact addopts-reinjection hole
+  evidence: []
+- text: in _retry_after_worker_crash via _neutralized_addopts/-o addopts=<stripped>.
+  evidence: []
+- text: This ticket may now be a duplicate of already-landed work; flagging rather
+  evidence: []
+- text: than dropping (see T-1968-adjacent caution on unilateral drops) -- worth a
+  evidence: []
+- text: coordinator pass to confirm and drop if fully subsumed.
+  evidence: []
 threat: null
 component: null
 anchor: false
