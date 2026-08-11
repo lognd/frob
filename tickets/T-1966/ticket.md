@@ -2,7 +2,7 @@
 id: T-1966
 title: 'One rule, two homes: ''files this branch''s own commits changed'' implemented
   twice and got wrong three times (T-1922, T-1955, T-1950)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -113,3 +113,5 @@ definition of the concept exists in src/ (the duplicate makes it fail).
 Then assert both former call sites produce identical results on a branch
 with commits on both sides of the merge-base, and that a freshly-cut
 branch yields the empty set from the shared helper.
+
+<!-- frob:waive BUG002 reason="the fix itself already landed on main as an acknowledged passenger of T-2132's land (commit 183f59675edb, same series worktree, --allow-cross-ticket used deliberately) -- this ticket's own close now has no un-landed diff, so its designated repro (tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation::test_unlanded_has_no_second_implementation) correctly PASSES at main's current tip: the defect it names is already fixed there, not still present. The repro genuinely FAILED at its own pre-fix commit (e411743d1) before that land, exactly as required by BUG002/T-1929's --check-repro gate at the time evidence was bound; the check now sees a main whose parent already contains the fix (T-1950's own documented limitation for a squash-landed passenger, referenced in this ticket's own body) and there is no way to re-derive a genuine pre-fix ref for a close-time check after the code has already shipped." -->
