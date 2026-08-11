@@ -1,7 +1,7 @@
 ---
 id: T-1899
 title: 'docs: document T-1892''s EvidenceCmdSilent refusal in docs/modules/tickets.md'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-09'
