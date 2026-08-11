@@ -162,3 +162,29 @@ T-1523's body said before it was scoped down"). The `land-finish-pending`
 marker, its reconciliation function, and its SIGTERM-injection test are
 follow-up implementation work for a new ticket this document's
 Recommendation section scopes, not built here.
+
+## `reclaim_orphaned_squash_residue` (T-2157/T-2170)
+
+A narrower, already-shipped mechanism in the same problem space as this
+document's Option A/B discussion above, worth cross-referencing here
+rather than in a second design doc: `frob.tickets._land_git_ops.
+reclaim_orphaned_squash_residue` closes the specific DirtyMain-trap case
+where a land killed mid-squash-merge (SIGKILL, uncatchable) leaves
+`root`'s real index/working tree staged and dirty with no safe way to
+tell that residue apart from a live concurrent land's own staging.
+
+It answers that question the same way this document's own markers would
+have to: by consulting `land.lock`'s existing advisory `flock` as the
+liveness oracle (a non-blocking exclusive lock attempt that SUCCEEDS
+only when nothing currently holds it -- the kernel frees an `flock` the
+instant its holder exits, SIGKILL included), never a recorded-pid
+comparison (pid reuse makes that unsafe) and never residue age.
+
+T-2157 shipped the primitive itself, tested and correct, but reachable
+from nowhere in production. T-2170 wired it into `frob.tickets._land.
+land()`'s own startup, immediately before `_land_lock` is acquired (it
+must run before the lock is taken, since its own liveness probe is a
+non-blocking flock on that same lock file) and before
+`_refuse_if_main_dirty`'s own DirtyMain check -- so a dead land's residue
+is cleared automatically at the start of the very next land attempt,
+instead of requiring a coordinator to notice and clear it by hand.

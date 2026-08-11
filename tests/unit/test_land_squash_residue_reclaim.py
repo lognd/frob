@@ -18,6 +18,7 @@ import fcntl
 import os
 import subprocess
 from pathlib import Path
+from unittest.mock import patch
 
 from frob.tickets._land_git_ops import reclaim_orphaned_squash_residue
 from frob.tickets._leases import LAND_LOCK_REL
@@ -129,3 +130,76 @@ class TestReclaimOrphanedSquashResidue:
 
         post = _run(["git", "status", "--porcelain"], root)
         assert post.stdout.strip() == ""
+
+
+class TestLandCallsReclaimAtStartup:
+    """T-2170: `reclaim_orphaned_squash_residue` (T-2157) had zero
+    production callers -- correct, tested, and reached by NOTHING except
+    its own tests above. `land()` must call it once, at the very top of
+    its own body, BEFORE `_land_lock` is acquired (calling it from inside
+    the lock would make its own non-blocking flock-on-the-same-file
+    liveness probe always fail, since `land()` itself would already hold
+    it)."""
+
+    # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
+    def test_land_calls_reclaim_before_acquiring_its_own_lock(
+        self, tmp_path: Path
+    ) -> None:
+        """FAILS FIRST against current main: `land()` never imports or
+        calls `reclaim_orphaned_squash_residue` at all, so this mock is
+        never invoked and the assertion below fails."""
+        from frob.tickets._land import land
+
+        root = _seed_root(tmp_path)
+        worktree = tmp_path / "worktree"
+        worktree.mkdir()
+
+        from typani import Ok
+
+        with patch(
+            "frob.tickets._land.reclaim_orphaned_squash_residue"
+        ) as mock_reclaim:
+            mock_reclaim.return_value = Ok(False)
+            land(root, "T-0000", worktree, dry_run=True)
+
+        assert mock_reclaim.called, (
+            "land() never called reclaim_orphaned_squash_residue -- the "
+            "T-2157 primitive still has zero production callers"
+        )
+        assert mock_reclaim.call_args.args[0] == root, (
+            "reclaim_orphaned_squash_residue must be called against root, "
+            "the shared checkout it is meant to unwind, not the worktree"
+        )
+
+    # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
+    def test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal(  # noqa: E501
+        self, tmp_path: Path
+    ) -> None:
+        """The real property (not a mock-import technicality): a land
+        started against a `root` that already carries a DEAD land's
+        orphaned squash residue (no live process holds `land.lock`) must
+        find `root` reclaimed BEFORE `_refuse_if_main_dirty` ever runs --
+        so this particular DirtyMain refusal, caused only by residue
+        `reclaim_orphaned_squash_residue` can safely clear, never fires,
+        and root ends up clean either way. FAILS FIRST against current
+        main: with no wiring, `root` is still dirty the instant `land()`
+        reaches `_refuse_if_main_dirty`, which refuses with `DirtyMain`
+        and leaves the residue sitting there untouched -- exactly the
+        fleet-blocking trap this ticket exists to close."""
+        from frob.tickets._land import land
+
+        root = _seed_root(tmp_path)
+        worktree = tmp_path / "worktree"
+        worktree.mkdir()
+        _simulate_orphaned_squash_stage(root)
+
+        pre = _run(["git", "status", "--porcelain"], root)
+        assert pre.stdout.strip() != "", "fixture setup must actually dirty root"
+
+        land(root, "T-0000", worktree, dry_run=True)
+
+        post = _run(["git", "status", "--porcelain"], root)
+        assert post.stdout.strip() == "", (
+            "root still carries dead-land residue after a land() attempt -- "
+            f"reclaim was never invoked, got: {post.stdout!r}"
+        )

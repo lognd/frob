@@ -265,6 +265,16 @@ def _verified_reset_root(
 
 
 # frob:ticket T-2157
+# frob:ticket T-2170
+# frob:doc \
+# docs/design/land-checkpoint-durability.md#reclaim_orphaned_squash_residue-t-2157t-2170
+# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_reclaims_when_no_live_land_holds_the_lock  # noqa: E501
+# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_does_not_touch_a_live_lands_own_staging  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test\
+# _clean_root_is_a_no_op
+# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
+# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
 def reclaim_orphaned_squash_residue(
     root: Path, ticket_id: str
 ) -> Result[bool, LandError]:
@@ -308,13 +318,15 @@ def reclaim_orphaned_squash_residue(
     staging apart from orphaned residue, so it must refuse to touch `root`
     rather than guess.
 
-    NOT yet wired into `land()`'s own startup sequence -- that call site
-    lives in `frob.tickets._land`, which this ticket does not hold (T-2155
-    holds it as of this ticket's own land). Wiring an automatic call here
-    at the start of every `land()` attempt (immediately before
-    `_refuse_if_main_dirty`'s own DirtyMain check) is the natural next
-    step and is left as a follow-up for whoever next holds that file,
-    rather than expanding this ticket's scope to reach it."""
+    T-2170: `frob.tickets._land.land()` now calls this at the very top of
+    its own body -- BEFORE it acquires its own `_land_lock` -- so a dead
+    land's orphaned residue is reclaimed automatically at the start of the
+    next land attempt, ahead of `_refuse_if_main_dirty`'s own DirtyMain
+    check. Prior to T-2170 this function was correct, tested, and had
+    ZERO production callers; the fleet-blocking trap it exists to close
+    (a killed land's staged residue silently refusing every other agent's
+    land until a human clears it by hand) was only closed by this wiring,
+    not by the primitive's own existence."""
     dirty = _porcelain_dirty(root)
     if dirty.is_err:
         return Err(dirty.danger_err)
@@ -329,6 +341,16 @@ def reclaim_orphaned_squash_residue(
             root,
         )
         return Ok(False)
+    return _reclaim_via_land_lock_probe(root, ticket_id)
+
+
+def _reclaim_via_land_lock_probe(root: Path, ticket_id: str) -> Result[bool, LandError]:
+    """The lock-acquire-then-reset half of `reclaim_orphaned_squash_residue`,
+    split out to keep that function's own decision-point count under
+    ARCH001/ARCH103's threshold -- pure extraction, no behavior change.
+    Assumes `root` is already known dirty and `_fcntl` is available; the
+    caller (`reclaim_orphaned_squash_residue`) checks both first."""
+    assert _fcntl is not None  # narrows for the type checker; caller already checked
     lock_path = root / LAND_LOCK_REL
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
@@ -345,26 +367,35 @@ def reclaim_orphaned_squash_residue(
         os.close(fd)
         return Ok(False)
     try:
-        current = _rev_parse(root, "HEAD")
-        if current.is_err:
-            return Err(current.danger_err)
-        pre_land_tip = current.danger_ok
-        _log.warning(
-            "land: %s reclaiming orphaned squash-merge residue in %s -- "
-            "land.lock was free (no live land process holds it) while "
-            "root's index/working tree carried uncommitted content; "
-            "resetting to HEAD (%s) and cleaning untracked files",
-            ticket_id,
-            root,
-            pre_land_tip,
-        )
-        reset = _verified_reset_root(root, pre_land_tip, ticket_id)
-        if reset.is_err:
-            return Err(reset.danger_err)
-        return Ok(True)
+        return _reset_orphaned_residue_under_lock(root, ticket_id)
     finally:
         _fcntl.flock(fd, _fcntl.LOCK_UN)
         os.close(fd)
+
+
+def _reset_orphaned_residue_under_lock(
+    root: Path, ticket_id: str
+) -> Result[bool, LandError]:
+    """The actual reset+clean, run only once `_reclaim_via_land_lock_probe`
+    has proven `land.lock` is free -- split out for the same ARCH103
+    reason as its caller."""
+    current = _rev_parse(root, "HEAD")
+    if current.is_err:
+        return Err(current.danger_err)
+    pre_land_tip = current.danger_ok
+    _log.warning(
+        "land: %s reclaiming orphaned squash-merge residue in %s -- "
+        "land.lock was free (no live land process holds it) while "
+        "root's index/working tree carried uncommitted content; "
+        "resetting to HEAD (%s) and cleaning untracked files",
+        ticket_id,
+        root,
+        pre_land_tip,
+    )
+    reset = _verified_reset_root(root, pre_land_tip, ticket_id)
+    if reset.is_err:
+        return Err(reset.danger_err)
+    return Ok(True)
 
 
 def _porcelain_dirty(root: Path) -> Result[bool, LandError]:

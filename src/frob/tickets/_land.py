@@ -67,6 +67,7 @@ from frob.tickets._land_git_ops import (
     _unstage_index_only,
     _wip_commit,
     detect_duplicate_ticket_id_collisions,
+    reclaim_orphaned_squash_residue,
 )
 from frob.tickets._land_ledger_merge import _STATE_RANK
 from frob.tickets._land_merge import _validate_closeable
@@ -1010,6 +1011,27 @@ def land(
                 resolved_root,
             )
             root = resolved_root
+
+    # T-2170: reclaim any DEAD prior land's orphaned squash residue in
+    # `root` BEFORE this land's own `_land_lock` acquire below --
+    # `reclaim_orphaned_squash_residue` distinguishes "dead" from "live"
+    # by taking a NON-BLOCKING flock on that exact same lock file (T-2157's
+    # docstring), so it must run while the lock is still free; calling it
+    # from inside `_land_lock`'s own critical section would make its
+    # liveness probe always observe itself as the holder and treat every
+    # residue as live, defeating the whole point. A genuinely live
+    # concurrent land is untouched (`Ok(False)`, no side effect) -- this
+    # only ever clears residue nothing currently holds the lock for.
+    reclaim = reclaim_orphaned_squash_residue(root, ticket_id)
+    if reclaim.is_err:
+        _log.error(
+            "land: %s pre-lock reclaim of orphaned squash residue in %s "
+            "failed: %s",
+            ticket_id,
+            root,
+            reclaim.danger_err,
+        )
+        return Err(reclaim.danger_err)
 
     try:
         with _land_lock(root, ticket_id):
