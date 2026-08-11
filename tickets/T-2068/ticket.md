@@ -27,8 +27,6 @@ acceptance:
   evidence: []
 - text: addopts still injected -n auto/--dist=loadgroup, confirming this ticket's
   evidence: []
-- text: root-cause claim end to end. `-o addopts=""` instead worked (15 passed).
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
@@ -76,6 +74,14 @@ acceptance_amendments:
   index: 6
   old_text: 'NOTE: T-2086 (landed f843ad7ed5ffb32fac8ab304d42fe2f0a5af55ca, successor
     to'
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 5
+  old_text: root-cause claim end to end. `-o addopts=""` instead worked (15 passed).
   new_text: null
   reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
     due to no blank-line separators'
