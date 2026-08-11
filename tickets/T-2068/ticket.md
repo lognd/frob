@@ -21,8 +21,6 @@ acceptance:
   evidence: []
 - text: 'original static reading: `uv run pytest tests/unit/test_app_style.py -q -p'
   evidence: []
-- text: 'no:xdist` failed with `error: unrecognized arguments: -n --dist=loadgroup`'
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
@@ -94,6 +92,14 @@ acceptance_amendments:
 - op: remove
   index: 3
   old_text: even though `-p no:xdist` was passed explicitly on the CLI -- pyproject.toml's
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 2
+  old_text: 'no:xdist` failed with `error: unrecognized arguments: -n --dist=loadgroup`'
   new_text: null
   reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
     due to no blank-line separators'
