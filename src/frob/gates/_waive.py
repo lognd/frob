@@ -179,6 +179,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1843
 # frob:ticket T-1937
 # frob:ticket T-1927
+# frob:ticket T-1784
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -596,6 +597,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0465: .git/info/exclude entry shadowing tracked source
         # (frob.gates._exclude_hazard).
         "EXCL001",
+        # T-1784: repo-root top-level directory with zero code references
+        # (frob.gates._root_asset_dirs).
+        "ROOT001",
         # T-0439: CVE code-smell needle/fingerprint pattern-scan
         # (frob.gates._cve_fingerprint_scan).
         "SEC-CVE-FINGERPRINT-001",

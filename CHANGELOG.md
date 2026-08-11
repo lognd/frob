@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.459.0] - unreleased
+
+- T-1784: New rule: flag repo-root asset directories with zero code references
+
 ## [0.458.0] - unreleased
 
 - T-2105: Detect a duplicate ticket id after a merge silently resolves two records (T-2092 half 2)

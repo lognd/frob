@@ -37,6 +37,7 @@ from frob.gates import (
     drift_gate,
     exclude_hazard_gate,
     fmt_gate,
+    root_asset_dir_gate,
     generated_fixability,
     inv003_gate,
     inv004_gate,
@@ -6623,6 +6624,111 @@ class TestExcludeHazardGate:
     def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/pkg/a.py", "x = 1\n")
         assert exclude_hazard_gate(tmp_path) == ()
+
+
+class TestRootAssetDirGate:
+    """T-1784: ROOT001 -- a repo-root top-level directory with zero code
+    references (docs/modules/gates.md#root001-t-1784).
+
+    Acceptance-fixture pair (T-0756 new-gate-rule policy): before this
+    rule existed, an orphan repo-root directory like the one these tests
+    build was invisible to `frob check` -- nothing FAILED on it. After
+    (`root_asset_dir_gate` wired into `_KNOWN_GATE_RULES` and the gate
+    dispatch table), the exact same fixture PASSES this test's assertion
+    that the violation IS reported -- proving the rule fires through the
+    production gate function, not merely a hypothetical."""
+
+    # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
+    def test_unreferenced_root_directory_fires(self, tmp_path: Path) -> None:
+        """FAIL before this rule exists (`frob.gates._root_asset_dirs`
+        did not exist at all -- the repro commit imported it locally and
+        got a ModuleNotFoundError); PASS after (`root_asset_dir_gate`
+        reports ROOT001 for it) -- the T-1611 agents/skills incident's
+        exact shape, mechanized."""
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "orphan/file.txt", "x\n")
+        _git_init(tmp_path)
+        violations = root_asset_dir_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "ROOT001"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "orphan"
+
+    def test_directory_referenced_under_src_frob_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """Check (a): a repo-root directory whose name appears literally
+        as a path token anywhere under `src/frob/**` is not flagged."""
+        _write(tmp_path, "src/frob/x.py", 'REF = "known/f.txt"\n')
+        _write(tmp_path, "known/f.txt", "x\n")
+        _git_init(tmp_path)
+        assert root_asset_dir_gate(tmp_path) == ()
+
+    def test_directory_referenced_in_pyproject_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """Check (b): a repo-root directory named in `pyproject.toml`'s
+        own text is not flagged."""
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "packaged/data.txt", "x\n")
+        _write(
+            tmp_path,
+            "pyproject.toml",
+            '[tool.hatch.build]\ninclude = ["packaged/"]\n',
+        )
+        _git_init(tmp_path)
+        assert root_asset_dir_gate(tmp_path) == ()
+
+    def test_directory_with_external_reader_declaration_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """Check (c): a repo-root directory with an explicit
+        `frob:external-reader dir="name"` declaration in ANY tracked
+        markdown file is not flagged -- the real, checkable-claim escape
+        hatch for something genuinely read only by a process outside this
+        repo's own code (the harness-config case)."""
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "harness_config/skill.md", "hi\n")
+        _write(
+            tmp_path,
+            "docs/notes.md",
+            '<!-- frob:external-reader dir="harness_config" '
+            'reason="read by the external dispatch harness" -->\n',
+        )
+        _git_init(tmp_path)
+        assert root_asset_dir_gate(tmp_path) == ()
+
+    def test_makefile_referenced_directory_is_silent(self, tmp_path: Path) -> None:
+        """The ticket's own "scripts a Makefile target actually invokes"
+        exemption clause: a directory literally named in the Makefile is
+        not flagged even with no other reference."""
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "scripts/run.sh", "#!/bin/sh\n")
+        _write(tmp_path, "Makefile", "deploy:\n\tsh scripts/run.sh\n")
+        _git_init(tmp_path)
+        assert root_asset_dir_gate(tmp_path) == ()
+
+    def test_allowlisted_directories_are_silent(self, tmp_path: Path) -> None:
+        """`docs/`, `tickets/`, `design/` are exempt by the ticket's own
+        named allowlist, with no reference of any kind."""
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "docs/readme.md", "hi\n")
+        _write(tmp_path, "tickets/T-0001/ticket.md", "hi\n")
+        _write(tmp_path, "design/frob.strata", "hi\n")
+        _git_init(tmp_path)
+        assert root_asset_dir_gate(tmp_path) == ()
+
+    def test_src_and_tests_dirs_are_never_flagged(self, tmp_path: Path) -> None:
+        """`src/` and `tests/` are the structural code/test roots -- never
+        candidates for this gate regardless of reference evidence."""
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "tests/test_x.py", "pass\n")
+        _git_init(tmp_path)
+        assert root_asset_dir_gate(tmp_path) == ()
+
+    def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "orphan/file.txt", "x\n")
+        assert root_asset_dir_gate(tmp_path) == ()
 
 
 class TestInvariantLoad:

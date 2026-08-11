@@ -179,6 +179,7 @@ from frob.gates._ratchet import (
 from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
+from frob.gates._root_asset_dirs import root_asset_dir_gate
 from frob.gates._secrets import fake_marker_staleness_gate, secrets_gate
 from frob.gates._suppress import (
     SuppressionDialect,
@@ -5581,6 +5582,8 @@ _ALL_GATES = frozenset(
         "docblocks",
         "walk_lint",
         "excludehazard",
+        # frob:ticket T-1784
+        "root_asset_dirs",
         # T-0412: frob:debt malformed/non-open-ticket/expired-until checks.
         "debt",
         # T-0459: bare stdout write outside frob.render.
@@ -5972,6 +5975,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "docblocks",
     "walk_lint",
     "excludehazard",
+    # frob:ticket T-1784
+    "root_asset_dirs",
     "debt",
     # frob:ticket T-0797
     "deprecated",
@@ -6407,6 +6412,10 @@ def _build_thread_jobs(
         # the possibly-scoped st.root) for the same reason secrets/refs
         # are -- the hazard is repo-wide by construction.
         "excludehazard": lambda: exclude_hazard_gate(st.repo_root),
+        # T-1784: repo-root scan, always against repo_root (never the
+        # possibly-scoped st.root) -- same reasoning as excludehazard
+        # above, a top-level directory hazard is repo-wide by construction.
+        "root_asset_dirs": lambda: root_asset_dir_gate(st.repo_root),
         # T-0396: whole-repo scan, always against repo_root (never the
         # possibly-scoped st.root) -- a `frob check <subdir>` run must see
         # the same inbound-reference graph as an unscoped run, same
@@ -7699,6 +7708,7 @@ __all__ = [
     "delta_violations",
     "drift_gate",
     "exclude_hazard_gate",
+    "root_asset_dir_gate",
     "fake_marker_staleness_gate",
     "fmt_gate",
     "format_paths",

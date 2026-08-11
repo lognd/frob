@@ -1,7 +1,7 @@
 ---
 id: T-1784
 title: 'New rule: flag repo-root asset directories with zero code references'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -11,12 +11,65 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- src/frob/gates/_root_asset_dirs.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_root_asset_dirs.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
+- tests/test_gates.py::TestRootAssetDirGate::test_directory_referenced_under_src_frob_is_silent
+- tests/test_gates.py::TestRootAssetDirGate::test_directory_referenced_in_pyproject_is_silent
+- tests/test_gates.py::TestRootAssetDirGate::test_directory_with_external_reader_declaration_is_silent
+- tests/test_gates.py::TestRootAssetDirGate::test_makefile_referenced_directory_is_silent
+- tests/test_gates.py::TestRootAssetDirGate::test_allowlisted_directories_are_silent
+designated_repro_test: tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
+acceptance:
+- text: given a repo-root directory with zero code references, when frob check runs,
+    then ROOT001 fires -- FAIL before this rule existed (frob.gates._root_asset_dirs.root_asset_dir_gate
+    did not exist, ModuleNotFoundError), PASS after (root_asset_dir_gate reports ROOT001
+    for the fixture directory)
+  evidence:
+  - tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
 threat: null
 component: null
 anchor: false
