@@ -27,6 +27,7 @@ import pytest
 from typani.result import Result
 
 import frob.tickets._draft_finalize
+import frob.tickets._new_renumber
 from frob.tickets import (
     Origin,
     Priority,
@@ -447,4 +448,128 @@ class TestPromoteVsLandFinalizeAllocationRace:
             "finalize_draft (promote) and finalize_draft_for_land (land) "
             f"allocated the SAME final id ({final_promote!r}) against the "
             "same main root -- the exact T-2060 collision (T-1669)"
+        )
+
+
+# frob:ticket T-2092
+class TestRenumberVsNewTicketAllocationRace:
+    """T-2092: `renumber_one` (v2-mode dispatches to `renumber_one_v2`, the
+    live default per T-1553) is a THIRD id-allocating call path that T-1669
+    never wired into `allocator_lock` -- unlike `finalize_draft`/
+    `finalize_draft_for_land`, which share it, `renumber_one_v2` only ever
+    took a per-ticket `ticket_lock`, and `new_ticket`'s own allocation only
+    ever took `ledger_lock`. Neither lock overlaps the other, so a renumber
+    targeting id X and a concurrent `new_ticket` independently allocating
+    the SAME id X can both report success, with `new_ticket`'s own
+    unconditional `atomic_write` (no existence check) silently clobbering
+    whichever one wrote second -- exactly the T-2083/T-2090 field incident
+    that silently deleted a whole ticket, reproduced here in one process
+    without needing git merge machinery at all: `new_ticket` computing its
+    id from a snapshot taken before the renumber's rename lands is enough
+    on its own."""
+
+    def test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id(
+        self, tmp_path: Path
+    ) -> None:
+        """Pause `new_ticket`'s id computation (`_allocate_and_check_
+        ticket_id`) right after it decides its next id but before it
+        writes -- while paused, let a concurrent `renumber_one(old,
+        new_id)` targeting that SAME id run to completion. Release
+        `new_ticket` to finish writing. Before the fix, `new_ticket`'s
+        write goes through unguarded and overwrites the just-renumbered
+        ticket's file with its own content -- both operations report
+        `Ok`, and the on-disk content for that id ends up being
+        `new_ticket`'s, not the renumbered ticket's: a silent, undetected
+        loss identical in shape to the T-2083/T-2090 incident. After the
+        fix (`allocator_lock` held by both paths), whichever call reaches
+        the lock second re-validates against the FRESH post-write state
+        and either targets a different id or refuses with `DuplicateId`
+        -- never a silent overwrite."""
+        _seed_ticket(tmp_path, ticket_id="T-0050", state=TicketState.QUEUED)
+
+        entered = threading.Event()
+        release = threading.Event()
+
+        real_allocate = frob.tickets._new_renumber._allocate_and_check_ticket_id
+
+        def _pausing_allocate(root: Path) -> Result[str, TicketError]:
+            result = real_allocate(root)
+            entered.set()
+            release.wait(timeout=_CONCURRENCY_TIMEOUT_S)
+            return result
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(
+            "frob.tickets._new_renumber._allocate_and_check_ticket_id",
+            _pausing_allocate,
+        )
+        try:
+            new_result: Result[Ticket, TicketError] | None = None
+            renumber_result: Result[RenumberReport, TicketError] | None = None
+
+            def _run_new() -> None:
+                nonlocal new_result
+                new_result = new_ticket(
+                    tmp_path,
+                    TicketSpec(
+                        title="Concurrent new ticket during renumber",
+                        kind=TicketKind.BUG,
+                        origin=Origin.AGENT,
+                    ),
+                )
+
+            def _run_renumber() -> None:
+                nonlocal renumber_result
+                renumber_result = renumber_one(tmp_path, "T-0050", "T-0051")
+
+            thread_new = threading.Thread(target=_run_new)
+            thread_new.start()
+            assert entered.wait(timeout=_CONCURRENCY_TIMEOUT_S), (
+                "new_ticket never reached its id-allocation pause point"
+            )
+
+            thread_renumber = threading.Thread(target=_run_renumber)
+            thread_renumber.start()
+            # Give renumber a real window to run to completion
+            # UNGUARDED (pre-fix) while new_ticket is still paused --
+            # post-fix it instead blocks acquiring allocator_lock, which
+            # this short join simply times out waiting for, harmlessly.
+            thread_renumber.join(timeout=2.0)
+            release.set()
+            thread_renumber.join(timeout=_CONCURRENCY_TIMEOUT_S)
+            thread_new.join(timeout=_CONCURRENCY_TIMEOUT_S)
+        finally:
+            monkeypatch.undo()
+
+        assert not thread_new.is_alive()
+        assert not thread_renumber.is_alive()
+
+        assert new_result is not None and new_result.is_ok, (
+            new_result.err if new_result is not None else None
+        )
+        new_id = new_result.danger_ok.id
+
+        # The failure mode this reproduces is not that either call errors --
+        # it is that BOTH report Ok while claiming the same id, with one
+        # silently overwriting the other's on-disk content. Assert directly
+        # against that: if renumber also reports Ok, it must not have
+        # landed on the same id `new_ticket` holds, AND the ticket content
+        # actually on disk for `new_id` must still be `new_ticket`'s own
+        # title, not silently replaced by the renumbered ticket's.
+        if renumber_result is not None and renumber_result.is_ok:
+            report = renumber_result.danger_ok
+            assert report.new_id != new_id, (
+                "renumber_one and a concurrent new_ticket both allocated "
+                f"id {new_id!r} -- the exact T-2092 silent-collision shape"
+            )
+
+        active_after = load_all(tmp_path)
+        assert active_after.is_ok
+        active_map = active_after.danger_ok
+        assert new_id in active_map, "new_ticket's own block did not survive"
+        surviving = active_map[new_id]
+        assert surviving.title == "Concurrent new ticket during renumber", (
+            f"id {new_id!r} on disk holds title {surviving.title!r} -- "
+            "new_ticket's write was silently clobbered by the concurrent "
+            "renumber, exactly the T-2092/T-2083 incident shape"
         )

@@ -39,6 +39,7 @@ from frob.tickets._models import (
 from frob.tickets._provisional import mint_draft_id, on_default_branch
 from frob.tickets._store import (
     _store_mode,
+    allocator_lock,
     archive_path,
     atomic_write,
     ledger_digest,
@@ -282,6 +283,7 @@ def _validate_new_ticket_spec(
 
 
 # frob:ticket T-1813
+# frob:ticket T-2092
 def _allocate_and_write_new_ticket(
     root: Path, spec: TicketSpec, validated_evidence: tuple[str, ...]
 ) -> Result[Ticket, TicketError]:
@@ -293,8 +295,18 @@ def _allocate_and_write_new_ticket(
     that produced T-0465's duplicate T-0427. `write_ticket` re-acquires
     the same lock internally (reentrant, see `ledger_lock`), so this
     outer hold is what actually closes the gap. (T-0458 established this
-    invariant.)"""
-    with ledger_lock(root):
+    invariant.)
+
+    T-2092: now ALSO held under `root`'s `allocator_lock` (T-1253),
+    wrapping the pre-existing `ledger_lock` span exactly as `finalize_
+    draft` does -- `renumber_one`/`renumber_one_v2` are two OTHER id-
+    allocating call paths that hold `allocator_lock` around their own
+    critical sections (this same ticket's fix); this is the third leg,
+    so `new_ticket`'s allocation actually serializes against a
+    concurrent renumber picking the identical id, instead of the two
+    only ever sharing no lock at all (v2 mode: `ledger_lock` here vs.
+    `renumber_one_v2`'s own `ticket_lock` never overlapped)."""
+    with allocator_lock(root), ledger_lock(root):
         ticket_id_result = _allocate_and_check_ticket_id(root)
         if ticket_id_result.is_err:
             return Err(ticket_id_result.danger_err)
@@ -1070,7 +1082,15 @@ def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> N
 # frob:ticket T-0633
 # frob:ticket T-0889
 # frob:ticket T-1255
+# frob:ticket T-2092
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_renumber_one  # noqa: E501
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace.test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id  # noqa: E501
+# frob:waive AFFECT001 reason="T-2092 adds allocator_lock around this function's v1 \
+# branch and _allocate_and_write_new_ticket's existing critical section, matching \
+# finalize_draft's T-1669 pattern -- the public contract docs/modules/tickets.md \
+# describes (rename one ticket's id atomically) is unchanged; that file is a large \
+# repo-wide hub file, out of this ticket's declared scope \
+# (src/frob/tickets/_renumber_v2.py, src/frob/tickets/_new_renumber.py)"
 def renumber_one(
     root: Path, old_id: str, new_id: str, *, dry_run: bool = False
 ) -> Result[RenumberReport, TicketError]:
@@ -1096,7 +1116,15 @@ def renumber_one(
     `renumber_one_v2` instead -- design section 4.1's `git mv` + per-ticket-
     file reference rewrite, in place of this function's whole-ledger
     read-modify-write. Checked FIRST, before `enforce_worktree_lease` even
-    runs, since `renumber_one_v2` does its own lease check."""
+    runs, since `renumber_one_v2` does its own lease check.
+
+    T-2092: the v1 (whole-ledger) branch below is now ALSO held under
+    `root`'s `allocator_lock` (T-1253), matching `finalize_draft`'s
+    pattern -- `renumber_one` is a third id-allocating call path (the
+    RENAME target it commits to is an id claim, same as `new_ticket`'s or
+    `finalize_draft`'s), and T-1669 never wired it in. See `renumber_one_
+    v2`'s own docstring for the v2-mode half of this fix; `_allocate_and_
+    write_new_ticket`'s docstring for the third leg (`new_ticket` itself)."""
     if _store_mode(root) == "v2":
         # Local import: `_renumber_v2` imports helpers back from this module
         # (`_rewrite_body_prose_references`, `_scan_code_references`,
@@ -1118,7 +1146,7 @@ def renumber_one(
         )
         if lease_conflict.is_err:
             return Err(lease_conflict.danger_err)
-    with ledger_lock(root):
+    with allocator_lock(root), ledger_lock(root):
         loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
         if loaded.is_err:
             return Err(loaded.danger_err)

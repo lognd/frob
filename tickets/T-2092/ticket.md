@@ -2,7 +2,7 @@
 id: T-2092
 title: Renumber allocates ids without allocator_lock, so a renumbered ticket can collide
   with a concurrent new and be silently deleted by a merge
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -14,22 +14,231 @@ runs_last: false
 scope:
 - src/frob/tickets/_renumber_v2.py
 - src/frob/tickets/_new_renumber.py
+- tests/test_tickets_ledger_concurrency.py
+- tickets/T-2101/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_ledger_concurrency.py
+  reason: concurrency repro test for the renumber-vs-new_ticket allocation race lives
+    here, following this file's own precedent (TestPromoteVsLandFinalizeAllocationRace
+    etc.)
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-2101/**
+  reason: filing this ticket's own follow-up draft (half 2 of T-2092) touches its
+    own new ticket.md, same as any frob ticket new call
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace::test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id
+designated_repro_test: tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace::test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id
 acceptance:
 - text: given a renumber and a concurrent frob ticket new both allocating an id, when
     both complete, then they hold DIFFERENT ids -- this test MUST fail against current
     main, where renumber takes no allocator_lock
-  evidence: []
-- text: given two ticket records that nonetheless claim the same id, when the ledger
-    is loaded or checked, then this is reported as an error rather than silently resolved
-    by picking one
-  evidence: []
-- text: given a branch carrying a ticket file that a merge of main would overwrite
+  evidence:
+  - tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace::test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id
+- text: 'DO NOT accept "verify the target id is free before renumbering/allocating"
+    (a checklist/procedural discipline, documentation, or manual double-check) as
+    a fix for this ticket. Measured FOUR TIMES in one day (2026-08-10), including
+    twice by agents who performed exactly that verification correctly and diligently
+    (occurrence 4: two agents independently checked T-2096 was free, both got the
+    same correct answer, both claimed it, one landed first) -- check-then-claim across
+    two roots/worktrees is not atomic no matter how careful the check is. Only a real
+    lock (or an equivalent atomic claim primitive) closes this; a "verify first" remedy
+    must be rejected on sight for this ticket.'
+  evidence:
+  - tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace::test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id
+acceptance_amendments:
+- op: remove
+  index: 2
+  old_text: given a branch carrying a ticket file that a merge of main would overwrite
     with different content for the same id, when the merge happens during a land,
     then the collision is surfaced rather than silently resolved
-  evidence: []
+  new_text: null
+  reason: 'Split per this ticket''s own body ("If half 2 turns out to be genuinely
+
+    large, implement half 1, measure and report, and file half 2 as its own
+
+    ticket"). This criterion is the "detect a duplicate id after the fact"
+
+    half: it needs a real merge-time or history-scanning detector across
+
+    tickets/**/ticket.md, distinct from the allocator_lock fix this ticket
+
+    implements, and is genuinely separate engineering scope. Filed as
+
+    T-2101 with this session''s own repro evidence cited.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 1
+  old_text: given two ticket records that nonetheless claim the same id, when the
+    ledger is loaded or checked, then this is reported as an error rather than silently
+    resolved by picking one
+  new_text: null
+  reason: 'Split per this ticket''s own body ("If half 2 turns out to be genuinely
+
+    large, implement half 1, measure and report, and file half 2 as its own
+
+    ticket"). This criterion is the "detect a duplicate id after the fact"
+
+    half: it needs a real merge-time or history-scanning detector across
+
+    tickets/**/ticket.md, distinct from the allocator_lock fix this ticket
+
+    implements, and is genuinely separate engineering scope. Filed as
+
+    T-2101 with this session''s own repro evidence cited.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 10
+  old_text: rejected on sight for this ticket.
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 9
+  old_text: atomic claim primitive) closes this; a "verify first" remedy must be
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 8
+  old_text: no matter how careful the check is. Only a real lock (or an equivalent
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 7
+  old_text: landed first) -- check-then-claim across two roots/worktrees is not atomic
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 6
+  old_text: T-2096 was free, both got the same correct answer, both claimed it, one
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 5
+  old_text: 'correctly and diligently (occurrence 4: two agents independently checked'
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 4
+  old_text: including twice by agents who performed exactly that verification
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 3
+  old_text: as a fix for this ticket. Measured FOUR TIMES in one day (2026-08-10),
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 2
+  old_text: (a checklist/procedural discipline, documentation, or manual double-check)
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 1
+  old_text: DO NOT accept "verify the target id is free before renumbering/allocating"
+  new_text: null
+  reason: 'Accidental split: --criterion-file split this single criterion into 10
+    by
+
+    newline instead of blank-line-delimited blocks (my mistake, not a policy
+
+    change) -- removing to re-add as one criterion.
+
+    '
+  actor: logan
+  at: '2026-08-10'
 threat: null
 component: tickets
 labels:

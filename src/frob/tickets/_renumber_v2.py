@@ -28,7 +28,7 @@ from frob.tickets._new_renumber import (
     _rewrite_body_prose_references,
     _scan_code_references,
 )
-from frob.tickets._store import atomic_write, ticket_lock, tickets_dir
+from frob.tickets._store import allocator_lock, atomic_write, ticket_lock, tickets_dir
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
 # Shared "frob.tickets" logger name kept explicit (not get_logger(__name__),
@@ -247,15 +247,23 @@ def _persist_v2_renumber(
 # frob:ticket T-1255
 # frob:ticket T-1882
 # frob:ticket T-1918
-# frob:waive AFFECT001 reason="T-1882/T-1918 only adjust the live-lease refusal guard \
-# (_refuse_if_other_worktree_holds_live_lease_for_id) ahead of the existing rename \
-# steps this function's design doc section already walks through -- no change to the \
-# rename mechanism itself; docs/design/ledger-v2.md is also out of this ticket's \
-# declared scope (src/frob/app/ticket_runner/_query.py, \
-# src/frob/tickets/_renumber_v2.py, src/frob/tickets/_new_renumber.py)"
+# frob:ticket T-2092
+# frob:waive AFFECT001 reason="T-1882/T-1918/T-2092 only adjust the live-lease refusal \
+# guard and add allocator_lock around the existing rename steps this function's design \
+# doc section already walks through -- no change to the rename mechanism itself; \
+# docs/design/ledger-v2.md is also out of this ticket's declared scope \
+# (src/frob/app/ticket_runner/_query.py, src/frob/tickets/_renumber_v2.py, \
+# src/frob/tickets/_new_renumber.py)"
 # frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_git_mv_renames_directory_and_rewrites_id_field  # noqa: E501
 # frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_sibling_ticket_prose_citation_rewritten  # noqa: E501
 # frob:tests tests/test_tickets_collision.py::TestRenumberOneV2.test_locks_acquired_in_sorted_id_order_no_deadlock  # noqa: E501
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberVsNewTicketAllocationRace.test_renumber_and_concurrent_new_ticket_never_allocate_the_same_id  # noqa: E501
+# frob:waive ARCH001 reason="T-2092's allocator_lock fix adds ~20 lines (the lock \
+# acquisition plus its docstring paragraph) to a function already at the threshold; \
+# splitting the body further would mean threading old_dir/ref_changes/code_changes/ \
+# report across yet another private helper purely to dodge a line count on a critical, \
+# data-loss-class lock fix -- not worth the added indirection here. A real LARGE001 \
+# split is better done as its own follow-up if this function grows again"
 def renumber_one_v2(
     root: Path, old_id: str, new_id: str, *, dry_run: bool = False
 ) -> Result[RenumberReport, TicketError]:
@@ -271,7 +279,24 @@ def renumber_one_v2(
     generalizes) so a renumber can never lock-order-deadlock against a
     concurrent renumber/write touching the same two ids in the opposite
     order. A `dry_run` call takes no locks and mutates nothing -- it only
-    computes and reports what WOULD change."""
+    computes and reports what WOULD change.
+
+    T-2092: the validate-through-persist span is now ALSO held under
+    `root`'s `allocator_lock` (T-1253) -- this function is a THIRD id-
+    allocating call path (alongside `new_ticket` and `finalize_draft`/
+    `finalize_draft_for_land`) that T-1669 never wired in: `_validate_v2_
+    renumber_ids`'s "is `new_id` free" check used to run entirely
+    UNLOCKED, so a concurrent `new_ticket` could allocate and WRITE that
+    exact `new_id` in the window between this function's check and its
+    own `ticket_lock`-protected persist -- `new_ticket`'s own write is an
+    unconditional `atomic_write` (no existence check), so the loser of
+    that race had its content silently overwritten with no error from
+    either side (the T-2083/T-2090 field incident this ticket reproduces).
+    `allocator_lock` is now taken BEFORE validation (not just around the
+    persist), closing the TOCTOU outright: a concurrent `new_ticket`
+    blocked on `allocator_lock` always sees this function's write land
+    first (or vice versa), and whichever runs second re-validates against
+    the FRESH post-write state rather than a stale snapshot."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -287,35 +312,37 @@ def renumber_one_v2(
         )
         if lease_conflict.is_err:
             return Err(lease_conflict.danger_err)
-    validated = _validate_v2_renumber_ids(root, old_id, new_id)
-    if validated.is_err:
-        return Err(validated.danger_err)
-    old_dir = validated.danger_ok
 
-    lock_ids = sorted({old_id, new_id})
-    with ExitStack() as stack:
-        for lock_id in lock_ids:
-            stack.enter_context(ticket_lock(root, lock_id))
+    with allocator_lock(root):
+        validated = _validate_v2_renumber_ids(root, old_id, new_id)
+        if validated.is_err:
+            return Err(validated.danger_err)
+        old_dir = validated.danger_ok
 
-        ticket_path = old_dir / "ticket.md"
-        old_text = ticket_path.read_text(encoding="utf-8")
-        new_text = _rewrite_v2_id_field(old_text, new_id)
-        ref_changes = _scan_v2_reference_files(
-            root, old_id, new_id, exclude=ticket_path
-        )
-        code_changes = _scan_code_references(root, old_id, new_id)
-        report = _build_v2_renumber_report(
-            root, old_id, new_id, old_dir, ref_changes, code_changes, dry_run
-        )
-        if dry_run:
-            _log_renumber_dry_run(old_id, new_id, report)
-            return Ok(report)
+        lock_ids = sorted({old_id, new_id})
+        with ExitStack() as stack:
+            for lock_id in lock_ids:
+                stack.enter_context(ticket_lock(root, lock_id))
 
-        persisted = _persist_v2_renumber(
-            root, old_dir, new_id, new_text, ref_changes, code_changes
-        )
-        if persisted.is_err:
-            return Err(persisted.danger_err)
+            ticket_path = old_dir / "ticket.md"
+            old_text = ticket_path.read_text(encoding="utf-8")
+            new_text = _rewrite_v2_id_field(old_text, new_id)
+            ref_changes = _scan_v2_reference_files(
+                root, old_id, new_id, exclude=ticket_path
+            )
+            code_changes = _scan_code_references(root, old_id, new_id)
+            report = _build_v2_renumber_report(
+                root, old_id, new_id, old_dir, ref_changes, code_changes, dry_run
+            )
+            if dry_run:
+                _log_renumber_dry_run(old_id, new_id, report)
+                return Ok(report)
+
+            persisted = _persist_v2_renumber(
+                root, old_dir, new_id, new_text, ref_changes, code_changes
+            )
+            if persisted.is_err:
+                return Err(persisted.danger_err)
 
     rename_lease(root, old_id, new_id)
     _log_renumber_done(old_id, new_id, {**ref_changes, **code_changes}, report)
