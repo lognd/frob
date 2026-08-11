@@ -125,6 +125,24 @@ def _scope_add_conflicts(
     queue_conflict = _scope_add_queue_conflict(
         glob, ticket_id, queue, root=root, new_file=new_file
     )
+    if queue_conflict is not None and root is not None:
+        # frob:ticket T-2095
+        # The queue-based check reflects THIS worktree's own possibly-
+        # stale local ledger copy of the holder's ticket -- a narrowing
+        # the holder published to the live cross-worktree lease side-
+        # channel (`mutate_scope` -> `record_lease`, T-0473/T-1993) is
+        # invisible to it until a merge/land. Before trusting a stale
+        # conflict, check the SAME holder's live lease record (if any):
+        # if it exists and no longer overlaps `glob`, the holder has
+        # already released this path and the queue-based finding is
+        # superseded, so fall through to the fresher live-lease check
+        # instead of returning the stale result directly. This can only
+        # ever CLEAR a conflict the queue-based check found, never invent
+        # one -- narrowing is monotone-safe (T-2095's own acceptance
+        # criterion 3); a holder with no live lease recorded at all keeps
+        # the pre-existing queue-based answer unchanged.
+        if not _live_lease_still_conflicts(queue_conflict[0], glob, root):
+            queue_conflict = None
     if queue_conflict is not None:
         return queue_conflict
     if root is not None:
@@ -132,6 +150,38 @@ def _scope_add_conflicts(
             glob, ticket_id, root, queue, new_file=new_file
         )
     return None
+
+
+# frob:ticket T-2095
+def _live_lease_still_conflicts(holder_id: str, glob: str, root: Path) -> bool:
+    """`True` unless `holder_id` has a LIVE cross-worktree lease
+    (`read_all_leases`, T-0473) recorded and that lease's CURRENT scope no
+    longer overlaps `glob` (T-2095) -- the narrow, monotone-safe check
+    `_scope_add_conflicts` uses to decide whether a stale queue-based
+    conflict against `holder_id` has been superseded by a narrowing the
+    holder already published to the shared side-channel.
+
+    Deliberately conservative in every direction that is NOT "the holder
+    has since released this exact path": no recorded lease at all for
+    `holder_id` (never started in this process's view of the side-channel,
+    or the side-channel itself is unavailable) returns `True` (keep
+    trusting the queue-based conflict -- there is no fresher signal to
+    prefer it over), and a lease whose scope STILL overlaps `glob` also
+    returns `True` (nothing has changed; the conflict is real). Only a
+    lease that demonstrably no longer covers `glob` returns `False`, which
+    is what makes this safe to use as a pre-check ahead of the existing,
+    independently-conflict-detecting `_scope_add_live_lease_conflict` --
+    it never widens what counts as a conflict, only narrows a stale one
+    away when the live record proves it has already been released."""
+    from frob.tickets._leases import read_all_leases
+
+    lease = next(
+        (entry for entry in read_all_leases(root) if entry.ticket_id == holder_id),
+        None,
+    )
+    if lease is None:
+        return True
+    return scope_overlap_globs((glob,), lease.scope) is not None
 
 
 # frob:ticket T-1880

@@ -772,3 +772,130 @@ class TestLeaseDeltaReconciliation:
             lease for lease in read_all_leases(second_worktree) if lease.ticket_id == tid
         )
         assert set(held.scope) == {"src/feature.py", "src/another.py"}
+
+
+# frob:ticket T-2095
+class TestScopeLeaseConflictPrefersLiveNarrowingOverStaleQueue:
+    """T-2095: a narrowing published to the live cross-worktree lease
+    side-channel (`mutate_scope` -> `record_lease`, T-0473/T-1993) must
+    actually be CONSULTED by `scope_lease_conflict` before a stale local
+    ledger's queue-based check refuses a candidate ticket over a path the
+    holder has already released.
+
+    Reproduces the exact T-2079/T-2093 shape live-measured on this repo's
+    own main: ticket A starts holding a broad scope covering path P (this
+    commit lands on `repo`, i.e. main -- matching main's copy of T-2079's
+    ticket.md). A's own worktree then narrows away P (matching that
+    worktree's copy of the ticket.md, and the live lease `mutate_scope`
+    republishes). A THIRD worktree is created from `repo` BEFORE the
+    narrowing (never merges it, matching every dispatched agent's
+    worktree, which never re-merges main mid-ticket) and tries to start a
+    ticket needing only P.
+
+    `_scope_add_queue_conflict` (stale local-ledger check, sees A's
+    ORIGINAL broad scope) runs BEFORE `_scope_add_live_lease_conflict`
+    (fresh side-channel check, sees A's narrowed scope) inside
+    `_scope_add_conflicts`, and returns its own stale conflict immediately
+    without ever consulting the live, authoritative lease -- so this
+    currently refuses a candidate whose only overlap is a path the holder
+    has already released. Must be `None` after the fix."""
+
+    def test_narrowed_away_path_is_not_blocked_by_a_stale_local_queue(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestScopeLeaseConflictPrefersLive\
+        # NarrowingOverStaleQueue.test_narrowed_away_path_is_not_blocked_by_a_stale_loc\
+        # al_queue
+        from frob.tickets._scope import scope_lease_conflict
+
+        (repo / "src" / "other.py").write_text("# other\n")
+        _commit_all(repo, "add src/other.py")
+
+        # Ticket A starts directly on `repo` (main), holding a broad scope
+        # that covers both `src/feature.py` (the path a later candidate
+        # needs) and `src/other.py` (a path it keeps).
+        created_a = new_ticket(
+            repo,
+            _spec("Feature A", scope=("src/feature.py", "src/other.py")),
+        )
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        assert transition(repo, tid_a, TicketState.PLANNED).is_ok
+        assert transition(repo, tid_a, TicketState.IN_PROGRESS).is_ok
+        # `transition()` (the low-level API used here, matching this
+        # module's other direct-API tests) writes the state change into
+        # `repo`'s ticket file but does not commit it -- only the CLI's
+        # `frob ticket start` (`commit_start_transition`) does that. A
+        # `git worktree add` below clones from the last COMMIT, so the
+        # in-progress transition must be committed first or every new
+        # worktree would see the ticket as still QUEUED.
+        _commit_all(repo, "start T-0001")
+
+        # Worktree A: A's own agent worktree, cut from `repo`'s current
+        # tip -- its local ticket.md still matches main's broad scope at
+        # this point.
+        worktree_a = repo.parent / "wt-a"
+        _run(["git", "worktree", "add", "-b", "agent-a", str(worktree_a)], repo)
+
+        # Worktree C: a THIRD, independent agent worktree cut from the
+        # SAME tip as worktree_a -- before A's narrowing exists anywhere.
+        # It never merges anything from worktree_a; this is the stale
+        # local-ledger view every dispatched agent's fresh worktree has.
+        worktree_c = repo.parent / "wt-c"
+        _run(["git", "worktree", "add", "-b", "agent-c", str(worktree_c)], repo)
+
+        # A narrows in ITS OWN worktree, releasing src/feature.py -- this
+        # updates worktree_a's local ticket.md AND (per mutate_scope's
+        # T-0473/T-1993 contract) republishes the narrowed scope onto the
+        # shared live lease. Never merged into `repo` or worktree_c.
+        narrowed = mutate_scope(
+            worktree_a,
+            tid_a,
+            remove=("src/feature.py",),
+            reason="T-2095 repro: release src/feature.py for others",
+        )
+        assert narrowed.is_ok
+
+        # Acceptance criterion 2: the narrowing published via the ONLY
+        # mechanism this fix relies on (the existing lease side-channel,
+        # T-0473/T-1993) -- worktree_a never wrote main's (`repo`'s) own
+        # ticket file directly, and `repo` (the shared root in this
+        # scenario) is not left dirty by worktree_a's mutation.
+        main_view = load_all(repo)
+        assert main_view.is_ok
+        assert "src/feature.py" in main_view.danger_ok[tid_a].scope
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=str(repo),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert status.stdout.strip() == ""
+
+        # Confirm the premise: worktree_c's own local ledger still shows
+        # A's ORIGINAL broad scope (it never merged worktree_a's commit).
+        local_queue = load_all(worktree_c)
+        assert local_queue.is_ok
+        assert "src/feature.py" in local_queue.danger_ok[tid_a].scope
+
+        # Confirm the premise: the live lease HAS already narrowed away
+        # src/feature.py, visible from worktree_c via the shared
+        # side-channel.
+        live = next(
+            lease for lease in read_all_leases(worktree_c) if lease.ticket_id == tid_a
+        )
+        assert "src/feature.py" not in live.scope
+
+        # The actual bug: a candidate ticket in worktree_c needing ONLY
+        # the already-released src/feature.py must not collide with A --
+        # the live lease (fresher, narrower) must be consulted rather
+        # than the stale local queue's broad scope.
+        conflict = scope_lease_conflict(
+            "T-9999-candidate",
+            ("src/feature.py",),
+            dict(local_queue.danger_ok),
+            root=worktree_c,
+        )
+        assert conflict is None

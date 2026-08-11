@@ -2,7 +2,7 @@
 id: T-2095
 title: A scope narrowing in a worktree is invisible to the fleet until land, so releasing
   a lease cannot unblock anyone
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,22 +13,30 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_scope.py
+evidence_scope:
+- tests/test_ticket_leases_cross_worktree.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestScopeLeaseConflictPrefersLiveNarrowingOverStaleQueue::test_narrowed_away_path_is_not_blocked_by_a_stale_local_queue
+- tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease::test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease
+designated_repro_test: tests/test_ticket_leases_cross_worktree.py::TestScopeLeaseConflictPrefersLiveNarrowingOverStaleQueue::test_narrowed_away_path_is_not_blocked_by_a_stale_local_queue
 acceptance:
 - text: given ticket A narrows its scope in its worktree to release path P, when ticket
     B whose scope needs only P runs frob ticket start, then B starts successfully
     without waiting for A to land -- this test MUST fail against current main
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestScopeLeaseConflictPrefersLiveNarrowingOverStaleQueue::test_narrowed_away_path_is_not_blocked_by_a_stale_local_queue
 - text: given a narrowing is published, when main and the worktree copies are compared,
     then no worktree has written main ticket file directly and the shared root is
     not left dirty
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestScopeLeaseConflictPrefersLiveNarrowingOverStaleQueue::test_narrowed_away_path_is_not_blocked_by_a_stale_local_queue
 - text: given ticket A WIDENS its scope in its worktree, when the fleet reads leases,
     then the widening does NOT silently take effect by the same path -- only narrowing
     is monotone-safe and only narrowing may use it
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease::test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease
 threat: null
 component: tickets
 labels:
