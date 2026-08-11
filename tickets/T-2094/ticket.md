@@ -28,6 +28,20 @@ acceptance:
 - text: given a ticket whose scope is within the threshold, when frob ticket start
     runs, then behaviour is unchanged
   evidence: []
+- text: 'CORRECTION TO THIS TICKET EVIDENCE, measured after filing: both cited incidents
+    (T-1669 blocking T-2076, T-2079 blocking T-2093) were NOT agents ignoring the
+    brief. Both agents DID narrow to named paths as instructed. Their narrowings were
+    invisible because a worktree-side scope edit does not reach the lease check, which
+    reads mains copy -- captured live: mains tickets/T-2079/ticket.md still listed
+    src/frob/tickets/** and src/frob/app/ticket_runner/** while the worktree copy
+    listed five named files. That mechanism is now T-2095 (critical) and is the better
+    explanation of both blocks. THIS ticket remains valid on its own terms -- an unacknowledged
+    broad scope should still be refused at the moment the lease is granted rather
+    than merely warned about, and scope_breadth_ack already exists as the opt-in channel
+    -- but do NOT justify it with the two blocking incidents, and do NOT assume fixing
+    it would have prevented them. It would not have. Acceptance for this ticket is
+    unchanged.'
+  evidence: []
 threat: null
 component: ticket_runner
 labels:
