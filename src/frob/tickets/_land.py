@@ -3683,6 +3683,55 @@ def _refuse_already_landed(
 # implicit-cli-wiring) to this function's refusal; docs/modules/tickets.md was leased \
 # to in-progress T-1686 and could not be edited here -- follow-up draft filed to \
 # update the anchor once free"
+# frob:ticket T-2121
+#: Paths `_check_cross_ticket_leakage` must never treat as "claimed" by
+#: any ticket's declared (or live-lease) scope, because no ticket's own
+#: committed work can legitimately explain a change to them in the first
+#: place -- they are written EXCLUSIVELY by land/sweep machinery itself,
+#: never by a worktree agent's intentional edit. Two already-recognized
+#: land-owned families, combined: `_LAND_OWNED_RELEASE_FILES` minus
+#: `pyproject.toml` (that module's own T-1805 comment: `pyproject.toml`
+#: is only PARTIALLY land-owned -- its `version = ` line -- every OTHER
+#: field is legitimate ticket territory, so the file as a whole must stay
+#: leakage-checkable, unlike `CHANGELOG.md`/`.frob-release.json`, which
+#: are wholly land-owned in practice and refused outright by the T-0731
+#: scaffolded pre-commit hook for ANY worktree commit that touches them
+#: at all) plus `rapid-debt.jsonl` (T-1699's deferred-debt append,
+#: written exclusively by `record_rapid_debt`/the detached post-land
+#: sweep, never by a ticket's own hand -- the T-2121 field incident: an
+#: unrelated open ticket happened to declare it in its own scope, and
+#: every OTHER rapid land in the fleet started refusing with
+#: CrossTicketLeakage over a file its own author never touched by hand).
+#:
+#: Deliberately NOT `uv.lock`: unlike these three, a stale `uv.lock` is
+#: harmless and gets unconditionally re-synced from `pyproject.toml` at
+#: land time regardless of which side's copy staged (see
+#: `_LAND_OWNED_RELEASE_FILES`'s own module comment) -- excluding it here
+#: would buy nothing a real ticket could ever collide on.
+#:
+#: This is a small, individually-justified ALLOWLIST, not a broad
+#: exemption rule -- a ticket's declared/live-lease scope still counts as
+#: a real claim on every path OUTSIDE this set, including every ordinary
+#: source/test/doc file no machinery ever writes to. Do not special-case
+#: a bare filename here without adding it to one of the two land-owned
+#: families above first (or documenting a THIRD family with the same
+#: "no ticket can legitimately explain this" property) -- an ad hoc
+#: string here is exactly the fragile, one-file-at-a-time fix this
+#: ticket's own body says not to write.
+def _machinery_owned_leakage_exempt_paths() -> frozenset[str]:
+    """The `_check_cross_ticket_leakage` machinery-owned-path allowlist
+    (T-2121) -- see the module-level comment directly above this
+    function for the full rationale; kept as a function (not a bare
+    module constant) so it always reflects `_LAND_OWNED_RELEASE_FILES`'s
+    current membership rather than a copy that could silently drift."""
+    from frob.tickets._land_release import _LAND_OWNED_RELEASE_FILES
+
+    return frozenset(
+        {p for p in _LAND_OWNED_RELEASE_FILES if p != "pyproject.toml"}
+        | {"rapid-debt.jsonl"}
+    )
+
+
 def _check_cross_ticket_leakage(
     root: Path,
     worktree: Path,
@@ -3744,7 +3793,12 @@ def _check_cross_ticket_leakage(
     # correctly. Excluded here so a ledger-only diff never false-positives
     # this check against every other open ticket in the worktree.
     archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
-    relevant = frozenset(changed.danger_ok) - {LEDGER_PATH, archive_rel}
+    # frob:ticket T-2121
+    relevant = (
+        frozenset(changed.danger_ok)
+        - {LEDGER_PATH, archive_rel}
+        - _machinery_owned_leakage_exempt_paths()
+    )
     if not relevant:
         return Ok(None)
 

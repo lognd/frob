@@ -2,7 +2,7 @@
 id: T-2094
 title: Over-broad scope is a warning at ticket start, not a refusal, so a ** glob
   silently leases whole subtrees and blocks critical work
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -132,3 +132,54 @@ ticket whose scope matches more than the threshold number of files, without
 the acknowledged-broad flag, currently succeeds and records the lease. After
 the fix it must refuse, name the measured file count, and name the flag that
 would allow it deliberately.
+
+## Drop reason
+- 2026-08-11: T-2094's own acceptance criterion [0] says the repro test "MUST fail
+against current main". It does not: `_refuse_over_broad_scope_on_start`
+(src/frob/app/ticket_runner/_lifecycle.py:928, wired into `start` at
+line 692) already promotes TICK009's breadth measure to a hard
+`sys.exit(1)` refusal at `frob ticket start`, with `scope_breadth_ack`
+as the exact escape hatch T-2094 itself names as "already exists" --
+this is T-1866, landed, with its own coverage
+(tests/unit/test_app_runners_batch7.py::TestTicketStart.
+test_start_refuses_over_broad_scope /
+test_start_over_broad_scope_ack_bypasses_refusal, both passing on
+main) and doc anchor (docs/modules/tickets.md#mega-glob-scope-refused-
+at-start-t-1866).
+
+Verified empirically in this session, not just by reading code: filed
+a real ticket with scope='src/frob/gates/**' (75 files, unacked) and
+ran `frob ticket start` against it on current main --
+
+  ERROR: ticket start failed: T-2124 scope 'src/frob/gates/**'
+    matches 75 files (> 25) -- narrow it to the specific files this
+    ticket touches
+  ERROR: ticket start failed: T-2124 carries 1 over-broad
+    scope entry -- narrow it (...), or if this ticket's honest scope
+    really is a package glob (a genuine epic/umbrella), acknowledge it
+    explicitly: `frob ticket scope-ack ...`
+
+-- refused, no lease recorded, names the measured count (75 > 25) and
+the ack flag, exactly T-2094's acceptance [0]/[1]/[2]. The probe ticket
+was dropped immediately after (verification-only, not real work).
+
+T-2094's own standing correction already retracted its original
+justification (the T-2076/T-2093 blocking incidents were narrowing-
+invisibility, T-2095's subject, not this). The coordinator's later
+message (T-2106's 614-collapsed-warnings evidence) is real and valuable
+but is about `frob ticket new` accepting an unacknowledged broad scope,
+a DIFFERENT enforcement point than this ticket's declared scope
+(_lifecycle.py, the `start` path only) and DIFFERENT acceptance
+criteria (all three are start-shaped) -- extending the refusal to `new`
+is a new, distinct unit of work, not a fold-in achievable inside this
+ticket's own acceptance without rewriting it. Dropping this one rather
+than reshaping it in place, since its acceptance criteria are already
+met verbatim and reshaping them would just be re-filing a different
+ticket under the same id.
+
+Filed as a new ticket instead (see Done-report-adjacent citation) for
+the `ticket new`-time enforcement gap, scoped to wherever `new_ticket`
+lives (src/frob/tickets/_new_renumber.py or its CLI parser) plus a
+severity-scales-with-count fix to the collapsed-warning display -- both
+out of _lifecycle.py's own scope, so out of this ticket's reach even if
+kept open.
