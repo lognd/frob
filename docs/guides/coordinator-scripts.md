@@ -111,13 +111,44 @@ measure alone. `frob worktree sweep` (section 12b of the agent playbook)
 is the authoritative, lease-aware check; this script's idle flag is for a
 human/coordinator glance, not a removal decision.
 
+### quarantine
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#quarantine -->
+
+`QUARANTINE` is `.frob/quarantine.json`, the T-1693 quarantine circuit
+breaker's own persisted store (`frob.verify._quarantine`), read here as
+raw JSON so this script stays dependency-light (no `frob` package
+import required) -- the same reasoning `LEASES` already applies.
+
+`quarantine_state()` returns `("raised" | "clear" | "unknown",
+undisposed_count)`. A missing file is `"clear"` (never raised). An
+unreadable/malformed file, or one whose `findings` field is not a list,
+is `"unknown"` -- NEVER `"clear"`, mirroring `frob.verify._quarantine`'s
+own "cannot verify is never verified" rule: misreading an unknown store
+as clear would tell a coordinator it is safe to dispatch when it might
+not be. `undisposed_count` is the number of findings whose
+`disposition` is still empty.
+
+T-2049's own reason for existing: a raised quarantine forces every land
+onto fully-synchronous verification (`_quarantine_override_ceilings`,
+`docs/modules/tickets.md#quarantine-circuit-breaker-t-1693`), and prior
+to this the ONLY signal was one ERROR line buried inside `frob ticket
+land`'s own several-hundred-line output -- read past across four
+separate land attempts in a real incident that cost roughly an hour of
+fleet-wide land throughput over two unused imports. `fleet_status.py`
+is the place a coordinator already reads before dispatching a wave, so
+`main()` now prints this state unconditionally, before LEASES/
+WORKTREES, rather than adding a new command nobody would know to run.
+
 ### fleet_status-main
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#fleet_status-main -->
 
-CLI entry point: prints root dirt, held leases, and worktree idle ages;
-exits 1 when the root is dirty, 0 otherwise. `--idle-minutes N` (default
-20) sets the idle threshold.
+CLI entry point: prints root dirt, quarantine state, held leases, and
+worktree idle ages; exits 1 when the root is dirty, 0 otherwise (the
+quarantine line does not itself change the exit code -- it is a
+visibility fix, not a new dispatch-refusal gate). `--idle-minutes N`
+(default 20) sets the idle threshold.
 
 Usage:
 

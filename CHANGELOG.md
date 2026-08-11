@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.461.0] - unreleased
+
+- T-2049: A raised quarantine silently forces synchronous verification on every land and is surfaced nowhere an operator looks -- two unused imports cost an hour of fleet land throughput
+
 ## [0.460.0] - unreleased
 
 - T-1782: New rule: every FROB_* env var needs a doc anchor or an explicit waiver

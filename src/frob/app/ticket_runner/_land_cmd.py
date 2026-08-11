@@ -3059,9 +3059,11 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
 
 # frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1693
+# frob:ticket T-2049
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_not_quarantined_is_unchanged  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_quarantined_forces_synchronous  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_corrupt_store_also_forces_synchronous  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_notice_names_undisposed_count_and_dispose_command  # noqa: E501
 def _quarantine_override_ceilings(
     root: Path,
     ceilings,
@@ -3084,7 +3086,18 @@ def _quarantine_override_ceilings(
     treated the SAME as `True` here -- "cannot verify is never verified"
     extends to this call site too: an unreadable quarantine store must
     never be misread as "quarantine is not raised", the direction that
-    would silently let deferred landing resume."""
+    would silently let deferred landing resume.
+
+    T-2049: the ERROR line now names how many findings are undisposed
+    and the exact command to clear them (`frob verify dispose`), not
+    just the ticket id -- the previous message was accurate but
+    actionless, and was read past across at least four separate land
+    attempts in the real incident (two dead imports left the quarantine
+    raised for roughly an hour of fleet-wide land throughput) before
+    anyone traced it back to this line. `_undisposed_count`'s own
+    unreadable-record case folds into the same "N unknown" wording
+    rather than a separate branch, since the log line already treats
+    "raised" and "cannot verify" identically above."""
     from frob.verify._backpressure import BackpressureCeilings
     from frob.verify._quarantine import is_quarantined
 
@@ -3095,10 +3108,33 @@ def _quarantine_override_ceilings(
     _log.error(
         "ticket land: %s quarantine is raised (or its store could not be "
         "read) -- deferred landing is OFF, forcing fully-synchronous "
-        "verification for this land regardless of profile (T-1693)",
+        "verification for this land regardless of profile (T-1693); "
+        "%s -- clear with `frob verify dispose`",
         ticket_id if ticket_id is not None else "<no ticket id>",
+        _quarantine_undisposed_summary(root),
     )
     return BackpressureCeilings(max_depth=0, max_age_s=0.0)
+
+
+# frob:ticket T-2049
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_notice_names_undisposed_count_and_dispose_command  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_no_quarantine_ever_raised_is_unknown_not_a_crash  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_corrupt_store_is_unknown  # noqa: E501
+# frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_raised_record_counts_undisposed_findings  # noqa: E501
+def _quarantine_undisposed_summary(root: Path) -> str:
+    """T-2049: a short human-readable fragment for `_quarantine_override_
+    ceilings`' own ERROR line -- "N finding(s) undisposed" for a readable
+    raised record, or "undisposed count unknown (store unreadable)" when
+    `load_quarantine` itself errors, so the log line always states a
+    concrete remedy-relevant fact instead of only naming the ticket."""
+    from frob.verify._quarantine import load_quarantine
+
+    loaded = load_quarantine(root)
+    if loaded.is_err or loaded.danger_ok is None:
+        return "undisposed count unknown (store unreadable)"
+    record = loaded.danger_ok
+    undisposed = sum(1 for f in record.findings if not f.disposition)
+    return f"{undisposed} finding(s) undisposed"
 
 
 # frob:ticket T-1693

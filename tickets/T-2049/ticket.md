@@ -3,7 +3,7 @@ id: T-2049
 title: A raised quarantine silently forces synchronous verification on every land
   and is surfaced nowhere an operator looks -- two unused imports cost an hour of
   fleet land throughput
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,8 +12,78 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/unit/test_land_cmd_quarantine.py
+- docs/guides/coordinator-scripts.md
+- tickets/T-2126/**
+- rapid-debt.jsonl
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: scripts/fleet_status.py
+  reason: acceptance criteria touch fleet_status.py (surface quarantine) and _land_cmd.py's
+    quarantine-notice log line, plus their existing test files
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: acceptance criteria touch fleet_status.py (surface quarantine) and _land_cmd.py's
+    quarantine-notice log line, plus their existing test files
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: acceptance criteria touch fleet_status.py (surface quarantine) and _land_cmd.py's
+    quarantine-notice log line, plus their existing test files
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_land_cmd_quarantine.py
+  reason: acceptance criteria touch fleet_status.py (surface quarantine) and _land_cmd.py's
+    quarantine-notice log line, plus their existing test files
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: new quarantine_state() public symbol in fleet_status.py needs its own frob:doc
+    anchor here, matching every other fleet_status.py symbol's existing anchor
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-2126/**
+  reason: T-2049's own acceptance criterion 4 investigation filed T-2126 as a follow-up
+    from inside this worktree; its ticket.md ships with this branch
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: frob ticket close's own REL001 rapid-profile debt-recording auto-appends
+    this file; routine bookkeeping like tickets.md, not part of the actual fix
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: quarantine_state()/QUARANTINE need their own frob:doc anchor content here,
+    matching every other fleet_status.py symbol's existing anchor pattern
+  actor: logan
+  at: '2026-08-11'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_reports_raised_with_undisposed_count
+- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_reports_clear_when_store_says_cleared
+- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_reports_clear_when_no_file
+- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_unreadable_store_is_unknown_never_clear
+- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_non_dict_record_is_unknown
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine::test_prints_raised_with_undisposed_count_and_consequence
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine::test_prints_clear
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine::test_prints_unknown_as_unsafe
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_notice_names_undisposed_count_and_dispose_command
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_no_quarantine_ever_raised_is_unknown_not_a_crash
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_corrupt_store_is_unknown
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_raised_record_counts_undisposed_findings
 designated_repro_test: null
 threat: null
 component: null

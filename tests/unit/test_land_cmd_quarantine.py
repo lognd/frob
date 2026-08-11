@@ -9,6 +9,7 @@ from pathlib import Path
 from frob.app.ticket_runner._land_cmd import (
     _auto_clear_synthetic_quarantine,
     _quarantine_override_ceilings,
+    _quarantine_undisposed_summary,
     _raise_quarantine_on_persistent_block_timeout,
 )
 from frob.verify._backpressure import BackpressureCeilings
@@ -53,6 +54,73 @@ class TestQuarantineOverrideCeilings:
         original = BackpressureCeilings(max_depth=None, max_age_s=None)
         result = _quarantine_override_ceilings(tmp_path, original, ticket_id="T-0001")
         assert result == BackpressureCeilings(max_depth=0, max_age_s=0.0)
+
+    # frob:ticket T-2049
+    def test_notice_names_undisposed_count_and_dispose_command(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_notice_names_undisposed_count_and_dispose_command  # noqa: E501
+        """T-2049: the ERROR line logged when quarantine forces synchronous
+        verification must name HOW MANY findings are undisposed and the
+        command to clear them -- naming only the ticket, with no actionable
+        count/remedy, was read past by the coordinator four times in the
+        real incident this ticket fixes."""
+        assert raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("deadbeef",),
+            findings=(
+                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),
+                QuarantinedFinding(rule_id="TEST002", file="src/y.py", line=2),
+            ),
+        ).is_ok
+
+        original = BackpressureCeilings(max_depth=None, max_age_s=None)
+        with caplog.at_level("ERROR"):
+            _quarantine_override_ceilings(tmp_path, original, ticket_id="T-0001")
+
+        messages = " ".join(caplog.messages)
+        assert "2" in messages
+        assert "frob verify dispose" in messages
+
+
+# frob:ticket T-2049
+class TestQuarantineUndisposedSummary:
+    # frob:ticket T-2049
+    def test_no_quarantine_ever_raised_is_unknown_not_a_crash(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_no_quarantine_ever_raised_is_unknown_not_a_crash  # noqa: E501
+        """`load_quarantine` returning `Ok(None)` (no store has ever been
+        written) must take the SAME 'unknown' branch as an `Err` -- this
+        distinguishes the `or` in `loaded.is_err or loaded.danger_ok is
+        None` from an `and`, which would instead try to read `.findings`
+        off `None` and crash."""
+        assert _quarantine_undisposed_summary(tmp_path) == (
+            "undisposed count unknown (store unreadable)"
+        )
+
+    # frob:ticket T-2049
+    def test_corrupt_store_is_unknown(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_corrupt_store_is_unknown  # noqa: E501
+        path = tmp_path / ".frob" / "quarantine.json"
+        path.parent.mkdir(parents=True)
+        path.write_text("not json{{{", encoding="utf-8")
+        assert _quarantine_undisposed_summary(tmp_path) == (
+            "undisposed count unknown (store unreadable)"
+        )
+
+    # frob:ticket T-2049
+    def test_raised_record_counts_undisposed_findings(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary.test_raised_record_counts_undisposed_findings  # noqa: E501
+        assert raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("deadbeef",),
+            findings=(
+                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),
+                QuarantinedFinding(rule_id="TEST002", file="src/y.py", line=2),
+            ),
+        ).is_ok
+        assert _quarantine_undisposed_summary(tmp_path) == "2 finding(s) undisposed"
 
 
 # frob:ticket T-1693

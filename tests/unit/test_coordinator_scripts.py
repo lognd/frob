@@ -249,6 +249,121 @@ class TestFleetStatusMain:
         assert " M x.py" in out
 
 
+class TestQuarantineState:
+    """`fleet_status.quarantine_state` (T-2049)."""
+
+    def test_reports_raised_with_undisposed_count(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An uncleared record reports 'raised' plus the count of findings
+        with an empty (undisposed) `disposition`."""
+        store = tmp_path / "quarantine.json"
+        store.write_text(
+            json.dumps(
+                {
+                    "cleared_at": None,
+                    "findings": [
+                        {"disposition": ""},
+                        {"disposition": "filed"},
+                        {"disposition": ""},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(fleet_status, "QUARANTINE", store)
+        assert fleet_status.quarantine_state() == ("raised", 2)
+
+    def test_reports_clear_when_store_says_cleared(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A record with `cleared_at` set is 'clear', regardless of its
+        (now-historical) findings list."""
+        store = tmp_path / "quarantine.json"
+        store.write_text(
+            json.dumps({"cleared_at": "2026-01-01T00:00:00+00:00", "findings": []}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(fleet_status, "QUARANTINE", store)
+        assert fleet_status.quarantine_state() == ("clear", 0)
+
+    def test_reports_clear_when_no_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No quarantine has ever been raised (missing store) is 'clear'."""
+        monkeypatch.setattr(fleet_status, "QUARANTINE", tmp_path / "does-not-exist.json")
+        assert fleet_status.quarantine_state() == ("clear", 0)
+
+    def test_unreadable_store_is_unknown_never_clear(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Malformed JSON is 'unknown', never misread as 'clear' -- an
+        unreadable store must never look like a green light to dispatch."""
+        store = tmp_path / "quarantine.json"
+        store.write_text("{not json", encoding="utf-8")
+        monkeypatch.setattr(fleet_status, "QUARANTINE", store)
+        assert fleet_status.quarantine_state() == ("unknown", 0)
+
+    def test_non_dict_record_is_unknown(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Valid JSON that is not an object (e.g. a bare list) is 'unknown',
+        not misparsed as a clear/empty record."""
+        store = tmp_path / "quarantine.json"
+        store.write_text("[]", encoding="utf-8")
+        monkeypatch.setattr(fleet_status, "QUARANTINE", store)
+        assert fleet_status.quarantine_state() == ("unknown", 0)
+
+
+class TestFleetStatusMainQuarantine:
+    """`fleet_status.main`'s quarantine line (T-2049)."""
+
+    def test_prints_raised_with_undisposed_count_and_consequence(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A raised quarantine is printed with its undisposed count and the
+        deferred-landing consequence -- the whole point of T-2049 is that
+        this line appears in the ONE place already read before dispatch."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("raised", 2))
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
+        fleet_status.main()
+        out = capsys.readouterr().out
+        assert "QUARANTINE RAISED" in out
+        assert "2" in out
+        assert "synchronous" in out
+
+    def test_prints_clear(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A clear quarantine is reported plainly, not silently omitted."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
+        fleet_status.main()
+        out = capsys.readouterr().out
+        assert "QUARANTINE clear" in out
+
+    def test_prints_unknown_as_unsafe(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """An unreadable store is reported as unknown/unsafe, never as
+        clear."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("unknown", 0))
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
+        fleet_status.main()
+        out = capsys.readouterr().out
+        assert "QUARANTINE UNKNOWN" in out
+        assert "clear" not in out.lower().split("quarantine unknown")[0]
+
+
 class TestResolve:
     """`verify_lands.resolve`."""
 
