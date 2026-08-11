@@ -25,8 +25,6 @@ acceptance:
   evidence: []
 - text: even though `-p no:xdist` was passed explicitly on the CLI -- pyproject.toml's
   evidence: []
-- text: addopts still injected -n auto/--dist=loadgroup, confirming this ticket's
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
@@ -82,6 +80,14 @@ acceptance_amendments:
 - op: remove
   index: 5
   old_text: root-cause claim end to end. `-o addopts=""` instead worked (15 passed).
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 4
+  old_text: addopts still injected -n auto/--dist=loadgroup, confirming this ticket's
   new_text: null
   reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
     due to no blank-line separators'
