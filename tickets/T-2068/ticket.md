@@ -28,6 +28,17 @@ acceptance:
     of already-landed work -- flagging for a coordinator pass rather than dropping
     it unilaterally.'
   evidence: []
+- text: 'MEASURED ON MAIN AFTER T-2086 LANDED (f843ad7ed): this ticket is NOT redundant
+    with T-2086. T-2086 fixed frob coverage internal xdist retry path (_strip_xdist_tokens
+    in _coverage_refresh.py), but the OPERATOR-FACING surface still fails identically:
+    `uv run pytest tests/unit/test_app_style.py -q -p no:xdist` on main at f843ad7ed
+    gives `pytest: error: unrecognized arguments: -n --dist=loadgroup`, because pyproject.toml
+    addopts injects `-n auto --dist=loadgroup` and `-p no:xdist` removes the plugin
+    that would parse them. Workaround that works: `-o addopts=""`. Given that every
+    agent brief tells agents to run scoped pytest subsets, this costs a wasted cycle
+    per agent that reaches for the documented -p no:xdist flag. Acceptance: running
+    pytest with -p no:xdist on any subset succeeds without a manual -o addopts override.'
+  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
