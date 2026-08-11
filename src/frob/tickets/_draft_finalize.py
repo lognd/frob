@@ -30,7 +30,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 from frob.tickets._archive import _load_merged
 from frob.tickets._models import TicketError
-from frob.tickets._new_renumber import _next_ticket_id
+from frob.tickets._new_renumber import _next_ticket_id_shared
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import allocator_lock, ledger_lock
 
@@ -117,7 +117,18 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     under it by a concurrent land). `allocator_lock` is the ONE lock both
     `finalize_draft` and `finalize_draft_for_land` now share, so they
     always serialize against each other regardless of which root/worktree
-    each one's OWN write lands in."""
+    each one's OWN write lands in.
+
+    T-2122: `allocator_lock(root)` alone was not enough -- it lives at
+    `root/.frob/tickets-allocator.lock`, a PER-CHECKOUT path, so two
+    DIFFERENT roots (this worktree vs. the primary checkout a `new_ticket`
+    call runs against) never actually contended on it, and the id itself
+    was still decided by scanning a snapshot that cannot see a sibling
+    checkout's not-yet-landed claim. `final_id` now comes from
+    `_next_ticket_id_shared` (`frob.tickets._new_renumber`), which reads
+    a single counter file shared by every checkout of this repo instead
+    of `root`'s own tree -- see that function's docstring for why the
+    scan could not be fixed by locking it more tightly."""
     if not is_draft_id(draft_id):
         _log.debug("tickets: finalize_draft(%s): already final, no-op", draft_id)
         return Ok(draft_id)
@@ -129,8 +140,8 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
         if draft_id not in tickets:
             _log.error("tickets: finalize_draft: %s not found", draft_id)
             return Err(TicketError.NotFound)
-        final_id = _next_ticket_id(
-            {tid: t for tid, t in tickets.items() if tid != draft_id}
+        final_id = _next_ticket_id_shared(
+            root, {tid: t for tid, t in tickets.items() if tid != draft_id}
         )
         from frob.tickets import renumber_one as _renumber_one
 
@@ -240,7 +251,7 @@ def _finalize_draft_for_land_locked(
     existing.update(
         {tid: t for tid, t in worktree_merged.danger_ok.items() if tid != draft_id}
     )
-    final_id = _next_ticket_id(existing)
+    final_id = _next_ticket_id_shared(main_root, existing)
 
     from frob.tickets import renumber_one as _renumber_one
 

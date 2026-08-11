@@ -14,11 +14,13 @@ from __future__ import annotations
 import multiprocessing
 import multiprocessing.synchronize
 import os
+import subprocess
 import threading
 import time
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 from frob.process._lock import (
     _INHERITED_LOCK_KEYS_ENV,
@@ -29,6 +31,10 @@ from frob.process._lock import (
     derived_state_write_lock,
     held_registry_keys,
 )
+from frob.tickets._new_renumber import _allocate_ticket_id
+
+if TYPE_CHECKING:
+    from frob.tickets._models import Ticket
 from frob.tickets._store import (
     _allocator_lock_path,
     _ticket_lock_path,
@@ -566,3 +572,89 @@ class TestAllocatorLock:
         with allocator_lock(tmp_path):
             with allocator_lock(tmp_path):
                 pass
+
+
+# frob:ticket T-2122
+class TestSharedIdCounter:
+    """`frob.tickets._new_renumber._next_ticket_id_shared`/`_allocate_ticket_id`
+    (T-2122): id allocation must not collide between two checkouts of the
+    SAME repo that each hold a divergent (stale) view of what ids are
+    taken -- the shape `allocator_lock` cannot fix, since it lives at a
+    PER-CHECKOUT path (`<root>/.frob/tickets-allocator.lock`) and never
+    contends across checkouts, and the old `_next_ticket_id` scan decides
+    purely from whatever ledger snapshot its own caller happened to load."""
+
+    @staticmethod
+    def _git(*args: str, cwd: Path) -> None:
+        result = subprocess.run(
+            ["git", *args], cwd=cwd, capture_output=True, text=True, check=False
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def _init_repo_on_main(self, root: Path) -> None:
+        root.mkdir(parents=True, exist_ok=True)
+        self._git("init", "-q", "-b", "main", cwd=root)
+        self._git("config", "user.email", "test@example.com", cwd=root)
+        self._git("config", "user.name", "Test", cwd=root)
+        (root / "seed.txt").write_text("seed\n")
+        self._git("add", "-A", cwd=root)
+        self._git("commit", "-q", "-m", "seed", cwd=root)
+
+    # frob:tests tests/unit/test_process_lock.py::TestSharedIdCounter.test_two_checkouts_with_divergent_views_never_collide  # noqa: E501
+    def test_two_checkouts_with_divergent_views_never_collide(
+        self, tmp_path: Path
+    ) -> None:
+        """GIVEN two checkouts of the SAME repo, each with a divergent
+        (here: identically stale) view of which ids are taken, WHEN both
+        allocate a fresh id THEN they must not receive the same one --
+        this MUST fail against current main (T-2122): the old
+        `_next_ticket_id` scan decides purely from each caller's own
+        `merged` snapshot with no cross-checkout coordination at all, so
+        two checkouts that agree (correctly, from their own stale view)
+        on the current max both compute the identical next id."""
+        primary = tmp_path / "primary"
+        self._init_repo_on_main(primary)
+        detached = tmp_path / "detached"
+        self._git(
+            "worktree", "add", "--detach", str(detached), "main", cwd=primary
+        )
+
+        # Both checkouts' own local ticket state agrees on max=3 -- neither
+        # one's view is "wrong" by its own lights, and neither can see the
+        # other's about-to-happen allocation; this is the real staleness
+        # shape, not a contrived one. `_allocate_ticket_id`'s scan only
+        # ever reads dict KEYS (never a `Ticket` field), so `None` values
+        # are runtime-safe; `cast` keeps the call site type-correct
+        # without constructing three full `Ticket` models per checkout.
+        stale_view = cast(
+            "dict[str, Ticket]", {f"T-{n:04d}": None for n in range(1, 4)}
+        )
+
+        id_from_primary = _allocate_ticket_id(primary, {}, dict(stale_view))
+        id_from_detached = _allocate_ticket_id(detached, {}, dict(stale_view))
+
+        assert id_from_primary != id_from_detached, (
+            f"both checkouts allocated {id_from_primary!r} -- the shared "
+            "id counter did not prevent the collision (T-2122)"
+        )
+
+    # frob:tests tests/unit/test_process_lock.py::TestSharedIdCounter.test_counter_file_lives_under_git_common_dir  # noqa: E501
+    def test_counter_file_lives_under_git_common_dir(self, tmp_path: Path) -> None:
+        """The counter file is created under the repo's shared
+        git-common-dir, not under either checkout's own `.frob/` -- the
+        single place every worktree of this clone actually shares
+        (T-0473's `frob-leases` precedent). `_shared_id_counter_path`
+        imported locally (T-2122 addition, does not exist pre-fix) so
+        this file's module-level imports stay resolvable at the parent
+        commit for `TestSharedIdCounter`'s own designated repro test."""
+        from frob.tickets._new_renumber import _shared_id_counter_path
+
+        primary = tmp_path / "primary"
+        self._init_repo_on_main(primary)
+
+        counter_path = _shared_id_counter_path(primary)
+        assert counter_path is not None
+        assert counter_path == primary / ".git" / "frob-ticket-id-counter"
+        _allocate_ticket_id(primary, {}, {})
+        assert counter_path.exists()
+        assert not (primary / ".frob" / "frob-ticket-id-counter").exists()

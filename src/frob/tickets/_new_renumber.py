@@ -18,13 +18,15 @@ established, now just from a different caller module.
 
 from __future__ import annotations
 
+import fcntl
+import os
 import re
 from datetime import date
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
-from frob.gitio import repo_root
+from frob.gitio import git_common_dir, repo_root
 from frob.logging import get_logger
 from frob.tickets._archive import _load_merged
 from frob.tickets._leases import is_lease_ttl_expired, read_all_leases, rename_lease
@@ -78,20 +80,48 @@ def _allocate_ticket_id(
     ever minted against the default branch's view, so two checkouts filing
     independently structurally cannot converge on the same final id (T-0162:
     three real collisions were all sequential max+1 races across checkouts).
-    """
+
+    T-2122: the default-branch case now allocates via `_next_ticket_id_
+    shared` (a counter shared across every checkout of this repo), not a
+    bare scan of `merged` -- see that function's docstring for why `merged`
+    alone, no matter how fresh or how tightly locked, structurally cannot
+    be made race-free: 11 collisions this session, including one ticket
+    renumbered twice trying to escape the identical unsound read each time."""
     if not on_default_branch(root):
         draft_id = mint_draft_id()
         while draft_id in existing or draft_id in merged:
             draft_id = mint_draft_id()
         _log.info("tickets: off-default-branch, minted provisional id %s", draft_id)
         return draft_id
-    return _next_ticket_id(merged)
+    return _next_ticket_id_shared(root, merged)
 
 
 def _next_ticket_id(existing: dict[str, Ticket]) -> str:
     """The next sequential `T-####` id above the highest existing ticket number
     in `existing` -- callers must pass the id space they want ids kept clear
-    of (T-0140: `new_ticket` passes active+archive merged, not active alone)."""
+    of (T-0140: `new_ticket` passes active+archive merged, not active alone).
+
+    T-2122: this is a PURE computation over whatever `existing` the caller
+    happens to hold -- it has no way to know if `existing` is stale (a
+    worktree that hasn't merged main, or a not-yet-landed draft's claim
+    that exists only in a sibling worktree's tree, never main's) and
+    cannot be made race-safe by locking alone, since two callers can each
+    correctly read "id N is free" from their OWN current-at-the-time view
+    and still collide the moment either one's claim reaches main before
+    the other's. Real allocation on the default branch goes through
+    `_next_ticket_id_shared` instead; this stays as the pure fallback for
+    callers with no git root at hand (tests, and `_next_ticket_id_shared`'s
+    own bootstrap value) and is kept name-stable since
+    `frob.tickets._draft_finalize` imports it directly."""
+    return f"T-{_max_ticket_number(existing) + 1:04d}"
+
+
+def _max_ticket_number(existing: dict[str, Ticket]) -> int:
+    """The highest `T-####` numeric suffix among `existing`'s ids, 0 if none
+    parse -- the scan `_next_ticket_id`/`_next_ticket_id_shared`'s bootstrap
+    both share, split out once so there is exactly one parsing rule for a
+    malformed/unexpected id shape (EXHAUST001/EXHAUST002, T-1371: skip it,
+    never abort the whole scan over every OTHER ticket)."""
     max_num = 0
     for tid in existing:
         try:
@@ -105,12 +135,123 @@ def _next_ticket_id(existing: dict[str, Ticket]) -> str:
         except TypeError:
             continue
         except Exception:
-            # A malformed/unexpected ticket id shape must not abort the
-            # whole id-space scan over every OTHER ticket (EXHAUST001/
-            # EXHAUST002, T-1371) -- same "skip it" posture as the two
-            # named branches above.
             continue
-    return f"T-{max_num + 1:04d}"
+    return max_num
+
+
+# frob:ticket T-2122
+#: The shared id-counter file's name, relative to the repo's git-common-dir
+#: (T-0473's precedent: `<git-common-dir>/frob-leases` is the same "one
+#: physical location every linked worktree of this clone actually shares"
+#: technique `_leases.leases_dir` already established -- `.frob/` itself is
+#: NOT that location, it is per-checkout, one copy per worktree AND one for
+#: the primary root, which is exactly why `allocator_lock`'s `.frob/tickets-
+#: allocator.lock` never contended across checkouts).
+_ID_COUNTER_REL = "frob-ticket-id-counter"
+
+
+# frob:ticket T-2122
+def _shared_id_counter_path(root: Path) -> Path | None:
+    """`<git-common-dir>/frob-ticket-id-counter` for `root`'s repository --
+    identical across every linked worktree AND the primary checkout, unlike
+    any path under `root` itself. `None` if `root` is not inside a git work
+    tree (the caller degrades to the old scan-based allocation rather than
+    hard-failing ticket creation over this) -- a plain `Path | None` rather
+    than a `Result[Path, TicketError]` since no existing `TicketError`
+    variant names this failure and this is an internal, best-effort seam,
+    not a caller-facing outcome."""
+    resolved = git_common_dir(root)
+    if resolved.is_err:
+        _log.warning(
+            "tickets: git-common-dir lookup failed under %s -- id allocation "
+            "cannot use the shared counter here",
+            root,
+        )
+        return None
+    return resolved.danger_ok / _ID_COUNTER_REL
+
+
+# frob:ticket T-2122
+# frob:tests tests/unit/test_process_lock.py::TestSharedIdCounter.test_two_checkouts_with_divergent_views_never_collide  # noqa: E501
+# frob:waive ARCH103 reason="the flock-guarded read-increment-write of the shared \
+# counter file must stay ONE body: splitting the read, the compare/increment, and the \
+# write into separate functions would let the flock scope span a function boundary or, \
+# worse, invite a caller to split them apart and reintroduce exactly the \
+# unlocked-window race this ticket exists to close"
+# frob:waive SELFAUDIT001 reason="T-2122: node=tickets_ledger already declares \
+# fs.write for this repo's tracked ledger state (tickets.md/tickets/**, force- \
+# overrides.jsonl per T-1762's identical waiver above); frob-ticket-id-counter is the \
+# same ledger-adjacent, git-common-dir-local bookkeeping surface, not a new capability \
+# class -- gitignored, never committed, same as .frob/tickets- allocator.lock this \
+# file already writes unaudited"
+def _next_ticket_id_shared(root: Path, existing: dict[str, Ticket]) -> str:
+    """Atomically allocate the next sequential `T-####` id from a counter
+    file shared across EVERY checkout of `root`'s repository (T-2122).
+
+    This replaces the plain `_next_ticket_id(existing)` scan for real
+    allocation because the scan's staleness cannot be fixed by locking
+    alone, no matter how wide the critical section or how many locks
+    guard it: `existing`/`merged` is a snapshot of ONE checkout's own
+    tree, and a concurrent checkout's claim on the "next" id can be real
+    (already decided, already written to ITS OWN tree) without appearing
+    in this checkout's tree at all -- `finalize_draft_for_land` commits a
+    promoted draft's new id to the WORKTREE being landed, not to main,
+    until the squash-merge lands moments later; a `new_ticket` call
+    reading main's ledger in that exact window sees no claim on that id
+    and, correctly per its own snapshot, allocates it too. T-1253's
+    `allocator_lock` cannot close this gap either: it lives at
+    `<root>/.frob/tickets-allocator.lock`, a PER-CHECKOUT path (like every
+    other file under `.frob/`), so a worktree and the primary root each
+    hold a completely different, non-contending lock file -- mutual
+    exclusion that never actually excludes anything across checkouts.
+
+    The fix is to stop deciding "next" from tree content at all: a single
+    counter file at `<git-common-dir>/frob-ticket-id-counter` (T-0473's
+    `frob-leases` precedent for "the one place every checkout of this
+    clone shares") is opened and flocked directly here -- a NEW, narrowly
+    scoped lock over only this file's own read-increment-write, not a
+    widening of `allocator_lock`'s existing critical section and not a
+    second lock guarding the same stale read. Every allocation, from
+    every checkout, claims the next value from the SAME physical file
+    before any of them decide what to do with it, so two divergent
+    readers can no longer converge on the same id even though their own
+    `existing` views disagree -- the counter, not the tree, is now the
+    single source of truth for "has this id been claimed."
+
+    `existing` is used only to seed/catch up the counter (`max(counter,
+    _max_ticket_number(existing)) + 1`) -- covers the counter file not
+    existing yet (first call ever) and a repo whose real max id has moved
+    past the counter's own last value for a reason outside this function's
+    control (a manually created ticket, a migration). The counter itself
+    only ever advances, never resets from this path, so it can never
+    re-mint an id it already handed out.
+
+    Falls back to `_next_ticket_id(existing)` (the old, race-prone scan)
+    only when `root` is not inside a resolvable git repo at all -- covers
+    non-git test fixtures and any caller that genuinely has no shared
+    location to anchor a counter in; every real allocation on a git
+    checkout uses the shared counter."""
+    path = _shared_id_counter_path(root)
+    if path is None:
+        return _next_ticket_id(existing)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        raw = os.read(fd, 64).decode("utf-8", errors="replace").strip()
+        counter_max = int(raw) if raw.isdigit() else 0
+        new_max = max(counter_max, _max_ticket_number(existing)) + 1
+        os.lseek(fd, 0, os.SEEK_SET)
+        os.ftruncate(fd, 0)
+        os.write(fd, f"{new_max}\n".encode("utf-8"))
+        os.fsync(fd)
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+    _log.info(
+        "tickets: allocated T-%04d from the shared id counter at %s", new_max, path
+    )
+    return f"T-{new_max:04d}"
 
 
 # frob:ticket T-1613

@@ -379,11 +379,21 @@ class TestPromoteVsLandFinalizeAllocationRace:
         release = threading.Event()
         call_count = {"n": 0}
 
-        real_next_ticket_id = frob.tickets._draft_finalize._next_ticket_id
+        # T-2122: `_draft_finalize` now allocates via `_next_ticket_id_shared`
+        # (root, existing) instead of the old `_next_ticket_id(existing)` --
+        # same two-arg wrapper shape, just threading `root` through. Both
+        # `main_root`/`worktree` here are plain tmp dirs, not real git
+        # checkouts, so `_next_ticket_id_shared`'s git-common-dir lookup
+        # fails and it degrades to the identical pure scan this test
+        # exercised before -- this race is still proven by `allocator_lock`
+        # alone (T-1669), unaffected by T-2122's shared-counter addition.
+        real_next_ticket_id_shared = (
+            frob.tickets._draft_finalize._next_ticket_id_shared
+        )
 
-        def _pausing_next_ticket_id(tickets: dict) -> str:
+        def _pausing_next_ticket_id(root: Path, tickets: dict) -> str:
             call_count["n"] += 1
-            computed = real_next_ticket_id(tickets)
+            computed = real_next_ticket_id_shared(root, tickets)
             if call_count["n"] == 1:
                 # This is the promote call: hold whatever critical section
                 # it is inside (locked or not) open long enough for a
@@ -395,7 +405,7 @@ class TestPromoteVsLandFinalizeAllocationRace:
 
         monkeypatch = pytest.MonkeyPatch()
         monkeypatch.setattr(
-            "frob.tickets._draft_finalize._next_ticket_id",
+            "frob.tickets._draft_finalize._next_ticket_id_shared",
             _pausing_next_ticket_id,
         )
         try:
