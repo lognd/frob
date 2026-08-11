@@ -38,12 +38,19 @@ acceptance:
   evidence: []
 - text: This ticket may now be a duplicate of already-landed work; flagging rather
   evidence: []
-- text: than dropping (see T-1968-adjacent caution on unilateral drops) -- worth a
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
   old_text: coordinator pass to confirm and drop if fully subsumed.
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 10
+  old_text: than dropping (see T-1968-adjacent caution on unilateral drops) -- worth
+    a
   new_text: null
   reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
     due to no blank-line separators'
