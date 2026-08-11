@@ -79,3 +79,6 @@ against the elaborator's own synthesis code beyond this one
 measurement, and guessing wrong here would make the test WRONG rather
 than merely weak, a worse failure mode than the floor it would
 replace).
+
+## Failure log
+- 2026-08-10 attempt 1: Derived-formula approach empirically proven useless: recomputing expected node count from the SAME raw design source that would carry the unintended addition means both sides of the equation move together -- verified directly by injecting an unintended node into design/frob.strata and re-running the test, which still passed. No fix landed; keeping T-2102's floor as-is per coordinator direction to push back rather than force a broken change.

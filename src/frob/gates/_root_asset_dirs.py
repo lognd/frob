@@ -86,7 +86,9 @@ def _top_level_dirs(tracked: tuple[str, ...]) -> frozenset[str]:
     return frozenset(names)
 
 
-def _makefile_referenced_names(root: Path, candidates: frozenset[str]) -> frozenset[str]:
+def _makefile_referenced_names(
+    root: Path, candidates: frozenset[str]
+) -> frozenset[str]:
     """Candidate directory names that appear literally in the repo-root
     `Makefile`'s text -- the ticket's own "scripts a Makefile target
     actually invokes, etc." exemption clause. Degrades to an empty set
