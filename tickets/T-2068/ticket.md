@@ -40,8 +40,15 @@ acceptance:
   evidence: []
 - text: than dropping (see T-1968-adjacent caution on unilateral drops) -- worth a
   evidence: []
-- text: coordinator pass to confirm and drop if fully subsumed.
-  evidence: []
+acceptance_amendments:
+- op: remove
+  index: 11
+  old_text: coordinator pass to confirm and drop if fully subsumed.
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
 threat: null
 component: null
 anchor: false
