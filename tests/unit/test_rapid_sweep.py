@@ -1153,6 +1153,7 @@ class TestIdentitiesStillReproducing:
 
 
 # frob:ticket T-2006
+# frob:ticket T-2078
 class TestRevalidateDispatchableSweepTickets:
     """T-2006, end-to-end: `frob ticket doable`'s residual gap after
     T-1983 -- a sweep-filed ticket must be re-verified at DISPATCH time,
@@ -1315,6 +1316,90 @@ class TestRevalidateDispatchableSweepTickets:
         requeried = load_queue(tmp_path)
         assert requeried.is_ok
         assert requeried.danger_ok.tickets[ticket_id].state == TicketState.QUEUED
+
+    # frob:ticket T-2078
+    def test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition  # noqa: E501
+        """T-2078: `revalidate_dispatchable_sweep_tickets` is called from
+        `doable`'s render path against the FULL candidate set -- unlike
+        `_close_resolved_sweep_tickets`, it never filtered out
+        already-terminal (`dropped`/`done`) tickets before this fix, so a
+        resolved-but-already-dropped sweep ticket got a doomed
+        `dropped -> dropped` transition attempted on every single
+        `frob ticket doable` call: 9 InvalidTransition errors and 9
+        dirtied files per invocation in the measured incident. This test
+        MUST fail against pre-fix main (it would log the illegal
+        transition and dirty the ticket's file)."""
+        import json
+
+        from frob.tickets import TicketState, drop_ticket, load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        # Already resolved by hand -- the ticket is TERMINAL before this
+        # sweep ever runs, exactly like 7 of the 9 tickets in the
+        # measured incident (`dropped -> dropped`).
+        dropped_first = drop_ticket(tmp_path, ticket_id, "already handled by hand")
+        assert dropped_first.is_ok
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        ticket_path = tmp_path / "tickets" / ticket_id / "ticket.md"
+        if not ticket_path.exists():
+            # v1/single-file store mode: fall back to tickets.md itself
+            # for the byte-identity check below.
+            ticket_path = tmp_path / "tickets.md"
+        before = ticket_path.read_bytes()
+
+        # Fresh measurement: COV003/a.py no longer appears -- "resolved".
+        payload = {"results": [{"tool": "gate-summary", "diagnostics": []}]}
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: TestIdentitiesStillReproducing._ok_result(
+                json.dumps(payload)
+            ),
+        )
+
+        with caplog.at_level("WARNING"):
+            tickets = list(load_queue(tmp_path).danger_ok.tickets.values())
+            dispatched = _rapid_sweep.revalidate_dispatchable_sweep_tickets(
+                tmp_path, tickets
+            )
+
+        # Not selected -- an already-terminal ticket is never a drop
+        # candidate.
+        assert dispatched == ()
+        # No InvalidTransition anywhere in the log -- the illegal
+        # transition must never even be attempted.
+        assert "illegal transition" not in caplog.text
+        assert "InvalidTransition" not in caplog.text
+        # No modification at all -- byte-identical to before the call.
+        after = ticket_path.read_bytes()
+        assert after == before
+
+        requeried = load_queue(tmp_path)
+        assert requeried.is_ok
+        assert requeried.danger_ok.tickets[ticket_id].state == TicketState.DROPPED
 
 
 # frob:ticket T-2077

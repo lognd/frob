@@ -2,7 +2,7 @@
 id: T-2078
 title: frob ticket doable auto-drop rewrites terminal tickets then fails the transition,
   destroying Done reports and dirtying the shared root
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -11,23 +11,92 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_reporting.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+- tests/test_tickets.py
+- docs/modules/tickets.md
+- tickets/T-2089/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_reporting.py
+  reason: 'T-2078 fix: transition-legality check in drop_ticket, terminal-state filter
+    in auto-drop, repro tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'T-2078 fix: transition-legality check in drop_ticket, terminal-state filter
+    in auto-drop, repro tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_reporting.py
+  reason: 'T-2078 fix: transition-legality check in drop_ticket, terminal-state filter
+    in auto-drop, repro tests'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'T-2078 fix: transition-legality check in drop_ticket, terminal-state filter
+    in auto-drop, repro tests'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tests/unit/test_reporting.py
+  reason: 'T-2078: correct test-file scope to the existing TestDropTicket home in
+    tests/test_tickets.py; test_reporting.py does not exist'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_tickets.py
+  reason: 'T-2078: correct test-file scope to the existing TestDropTicket home in
+    tests/test_tickets.py; test_reporting.py does not exist'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-2078: AFFECT001 requires touching drop_ticket''s own doc anchor to describe
+    the new pre-check'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-2089/
+  reason: 'T-2078: the T-2006 perf follow-up draft this ticket filed lives here; SCOPE001
+    flags it as outside scope otherwise'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
+- tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
+- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+designated_repro_test: tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
 acceptance:
 - text: given a ticket already in a terminal state (dropped or done) whose regression
     identities no longer reproduce, when frob ticket doable runs its auto-drop pass,
     then that ticket is not selected for dropping and no InvalidTransition error is
     logged -- this test MUST fail against current main
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
+  - tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
+  - tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
 - text: given an auto-drop whose transition fails for any reason, when the pass returns,
     then no modification remains in the working tree -- git status --porcelain is
     byte-identical to before the invocation
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
+  - tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
+  - tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
 - text: given a done ticket carrying a Done report section, when any auto-drop path
     touches it, then the Done report content is preserved -- verified by content,
     not by exit code
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
+  - tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
+  - tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
 threat: null
 component: ticket_runner
 labels:

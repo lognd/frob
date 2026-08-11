@@ -1560,6 +1560,7 @@ def _discard_uncommitted_ticket_drop(root: Path, ticket_id: str) -> None:
 
 # frob:ticket T-1983
 # frob:ticket T-2034
+# frob:ticket T-2078
 def _maybe_drop_resolved_ticket(
     root: Path,
     final_id: str,
@@ -1584,7 +1585,8 @@ def _maybe_drop_resolved_ticket(
     root, DirtyMain-blocking every concurrent land AND making the ticket
     non-idempotent (the next sweep still saw it as QUEUED/PLANNED and
     dropped it again, appending a duplicate reason block)."""
-    from frob.tickets import drop_ticket
+    from frob.tickets import TicketState, drop_ticket
+    from frob.tickets._reporting import _is_transition_legal
 
     identities = _parse_sweep_ticket_identities(ticket)
     if identities:
@@ -1594,6 +1596,21 @@ def _maybe_drop_resolved_ticket(
         # normalized by the caller).
         identities = _normalize_identities(root, identities)
     if not identities or not identities <= vanished:
+        return None
+    # T-2078: `_close_resolved_sweep_tickets` already filters its own
+    # candidates to QUEUED/PLANNED before calling here, but
+    # `revalidate_dispatchable_sweep_tickets` (T-2006) calls this
+    # function directly against `doable`'s FULL candidate set -- which
+    # includes already-terminal (`done`/`dropped`) tickets whose
+    # identities happen to still be recorded. Checking legality here, in
+    # the shared per-ticket decision point, closes that gap for every
+    # current and future caller in one place rather than duplicating the
+    # state filter at each call site. Not just defense-in-depth:
+    # `drop_ticket` itself now also refuses illegal transitions with
+    # zero writes (T-2078), but skipping the doomed attempt here avoids
+    # the InvalidTransition log noise entirely for a ticket that was
+    # never droppable to begin with.
+    if not _is_transition_legal(ticket.state, TicketState.DROPPED):
         return None
     # frob:waive PERF004 reason="this function itself runs once per candidate ticket \
     # from _close_resolved_sweep_tickets' loop, but `identities` is a DIFFERENT set \

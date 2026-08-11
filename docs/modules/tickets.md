@@ -288,6 +288,14 @@ def drop_ticket(root: Path, ticket_id: str, reason: str, *,
     # to DROPPED so a held lease releases the normal way. Err(
     # DropReasonMissing) if `reason` is blank; `absorbed_by` is an
     # unvalidated cross-reference note, not a blocked_by-style edge.
+    # T-2078: the transition's legality is now checked FIRST, against the
+    # same state machine table `transition()` enforces -- Err(
+    # InvalidTransition) with ZERO writes for a ticket already terminal
+    # (`done`/`dropped`). The old order (write the drop-reason body, THEN
+    # attempt the transition) let a terminal ticket's body get
+    # destructively rewritten -- dropping its '## Done report' section --
+    # before the transition refusal was ever seen, leaving the rewrite
+    # sitting uncommitted in the working tree.
 def attach(root: Path, ticket_id: str, source: AttachmentSource,
            caption: str) -> Result[Attachment, AttachError]
     # source is a file path or clipboard; stores under tickets/attachments/.

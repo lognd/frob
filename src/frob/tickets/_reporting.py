@@ -712,6 +712,24 @@ def has_approved_review_for_commit(ticket: Ticket, commit: str) -> bool:
     )
 
 
+# frob:ticket T-2078
+# frob:tests tests/test_tickets.py::TestDropTicket.test_terminal_ticket_transition_refused_before_any_write  # noqa: E501
+def _is_transition_legal(current: TicketState, to: TicketState) -> bool:
+    """T-2078: pure, side-effect-free legality check against the SAME
+    state machine table `transition()` (`frob.tickets._TRANSITIONS`)
+    enforces -- lets a caller validate a transition BEFORE mutating a
+    ticket's record, instead of discovering illegality only after a
+    destructive rewrite is already sitting in the working tree (the
+    T-2078 incident: an auto-drop pass rewrote a `done`/`dropped`
+    ticket's body -- destroying its Done report -- then called
+    `transition()`, which refused, leaving the rewrite behind). Deferred
+    import: `frob.tickets.__init__` imports `drop_ticket` from this
+    module, so a module-level import here would be circular."""
+    from frob.tickets import _TRANSITIONS
+
+    return to in _TRANSITIONS.get(current, frozenset())
+
+
 # frob:ticket T-0579
 # frob:doc docs/modules/tickets.md#public-api
 def drop_ticket(
@@ -740,6 +758,25 @@ def drop_ticket(
     if loaded.is_err:
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
+
+    # T-2078: validate the transition is LEGAL before mutating anything.
+    # The old order (write the drop-reason body, THEN attempt the
+    # transition) meant a terminal ticket (`dropped`/`done`) got its
+    # record destructively rewritten -- the drop-reason splice drops the
+    # '## Done report' section on read/append -- and only THEN found out
+    # the transition itself was refused, leaving the destructive rewrite
+    # sitting uncommitted in the working tree with no transition to show
+    # for it. Compute-then-validate-then-mutate: a ticket that cannot
+    # legally reach DROPPED from its current state is refused here, with
+    # zero writes, before `write_ticket` is ever called.
+    if not _is_transition_legal(ticket.state, TicketState.DROPPED):
+        _log.warning(
+            "tickets: %s illegal transition %s -> %s",
+            ticket_id,
+            ticket.state,
+            TicketState.DROPPED,
+        )
+        return Err(TicketError.InvalidTransition)
 
     # T-1541: `reason` (`ticket drop --reason`/`--reason-file`) is
     # caller-authored free text spliced directly into the body's

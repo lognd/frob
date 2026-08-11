@@ -909,6 +909,68 @@ class TestDropTicket:
         assert reloaded.is_ok
         assert set(reloaded.danger_ok.tickets) == {"T-0001"}
 
+    # frob:ticket T-2078
+    def test_terminal_ticket_transition_refused_before_any_write(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDropTicket.test_terminal_ticket_transition_refused_before_any_write  # noqa: E501
+        """T-2078: a ticket already in a TERMINAL state (`done`) must be
+        refused with zero writes -- the old order (rewrite the body under
+        '## Drop reason', THEN attempt the state transition) destructively
+        overwrote a `done` ticket's '## Done report' section and only
+        THEN discovered the transition itself was illegal, leaving the
+        destructive rewrite sitting in the working tree with no
+        transition to show for it (the T-2078 incident: a `done -> dropped`
+        InvalidTransition on a real ticket deleted a 50+ line Done report
+        containing a FIX narrative and an attribution correction with
+        commit shas). This test MUST fail against pre-fix main."""
+        done_report = (
+            "## Done report\n\n"
+            "FIX: of the 5 (rule, file) identities this ticket named, "
+            "only ONE was still live at investigation time.\n"
+        )
+        body = f"## Description\nsomething\n\n{done_report}"
+        ticket = _ticket(state=TicketState.DONE, body=body)
+        path = _write(tmp_path, ticket)
+        before = path.read_bytes()
+
+        result = drop_ticket(tmp_path, "T-0001", "should never apply to a done ticket")
+
+        assert result.is_err
+        assert result.danger_err is TicketError.InvalidTransition
+        # No write happened at all -- byte-identical to before the call,
+        # not merely "still contains the right text" (a partial rewrite
+        # that happens to round-trip the same content would pass a
+        # content-only check but still prove the ordering bug is back).
+        after = path.read_bytes()
+        assert after == before
+        # Verified BY CONTENT, not by exit code: the Done report survives.
+        reloaded_text = path.read_text(encoding="utf-8")
+        assert "## Done report" in reloaded_text
+        assert "FIX: of the 5" in reloaded_text
+
+    # frob:ticket T-2078
+    def test_dropped_ticket_transition_refused_before_any_write(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDropTicket.test_dropped_ticket_transition_refused_before_any_write  # noqa: E501
+        """T-2078: same guarantee as the `done` case above, for the OTHER
+        terminal state (`dropped -> dropped`) -- the shape 7 of the 9
+        real tickets hit in the measured incident."""
+        body = "## Description\nsomething\n\n## Drop reason\n- 2026-01-01: first cut\n"
+        ticket = _ticket(state=TicketState.DROPPED, body=body)
+        path = _write(tmp_path, ticket)
+        before = path.read_bytes()
+
+        result = drop_ticket(tmp_path, "T-0001", "already dropped, do not re-drop")
+
+        assert result.is_err
+        assert result.danger_err is TicketError.InvalidTransition
+        after = path.read_bytes()
+        assert after == before
+
 
 # frob:ticket T-0579
 class TestDropCli:
