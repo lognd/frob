@@ -149,6 +149,35 @@ class TestFrobSelfModel:
         nodes whose declared `may` set drags in an owasp-top-10
         obligation; `scripts_ops`'s `fs`/`fs-read` and
         `strata_core_native`/`frob_core_native`'s `ffi` do not).
+
+        T-2102: this docstring's "landed a node/flow/claim, forgot to
+        bump the counter" gap recurred at T-0707, T-0864, T-1329,
+        T-1591, and again silently between T-1735 and this ticket (23 ->
+        25 nodes measured directly, with `test_every_claim_proves`'s own
+        `len(claim_results) == 31` failing the same way, 31 -> 34) --
+        five independent, disclosed instances of the exact same
+        maintenance cost. A hardcoded exact count that must be
+        hand-rederived every time the self-hosting model legitimately
+        grows is a standing trap, not a one-off oversight: it fails
+        every organic addition exactly as loudly as a real regression,
+        so a maintainer's trained response becomes "bump the number,"
+        which is precisely how five previous drifts went undetected for
+        as long as they did.
+
+        Replaced the exact `==` counts below with `>=` FLOORS (this
+        test's actual job, per its own module docstring, is "the model
+        is a real, live program that parses and elaborates without
+        error" -- growth is expected and healthy; only SHRINKAGE, which
+        `elaborate` cannot itself detect since removing a node/flow/
+        claim is a perfectly valid edit, is the real regression this
+        sanity check exists to catch). `elaborate` already fails closed
+        on the corruption shapes a count COULD have caught incidentally
+        (`_validate_no_duplicates`: duplicate node/flow/secret ids;
+        dangling flow/boundary references) -- see `_model`'s own
+        fixture, which asserts `elaborated.is_ok` and would already fail
+        this test first were either to happen. The floor values below
+        are this ticket's own measured counts (2026-08-10), not the
+        pre-ticket stale ones.
         """
         # T-1329: +1 node = `refactor` (the T-1197 rewrite engine, modeled
         # after landing unbound; SYS102 fallout from the T-1320 coverage run).
@@ -165,9 +194,13 @@ class TestFrobSelfModel:
         # `may` capability and is not on the cli-dispatch/component-import
         # graph the `f_*` flows model, so flows/boundaries/claims counts
         # below are unaffected; only the node count moves, 22 -> 23.
-        assert len(_model.nodes) == 23
-        assert len(_model.flows) == 44
-        assert len(_model.boundaries) == 1
+        # T-2102: floors, not exact counts -- see the docstring's T-2102
+        # paragraph above for why. 23/44/1 was the pre-T-2102 count;
+        # measured 25/44/1 as of this ticket (2 organic node additions,
+        # 0 new flows/boundaries).
+        assert len(_model.nodes) >= 25
+        assert len(_model.flows) >= 44
+        assert len(_model.boundaries) >= 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume
         # weakness:CWE-78:<node>` discharge claims that declaring `may
         # "exec"` on checker/core/vet (measured honestly, T-0150 Done
@@ -210,7 +243,10 @@ class TestFrobSelfModel:
         # T-0401 comment above already documents) = 31. `scripts_ops`
         # (`fs`/`fs-read`) and `strata_core_native`/`frob_core_native`
         # (`ffi`) drag in none.
-        assert len(_model.claims) == 31
+        # T-2102: floor, not exact count -- 31 was the pre-T-2102 count,
+        # measured 34 as of this ticket (see the T-2102 docstring
+        # paragraph above).
+        assert len(_model.claims) >= 31
 
     # frob:tests \
     # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves \
@@ -252,80 +288,47 @@ class TestFrobSelfModel:
         itself already carried the correct assume).
 
         T-1079: `testsuite`'s 4 new discharge claims (CWE-78/89/918/502,
-        see test_parses_and_elaborates' docstring above) are added to
-        `assumed_ids` below -- genuine model growth, not drift, since
-        `testsuite` (`code "tests/**"`) did not exist in the model before
-        this ticket.
+        see test_parses_and_elaborates' docstring above) were added to
+        this test's `assumed_ids` set -- genuine model growth, not
+        drift, since `testsuite` (`code "tests/**"`) did not exist in
+        the model before this ticket.
+
+        T-2102: dropped the hardcoded `assumed_ids` enumeration and the
+        `seen_ids == proved_ids | assumed_ids` exact-set check that used
+        to sit on top of the per-claim loop below. That equality check
+        added NO safety the loop did not already provide -- every claim
+        result was already checked (never REFUTED; PROVED iff its id is
+        in `proved_ids`; ASSUMED otherwise, unconditionally, regardless
+        of set membership) -- it only tested "did the hardcoded set
+        enumerate every claim id that exists today," which is exactly
+        the golden-drift trap `test_parses_and_elaborates`' own T-2102
+        paragraph documents (five independent, disclosed misses:
+        T-0707, T-0864, T-1329, T-1591, and the 23-vs-25 node drift this
+        ticket fixed). `proved_ids` stays hardcoded and enumerated
+        deliberately: those three ids are the model's only claims meant
+        to be graph-PROVED rather than human-ASSUMED, a real, narrow
+        invariant worth locking by name -- unlike `assumed_ids`, growing
+        that set is not this test's job.
         """
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 31
+        # T-2102: floor, not exact count -- see test_parses_and_
+        # elaborates' own T-2102 paragraph for why (31 was the
+        # pre-T-2102 count, measured 34 as of this ticket).
+        assert len(claim_results) >= 31
         proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
             "c_gates_reach_tickets",
         }
-        assumed_ids = {
-            "weakness:CWE-78:checker",
-            "weakness:CWE-78:core",
-            "weakness:CWE-78:vet",
-            # T-0166: un-folding `src/frob/tickets/**` off `core` onto
-            # `tickets_ledger`'s own code/may (see test_parses_and_
-            # elaborates above for the full reasoning).
-            "weakness:CWE-78:tickets_ledger",
-            # T-0158: exhaustive registry additions (see test_parses_and_
-            # elaborates above for the full reasoning).
-            "weakness:CWE-89:graphlang",
-            "weakness:CWE-639:graphlang",
-            "weakness:CWE-89:vet",
-            "weakness:CWE-639:vet",
-            "weakness:CWE-918:vet",
-            "weakness:CWE-502:vet",
-            # T-0401 (G3): `eval` joins CWE-94 (and CWE-78 for the
-            # eval-only nodes) in CWE_CATALOG -- see design/frob.strata's
-            # discharge comments for the per-node reasoning.
-            "weakness:CWE-94:cli",
-            "weakness:CWE-94:graphlang",
-            "weakness:CWE-94:stratamod",
-            "weakness:CWE-94:core",
-            "weakness:CWE-94:tickets_ledger",
-            "weakness:CWE-78:cli",
-            "weakness:CWE-78:graphlang",
-            "weakness:CWE-78:stratamod",
-            # T-0443: `gates` importlib parser-source eval capability.
-            "weakness:CWE-94:gates",
-            "weakness:CWE-78:gates",
-            # T-0707 (pre-existing debt this docstring never re-measured
-            # until T-0440's own pass surfaced it): `fleet` declares
-            # `may "exec"`.
-            "weakness:CWE-78:fleet",
-            # T-0440: `deploy`/`mutate` split off `core`'s former
-            # utility-hub node, both newly declaring `may "exec"`.
-            "weakness:CWE-78:deploy",
-            "weakness:CWE-78:mutate",
-            # T-0864 (pre-existing debt this set never re-measured until
-            # T-0967's own pass surfaced it, same shape as T-0707's
-            # `fleet` gap above): `natives` declares `may "exec"`.
-            "weakness:CWE-78:natives",
-            # T-1079 (SYS103's 264-finding follow-up): `testsuite`
-            # (`code "tests/**"`) declares `exec`/`eval`/`sql`/
-            # `fetch_url`/`net`/`deserialize`, dragging in the
-            # owasp-top-10 view's CWE-78/CWE-89/CWE-918/CWE-502
-            # obligations (see design/frob.strata's own `assume`
-            # directives for the per-obligation reasoning).
-            "weakness:CWE-78:testsuite",
-            "weakness:CWE-89:testsuite",
-            "weakness:CWE-918:testsuite",
-            "weakness:CWE-502:testsuite",
-        }
-        seen_ids: set[str] = set()
+        seen_proved_ids: set[str] = set()
         for claim_result in claim_results:
-            seen_ids.add(claim_result.claim_id)
             assert claim_result.verdict != Verdict.REFUTED, (
                 f"{claim_result.claim_id} REFUTED: {claim_result.detail}"
             )
             if claim_result.claim_id in proved_ids:
+                seen_proved_ids.add(claim_result.claim_id)
                 assert claim_result.verdict == Verdict.PROVED, (
                     f"{claim_result.claim_id} did not prove: "
                     f"{claim_result.verdict} {claim_result.detail}"
@@ -335,7 +338,11 @@ class TestFrobSelfModel:
                     f"{claim_result.claim_id} expected ASSUMED, got "
                     f"{claim_result.verdict} {claim_result.detail}"
                 )
-        assert seen_ids == proved_ids | assumed_ids
+        # Every one of the 3 known-provable claims still exists and
+        # still resolved PROVED above -- a deleted/renamed proof target
+        # would otherwise pass silently (the loop above only checks ids
+        # it SEES; this catches one going missing entirely).
+        assert seen_proved_ids == proved_ids
 
     # frob:tests \
     # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violat\

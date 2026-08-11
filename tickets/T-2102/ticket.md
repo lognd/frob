@@ -2,7 +2,7 @@
 id: T-2102
 title: frob's self-model test asserts hardcoded golden node/flow/claim counts that
   drift on every organic model growth (23-vs-25 nodes)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -15,13 +15,18 @@ scope:
 - tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
+designated_repro_test: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 acceptance:
 - text: Given design/frob.strata's live elaborated model, when test_parses_and_elaborates
     and test_every_claim_proves run, then both pass against the current model and
     the fix decides+documents whether counts are re-measured exact values or replaced
     by a non-decreasing structural invariant
-  evidence: []
+  evidence:
+  - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+  - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
 threat: null
 component: null
 anchor: false
