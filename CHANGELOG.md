@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.462.0] - unreleased
+
+- T-2129: LAND-PROOF reports verified=SKIPPED-UNMEASURED/ERROR for a successful QUEUED-with-failure-log land (is_ancestor_of_main=True contradicts its own ERROR)
+
 ## [0.461.0] - unreleased
 
 - T-2049: A raised quarantine silently forces synchronous verification on every land and is surfaced nowhere an operator looks -- two unused imports cost an hour of fleet land throughput

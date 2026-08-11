@@ -118,7 +118,11 @@
     "scripts/fleet_status.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "scripts/fleet_status.py::quarantine_state": "b83fb4a44381d70b72cd11ecbbfd2d76f8e32212b093b7380eb4d12a55e5c72d",
     "scripts/fleet_status.py::root_dirt": "37e0dbca57009139c2690e28bab8a4bc1c437b07db4940bc0499574dc0cb4ba7",
+    "scripts/fleet_status.py::ticket_frontmatter_on_main": "a280cbebdf84c3b5d08f81f5b83f21a6ed7a403610ff2c3912bc1568e8e10c59",
+    "scripts/fleet_status.py::ticket_lease": "6861440ab371976e550714539def51efe3af5c2cda725a130af33f2f7aef805c",
+    "scripts/fleet_status.py::ticket_readiness": "a539235080a45e2c5aafaf68a25bbd2c3646a15404684c94330cc6c2cfe18f7c",
     "scripts/fleet_status.py::worktrees": "619182471203b2b3fc92d31458626eae00c6e0d07c7b61fa09c0e8c36bfbafd5",
+    "scripts/fleet_status.py::worktrees_touching_ticket": "2e723a51e38154da3f2ca85444a8dfb9f08f8fc129767a051fb6cac191a14034",
     "scripts/verify_lands.py::REPO": "359d18a5db6144166af75a63b53d2e02ae00dca50ebfa5f2a85b28394be220ff",
     "scripts/verify_lands.py::is_ancestor": "41aa4dd87d72de06f22ccc251218cf0246b9ed87cbdf1022868ffb8be98cf2b6",
     "scripts/verify_lands.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
@@ -2262,5 +2266,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.461.0"
+  "version": "0.462.0"
 }

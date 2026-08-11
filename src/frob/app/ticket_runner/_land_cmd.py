@@ -1195,8 +1195,43 @@ def _is_ancestor_with_retry(
 # frob:ticket T-1523
 # frob:ticket T-1884
 # frob:ticket T-1913
+# frob:ticket T-2129
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_verifies_an_anchor_ticket_left_queued_on_main  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_still_refuses_a_non_anchor_ticket_left_queued  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log  # noqa: E501
+def _land_proof_state_ok(ticket) -> bool:  # noqa: ANN001
+    """T-2129: the single terminal-state allowlist `_land_proof_checks`
+    consults, extracted so `_print_land_proof` and `_report_stale_post_
+    land_verify_markers` cannot independently drift on what counts as a
+    legitimately-published non-done state (they used to duplicate this
+    exact condition inline, and the duplication is how the T-2129 defect
+    went unnoticed in one of the two copies).
+
+    True for `done`/`dropped` (the ordinary terminal shapes); for an
+    `anchor=True` ticket sitting in `queued`/`blocked` (T-1884, mirroring
+    `_skip_close_for_anchor_no_close_requested`'s own condition); and now
+    for a plain `queued` ticket carrying a recorded `## Failure log` entry
+    (T-2129, mirroring `_skip_close_for_legitimate_fail`'s own condition)
+    -- `frob ticket fail` returns a ticket to `queued` with no legal
+    `queued -> done` transition, and `land` correctly publishes that
+    failure log to `main` as-is rather than forcing one (T-1818). Before
+    this, that exact shape's `state_desc == "queued"` fell through this
+    allowlist as if it were an ordinary unstarted/requeued ticket, so a
+    land that genuinely reached `main` (`is_ancestor_of_main=True`)
+    printed `verified=False`/an ERROR that contradicted its own
+    `is_ancestor_of_main` field on the same line (T-2109's land)."""
+    from frob.tickets import TicketState
+    from frob.tickets._land_merge import _has_failure_log
+
+    if ticket is None:
+        return False
+    if ticket.state in (TicketState.DONE, TicketState.DROPPED):
+        return True
+    if ticket.anchor and ticket.state in (TicketState.QUEUED, TicketState.BLOCKED):
+        return True
+    return ticket.state is TicketState.QUEUED and _has_failure_log(ticket.body)
+
+
 def _land_proof_checks(
     root: Path, final_id: str, commit_sha: str
 ) -> tuple[bool, str, bool]:
@@ -1206,25 +1241,24 @@ def _land_proof_checks(
     `(ticket_id, commit_sha)` pair without duplicating the git/ledger
     logic: `commit_sha` is an ancestor of `root`'s `main` (T-1913: retried
     briefly via `_is_ancestor_with_retry` before concluding False), AND
-    `final_id`'s state on `main` is a terminal state (done/dropped) -- OR
-    (T-1884) `final_id` is an `anchor=True` ticket sitting in `queued`/
-    `blocked`, the legitimate non-terminal-forever shape `_skip_close_for_
-    anchor_no_close_requested` (T-1874) publishes as-is rather than
-    forcing through a DONE transition. Returns `(ancestor_ok, state_desc,
-    is_anchor)` -- the caller derives `verified` and any logging itself."""
+    `final_id`'s on-main state passes `_land_proof_state_ok` (T-2129: done/
+    dropped, an anchor left queued/blocked, or a queued ticket with a
+    recorded failure log). Returns `(ancestor_ok, state_desc, state_ok)`
+    -- the caller derives `verified` (`ancestor_ok and state_ok`) and any
+    logging itself."""
     from frob.tickets import load_all
 
     ancestor_ok = _is_ancestor_with_retry(root, commit_sha)
 
     state_desc = "unknown"
-    is_anchor = False
+    state_ok = False
     loaded = load_all(root)
     if loaded.is_ok:
         ticket = loaded.danger_ok.get(final_id)
         if ticket is not None:
             state_desc = ticket.state.value
-            is_anchor = ticket.anchor
-    return ancestor_ok, state_desc, is_anchor
+            state_ok = _land_proof_state_ok(ticket)
+    return ancestor_ok, state_desc, state_ok
 
 
 def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
@@ -1275,15 +1309,10 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     `land()`'s own claims-check step in this process) leaves the printed
     token as the plain `True`/`False` of the unchanged bool, exactly as
     before -- the healthy path has no behavior change."""
-    from frob.tickets import TicketState
     from frob.tickets._land import _LAST_CLAIMS_OUTCOME, _ClaimsReverifyOutcome
 
-    ancestor_ok, state_desc, is_anchor = _land_proof_checks(
+    ancestor_ok, state_desc, state_ok = _land_proof_checks(
         root, report.final_id, report.commit_sha
-    )
-    state_ok = state_desc in (TicketState.DONE.value, TicketState.DROPPED.value) or (
-        is_anchor
-        and state_desc in (TicketState.QUEUED.value, TicketState.BLOCKED.value)
     )
     verified = ancestor_ok and state_ok
 
@@ -1325,21 +1354,12 @@ def _report_stale_post_land_verify_markers(root: Path) -> None:
     `root`'s ledger/git-log by hand; this function itself never refuses or
     exits, since the NEW ticket this invocation is actually landing must
     not be blocked by a PRIOR, unrelated ticket's leftover marker."""
-    from frob.tickets import TicketState
     from frob.tickets._land import _clear_post_land_verify_marker
     from frob.tickets._land import _stale_post_land_verify_markers as _stale_markers
 
     for ticket_id, commit_sha in _stale_markers(root):
-        ancestor_ok, state_desc, is_anchor = _land_proof_checks(
+        ancestor_ok, state_desc, state_ok = _land_proof_checks(
             root, ticket_id, commit_sha
-        )
-        # frob:ticket T-1884
-        state_ok = state_desc in (
-            TicketState.DONE.value,
-            TicketState.DROPPED.value,
-        ) or (
-            is_anchor
-            and state_desc in (TicketState.QUEUED.value, TicketState.BLOCKED.value)
         )
         verified = ancestor_ok and state_ok
         _log.warning(
@@ -1824,22 +1844,45 @@ def _finish_land_after_success(
     coordinator loop that only checks the exit code, not greps the log
     for `verified=`, sees a clean success and moves on while the real
     code change stays lost. The two lines must never disagree about
-    whether the caller should treat this as done."""
+    whether the caller should treat this as done.
+
+    T-2129: the ERROR text below used to assert a blanket "did NOT reach
+    `main` (or the ticket's on-main state is not terminal)" every time
+    `verified` was False -- worded to cover BOTH possible causes at once,
+    which reads as a direct contradiction of the `LAND-PROOF:` line right
+    above it whenever the true cause is the second one and
+    `is_ancestor_of_main=True` is sitting in plain view on the same
+    output (T-2109's land: ancestor check passed, but `_land_proof_state_
+    ok` had not yet learned the queued-with-failure-log shape). It now
+    re-runs the SAME `_land_proof_checks` `_print_land_proof` just used --
+    read-only, already cheap enough to run twice in the unverified path --
+    and names whichever check actually failed, so this line can never
+    assert a conclusion the `LAND-PROOF:` line's own `is_ancestor_of_main`
+    field disagrees with."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     if report.dry_run:
         return
     verified = _print_land_proof(root, report)
     if not verified:
+        ancestor_ok, state_desc, _state_ok = _land_proof_checks(
+            root, report.final_id, report.commit_sha
+        )
+        if not ancestor_ok:
+            reason = "the commit does NOT reach `main`"
+        else:
+            reason = (
+                f"the commit reached `main`, but the ticket's on-main "
+                f"state ({state_desc}) is not a recognized terminal shape"
+            )
         _log.error(
-            "ticket land: %s LAND-PROOF did not verify -- the commit "
-            "(%s) exists but did NOT reach `main` (or the ticket's "
-            "on-main state is not terminal); treat this land as FAILED "
-            "despite the 'landed as' line above, investigate with `git "
-            "merge-base --is-ancestor %s main` and `git branch --contains "
-            "%s`, and recover the commit (e.g. cherry-pick it onto main) "
-            "before assuming the work is safe (T-1910)",
+            "ticket land: %s LAND-PROOF did not verify -- %s; treat this "
+            "land as FAILED despite the 'landed as' line above, "
+            "investigate with `git merge-base --is-ancestor %s main` and "
+            "`git branch --contains %s`, and recover the commit (e.g. "
+            "cherry-pick it onto main) before assuming the work is safe "
+            "(T-1910)",
             cfg.ticket_id,
-            report.commit_sha,
+            reason,
             report.commit_sha,
             report.commit_sha,
         )

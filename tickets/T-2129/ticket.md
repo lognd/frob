@@ -2,7 +2,7 @@
 id: T-2129
 title: LAND-PROOF reports verified=SKIPPED-UNMEASURED/ERROR for a successful QUEUED-with-failure-log
   land (is_ancestor_of_main=True contradicts its own ERROR)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -12,18 +12,48 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/**
-- src/frob/app/ticket_runner/**
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
+- tickets/T-2167/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: narrow to LAND-PROOF error-message consistency fix
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: narrow to LAND-PROOF error-message consistency fix
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: narrow to LAND-PROOF error-message consistency fix
+  actor: logan
+  at: '2026-08-11'
+- op: remove
+  glob: src/frob/app/ticket_runner/**
+  reason: narrow to the two touched files only
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: tickets/T-2167/**
+  reason: residue ticket filed from this worktree
+  actor: logan
+  at: '2026-08-11'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log
+designated_repro_test: tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log
 acceptance:
 - text: Given a QUEUED ticket with a recorded failure log landed via frob ticket land
     (publishing the failure log to main, no done transition), when the LAND-PROOF
     self-check runs, then it reports verified=True (or an equivalently non-error terminal
     outcome) instead of an ERROR that contradicts its own printed is_ancestor_of_main=True
     field
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log
 threat: null
 component: null
 anchor: false

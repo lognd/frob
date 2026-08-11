@@ -11,8 +11,15 @@ hint, not proof. `frob worktree remove` performs the authoritative
 lease-and-liveness check and refuses when it is not safe; prefer it over
 raw `git worktree remove`, which has deleted a live agent's checkout here.
 
+T-2133 extends this with the missing PER-TICKET question: given T-####,
+is it actually dispatchable right now? `ticket_readiness` answers that
+directly from `.git/frob-leases/<id>.json` (the live, authoritative
+scope/holder) and `main:tickets/<id>/ticket.md` (the committed record),
+rather than a coordinator hand-rolling the same three git probes -- and
+getting them wrong, twice, in ways this ticket's own body documents.
+
 Usage:
-    python3 scripts/fleet_status.py [--idle-minutes N]
+    python3 scripts/fleet_status.py [--idle-minutes N] [--ticket T-####]
 """
 
 from __future__ import annotations
@@ -103,6 +110,180 @@ def worktrees(idle_seconds: int) -> list[tuple[str, int, bool]]:
     return rows
 
 
+# frob:doc docs/guides/coordinator-scripts.md#ticket_lease
+# frob:ticket T-2133
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketLease.test_reads_a_live_lease
+# frob:tests tests/unit/test_coordinator_scripts.py::TestTicketLease.test_no_lease_file
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketLease.test_unreadable_lease_file
+def ticket_lease(ticket_id: str) -> dict | None:
+    """The single live lease record for `ticket_id` (`.git/frob-leases/
+    <id>.json`), or `None` if no lease file exists at all -- the SAME file
+    `leases()` above enumerates in bulk, read directly by id instead, so a
+    caller checking one specific ticket does not have to scan and filter
+    every held lease. `recorded_at` and `scope` are exactly the fields
+    T-2133's own incident needed and did not have a one-call answer for:
+    a coordinator dispatched T-2114 believing its lease "should be free
+    now" while another worktree still held it, mid-implementation, with a
+    Done report already written on its own branch -- a wasted dispatch
+    this function exists to make impossible to repeat. An unreadable/
+    malformed lease file reads as `{"ticket_id": ..., "worktree":
+    "<unreadable>"}`, mirroring `leases()`'s own defensive shape, never
+    raised (a lease file is peer-writable, T-0780)."""
+    path = LEASES / f"{ticket_id}.json"
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"ticket_id": ticket_id, "worktree": "<unreadable>"}
+
+
+# frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
+# frob:ticket T-2133
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_reads_state_\
+# and_scope
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_missing_tick\
+# et_returns_none
+def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
+    """`{"state": ..., "scope": [...]}` parsed from `main:tickets/<id>/
+    ticket.md`'s YAML frontmatter, or `None` if the ticket does not exist
+    on `main` at all. Hand-parsed (no `import yaml`, matching this
+    script's own "no `frob` import, plain stdlib" contract from its module
+    docstring) against the narrow shape `frob ticket` actually writes: a
+    flat `key: value` line for `state`, and a `scope:` block of `- 'glob'`
+    list lines directly beneath it. T-2133's own incident: a coordinator
+    read `main:tickets/<id>/ticket.md`'s scope twice believing it was the
+    ticket's LIVE scope, when the authoritative live value (if a lease is
+    held) is the lease record's own `scope` field, which can have
+    diverged via `frob ticket scope` inside a worktree that has not
+    landed yet -- this function reads the STATIC, main-committed side of
+    that comparison; `ticket_readiness` below is what actually compares
+    the two."""
+    text = _git(["show", f"main:tickets/{ticket_id}/ticket.md"], REPO)
+    if not text:
+        return None
+    lines = text.splitlines()
+    state = None
+    scope: list[str] = []
+    in_scope_block = False
+    for line in lines:
+        if line.startswith("state:"):
+            state = line.split(":", 1)[1].strip()
+            in_scope_block = False
+            continue
+        if line == "scope:":
+            in_scope_block = True
+            continue
+        if in_scope_block:
+            stripped = line.strip()
+            if not stripped.startswith("- "):
+                in_scope_block = False
+                continue
+            item = stripped[2:].strip()
+            if len(item) >= 2 and item[0] == item[-1] and item[0] in "'\"":
+                item = item[1:-1]
+            scope.append(item)
+    return {"state": state, "scope": scope}
+
+
+# frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket
+# frob:ticket T-2133
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_finds_a_bran\
+# ch_with_unlanded_commits
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_empty_when_n\
+# othing_touches_it
+def worktrees_touching_ticket(ticket_id: str) -> list[str]:
+    """Names of live worktrees whose branch carries a commit (not yet on
+    `main`) that touches `tickets/<id>/` -- the "already implemented on
+    another branch" signal T-2114's incident needed: a ticket believed
+    free was in fact already implemented, evidenced, and Done-reported on
+    a sibling worktree's branch, discoverable only by hand-inspecting that
+    branch's own commit log. `git log main..HEAD -- tickets/<id>/` per
+    worktree is the direct, mechanical version of that same inspection."""
+    if not WORKTREES.is_dir():
+        return []
+    hits = []
+    for path in sorted(p for p in WORKTREES.iterdir() if p.is_dir()):
+        out = _git(
+            ["log", "main..HEAD", "--oneline", "--", f"tickets/{ticket_id}/"], path
+        )
+        if out.strip():
+            hits.append(path.name)
+    return hits
+
+
+# frob:doc docs/guides/coordinator-scripts.md#ticket_readiness
+# frob:ticket T-2133
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_dispatchable_when_no\
+# _lease_no_commits_no_divergence
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_not_dispatchable_whe\
+# n_a_live_lease_exists
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_not_dispatchable_whe\
+# n_another_branch_already_has_commits
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_flags_scope_divergen\
+# ce_between_the_live_lease_and_main
+def ticket_readiness(ticket_id: str) -> dict:
+    """T-2133: the single per-ticket answer to "given T-####, is it
+    actually dispatchable?" -- `fleet_status.py` already answers the
+    fleet-wide half of pre-dispatch safety (root cleanliness, quarantine,
+    idle worktrees); this is the missing per-ticket half, combining
+    `ticket_lease`, `ticket_frontmatter_on_main`, and
+    `worktrees_touching_ticket` into one dict:
+
+    - `lease`: the live lease record (`ticket_lease`), or `None`.
+    - `main`: `ticket_frontmatter_on_main`'s `{"state", "scope"}`, or
+      `None` if the ticket does not exist on `main` yet.
+    - `scope_diverges`: `True` when a live lease exists AND its `scope`
+      differs from `main`'s declared scope -- T-2133's own "single
+      highest-value signal": a coordinator reading `main:tickets/<id>/
+      ticket.md` alone, while a lease has since narrowed (or widened) the
+      real working scope inside a worktree, draws a stale conclusion
+      about what the ticket actually touches (observed twice: once nearly
+      releasing a healthy lease, once asking an agent to redo a narrowing
+      it had already done).
+    - `worktrees_with_commits`: from `worktrees_touching_ticket` -- a
+      non-empty list means the ticket is already implemented elsewhere,
+      not merely leased.
+    - `dispatchable`: `False` whenever a live lease is held, OR another
+      worktree already carries commits for this ticket, OR `main`
+      declares it in a state a fresh dispatch cannot productively start
+      from (`done`/`dropped`/`in-progress`) -- `True` otherwise. This is
+      the field a caller (or `main`'s own exit code) gates dispatch on."""
+    lease = ticket_lease(ticket_id)
+    main_info = ticket_frontmatter_on_main(ticket_id)
+    main_scope = main_info["scope"] if main_info is not None else None
+    scope_diverges = (
+        lease is not None
+        and main_scope is not None
+        and set(lease.get("scope", [])) != set(main_scope)
+    )
+    worktrees_with_commits = worktrees_touching_ticket(ticket_id)
+    state_on_main = main_info["state"] if main_info is not None else None
+    dispatchable = (
+        lease is None
+        and not worktrees_with_commits
+        and state_on_main not in ("done", "dropped", "in-progress")
+    )
+    return {
+        "ticket_id": ticket_id,
+        "lease": lease,
+        "main": main_info,
+        "scope_diverges": scope_diverges,
+        "worktrees_with_commits": worktrees_with_commits,
+        "dispatchable": dispatchable,
+    }
+
+
 # frob:doc docs/guides/coordinator-scripts.md#quarantine
 # frob:ticket T-2049
 # frob:tests \
@@ -174,12 +355,21 @@ def quarantine_state() -> tuple[str, int]:
 # nown_as_unsafe
 def main() -> int:
     """Print root/lease/worktree/quarantine state; exit 1 when root is
-    dirty. T-2049: the quarantine line is printed unconditionally (not
-    just on --verbose or similar) because this is the ONE place a
-    coordinator already looks before dispatching a wave -- see
-    `quarantine_state`'s own docstring for the incident this answers."""
+    dirty OR (T-2133) `--ticket T-####` was given and `ticket_readiness`
+    says it is not dispatchable. T-2049: the quarantine line is printed
+    unconditionally (not just on --verbose or similar) because this is
+    the ONE place a coordinator already looks before dispatching a wave
+    -- see `quarantine_state`'s own docstring for the incident this
+    answers."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--idle-minutes", type=int, default=20)
+    parser.add_argument(
+        "--ticket",
+        default=None,
+        help="T-2133: also print per-ticket readiness (lease, main scope/"
+        "state divergence, sibling-branch commits) and gate the exit code "
+        "on ticket_readiness()['dispatchable'], not just root cleanliness.",
+    )
     args = parser.parse_args()
 
     dirt = root_dirt()
@@ -213,7 +403,35 @@ def main() -> int:
         mins = "unknown" if age < 0 else f"{age // 60}m"
         print(f"  {name:28} last-commit {mins:>9}{'  IDLE?' if idle else ''}")
 
-    return 1 if dirt else 0
+    ticket_ok = True
+    if args.ticket is not None:
+        readiness = ticket_readiness(args.ticket)
+        ticket_ok = readiness["dispatchable"]
+        print(f"TICKET {args.ticket}")
+        lease = readiness["lease"]
+        if lease is None:
+            print("  lease: none")
+        else:
+            print(
+                f"  lease: recorded_at={lease.get('recorded_at')} "
+                f"worktree={lease.get('worktree')} scope={lease.get('scope')}"
+            )
+        main_info = readiness["main"]
+        if main_info is None:
+            print("  main: ticket does not exist on main")
+        else:
+            print(f"  main: state={main_info['state']} scope={main_info['scope']}")
+        if readiness["scope_diverges"]:
+            print(
+                "  SCOPE DIVERGES -- the live lease's scope differs from "
+                "main's declared scope; trust the lease, not the ticket file"
+            )
+        commits = readiness["worktrees_with_commits"]
+        if commits:
+            print(f"  ALREADY IMPLEMENTED on: {', '.join(commits)}")
+        print(f"  dispatchable: {readiness['dispatchable']}")
+
+    return 1 if (dirt or not ticket_ok) else 0
 
 
 if __name__ == "__main__":

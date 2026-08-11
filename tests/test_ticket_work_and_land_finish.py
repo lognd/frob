@@ -1244,6 +1244,45 @@ class TestLandProofAndFinish:
         fake_report = SimpleNamespace(final_id=tid, commit_sha=commit_sha)
         assert _print_land_proof(repo, fake_report) is False
 
+    # frob:ticket T-2129
+    def test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_proof_verifies_a_queued_ticket_with_a_recorded_failure_log  # noqa: E501
+        # T-2129 (T-2109's own landed shape): `frob ticket fail` returns a
+        # ticket to QUEUED with a recorded `## Failure log` entry, and
+        # `land` correctly publishes that record to `main` as-is
+        # (`_skip_close_for_legitimate_fail`, T-1818) -- no done
+        # transition is ever attempted. Before this fix, `_land_proof_
+        # checks`'s terminal-state allowlist only recognized done/dropped/
+        # anchor-left-queued, so this genuinely successful publish (real
+        # ancestor of main) still printed verified=False, contradicting
+        # its own is_ancestor_of_main=True field on the same LAND-PROOF
+        # line. FAILS at pre-fix behavior (`_print_land_proof` returns
+        # False here even though the commit is a real ancestor of main).
+        from types import SimpleNamespace
+
+        created = new_ticket(repo, _spec("Queued with failure log"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "body": ticket.body
+                + "\n## Failure log\n\nattempt 1: could not build it as scoped\n"
+            }
+        )
+        assert write_ticket(repo, ticket).is_ok
+        _commit_all(repo, "queued ticket with a recorded failure log")
+        commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        fake_report = SimpleNamespace(
+            ticket_id=tid, final_id=tid, commit_sha=commit_sha
+        )
+        assert _print_land_proof(repo, fake_report) is True
+
     def test_finish_removes_the_worktree(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_finish\

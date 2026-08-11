@@ -221,6 +221,192 @@ class TestWorktrees:
         assert fleet_status.worktrees(idle_seconds=100) == []
 
 
+class TestTicketLease:
+    """`fleet_status.ticket_lease` (T-2133)."""
+
+    def test_reads_a_live_lease(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The single `<id>.json` lease file is read and parsed directly."""
+        leases_dir = tmp_path / "leases"
+        leases_dir.mkdir()
+        record = {
+            "ticket_id": "T-2114",
+            "scope": ["src/x.py"],
+            "worktree": "/w",
+            "branch": "b",
+            "recorded_at": "2026-08-01T00:00:00+00:00",
+        }
+        (leases_dir / "T-2114.json").write_text(json.dumps(record), encoding="utf-8")
+        monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
+        assert fleet_status.ticket_lease("T-2114") == record
+
+    def test_no_lease_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """No lease file for this specific id returns None, not an error."""
+        leases_dir = tmp_path / "leases"
+        leases_dir.mkdir()
+        monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
+        assert fleet_status.ticket_lease("T-9999") is None
+
+    def test_unreadable_lease_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Malformed JSON reads as '<unreadable>', mirroring `leases()`."""
+        leases_dir = tmp_path / "leases"
+        leases_dir.mkdir()
+        (leases_dir / "T-2114.json").write_text("{not json", encoding="utf-8")
+        monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
+        assert fleet_status.ticket_lease("T-2114") == {
+            "ticket_id": "T-2114",
+            "worktree": "<unreadable>",
+        }
+
+
+class TestTicketFrontmatterOnMain:
+    """`fleet_status.ticket_frontmatter_on_main` (T-2133)."""
+
+    def test_reads_state_and_scope(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """`state:` and the `scope:` list block are parsed from the
+        committed ticket.md's YAML frontmatter."""
+        text = (
+            "---\n"
+            "id: T-2114\n"
+            "state: in-progress\n"
+            "scope:\n"
+            "- src/a.py\n"
+            "- 'src/b.py'\n"
+            "priority: high\n"
+        )
+        monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: text)
+        assert fleet_status.ticket_frontmatter_on_main("T-2114") == {
+            "state": "in-progress",
+            "scope": ["src/a.py", "src/b.py"],
+        }
+
+    def test_missing_ticket_returns_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """`git show` returning nothing (ticket absent on main) is None."""
+        monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: "")
+        assert fleet_status.ticket_frontmatter_on_main("T-9999") is None
+
+
+class TestWorktreesTouchingTicket:
+    """`fleet_status.worktrees_touching_ticket` (T-2133)."""
+
+    def test_finds_a_branch_with_unlanded_commits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A worktree whose branch has `main..HEAD` commits touching
+        `tickets/<id>/` is reported by name."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "one").mkdir(parents=True)
+        (worktrees_dir / "two").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+
+        def fake_git(args: list[str], cwd: Path) -> str:
+            return "abc123 done report" if cwd.name == "one" else ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert fleet_status.worktrees_touching_ticket("T-2114") == ["one"]
+
+    def test_empty_when_nothing_touches_it(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No worktree with matching commits returns an empty list."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "one").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+        monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: "")
+        assert fleet_status.worktrees_touching_ticket("T-2114") == []
+
+
+class TestTicketReadiness:
+    """`fleet_status.ticket_readiness` (T-2133)."""
+
+    def test_dispatchable_when_no_lease_no_commits_no_divergence(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A queued ticket, no live lease, no sibling-branch commits: ready."""
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda tid: None)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "queued", "scope": ["src/a.py"]},
+        )
+        monkeypatch.setattr(fleet_status, "worktrees_touching_ticket", lambda tid: [])
+        readiness = fleet_status.ticket_readiness("T-2114")
+        assert readiness["dispatchable"] is True
+        assert readiness["scope_diverges"] is False
+        assert readiness["worktrees_with_commits"] == []
+
+    def test_not_dispatchable_when_a_live_lease_exists(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A live lease (someone already working it) blocks dispatch --
+        the exact T-2114 incident: dispatched believing the lease 'should
+        be free now' when another worktree still held it."""
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_lease",
+            lambda tid: {
+                "ticket_id": tid,
+                "scope": ["src/a.py"],
+                "worktree": "/w",
+                "branch": "b",
+                "recorded_at": "2026-08-01T00:00:00+00:00",
+            },
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "queued", "scope": ["src/a.py"]},
+        )
+        monkeypatch.setattr(fleet_status, "worktrees_touching_ticket", lambda tid: [])
+        assert fleet_status.ticket_readiness("T-2114")["dispatchable"] is False
+
+    def test_not_dispatchable_when_another_branch_already_has_commits(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Already-implemented-elsewhere (no lease left, but real commits
+        on a sibling branch) also blocks dispatch."""
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda tid: None)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "queued", "scope": ["src/a.py"]},
+        )
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid: ["sibling"]
+        )
+        readiness = fleet_status.ticket_readiness("T-2114")
+        assert readiness["dispatchable"] is False
+        assert readiness["worktrees_with_commits"] == ["sibling"]
+
+    def test_flags_scope_divergence_between_the_live_lease_and_main(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The live lease's scope differing from main's committed scope is
+        surfaced as `scope_diverges`, the 'single highest-value signal'
+        this ticket exists to add."""
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_lease",
+            lambda tid: {
+                "ticket_id": tid,
+                "scope": ["src/a.py"],
+                "worktree": "/w",
+                "branch": "b",
+                "recorded_at": "2026-08-01T00:00:00+00:00",
+            },
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "queued", "scope": ["src/a.py", "src/b.py"]},
+        )
+        monkeypatch.setattr(fleet_status, "worktrees_touching_ticket", lambda tid: [])
+        readiness = fleet_status.ticket_readiness("T-2114")
+        assert readiness["scope_diverges"] is True
+        assert readiness["dispatchable"] is False
+
+
 class TestFleetStatusMain:
     """`fleet_status.main`."""
 
@@ -247,6 +433,62 @@ class TestFleetStatusMain:
         out = capsys.readouterr().out
         assert "DIRTY" in out
         assert " M x.py" in out
+
+    # frob:ticket T-2133
+    def test_ticket_flag_exits_one_when_not_dispatchable(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A clean root but a NOT-dispatchable `--ticket` still exits 1,
+        with the reason (a live lease) printed -- T-2133's own exit-code
+        gate, so this can drive a dispatch loop without prose parsing."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_readiness",
+            lambda tid: {
+                "ticket_id": tid,
+                "lease": {
+                    "recorded_at": "2026-08-01T00:00:00+00:00",
+                    "worktree": "/w",
+                    "scope": ["src/a.py"],
+                },
+                "main": {"state": "in-progress", "scope": ["src/a.py"]},
+                "scope_diverges": False,
+                "worktrees_with_commits": [],
+                "dispatchable": False,
+            },
+        )
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py", "--ticket", "T-2114"])
+        assert fleet_status.main() == 1
+        out = capsys.readouterr().out
+        assert "TICKET T-2114" in out
+        assert "dispatchable: False" in out
+
+    # frob:ticket T-2133
+    def test_ticket_flag_exits_zero_when_dispatchable(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A clean root and a dispatchable `--ticket` exits 0."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_readiness",
+            lambda tid: {
+                "ticket_id": tid,
+                "lease": None,
+                "main": {"state": "queued", "scope": ["src/a.py"]},
+                "scope_diverges": False,
+                "worktrees_with_commits": [],
+                "dispatchable": True,
+            },
+        )
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py", "--ticket", "T-2114"])
+        assert fleet_status.main() == 0
+        assert "dispatchable: True" in capsys.readouterr().out
 
 
 class TestQuarantineState:

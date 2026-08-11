@@ -140,6 +140,68 @@ is the place a coordinator already reads before dispatching a wave, so
 `main()` now prints this state unconditionally, before LEASES/
 WORKTREES, rather than adding a new command nobody would know to run.
 
+### `ticket_lease`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#ticket_lease -->
+
+T-2133. The single live lease record for one ticket id
+(`.git/frob-leases/<id>.json`), read directly rather than filtering
+`leases()`'s full enumeration -- `None` if no lease file exists,
+`{"ticket_id": ..., "worktree": "<unreadable>"}` on malformed JSON
+(mirroring `leases()`'s own defensive shape; a lease file is
+peer-writable, T-0780).
+
+This is the direct fix for T-2133's own first incident: a coordinator
+dispatched T-2114 believing its lease "should be free now" -- a belief
+formed without ever reading `.git/frob-leases/T-2114.json` directly --
+while another worktree still held it, mid-implementation, with its own
+Done report already written. `ticket_lease` is the one-call answer that
+makes skipping this check unnecessary.
+
+### `ticket_frontmatter_on_main`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main -->
+
+`{"state": ..., "scope": [...]}` parsed from `main:tickets/<id>/
+ticket.md`'s YAML frontmatter via `git show` plus a narrow hand-rolled
+parse (no `import yaml` -- this script stays plain-stdlib, matching its
+module docstring's contract), or `None` if the ticket does not exist on
+`main` at all.
+
+This is deliberately the STATIC, main-committed half of a scope
+comparison, not the live one -- `main:tickets/<id>/ticket.md`'s `scope:`
+field can be stale the moment a worktree calls `frob ticket scope`
+without having landed yet. T-2133's own second incident: a coordinator
+read this file directly, twice, believing it WAS the ticket's live
+scope -- once nearly releasing a healthy lease, once asking an agent to
+redo a scope-narrowing it had already done on its own branch.
+`ticket_readiness` below is what actually compares this against the
+live lease.
+
+### `worktrees_touching_ticket`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket -->
+
+Names of live worktrees whose branch has an unlanded commit (`git log
+main..HEAD -- tickets/<id>/`) touching a given ticket's own ticket
+directory -- the mechanical version of the hand-inspection T-2114's
+incident required: discovering the ticket was already implemented,
+evidenced, and Done-reported on a sibling branch only by manually
+reading that branch's own commit log and running a process check.
+
+### `ticket_readiness`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#ticket_readiness -->
+
+T-2133's actual answer to "given T-####, is it dispatchable right now?" --
+combines the three functions above into one dict: `lease`, `main`
+(state/scope on `main`), `scope_diverges` (`True` when a live lease's
+scope differs from `main`'s declared scope -- the single highest-value
+signal this ticket exists to add), `worktrees_with_commits`, and
+`dispatchable` (`False` whenever a live lease is held, another worktree
+already carries commits for this ticket, or `main` shows a
+`done`/`dropped`/`in-progress` state; `True` otherwise).
+
 ### fleet_status-main
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#fleet_status-main -->
@@ -148,12 +210,17 @@ CLI entry point: prints root dirt, quarantine state, held leases, and
 worktree idle ages; exits 1 when the root is dirty, 0 otherwise (the
 quarantine line does not itself change the exit code -- it is a
 visibility fix, not a new dispatch-refusal gate). `--idle-minutes N`
-(default 20) sets the idle threshold.
+(default 20) sets the idle threshold. T-2133: `--ticket T-####` also
+prints `ticket_readiness`'s report (lease, main state/scope, scope
+divergence, sibling-branch commits, and the final `dispatchable`
+verdict) and folds `not dispatchable` into the exit code alongside root
+dirt, so this can gate a dispatch loop mechanically instead of a human
+reading prose.
 
 Usage:
 
 ```
-python3 scripts/fleet_status.py [--idle-minutes N]
+python3 scripts/fleet_status.py [--idle-minutes N] [--ticket T-####]
 ```
 
 ## `scripts/verify_lands.py`
