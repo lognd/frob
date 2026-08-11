@@ -19,8 +19,6 @@ designated_repro_test: null
 acceptance:
 - text: Operator-side reproduction (2026-08-10), stronger evidence than this ticket's
   evidence: []
-- text: 'original static reading: `uv run pytest tests/unit/test_app_style.py -q -p'
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
@@ -100,6 +98,15 @@ acceptance_amendments:
 - op: remove
   index: 2
   old_text: 'no:xdist` failed with `error: unrecognized arguments: -n --dist=loadgroup`'
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 1
+  old_text: 'original static reading: `uv run pytest tests/unit/test_app_style.py
+    -q -p'
   new_text: null
   reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
     due to no blank-line separators'
