@@ -16,6 +16,18 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'Operator-side reproduction (2026-08-10), stronger evidence than this ticket''s
+    original static reading: uv run pytest tests/unit/test_app_style.py -q -p no:xdist
+    failed with ''unrecognized arguments: -n --dist=loadgroup'' even with -p no:xdist
+    passed explicitly on the CLI -- pyproject.toml addopts still injected -n auto/--dist=loadgroup,
+    confirming this ticket''s root-cause claim end to end; -o addopts="" instead worked
+    (15 passed). NOTE: T-2086 (landed f843ad7ed5ffb32fac8ab304d42fe2f0a5af55ca, successor
+    to T-2031/T-draft-4aa27f0c) already fixes this exact addopts-reinjection hole
+    via _neutralized_addopts/-o addopts=<stripped>; this ticket may be a duplicate
+    of already-landed work -- flagging for a coordinator pass rather than dropping
+    it unilaterally.'
+  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
