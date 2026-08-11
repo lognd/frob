@@ -16,9 +16,6 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
-acceptance:
-- text: Operator-side reproduction (2026-08-10), stronger evidence than this ticket's
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
@@ -107,6 +104,14 @@ acceptance_amendments:
   index: 1
   old_text: 'original static reading: `uv run pytest tests/unit/test_app_style.py
     -q -p'
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 0
+  old_text: Operator-side reproduction (2026-08-10), stronger evidence than this ticket's
   new_text: null
   reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
     due to no blank-line separators'
