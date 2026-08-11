@@ -2997,17 +2997,33 @@ def _check_live_tracker_citations(
 
 # frob:ticket T-1355
 def _branch_changed_files(
-    worktree: Path, base_ref: str
+    worktree: Path, base_ref: str, ref: str = "HEAD"
 ) -> Result[frozenset[str], LandError]:
-    """The set of paths `worktree`'s current branch has committed changes
-    to since it diverged from `base_ref` (T-1355), via `git diff --name-
-    only <base_ref>...HEAD` (three-dot: the merge-base diff, so a
-    worktree that has since merged `base_ref` back in does not report
-    every file `base_ref` itself touched). `Err(GitFailed)` on a git
-    failure; an empty set (never an error) when the branch has committed
-    nothing new."""
+    """THE canonical answer to "which files did THIS BRANCH'S OWN COMMITS
+    change" (T-1966): the set of paths `ref` (default `HEAD`, i.e.
+    `worktree`'s currently checked-out branch) has committed changes to
+    since it diverged from `base_ref` (T-1355), via `git diff --name-only
+    <base_ref>...<ref>` (three-dot: the merge-base diff, so a worktree
+    that has since merged `base_ref` back in does not report every file
+    `base_ref` itself touched -- T-1550/T-1922's own lesson). `Err
+    (GitFailed)` on a git failure; an empty set (never an error) when the
+    branch has committed nothing new.
+
+    T-1966: this used to have a second, independent implementation in
+    `frob.tickets._unlanded` (`_branch_own_changed_files`, T-1955's own
+    fix for the SAME two-dot/three-dot lesson landing a second time in a
+    different consumer) -- that module now delegates here instead of
+    keeping its own `git diff` spawn. The `ref` parameter (added for that
+    consolidation, defaulting to `HEAD` so every existing `_land.py` call
+    site is unaffected) is what makes one function serve both shapes: a
+    `_land.py` caller runs `worktree` checked out AT the branch already
+    (land-time, implicit `HEAD`), while `_unlanded.py`'s shared-root scan
+    needs to diff an ARBITRARY branch name from whatever `root` happens
+    to be checked out to right now -- passing `ref=<branch name>`
+    explicitly makes that not require a checkout at all, since `git diff`
+    only needs the ref to exist, never to be checked out."""
     diffed = run_argv(
-        ["git", "-C", str(worktree), "diff", "--name-only", f"{base_ref}...HEAD"]
+        ["git", "-C", str(worktree), "diff", "--name-only", f"{base_ref}...{ref}"]
     )
     if diffed.is_err or diffed.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)

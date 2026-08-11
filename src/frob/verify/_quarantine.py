@@ -65,6 +65,37 @@ SCHEMA_VERSION = 1
 _QUARANTINE_REL = Path(".frob") / "quarantine.json"
 _QUARANTINE_LOCK_REL = Path(".frob") / "quarantine.lock"
 
+# frob:ticket T-2132
+#: T-2132: gate rules whose finding is a statement about ELAPSED TIME or
+#: repo/queue STATE, never about a commit's diff -- structurally
+#: impossible for `frob.verify._attribution.attribute_batch` to pin to a
+#: commit, no matter how good the reference-graph walk gets. `TICK004`
+#: ("T-#### has sat queued for Nd") fires purely off `date.today()` minus
+#: a ticket's `created` date (`frob.gates._tickets_gate._tick004_queue_
+#: rot`) -- no land can ever be "the commit that caused" a clock ticking
+#: forward, so `commit_sha=None` for a TICK004 finding is the TRUTH, not
+#: a failed attribution.
+#:
+#: THE LINE THIS SET DRAWS (read before adding to it): membership here is
+#: a claim about the RULE's own inputs, decided once by a human reading
+#: the rule's implementation -- never inferred from an `Attribution`'s
+#: runtime `status`. `status="unattributed"` (attribution genuinely
+#: tried, walked the reference graph, and found zero or >1 reaching
+#: commits) is NOT the same fact as "this rule could never have named a
+#: commit in the first place", and the two must not be conflated: an
+#: unattributed CODE finding (e.g. TEST001 with no reaching commit) still
+#: raises quarantine below, because the attribution attempt failing is
+#: itself a real, actionable "we don't know what broke this" signal
+#: (T-1686's prior-art incident, referenced in this module's own
+#: docstring, was a sweep that dropped UNATTRIBUTED findings as if they
+#: were non-regressions -- do not repeat that mistake here by widening
+#: this set past rules that are unattributable BY NATURE). A candidate
+#: for this set must satisfy: "no git commit, however written, could ever
+#: be the cause of this finding" -- true for a pure `date.today()`/queue-
+#: age computation, false for anything that reads source, config, or
+#: generated artifacts a commit could change.
+_NATURALLY_UNATTRIBUTABLE_RULES: frozenset[str] = frozenset({"TICK004"})
+
 
 # frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
 class QuarantineError(ErrorSet):
@@ -235,9 +266,37 @@ def raise_quarantine(
     set -- the caller (the batch-verification driver) is expected to call
     this once per red batch, not per finding.
 
-    `Err(QuarantineError.EmptyFindings)` for a call with no findings --
-    quarantine exists to name WHAT is wrong; a flag with nothing to
-    attribute is a caller bug, not a legitimate empty raise."""
+    `Err(QuarantineError.EmptyFindings)` for a call with no findings (or
+    whose findings are ALL naturally-unattributable, T-2132 -- see
+    `_NATURALLY_UNATTRIBUTABLE_RULES`) -- quarantine exists to name WHAT
+    is wrong; a flag with nothing to attribute is a caller bug, not a
+    legitimate empty raise, and a clock-driven finding that no commit
+    could ever fix is exactly as unnameable as no finding at all.
+
+    T-2132: every `_NATURALLY_UNATTRIBUTABLE_RULES` finding is dropped
+    from `findings` FIRST, before the emptiness check and before
+    persisting -- this is the single choke point both real callers
+    (`frob.app.ticket_runner._land_cmd`'s backpressure-timeout raise and
+    `_rapid_sweep`'s red-batch raise) already go through, so filtering
+    here covers both without either needing its own copy of this rule.
+    A finding that legitimately failed attribution (a real code rule,
+    `commit_sha=None` because the reachability walk found zero or >1
+    candidates) is NEVER in this set and always passes through unchanged
+    -- see `_NATURALLY_UNATTRIBUTABLE_RULES`'s own docstring for exactly
+    where that line is drawn."""
+    exempted = tuple(f for f in findings if f.rule_id in _NATURALLY_UNATTRIBUTABLE_RULES)
+    if exempted:
+        _log.info(
+            "quarantine: %d naturally-unattributable finding(s) dropped from "
+            "this raise (rules=%s) -- a clock/repo-state rule can never be "
+            "fixed by a commit, so it cannot gate landing (T-2132)",
+            len(exempted),
+            sorted({f.rule_id for f in exempted}),
+        )
+        findings = tuple(
+            f for f in findings if f.rule_id not in _NATURALLY_UNATTRIBUTABLE_RULES
+        )
+
     if not findings:
         _log.error(
             "quarantine: raise_quarantine called with zero findings for batch %s "

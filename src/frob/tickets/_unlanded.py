@@ -167,7 +167,9 @@ def _state_from_ticket_md(text: str) -> str | None:
 # group 3 the state value. `<ref>` is filled in per call (`main`, or a
 # branch name -- branch names can contain regex metacharacters, so the
 # caller builds this via `re.escape`, never a bare f-string interpolation).
-_STATE_GREP_RE_TEMPLATE = r"^{ref}:tickets/(archive/)?(T-[0-9A-Za-z][0-9A-Za-z-]*)/ticket\.md:state:\s*(\S+)"
+_STATE_GREP_RE_TEMPLATE = (
+    r"^{ref}:tickets/(archive/)?(T-[0-9A-Za-z][0-9A-Za-z-]*)/ticket\.md:state:\s*(\S+)"
+)
 
 
 # frob:ticket T-2125
@@ -223,11 +225,24 @@ def _ticket_states_on_ref(
     unable to resolve `ref`'s ticket states treats every id as
     unresolvable (`.get(ticket_id)` -> `None`) rather than crashing."""
     spawned = run_argv(
-        ("git", "-C", str(root), "grep", "--no-color", "-e", "^state:", ref, "--", *globs)
+        (
+            "git",
+            "-C",
+            str(root),
+            "grep",
+            "--no-color",
+            "-e",
+            "^state:",
+            ref,
+            "--",
+            *globs,
+        )
     )
     if spawned.is_err:
         _log.warning(
-            "tickets: unlanded-work scan: git grep failed for ref %s under %s", ref, root
+            "tickets: unlanded-work scan: git grep failed for ref %s under %s",
+            ref,
+            root,
         )
         return {}
     result = spawned.danger_ok
@@ -308,36 +323,39 @@ def _ticket_state_on_main(root: Path, ticket_id: str) -> str | None:
     return None
 
 
-# frob:ticket T-1955
+# frob:ticket T-1966
 def _branch_own_changed_files(root: Path, branch: str) -> frozenset[str]:
-    """The set of paths `branch` has COMMITTED changes to since it diverged
-    from `main`, via `git diff --name-only main...<branch>` (three-dot: the
-    merge-base diff -- T-1955's fix, mirroring `frob.tickets._land.
-    _branch_changed_files`'s identical two-dot/three-dot lesson from
-    T-1922). `_finished_signals_on_branch` used a bare `git ls-tree
-    <branch> -- tickets`, which lists everything REACHABLE from the
-    branch tip -- including every ticket ever finished on `main` before the
-    branch was cut, since that whole tree is an ancestor of the branch.
-    That produced 216 false positives (T-1955): a branch cut from main
-    MINUTES ago inherited main's entire finished-ticket history as
-    "signals it carries". Intersecting against this three-dot diff instead
-    means only paths the branch's OWN commits touched can ever count.
-    Returns an empty set (never an error) on any git failure -- the same
-    best-effort posture as every other read in this module; a caller that
+    """The set of paths `branch` has COMMITTED changes to since it
+    diverged from `main` -- T-1955's own fix (a bare `git ls-tree
+    <branch> -- tickets` used to list everything REACHABLE from the
+    branch tip, including every ticket ever finished on `main` before the
+    branch was cut, producing 216 false positives; intersecting against a
+    three-dot diff instead means only paths the branch's OWN commits
+    touched can ever count).
+
+    T-1966: this is now a thin delegate to the SAME `git diff` this
+    module used to run independently -- `frob.tickets._land.
+    _branch_changed_files(root, "main", ref=branch)` -- rather than a
+    second copy of it. Two independent implementations of this exact
+    concept got the identical two-dot/three-dot lesson wrong in two
+    different consumers (T-1922 for `_land.py`'s own callers, T-1955
+    for this one); a thin delegate cannot desync from its single real
+    implementation the way a hand-copied twin already did once. Returns
+    an empty set (never raises) on any git failure -- the same best-
+    effort posture as every other read in this module; a caller that
     cannot resolve its own diff reports nothing rather than guessing."""
-    spawned = run_argv(
-        ("git", "-C", str(root), "diff", "--name-only", f"main...{branch}")
-    )
-    if spawned.is_err or spawned.danger_ok.returncode != 0:
+    from frob.tickets._land import _branch_changed_files
+
+    result = _branch_changed_files(root, "main", ref=branch)
+    if result.is_err:
         _log.warning(
-            "tickets: unlanded-work scan: git diff main...%s failed under %s",
+            "tickets: unlanded-work scan: git diff main...%s failed under %s (%s)",
             branch,
             root,
+            result.danger_err,
         )
         return frozenset()
-    return frozenset(
-        line.strip() for line in spawned.danger_ok.stdout.splitlines() if line.strip()
-    )
+    return result.danger_ok
 
 
 # frob:ticket T-1955
@@ -574,5 +592,7 @@ def _unlanded_branch_work(root: Path) -> tuple[_UnlandedWork, ...]:
     main_states = _all_ticket_states_on_main(root)
     findings: list[_UnlandedWork] = []
     for branch in _local_branch_names(root):
-        findings.extend(_unlanded_findings_for_branch(root, branch, leases, main_states))
+        findings.extend(
+            _unlanded_findings_for_branch(root, branch, leases, main_states)
+        )
     return tuple(findings)

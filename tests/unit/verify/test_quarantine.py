@@ -110,6 +110,68 @@ class TestRaiseQuarantine:
         assert reloaded.danger_ok is not None
         assert reloaded.danger_ok.cleared_at is None
 
+    # frob:ticket T-2132
+    def test_a_naturally_unattributable_finding_alone_does_not_raise(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # TICK004 (ticket-rot: "T-#### has sat queued for Nd") is a
+        # statement about ELAPSED TIME, not about any commit's diff --
+        # commit=None here is the truth, not a failed attribution. A
+        # batch whose only finding is TICK004 must not switch deferred
+        # landing off repo-wide (T-2132): no land can ever "fix" a clock.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=(),
+            findings=(
+                QuarantinedFinding(rule_id="TICK004", file="tickets.md", line=0),
+            ),
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.EmptyFindings
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-2132
+    def test_an_unattributed_code_finding_still_raises(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # Contrast case: a real code finding that attribution genuinely
+        # FAILED to pin to a commit (`commit_sha=None` because the
+        # reachability walk found zero or >1 candidates, not because the
+        # rule is inherently clock-driven) must still raise -- T-1686's
+        # prior-art incident was a sweep that treated UNATTRIBUTED code
+        # findings as non-regressions, which is the opposite mistake.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(
+                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),
+            ),
+        )
+        assert result.is_ok
+        assert is_quarantined(tmp_path).danger_ok is True
+
+    # frob:ticket T-2132
+    def test_a_mixed_batch_raises_with_only_the_attributable_finding_kept(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # A batch with BOTH a naturally-unattributable finding and a real
+        # code finding still raises (the code finding is real), but the
+        # persisted record drops the naturally-unattributable one -- it
+        # was never something a filed ticket against a commit could fix.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(
+                QuarantinedFinding(rule_id="TICK004", file="tickets.md", line=0),
+                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),
+            ),
+        )
+        assert result.is_ok
+        record = result.danger_ok
+        assert len(record.findings) == 1
+        assert record.findings[0].rule_id == "TEST001"
+
 
 # frob:ticket T-1693
 class TestClearQuarantine:

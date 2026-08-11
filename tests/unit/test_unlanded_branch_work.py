@@ -19,6 +19,7 @@ import pytest
 
 from frob.tickets._leases import record_lease
 from frob.tickets._unlanded import (
+    _branch_own_changed_files,
     _unlanded_branch_work,
     _unlanded_findings_for_branch,
 )
@@ -470,3 +471,85 @@ class TestUnlandedBranchWorkMainStateSpawnScaling:
             "resolution must not multiply per (branch, ticket) pair "
             f"(spawned argvs: {recorder.counts()!r})"
         )
+
+
+# frob:ticket T-1966
+class TestBranchOwnChangedFilesConsolidation:
+    """T-1966: 'files this branch's own commits changed' used to be
+    implemented independently in `frob.tickets._land` and
+    `frob.tickets._unlanded`, and got the two-dot/three-dot lesson wrong
+    twice in different clothes (T-1922, T-1955). These tests pin the
+    consolidated shape: exactly ONE real implementation, both former
+    call sites agreeing on a real diff, and the empty-set case for a
+    freshly-cut branch."""
+
+    def test_unlanded_has_no_second_implementation(self) -> None:
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidati\
+        # on.test_unlanded_has_no_second_implementation
+        """The concept must have exactly one home. Before T-1966,
+        `_unlanded._branch_own_changed_files` ran its own `git diff
+        --name-only` spawn (`run_argv(("git", ..., "diff", ...))`)
+        independently of `frob.tickets._land._branch_changed_files` --
+        this is the DUPLICATION the ticket measured. After the fix,
+        `_unlanded`'s function is a thin delegate to the `_land` one and
+        its own source carries no `run_argv` call at all."""
+        import inspect
+
+        source = inspect.getsource(_branch_own_changed_files)
+        assert "run_argv" not in source, (
+            "_branch_own_changed_files still spawns its own git diff -- "
+            "it must delegate to frob.tickets._land._branch_changed_files "
+            "instead of keeping a second implementation (T-1966)"
+        )
+
+    def test_both_former_call_sites_agree_on_a_real_branch(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidati\
+        # on.test_both_former_call_sites_agree_on_a_real_branch
+        """A branch with commits on BOTH sides of the merge-base: `main`
+        advances after the branch is cut (a file only `main` touched),
+        and the branch commits its own file. `_land._branch_changed_files`
+        (worktree checked out AT the branch, base_ref='main', implicit
+        HEAD) and `_unlanded._branch_own_changed_files` (root need not be
+        checked out at the branch at all, explicit branch name) must
+        report the IDENTICAL set: only the branch's own file, never the
+        post-divergence main-only file."""
+        from frob.tickets._land import _branch_changed_files
+
+        _branch(repo, "feature-x")
+        (repo / "branch_only.txt").write_text("branch\n", encoding="utf-8")
+        _commit_all(repo, "branch commits its own file")
+        _back_to_main(repo)
+        (repo / "main_only.txt").write_text("main\n", encoding="utf-8")
+        _commit_all(repo, "main advances after divergence")
+
+        # _unlanded's call site: root need not be checked out at the
+        # branch (it is on main here, deliberately, since this is the
+        # shared-root scan shape T-1955 introduced this function for).
+        via_unlanded = _branch_own_changed_files(repo, "feature-x")
+
+        # _land's call site: assumes the worktree IS checked out at the
+        # branch (its many real callers run at land time, mid-ticket).
+        _run(["git", "checkout", "-q", "feature-x"], repo)
+        via_land_result = _branch_changed_files(repo, "main")
+        assert via_land_result.is_ok
+        via_land = via_land_result.danger_ok
+
+        assert via_unlanded == via_land == frozenset({"branch_only.txt"})
+        assert "main_only.txt" not in via_unlanded
+        assert "main_only.txt" not in via_land
+
+    def test_freshly_cut_branch_yields_empty_set(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidati\
+        # on.test_freshly_cut_branch_yields_empty_set
+        """A branch cut from `main` with no commits of its own reports
+        the empty set from the shared helper -- the exact T-1955
+        regression shape (a `git ls-tree`-based predecessor inherited
+        `main`'s entire history as "this branch's own work")."""
+        _branch(repo, "just-cut")
+        result = _branch_own_changed_files(repo, "just-cut")
+        assert result == frozenset()

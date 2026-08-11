@@ -2,7 +2,7 @@
 id: T-1966
 title: 'One rule, two homes: ''files this branch''s own commits changed'' implemented
   twice and got wrong three times (T-1922, T-1955, T-1950)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,10 +12,41 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/
+- src/frob/tickets/_land.py
+- src/frob/tickets/_unlanded.py
+- tests/unit/test_unlanded_branch_work.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: narrow whole-package scope to the two duplicated-function homes plus their
+    test file, per T-1866 breadth guard
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: narrow whole-package scope to the two duplicated-function homes plus their
+    test file, per T-1866 breadth guard
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: src/frob/tickets/_unlanded.py
+  reason: narrow whole-package scope to the two duplicated-function homes plus their
+    test file, per T-1866 breadth guard
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: tests/unit/test_unlanded_branch_work.py
+  reason: narrow whole-package scope to the two duplicated-function homes plus their
+    test file, per T-1866 breadth guard
+  actor: logan
+  at: '2026-08-11'
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation::test_unlanded_has_no_second_implementation
+- tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation::test_both_former_call_sites_agree_on_a_real_branch
+- tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation::test_freshly_cut_branch_yields_empty_set
+designated_repro_test: tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidation::test_unlanded_has_no_second_implementation
 threat: null
 component: null
 anchor: false
