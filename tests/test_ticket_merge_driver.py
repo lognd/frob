@@ -375,13 +375,18 @@ class TestMergeDriverViaRealGit:
     def test_real_git_merge_auto_splices_both_sides_append(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit.test_real_git_merge_auto_splices_both_sides_append  # noqa: E501
         _run(["git", "checkout", "-q", "-b", "feature"], repo)
-        feature_created = new_ticket(repo, _spec("Feature-branch ticket"))
+        # T-2120: no_commit=True -- new_ticket (T-1758) auto-commits the
+        # ledger write itself by default, which would leave nothing for
+        # this fixture's own _commit_all to commit.
+        feature_created = new_ticket(
+            repo, _spec("Feature-branch ticket"), no_commit=True
+        )
         assert feature_created.is_ok
         feature_tid = feature_created.danger_ok.id
         _commit_all(repo, "feature: file a ticket")
 
         _run(["git", "checkout", "-q", "main"], repo)
-        main_created = new_ticket(repo, _spec("Main-branch ticket"))
+        main_created = new_ticket(repo, _spec("Main-branch ticket"), no_commit=True)
         assert main_created.is_ok
         main_tid = main_created.danger_ok.id
         _commit_all(repo, "main: file a ticket")
@@ -428,7 +433,10 @@ class TestMergeDriverViaRealGit:
         tmp-dir cwd with no pyproject.toml -- see `TestMergeDriverHandler`
         for this repo's own precedent of calling `_merge_driver` directly
         rather than through a spawned CLI)."""
-        created = new_ticket(repo, _spec("Will be archived on main"))
+        # T-2120: no_commit=True -- new_ticket (T-1758) auto-commits the
+        # ledger write itself by default, which would leave nothing for
+        # this fixture's own _commit_all to commit.
+        created = new_ticket(repo, _spec("Will be archived on main"), no_commit=True)
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "file the ticket that will later be archived")
@@ -437,7 +445,7 @@ class TestMergeDriverViaRealGit:
         # Feature does its own unrelated work -- nothing touching `tid` --
         # so tickets.md genuinely diverges on both sides (a real 3-way
         # merge is needed, not a fast-forward).
-        unrelated = new_ticket(repo, _spec("Unrelated feature work"))
+        unrelated = new_ticket(repo, _spec("Unrelated feature work"), no_commit=True)
         assert unrelated.is_ok
         unrelated_tid = unrelated.danger_ok.id
         _commit_all(repo, "feature: unrelated work")

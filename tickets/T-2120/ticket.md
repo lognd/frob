@@ -2,7 +2,7 @@
 id: T-2120
 title: 3 test fixtures hit 'nothing to commit' after new_ticket's T-1758 internal
   auto-commit
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -16,12 +16,19 @@ scope:
 - tests/unit/test_land_cross_ticket_leakage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_real_git_merge_auto_splices_both_sides_append
+- tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_queued_sibling_scope_overlap_does_not_block
+designated_repro_test: tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_real_git_merge_auto_splices_both_sides_append
 acceptance:
 - text: Given new_ticket's T-1758 internal auto-commit, when the 3 named fixtures
     run, then they pass no_commit=True to new_ticket so their own _commit_all call
     has something to commit again
-  evidence: []
+  evidence:
+  - tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_real_git_merge_auto_splices_both_sides_append
+  - tests/test_ticket_merge_driver.py::TestMergeDriverViaRealGit::test_merge_driver_reads_archived_ids_from_merge_head_not_stale_disk
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_queued_sibling_scope_overlap_does_not_block
 threat: null
 component: null
 anchor: false

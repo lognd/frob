@@ -316,8 +316,13 @@ class TestCrossTicketLeakage:
         # scope on an unstarted ticket is an intention, not a claim; only
         # an IN_PROGRESS sibling (a real concurrent writer with real
         # commits) may refuse.
+        # T-2120: no_commit=True -- new_ticket (T-1758) auto-commits the
+        # ledger write itself by default, which would leave nothing for
+        # this fixture's own _commit_all to commit.
         queued = new_ticket(
-            repo, _spec("Freshly filed backlog item", scope=("src/**",))
+            repo,
+            _spec("Freshly filed backlog item", scope=("src/**",)),
+            no_commit=True,
         )
         assert queued.is_ok
         queued_id = queued.danger_ok.id
@@ -412,9 +417,7 @@ class TestCrossTicketLeakage:
         assert landing.is_ok
         landing_id = landing.danger_ok.id
         _make_closeable(wt, landing_id)
-        (wt / "src" / "fix.py").write_text(
-            "# independent fix, unrelated to held_id\n"
-        )
+        (wt / "src" / "fix.py").write_text("# independent fix, unrelated to held_id\n")
         _commit_all(wt, f"{landing_id}: independent fix")
 
         result = land(repo, landing_id, wt, dry_run=False)
@@ -592,9 +595,7 @@ class TestPassengerTickets:
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "series-c", str(wt)], repo)
 
-        passenger = new_ticket(
-            wt, _spec("Rejected work", scope=("src/rejected.py",))
-        )
+        passenger = new_ticket(wt, _spec("Rejected work", scope=("src/rejected.py",)))
         assert passenger.is_ok
         passenger_id = passenger.danger_ok.id
         (wt / "src" / "rejected.py").write_text(f"# frob:ticket {passenger_id}\n")
