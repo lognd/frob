@@ -2277,6 +2277,60 @@ class TestWorktreeReleaseLeaseCli:
         assert "released orphaned lease for T-9001" in out
         assert not lease_file.exists()
 
+    def test_release_lease_cli_releases_a_scope_diverged_lease(
+        self, repo: Path, second_worktree: Path, capsys
+    ) -> None:
+        """T-2175: a lease whose recorded `scope` shares NOTHING with the
+        ticket's own CURRENT declared scope in the ledger is exactly the
+        real incident shape -- an id that briefly belonged to a different
+        ticket before being renumbered, leaving a stale lease recorded
+        under the OLD identity's scope pointing at a worktree that still
+        exists and a ticket id that still resolves (so none of T-1806's
+        path-gone/ticket-gone/ticket-terminal shapes fire), with `recorded_
+        at` set to right now (so `holder-dead`'s TTL gate cannot fire
+        either, no matter how long this actually sat). FAILS FIRST against
+        current main: `release_orphaned_lease`/`lease_staleness_reason`
+        have no shape for this at all, so `release-lease` refuses with the
+        canned LeaseWorktreeMismatch message and exits 1."""
+        # frob:tests src/frob/app/worktree_runner.py::run kind="unit"
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+        from frob.tickets._leases import _lease_path, leases_dir
+
+        _write_lease(
+            repo,
+            "T-0001",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        # _write_lease hardcodes scope=("src/feature.py",) -- the SAME
+        # scope `repo`'s own T-0001 fixture ticket declares, matching the
+        # genuinely-live shape. Overwrite it with a disjoint scope to
+        # simulate the real id-reuse residue.
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+        from frob.tickets._leases import _LeaseRecord
+
+        diverged = _LeaseRecord(
+            ticket_id="T-0001",
+            scope=("completely/unrelated/path.py",),
+            worktree=str(second_worktree),
+            branch="feature-wt",
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        lease_file.write_text(diverged.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+        cwd = Path.cwd()
+        _os.chdir(repo)
+        try:
+            worktree_run(["release-lease", "T-0001"])
+        finally:
+            _os.chdir(cwd)
+        out = capsys.readouterr().out
+        assert "released" in out
+        assert not lease_file.exists()
+
     def test_release_lease_cli_exits_1_for_a_live_worktree(
         self, repo: Path, second_worktree: Path, capsys
     ) -> None:

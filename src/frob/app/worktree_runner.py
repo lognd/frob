@@ -18,6 +18,8 @@ from frob.logging import get_logger
 from frob.render import Renderer
 from frob.tickets._leases import (
     LeaseError,
+    force_release_lease,
+    read_all_leases,
     release_orphaned_lease,
     remove_worktree,
     sweep_worktrees,
@@ -178,39 +180,138 @@ def _run_remove(path: str, *, dry_run: bool, force: bool) -> None:
         sys.exit(1)
 
 
+# frob:ticket T-2175
+def _lease_scope_diverged_from_ledger(root: Path, ticket_id: str) -> bool:
+    """T-2175: `True` iff `ticket_id` HAS a recorded lease, that lease's
+    own `scope` shares NOTHING at all with `ticket_id`'s CURRENT declared
+    scope in `root`'s ledger -- a fifth staleness shape T-1806/T-2048's
+    four (path-gone/ticket-gone/ticket-terminal/holder-dead, all in
+    `frob.tickets._leases.lease_staleness_reason`) do not cover, and the
+    exact real-incident shape this ticket was filed from: an id that
+    briefly belonged to a DIFFERENT ticket before being renumbered
+    (T-2114 -> T-2140), leaving a lease recorded under the old identity's
+    scope pointing at a worktree that still exists, for a ticket id that
+    still resolves in the ledger (so path-gone/ticket-gone never fire)
+    and whose ticket may not even be terminal (so ticket-terminal never
+    fires either) -- and freshly enough recorded that `holder-dead`'s TTL
+    gate cannot fire regardless of how long the underlying worktree has
+    actually been idle.
+
+    A ticket's own lease is written once, at `IN_PROGRESS` entry, from the
+    SAME `scope` the ledger records at that moment, and only ever GROWS
+    from there (`frob ticket scope --add`) -- never shrinks to something
+    wholly unrelated. A COMPLETE disjunction between the two is therefore
+    strong, conservative evidence that the lease on disk was never
+    written for the ticket now living under this id at all, not a normal
+    in-progress ticket whose scope merely narrowed or grew since start.
+    Deliberately does NOT fire on a PARTIAL overlap (a ticket's scope
+    narrowing via `--remove`, or growing via `--add`, both still leave
+    real overlap) -- only total disjunction, to stay strictly narrower
+    than (never a substitute for) `lease_staleness_reason`'s own four
+    checks, and to never treat an ordinary live ticket's scope change as
+    staleness.
+
+    `False` on any lookup failure (no lease recorded, ledger unreadable,
+    ticket absent from the ledger) -- this function adds one NEW positive
+    signal on top of the existing checks, it never itself decides
+    "unmeasurable means stale"."""
+    leases = read_all_leases(root)
+    record = next((r for r in leases if r.ticket_id == ticket_id), None)
+    if record is None:
+        return False
+    from frob.tickets._archive import load_queue
+
+    queue = load_queue(root)
+    if queue.is_err:
+        return False
+    ticket = queue.danger_ok.tickets.get(ticket_id)
+    if ticket is None:
+        return False
+    lease_scope = set(record.scope)
+    ledger_scope = set(ticket.scope)
+    if not lease_scope or not ledger_scope:
+        return False
+    return lease_scope.isdisjoint(ledger_scope)
+
+
 # frob:ticket T-1789
 # frob:ticket T-1806
+# frob:ticket T-2175
 def _run_release_lease(ticket_id: str) -> None:
     """`frob worktree release-lease TICKET-ID` (T-1779 finding 7): the
     safe, scoped path a coordinator now has for exactly the recovery
     T-1766's ghost lease forced by hand (`rm .git/frob-leases/T-1766.json`)
     -- refuses (exit 1) unless `release_orphaned_lease` confirms the
-    lease is genuinely stale, by any of `lease_staleness_reason`'s three
-    shapes (T-1806: path-gone, ticket-gone, or holder-dead -- not just
-    path-gone as before), so this can never release a lease still pinned
-    to a live, ticketed, occupied worktree by mistake. `root` is resolved
-    from cwd, same convention as `frob worktree remove`."""
+    lease is genuinely stale, by any of `lease_staleness_reason`'s four
+    shapes (T-1806/T-2048: path-gone, ticket-gone, ticket-terminal, or
+    holder-dead -- not just path-gone as before), so this can never
+    release a lease still pinned to a live, ticketed, occupied worktree
+    by mistake.
+
+    T-2175: when `release_orphaned_lease` refuses with `LeaseWorktreeMismatch`
+    (none of those four shapes fired), this ALSO independently checks
+    `_lease_scope_diverged_from_ledger` -- a fifth shape those four do not
+    cover (see that function's own docstring for the real incident this
+    closes) -- and force-releases via `force_release_lease` (T-1743's
+    existing operator-clears-someone-else's-lease primitive, never wired
+    to a CLI verb before this) when it fires. This is a genuine, freshly-
+    computed positive signal, not a bypass of the existing safety check:
+    every ordinary live ticket's lease scope still overlaps its own
+    current ledger scope, so this can never fire for the live-worktree
+    case `LeaseWorktreeMismatch` exists to protect.
+
+    T-2175 also fixes the refusal MESSAGE itself: the old text
+    unconditionally asserted three specific conditions ("its worktree
+    exists, its ticket is in the ledger, and a process holds it") that
+    `LeaseWorktreeMismatch` alone does not individually confirm --
+    `lease_staleness_reason` returning `None` only means none of its own
+    checks fired, not that every one of those three claims is true (a
+    live-process claim in particular was never checked at all on this
+    path). The message now names only what `LeaseWorktreeMismatch`
+    actually means (none of the known staleness shapes matched) and
+    points at the two real recovery paths, instead of asserting an
+    unverified diagnosis.
+
+    `root` is resolved from cwd, same convention as `frob worktree
+    remove`."""
     root = Path(".").resolve()
     result = release_orphaned_lease(root, ticket_id)
-    if result.is_err:
-        err = result.danger_err
-        if err is LeaseError.NoLeaseForTicket:
-            _log.error(
-                "frob worktree release-lease: %s has no recorded lease", ticket_id
-            )
-        elif err is LeaseError.LeaseWorktreeMismatch:
-            _log.error(
-                "frob worktree release-lease: %s's lease is not stale -- "
-                "its worktree exists, its ticket is in the ledger, and a "
-                "process holds it; use `frob worktree remove` (and the "
-                "ordinary ticket-close path) instead",
-                ticket_id,
-            )
-        else:
-            _log.error("frob worktree release-lease: %s (%s)", err.value, ticket_id)
+    if result.is_ok:
+        renderer = Renderer.for_stream(sys.stdout)
+        renderer.line(f"released orphaned lease for {ticket_id}")
+        return
+    err = result.danger_err
+    if err is LeaseError.NoLeaseForTicket:
+        _log.error("frob worktree release-lease: %s has no recorded lease", ticket_id)
         sys.exit(1)
-    renderer = Renderer.for_stream(sys.stdout)
-    renderer.line(f"released orphaned lease for {ticket_id}")
+    if err is LeaseError.LeaseWorktreeMismatch and _lease_scope_diverged_from_ledger(
+        root, ticket_id
+    ):
+        force_release_lease(root, ticket_id)
+        _log.warning(
+            "frob worktree release-lease: %s's lease scope shares nothing "
+            "with its current ledger scope -- id-reuse/renumber residue, "
+            "not a live holder; force-released via T-2175's scope-"
+            "divergence check",
+            ticket_id,
+        )
+        renderer = Renderer.for_stream(sys.stdout)
+        renderer.line(f"released orphaned lease for {ticket_id}")
+        return
+    if err is LeaseError.LeaseWorktreeMismatch:
+        _log.error(
+            "frob worktree release-lease: %s's lease matched none of the "
+            "known staleness shapes (path-gone, ticket-gone, ticket-"
+            "terminal, holder-dead, scope-diverged) -- this does not by "
+            "itself confirm the worktree is live or a process holds it, "
+            "only that nothing here could yet prove it is not; if you have "
+            "independently confirmed the holder is dead, use `frob "
+            "worktree remove` (or the ordinary ticket-close path) instead",
+            ticket_id,
+        )
+    else:
+        _log.error("frob worktree release-lease: %s (%s)", err.value, ticket_id)
+    sys.exit(1)
 
 
 # frob:doc docs/modules/app.md#runners
