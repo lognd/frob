@@ -2,7 +2,7 @@
 id: T-2110
 title: '5 missing exports: judge each on merit (GlobalBinarySkew, global_binary_skew,
   commit_diff, recent_commits, frob_map)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -14,15 +14,30 @@ runs_last: false
 scope:
 - src/frob/__init__.py
 - src/frob/serve/_tools.py
+- src/frob/serve/__init__.py
+evidence_scope:
+- tests/unit/test_exports.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/serve/__init__.py
+  reason: 'T-2110 mid-fix discovery: frob_map''s export gap existed at two levels
+    (_tools.py''s own __all__ AND serve/__init__.py''s re-export of it) -- fixing
+    only the first still left the src/frob/serve package itself reporting the symbol
+    missing'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+designated_repro_test: tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 acceptance:
 - text: Given frob-exports' 5 flagged symbols, when test_all_nine_packages_report_zero_missing_symbols
     runs, then it reports zero missing symbols and each symbol's export decision is
     justified individually (usage breadth, existing curation pattern, existing test
     surface), not blanket-added
-  evidence: []
+  evidence:
+  - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 threat: null
 component: null
 anchor: false

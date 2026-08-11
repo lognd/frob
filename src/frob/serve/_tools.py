@@ -721,6 +721,7 @@ __all__ = [
     "frob_doc_for",
     "frob_exports",
     "frob_graph_query",
+    "frob_map",
     "frob_perf_hot",
     "frob_run_touched_tests",
     "frob_stale_docs",
