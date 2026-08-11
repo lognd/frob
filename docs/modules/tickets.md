@@ -3495,30 +3495,46 @@ all, only at scope declarations and ledger state.
 `_check_passenger_tickets` (`frob.tickets._land`) is a deliberately
 DIFFERENT, complementary signal: it scans the branch's FULL diff (`git
 diff base_ref...HEAD`, not `--name-only`) for `frob:ticket <id>` directive
-additions (`+`-prefixed lines only, never context) naming any ticket OTHER
-than the one landing. This asks a narrower, more precise question than
-scope-matching -- whose fingerprint is on the code actually riding along,
-full stop -- and does not consult any sibling's ledger state at all, so a
-DROPPED sibling whose code is still physically present is caught exactly
-as readily as an IN_PROGRESS one. Wired into `_land_precheck_remaining_
-checks` alongside the existing leakage check, sharing the SAME `--allow-
-cross-ticket` escape hatch (`frob ticket land --allow-cross-ticket`) --
-one flag an operator already knows, not a second differently-named
-override. A refusal (`LandError.PassengerTickets`) lists every passenger
-id found; an acknowledged override logs the same list at WARNING before
-proceeding. Nothing about the land is silent either way -- the T-1618
-incident's own root complaint ("nothing in the output said T-1579 was
-going to main") no longer has a code path where that holds.
+lines naming any ticket OTHER than the one landing. This asks a narrower,
+more precise question than scope-matching -- whose fingerprint is on the
+code actually riding along, full stop -- and does not consult any
+sibling's ledger state at all, so a DROPPED sibling whose code is still
+physically present is caught exactly as readily as an IN_PROGRESS one.
+Wired into `_land_precheck_remaining_checks` alongside the existing
+leakage check, sharing the SAME `--allow-cross-ticket` escape hatch
+(`frob ticket land --allow-cross-ticket`) -- one flag an operator already
+knows, not a second differently-named override. A refusal (`LandError.
+PassengerTickets`) lists every passenger id found; an acknowledged
+override logs the same list at WARNING before proceeding. Nothing about
+the land is silent either way -- the T-1618 incident's own root complaint
+("nothing in the output said T-1579 was going to main") no longer has a
+code path where that holds.
 
-The tradeoff, disclosed rather than hidden: this can flag a hunk that
-merely MOVED a pre-existing `frob:ticket <id>` directive (e.g. a function
-carrying one got relocated by an unrelated refactor, so git represents it
-as delete+re-add) as if it were a fresh addition. That is a real, known
-false-positive shape -- but it is arguably still an honest signal ("this
-diff touches code attributed to another ticket"), and the escape hatch
-exists precisely for a deliberately joint landing; the alternative
-(missing a genuine passenger silently, the actual incident) is strictly
-worse.
+**T-2082 fix -- relocation is no longer a false positive:** the original
+version counted an id as a passenger the moment ANY `+`-prefixed line
+named it, with no regard for whether the same directive was also removed
+elsewhere in the same diff. A refactor that RELOCATES a function carrying
+a pre-existing `frob:ticket <id>` comment emits both a `+` at the new
+site and a `-` at the old -- net occurrence delta zero -- and the old
+check refused every such move, forcing two independent agents to
+`--allow-cross-ticket` in the same hour on pure ARCH001 splits that added
+none of the named tickets' code (T-2073, four ids; T-2077, one id).
+
+The discriminator (`_passenger_ids_from_line_buckets`) is now each id's
+OCCURRENCE COUNT delta between `+`- and `-`-prefixed lines: an id is a
+genuine passenger only if `+`-line occurrences strictly EXCEED `-`-line
+occurrences. An equal-count id is exempt only when the exact multiset of
+added directive lines equals the exact multiset of removed directive
+lines (verbatim text, not just id match) -- so a relocation that ALSO
+edits the directive line itself (folding it into another comment, or
+changing the line it sits on) still fails the verbatim check and is still
+reported, deliberately erring toward refusing when the two sides are not
+an exact match. This does not weaken the original guard: the 2026-08-05
+incident's passenger code was physically ADDED with no corresponding
+removal, so its count strictly increases under either version of the
+check, and `tests/unit/test_land_cross_ticket_leakage.py::
+TestPassengerTickets` carries a regression test reproducing that exact
+incident shape to prove the refusal still fires.
 
 ## Already-landed-on-main: first-class outcome (T-1618)
 

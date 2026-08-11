@@ -2,7 +2,7 @@
 id: T-2082
 title: PassengerTickets false-refuses every refactor that relocates a pre-existing
   frob:ticket directive, training agents to reflex --allow-cross-ticket
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -13,24 +13,47 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- tests/unit/test_land_cross_ticket_leakage.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: T-2082 regression tests for the discriminator fix
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-2082 fix changes the passenger-ticket-disclosure section's own documented
+    behavior; T-2078's lease freed after its land
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_pure_relocation_of_a_preexisting_directive_does_not_refuse
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refuses_and_lists_every_passenger_by_id
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_dropped_siblings_still_present_code_is_still_reported
+designated_repro_test: tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_pure_relocation_of_a_preexisting_directive_does_not_refuse
 acceptance:
 - text: given a branch that only RELOCATES an existing frob:ticket directive to a
     new line in the same file (net occurrence delta zero), when frob ticket land runs,
     then it does NOT refuse with PassengerTickets and no --allow-cross-ticket is needed
     -- this test MUST fail against current main
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_pure_relocation_of_a_preexisting_directive_does_not_refuse
 - text: given a branch that genuinely ADDS a new frob:ticket directive naming another
     ticket (the T-1618 incident shape, passenger code physically present), when frob
     ticket land runs, then it still refuses with PassengerTickets and names that id
     -- proving the guard is not weakened
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_pure_relocation_of_a_preexisting_directive_does_not_refuse
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refuses_and_lists_every_passenger_by_id
 - text: given the passenger ticket record reads DONE or DROPPED, when its code is
     genuinely added by the landing branch, then the refusal still fires -- the ledger-state-blind
     property of the check is preserved
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_refuses_and_lists_every_passenger_by_id
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_dropped_siblings_still_present_code_is_still_reported
 threat: null
 component: tickets
 anchor: false

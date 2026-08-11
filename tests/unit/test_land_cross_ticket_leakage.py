@@ -554,3 +554,87 @@ class TestPassengerTickets:
         assert result.is_err
         assert result.danger_err == LandError.PassengerTickets
         assert not (repo / "src" / "fix.py").exists()
+
+    def test_pure_relocation_of_a_preexisting_directive_does_not_refuse(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_directive_ticket_ids_in_diff kind="unit"  # noqa: E501
+        # T-2082: a pure ARCH001-style refactor that RELOCATES a
+        # pre-existing `frob:ticket <id>` directive comment out of a
+        # larger file, into a newly-extracted helper file -- this
+        # reproduces the T-2073/T-2077 false-refusal shape exactly. The
+        # original file survives (with unrelated content left behind) so
+        # git's rename-detection cannot pair it 1:1 with the new file as
+        # a pure rename and swallow the hunk content -- a whole-file
+        # rename produces NO +/- content lines at all (verified directly:
+        # 100%-similarity renames show only "rename from"/"rename to",
+        # no hunks), which would make this repro pass vacuously against
+        # EITHER the buggy or the fixed scan. MUST fail against current
+        # main (pre-T-2082-fix): the old scan counted the `+` line alone
+        # and refused.
+        prior = new_ticket(repo, _spec("Prior work", scope=("src/original.py",)))
+        assert prior.is_ok
+        prior_id = prior.danger_ok.id
+        (repo / "src" / "original.py").write_text(
+            f"# frob:ticket {prior_id}\n"
+            "def helper():\n    pass\n\n\ndef other():\n    pass\n"
+        )
+        _commit_all(repo, f"{prior_id}: original location")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-relocate", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Split the module", scope=("src/",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "original.py").write_text("def other():\n    pass\n")
+        (wt / "src" / "extracted.py").write_text(
+            f"# frob:ticket {prior_id}\ndef helper():\n    pass\n"
+        )
+        _commit_all(wt, f"{landing_id}: extract helper() into extracted.py")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "extracted.py").exists()
+        assert (repo / "src" / "original.py").exists()
+
+    def test_relocation_that_also_edits_the_directive_line_still_refuses(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_directive_ticket_ids_in_diff kind="unit"  # noqa: E501
+        # T-2082's deliberate strictness: equal add/remove COUNT is not
+        # enough to exempt an id -- the moved directive line's TEXT must
+        # match verbatim too. Here the relocation also folds the directive
+        # onto a differently-worded line, so it must still refuse. Same
+        # rename-detection avoidance as the previous test: the original
+        # file survives with unrelated content so this cannot collapse
+        # into a content-free pure rename.
+        prior = new_ticket(repo, _spec("Prior work", scope=("src/original2.py",)))
+        assert prior.is_ok
+        prior_id = prior.danger_ok.id
+        (repo / "src" / "original2.py").write_text(
+            f"# frob:ticket {prior_id}\ndef helper():\n    pass\n\n\n"
+            "def other():\n    pass\n"
+        )
+        _commit_all(repo, f"{prior_id}: original location")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-relocate-edit", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Split and reword", scope=("src/",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "original2.py").write_text("def other():\n    pass\n")
+        (wt / "src" / "extracted2.py").write_text(
+            f"# see frob:ticket {prior_id} for context\ndef helper():\n    pass\n"
+        )
+        _commit_all(wt, f"{landing_id}: relocate and reword the attribution line")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.PassengerTickets
+        assert not (repo / "src" / "extracted2.py").exists()

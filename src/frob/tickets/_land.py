@@ -3321,36 +3321,72 @@ def _find_leaked_tickets(
 _DIRECTIVE_TICKET_ID_RE = re.compile(r"frob:ticket\s+(T-[A-Za-z0-9_-]+)")
 
 
+# frob:ticket T-2082
+# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+def _passenger_ids_from_line_buckets(
+    added_lines: dict[str, list[str]], removed_lines: dict[str, list[str]]
+) -> frozenset[str]:
+    """The T-2082 discriminator: which ids in `added_lines` (ticket id ->
+    every added line naming it) are GENUINE passengers, given the matching
+    `removed_lines` from the same diff.
+
+    An id whose `+`-occurrence count strictly EXCEEDS its `-`-occurrence
+    count is unambiguously a passenger (its count increased) -- this is
+    exactly the 2026-08-05 WAIVE004 incident's shape: T-1579's code was
+    physically ADDED with no matching removal, so old and new logic agree
+    it must refuse. An id with EQUAL counts is exempted only when the
+    exact MULTISET of added lines equals the exact multiset of removed
+    lines (full text, whitespace included) -- i.e. the directive moved
+    VERBATIM. A relocation that also edits the directive line itself in
+    the same motion (folds it into another comment, reworks the line it
+    sits on) keeps the same count but fails this verbatim check and is
+    still reported: T-2082 deliberately errs toward refusing whenever the
+    two sides are not an exact textual match, since a false refusal costs
+    one `--allow-cross-ticket` flag and a false pass costs an incident.
+    Do NOT weaken this to bare count equality."""
+    passengers: set[str] = set()
+    for directive_id, adds in added_lines.items():
+        removes = removed_lines.get(directive_id, [])
+        # frob:waive PERF004 reason="adds/removes are this directive_id's own small \
+        # distinct per-id line list (typically 1-2 entries), not a shared collection \
+        # re-sorted identically across iterations -- same posture as every other \
+        # per-key-distinct-set PERF004 waiver in this codebase"
+        if len(adds) > len(removes) or sorted(adds) != sorted(removes):
+            passengers.add(directive_id)
+        # else: equal counts AND identical line text on both sides -- a
+        # pure relocation of a pre-existing directive. Not a passenger.
+    return frozenset(passengers)
+
+
 # frob:ticket T-1618
+# frob:ticket T-2082
 # frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
 def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[str]:
-    """Every ticket id named by a `frob:ticket <id>` directive ADDED
-    (`+`-prefixed source line, never a context/removed line) anywhere in
-    `worktree`'s full committed diff against `base_ref` (T-1618) --
-    `git diff base_ref...HEAD`, the three-dot merge-base diff, NOT
-    `--name-only` like `_branch_changed_files` (T-1355) uses: this needs
-    the actual hunk CONTENT, since a `frob:ticket` directive is a source
-    line, not a file path.
+    """Every ticket id named by a `frob:ticket <id>` directive that is a
+    GENUINE passenger of `worktree`'s full committed diff against
+    `base_ref` (T-1618, discriminator fixed T-2082 -- see
+    `_passenger_ids_from_line_buckets` for the exact rule) -- `git diff
+    base_ref...HEAD`, the three-dot merge-base diff, NOT `--name-only`
+    like `_branch_changed_files` (T-1355) uses: this needs the actual
+    hunk CONTENT, since a `frob:ticket` directive is a source line, not a
+    file path.
 
     This is a deliberately DIFFERENT, complementary signal from
     `_check_cross_ticket_leakage`'s scope-glob-plus-ledger-record-diff
     heuristic (T-1355/T-1390/T-1639): a declared `scope` is an intention a
     sibling ticket's author wrote down, and that check explicitly exempts
-    a sibling once its ledger state reaches DONE/DROPPED (the ticket is
-    "closed", so its scope claim is assumed spent). A `frob:ticket`
+    a sibling once its ledger state reaches DONE/DROPPED. A `frob:ticket`
     directive is the OPPOSITE kind of signal -- it is written into the
-    source hunk itself, at the exact place code was added, and says
-    nothing about the sibling ticket's CURRENT ledger state at all. This
-    is precisely the T-1618 incident gap: T-1579 was reverted in its own
-    worktree and (per the incident write-up) judged unsafe -- however its
-    ledger ended up marked, the leakage check's DONE/DROPPED exemption (or
-    the scope-hit simply missing because the revert's own diff canceled
-    out that file's NET change) meant a sibling whose CODE was still
-    physically present in the landing branch's diff was never surfaced.
-    Scanning the diff's own directive additions catches that regardless of
-    any sibling's ledger state, because it asks a strictly narrower
-    question: whose `frob:ticket` fingerprint is on the code actually
-    riding along, full stop.
+    source hunk itself and says nothing about the sibling ticket's
+    CURRENT ledger state at all. This is precisely the T-1618 incident
+    gap: T-1579 was reverted in its own worktree and judged unsafe, but
+    its ledger state (or the revert's own diff canceling out that file's
+    net change) meant a sibling whose CODE was still physically present
+    was never surfaced. Scanning the diff's own directive lines catches
+    that regardless of ledger state -- this function NEVER consults any
+    id's ledger state, and that blindness is deliberate (see
+    `_check_passenger_tickets`'s own docstring); do not re-introduce a
+    DONE/DROPPED exemption here.
 
     Degrades to an empty set (never refuses, never raises) on a `git
     diff` failure -- this is an additional disclosure layer on top of
@@ -3359,12 +3395,22 @@ def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[st
     diffed = run_argv(["git", "-C", str(worktree), "diff", f"{base_ref}...HEAD"])
     if diffed.is_err or diffed.danger_ok.returncode != 0:
         return frozenset()
-    found: set[str] = set()
+
+    added_lines: dict[str, list[str]] = {}
+    removed_lines: dict[str, list[str]] = {}
     for line in diffed.danger_ok.stdout.splitlines():
-        if not line.startswith("+") or line.startswith("+++"):
+        if line.startswith("+++") or line.startswith("---"):
             continue
-        found.update(_DIRECTIVE_TICKET_ID_RE.findall(line))
-    return frozenset(found)
+        if line.startswith("+"):
+            bucket, text = added_lines, line[1:]
+        elif line.startswith("-"):
+            bucket, text = removed_lines, line[1:]
+        else:
+            continue
+        for directive_id in _DIRECTIVE_TICKET_ID_RE.findall(text):
+            bucket.setdefault(directive_id, []).append(text)
+
+    return _passenger_ids_from_line_buckets(added_lines, removed_lines)
 
 
 # frob:ticket T-1618
