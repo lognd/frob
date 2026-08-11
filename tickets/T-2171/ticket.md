@@ -2,7 +2,7 @@
 id: T-2171
 title: 'post-land sweep regression from T-2157, T-2155: 3 new (rule, file) identit(ies),
   3 finding(s) (ARCH103, COV001, TEST001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -40,3 +40,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TEST001  src/frob/tickets/_land_git_ops.py  -> attributed to T-2157 (commit 76f94bccbcd1, already closed/dropped -- filed below) via src/frob/tickets/_land_git_ops.py::reclaim_orphaned_squash_residue -> src/frob/tickets/_land_git_ops.py::_verified_reset_root -> src/frob/tickets/_land_git_ops.py::_refuse_drift_but_unstage -> src/frob/tickets/_land_git_ops.py::_unstage_index_only
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-11: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (ARCH103 src/frob/tickets/_land_git_ops.py, COV001 src/frob/tickets/_land_git_ops.py, TEST001 src/frob/tickets/_land_git_ops.py) is absent from the fresh unscoped measurement at T-2170's deferred sweep, i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
