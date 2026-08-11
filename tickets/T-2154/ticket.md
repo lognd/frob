@@ -2,7 +2,7 @@
 id: T-2154
 title: 'post-land sweep regression from T-2125: 2 new (rule, file) identit(ies), 5
   finding(s) (E402, E501)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -12,10 +12,23 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- /home/logan/projects/frob/src/frob/tickets/_unlanded.py
 - /home/logan/projects/frob/tests/test_ticket_leases.py
+evidence_scope:
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: /home/logan/projects/frob/src/frob/tickets/_unlanded.py
+  reason: 'T-2156''s dispatch instructed touching only tests/test_ticket_leases.py''s
+    E402; the E501 in src/frob/tickets/_unlanded.py is owned by T-1966''s holder.
+    Narrowing T-2154''s scope to avoid a lease conflict with that agent.
+
+    '
+  actor: logan
+  at: '2026-08-11'
+evidence:
+- tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable::test_dispatch_table_verbs_are_all_accounted_for
 designated_repro_test: null
 threat: null
 component: null
