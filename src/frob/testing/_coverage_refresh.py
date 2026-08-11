@@ -56,11 +56,13 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import signal
 import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -704,34 +706,98 @@ def _run(argv: list[str], *, cwd: Path) -> Result[subprocess.CompletedProcess, U
 
 #: pytest CLI argv words that select xdist's worker-count. Both the
 #: short (`-n`) and long (`--numprocesses`) spellings take a separate
-#: value word; `--numprocesses=N` is the only spelling that folds the
-#: value into the same argv word. T-2032: `_strip_worker_count_flag` uses
-#: this to find and remove all of them before appending `-p no:xdist`.
+#: value token; `--numprocesses=N` is the only spelling that folds the
+#: value into the same token.
 _WORKER_COUNT_FLAGS = ("-n", "--numprocesses")
+
+#: pytest-xdist CLI tokens that select a DISTRIBUTION mode (`--dist`) or
+#: a remote worker spec (`--tx`) -- both take a separate value token,
+#: `--dist=VALUE` is the folded spelling. T-2032 follow-up: `--dist
+#: loadgroup`/`--dist=loadgroup` is exactly as fatal to a `-p no:xdist`
+#: retry as a leftover `-n` -- xdist owns both options, so disabling the
+#: plugin makes either one unrecognised.
+_XDIST_DIST_FLAGS = ("--dist", "--tx")
 
 
 # frob:ticket T-2032
-def _strip_worker_count_flag(argv: list[str]) -> list[str]:
-    """Remove any `-n`/`--numprocesses` flag (and its value) from ARGV
-    (T-2032) -- REQUIRED before appending `-p no:xdist`: once xdist is
-    disabled, pytest no longer recognises `-n` at all, so leaving it in
-    place turns the "serial retry" into a guaranteed usage-error exit (4)
-    that never runs a single test. This was measured directly: `frob
-    coverage --full`'s retry argv was `[..., '-n', '12', '-p',
-    'no:xdist']`, and the retry died before collecting anything."""
+def _strip_xdist_tokens(tokens: list[str]) -> list[str]:
+    """Remove every xdist worker-count (`_WORKER_COUNT_FLAGS`) and
+    distribution-mode (`_XDIST_DIST_FLAGS`) token -- and its value --
+    from TOKENS (T-2032, extended by its own follow-up). REQUIRED before
+    appending `-p no:xdist` to ANY argv: once the plugin is disabled,
+    pytest no longer recognises the options it used to own at all, so
+    leaving one in place turns a "serial retry" into a guaranteed
+    usage-error exit (4) that never runs a single test. Shared by both
+    the explicit retry argv (`argv` this module built itself) and the
+    config-level `addopts` override `_neutralized_addopts` builds below
+    -- xdist tokens reach the retry from EITHER source, and both are
+    equally fatal once `-p no:xdist` is in effect. This was measured
+    directly twice: first `frob coverage --full`'s retry argv carrying a
+    leftover explicit `-n 12` (T-2032's original bug), then -- after that
+    fix landed -- the SAME usage-error exit 4 recurring because
+    `pyproject.toml`'s own `addopts = "-n auto --dist=loadgroup ..."` is
+    merged into every pytest invocation regardless of what this module's
+    own argv contains (T-2032's follow-up: stripping only the explicit
+    argv was necessary but not sufficient)."""
     stripped: list[str] = []
     skip_next = False
-    for arg in argv:
+    for token in tokens:
         if skip_next:
             skip_next = False
             continue
-        if arg in _WORKER_COUNT_FLAGS:
+        if token in _WORKER_COUNT_FLAGS or token in _XDIST_DIST_FLAGS:
             skip_next = True
             continue
-        if arg.startswith("--numprocesses="):
+        if token.startswith("--numprocesses=") or token.startswith("--dist="):
             continue
-        stripped.append(arg)
+        stripped.append(token)
     return stripped
+
+
+# frob:ticket T-2032
+def _neutralized_addopts(cwd: Path) -> str | None:
+    """Read `cwd/pyproject.toml`'s `[tool.pytest.ini_options].addopts`
+    (T-2032 follow-up) and return it with every xdist worker-count/
+    distribution-mode token stripped (`_strip_xdist_tokens`), re-joined
+    for a `-o addopts=...` override -- or `None` if there is nothing to
+    neutralise (no `pyproject.toml`, no `addopts` key, or an `addopts`
+    that already carries no xdist tokens).
+
+    This exists because pytest merges its OWN config file's `addopts`
+    into every invocation on top of whatever argv a caller builds --
+    `_strip_xdist_tokens` alone, applied only to this module's explicit
+    argv, cannot see or remove that config-level injection at all. `-o
+    addopts=VALUE` is pytest's own override mechanism (`--override-ini`):
+    passing it replaces the ini-file value outright for that one
+    invocation, rather than merging with it, so the returned string is
+    a COMPLETE replacement addopts, not something to be appended to the
+    original.
+
+    Deliberately narrow: this repo keeps `addopts` in `pyproject.toml`
+    only (verified: no `pytest.ini`/`tox.ini`/`setup.cfg` equivalent
+    exists here) -- a project that moved `addopts` to one of those files
+    instead would need this extended, not silently mis-neutralise
+    nothing. Any read/parse failure (missing file, unparsable TOML, no
+    `[tool.pytest.ini_options]` table, `addopts` not a string) returns
+    `None` rather than raising -- this is a best-effort refinement on
+    top of the argv-level strip, never a hard requirement for the retry
+    to proceed at all."""
+    path = cwd / "pyproject.toml"
+    try:
+        with path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    addopts = (
+        data.get("tool", {}).get("pytest", {}).get("ini_options", {}).get("addopts")
+    )
+    if not isinstance(addopts, str):
+        return None
+    tokens = shlex.split(addopts)
+    neutralized_tokens = _strip_xdist_tokens(tokens)
+    if neutralized_tokens == tokens:
+        return None
+    return shlex.join(neutralized_tokens)
 
 
 #: pytest exit codes that mean "no test outcome was produced at all" --
@@ -756,14 +822,25 @@ def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
     complete (still worth keeping the original pass's data, per
     `_pytest_outcome`'s own docstring).
 
-    T-2032: the retry argv strips any existing `-n`/`--numprocesses`
-    flag before appending `-p no:xdist` (`_strip_worker_count_flag`) --
-    otherwise pytest refuses the malformed combination outright. And a
-    retry that itself exits with a pytest USAGE/INTERNAL error code
-    (`_PYTEST_UNMEASURABLE_EXIT_CODES`) is reported as an inability to
-    measure, never as "a REAL failure" -- that message previously fired
-    for exit 4 too, telling the operator to go hunt a test regression
-    that never had a chance to run."""
+    T-2032: the retry argv strips any existing `-n`/`--numprocesses`/
+    `--dist`/`--tx` token before appending `-p no:xdist`
+    (`_strip_xdist_tokens`) -- otherwise pytest refuses the malformed
+    combination outright. And a retry that itself exits with a pytest
+    USAGE/INTERNAL error code (`_PYTEST_UNMEASURABLE_EXIT_CODES`) is
+    reported as an inability to measure, never as "a REAL failure" --
+    that message previously fired for exit 4 too, telling the operator
+    to go hunt a test regression that never had a chance to run.
+
+    T-2032 FOLLOW-UP: stripping the explicit argv alone was necessary
+    but not sufficient -- `pyproject.toml`'s own `addopts` (`-n auto
+    --dist=loadgroup ...`) is merged into every pytest invocation by
+    pytest itself, invisible to anything that only inspects the argv
+    this module built. `_neutralized_addopts` reads that config value
+    and, if it carries any xdist token, passes a `-o addopts=...`
+    override with those tokens stripped -- pytest's own `-o`/
+    `--override-ini` REPLACES the ini value for this invocation rather
+    than merging with it, so the config-level injection is neutralised
+    the same way the explicit argv is."""
     _log.error(
         "coverage_refresh: %s exited %d and matched the xdist "
         "worker-crash signature (T-1672: a worker process was killed, "
@@ -772,7 +849,15 @@ def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
         " ".join(argv),
         code,
     )
-    retry_argv = [*_strip_worker_count_flag(argv), "-p", "no:xdist"]
+    retry_argv = [*_strip_xdist_tokens(argv), "-p", "no:xdist"]
+    neutralized_addopts = _neutralized_addopts(cwd)
+    if neutralized_addopts is not None:
+        _log.info(
+            "coverage_refresh: neutralizing xdist token(s) in pyproject.toml's "
+            "addopts for the serial retry (-o addopts=%r)",
+            neutralized_addopts,
+        )
+        retry_argv += ["-o", f"addopts={neutralized_addopts}"]
     respawned = _spawn(retry_argv, cwd=cwd)
     if respawned.is_err:
         _log.error(

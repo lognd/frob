@@ -1015,6 +1015,143 @@ class TestWorkerCrashRetryUnmeasurableExitReporting:
         assert "could not" in messages.lower()
 
 
+# frob:ticket T-2032
+class TestNeutralizedAddopts:
+    """T-2032 follow-up: stripping the explicit `-n <N>` from the retry
+    argv (the original T-2032 fix) is necessary but not sufficient --
+    pytest merges `pyproject.toml`'s own `addopts` into every invocation
+    regardless of what argv this module builds, and `addopts` here still
+    carries `-n auto --dist=loadgroup`. `_neutralized_addopts` reads and
+    strips that config value; `_retry_after_worker_crash` must apply it
+    via `-o addopts=...`."""
+
+    def test_neutralizes_xdist_tokens_from_a_real_pyproject_toml(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestNeutralizedAddopts.test_neutralizes_xdist_tokens_from_a_real_pyproject_toml  # noqa: E501
+        """Acceptance criterion 1: built from a REAL `pyproject.toml`
+        carrying the same shape this repo's own addopts has, the
+        neutralized value must contain neither `-n`/`auto` nor
+        `--dist=loadgroup`, while keeping the non-xdist options."""
+        (tmp_path / "pyproject.toml").write_text(
+            "[tool.pytest.ini_options]\n"
+            'addopts = "-q -n auto --dist=loadgroup --timeout=120 '
+            '--timeout-method=thread"\n',
+            encoding="utf-8",
+        )
+
+        result = _refresh_mod._neutralized_addopts(tmp_path)
+
+        assert result is not None
+        tokens = result.split()
+        assert "-n" not in tokens
+        assert "auto" not in tokens
+        assert "--dist=loadgroup" not in tokens
+        assert "-q" in tokens
+        assert "--timeout=120" in tokens
+        assert "--timeout-method=thread" in tokens
+
+    def test_returns_none_when_addopts_has_no_xdist_tokens(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestNeutralizedAddopts.test_returns_none_when_addopts_has_no_xdist_tokens  # noqa: E501
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.pytest.ini_options]\naddopts = "-q --timeout=120"\n',
+            encoding="utf-8",
+        )
+
+        assert _refresh_mod._neutralized_addopts(tmp_path) is None
+
+    def test_returns_none_when_pyproject_toml_is_missing(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_coverage.py::TestNeutralizedAddopts.test_returns_none_when_pyproject_toml_is_missing  # noqa: E501
+        assert _refresh_mod._neutralized_addopts(tmp_path) is None
+
+    def test_retry_argv_carries_the_override_when_addopts_has_xdist_tokens(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestNeutralizedAddopts.test_retry_argv_carries_the_override_when_addopts_has_xdist_tokens  # noqa: E501
+        """THIS TEST FAILS BEFORE THE FIX: before `_neutralized_addopts`
+        existed, `_retry_after_worker_crash` never read `pyproject.toml`
+        at all, so no `-o addopts=...` token ever appeared in the retry
+        argv -- the config-level `-n auto --dist=loadgroup` injection was
+        invisible to it."""
+        (tmp_path / "pyproject.toml").write_text(
+            "[tool.pytest.ini_options]\n"
+            'addopts = "-q -n auto --dist=loadgroup --timeout=120"\n',
+            encoding="utf-8",
+        )
+        captured: list[list[str]] = []
+
+        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+            captured.append(list(argv))
+            return Ok(subprocess.CompletedProcess(argv, 0, stdout="ok\n"))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+
+        _refresh_mod._retry_after_worker_crash(
+            ["pytest", "-n", "12"], cwd=tmp_path, code=3
+        )
+
+        assert len(captured) == 1
+        retry_argv = captured[0]
+        assert "-o" in retry_argv
+        override = retry_argv[retry_argv.index("-o") + 1]
+        assert override.startswith("addopts=")
+        assert "-n" not in override
+        assert "--dist=loadgroup" not in override
+
+
+# frob:ticket T-2032
+class TestWorkerCrashRetryRealSubprocessRecoversFromAddopts:
+    """T-2032 follow-up acceptance criterion 2 -- end to end, with a REAL
+    pytest subprocess (no `_spawn` mock): a project whose own
+    `pyproject.toml` carries the exact `-n auto --dist=loadgroup` shape
+    that broke the retry must actually recover when
+    `_retry_after_worker_crash` runs against it for real, and the
+    subsequent `coverage xml` step must actually produce `coverage.xml`.
+
+    This is deliberately NOT routed through `native_coverage_refresh`'s
+    own worker-crash AUTO-DETECTION: a real worker crash forced via
+    `os._exit`/`SIGKILL` on the pytest-xdist version installed in this
+    repo does not match `_WORKER_CRASH_SIGNATURE_RE` at all (measured
+    directly; filed separately, out of this ticket's scope, since fixing
+    the signature regex is an unrelated defect from the argv/addopts one
+    this ticket fixes) -- calling `_retry_after_worker_crash` directly
+    exercises the exact recovery code path a real detection would have
+    invoked, against a real subprocess, without depending on detection
+    also working."""
+
+    def test_real_pytest_subprocess_recovers_and_produces_coverage_xml(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestWorkerCrashRetryRealSubprocessRecoversFromAddopts.test_real_pytest_subprocess_recovers_and_produces_coverage_xml  # noqa: E501
+        (tmp_path / "pyproject.toml").write_text(
+            "[tool.pytest.ini_options]\n"
+            'addopts = "-q -n auto --dist=loadgroup --timeout=60 '
+            '--timeout-method=thread"\n',
+            encoding="utf-8",
+        )
+        (tmp_path / "test_widget.py").write_text(
+            "def test_ok():\n    assert 1 + 1 == 2\n",
+            encoding="utf-8",
+        )
+
+        # The exact call `_pytest_outcome` makes after detecting a crash:
+        # a plain argv still carrying the ORIGINAL explicit -n, against a
+        # cwd whose pyproject.toml still carries the xdist addopts that
+        # broke this retry before the fix.
+        retry_code = _refresh_mod._retry_after_worker_crash(
+            ["pytest", "--cov=.", "--cov-report=", "-n", "4", "test_widget.py"],
+            cwd=tmp_path,
+            code=3,
+        )
+        assert retry_code == 0  # not 4 -- the retry actually ran the test
+
+        xml_result = _refresh_mod._run(["coverage", "xml", "-i"], cwd=tmp_path)
+        assert xml_result.is_ok
+        assert (tmp_path / "coverage.xml").exists()
+
+
 # frob:ticket T-1677
 class TestNativeCoverageRefreshAbort:
     """T-1677: a watchdog abort (either deadline) must never touch

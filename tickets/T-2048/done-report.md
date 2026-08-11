@@ -45,7 +45,7 @@ this session's live state. 13 leases held. 1 of 13 (T-2031, state
 "dropped") is confirmed terminal -- the exact ticket this ticket's own
 Problem section cites, still holding its lease in this same session. 9 of
 13 belong to in-progress tickets (T-1686, T-1959, T-2003, T-2011, T-2016,
-T-2024, T-2033, T-2041, T-2048 itself). 3 of 13 (T-draft-4aa27f0c,
+T-2024, T-2033, T-2041, T-2048 itself). 3 of 13 (T-2086,
 T-draft-5e282a76, T-draft-ce9b8ee4) are local drafts that do not resolve
 against this root's own ledger at all -- a different, already-known shape
 (T-1806's "ticket-gone"), not "ticket-terminal", so they are excluded from
