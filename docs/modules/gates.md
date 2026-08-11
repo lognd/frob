@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUDGET001,BUG002,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUDGET001,BUG002,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -102,6 +102,7 @@ declaration).
 | DOC006 | docblocks | (warn, T-0688 new-gate-at-WARN precedent) a doc's PROSE (inline code span or markdown link, not a fenced code block -- DOC004's territory) contains a pointer of a RECOGNIZED, mechanically resolvable shape (file/path, cli invocation, config reference, code symbol, doc-anchor link, `path.py::symbol`/`path.rs::fn`, or a bare identifier within its doc's anchored module scope -- T-1228) <!-- frob:waive DOC006 reason="path.py::symbol/path.rs::fn here are the KIND'S OWN illustrative placeholder shape, not real pointers" --> that does not resolve, or a `frob:tests` directive's target uses pytest's `Class::method` collect-only separator where this graph wants a single `::` then a dotted `Class.method` qualname -- see "DOC006 doc-pointer resolution gate" below |
 | EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
 | ROOT001 | root_asset_dirs | (warn) a repo-root top-level directory (not `src/`/`tests/`, not on the docs/tickets/design allowlist, not referenced by the Makefile) has zero code references: no `src/frob/**` path token, no `pyproject.toml` mention, and no `frob:external-reader` declaration -- see "ROOT001 (T-1784)" below |
+| ENV001 | env_var_docs | (warn) a `FROB_*` string-literal constant assigned under `src/frob/**/*.py` is documented nowhere under `docs/` -- neither its literal env-var string nor its owning Python constant name appears in any tracked `docs/` file, and no file-scoped `frob:waive ENV001` covers it -- see "ENV001 (T-1782)" below |
 | PROTO001 | protocol_summary | (warn) a `frob:requires`/`frob:transition`-tagged symbol's `frob.graph.summary.compute_protocol_summaries` result is `poisoned` (an `UNRESOLVED_CALLEE` somewhere in its transitive call closure) -- see "PROTO001 (T-0813)" below |
 | PROTO002 | protocol_summary | (error) a `frob:requires` symbol's required state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
 | PROTO003 | protocol_summary | (error) a `frob:transition` symbol's precondition state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
@@ -3768,6 +3769,40 @@ A directory satisfying none of these is flagged WARN, never auto-deleted
 -- the next audit starts from a measured "zero code references" fact
 instead of re-deriving it from scratch and risking the same
 name-matching mistake T-1767 made.
+
+### ENV001 (T-1782)
+
+<!-- frob:describes src/frob/gates/_env_var_docs.py::env_var_doc_gate -->
+
+`frob.gates._env_var_docs` -- `env_var_doc_gate` (gate name
+`env_var_docs`, default-on, WARN severity, waivable). Motivating
+incident: T-1610's docs-completeness sweep found
+`FROB_WORKER_STDOUT_LOG_LEVEL` (T-0806) undocumented anywhere in `docs/`
+for roughly two weeks. `SEC110` already fires on this exact env-var
+read, but it asks "is this a secret needing a `std.secrets` registry
+mapping" -- a different question than "does this operational env var
+have user-facing documentation"; the SEC110 waiver ("worker log-level
+marker, not a secret") does not cover the doc-coverage obligation at
+all. `COV001`/`COV007` do not apply either: the backing constant is
+normally private, and this repo's own COV007 convention is that private
+symbols do NOT carry a `frob:doc` anchor by default -- so an
+operationally user-facing `FROB_*` env var implemented as a private
+constant was structurally invisible to every existing doc-coverage gate.
+
+`env_var_doc_gate` enumerates every `FROB_*` string-literal constant
+ASSIGNMENT under `src/frob/**/*.py` (the same enumeration T-1610 did by
+hand) and requires each to either:
+
+  (a) appear literally (the `FROB_...` string) or by its owning Python
+      constant name in some tracked file under `docs/` -- the
+      "documented by constant name, not literal string" allowance
+      T-1610's own audit already established as adequate (the
+      `FROB_PARSE_ARTIFACT_CACHE` precedent), or
+  (b) carry a `frob:waive ENV001 reason="..."` directive anywhere in the
+      same source file -- file-scoped (`_match_waiver`'s ordinary
+      symref-less matching mode), not per-constant: a file grouping
+      several genuinely internal/test-only/worker-internal `FROB_*`
+      constants together can waive them all with one directive.
 
 ### NATIVE001 (T-1148)
 

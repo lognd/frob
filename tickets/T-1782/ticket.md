@@ -1,7 +1,7 @@
 ---
 id: T-1782
 title: 'New rule: every FROB_* env var needs a doc anchor or an explicit waiver'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -11,12 +11,64 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- src/frob/gates/_env_var_docs.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: src/frob/gates/_env_var_docs.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-11'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'narrow package glob to the exact files this ticket touches: new gate module,
+    its __init__.py wiring, the _KNOWN_GATE_RULES registry, docs, and tests'
+  actor: logan
+  at: '2026-08-11'
+evidence:
+- tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires
+- tests/test_gates.py::TestEnvVarDocGate::test_documented_by_literal_string_is_silent
+- tests/test_gates.py::TestEnvVarDocGate::test_documented_by_constant_name_is_silent
+- tests/test_gates.py::TestEnvVarDocGate::test_file_scoped_waiver_covers_it
+- tests/test_gates.py::TestEnvVarDocGate::test_non_frob_env_prefixed_constants_are_ignored
+designated_repro_test: tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires
+acceptance:
+- text: given a FROB_* env var constant with no docs/ mention, when frob check runs,
+    then ENV001 fires -- FAIL before this rule existed (frob.gates._env_var_docs.env_var_doc_gate
+    did not exist, ModuleNotFoundError), PASS after (env_var_doc_gate reports ENV001
+    for the fixture constant)
+  evidence:
+  - tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires
 threat: null
 component: null
 anchor: false

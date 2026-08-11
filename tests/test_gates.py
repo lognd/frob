@@ -38,6 +38,7 @@ from frob.gates import (
     exclude_hazard_gate,
     fmt_gate,
     root_asset_dir_gate,
+    env_var_doc_gate,
     generated_fixability,
     inv003_gate,
     inv004_gate,
@@ -6729,6 +6730,94 @@ class TestRootAssetDirGate:
     def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
         _write(tmp_path, "orphan/file.txt", "x\n")
         assert root_asset_dir_gate(tmp_path) == ()
+
+
+class TestEnvVarDocGate:
+    """T-1782: ENV001 -- a `FROB_*` env var with no doc anchor or waiver
+    (docs/modules/gates.md#env001-t-1782).
+
+    Acceptance-fixture pair (T-0756 new-gate-rule policy): before this
+    rule existed, an undocumented `FROB_*` constant like the ones these
+    tests build was invisible to `frob check` -- the T-1610 audit found
+    `FROB_WORKER_STDOUT_LOG_LEVEL` undocumented for two weeks precisely
+    because nothing FAILED on it. After (`env_var_doc_gate` wired into
+    `_KNOWN_GATE_RULES` and the gate dispatch table), the exact same
+    fixture PASSES this test's assertion that the violation IS reported."""
+
+    # frob:tests src/frob/gates/_env_var_docs.py::env_var_doc_gate
+    def test_undocumented_env_var_fires(self, tmp_path: Path) -> None:
+        """FAIL before this rule exists (`frob.gates._env_var_docs` did
+        not exist at all -- the repro commit's import raised
+        `ModuleNotFoundError`); PASS after (`env_var_doc_gate` reports
+        ENV001 for it) -- the T-1610 undocumented-env-var incident,
+        mechanized."""
+        _write(tmp_path, "src/frob/x.py", '_UNDOC_ENV = "FROB_UNDOCUMENTED"\n')
+        _git_init(tmp_path)
+        violations = env_var_doc_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "ENV001"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "src/frob/x.py"
+        assert violations[0].line == 1
+
+    def test_documented_by_literal_string_is_silent(self, tmp_path: Path) -> None:
+        """Check (a), literal form: the env-var string itself appears
+        somewhere under `docs/`."""
+        _write(tmp_path, "src/frob/x.py", '_DOC_ENV = "FROB_DOCUMENTED"\n')
+        _write(tmp_path, "docs/config.md", "Set FROB_DOCUMENTED to enable X.\n")
+        _git_init(tmp_path)
+        assert env_var_doc_gate(tmp_path) == ()
+
+    def test_documented_by_constant_name_is_silent(self, tmp_path: Path) -> None:
+        """Check (a), constant-name form: the T-1610-established
+        allowance -- documented by the Python constant's own name instead
+        of the literal env-var string."""
+        _write(tmp_path, "src/frob/x.py", '_ARTIFACT_CACHE_ENV = "FROB_ARTIFACT_CACHE"\n')
+        _write(
+            tmp_path,
+            "docs/config.md",
+            "See `_ARTIFACT_CACHE_ENV` for the cache override.\n",
+        )
+        _git_init(tmp_path)
+        assert env_var_doc_gate(tmp_path) == ()
+
+    def test_file_scoped_waiver_covers_it(self, tmp_path: Path) -> None:
+        """Check (b): a `frob:waive ENV001` directive anywhere in the same
+        source file waives every `FROB_*` constant in it -- the
+        genuinely-internal/test-only/worker-internal escape hatch."""
+        _write(
+            tmp_path,
+            "src/frob/worker.py",
+            '# frob:waive ENV001 reason="worker-internal flag, not user-facing"\n'
+            '_WORKER_FLAG = "FROB_WORKER_INTERNAL"\n',
+        )
+        _git_init(tmp_path)
+        from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
+
+        snapshot = _snapshot(tmp_path)
+        raw = env_var_doc_gate(tmp_path)
+        assert len(raw) == 1
+        kept, waived = _apply_waivers(raw, snapshot)
+        assert kept == ()
+        assert len(waived) == 1
+
+    def test_non_frob_env_prefixed_constants_are_ignored(
+        self, tmp_path: Path
+    ) -> None:
+        """A constant assigned some OTHER string entirely is not this
+        gate's concern -- only `FROB_*`-prefixed literal values count."""
+        _write(tmp_path, "src/frob/x.py", '_OTHER = "SOME_OTHER_VALUE"\n')
+        _git_init(tmp_path)
+        assert env_var_doc_gate(tmp_path) == ()
+
+    def test_no_env_assignments_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _git_init(tmp_path)
+        assert env_var_doc_gate(tmp_path) == ()
+
+    def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/frob/x.py", '_UNDOC_ENV = "FROB_UNDOCUMENTED"\n')
+        assert env_var_doc_gate(tmp_path) == ()
 
 
 class TestInvariantLoad:

@@ -101,6 +101,7 @@ from frob.gates._doclink_docanchor import (
 )
 from frob.gates._docptr import doc006_gate
 from frob.gates._dup import dup_gate
+from frob.gates._env_var_docs import env_var_doc_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._exhaustive_handling import exhaustive_handling_gate
 from frob.gates._ffi_boundary import ffi_boundary_gate
@@ -5584,6 +5585,8 @@ _ALL_GATES = frozenset(
         "excludehazard",
         # frob:ticket T-1784
         "root_asset_dirs",
+        # frob:ticket T-1782
+        "env_var_docs",
         # T-0412: frob:debt malformed/non-open-ticket/expired-until checks.
         "debt",
         # T-0459: bare stdout write outside frob.render.
@@ -5977,6 +5980,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "excludehazard",
     # frob:ticket T-1784
     "root_asset_dirs",
+    # frob:ticket T-1782
+    "env_var_docs",
     "debt",
     # frob:ticket T-0797
     "deprecated",
@@ -6416,6 +6421,9 @@ def _build_thread_jobs(
         # possibly-scoped st.root) -- same reasoning as excludehazard
         # above, a top-level directory hazard is repo-wide by construction.
         "root_asset_dirs": lambda: root_asset_dir_gate(st.repo_root),
+        # T-1782: repo-wide scan (every FROB_* constant under src/frob/**),
+        # always against repo_root, same reasoning as root_asset_dirs above.
+        "env_var_docs": lambda: env_var_doc_gate(st.repo_root),
         # T-0396: whole-repo scan, always against repo_root (never the
         # possibly-scoped st.root) -- a `frob check <subdir>` run must see
         # the same inbound-reference graph as an unscoped run, same
@@ -7709,6 +7717,7 @@ __all__ = [
     "drift_gate",
     "exclude_hazard_gate",
     "root_asset_dir_gate",
+    "env_var_doc_gate",
     "fake_marker_staleness_gate",
     "fmt_gate",
     "format_paths",
