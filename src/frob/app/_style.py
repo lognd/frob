@@ -18,7 +18,7 @@ to plain text (paint() is a no-op when `color` is False).
 
 from __future__ import annotations
 
-from frob.logging.color import BOLD, CYAN, DIM, GREEN, RED, YELLOW, paint
+from frob.logging.color import BOLD, CYAN, DIM, GREEN, MAGENTA, RED, YELLOW, paint
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
@@ -30,7 +30,12 @@ STATE_STYLE = {
     "planned": YELLOW,
     "queued": DIM,
     "blocked": RED,
-    "dropped": DIM,
+    # Deliberately NOT DIM (which `queued` uses) and NOT RED (reserved for
+    # `blocked`/`failed`, states that want attention): `dropped` is TERMINAL
+    # -- there is no undrop verb, `frob ticket requeue` refuses it -- so a
+    # reader scanning a listing must never mistake it for work still waiting
+    # to be picked up (T-2084).
+    "dropped": MAGENTA,
     "failed": RED,
 }
 

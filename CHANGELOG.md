@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.454.0] - unreleased
+
+- T-2084: Ticket-state palette: dropped and queued are both DIM, so terminal work is indistinguishable from waiting work
+
 ## [0.453.0] - unreleased
 
 - T-2023: T-1961s land-wait timeout is calibrated below the observed land duration, so ledger verbs now cost 60s and refuse anyway

@@ -489,8 +489,12 @@ escape code.
 <!-- frob:describes src/frob/app/_style.py::style_rule -->
 
 - `STATE_STYLE` -- ticket-state -> SGR code map (`done`=green,
-  `in_progress`=cyan, `planned`=yellow, `queued`/`dropped`=dim,
-  `blocked`/`failed`=red).
+  `in_progress`=cyan, `planned`=yellow, `queued`=dim, `dropped`=magenta,
+  `blocked`/`failed`=red). `dropped` is deliberately neither dim nor red
+  (T-2084): dim is `queued`, and confusing terminal work with work still
+  waiting to be picked up is the one collision that matters here, since a
+  drop cannot be undone -- `frob ticket requeue` refuses it. Red stays
+  reserved for states that want attention.
 - `style_ticket_id` -- bolds a ticket id (`T-0042`).
 - `style_state` -- colors a ticket state word per `STATE_STYLE`.
 - `style_ok` / `style_fail` / `style_warn` -- green/red/yellow for

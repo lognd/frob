@@ -150,7 +150,7 @@
     "src/frob/app/_daemon_proxy.py::try_daemon_lease": "3067c0323c04f8efb8058d7d5fe7e12f7602be29bf8226755fa77989085147f6",
     "src/frob/app/_snapshot.py::CACHE_REL": "4a08ebfa739f80ac5e4e6b02964af42021bed55fb59d6b716818bc849457bde6",
     "src/frob/app/_snapshot.py::load_or_build_snapshot": "d4b8873d6916febf90522189b768df74d04040d5891566257397014e27c88e2d",
-    "src/frob/app/_style.py::STATE_STYLE": "2af4798352f364d9a8483f7a700e26b28cdedf7ab22b2f3358bc1a17b60cc2b5",
+    "src/frob/app/_style.py::STATE_STYLE": "f4c172c1a308ff008605bce57e43fc074e049a3e401082b1d98e47064e1d4dd4",
     "src/frob/app/_style.py::style_fail": "c14acfbd13f9f4dbb65c1906c9cffa711c52ba65463e3c904356c4ae9596c36a",
     "src/frob/app/_style.py::style_header": "c43a76a7a90a952651e583bd613c1b7b7e1c2b8a805e0425f2e332b956ea67f6",
     "src/frob/app/_style.py::style_ok": "96ca19a651bb616ea02b482f426424b2db17477edd927ce30602e3f631b3aa3a",
@@ -932,6 +932,7 @@
     "src/frob/logging/color.py::CYAN": "839468c6e162d6b667b65dbaa31fc83022808ac596c457ffb9023b0a7332a243",
     "src/frob/logging/color.py::DIM": "06044aa13c107e82e62339264e4db510efa26e354e9dc01491f267923a1ecdb3",
     "src/frob/logging/color.py::GREEN": "271fc2cd13fe5cbb083e2eb95d86148061b42e7d8567bd2a7e664ef4f017513c",
+    "src/frob/logging/color.py::MAGENTA": "68979851d5ca8b394d618b9827ed92ec46bca8fe40c3a9a10fc83122d44f91d1",
     "src/frob/logging/color.py::RED": "323b13f013ea227b65b89561c710999e91caf788dc936be2d5e4e5bc1fe863e3",
     "src/frob/logging/color.py::YELLOW": "9e9b5b3963933aacfc90b050eac6fa7655255dc5eb1faed0b684166c4813c297",
     "src/frob/logging/color.py::paint": "16b888ed39048b4a3e25d8b07c0b28bb1c4bee62e77279884c11455e5c09c179",
@@ -2253,5 +2254,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.453.0"
+  "version": "0.454.0"
 }

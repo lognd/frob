@@ -344,3 +344,31 @@ def test_vet_print_table_force_color_has_ansi_same_content(monkeypatch, capsys):
 
     stripped = re.sub(r"\x1b\[[0-9;]*m", "", colored_out)
     assert stripped == plain_out
+
+
+# frob:ticket T-2084
+def test_dropped_state_is_visually_distinct_from_queued_and_blocked():
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_dropped_state_is_visually_distinct_from_queued\
+    # _and_blocked kind="unit"
+    from frob.app._style import STATE_STYLE, style_state
+
+    # `dropped` is TERMINAL (no undrop verb; `frob ticket requeue` refuses),
+    # so it must not read as `queued` -- work still waiting to be picked up.
+    assert STATE_STYLE["dropped"] != STATE_STYLE["queued"]
+    # ...nor as `blocked`/`failed`, which are red because they want action.
+    assert STATE_STYLE["dropped"] != STATE_STYLE["blocked"]
+    assert STATE_STYLE["dropped"] != STATE_STYLE["failed"]
+    assert style_state("dropped", True) != style_state("queued", True)
+
+
+# frob:ticket T-2084
+def test_state_styling_is_a_noop_without_color():
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_state_styling_is_a_noop_without_color \
+    # kind="unit"
+    from frob.app._style import STATE_STYLE, style_state
+
+    # --json / pipe / non-TTY paths must stay byte-identical to plain text.
+    for state in STATE_STYLE:
+        assert style_state(state, False) == state
