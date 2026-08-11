@@ -32,8 +32,6 @@ acceptance:
 - text: 'NOTE: T-2086 (landed f843ad7ed5ffb32fac8ab304d42fe2f0a5af55ca, successor
     to'
   evidence: []
-- text: T-2031/T-draft-4aa27f0c) already fixes this exact addopts-reinjection hole
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 11
@@ -63,6 +61,15 @@ acceptance_amendments:
 - op: remove
   index: 8
   old_text: in _retry_after_worker_crash via _neutralized_addopts/-o addopts=<stripped>.
+  new_text: null
+  reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
+    due to no blank-line separators'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  index: 7
+  old_text: T-2031/T-draft-4aa27f0c) already fixes this exact addopts-reinjection
+    hole
   new_text: null
   reason: 'cleanup: previous --criterion-file call split one note into per-line fragments
     due to no blank-line separators'
