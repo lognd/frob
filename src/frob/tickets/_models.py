@@ -1813,6 +1813,17 @@ class TicketError(ErrorSet):
     WorktreeLeaseViolation = (
         "FROB_WORKTREE is leased to a different worktree than this command's cwd"
     )
+    # frob:ticket T-2079
+    # Ledger ownership (T-1669's design, split off as T-2079): a ticket
+    # currently leased (cross-worktree lease side-channel, T-0473) to one
+    # worktree may only be WRITTEN from that worktree -- any other
+    # worktree, including the shared main checkout, must refuse rather
+    # than silently clobber the holder's in-flight edit (the T-1617
+    # incident: a `kind` field change written from main was dropped by a
+    # later merge because main edited a ticket a worktree owned).
+    TicketOwnershipViolation = (
+        "ticket is leased to another worktree; only the lease holder may write it"
+    )
     # T-0579: `frob ticket drop <id> --reason TEXT` failure mode -- a drop
     # with no reason is indistinguishable from a silent discard later.
     DropReasonMissing = "drop requires a non-empty --reason"

@@ -1767,15 +1767,32 @@ def write_ticket(
 
 # frob:ticket T-1679
 # frob:ticket T-1711
+# frob:ticket T-2079
 def _write_ticket_impl(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """The actual mode-dispatched write `write_ticket` performs AFTER its
     own content-loss guard has already passed (T-1679 split, so
     `tests._write_unchecked._write_ticket_unchecked` -- T-1711: relocated
     out of this module -- can share this exact write path without
     re-running, or bypassing via a flag, the guard `write_ticket` itself
-    owns)."""
+    owns).
+
+    T-2079: v2 mode additionally runs `enforce_ticket_ownership` first --
+    the OWNERSHIP half of T-1669's ledger-ownership design, enforceable as
+    exactly the plain path check that design predicted now that T-1631
+    migrated main off the v1 monofile: a `tickets/T-####/ticket.md` write
+    is refused if `ticket.id` is currently leased (T-0473) to a DIFFERENT
+    git worktree than `root` resolves to. Single/dir mode are the retired
+    v1 backends this design was explicitly sequenced to NOT be shimmed
+    onto (T-1669's own text: "build correct-on-v2 and merely non-breaking
+    on v1") -- ownership is a v2-only concept, tied to the one-file-per-
+    ticket layout the lease side-channel already keys on."""
     mode = _store_mode(root)
     if mode == "v2":
+        from frob.tickets._leases import enforce_ticket_ownership
+
+        owned = enforce_ticket_ownership(root, ticket.id)
+        if owned.is_err:
+            return Err(owned.danger_err)
         return _write_ticket_v2_mode(root, ticket)
     with ledger_lock(root):
         if mode == "single":

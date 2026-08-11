@@ -44,6 +44,7 @@ from typani.result import Err, Ok, Result
 from frob import gitio
 from frob.gitio import GitError, ProcResult
 from frob.logging import get_logger
+from frob.tickets._models import TicketError
 
 # frob:ticket T-1619
 # Same posix-only degradation as `frob.tickets._land`'s own `fcntl` import
@@ -921,6 +922,75 @@ def lease_holder_worktree(root: Path, ticket_id: str) -> str | None:
         if record.ticket_id == ticket_id:
             return record.worktree
     return None
+
+
+# frob:ticket T-2079
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_ticket_ownership_guard.py::TestMainWriteToLeasedTicketIsRefused.test_main_side_write_to_a_worktree_leased_ticket_is_refused  # noqa: E501
+# frob:tests tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicket.test_holder_worktree_write_still_succeeds  # noqa: E501
+# frob:tests tests/test_ticket_ownership_guard.py::TestLeaseHolderCanStillWriteItsOwnTicket.test_unleased_ticket_is_writable_from_main  # noqa: E501
+def enforce_ticket_ownership(root: Path, ticket_id: str) -> Result[None, TicketError]:
+    """The OWNERSHIP half of T-1669's ledger-ownership model, split off as
+    T-2079 once T-1631's v2 migration made every active ticket a single
+    `tickets/T-####/ticket.md` path: `Err(TicketOwnershipViolation)` iff
+    `ticket_id` currently holds a LIVE cross-worktree lease (T-0473,
+    `lease_holder_worktree`) recorded against a worktree OTHER than the one
+    `root` itself resolves to.
+
+    This is deliberately narrower than `enforce_worktree_lease`
+    (`_worktree_guard.py`, T-0431): that check asks "does this shell's
+    OWN claimed lease (`FROB_WORKTREE`) match where it actually is" and is
+    a no-op whenever `FROB_WORKTREE` is unset (true for the shared main
+    checkout and for any coordinator-run command) -- it was never designed
+    to catch main writing into a WORKTREE's lease, only an agent
+    wandering out of its own. This function instead asks "does the git
+    worktree `root` resolves to match `ticket_id`'s recorded lease
+    holder", independent of any env var, so it catches exactly the T-1617
+    incident (main editing a ticket a worktree owned, silently reverted
+    by a later merge) without touching `enforce_worktree_lease`'s
+    existing, narrower contract at all.
+
+    `Ok(None)` (never refuses) in every other case:
+    - `ticket_id` has no recorded lease at all (`lease_holder_worktree`
+      returns `None`) -- an unleased ticket is main's (or anyone's) to
+      write, exactly as T-1669's design text specifies.
+    - `root` resolves to the SAME worktree the lease names -- the holder
+      writing its own ticket, the ordinary in-progress workflow, must
+      keep working unchanged (the T-1882 lesson: a guard scoped to the
+      NORMAL case, not just the leak it targets, breaks every land).
+    - `root` fails to resolve to a git worktree at all (a test fixture
+      with no `.git`, matching `enforce_worktree_lease`'s own degrade-
+      quietly contract) -- "cannot resolve a git root" is `frob.gitio`'s
+      concern, not this guard's; it only ever ADDS a refusal on top of an
+      otherwise-resolvable root."""
+    holder = lease_holder_worktree(root, ticket_id)
+    if holder is None:
+        return Ok(None)
+
+    actual = gitio.repo_root(root)
+    if actual.is_err:
+        _log.debug(
+            "ownership-guard: %s unresolvable as a repo, skipping ownership "
+            "check for %s",
+            root,
+            ticket_id,
+        )
+        return Ok(None)
+    actual_path = str(actual.danger_ok.resolve())
+    holder_path = str(Path(holder).resolve())
+
+    if actual_path == holder_path:
+        return Ok(None)
+
+    _log.error(
+        "ownership-guard: refusing to write %s from %s -- it is currently "
+        "leased to worktree %s (T-1617 shape: only the lease holder may "
+        "write a ticket it holds)",
+        ticket_id,
+        actual_path,
+        holder_path,
+    )
+    return Err(TicketError.TicketOwnershipViolation)
 
 
 # frob:ticket T-1356
