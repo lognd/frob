@@ -2,7 +2,7 @@
 id: T-1996
 title: docs/modules/tickets.md's cross-worktree lease section is stale after T-1993's
   delta-reconciliation fix
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'

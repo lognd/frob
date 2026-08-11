@@ -2,7 +2,7 @@
 id: T-1973
 title: Add T-1946/T-1944 doc sections to docs/modules/tickets.md once T-1967's lease
   frees
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
