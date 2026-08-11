@@ -394,6 +394,51 @@ if [ -n "$FROB_AGENT" ]; then
     echo "frob: unset FROB_AGENT if deliberate, or run from the leased worktree" >&2
     exit 1
 fi
+
+# T-2071: the guard above is INERT for its own target population -- the
+# Agent tool's dispatched shells never carry FROB_AGENT, measured directly
+# (`echo "FROB_AGENT is: [${FROB_AGENT:-UNSET}]"` -> UNSET in every such
+# shell). A guard keyed on a variable nobody in the offending population
+# sets is indistinguishable from no guard. This second check keys on a
+# FACT instead: is this commit landing in the PRIMARY checkout (not a
+# linked worktree) WHILE OTHER WORKTREES EXIST (a fleet is dispatched) and
+# non-ledger files are staged, with no FROB_LAND_INTERNAL cover -- a
+# single-checkout repo with no worktrees at all is never affected, only a
+# root commit made while the fleet shape this guard cares about is live.
+# `frob ticket new`/`start`/etc.'s own internal
+# ledger commits stage only tickets.md/tickets/** by pathspec and are
+# unaffected; `frob ticket land`'s internal commits set
+# FROB_LAND_INTERNAL=1 for their duration and are unaffected. Anything
+# else committing non-ledger content straight into the primary checkout
+# -- almost always a dispatched agent shell that wandered out of its
+# worktree -- is refused, regardless of FROB_AGENT.
+if [ -z "$FROB_LAND_INTERNAL" ]; then
+    _t2071_toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
+    _t2071_wt_list=$(git worktree list --porcelain 2>/dev/null)
+    _t2071_primary=$(echo "$_t2071_wt_list" | awk '/^worktree /{print $2; exit}')
+    _t2071_n=$(echo "$_t2071_wt_list" | grep -c '^worktree ')
+    if [ -n "$_t2071_toplevel" ] && [ -n "$_t2071_primary" ] \\
+        && [ "$_t2071_toplevel" = "$_t2071_primary" ] \\
+        && [ "$_t2071_n" -gt 1 ]; then
+        _t2071_staged=$(git diff --cached --name-only)
+        _t2071_foreign=$(echo "$_t2071_staged" \\
+            | grep -v -E '^(tickets\\.md|tickets/)')
+        if [ -n "$_t2071_foreign" ]; then
+            echo "frob: refusing commit -- agent-context root" \\
+                "contamination (T-2071)" >&2
+            echo "frob: non-ledger file(s) committed directly in" \\
+                "the primary checkout root $(pwd):" >&2
+            echo "$_t2071_foreign" | while IFS= read -r _t2071_f; do
+                echo "frob:   $_t2071_f" >&2
+            done
+            echo "frob: use a leased worktree instead" \\
+                "(frob ticket work <id>)" >&2
+            echo "frob: (set FROB_LAND_INTERNAL=1 if this is" \\
+                "deliberate land/tooling machinery)" >&2
+            exit 1
+        fi
+    fi
+fi
 """
 
 _WORKTREE_LEASE_HOOK_TERMINATOR = "exit 0\n"
@@ -563,7 +608,13 @@ def _hooks_dir(root: Path) -> Result[Path, ScaffoldError]:
 
 
 # frob:doc docs/commands/scaffold.md#public-api
+# frob:waive AFFECT001 reason="T-2071's own scope is src/frob/scaffold/project.py \
+# alone -- docs/commands/scaffold.md is held by T-1382's LIVE cross-worktree lease for \
+# the duration of this ticket; the docstring change is additive (a new guard \
+# described, nothing existing removed/contradicted), so the doc is not WRONG, only \
+# incomplete -- filed a follow-up ticket to update it once T-1382's lease frees"
 # frob:ticket T-0731
+# frob:ticket T-2071
 # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_installs_pre_commit_and_pre_merge_commit  # noqa: E501
 # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_refuses_existing_hook_without_force  # noqa: E501
 # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_changelog  # noqa: E501
@@ -575,27 +626,30 @@ def _hooks_dir(root: Path) -> Result[Path, ScaffoldError]:
 # frob:ticket T-1742
 # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_merge_commit_matching_main_is_allowed  # noqa: E501
 # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_merge_commit_diverging_from_main_still_refused  # noqa: E501
+# frob:ticket T-2071
+# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_agent_context_root_write_refused_without_frob_agent  # noqa: E501
 def install_worktree_lease_hook(
     root: Path, *, force: bool = False
 ) -> Result[tuple[Path, ...], ScaffoldError]:
     """Install the T-0431 worktree-lease `pre-commit`/`pre-merge-commit`
     git hooks into `root`'s real hooks directory (`_hooks_dir`): each
-    hook aborts loudly if `FROB_AGENT` is set in the environment it runs
-    in, catching a stray raw `git commit`/`git merge` from an
-    agent-context shell that wandered into the wrong checkout.
-    `pre-merge-commit` ALSO carries the T-0577 raw-ticket-branch-merge
-    guard (`_FORBID_RAW_TICKET_MERGE_SCRIPT`): it refuses a real merge
-    commit whose incoming side is a `worktree-agent-*` branch from ANY
-    shell, coordinator included, forcing `frob ticket land` as the only
-    path onto main for a ticket branch. `pre-commit` ALSO carries the
-    T-0731 land-owned-files guard (`_FORBID_LAND_OWNED_FILES_SCRIPT`): it
-    refuses a worktree commit touching `pyproject.toml`'s version line,
-    CHANGELOG.md, or uv.lock (all three are `frob ticket land`'s
-    exclusively, per T-0731), and warns (does not refuse) on tickets.md.
+    hook aborts loudly if `FROB_AGENT` is set, catching a stray raw
+    `git commit`/`git merge` from an agent-context shell in the wrong
+    checkout. T-2071: both hooks ALSO carry a second, FACT-based guard
+    that does NOT depend on `FROB_AGENT` (measured UNSET in every
+    Agent-tool shell) -- see the T-2071 comment in
+    `_WORKTREE_LEASE_HOOK_SCRIPT`. `pre-merge-commit` ALSO carries the
+    T-0577 raw-ticket-branch-merge guard
+    (`_FORBID_RAW_TICKET_MERGE_SCRIPT`): refuses a real merge commit
+    whose incoming side is a `worktree-agent-*` branch from ANY shell,
+    forcing `frob ticket land` as the only path onto main. `pre-commit`
+    ALSO carries the T-0731 land-owned-files guard
+    (`_FORBID_LAND_OWNED_FILES_SCRIPT`): refuses a worktree commit
+    touching `pyproject.toml`'s version line, CHANGELOG.md, or uv.lock
+    (all `frob ticket land`'s exclusively), and warns on tickets.md.
 
-    `Err(OutputExists)` if either hook file already exists and `force` is
-    not set -- never silently overwrites a repo's own custom hook.
-    Returns the paths written, executable-bit set (`chmod +x`, POSIX)."""
+    `Err(OutputExists)` if either hook file already exists and `force`
+    is not set. Returns the paths written, executable-bit set."""
     hooks_dir_result = _hooks_dir(root)
     if hooks_dir_result.is_err:
         return Err(hooks_dir_result.danger_err)

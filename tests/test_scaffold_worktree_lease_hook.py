@@ -463,3 +463,48 @@ class TestInstallWorktreeLeaseHook:
         assert commit.returncode == 0, commit.stdout + commit.stderr
         assert "WARNING" in (commit.stdout + commit.stderr)
         assert "tickets.md" in (commit.stdout + commit.stderr)
+
+    # frob:ticket T-2071
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_agent_context_root_write_refused_without_frob_agent(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_agent_context_root_write_refused_without_frob_agent  # noqa: E501
+        """T-2071: `FROB_AGENT` is UNSET in every shell the Agent tool
+        spawns, so the T-0431 guard above (keyed on that variable) never
+        fires for the exact population it exists to stop. This reproduces
+        the real incident shape: a linked worktree exists (an agent is
+        dispatched), and a non-ledger source file is committed directly in
+        the PRIMARY checkout with `FROB_AGENT` unset -- exactly what a
+        dispatched agent's shell does. Must be refused on the fact that
+        this is a root-checkout commit of a non-ledger file while
+        worktrees exist, not on an env var nobody in this population
+        sets."""
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        worktree_dir = tmp_path.parent / "linked-worktree"
+        added = _git(
+            "worktree", "add", "-b", "agent-branch", str(worktree_dir), "main",
+            cwd=tmp_path,
+        )
+        assert added.returncode == 0, added.stdout + added.stderr
+
+        (tmp_path / "src_file.py").write_text("x = 1\n")
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "agent commits straight to root"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode != 0, commit.stdout + commit.stderr
+        assert "root" in (commit.stdout + commit.stderr).lower()

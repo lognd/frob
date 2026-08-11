@@ -2,7 +2,7 @@
 id: T-2071
 title: 'Agent-context root-write guard is inert: FROB_AGENT is unset in dispatched
   agent shells'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -11,22 +11,55 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/scaffold/project.py
+- tests/test_scaffold_worktree_lease_hook.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/project.py
+  reason: 'fact-based root-write guard: hook body keys off checkout identity + staged
+    non-ledger files, not FROB_AGENT'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: 'fact-based root-write guard: hook body keys off checkout identity + staged
+    non-ledger files, not FROB_AGENT'
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_agent_context_root_write_refused_without_frob_agent
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_dirty_repo
+designated_repro_test: tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_agent_context_root_write_refused_without_frob_agent
 acceptance:
 - text: given a shell with FROB_AGENT unset (as every dispatched agent has), when
     it writes and commits a source file in the shared repo root, then the write is
     refused or surfaced as agent-context root contamination -- this test MUST fail
     against current main
-  evidence: []
-- text: given an agent has dirtied the shared root, when another agent's land is DirtyMain-refused,
-    then the refusal names the offending path AND identifies it as foreign to the
-    landing ticket, so the operator can route it without hand-diagnosis
-  evidence: []
+  evidence:
+  - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_agent_context_root_write_refused_without_frob_agent
 - text: given the fleet is running, when scripts/fleet_status.py probes ROOT, then
     a dirty root reports the offending paths rather than a bare dirty/clean verdict
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestRootDirt::test_dirty_repo
+acceptance_amendments:
+- op: remove
+  index: 1
+  old_text: given an agent has dirtied the shared root, when another agent's land
+    is DirtyMain-refused, then the refusal names the offending path AND identifies
+    it as foreign to the landing ticket, so the operator can route it without hand-diagnosis
+  new_text: null
+  reason: src/frob/tickets/_land.py was held by T-2105's LIVE cross-worktree lease
+    for T-2071's entire duration, so the DirtyMain-refusal-names-the-owning-ticket
+    improvement could not be implemented here; split out as a follow-up ticket (T-2118)
+    to be worked once the lease frees. Criteria 1 and 3 (renumbered to 2) remain in
+    T-2071 and are both evidenced.
+  actor: logan
+  at: '2026-08-11'
 threat: null
 component: tickets
 labels:
