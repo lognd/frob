@@ -32,7 +32,7 @@ from frob.tickets._archive import _load_merged
 from frob.tickets._models import TicketError
 from frob.tickets._new_renumber import _next_ticket_id
 from frob.tickets._provisional import is_draft_id
-from frob.tickets._store import ledger_lock
+from frob.tickets._store import allocator_lock, ledger_lock
 
 # T-1103: shared "frob.tickets" logger name kept explicit (not
 # get_logger(__name__), which would read "frob.tickets._draft_finalize")
@@ -44,8 +44,17 @@ _log = get_logger("frob.tickets")
 
 # frob:ticket T-0162
 # frob:ticket T-1090
+# frob:ticket T-1669
 # frob:doc docs/modules/tickets.md#provisional-ids
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace.test_two_concurrent_finalize_draft_calls_get_distinct_ids  # noqa: E501
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace.test_promote_and_land_finalize_never_allocate_the_same_id  # noqa: E501
+# frob:waive AFFECT001 reason="T-1669 adds an internal lock (allocator_lock) around \
+# this function's existing critical section -- the public contract \
+# docs/modules/tickets.md#provisional-ids and #public-api describe (assign a draft its \
+# final id, atomically, no manual handling) is unchanged; docs/modules/tickets.md is a \
+# large repo-wide hub file, out of this ticket's narrowed scope (T-2076 holds a live \
+# lease on src/frob/tickets/_land.py, the other file this ticket originally scoped, so \
+# scope was narrowed rather than widened into an unrelated hub doc)"
 def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     """Assign `draft_id` its final sequential `T-####` id against the CURRENT
     merged (active+archive) view and rewrite the ledger plus every code
@@ -86,11 +95,33 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     (rather than called as the module-local name), so a test that
     monkeypatches `frob.tickets.renumber_one` observes `finalize_draft`
     routing through the patched callable too.
-    """
+
+    T-1669: the whole critical section is now ALSO held under `root`'s
+    `allocator_lock` (T-1253's dedicated id-allocation lock, `.frob/
+    tickets-allocator.lock` -- a distinct file from `ledger_lock`'s own
+    `.frob/tickets.lock`, defined but never actually wired into any
+    allocator until now), wrapping the pre-existing `ledger_lock` span
+    rather than replacing it. `ledger_lock(root)` alone only ever
+    serialized this function against OTHER callers that also take
+    `ledger_lock(root)` -- `finalize_draft_for_land` (the `frob ticket
+    land` path) deliberately does NOT take `main_root`'s `ledger_lock`
+    (see that function's own docstring for the git-tracked-merge
+    collision this avoids), so a `finalize_draft` call here (`frob ticket
+    promote`, or Tier-A's `fix_tick002_renumber`) and a concurrent `frob
+    ticket land`'s draft finalization could each compute the identical
+    `final_id` against the same pre-write snapshot and both "succeed" --
+    each writing to a DIFFERENT tree (this call's `root` vs. the land's
+    own worktree), so neither write itself ever errors; the collision only
+    surfaces later, at squash time, as a forced re-renumber (measured
+    twice in one land, T-2060: ids T-2041 and T-2045 each claimed out from
+    under it by a concurrent land). `allocator_lock` is the ONE lock both
+    `finalize_draft` and `finalize_draft_for_land` now share, so they
+    always serialize against each other regardless of which root/worktree
+    each one's OWN write lands in."""
     if not is_draft_id(draft_id):
         _log.debug("tickets: finalize_draft(%s): already final, no-op", draft_id)
         return Ok(draft_id)
-    with ledger_lock(root):
+    with allocator_lock(root), ledger_lock(root):
         merged = _load_merged(root)
         if merged.is_err:
             return Err(merged.danger_err)
@@ -111,8 +142,15 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
 
 
 # frob:ticket T-1179
+# frob:ticket T-1669
 # frob:doc docs/modules/tickets.md#provisional-ids
 # frob:tests tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling.test_id_ceiling_reads_current_main_not_stale_worktree_view  # noqa: E501
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace.test_promote_and_land_finalize_never_allocate_the_same_id  # noqa: E501
+# frob:waive AFFECT001 reason="T-1669 adds allocator_lock around this function's \
+# existing critical section -- the public contract \
+# docs/modules/tickets.md#provisional-ids describes (finalize a draft's id fresh \
+# against main, atomically) is unchanged; docs/modules/tickets.md is out of this \
+# ticket's narrowed scope, see finalize_draft's identical waiver above"
 def finalize_draft_for_land(
     worktree: Path, draft_id: str, main_root: Path
 ) -> Result[str, TicketError]:
@@ -149,7 +187,25 @@ def finalize_draft_for_land(
     own `ledger_lock(root)`) at the point that actually commits to main.
 
     A no-op (`Ok(draft_id)` unchanged) if `draft_id` is already final,
-    mirroring `finalize_draft`."""
+    mirroring `finalize_draft`.
+
+    T-1669: now also held under `main_root`'s `allocator_lock` (T-1253's
+    dedicated id-allocation lock) around the whole critical section --
+    deliberately NOT `main_root`'s `ledger_lock`, so the git-tracked-merge
+    collision this docstring's prior paragraph documents (a stray `.frob/
+    tickets.lock` colliding with a worktree branch's own tracked copy at
+    squash time) is not reintroduced: `allocator_lock` lives at its own
+    distinct path (`.frob/tickets-allocator.lock`, T-1253), the same
+    "give cross-root coordination its own lock file" technique `_land_
+    lock` already uses for exactly this reason (see `_land_lock`'s own
+    module comment). This closes the real gap the SECOND guard mentioned
+    above (the squash-time `_overlay_landed_ticket` mismatch refusal) only
+    ever detected AFTER the fact, forcing a manual re-renumber (T-2060: ids
+    T-2041/T-2045 each claimed out from under a land by a concurrent
+    `frob ticket promote`/Tier-A auto-fix, since `finalize_draft` and this
+    function shared no lock at all before T-1669) -- `allocator_lock` now
+    makes the two paths queue instead of collide, so the id this function
+    computes is never stale by the time it commits."""
     if not is_draft_id(draft_id):
         _log.debug(
             "tickets: finalize_draft_for_land(%s): already final, no-op", draft_id
@@ -157,7 +213,7 @@ def finalize_draft_for_land(
         return Ok(draft_id)
     main_root = main_root.resolve()
     worktree = worktree.resolve()
-    with ledger_lock(worktree):
+    with allocator_lock(main_root), ledger_lock(worktree):
         return _finalize_draft_for_land_locked(worktree, draft_id, main_root)
 
 

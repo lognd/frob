@@ -2,7 +2,7 @@
 id: T-1669
 title: 'Ledger ownership model: lease-scoped writes plus atomic draft promotion at
   land'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -14,13 +14,88 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/**
-- src/frob/app/ticket_runner/**
-- docs/design/ledger-v2.md
-- tests/**
+- src/frob/tickets/_draft_finalize.py
+- tests/test_tickets_ledger_concurrency.py
+- tickets/T-2079/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: 'narrow to the promotion-race fix (T-1669 part 2): reuse the land lock in
+    finalize_draft/finalize_draft_for_land so promote and land-time id allocation
+    mutually exclude'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/app/ticket_runner/**
+  reason: 'narrow to the promotion-race fix (T-1669 part 2): reuse the land lock in
+    finalize_draft/finalize_draft_for_land so promote and land-time id allocation
+    mutually exclude'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/design/ledger-v2.md
+  reason: 'narrow to the promotion-race fix (T-1669 part 2): reuse the land lock in
+    finalize_draft/finalize_draft_for_land so promote and land-time id allocation
+    mutually exclude'
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: tests/**
+  reason: 'narrow to the promotion-race fix (T-1669 part 2): reuse the land lock in
+    finalize_draft/finalize_draft_for_land so promote and land-time id allocation
+    mutually exclude'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'narrow to the promotion-race fix (T-1669 part 2): reuse the land lock in
+    finalize_draft/finalize_draft_for_land so promote and land-time id allocation
+    mutually exclude'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/tickets/_draft_finalize.py
+  reason: 'narrow to the promotion-race fix (T-1669 part 2): reuse the land lock in
+    finalize_draft/finalize_draft_for_land so promote and land-time id allocation
+    mutually exclude'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_tickets_ledger_concurrency.py
+  reason: 'narrow to the promotion-race fix (T-1669 part 2): reuse the land lock in
+    finalize_draft/finalize_draft_for_land so promote and land-time id allocation
+    mutually exclude'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: doc-closure target for finalize_draft/finalize_draft_for_land edits
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: not needed -- fix stays within existing docstrings, no new frob:doc anchor
+    added
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: src/frob/tickets/_land.py
+  reason: 'root cause is narrower than expected: allocator_lock (T-1253) already exists
+    in _store.py but was never wired into finalize_draft/finalize_draft_for_land --
+    no _land.py edit needed, and it collides with T-2076''s live lease there'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tickets/T-2079/**
+  reason: the follow-up draft this ticket filed for the OWNERSHIP half needs to be
+    committed as part of this ticket's own change set
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace::test_promote_and_land_finalize_never_allocate_the_same_id
+designated_repro_test: tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace::test_promote_and_land_finalize_never_allocate_the_same_id
 threat: null
 component: null
 anchor: false

@@ -18,12 +18,15 @@ exercised, then asserting both tickets' blocks survive either way.
 
 from __future__ import annotations
 
+import shutil
 import threading
 from datetime import date
 from pathlib import Path
 
+import pytest
 from typani.result import Result
 
+import frob.tickets._draft_finalize
 from frob.tickets import (
     Origin,
     Priority,
@@ -34,6 +37,7 @@ from frob.tickets import (
     TicketState,
     archive,
     finalize_draft,
+    finalize_draft_for_land,
     load_all,
     new_ticket,
     renumber_one,
@@ -315,3 +319,132 @@ class TestFinalizeDraftAllocationRace:
         assert final_b in active_map, "draft_b's finalized block did not survive"
         assert draft_a not in active_map
         assert draft_b not in active_map
+
+
+# frob:ticket T-1669
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace.test_promote_and_land_finalize_never_allocate_the_same_id  # noqa: E501
+class TestPromoteVsLandFinalizeAllocationRace:
+    """T-1669: `finalize_draft` (the `frob ticket promote` / Tier-A auto-fix
+    path, always called against a single `root`) and `finalize_draft_for_land`
+    (the `frob ticket land` path, called against a WORKTREE with `root` as
+    its separate main-ledger view) are two DIFFERENT call paths that both
+    allocate a final `T-####` id. `TestFinalizeDraftAllocationRace` above
+    only proves the first path is race-free against ITSELF -- both calls in
+    that test share the same `ledger_lock(root)` span. It says nothing
+    about the second path, which reads `main_root`'s id ceiling WITHOUT
+    holding `main_root`'s `ledger_lock` at all (by design -- see
+    `finalize_draft_for_land`'s own docstring for why a worktree cannot
+    safely take main's `ledger_lock` across a git-tracked merge).
+
+    This is exactly the failure this drive measured for real (T-1669's own
+    body): a draft promoted directly on main via `frob ticket promote`
+    (or Tier-A's `fix_tick002_renumber`) racing a concurrent `frob ticket
+    land`'s own draft finalization can compute and claim the SAME next id,
+    each in its own tree (main vs. the landing worktree) -- so neither
+    write itself ever errors, and the collision only ever surfaces later,
+    as a squash-time refusal that forces a human/agent to hand-renumber
+    (measured twice in one land this session, T-2060 -- ids T-2041 and
+    T-2045 each claimed out from under it)."""
+
+    def test_promote_and_land_finalize_never_allocate_the_same_id(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        """Simulates the exact race: a `finalize_draft` call (promote) is
+        paused mid-critical-section (after it has computed its next id but
+        before it commits the rename) while a concurrent `finalize_draft_
+        for_land` call (land, against a SEPARATE worktree directory reading
+        the SAME main root) is given a window to run. Before T-1669's fix
+        (wiring `frob.tickets._store.allocator_lock` into both paths), the
+        land-side call has no lock forcing it to wait for the paused
+        promote call to finish and free the id it already claimed -- it
+        reads the same pre-write ceiling and computes the IDENTICAL final
+        id. After the fix, the land-side call blocks on `allocator_lock`
+        until promote's write completes, then computes the next id fresh."""
+        main_root = tmp_path_factory.mktemp("main")
+        worktree = tmp_path_factory.mktemp("worktree")
+
+        _seed_ticket(main_root, ticket_id="T-0050", state=TicketState.QUEUED)
+        draft_promote = f"{DRAFT_PREFIX}c0ffee01"
+        _seed_ticket(main_root, ticket_id=draft_promote, state=TicketState.DONE)
+
+        # worktree starts as a copy of main's ledger, plus its OWN local
+        # draft -- exactly the shape a real landing worktree has (its own
+        # draft, main's ledger merged in at warm-up).
+        shutil.copytree(main_root, worktree, dirs_exist_ok=True)
+        draft_land = f"{DRAFT_PREFIX}c0ffee02"
+        _seed_ticket(worktree, ticket_id=draft_land, state=TicketState.DONE)
+
+        entered = threading.Event()
+        release = threading.Event()
+        call_count = {"n": 0}
+
+        real_next_ticket_id = frob.tickets._draft_finalize._next_ticket_id
+
+        def _pausing_next_ticket_id(tickets: dict) -> str:
+            call_count["n"] += 1
+            computed = real_next_ticket_id(tickets)
+            if call_count["n"] == 1:
+                # This is the promote call: hold whatever critical section
+                # it is inside (locked or not) open long enough for a
+                # concurrent, unguarded land-side call to read the SAME
+                # pre-write ledger snapshot.
+                entered.set()
+                release.wait(timeout=_CONCURRENCY_TIMEOUT_S)
+            return computed
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(
+            "frob.tickets._draft_finalize._next_ticket_id",
+            _pausing_next_ticket_id,
+        )
+        try:
+            result_promote: Result[str, TicketError] | None = None
+            result_land: Result[str, TicketError] | None = None
+
+            def _run_promote() -> None:
+                nonlocal result_promote
+                result_promote = finalize_draft(main_root, draft_promote)
+
+            def _run_land() -> None:
+                nonlocal result_land
+                result_land = finalize_draft_for_land(
+                    worktree, draft_land, main_root
+                )
+
+            thread_promote = threading.Thread(target=_run_promote)
+            thread_land = threading.Thread(target=_run_land)
+
+            thread_promote.start()
+            assert entered.wait(timeout=_CONCURRENCY_TIMEOUT_S), (
+                "promote's finalize_draft never reached its id computation"
+            )
+
+            thread_land.start()
+            # Give the land-side call a real window to run to completion
+            # unguarded (pre-fix) while promote is still paused -- plenty
+            # of margin over the filesystem-only work either side does.
+            thread_land.join(timeout=2.0)
+            release.set()
+
+            thread_promote.join(timeout=_CONCURRENCY_TIMEOUT_S)
+            thread_land.join(timeout=_CONCURRENCY_TIMEOUT_S)
+        finally:
+            monkeypatch.undo()
+
+        assert not thread_promote.is_alive()
+        assert not thread_land.is_alive()
+
+        assert result_promote is not None and result_promote.is_ok, (
+            result_promote.err if result_promote is not None else None
+        )
+        assert result_land is not None and result_land.is_ok, (
+            result_land.err if result_land is not None else None
+        )
+        final_promote = result_promote.danger_ok
+        final_land = result_land.danger_ok
+
+        assert final_promote != final_land, (
+            "finalize_draft (promote) and finalize_draft_for_land (land) "
+            f"allocated the SAME final id ({final_promote!r}) against the "
+            "same main root -- the exact T-2060 collision (T-1669)"
+        )
