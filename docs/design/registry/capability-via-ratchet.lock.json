@@ -146,9 +146,9 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 1,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 2,
+      "reason": "T-2001 auto-baseline: this land's own diff grew env.read on testsuite from 0 to 2 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "testsuite::eval": {
       "accepted_count": 15,
@@ -156,8 +156,8 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 164,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 0 to 164 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 165,
+      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 0 to 165 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::fetch_url": {
@@ -176,8 +176,8 @@
       "ticket": "T-2001"
     },
     "testsuite::fs.write": {
-      "accepted_count": 309,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 0 to 309 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 310,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 0 to 310 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::install-hook": {

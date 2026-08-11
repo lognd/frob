@@ -156,6 +156,54 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         "the output.",
         None,
     ),
+    (
+        "handrolled-floor-count",
+        # The gap class MUST be `[^|;]*`, NOT `[^|;&]*` (T-2031's own
+        # near-miss, caught by running the positive case rather than
+        # eyeballing the regex): excluding `&` cannot cross the `2>&1`
+        # present in nearly every real `frob check` invocation, so a
+        # `[^|;&]*` version matches nothing while looking correct. A guard
+        # never exercised against a real input is indistinguishable from
+        # one that does not exist.
+        re.compile(_POS + r"frob +check\b[^|;]*\|[^|;]*\bgrep\b", re.M),
+        # Two SEPARATE backtick spans, deliberately: a single span
+        # containing both "frob check --json" AND a literal `|` reads to
+        # WIRE003's own alternation-splitting heuristic as `frob` followed
+        # by a `|`-delimited verb list, misreading the shell pipe as a
+        # glob-alternation separator and flagging "python3"/"scripts" as
+        # unresolved frob verbs. Splitting the pipe out of the "frob"
+        # backtick span sidesteps that false positive entirely.
+        "Prefer `uv run frob check --json` piped into "
+        "`python3 scripts/check_summary.py` "
+        "over counting findings with a grep pipeline. `frob check --json` "
+        "nests severity two levels deep (results[].diagnostics[].severity, "
+        "NOT a top-level findings list); reading it at the wrong level -- or "
+        "losing the real exit code behind a pipeline -- has already produced "
+        "two false '0 errors' reports. check_summary.py encodes the correct "
+        "traversal once instead of re-deriving it inline.",
+        # Already piping into check_summary.py IS the fix -- do not nudge it.
+        re.compile(r"check_summary\.py"),
+    ),
+    (
+        "handrolled-fleet-probe",
+        # Two lookaheads, order-independent: fires only when a root-
+        # dirtiness check (`git status --porcelain`) is COMBINED with a
+        # liveness/land-in-flight probe (`ps aux`, `pgrep`, or `git
+        # worktree list`) in the same command -- either alone is routine
+        # hygiene (criterion 7) and must stay quiet.
+        re.compile(
+            r"(?=.*git +status +--porcelain)"
+            r"(?=.*(?:ps +aux\b|pgrep\b|git +worktree +list\b))",
+            re.M | re.S,
+        ),
+        "Prefer `python3 scripts/fleet_status.py` over hand-rolling root "
+        "cleanliness / land-in-flight / worktree-liveness with separate "
+        "git status / ps aux / pgrep / git worktree list calls. It answers "
+        "'is it safe to dispatch, and which worktrees are actually idle?' "
+        "in one invocation instead of several hand-derived ones.",
+        # Already invoking fleet_status.py IS the fix -- do not nudge it.
+        re.compile(r"fleet_status\.py"),
+    ),
 ]
 
 

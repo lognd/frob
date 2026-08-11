@@ -2,7 +2,7 @@
 id: T-2033
 title: Extend frob-suggest to cover hand-rolled coordinator measurement (successor
   to T-2031, dropped in error)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -11,8 +11,42 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- .claude/hooks/frob-suggest.py
+- tests/test_hook_frob_suggest.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/frob-suggest.py
+  reason: successor to T-2031 (dropped in error); core hook/test/design scope
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/test_hook_frob_suggest.py
+  reason: successor to T-2031 (dropped in error); core hook/test/design scope
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: design/frob.strata
+  reason: successor to T-2031 (dropped in error); core hook/test/design scope
+  actor: logan
+  at: '2026-08-10'
+evidence:
+- tests/test_hook_frob_suggest.py::test_check_count_pipeline_is_blocked_naming_check_summary
+- tests/test_hook_frob_suggest.py::test_fleet_probe_combo_is_blocked_naming_fleet_status
+- tests/test_hook_frob_suggest.py::test_fleet_probe_combo_with_worktree_list_is_blocked
+- tests/test_hook_frob_suggest.py::test_fleet_probe_combo_with_pgrep_is_blocked
+- tests/test_hook_frob_suggest.py::test_second_identical_check_pipeline_is_allowed_through
+- tests/test_hook_frob_suggest.py::test_second_identical_fleet_probe_is_allowed_through
+- tests/test_hook_frob_suggest.py::test_plain_check_only_gates_is_not_blocked
+- tests/test_hook_frob_suggest.py::test_check_piped_to_tail_only_is_not_blocked
+- tests/test_hook_frob_suggest.py::test_git_grep_piped_to_grep_is_not_blocked_by_new_rules
+- tests/test_hook_frob_suggest.py::test_plain_git_status_porcelain_is_not_blocked
+- tests/test_hook_frob_suggest.py::test_bare_ps_aux_grep_alone_is_not_blocked
+- tests/test_hook_frob_suggest.py::test_check_summary_invocation_itself_is_not_blocked
+- tests/test_hook_frob_suggest.py::test_fleet_status_invocation_itself_is_not_blocked
 designated_repro_test: null
 threat: null
 component: null
