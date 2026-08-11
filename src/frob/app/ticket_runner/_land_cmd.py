@@ -1897,7 +1897,7 @@ def _finish_land_after_success(
         # for no benefit. The common series-worktree case (no `--finish`,
         # more tickets to land in the same worktree next) is exactly the
         # case this closes.
-        _auto_rebase_worktree_onto_main(root, worktree, cfg.ticket_id)
+        _auto_sync_worktree_onto_main(root, worktree, cfg.ticket_id)
         return
     # T-1910: `verified` is always True by this point -- the unconditional
     # `sys.exit(1)` above already handled the False case for every caller,
@@ -1936,47 +1936,125 @@ def _finish_land_after_success(
 
 
 # frob:ticket T-1720
-# frob:doc docs/modules/tickets.md#auto-rebase-after-a-successful-land-t-1720
-# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoRebaseWorktreeOntoMain.test_rebases_the_worktree_onto_the_new_main_tip  # noqa: E501
-# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoRebaseWorktreeOntoMain.test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land  # noqa: E501
-def _auto_rebase_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) -> None:
-    """T-1720: `git rebase <main>` `worktree`'s own branch onto the main
-    tip THIS land just produced, best-effort -- closes the repeated,
-    by-hand `git rebase main` every multi-ticket series worktree agent
+# frob:ticket T-2173
+# frob:doc \
+# docs/modules/tickets.md#auto-sync-after-a-successful-land-t-1720-rebase-replaced-by-m\
+# erge-in-t-2173
+# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_merges_the_worktree_onto_the_new_main_tip  # noqa: E501
+# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land  # noqa: E501
+# frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_dirty_worktree_is_skipped_rather_than_merged_into  # noqa: E501
+def _auto_sync_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) -> None:
+    """T-1720/T-2173: `git merge <main>` `worktree`'s own branch onto the
+    main tip THIS land just produced, best-effort -- closes the repeated,
+    by-hand `git merge main` every multi-ticket series worktree agent
     performed after each successful land in this session (T-1720's own
-    evidence: six for six lands, same manual recipe every time), before
-    starting the next ticket in the same worktree.
+    original evidence: six for six lands, same manual recipe every time),
+    before starting the next ticket in the same worktree.
 
-    ORDERING (T-1932's own finding, applied here): this MUST run only
-    AFTER `_finish_land_after_success` has already confirmed `verified=
-    True` from `_print_land_proof` -- never before. `_print_land_proof`'s
-    ancestry/state check reads `root`'s own `main` ref and the just-
-    landed commit; this rebase only rewrites `worktree`'s OWN branch
-    history and never touches `root` at all, so it cannot retroactively
-    invalidate that already-run guard's verdict. Nothing inside THIS same
-    `frob ticket land` invocation re-reads the worktree's rewritten
-    history afterward, so the rebase introduces no NEW guard for a LATER
-    mutation in this call to defeat either -- it is the last thing this
-    function does. A future caller that adds a check AFTER this point
-    that re-reads `worktree`'s branch state must reason about this
-    mutation the same way T-1932 asks every land-path guard to.
+    T-2173: this was `git rebase` from T-1720 through most of this
+    session, and was renamed/rewritten here after that rebase failed
+    identically on FOUR separate lands in one day, across three different
+    worktrees (`t-2107`, `t-2129` twice, `t2132-t1966`), every single time
+    conflicting on a ledger file -- and every single time a plain,
+    by-hand `git merge main` cleared what the rebase could not. Two
+    candidate mechanisms were investigated and both were tested directly
+    rather than assumed:
+
+    1. FALSIFIED: "the `tickets.md`/`tickets-archive.md` `merge=frob-
+       ledger` driver (`.gitattributes`) is only invoked by `git merge`,
+       not `git rebase`'s internal per-commit replay." Tested directly
+       with a real registered driver on a throwaway file: `git merge` and
+       `git rebase` both invoked it identically (same output, both
+       succeeded, no conflict either way). Git DOES invoke a registered
+       merge driver during rebase's replay -- this was never the actual
+       mechanism.
+    2. CONFIRMED: the classic "rebase a branch after its own content was
+       already squash-merged" conflict class, independent of any merge
+       driver. Reproduced directly with NO driver registered at all: a
+       worktree branch making several separate commits that walk one
+       file through a sequence of states (mirroring the auto-commits
+       `frob ticket scope`/`start`/`evidence`/`done-report` each make --
+       queued -> planned -> in-progress -> done), then `main` receiving
+       the SAME final state as ONE squash-applied commit (exactly what
+       `frob ticket land`'s own squash-apply does) -- `git merge` from
+       the worktree branch: exit 0, correct content, no conflict (one
+       3-way diff of final-vs-final finds nothing real to resolve).
+       `git rebase main` from the same branch: CONFLICT on the FIRST
+       replayed commit, even though the two branches' FINAL content is
+       byte-identical -- rebase replays each of the worktree's original,
+       now-superseded intermediate commits one at a time against main's
+       already-final post-squash tip, and the first one disagrees with
+       that final state on its own terms. This is deterministic, not a
+       race -- it explains why the failure showed up on every affected
+       land, not occasionally: every `frob ticket land` squash-applies.
+
+    `git merge` is structurally immune to (2) by construction (single
+    3-way diff of final states); `git rebase` is structurally exposed to
+    it. That is the actual fix shape T-2173 ships -- not a workaround for
+    driver reachability, which was never broken.
+
+    ORDERING (T-1932's own finding, applied here, unchanged from T-1720):
+    this MUST run only AFTER `_finish_land_after_success` has already
+    confirmed `verified=True` from `_print_land_proof` -- never before.
+    `_print_land_proof`'s ancestry/state check reads `root`'s own `main`
+    ref and the just-landed commit; this merge only mutates `worktree`'s
+    OWN branch and never touches `root` at all, so it cannot
+    retroactively invalidate that already-run guard's verdict. Nothing
+    inside THIS same `frob ticket land` invocation re-reads the
+    worktree's branch state afterward, so this introduces no NEW guard
+    for a LATER mutation in this call to defeat either -- it is the last
+    thing this function does.
+
+    T-2173: only attempts the merge when `worktree` is CLEAN (`git status
+    --porcelain` reports nothing) -- merging into a dirty worktree can
+    destroy an agent's own uncommitted in-progress edits, and this
+    function has no way to tell "safe to auto-sync" apart from "an agent
+    is mid-diagnosis in this worktree right now" the same way a human
+    operator checking by hand would need to. A dirty worktree (or a
+    failed cleanliness check itself) is skipped silently at DEBUG,
+    matching this function's existing detached-HEAD/no-resolvable-`main`
+    skip posture from T-1720 -- never a failure, since the land itself
+    already succeeded regardless of whether this best-effort step runs
+    at all.
 
     Best-effort, never fails the overall `frob ticket land` invocation
     (the land itself already succeeded and is durable on `main` by the
-    time this runs) -- a real conflict aborts the rebase immediately
-    (`git rebase --abort`), restoring `worktree` to its exact pre-rebase
+    time this runs) -- a real conflict aborts the merge immediately
+    (`git merge --abort`), restoring `worktree` to its exact pre-merge
     state, and logs a WARNING naming the ticket and worktree for manual
-    resolution, rather than leaving the branch mid-rebase (a half-
-    mutated worktree is exactly the kind of state a LATER guard -- e.g.
-    the next ticket's own T-1922 committed-waive-deletion scan, or its
-    pre-work sweep -- could misread). A worktree not on a real branch
-    (detached HEAD) or with no resolvable `main` branch name is skipped
-    silently -- neither is this function's problem to fix."""
+    resolution, rather than leaving the branch mid-merge (a half-mutated
+    worktree is exactly the kind of state a LATER guard -- e.g. the next
+    ticket's own T-1922 committed-waive-deletion scan, or its pre-work
+    sweep -- could misread). A worktree not on a real branch (detached
+    HEAD) or with no resolvable `main` branch name is skipped silently --
+    neither is this function's problem to fix. The merge commit itself
+    runs under `_land_internal_git_env()` (T-0731) since `main`'s
+    post-land tip can carry a REL001 version bump the scaffolded pre-
+    commit hook would otherwise refuse a worktree commit touching."""
     branch = _worktree_branch_name(root, worktree)
     if branch is None:
         _log.debug(
-            "ticket land: %s auto-rebase skipped -- %s is not on a "
+            "ticket land: %s auto-sync skipped -- %s is not on a "
             "named branch (detached HEAD)",
+            ticket_id,
+            worktree,
+        )
+        return
+    dirty = run_argv(["git", "-C", str(worktree), "status", "--porcelain"])
+    if dirty.is_err or dirty.danger_ok.returncode != 0:
+        _log.warning(
+            "ticket land: %s auto-sync skipped -- could not check %s's "
+            "cleanliness, refusing to merge into an unknown state",
+            ticket_id,
+            worktree,
+        )
+        return
+    if dirty.danger_ok.stdout.strip():
+        _log.debug(
+            "ticket land: %s auto-sync skipped -- %s has uncommitted "
+            "changes; merging into a dirty worktree risks destroying "
+            "in-progress work, resolve with a manual `git merge main` "
+            "there once it is clean",
             ticket_id,
             worktree,
         )
@@ -1984,17 +2062,19 @@ def _auto_rebase_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) 
     main_ref = run_argv(["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"])
     if main_ref.is_err or main_ref.danger_ok.returncode != 0:
         _log.warning(
-            "ticket land: %s auto-rebase skipped -- could not resolve "
+            "ticket land: %s auto-sync skipped -- could not resolve "
             "%s's current branch name",
             ticket_id,
             root,
         )
         return
     main_branch = main_ref.danger_ok.stdout.strip()
-    rebased = run_argv(["git", "-C", str(worktree), "rebase", main_branch])
-    if rebased.is_ok and rebased.danger_ok.returncode == 0:
+    merge_argv = ["git", "-C", str(worktree), "merge", "--no-edit", main_branch]
+    with _land_internal_git_env():
+        merged = run_argv(merge_argv)
+    if merged.is_ok and merged.danger_ok.returncode == 0:
         _log.info(
-            "ticket land: %s auto-rebased %s (branch %s) onto %s (T-1720)",
+            "ticket land: %s auto-synced %s (branch %s) onto %s (T-1720/T-2173)",
             ticket_id,
             worktree,
             branch,
@@ -2002,18 +2082,19 @@ def _auto_rebase_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) 
         )
         return
     _log.warning(
-        "ticket land: %s auto-rebase onto %s failed or conflicted in %s -- "
-        "aborting the rebase (T-1720 is best-effort, never fails an "
-        "already-successful land) and leaving the worktree exactly as it "
-        "was before this attempt; resolve with a manual `git rebase %s` "
-        "in %s before starting the next ticket there",
+        "ticket land: %s auto-sync (merge) with %s failed or conflicted in "
+        "%s -- aborting the merge (T-1720/T-2173 is best-effort, never "
+        "fails an already-successful land) and leaving the worktree "
+        "exactly as it was before this attempt; resolve with a manual "
+        "`git merge %s` in %s before starting the next ticket there",
         ticket_id,
         main_branch,
         worktree,
         main_branch,
         worktree,
     )
-    run_argv(["git", "-C", str(worktree), "rebase", "--abort"])
+    with _land_internal_git_env():
+        run_argv(["git", "-C", str(worktree), "merge", "--abort"])
 
 
 # frob:ticket T-1619

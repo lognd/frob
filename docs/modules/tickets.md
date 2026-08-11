@@ -3969,9 +3969,9 @@ preflight sequence should copy this same shape (self-delegating
 re-invocation, called after `_land_merge_stage`, pinned by an equivalent
 source-order test) until the generic registry exists.
 
-## Auto-rebase after a successful land (T-1720)
+## Auto-sync after a successful land (T-1720, rebase replaced by merge in T-2173)
 
-<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_auto_rebase_worktree_onto_main -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_auto_sync_worktree_onto_main -->
 
 Every land performed across two multi-ticket series worktrees in one
 measured session hit the same sequence: land a ticket successfully
@@ -3982,33 +3982,71 @@ step commits for that already-landed work are still present on its
 branch, and the branch has not moved to `main`'s new (squashed) tip, so
 `git diff main` for those files looks non-empty even though the content
 is byte-identical. Resolved by hand, every single time (six for six),
-with `git rebase main` before starting the next ticket.
+with `git merge main` before starting the next ticket.
 
-`frob ticket land` now does this automatically: `_auto_rebase_worktree_
-onto_main` runs `git rebase <main>` in the worktree right after a real
+`frob ticket land` does this automatically: `_auto_sync_worktree_
+onto_main` merges `<main>` into the worktree right after a real
 (non-`--dry-run`) land, but only when `--finish`/`--retire-on-proof` was
 NOT passed (a worktree about to be removed by `_finish_worktree` gains
-nothing from being rebased first, and only takes on the same small
+nothing from being synced first, and only takes on the same small
 conflict-abort risk for no benefit).
 
-ORDERING (T-1932's own finding, applied here): the rebase runs strictly
-AFTER `_print_land_proof` has already confirmed `verified=True`. That
-check reads `root`'s own `main` ref and the just-landed commit sha,
-neither of which a rebase of the WORKTREE's own branch touches -- so
-placing the mutation after that guard means it cannot retroactively
-invalidate a verdict the guard already reached. Nothing later in the same
-`frob ticket land` invocation re-reads the worktree's rewritten history,
-so this mutation introduces no new guard for a later step to defeat
-either -- it is the last thing the successful-land path does.
+T-2173: T-1720's original implementation used `git rebase <main>`, not
+`git merge`. That rebase failed identically on four separate real lands
+in one day, across three different worktrees, every time conflicting on
+a ledger file, every time cleared by a by-hand `git merge main` instead.
+Two candidate mechanisms were investigated and TESTED DIRECTLY rather
+than assumed:
+
+1. **Falsified**: "the `tickets.md`/`tickets-archive.md` `merge=frob-
+   ledger` driver (`.gitattributes`) is only invoked by `git merge`, not
+   by `git rebase`'s internal per-commit replay." A real registered
+   driver on a throwaway file was invoked identically by both `git merge`
+   and `git rebase` -- this was never the actual mechanism.
+2. **Confirmed**: the classic "rebase a branch after its own content was
+   already squash-merged" conflict class, independent of any merge
+   driver. Reproduced directly with no driver registered at all: a
+   worktree branch making several separate commits that walk one file
+   through a sequence of states (mirroring the auto-commits `frob ticket
+   scope`/`start`/`evidence`/`done-report` each make), then `main`
+   receiving the SAME final state as ONE squash-applied commit (exactly
+   what `frob ticket land`'s own squash-apply does) -- `git merge` from
+   the worktree branch succeeds with no conflict (one 3-way diff of
+   final-vs-final finds nothing real to resolve); `git rebase main` from
+   the same branch conflicts on the FIRST replayed commit, even though
+   the two branches' final content is byte-identical, because rebase
+   replays each of the worktree's original, now-superseded intermediate
+   commits one at a time against main's already-final post-squash tip.
+   This is deterministic, not a race -- every `frob ticket land` squash-
+   applies, so this fired on every affected land, not occasionally.
+
+`git merge` is structurally immune to (2) by construction; `git rebase`
+is structurally exposed to it, regardless of merge drivers.
+
+ORDERING (T-1932's own finding, applied here, unchanged by T-2173): the
+merge runs strictly AFTER `_print_land_proof` has already confirmed
+`verified=True`. That check reads `root`'s own `main` ref and the just-
+landed commit sha, neither of which a merge of the WORKTREE's own branch
+touches -- so placing the mutation after that guard means it cannot
+retroactively invalidate a verdict the guard already reached. Nothing
+later in the same `frob ticket land` invocation re-reads the worktree's
+branch state, so this mutation introduces no new guard for a later step
+to defeat either -- it is the last thing the successful-land path does.
+
+T-2173: the merge only runs when the worktree is CLEAN (`git status
+--porcelain` empty) -- merging into a dirty worktree risks destroying an
+agent's own uncommitted in-progress edits, which this function cannot
+distinguish from "safe to auto-sync" any more reliably than a human
+operator checking by hand would need to. A dirty worktree is skipped
+silently, same posture as the existing detached-HEAD/no-resolvable-
+`main` skips.
 
 Best-effort, never fails an already-successful land: a real conflict
-(not merely "patch already upstream", which `git rebase` drops on its
-own) aborts immediately (`git rebase --abort`), restores the worktree to
-its exact pre-rebase state, and logs a WARNING naming the ticket and
-worktree for manual resolution -- never left mid-rebase, which would
-otherwise hand a LATER guard (the next ticket's own T-1922 committed-
-waive-deletion scan, or its pre-work sweep) a half-mutated worktree to
-reason about.
+aborts immediately (`git merge --abort`), restores the worktree to its
+exact pre-merge state, and logs a WARNING naming the ticket and worktree
+for manual resolution -- never left mid-merge, which would otherwise hand
+a LATER guard (the next ticket's own T-1922 committed-waive-deletion
+scan, or its pre-work sweep) a half-mutated worktree to reason about.
 
 ## OutOfScopeWaiveDeletion false-refusal on a stale worktree (T-1922)
 
