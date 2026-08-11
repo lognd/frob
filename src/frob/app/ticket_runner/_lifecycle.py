@@ -190,7 +190,9 @@ def _refuse_if_terminal(root: Path, ticket_id: str, ticket) -> None:  # noqa: AN
     sys.exit(1)
 
 
-def _refuse_if_foreign_live_lease(root: Path, ticket_id: str, *, steal: bool) -> None:
+def _refuse_if_foreign_live_lease(
+    root: Path, ticket_id: str, *, steal: bool, scope: tuple[str, ...] = ()
+) -> None:
     """`sys.exit(1)` if `ticket_id` holds a LIVE lease pinned to a worktree
     other than `root`, unless `steal` is set (T-0835 -- the double-dispatch
     fix). A lease pinned to `root` itself is idempotent (no refusal, so a
@@ -199,19 +201,30 @@ def _refuse_if_foreign_live_lease(root: Path, ticket_id: str, *, steal: bool) ->
     that is the existing dead-agent recovery path (T-0782/T-0476) and must
     stay intact.
 
-    Stealing does not itself rewrite the lease file: the caller's own
-    `transition(..., TicketState.IN_PROGRESS)` call (via `_sync_cross_
-    worktree_lease`) already re-`record_lease`s pinned to `root`
-    unconditionally, which overwrites the stolen worktree's file in place --
-    reusing that existing machinery rather than inventing a second lease
-    write path. The losing worktree's OWN lease is gone the moment this
-    returns, so its later `resolve_lease`/`ticket_lease_pin` (`frob check
-    --ticket`, `frob ticket close`) fails against the new content, exactly
-    the "cannot silently land" property T-0835 requires."""
+    T-2103: a genuine `--steal` now re-`record_lease`s pinned to `root`
+    RIGHT HERE, before returning, rather than only relying on the
+    caller's later `transition(..., TicketState.IN_PROGRESS)` call (via
+    `_sync_cross_worktree_lease`) to do it. That later re-pin still
+    happens too (harmlessly idempotent -- `record_lease` unconditionally
+    overwrites), but `_start`'s own `_auto_plan_if_queued` step writes the
+    ticket (queued -> planned) BEFORE reaching the `IN_PROGRESS`
+    transition, and T-2079's `enforce_ticket_ownership` now gates every
+    such write -- so without repinning here first, that intermediate
+    write is refused against the STALE (still foreign) lease before the
+    steal it is part of ever takes effect, breaking `--steal` entirely.
+    `scope` is threaded through only so this early re-pin has something
+    to record (`record_lease`'s own contract); it degrades to an empty
+    scope tuple if the caller cannot supply one, matching a lease's
+    already-optional scope field elsewhere in this module. The losing
+    worktree's OWN lease is gone the moment this returns, so its later
+    `resolve_lease`/`ticket_lease_pin` (`frob check --ticket`, `frob
+    ticket close`) fails against the new content, exactly the "cannot
+    silently land" property T-0835 requires."""
     from frob.tickets._leases import (
         is_lease_ttl_expired,
         lease_age_seconds,
         read_all_leases,
+        record_lease,
     )
 
     record = next((r for r in read_all_leases(root) if r.ticket_id == ticket_id), None)
@@ -233,6 +246,7 @@ def _refuse_if_foreign_live_lease(root: Path, ticket_id: str, *, steal: bool) ->
             age_desc,
             ticket_id,
         )
+        record_lease(root, ticket_id, scope)
         return
     _log.error(
         "ticket start failed: %s has a live lease held by worktree %s "
@@ -662,7 +676,9 @@ def _start(root: Path, cfg: AppConfig) -> None:
 
     ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="start")
     _refuse_if_terminal(root, cfg.ticket_id, ticket)
-    _refuse_if_foreign_live_lease(root, cfg.ticket_id, steal=cfg.ticket_steal)
+    _refuse_if_foreign_live_lease(
+        root, cfg.ticket_id, steal=cfg.ticket_steal, scope=ticket.scope
+    )
 
     if ticket.state == TicketState.IN_PROGRESS:
         _log.error(

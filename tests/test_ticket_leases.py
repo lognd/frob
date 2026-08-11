@@ -3383,6 +3383,15 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
         },
         "priority": {"ticket_id": "T-0001", "ticket_priority_level": "high"},
         "kind": {"ticket_id": "T-0001", "ticket_kind_value": "feature"},
+        # T-2103: `anchor` (T-1867's CLI wiring for T-1856's set_anchor
+        # primitive) forwards straight to a ticket write, the same shape
+        # as `priority`/`kind` directly above -- it belongs in this dict,
+        # not in a new bucket.
+        "anchor": {
+            "ticket_id": "T-0001",
+            "ticket_anchor_set": True,
+            "ticket_anchor_reason": "T-2103 dispatch-table coverage",
+        },
         "component": {"ticket_id": "T-0001", "ticket_component": "mycomp"},
         "label": {"ticket_id": "T-0001", "ticket_label_add": ["urgent"]},
         "accept": {

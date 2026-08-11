@@ -962,10 +962,22 @@ def enforce_ticket_ownership(root: Path, ticket_id: str) -> Result[None, TicketE
       with no `.git`, matching `enforce_worktree_lease`'s own degrade-
       quietly contract) -- "cannot resolve a git root" is `frob.gitio`'s
       concern, not this guard's; it only ever ADDS a refusal on top of an
-      otherwise-resolvable root."""
-    holder = lease_holder_worktree(root, ticket_id)
-    if holder is None:
+      otherwise-resolvable root.
+    - `ticket_id`'s recorded lease is EXPIRED (`is_lease_ttl_expired`) --
+      T-2103: the ORIGINAL T-0782/T-0476 dead-agent recovery path (a
+      second worktree may `start` a ticket whose prior holder's lease
+      has aged out, no `--steal` required) predates this guard and must
+      stay intact; `_refuse_if_foreign_live_lease` in
+      `frob.app.ticket_runner._lifecycle` already applies this exact
+      check before refusing, and this guard must agree with it rather
+      than re-refusing what that check already decided was safe to
+      proceed past."""
+    record = next(
+        (r for r in read_all_leases(root) if r.ticket_id == ticket_id), None
+    )
+    if record is None or is_lease_ttl_expired(record):
         return Ok(None)
+    holder = record.worktree
 
     actual = gitio.repo_root(root)
     if actual.is_err:
