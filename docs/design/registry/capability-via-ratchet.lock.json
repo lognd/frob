@@ -156,8 +156,8 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 169,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 168 to 169 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 171,
+      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 170 to 171 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::fetch_url": {
@@ -176,8 +176,8 @@
       "ticket": "T-2001"
     },
     "testsuite::fs.write": {
-      "accepted_count": 313,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 312 to 313 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 315,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 314 to 315 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::install-hook": {

@@ -1697,6 +1697,91 @@ def _resolve_land_root(root: Path, worktree: Path, ticket_id: str) -> Path:
     return resolved_root
 
 
+# frob:ticket T-2108
+def _ticket_terminal_state_on_main(root: Path, ticket_id: str) -> str | None:
+    """`ticket_id`'s `state:` on `root`'s own ledger if it is already a
+    TERMINAL state (done/dropped -- the same pair `_land_proof_checks`'s
+    own `state_ok` treats as terminal, T-2108), else `None`. `root` is
+    always the primary checkout by the time this is called (`_land`
+    resolves it via `_resolve_land_root` first), so this reads the SAME
+    ledger `_land_proof_checks` reads post-land, just before any land
+    attempt this call might otherwise make. Reuses `frob.tickets.
+    load_all`, the same ledger-load primitive `_land_proof_checks` already
+    uses for its own `state_desc` -- no separate parse path to keep in
+    sync. `None` on a load failure or an unknown/non-terminal state (the
+    overwhelmingly common `--finish` case: a ticket that genuinely still
+    needs to land)."""
+    from frob.tickets import TicketState, load_all
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return None
+    ticket = loaded.danger_ok.get(ticket_id)
+    if ticket is None:
+        return None
+    terminal = {TicketState.DONE.value, TicketState.DROPPED.value}
+    return ticket.state.value if ticket.state.value in terminal else None
+
+
+# frob:ticket T-2108
+# frob:tests tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded.test_terminal_on_main_skips_land_core_and_cleans_up  # noqa: E501
+# frob:tests tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded.test_non_terminal_on_main_runs_the_normal_land  # noqa: E501
+def _finish_only_if_already_landed(root: Path, worktree: Path, cfg: AppConfig) -> bool:
+    """T-2108: `frob ticket land <id> --finish` on a ticket ALREADY
+    terminal on `main` (a prior invocation of this same worktree's own
+    land already succeeded -- e.g. it died between the commit and the
+    worktree-removal cleanup, or a coordinator closed it directly on
+    `main`) used to re-run the FULL land pipeline anyway, including a
+    fresh BUG002 repro re-check of the ticket's designated repro test --
+    which now genuinely PASSES against `main`'s new parent (the fix is
+    already there), so BUG002 refuses a land that has nothing left to do,
+    every single time, burning a full merge+verify cycle to rediscover
+    what `_ticket_terminal_state_on_main` answers in one ledger read.
+
+    Returns `True` (and has ALREADY performed the pure-cleanup finish:
+    worktree removal, plus branch deletion for `--retire-on-proof`) when
+    `cfg.ticket_id` is terminal on `main` -- the caller (`_land`) must
+    return immediately without calling `_land_core` at all. Returns
+    `False` (no side effect) for the ordinary case, a ticket that
+    genuinely still needs to land -- the caller proceeds exactly as
+    before this fix.
+
+    Deliberately does NOT reuse the T-1845 land-finish-pending marker
+    machinery: that marker exists to make an INTERRUPTED mutation
+    recoverable/idempotent for a land this same invocation just
+    performed; this path performs no mutation of `main` at all, so there
+    is nothing for a marker to make safe to retry. A cleanup failure here
+    (a wedged worktree, a live process) is reported by the same `_finish_
+    worktree` used on the normal path, with the same remedy."""
+    assert cfg.ticket_id is not None  # narrows for the type checker; caller enforces
+    state = _ticket_terminal_state_on_main(root, cfg.ticket_id)
+    if state is None:
+        return False
+    _log.info(
+        "ticket land --finish: %s is already '%s' on main -- skipping a "
+        "full re-land (T-2108: a prior land already succeeded, or the "
+        "ticket was closed directly) and running pure cleanup only",
+        cfg.ticket_id,
+        state,
+    )
+    branch = (
+        _worktree_branch_name(root, worktree)
+        if cfg.ticket_land_retire_on_proof
+        else None
+    )
+    _finish_worktree(
+        root,
+        worktree,
+        cfg.ticket_id,
+        force=cfg.ticket_force,
+        force_reason=cfg.ticket_force_reason,
+        force_reason_file=cfg.ticket_force_reason_file,
+    )
+    if cfg.ticket_land_retire_on_proof and branch is not None:
+        _delete_worktree_branch(root, branch, cfg.ticket_id)
+    return True
+
+
 # frob:ticket T-1175
 # frob:ticket T-1715
 # frob:ticket T-1845
@@ -2749,6 +2834,13 @@ def _land(root: Path, cfg: AppConfig) -> None:
     # only one `root` for the whole call, and it is always the real
     # primary checkout.
     root = _resolve_land_root(root, worktree, cfg.ticket_id)
+
+    # frob:ticket T-2108
+    if (
+        cfg.ticket_land_finish or cfg.ticket_land_retire_on_proof
+    ) and not cfg.ticket_dry_run:
+        if _finish_only_if_already_landed(root, worktree, cfg):
+            return
 
     result = _land_core(root, cfg)
     if result.is_err:

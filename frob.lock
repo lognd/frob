@@ -206,6 +206,42 @@
       "old_digest": null,
       "reason": "T-1952: T-1720's lease has freed; digests re-verified, doc content already matches T-1935's wording change",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "body",
+      "new_digest": "12e44c5052391dba59199e7e391f561cbf341050b61113fb8a0faa58e392a02e",
+      "old_digest": null,
+      "reason": "T-2108: new symbols, doc anchor added same change",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "sig",
+      "new_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "old_digest": null,
+      "reason": "T-2108: new symbols, doc anchor added same change",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "body",
+      "new_digest": "7b525742fc7823078612465164dd729f49b20dd5fecd3f997d80e02be23b7020",
+      "old_digest": null,
+      "reason": "T-2108: new symbols, doc anchor added same change",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-11",
+      "facet": "sig",
+      "new_digest": "bf68a9348364104588293bc5afaa01f7fa844975684f004e41057a2cb69c65e2",
+      "old_digest": null,
+      "reason": "T-2108: new symbols, doc anchor added same change",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
     }
   ],
   "entries": [
@@ -233,6 +269,26 @@
       "digest": "feddd2674eac3495c45aefd9525e8875be254ac4e52b710b4e505b57214186f0",
       "facet": "sig",
       "ref": "src/frob/app/telemetry.py::usage_report"
+    },
+    {
+      "digest": "12e44c5052391dba59199e7e391f561cbf341050b61113fb8a0faa58e392a02e",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "digest": "7b525742fc7823078612465164dd729f49b20dd5fecd3f997d80e02be23b7020",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
+    },
+    {
+      "digest": "bf68a9348364104588293bc5afaa01f7fa844975684f004e41057a2cb69c65e2",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
     },
     {
       "digest": "035a4e775b8231358a88b29bf40988f1612e1cd508f33301db6f1b49bcdc3004",
