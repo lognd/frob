@@ -3,7 +3,7 @@ id: T-2133
 title: 'No pre-dispatch readiness check: a coordinator cannot see that a ticket is
   leased, already implemented on another branch, or scope-divergent without three
   hand-rolled git probes'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-11'
