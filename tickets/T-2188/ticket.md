@@ -3,7 +3,7 @@ id: T-2188
 title: callgraph.py's build_call_graph/build_reference_graph/build_ordered_call_graph
   resolve cross-file private candidates by bare short name, unverified against imports
   -- same T-2156 mechanism, three unfixed consumers (COV006, DEAD001, PROTO001-005)
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-08-16'
