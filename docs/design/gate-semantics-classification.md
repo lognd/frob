@@ -110,6 +110,40 @@ under inspection.
 - (c) lexical and wrong: REF001 (T-1665, this epic). One adjacent
   symref-blast-radius defect filed as T-1683 (DEAD001/OPAQUE001).
 
+## Addendum (2026-08-16, post-survey findings)
+
+Two class-(c) defects surfaced AFTER this survey, both by construction it
+did not (and structurally could not) catch:
+
+- **T-2178**: `_debt_deprecated.py`'s `_looks_like_call` decides whether a
+  deprecated symbol is CALLED via a regex scan of raw source lines; its
+  own docstring admits it is "a lightweight textual heuristic, not a
+  parse." This module's DEBT/DEPR rule ids were classified (a) above --
+  wrong for this one function. Filed as T-2178.
+- **The callgraph substrate itself** (T-draft-385de2c7, filed by this
+  epic's decomposition pass): `build_call_graph`, `build_reference_
+  graph`, and `build_ordered_call_graph` resolve a cross-file candidate
+  for a private-symbol token by matching its BARE SHORT NAME against a
+  repo/package-wide index, with no import verification -- the identical
+  mechanism T-2156 found and fixed for exactly one consumer (verify
+  attribution, via the new `build_reference_graph_module_scoped`). Three
+  OTHER consumers of the original, unfixed functions inherit the same
+  false-edge risk: COV006 (`gates/__init__.py:3106`), DEAD001
+  (`_dead_symbols.py:759`), and PROTO001-005 (`_protocol_summary.py`).
+  Every one of these was classified (a) above -- correctly, from a
+  per-gate-module read (each does consume `frob.graph` edges, not raw
+  text) -- but the substrate producing those edges was never itself
+  audited. A module-granularity survey structurally cannot see a defect
+  one layer BELOW the module it is classifying; this is why this
+  addendum exists instead of a correction to the table above.
+
+Neither is a correction to the original classification method -- REF001,
+DEAD001/OPAQUE001's symref gap, and the class-(a) list above all still
+hold as classified. These are new information the epic's own directive
+(check every new gate rule and, per this finding, every substrate the
+gates build on) requires surfacing, not evidence the original pass was
+done wrong.
+
 ## Method note
 
 Classification was done at module granularity (one detection mechanism per
