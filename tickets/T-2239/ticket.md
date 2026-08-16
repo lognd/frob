@@ -2,7 +2,7 @@
 id: T-2239
 title: T-1433's .gitattributes CRLF-suppression glob does not match v2-mode nested
   attachment paths, breaking COV004 sha verification
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -16,7 +16,11 @@ scope:
 - tests/unit/test_gitattributes_merge.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_v2_nested_attachment_survives_checkout_unconverted
+- tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_v1_flat_attachment_still_covered
+- tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_unrelated_text_file_still_gets_autocrlf_conversion
+designated_repro_test: tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_v2_nested_attachment_survives_checkout_unconverted
 threat: null
 component: null
 anchor: false

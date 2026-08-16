@@ -157,3 +157,123 @@ class TestRapidDebtUnionMerge:
 
         text = (repo / "rapid-debt.jsonl").read_text()
         assert text.count('"commit": "cccccccc"') == 1
+
+
+@pytest.fixture
+def autocrlf_repo(tmp_path: Path) -> Path:
+    """A checkout carrying THIS repo's real `.gitattributes` (so the fixture
+    exercises the actual rule under test, not a hand-rewritten copy that
+    could silently drift from it) with `core.autocrlf=true` set LOCALLY on
+    this throwaway repo only -- never touching the real clone's config,
+    per T-2239's explicit "not a per-clone autocrlf=false fix" constraint.
+    autocrlf=true reproduces the exact CRLF-conversion-on-checkout behavior
+    T-1433/T-2239 exist to suppress."""
+    main_repo = tmp_path / "autocrlf-main"
+    _git_init(main_repo)
+    _run(["git", "config", "core.autocrlf", "true"], main_repo)
+    real_gitattributes = Path(__file__).parents[2] / ".gitattributes"
+    (main_repo / ".gitattributes").write_text(real_gitattributes.read_text())
+    _commit_all(main_repo, "init")
+    return main_repo
+
+
+class TestAttachmentCrlfSuppression:
+    """T-2239: T-1433's `.gitattributes` `-text` rule only matched the OLD
+    v1 flat attachment layout (`tickets/attachments/**`), never the v2
+    per-ticket nested layout (`tickets/<id>/attachments/**`) ledger v2
+    actually uses -- so v2 attachments were silently CRLF-converted on
+    checkout, desyncing their on-disk sha256 from the sha256 recorded at
+    attach time (LF content). Verified by REPRODUCTION: write an LF file,
+    commit it, force a real checkout-time filter pass (delete + `git
+    checkout --`, the same code path a fresh clone/checkout exercises,
+    not merely a read of the committed blob), and assert the byte content
+    -- and therefore its sha256 -- survives unconverted. A test that never
+    re-checks out the file would prove nothing, since `-text` only takes
+    effect on checkout, not on `git show`/`git add`.
+    """
+
+    @staticmethod
+    def _write_lf_file(repo: Path, rel_path: str, body: str) -> str:
+        """Write `body` as literal LF-terminated bytes at `rel_path` inside
+        `repo`, commit it, then force a checkout-time filter re-application
+        (delete the working-tree copy and `git checkout --` it back) --
+        the same path a fresh clone/checkout takes -- and return the
+        resulting on-disk sha256 hex digest."""
+        full = repo / rel_path
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_bytes(body.encode("utf-8"))
+        _commit_all(repo, f"add {rel_path}")
+
+        full.unlink()
+        _run(["git", "checkout", "--", rel_path], repo)
+
+        import hashlib
+
+        return hashlib.sha256(full.read_bytes()).hexdigest()
+
+    def test_v2_nested_attachment_survives_checkout_unconverted(
+        self, autocrlf_repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_v2\
+        # _nested_attachment_survives_checkout_unconverted
+        body = "line one\nline two\nline three\n"
+        import hashlib
+
+        expected_sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+        on_disk_sha = self._write_lf_file(
+            autocrlf_repo,
+            "tickets/T-9001/attachments/01-example.md",
+            body,
+        )
+
+        assert on_disk_sha == expected_sha, (
+            "v2-mode nested attachment path was CRLF-converted on checkout "
+            "despite the .gitattributes -text rule -- the exact T-2239 "
+            "regression this test guards against"
+        )
+
+    def test_v1_flat_attachment_still_covered(self, autocrlf_repo: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_v1\
+        # _flat_attachment_still_covered
+        """MUST-STILL-PASS control (T-2239): the OLD v1 flat layout the
+        original T-1433 rule targeted must remain covered after widening
+        the glob to also match v2 -- a fix that replaced rather than
+        extended coverage would silently regress it."""
+        body = "flat layout line one\nflat layout line two\n"
+        import hashlib
+
+        expected_sha = hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+        on_disk_sha = self._write_lf_file(
+            autocrlf_repo,
+            "tickets/attachments/T-9002/01-example.md",
+            body,
+        )
+
+        assert on_disk_sha == expected_sha, (
+            "v1-mode flat attachment path regressed -- no longer covered "
+            "by the .gitattributes -text rule"
+        )
+
+    def test_unrelated_text_file_still_gets_autocrlf_conversion(
+        self, autocrlf_repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_un\
+        # related_text_file_still_gets_autocrlf_conversion
+        """Negative control: a plain file OUTSIDE any attachments path is
+        NOT covered by the widened rule -- proves the glob is scoped to
+        attachments, not accidentally suppressing autocrlf repo-wide."""
+        full = autocrlf_repo / "some_unrelated_file.md"
+        full.write_bytes(b"line one\nline two\n")
+        _commit_all(autocrlf_repo, "add unrelated file")
+        full.unlink()
+        _run(["git", "checkout", "--", "some_unrelated_file.md"], autocrlf_repo)
+
+        assert b"\r\n" in full.read_bytes(), (
+            "unrelated file unexpectedly escaped autocrlf conversion -- "
+            "the attachment glob is too broad"
+        )

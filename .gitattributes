@@ -56,5 +56,12 @@
 /rapid-debt.jsonl merge=union
 /force-overrides.jsonl merge=union
 
-# T-1433 incident: attachment shas are byte-exact; CRLF conversion breaks COV004
+# T-1433 incident: attachment shas are byte-exact; CRLF conversion breaks COV004.
+# T-2239: T-1433's glob only matched the OLD v1 flat layout (tickets/attachments/**).
+# Ledger v2 stores attachments per-ticket (tickets/<id>/attachments/**), a path shape
+# the v1 glob never matches, so v2 attachments were still CRLF-converted on checkout,
+# desyncing their on-disk sha256 from the sha256 recorded at attach time (LF content).
+# Both layouts are covered here -- v1 attachments still exist on disk (tickets/
+# attachments/T-1433/...) and must not regress.
 tickets/attachments/** -text
+tickets/*/attachments/** -text
