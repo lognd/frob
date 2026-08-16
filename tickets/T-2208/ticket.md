@@ -17,6 +17,32 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'Measured: _file_regression_ticket (src/frob/app/ticket_runner/_rapid_sweep.py:1259)
+    files a regression ticket for a quarantine finding, and clear_quarantine is called
+    ONLY from src/frob/app/verify_runner.py and src/frob/app/ticket_runner/_land_cmd.py
+    -- never from the sweep. So the system files T-XXXX for finding F and then requires
+    a human to run ''frob verify dispose --file-ticket F=T-XXXX'', restating a fact
+    it already established. I did that 8 times this session; each time deferred landing
+    was OFF fleet-wide until I did, forcing every land onto ~208s synchronous verification.
+    This test MUST fail against current main.'
+  evidence: []
+- text: When the sweep files a regression ticket for a finding, dispose that finding
+    with --file-ticket semantics in the same operation, and log it the way a manual
+    disposal is logged so the audit trail is identical. Do NOT auto-dispose findings
+    the sweep did NOT file a ticket for -- an undisposed finding with no tracking
+    ticket is exactly what quarantine exists to surface, and blanket auto-clearing
+    reopens the hole T-1693 closed.
+  evidence: []
+- text: 'SCOPE-PLAUSIBILITY FALSE POSITIVE, recorded deliberately. Filing this ticket
+    tripped T-2177''s own warning (''none of the declared scope files contain any
+    identifier or string-literal token matching this title/body''). I verified the
+    scope IS correct: _file_regression_ticket lives in _rapid_sweep.py at line 1259
+    and that file mentions quarantine 33 times. The warning fired because my title
+    is entirely prose with ZERO identifier-shaped tokens -- precisely the T-2189-shaped
+    limitation T-2192''s author measured and disclosed as not closable by token matching.
+    Useful corroboration from a real filing, not a new defect.'
+  evidence: []
 threat: null
 component: null
 anchor: false
