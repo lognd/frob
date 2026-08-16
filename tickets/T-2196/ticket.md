@@ -1,0 +1,24 @@
+---
+id: T-2196
+title: 'fleet_status --ticket prints ''ticket does not exist on main'' and then reports
+  dispatchable: True on the next line, so the pre-dispatch check endorses dispatching
+  a nonexistent ticket'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-16'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope:
+- scripts/fleet_status.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+---
