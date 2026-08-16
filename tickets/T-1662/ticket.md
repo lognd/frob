@@ -1,7 +1,7 @@
 ---
 id: T-1662
 title: 'EPIC: every check must decide from semantics, never a lexical match'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-08-06'
