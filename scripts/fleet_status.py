@@ -489,9 +489,31 @@ def _parse_ps_cpu_time(value: str) -> int:
         return 0
 
 
-#: Matches a `--ticket T-####`/`--ticket=T-####` argv fragment, however
-#: `frob ticket land` was invoked (space or `=` separated).
-_LAND_ARGV_TICKET_RE = re.compile(r"--ticket[= ]+([A-Za-z]+-\d+)")
+#: Matches the ticket id in a real `frob ticket land T-#### ...`
+#: invocation -- the id is a POSITIONAL argument immediately after
+#: `land` (confirmed against `frob ticket land`'s own argparse usage:
+#: `id` is a bare positional, there is no `--ticket` flag on this
+#: subcommand at all -- an earlier version of this regex looked for
+#: `--ticket T-####` and matched NOTHING against real land invocations,
+#: which collapsed every row to `ticket_id=None` and made the whole
+#: fan-out-collapse fix inert: a coordinator measured 13 reported rows
+#: for ONE real land, the exact 4x-style inflation this ticket exists to
+#: eliminate). `--ticket[= ]` is kept as a fallback for any other
+#: `frob ...` invocation shape that does use a flag.
+_LAND_ARGV_TICKET_RE = re.compile(
+    r"\bticket\s+land\s+([A-Za-z]+-\d+)\b|--ticket[= ]+([A-Za-z]+-\d+)\b"
+)
+
+
+def _parse_land_argv_ticket_id(argv: str) -> str | None:
+    """Extract the ticket id from a `land_process_rows` argv string via
+    `_LAND_ARGV_TICKET_RE`'s two alternatives (positional first, `--ticket`
+    flag second), returning whichever group matched, or `None` if
+    neither did."""
+    match = _LAND_ARGV_TICKET_RE.search(argv)
+    if match is None:
+        return None
+    return match.group(1) or match.group(2)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#land_process_rows
@@ -516,12 +538,15 @@ def land_process_rows() -> list[dict]:
     substring match cannot distinguish a REAL `frob ticket land`
     invocation from another process whose command line merely CONTAINS
     that text -- e.g. a coordinator's own wait-loop shell running
-    `pgrep -f "frob ticket land T-..."`. Such a row parses no `--ticket`
-    fragment (`land_invocations` reports it honestly as its own
-    `ticket_id=None` entry rather than folding it into a real ticket's
-    group), so it cannot corrupt a real invocation's own count -- but it
-    can still inflate `LANDS IN FLIGHT` by one. Read the printed argv
-    for any `ticket_id=None` row before treating it as a real land."""
+    `pgrep -f "frob ticket land T-..."`. Such a row parses no ticket id
+    (`_parse_land_argv_ticket_id` returns `None`) and `land_invocations`
+    DROPS any row it cannot parse a ticket id from (T-2193: an earlier
+    version reported it as its own `ticket_id=None` invocation instead,
+    which still inflated the reported count by one per such row --
+    dropping it is the fix), so this residual noise never reaches the
+    printed report at all. A caller auditing raw process-table rows
+    directly (bypassing `land_invocations`'s own filtering) still sees
+    it here."""
     try:
         done = subprocess.run(
             ["ps", "-eo", "pid,etimes,time,args"],
@@ -553,63 +578,69 @@ def land_process_rows() -> list[dict]:
 
 # frob:doc docs/guides/coordinator-scripts.md#land_invocations
 # frob:ticket T-2180
+# frob:ticket T-2193
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestLandInvocations.test_collapses_process_fa\
 # n_out_by_ticket_id
 # frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLandInvocations.test_must_pass_control_on\
+# e_land_many_processes_reports_one
+# frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestLandInvocations.test_rows_with_no_ticket_\
-# id_are_never_merged_together
+# id_are_dropped_not_reported
 def land_invocations() -> list[dict]:
     """Distinct `frob ticket land` INVOCATIONS, keyed on the ticket id
-    parsed from each process row's own argv `--ticket T-####` field --
-    collapsing `land_process_rows`'s ~4-rows-per-land fan-out down to one
-    entry per real land. `ps aux | grep -c "frob ticket land"` returns
-    roughly 4 per land; this is the fix: distinct invocations keyed on
-    ticket id from the process table's own structured fields, never a
-    line count.
+    parsed from each process row's own argv -- collapsing
+    `land_process_rows`'s ~4-rows-per-land fan-out down to one entry per
+    real land. `ps aux | grep -c "frob ticket land"` returns roughly 4
+    per land; this is the fix: distinct invocations keyed on ticket id
+    from the process table's own structured fields, never a line count.
 
-    Each entry: `ticket_id` (`None` if no `--ticket` fragment was found
-    in ANY matched row -- reported honestly as its own single-row
-    invocation rather than silently merged into an unrelated group, since
-    rows with no ticket id cannot be correlated to each other at all),
-    `pids` (every pid in the row group), `elapsed_s` (the MAX `etimes`
-    across the group -- the longest-lived row is the one that actually
-    started the invocation), and `cpu_s` (the MAX parsed CPU time across
-    the group). CPU time is reported precisely because content alone
-    cannot distinguish a live land from a dead attempt's residue -- a
-    killed land's staged diff is byte-identical across retries because it
-    is the same work -- but CPU time discriminates immediately: a
-    wedged/dead process stops accumulating CPU while a live one keeps
-    climbing."""
+    A row whose argv parses NO ticket id (`_parse_land_argv_ticket_id`
+    returns `None`) is DROPPED here, not reported as its own invocation.
+    Measured incident (T-2193): an earlier version reported every such
+    row as a `ticket_id=None` entry, on the theory that an uncorrelated
+    row should be disclosed rather than silently discarded -- but in
+    practice this let a single long-lived process whose command line
+    merely CONTAINS the text 'ticket land' (a coordinator's own wait-loop
+    shell running `pgrep -f "frob ticket land T-..."`) inflate `LANDS IN
+    FLIGHT` by one forever, and (compounded by the regex bug this same
+    incident also fixed -- see `_LAND_ARGV_TICKET_RE`'s own comment)
+    turned EVERY row into a `ticket_id=None` singleton, reporting 13 rows
+    for one real land where a live coordinator was watching: 13 where the
+    truth was 1. Without a ticket id there is nothing to deduplicate a
+    row against, so it cannot be reported as a distinct INVOCATION at
+    all -- it is process-table noise, not evidence of a land. A caller
+    that wants to audit raw rows for exactly this shape still has
+    `land_process_rows` directly.
+
+    Each entry: `ticket_id`, `pids` (every pid in the row group),
+    `elapsed_s` (the MAX `etimes` across the group -- the longest-lived
+    row is the one that actually started the invocation), and `cpu_s`
+    (the MAX parsed CPU time across the group). CPU time is reported
+    precisely because content alone cannot distinguish a live land from a
+    dead attempt's residue -- a killed land's staged diff is byte-
+    identical across retries because it is the same work -- but CPU time
+    discriminates immediately: a wedged/dead process stops accumulating
+    CPU while a live one keeps climbing."""
     rows = land_process_rows()
-    groups: dict[str | None, list[dict]] = {}
+    groups: dict[str, list[dict]] = {}
     for row in rows:
-        match = _LAND_ARGV_TICKET_RE.search(row["argv"])
-        key = match.group(1) if match else None
-        groups.setdefault(key, []).append(row)
-
-    invocations: list[dict] = []
-    for ticket_id, group_rows in groups.items():
+        ticket_id = _parse_land_argv_ticket_id(row["argv"])
         if ticket_id is None:
-            for row in group_rows:
-                invocations.append(
-                    {
-                        "ticket_id": None,
-                        "pids": [row["pid"]],
-                        "elapsed_s": row["etimes"],
-                        "cpu_s": _parse_ps_cpu_time(row["cputime"]),
-                    }
-                )
             continue
-        invocations.append(
-            {
-                "ticket_id": ticket_id,
-                "pids": [r["pid"] for r in group_rows],
-                "elapsed_s": max(r["etimes"] for r in group_rows),
-                "cpu_s": max(_parse_ps_cpu_time(r["cputime"]) for r in group_rows),
-            }
-        )
-    invocations.sort(key=lambda inv: (inv["ticket_id"] is None, inv["ticket_id"] or ""))
+        groups.setdefault(ticket_id, []).append(row)
+
+    invocations = [
+        {
+            "ticket_id": ticket_id,
+            "pids": [r["pid"] for r in group_rows],
+            "elapsed_s": max(r["etimes"] for r in group_rows),
+            "cpu_s": max(_parse_ps_cpu_time(r["cputime"]) for r in group_rows),
+        }
+        for ticket_id, group_rows in groups.items()
+    ]
+    invocations.sort(key=lambda inv: inv["ticket_id"])
     return invocations
 
 
@@ -856,10 +887,11 @@ def _land_status_lines(
     `(1-minute load average, MemAvailable kb)`, or `None` when unknown."""
     lines = [f"LANDS IN FLIGHT: {len(invocations)}"]
     for inv in invocations:
-        ticket_label = inv["ticket_id"] or "<no --ticket parsed>"
+        # T-2193: land_invocations() drops any row it cannot parse a
+        # ticket id from, so ticket_id is always real here -- never None.
         pids = ",".join(str(p) for p in inv["pids"])
         lines.append(
-            f"  {ticket_label} pids={pids} elapsed={inv['elapsed_s']}s "
+            f"  {inv['ticket_id']} pids={pids} elapsed={inv['elapsed_s']}s "
             f"cpu={inv['cpu_s']}s"
         )
 
