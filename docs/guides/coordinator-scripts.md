@@ -291,15 +291,26 @@ collapses this to distinct invocations.
 <!-- frob:doc docs/guides/coordinator-scripts.md#land_invocations -->
 
 T-2180. Distinct `frob ticket land` invocations, keyed on the ticket id
-parsed from each process row's own `--ticket T-####` argv fragment --
-the fix for `ps aux | grep -c "frob ticket land"` overcounting by
-roughly 4x (the bash wrapper, `timeout`, `uv run`, and the real python
-process all match the same grep). Each entry reports pids, elapsed
-seconds (MAX across the row group), and CPU time (MAX across the group)
--- content alone cannot distinguish a live land from a dead attempt's
-residue (a killed land's staged diff is byte-identical across retries),
-but CPU time discriminates immediately. Rows with no parseable ticket id
-are reported individually, never silently merged.
+parsed from each process row's own argv (the id is a POSITIONAL
+argument -- `frob ticket land T-#### --worktree ...` -- there is no
+`--ticket` flag on this subcommand) -- the fix for `ps aux | grep -c
+"frob ticket land"` overcounting by roughly 4x (the bash wrapper,
+`timeout`, `uv run`, and the real python process all match the same
+grep). Each entry reports pids, elapsed seconds (MAX across the row
+group), and CPU time (MAX across the group) -- content alone cannot
+distinguish a live land from a dead attempt's residue (a killed land's
+staged diff is byte-identical across retries), but CPU time
+discriminates immediately.
+
+**T-2193 fix**: an earlier version looked for a `--ticket T-####` FLAG,
+which does not exist on `land`'s own argparse usage, so it matched
+nothing against a real land and every row fell back to a
+`ticket_id=None` singleton -- reported live as 13 rows for ONE real
+land. Rows with no parseable ticket id are now DROPPED entirely, not
+reported as their own invocation -- there is nothing to deduplicate an
+uncorrelated row against, so it is process-table noise (e.g. a
+coordinator's own wait-loop shell whose command line merely contains
+the text), never evidence of a land.
 
 ### `land_lock_holder_pids`
 

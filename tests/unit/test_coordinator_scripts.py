@@ -534,31 +534,36 @@ class TestLandInvocations:
         wrapper, timeout, uv run, the python process -- T-1344's own
         measured shape) collapses to ONE invocation keyed on the ticket id
         parsed from argv, not a per-row count. `ps aux | grep -c "frob
-        ticket land"` returns ~4 for this same input; this must return 1."""
+        ticket land"` returns ~4 for this same input; this must return 1.
+        T-2193: the ticket id is a POSITIONAL argument after `land`
+        (`frob ticket land T-1234 --worktree ...`) -- there is no
+        `--ticket` flag on this subcommand -- so this fixture uses the
+        real argv shape, not a flag form that would never match a live
+        land."""
         rows = [
             {
                 "pid": 100,
                 "etimes": 300,
                 "cputime": "00:10",
-                "argv": "bash -c timeout 540 uv run frob ticket land --ticket T-1234",
+                "argv": "bash -c timeout 540 uv run frob ticket land T-1234 --worktree /w",
             },
             {
                 "pid": 101,
                 "etimes": 298,
                 "cputime": "00:05",
-                "argv": "timeout 540 uv run frob ticket land --ticket T-1234",
+                "argv": "timeout 540 uv run frob ticket land T-1234 --worktree /w",
             },
             {
                 "pid": 102,
                 "etimes": 295,
                 "cputime": "00:05",
-                "argv": "uv run frob ticket land --ticket T-1234",
+                "argv": "uv run frob ticket land T-1234 --worktree /w",
             },
             {
                 "pid": 103,
                 "etimes": 290,
                 "cputime": "04:30",
-                "argv": "/venv/bin/python -m frob ticket land --ticket T-1234",
+                "argv": "/venv/bin/python -m frob ticket land T-1234 --worktree /w",
             },
         ]
         monkeypatch.setattr(fleet_status, "land_process_rows", lambda: rows)
@@ -572,23 +577,66 @@ class TestLandInvocations:
         # cpu = MAX parsed cpu time across the group (270s = 4:30)
         assert inv["cpu_s"] == 270
 
-    def test_rows_with_no_ticket_id_are_never_merged_together(
+    # frob:ticket T-2193
+    def test_must_pass_control_one_land_many_processes_reports_one(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Two rows that each lack a `--ticket` fragment cannot be
-        correlated to each other -- each is reported as its own,
-        `ticket_id=None` invocation rather than silently merged into one
-        (which would misreport their combined elapsed/cpu as a single
-        land)."""
+        """T-2193's own must-pass control: a fixture representing exactly
+        ONE real land as several processes (the measured live incident --
+        13 rows for pid 2298926, its wrapper processes and sibling
+        invocations, most at cpu=0s and one at cpu=67s) reports exactly
+        ONE invocation. A test that only asserts 'some lands are
+        reported' cannot distinguish working from inflated; this asserts
+        the exact count."""
         rows = [
-            {"pid": 200, "etimes": 50, "cputime": "00:01", "argv": "frob ticket land"},
-            {"pid": 201, "etimes": 20, "cputime": "00:02", "argv": "frob ticket land"},
+            {
+                "pid": 2298899,
+                "etimes": 90,
+                "cputime": "00:00",
+                "argv": "bash -c timeout 540 uv run frob ticket land T-9999 --worktree /w",
+            },
+            {
+                "pid": 2298920,
+                "etimes": 90,
+                "cputime": "00:00",
+                "argv": "timeout 540 uv run frob ticket land T-9999 --worktree /w",
+            },
+            {
+                "pid": 2298926,
+                "etimes": 90,
+                "cputime": "01:07",
+                "argv": "/venv/bin/python -m frob ticket land T-9999 --worktree /w",
+            },
         ]
         monkeypatch.setattr(fleet_status, "land_process_rows", lambda: rows)
         invocations = fleet_status.land_invocations()
-        assert len(invocations) == 2
-        assert all(inv["ticket_id"] is None for inv in invocations)
-        assert {inv["pids"][0] for inv in invocations} == {200, 201}
+        assert len(invocations) == 1
+        assert invocations[0]["ticket_id"] == "T-9999"
+        assert invocations[0]["cpu_s"] == 67
+
+    def test_rows_with_no_ticket_id_are_dropped_not_reported(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2193: a row whose argv parses no ticket id at all (a
+        coordinator's own long-lived wait-loop shell whose command line
+        merely CONTAINS the substring 'frob ticket land', measured for
+        real at elapsed=101983s -- ~28 hours, plainly not a land) is
+        DROPPED from `land_invocations` entirely, not reported as its own
+        `ticket_id=None` invocation -- the earlier behavior still
+        inflated `LANDS IN FLIGHT` by one per such row."""
+        rows = [
+            {
+                "pid": 428763,
+                "etimes": 101983,
+                "cputime": "00:07",
+                "argv": (
+                    "/bin/bash -c until [ \"$(pgrep -f 'frob ticket land T-' "
+                    "| wc -l)\" -eq 0 ]; do sleep 15; done"
+                ),
+            },
+        ]
+        monkeypatch.setattr(fleet_status, "land_process_rows", lambda: rows)
+        assert fleet_status.land_invocations() == []
 
 
 class TestLandLockHolderPids:

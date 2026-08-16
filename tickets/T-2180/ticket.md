@@ -3,7 +3,7 @@ id: T-2180
 title: fleet_status.py cannot answer 'which lands are in flight', so every coordinator
   hand-rolls a ps grep that overcounts 4x -- the misread behind two agents reporting
   15-16 concurrent lands when there were 4
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -20,7 +20,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_collapses_process_fan_out_by_ticket_id
-- tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_rows_with_no_ticket_id_are_never_merged_together
+- tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_rows_with_no_ticket_id_are_dropped_not_reported
 - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_prints_invocations_and_live_lock_holder
 - tests/unit/test_coordinator_scripts.py::TestLandLockHolderPids::test_finds_a_pid_holding_the_lock_open
 - tests/unit/test_coordinator_scripts.py::TestLandLockHolderPids::test_no_live_holder_returns_empty
@@ -33,6 +33,7 @@ evidence:
 - tests/unit/test_coordinator_scripts.py::TestHostLoad::test_missing_proc_files_return_none
 - tests/unit/test_coordinator_scripts.py::TestLandProcessRows::test_parses_matching_rows_and_skips_others
 - tests/unit/test_coordinator_scripts.py::TestLandProcessRows::test_failed_ps_returns_empty
+- tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_must_pass_control_one_land_many_processes_reports_one
 designated_repro_test: null
 acceptance:
 - text: Report DISTINCT land invocations keyed on ticket id, derived from the process
@@ -43,7 +44,7 @@ acceptance:
     it. This test MUST fail against current main.
   evidence:
   - tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_collapses_process_fan_out_by_ticket_id
-  - tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_rows_with_no_ticket_id_are_never_merged_together
+  - tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_rows_with_no_ticket_id_are_dropped_not_reported
 - text: Report each land's CPU time alongside elapsed time. Content alone cannot distinguish
     a live land from a dead attempt's residue -- a killed land's staged diff is byte-identical
     across retries because it is the same work -- but CPU time discriminates immediately.
@@ -78,6 +79,13 @@ acceptance:
     in the tool already in the dispatch loop is the fix.
   evidence:
   - tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_prints_all_four_sections
+evidence_changes:
+- old_node: tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_rows_with_no_ticket_id_are_never_merged_together
+  new_node: tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_rows_with_no_ticket_id_are_dropped_not_reported
+  reason: 'T-2193 fix: rows with no parseable ticket id are now dropped, not reported
+    as their own invocation; test renamed to match'
+  actor: logan
+  at: '2026-08-16'
 threat: null
 component: null
 anchor: false
