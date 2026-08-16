@@ -17,6 +17,7 @@ scope:
 - scripts/verify_lands.py
 - docs/guides/coordinator-scripts.md
 - docs/modules/tickets-landing.md
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -30,6 +31,15 @@ scope_changes:
   glob: docs/modules/tickets-landing.md
   reason: the land path gains a persisted land-commit field; the landing module doc
     documents that path
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: 'MEASURED: _find_landing_commit (_lifecycle.py:129) IS frob''s own ticket->land-commit
+    resolver and implements exactly the broken bridge this ticket describes -- git
+    log --grep ''land {ticket_id}([^0-9]|$)'', which cannot match a --plan land (subject
+    ''chore(tickets): land --plan'', no id). This is the primary in-code consumer
+    of the persisted field; without it the fix would add a field nothing reads'
   actor: logan
   at: '2026-08-16'
 designated_repro_test: null
