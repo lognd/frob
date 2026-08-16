@@ -15,8 +15,16 @@ scope:
 - src/frob/vet/_capability.py
 - src/frob/vet/_capability_scan.py
 - src/frob/vet/_capability_core.py
+- docs/modules/vet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/vet.md
+  reason: 'close scope-closure warning: vet capability functions'' frob:doc target
+    lives here'
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 threat: null
 component: null
