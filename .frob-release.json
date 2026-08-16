@@ -898,9 +898,9 @@
     "src/frob/graph/callgraph.py::OrderedCallGraph": "f50dcbc99928dc2e721a63c47f0dc1817d1bc9928227134452c9494811fd5367",
     "src/frob/graph/callgraph.py::PrivateHelperGap": "44f87a4fda44fb37df2a050e1b2881c98d19a6c9aed2cd3b22a718559fb6044b",
     "src/frob/graph/callgraph.py::UNRESOLVED_CALLEE": "eae63292eb86e25132582cdb509da55663c9e16372650ba4f14b132c2757573b",
-    "src/frob/graph/callgraph.py::build_call_graph": "2295866498ea9baabfe25bf0628904a37c8e9c3181310914f32075dfb45274e3",
+    "src/frob/graph/callgraph.py::build_call_graph": "92389ce21d02ade6591adb0e4fd899aaf85952a818d27e9d984f343ffc285d79",
     "src/frob/graph/callgraph.py::build_ordered_call_graph": "8f6d93f73fd1b694ee476aca10091678339d231af06551d639ab155bfd9f302d",
-    "src/frob/graph/callgraph.py::build_reference_graph": "1796c447d7ff18e1a6711193fed68b8b746479050264429ed1a056c0852ef6cc",
+    "src/frob/graph/callgraph.py::build_reference_graph": "88a612b686964728a736b2f8e3ce815adfc1fb2e2551a1b3abcc57fbd2770db5",
     "src/frob/graph/callgraph.py::build_reference_graph_module_scoped": "1fec5afbff615148376389cfc83249c83d7ab95b1e3036d5df4fb55cd7746cab",
     "src/frob/graph/callgraph.py::closure": "03a5762b12fa785c4d7b4237e2c9f326ba68d1e047b1f5524b6a8edfbe3af3e2",
     "src/frob/graph/callgraph.py::is_symref": "7bf72a8972aca0af67822c4c55799bf9b4c3357326dcfeac0b5142889378beb8",
@@ -2304,5 +2304,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.467.0"
+  "version": "0.468.0"
 }

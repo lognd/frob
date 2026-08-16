@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.468.0] - unreleased
+
+- T-2188: callgraph.py's build_call_graph/build_reference_graph/build_ordered_call_graph resolve cross-file private candidates by bare short name, unverified against imports -- same T-2156 mechanism, three unfixed consumers (COV006, DEAD001, PROTO001-005)
+
 ## [0.467.0] - unreleased
 
 - T-2191: REDUNDANT_RERUN asserts 'this run could not have produced a different result' from the repo tree hash alone, but verbs like claude sync --check read state outside the repo and legitimately change verdict
