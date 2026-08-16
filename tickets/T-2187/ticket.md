@@ -3,7 +3,7 @@ id: T-2187
 title: 'walk_strata parses .strata with the strata-core grammar then discards it,
   extracting symbols by line regex instead and downgrading the disagreement to a log
   warning: 16 mismatches in a single run'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,9 +14,25 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/lang/_walk_strata.py
+- tests/unit/test_lang_strata.py
+evidence_scope:
+- tests/unit/test_lang_strata.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_lang_strata.py
+  reason: T-2187's own repro/regression tests live here, alongside every other .strata
+    walker test
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_quoted_string_claim_id_is_extracted
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_resource_declaration_is_extracted
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_locator_fails_closed_on_a_construct_it_cannot_find
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_walk_strata_returns_err_not_a_log_line_on_disagreement
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_declared_items_covers_every_keyword_family
+designated_repro_test: tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_quoted_string_claim_id_is_extracted
 acceptance:
 - text: 'Symbols MUST come from strata-core''s parse result, not from _HEADER_RE over
     source lines. walk_strata (src/frob/lang/_walk_strata.py) already calls strata_core.parse_source(source)
@@ -25,12 +41,14 @@ acceptance:
     only LOGS when the two disagree. Measured: 16 ''header-regex symbol count != strata-core
     declared count'' warnings in a single frob verify explain run. This test MUST
     fail against current main.'
-  evidence: []
+  evidence:
+  - tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_quoted_string_claim_id_is_extracted
 - text: Given a .strata source where the grammar and the header regex disagree on
     symbol count, when walk_strata runs, then the returned symbols match the grammar's
     declarations -- not the regex's. Today the regex result is returned and the mismatch
     is a warning the caller never sees.
-  evidence: []
+  evidence:
+  - tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_resource_declaration_is_extracted
 - text: 'Do NOT fix this by tightening _HEADER_RE until the counts agree on today''s
     corpus -- that is a lexical fix to a lexical defect and the next construct reopens
     it. Do NOT delete the drift check either: keep it, but it should be a fail-closed
@@ -38,7 +56,8 @@ acceptance:
     line. Note strata symbols feed capability enforcement, which T-1623 (critical)
     is separately trying to make watertight -- a wrong symbol set undermines that
     gate silently.'
-  evidence: []
+  evidence:
+  - tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols::test_walk_strata_returns_err_not_a_log_line_on_disagreement
 threat: null
 component: null
 anchor: false
