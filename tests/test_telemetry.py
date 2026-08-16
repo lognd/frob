@@ -523,3 +523,78 @@ def test_usage_report_counts_fast_exit1(tmp_path: Path):
     )
     report = usage_report(tmp_path)
     assert report.fast_exit1_count == 1
+
+
+# --- REDUNDANT_RERUN must not fire across a real external-state change (T-2191) ---
+
+
+def test_redundant_rerun_not_flagged_when_home_claude_config_changed(
+    tmp_path: Path, monkeypatch
+):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # Reproduces the exact live incident: `frob claude sync --check`
+    # reported drifted; `frob claude sync` wrote ~/.claude/refs/*; the next
+    # `--check` claimed REDUNDANT_RERUN ("nothing has changed since") even
+    # though its own materialized target had just changed. `tree_hash`
+    # alone (the repo tree) cannot see this -- the change is entirely
+    # under `~/.claude`, outside the repo `tmp_path` represents here.
+    home = tmp_path / "fake-home"
+    claude_refs = home / ".claude" / "refs"
+    claude_refs.mkdir(parents=True)
+    ref_file = claude_refs / "agent-playbook.md"
+    ref_file.write_text("v1 -- stale copy")
+    monkeypatch.setenv("HOME", str(home))
+
+    record_cli_event(
+        tmp_path,
+        subcommand="claude",
+        args_head="claude sync --check",
+        duration_ms=500,
+        exit_code=0,
+    )
+
+    # The materialized copy under ~/.claude changes -- exactly what
+    # `frob claude sync` (no --check) does between the two `--check` runs
+    # in the live incident. The repo tree (`tmp_path`) itself never moves.
+    ref_file.write_text("v2 -- freshly synced content")
+
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="claude",
+        args_head="claude sync --check",
+        duration_ms=500,
+        exit_code=0,
+        tree_hash_value="unknown",
+    )
+    assert "REDUNDANT_RERUN" not in [t.rule_id for t in tips], (
+        "REDUNDANT_RERUN fired even though ~/.claude (this verb's real "
+        "input) changed between the two runs -- the tree_hash-only key "
+        "cannot see state outside the repo"
+    )
+
+
+def test_redundant_rerun_still_flags_when_nothing_changed_at_all(
+    tmp_path: Path, monkeypatch
+):
+    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # The positive case: when NEITHER the repo tree NOR ~/.claude changed,
+    # REDUNDANT_RERUN must still fire -- the fix must not blunt the
+    # detector into never firing at all.
+    home = tmp_path / "fake-home"
+    claude_refs = home / ".claude" / "refs"
+    claude_refs.mkdir(parents=True)
+    (claude_refs / "agent-playbook.md").write_text("unchanged")
+    monkeypatch.setenv("HOME", str(home))
+
+    record_cli_event(
+        tmp_path, subcommand="check", args_head="check", duration_ms=500, exit_code=0
+    )
+    tips = detect_footguns(
+        tmp_path,
+        subcommand="check",
+        args_head="check",
+        duration_ms=500,
+        exit_code=0,
+        tree_hash_value="unknown",
+    )
+    assert [t.rule_id for t in tips] == ["REDUNDANT_RERUN"]

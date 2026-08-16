@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.467.0] - unreleased
+
+- T-2191: REDUNDANT_RERUN asserts 'this run could not have produced a different result' from the repo tree hash alone, but verbs like claude sync --check read state outside the repo and legitimately change verdict
+
 ## [0.466.0] - unreleased
 
 - T-2181: T-2179 residue: 'already implemented' still decides from scope-file overlap, so any branch that touched a shared file claims someone else's ticket -- t-2107 and t2049-series falsely claim T-2114

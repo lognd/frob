@@ -176,8 +176,8 @@
       "ticket": "T-2001"
     },
     "testsuite::fs.write": {
-      "accepted_count": 320,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 319 to 320 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 321,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 320 to 321 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::install-hook": {

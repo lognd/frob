@@ -152,6 +152,115 @@ def tree_hash(root: Path) -> str:
     return result.stdout.strip() or "unknown"
 
 
+# frob:ticket T-2191
+_HOME_CLAUDE_RUNTIME_STATE_DIRS = frozenset(
+    {
+        # frob:ticket T-2191
+        # Claude Code's own well-known RUNTIME/session-state directories
+        # under `~/.claude` -- churn on every turn of every session
+        # (transcripts, shell snapshots, IDE state, todo scratch, usage
+        # telemetry) regardless of whether any `frob` verb read or wrote
+        # anything. Excluded by NAME, not by full path, so this stays
+        # correct across machines with a differently-cased/located home.
+        # This is a small, stable list of Claude Code's OWN reserved
+        # directory names (documented, product-level, changes on the
+        # order of Claude Code releases) -- a fundamentally different,
+        # far more durable kind of list than "which frob subcommands
+        # read outside the repo" (which is exactly what this ticket's
+        # acceptance criteria forbid hardcoding): this list exists to
+        # exclude noise, not to include coverage, so a missed entry only
+        # ever makes the digest MORE sensitive (a false "changed"), never
+        # a false "unchanged" the way an exempt-subcommand list would.
+        "projects",
+        "todos",
+        "shell-snapshots",
+        "logs",
+        "ide",
+        "statsig",
+        "history",
+        "__pycache__",
+    }
+)
+
+
+# frob:ticket T-2191
+# frob:tests tests/test_telemetry.py::test_redundant_rerun_not_flagged_when_home_claude_config_changed  # noqa: E501
+# frob:tests tests/test_telemetry.py::test_redundant_rerun_still_flags_when_nothing_changed_at_all  # noqa: E501
+def _home_config_state_hash() -> str:
+    """sha256-derived digest (first 12 hex chars) over every regular
+    file's `(relpath, size, mtime_ns)` under `~/.claude`, excluding
+    Claude Code's own known runtime/session-state subdirectories
+    (`_HOME_CLAUDE_RUNTIME_STATE_DIRS`) -- T-2191.
+
+    T-1360's `REDUNDANT_RERUN` used to key SOLELY on `(subcommand,
+    args_head, tree_hash)`, where `tree_hash` covers the REPO tree only --
+    correct for a verb whose result depends only on repo state, wrong for
+    one that also reads/writes `~/.claude` (this repo's one existing
+    out-of-repo materialized-copy target: `frob claude sync`'s
+    destination, per `.claude/hooks/sync-claude-config.py`'s own
+    docstring). Reproduced live: `claude sync --check` reported drifted,
+    `claude sync` wrote `~/.claude/refs/*`, and the next `--check` claimed
+    "nothing has changed since" -- false, because `~/.claude` had.
+
+    Folding this digest into the redundancy key (alongside `tree_hash`,
+    never replacing it) makes the check correct for `frob claude sync`
+    AND for any future verb that happens to read/write under the same
+    directory, without maintaining a hardcoded list of exempt subcommand
+    names -- the fix generalizes by WHERE a verb's out-of-repo input
+    lives, not by WHICH verb it is. A verb with a genuinely different
+    out-of-repo input (not under `~/.claude`) is not covered by this
+    digest -- see this function's own limits noted in `_tip_redundant_
+    rerun`'s docstring.
+
+    Returns `"none"` when `~/.claude` does not exist (nothing to be blind
+    to), `"unreadable"` on any OSError walking it (never raises -- matches
+    `tree_hash`'s own best-effort "unknown" convention: a digest that
+    cannot be computed must never silently read as "unchanged")."""
+    import hashlib
+
+    # frob:waive WALK001 reason="~/.claude is the user's home config dir, not the repo \
+    # tree -- no .git/.venv/node_modules/build/dist/target to prune, and \
+    # frob.excludes' repo-relative exclude globs do not apply outside a project \
+    # checkout (same rationale as the vet/_source.py WALK001 waivers for a \
+    # home-directory cache root); the runtime-state subdirs this function itself needs \
+    # to skip are pruned explicitly below via _HOME_CLAUDE_RUNTIME_STATE_DIRS, not via \
+    # frob.excludes"
+    home_claude = Path.home() / ".claude"
+    if not home_claude.is_dir():
+        return "none"
+
+    def _walk(root: Path) -> list[str]:
+        out: list[str] = []
+        try:
+            with os.scandir(root) as it:
+                children = sorted(it, key=lambda e: e.name)
+        except OSError:
+            return out
+        for entry in children:
+            if entry.is_dir(follow_symlinks=False):
+                if (
+                    root == home_claude
+                    and entry.name in _HOME_CLAUDE_RUNTIME_STATE_DIRS
+                ):
+                    continue
+                out.extend(_walk(Path(entry.path)))
+            elif entry.is_file(follow_symlinks=False):
+                try:
+                    stat = entry.stat()
+                except OSError:
+                    continue
+                rel = Path(entry.path).relative_to(home_claude)
+                out.append(f"{rel}:{stat.st_size}:{stat.st_mtime_ns}")
+        return out
+
+    try:
+        entries = sorted(_walk(home_claude))
+    except OSError:
+        return "unreadable"
+    digest = hashlib.sha256("\n".join(entries).encode("utf-8", errors="replace"))
+    return digest.hexdigest()[:12]
+
+
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 def estimate_tokens(text: str) -> int:
     """Rough `len(text) / 4` token estimate -- the documented heuristic
@@ -190,6 +299,8 @@ def record_cli_event(
             "duration_ms": round(duration_ms, 3),
             "exit": exit_code,
             "tree_hash": tree_hash(root),
+            # frob:ticket T-2191
+            "home_config_hash": _home_config_state_hash(),
         }
         append_event(root, record)
 
@@ -487,13 +598,23 @@ def _tip_redundant_rerun(
     tree_hash_value: str,
 ) -> Tip | None:
     """`REDUNDANT_RERUN`: an EARLIER `history` record shares this run's
-    `(subcommand, args_head, tree_hash)` exactly -- the tree has not
-    changed since, so this run's result could not have differed."""
+    `(subcommand, args_head, tree_hash, home_config_hash)` exactly -- ONLY
+    the state this repo knows a verb can read (the repo tree AND
+    `~/.claude`, T-2191's `_home_config_state_hash`) is unchanged, so this
+    run's result could not have differed. Still not omniscient: a verb
+    with a real out-of-repo input OUTSIDE `~/.claude` (a different env var,
+    a different external service) is not covered by either digest -- this
+    is a strictly TIGHTER key than pre-T-2191's tree-hash-only one, not a
+    complete one; it removes the one measured false-positive class
+    (`frob claude sync --check`) without claiming to remove every possible
+    one."""
+    home_config_hash_value = _home_config_state_hash()
     for prior in reversed(history):
         if (
             prior.get("subcommand") == subcommand
             and prior.get("args_head") == args_head
             and prior.get("tree_hash") == tree_hash_value
+            and prior.get("home_config_hash") == home_config_hash_value
         ):
             return Tip(
                 rule_id="REDUNDANT_RERUN",
@@ -724,9 +845,18 @@ def _top_time_sinks(
 
 def _redundant_rerun_totals(events: list[dict[str, Any]]) -> tuple[int, float]:
     """(count, wasted_ms) for `events` whose `(subcommand, args_head,
-    tree_hash)` repeats an EARLIER event exactly -- each repeat after the
-    first is provably redundant (the tree had not changed)."""
-    seen: dict[tuple[str, str, str], bool] = {}
+    tree_hash, home_config_hash)` repeats an EARLIER event exactly (T-2191
+    added `home_config_hash` to the key, matching `_tip_redundant_rerun`'s
+    own key -- see its docstring for why) -- each repeat after the first
+    is provably redundant (neither the repo tree nor `~/.claude` had
+    changed). An older event recorded before T-2191 has no `home_config_
+    hash` field at all; `.get(..., "")` reads that as the empty string on
+    both sides consistently, so two such legacy events can still match
+    each other (degrading gracefully to the pre-T-2191 tree-hash-only
+    comparison for old data), but a legacy event never spuriously matches
+    a post-T-2191 one (whose `home_config_hash` is never the empty
+    string)."""
+    seen: dict[tuple[str, str, str, str], bool] = {}
     redundant_count = 0
     redundant_wasted_ms = 0.0
     for e in events:
@@ -734,6 +864,7 @@ def _redundant_rerun_totals(events: list[dict[str, Any]]) -> tuple[int, float]:
             str(e.get("subcommand", "")),
             str(e.get("args_head", "")),
             str(e.get("tree_hash", "")),
+            str(e.get("home_config_hash", "")),
         )
         if key in seen:
             redundant_count += 1
