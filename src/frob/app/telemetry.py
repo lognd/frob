@@ -261,6 +261,162 @@ def _home_config_state_hash() -> str:
     return digest.hexdigest()[:12]
 
 
+# frob:ticket T-2204
+_EXTERNAL_PATH_EXCLUDE_DIRS = frozenset(
+    {
+        # frob:ticket T-2204
+        # Generic, non-repo-specific churn dirs to prune while walking an
+        # ARBITRARY external path argument (a fixture tree, a sibling
+        # checkout, ...) -- unlike `_HOME_CLAUDE_RUNTIME_STATE_DIRS`, this
+        # is not "known runtime state under one well-known directory", it
+        # is "names common enough to be noise wherever they appear", so a
+        # missed entry only ever makes the digest MORE sensitive (a false
+        # "changed"), never a false "unchanged" -- same asymmetry
+        # `_home_config_state_hash`'s own list already leans on.
+        ".git",
+        "__pycache__",
+        "node_modules",
+        ".venv",
+        "dist",
+        "build",
+        "target",
+    }
+)
+
+
+# frob:ticket T-2204
+def _looks_like_path_token(token: str) -> bool:
+    """`True` if `token` (one whitespace-split piece of a redacted
+    `args_head`) is plausibly a filesystem path argument rather than a
+    flag, subcommand word, or bare value -- a path SEPARATOR is the
+    strongest signal (`frob cycle some/fixture/dir`), and an otherwise
+    bare token that happens to exist on disk relative to the current
+    working directory (`frob cycle srclayout` run from inside the
+    fixture's own parent) is the fallback. Deliberately permissive: a
+    false positive here only adds a harmless extra digest input, while a
+    false negative reproduces this ticket's own bug (a real external
+    input silently uncovered)."""
+    if not token or token.startswith("-"):
+        return False
+    if "/" in token or "\\" in token:
+        return True
+    try:
+        return Path(token).exists()
+    except OSError:
+        return False
+
+
+# frob:ticket T-2204
+def _walk_external_path_state(path: Path) -> list[str]:
+    """`(relpath-from-`path`, size, mtime_ns)` for every regular file
+    under `path` (pruning `_EXTERNAL_PATH_EXCLUDE_DIRS` by name), or a
+    single `f"{path}:{size}:{mtime_ns}"` entry when `path` is itself a
+    file, or `[f\"MISSING:{path}\"]` when `path` does not exist at all --
+    the MISSING sentinel is exactly what makes a deleted fixture register
+    as a state CHANGE (T-2204's own measured bug) rather than silently
+    matching whatever state existed when the path was last present.
+    Never raises; an unreadable entry is simply skipped."""
+    if not path.exists():
+        return [f"MISSING:{path}"]
+    if path.is_file():
+        try:
+            stat = path.stat()
+        except OSError:
+            return [f"UNREADABLE:{path}"]
+        return [f"{path}:{stat.st_size}:{stat.st_mtime_ns}"]
+
+    out: list[str] = []
+
+    def _walk(root: Path) -> None:
+        try:
+            with os.scandir(root) as it:
+                children = sorted(it, key=lambda e: e.name)
+        except OSError:
+            return
+        for entry in children:
+            if entry.is_dir(follow_symlinks=False):
+                if entry.name in _EXTERNAL_PATH_EXCLUDE_DIRS:
+                    continue
+                _walk(Path(entry.path))
+            elif entry.is_file(follow_symlinks=False):
+                try:
+                    stat = entry.stat()
+                except OSError:
+                    continue
+                rel = Path(entry.path).relative_to(path)
+                out.append(f"{rel}:{stat.st_size}:{stat.st_mtime_ns}")
+
+    _walk(path)
+    return out
+
+
+# frob:ticket T-2204
+# frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_a_deleted_external_fixture_changes_the_hash  # noqa: E501
+# frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_no_path_looking_argument_yields_none  # noqa: E501
+def _external_path_arg_hash(root: Path, args_head: str) -> str:
+    """sha256-derived digest (first 12 hex chars) over the on-disk state of
+    every positional-PATH-shaped token in `args_head` that resolves
+    OUTSIDE `root` -- the generic fix T-2204 asks for: `REDUNDANT_RERUN`'s
+    key used to cover `root`'s own tree (`tree_hash`) and one hardcoded
+    out-of-repo location (`~/.claude`, `_home_config_state_hash`), but any
+    verb taking an arbitrary positional PATH argument (`frob cycle`,
+    `outline`, `map`, ...) decides from a tree neither digest describes.
+    Measured live: `frob cycle <fixture>/srclayout` reported a cycle,
+    deleting that fixture's `pyproject.toml` flipped the verdict to `no
+    cycles found`, and the unchanged `tree_hash`/`home_config_hash` pair
+    made `REDUNDANT_RERUN` claim nothing had changed -- false.
+
+    Derives coverage from WHAT THE ARGS NAME, not from a hardcoded list of
+    known external locations (matching `_home_config_state_hash`'s own
+    "generalize by WHERE state lives" precedent, extended from one fixed
+    location to arbitrary caller-supplied ones): each whitespace-split
+    token in `args_head` that `_looks_like_path_token` accepts is resolved
+    against the current working directory, and any that resolves to a
+    location NOT under `root` (already covered by `tree_hash`) has its
+    on-disk state folded in via `_walk_external_path_state` -- including a
+    MISSING sentinel when the path no longer exists, which is exactly the
+    delete-the-fixture case this ticket measured.
+
+    Returns `"none"` when no token in `args_head` resolves to an external
+    path at all (nothing to be blind to, matching `_home_config_state_
+    hash`'s own convention for "not applicable" runs) -- the common case
+    for a subcommand with no PATH-shaped positional argument. Never
+    raises; an individual token's own resolution failure is skipped, not
+    fatal to the whole digest."""
+    import hashlib
+
+    try:
+        root_resolved = root.resolve()
+    except OSError:
+        root_resolved = root
+
+    cwd = Path.cwd()
+    entries: list[str] = []
+    for token in args_head.split():
+        if not _looks_like_path_token(token):
+            continue
+        candidate = Path(token)
+        try:
+            resolved = (
+                candidate if candidate.is_absolute() else cwd / candidate
+            ).resolve()
+        except OSError:
+            continue
+        try:
+            resolved.relative_to(root_resolved)
+            continue  # inside the repo tree -- already covered by tree_hash
+        except ValueError:
+            pass
+        entries.extend(_walk_external_path_state(resolved))
+
+    if not entries:
+        return "none"
+    digest = hashlib.sha256(
+        "\n".join(sorted(entries)).encode("utf-8", errors="replace")
+    )
+    return digest.hexdigest()[:12]
+
+
 # frob:doc docs/guides/agentic-time-profiling.md#public-api
 def estimate_tokens(text: str) -> int:
     """Rough `len(text) / 4` token estimate -- the documented heuristic
@@ -301,6 +457,8 @@ def record_cli_event(
             "tree_hash": tree_hash(root),
             # frob:ticket T-2191
             "home_config_hash": _home_config_state_hash(),
+            # frob:ticket T-2204
+            "external_path_hash": _external_path_arg_hash(root, args_head),
         }
         append_event(root, record)
 
@@ -593,28 +751,34 @@ def _read_recent_cli_events(root: Path, limit: int) -> list[dict[str, Any]]:
 def _tip_redundant_rerun(
     history: list[dict[str, Any]],
     *,
+    root: Path,
     subcommand: str,
     args_head: str,
     tree_hash_value: str,
 ) -> Tip | None:
     """`REDUNDANT_RERUN`: an EARLIER `history` record shares this run's
-    `(subcommand, args_head, tree_hash, home_config_hash)` exactly -- ONLY
-    the state this repo knows a verb can read (the repo tree AND
-    `~/.claude`, T-2191's `_home_config_state_hash`) is unchanged, so this
-    run's result could not have differed. Still not omniscient: a verb
-    with a real out-of-repo input OUTSIDE `~/.claude` (a different env var,
-    a different external service) is not covered by either digest -- this
-    is a strictly TIGHTER key than pre-T-2191's tree-hash-only one, not a
-    complete one; it removes the one measured false-positive class
-    (`frob claude sync --check`) without claiming to remove every possible
-    one."""
+    `(subcommand, args_head, tree_hash, home_config_hash,
+    external_path_hash)` exactly -- ONLY the state this repo knows a verb
+    can read (the repo tree, `~/.claude` via T-2191's `_home_config_state_
+    hash`, AND any external PATH argument the command line itself names,
+    T-2204's `_external_path_arg_hash`) is unchanged, so this run's result
+    could not have differed. Still not omniscient: a verb with a real
+    out-of-repo input this cannot see at all (a different env var, a
+    different external service, a positional argument that is not
+    PATH-shaped) is not covered by any of the three digests -- this is a
+    strictly TIGHTER key than pre-T-2204's pair, not a complete one; it
+    removes the two measured false-positive classes (`frob claude sync
+    --check`, and T-2204's `frob cycle <external-fixture>`) without
+    claiming to remove every possible one."""
     home_config_hash_value = _home_config_state_hash()
+    external_path_hash_value = _external_path_arg_hash(root, args_head)
     for prior in reversed(history):
         if (
             prior.get("subcommand") == subcommand
             and prior.get("args_head") == args_head
             and prior.get("tree_hash") == tree_hash_value
             and prior.get("home_config_hash") == home_config_hash_value
+            and prior.get("external_path_hash") == external_path_hash_value
         ):
             return Tip(
                 rule_id="REDUNDANT_RERUN",
@@ -717,6 +881,7 @@ def detect_footguns(
     candidates = (
         _tip_redundant_rerun(
             history,
+            root=root,
             subcommand=subcommand,
             args_head=args_head,
             tree_hash_value=tree_hash_value,
@@ -845,18 +1010,20 @@ def _top_time_sinks(
 
 def _redundant_rerun_totals(events: list[dict[str, Any]]) -> tuple[int, float]:
     """(count, wasted_ms) for `events` whose `(subcommand, args_head,
-    tree_hash, home_config_hash)` repeats an EARLIER event exactly (T-2191
-    added `home_config_hash` to the key, matching `_tip_redundant_rerun`'s
-    own key -- see its docstring for why) -- each repeat after the first
-    is provably redundant (neither the repo tree nor `~/.claude` had
-    changed). An older event recorded before T-2191 has no `home_config_
-    hash` field at all; `.get(..., "")` reads that as the empty string on
-    both sides consistently, so two such legacy events can still match
-    each other (degrading gracefully to the pre-T-2191 tree-hash-only
-    comparison for old data), but a legacy event never spuriously matches
-    a post-T-2191 one (whose `home_config_hash` is never the empty
-    string)."""
-    seen: dict[tuple[str, str, str, str], bool] = {}
+    tree_hash, home_config_hash, external_path_hash)` repeats an EARLIER
+    event exactly (T-2191 added `home_config_hash`, T-2204 added
+    `external_path_hash`, both matching `_tip_redundant_rerun`'s own key
+    -- see its docstring for why) -- each repeat after the first is
+    provably redundant (neither the repo tree, `~/.claude`, nor any
+    external PATH argument the command line named had changed). An older
+    event recorded before T-2191/T-2204 has no `home_config_hash`/
+    `external_path_hash` field at all; `.get(..., "")` reads that as the
+    empty string on both sides consistently, so two such legacy events
+    can still match each other (degrading gracefully to the older,
+    narrower comparison for old data), but a legacy event never
+    spuriously matches a post-fix one (whose digest fields are never the
+    empty string)."""
+    seen: dict[tuple[str, str, str, str, str], bool] = {}
     redundant_count = 0
     redundant_wasted_ms = 0.0
     for e in events:
@@ -865,6 +1032,7 @@ def _redundant_rerun_totals(events: list[dict[str, Any]]) -> tuple[int, float]:
             str(e.get("args_head", "")),
             str(e.get("tree_hash", "")),
             str(e.get("home_config_hash", "")),
+            str(e.get("external_path_hash", "")),
         )
         if key in seen:
             redundant_count += 1

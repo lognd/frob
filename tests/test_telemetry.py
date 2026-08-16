@@ -598,3 +598,110 @@ def test_redundant_rerun_still_flags_when_nothing_changed_at_all(
         tree_hash_value="unknown",
     )
     assert [t.rule_id for t in tips] == ["REDUNDANT_RERUN"]
+
+
+# --- REDUNDANT_RERUN must not fire when an external PATH argument's own
+# --- state changes either (T-2204) ---
+
+
+class TestExternalPathArgHash:
+    """`_external_path_arg_hash`/`REDUNDANT_RERUN` (T-2204): a verb taking
+    an arbitrary positional PATH argument (`frob cycle <path>`) decides
+    from that path's own on-disk state, which neither `tree_hash` (the
+    repo tree) nor `home_config_hash` (the hardcoded `~/.claude` target,
+    T-2191) describes at all."""
+
+    # frob:ticket T-2204
+    # frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_a_deleted_external_fixture_changes_the_hash  # noqa: E501
+    def test_a_deleted_external_fixture_changes_the_hash(self, tmp_path: Path):
+        # T-2204's DESIGNATED REPRO (BUG002): reproduces the exact live
+        # incident. `frob cycle <fixture>/srclayout` (fixture lives
+        # OUTSIDE the repo `tmp_path` represents here) reported a cycle
+        # with a `pyproject.toml` present; deleting that file flips the
+        # verdict to "no cycles found" -- a real result change `tree_hash`
+        # structurally cannot see, since the fixture is not under `root`
+        # at all. REDUNDANT_RERUN must not claim "nothing has changed"
+        # across that deletion.
+        fixture_root = tmp_path.parent / f"fixture-{tmp_path.name}"
+        srclayout = fixture_root / "srclayout"
+        srclayout.mkdir(parents=True)
+        pyproject = srclayout / "pyproject.toml"
+        pyproject.write_text("[tool.setuptools.packages.find]\nwhere = ['src']\n")
+
+        args_head = f"cycle {srclayout}"
+        record_cli_event(
+            tmp_path,
+            subcommand="cycle",
+            args_head=args_head,
+            duration_ms=300,
+            exit_code=0,
+        )
+
+        # The verdict-determining input changes: the fixture's own
+        # pyproject.toml is deleted, exactly as in the live incident.
+        pyproject.unlink()
+
+        tips = detect_footguns(
+            tmp_path,
+            subcommand="cycle",
+            args_head=args_head,
+            duration_ms=300,
+            exit_code=0,
+            tree_hash_value="unknown",
+        )
+        assert "REDUNDANT_RERUN" not in [t.rule_id for t in tips], (
+            "REDUNDANT_RERUN fired even though the external fixture path "
+            "named in args_head changed between the two runs -- neither "
+            "tree_hash nor home_config_hash can see state outside the "
+            "repo AND outside ~/.claude"
+        )
+
+    # frob:ticket T-2204
+    # frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_still_flags_when_the_external_fixture_is_unchanged  # noqa: E501
+    def test_still_flags_when_the_external_fixture_is_unchanged(
+        self, tmp_path: Path
+    ):
+        # The positive case: when the named external path's own state
+        # genuinely has not moved, REDUNDANT_RERUN must still fire -- the
+        # fix must not blunt the detector into never firing at all.
+        fixture_root = tmp_path.parent / f"fixture-{tmp_path.name}-2"
+        srclayout = fixture_root / "srclayout"
+        srclayout.mkdir(parents=True)
+        (srclayout / "pyproject.toml").write_text("[tool.setuptools]\n")
+
+        args_head = f"cycle {srclayout}"
+        record_cli_event(
+            tmp_path,
+            subcommand="cycle",
+            args_head=args_head,
+            duration_ms=300,
+            exit_code=0,
+        )
+        tips = detect_footguns(
+            tmp_path,
+            subcommand="cycle",
+            args_head=args_head,
+            duration_ms=300,
+            exit_code=0,
+            tree_hash_value="unknown",
+        )
+        assert [t.rule_id for t in tips] == ["REDUNDANT_RERUN"]
+
+    # frob:ticket T-2204
+    # frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_no_path_looking_argument_yields_none  # noqa: E501
+    def test_no_path_looking_argument_yields_none(self, tmp_path: Path):
+        # A subcommand with no PATH-shaped positional argument at all
+        # (e.g. plain "check") must not be affected by this digest --
+        # the redundant-rerun behavior for that case is unchanged.
+        record_cli_event(
+            tmp_path, subcommand="check", args_head="check", duration_ms=500, exit_code=0
+        )
+        tips = detect_footguns(
+            tmp_path,
+            subcommand="check",
+            args_head="check",
+            duration_ms=500,
+            exit_code=0,
+            tree_hash_value="unknown",
+        )
+        assert [t.rule_id for t in tips] == ["REDUNDANT_RERUN"]
