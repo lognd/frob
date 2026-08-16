@@ -10,7 +10,7 @@ priority: critical
 parent: null
 tier: ticket
 sprint: null
-runs_last: true
+runs_last: false
 scope:
 - docs/modules/tickets.md
 - docs/index.md
