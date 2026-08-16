@@ -87,12 +87,19 @@ _TITLE_STOPWORDS = frozenset(
 )
 
 # frob:ticket T-2177
+# frob:ticket T-2192
 # Below this length, a candidate word/subword is too generic to be a
 # meaningful signal either way (both "the" and "run" are far too common to
 # prove or disprove a scope match) -- excluded from both the ticket-text
 # and file-token candidate sets so neither side manufactures a false
-# match/non-match off noise.
-_SCOPE_PLAUSIBILITY_MIN_WORD_LEN = 4
+# match/non-match off noise. T-2192 raised this from 4 to 5: measured
+# directly, a 4-letter subword ("auto", extracted from both a ticket's
+# "auto-rebase" and an unrelated single-line log literal "auto-resolve
+# of out-of-scope conflict...") produced a coincidental match with no
+# real relationship between the two -- 4-letter English prefixes recur
+# across unrelated identifiers/messages far more often than 5+-letter
+# ones, so this is a real-measured, not a guessed, threshold.
+_SCOPE_PLAUSIBILITY_MIN_WORD_LEN = 5
 
 # frob:ticket T-2177
 # Generic code/prose words common enough that a match on them alone proves
@@ -144,6 +151,12 @@ _SCOPE_PLAUSIBILITY_TOKEN_RE = re.compile(
     r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*"
 )
 _SCOPE_PLAUSIBILITY_CAMEL_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+
+# frob:ticket T-2192
+# `'...'`/`"..."`/`` `...` ``-quoted spans in ticket prose -- every word
+# inside counts as a candidate regardless of shape, because the author
+# explicitly flagged it as a literal/code citation, not ordinary prose.
+_SCOPE_PLAUSIBILITY_QUOTED_RE = re.compile(r"`([^`]+)`|'([^']+)'|\"([^\"]+)\"")
 
 
 # frob:ticket T-1556
@@ -346,6 +359,34 @@ def _title_words(title: str) -> frozenset[str]:
     )
 
 
+# frob:ticket T-2192
+def _looks_identifier_shaped(token: str) -> bool:
+    """True if bare-prose `token` (already hyphen-to-underscore normalized
+    by the caller) looks like a code identifier rather than an ordinary
+    English word (T-2192): contains `_` or `.`, is an ALLCAPS constant
+    (length >= 3), or has an internal capital past its first character
+    (camelCase/PascalCase/mixed-case -- `PlanTickGateDirty`, `iPhone`-
+    shaped). A single ordinarily-capitalized sentence-start word
+    (`Rebase`, `The`) does NOT qualify -- only its first character differs
+    in case, `token[1:]` stays all-lower, so `any(c.isupper() for c in
+    token[1:])` is False for it and True for a genuine multi-hump name.
+
+    T-2192's own measured defect: a bare, single-case, unhyphenated
+    prose word ('land', 'ledger', 'merge', 'conflict', 'files') shares
+    vocabulary with EVERY file in a subject area by construction --
+    that is exactly where the three real historical mis-scopings
+    happened (a wrong file in the RIGHT area, not a wildly unrelated
+    one), so counting bare words as candidates could never distinguish
+    them. Requiring identifier shape is the fix: `_land_plan_locked`,
+    `PlanTickGateDirty`, `auto_rebase` (hyphen-normalized from
+    `auto-rebase`) all qualify; `land`, `merge`, `rebase` alone do not."""
+    if "_" in token or "." in token:
+        return True
+    if token.isupper() and len(token) >= 3:
+        return True
+    return any(c.isupper() for c in token[1:])
+
+
 # frob:ticket T-2177
 def _split_scope_plausibility_words(token: str) -> tuple[str, ...]:
     """Lowercased, `_SCOPE_PLAUSIBILITY_MIN_WORD_LEN`-filtered, stopword-
@@ -373,11 +414,29 @@ def _split_scope_plausibility_words(token: str) -> tuple[str, ...]:
 
 
 # frob:ticket T-2177
+# frob:ticket T-2192
 def _scope_plausibility_ticket_words(title: str, body: str) -> frozenset[str]:
     """Candidate symbol/word tokens from a ticket's own `title`+`body`
-    prose (T-2177): every identifier-shaped span (`_SCOPE_PLAUSIBILITY_
-    TOKEN_RE` -- bare words, snake_case/leading-underscore identifiers,
-    ALLCAPS constants, dotted qualnames) split into normalized subwords via
+    prose (T-2177, tightened by T-2192). Two sources:
+
+    1. Every word inside a `` `...` ``/`'...'`/`"..."`-quoted span, ANY
+       shape -- the author explicitly cited it as literal/code text.
+    2. Every BARE (unquoted) token that `_looks_identifier_shaped` accepts
+       -- snake_case/leading-underscore identifiers, ALLCAPS constants,
+       dotted qualnames, CamelCase/mixed-case names, and hyphenated
+       compounds (`auto-rebase`, normalized to `auto_rebase` before the
+       shape check, since hyphenated prose compounds routinely correspond
+       to a snake_case identifier in code). An ordinary single-case,
+       unhyphenated English word is DELIBERATELY EXCLUDED here -- T-2192's
+       own measured defect: a bare word ('land', 'merge', 'conflict')
+       shares vocabulary with every file in a subject area by
+       construction, which is exactly where a wrong-file-in-the-right-
+       area mis-scoping happens (T-2157/T-2173/T-2189's real shape), so
+       counting it as a candidate could never distinguish the right file
+       from a plausible-but-wrong one. See `_looks_identifier_shaped`'s
+       own docstring for the exact rule and the measured before/after.
+
+    Both sources are split into normalized subwords via
     `_split_scope_plausibility_words`. This is deliberately NOT a grammar
     parse -- ticket prose is markdown, not source code, so there is no
     real grammar to parse it with -- but it produces the same SHAPE of
@@ -385,13 +444,30 @@ def _scope_plausibility_ticket_words(title: str, body: str) -> frozenset[str]:
     `_scope_plausibility_file_words` derives from the scope file's actual
     tree-sitter grammar, so the two sides compare as SYMBOL SETS, never as
     one text searched for the other's substring."""
+    text = f"{title}\n{body}"
     words: set[str] = set()
-    for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(f"{title}\n{body}"):
-        words.update(_split_scope_plausibility_words(match.group(0)))
+    quoted_spans: list[tuple[int, int]] = []
+    for qmatch in _SCOPE_PLAUSIBILITY_QUOTED_RE.finditer(text):
+        quoted_spans.append(qmatch.span())
+        quoted = next(g for g in qmatch.groups() if g is not None)
+        for tmatch in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(quoted):
+            words.update(_split_scope_plausibility_words(tmatch.group(0)))
+
+    def _in_quoted_span(pos: int) -> bool:
+        return any(start <= pos < end for start, end in quoted_spans)
+
+    normalized = text.replace("-", "_")
+    for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(normalized):
+        if _in_quoted_span(match.start()):
+            continue  # already covered via the quoted-span pass above
+        token = match.group(0)
+        if _looks_identifier_shaped(token):
+            words.update(_split_scope_plausibility_words(token))
     return frozenset(words)
 
 
 # frob:ticket T-2177
+# frob:ticket T-2192
 def _scope_plausibility_file_words(path: Path) -> frozenset[str]:
     """Candidate symbol/word tokens actually present in `path`, parsed
     with `path`'s real language grammar (T-2177) -- never a lexical scan
@@ -404,11 +480,22 @@ def _scope_plausibility_file_words(path: Path) -> frozenset[str]:
       distinct node kind, never visited), so a symbol merely MENTIONED in
       a comment does not manufacture a false match the way a plain grep
       would.
-    - String-literal node text (any node whose tree-sitter type name
-      contains `"string"`), tokenized the same way -- catches the T-2157/
-      T-2173 shape directly: a ticket naming a subprocess argument or
-      error string (`git rebase`) that appears as string content, not as
-      an identifier.
+    - SINGLE-LINE string-literal node text (any node whose tree-sitter
+      type name contains `"string"` AND whose raw text has no newline),
+      tokenized the same way -- catches the T-2157/T-2173 shape directly:
+      a ticket naming a subprocess argument or error string
+      (`git rebase`) that appears as string content, not as an
+      identifier. T-2192: a MULTI-line string literal is excluded --
+      measured directly against `_land_git_ops.py`, its own docstrings
+      (module/function-level prose, routinely several sentences) pulled
+      in hundreds of ordinary English words as false "file words" (found
+      via `iter_identifiers` alone catching none of the mismatch, but the
+      unrestricted string-literal walk grabbing the whole docstring
+      corpus), which defeated the very purpose of grammar-parsing the
+      file: a docstring MENTIONING a subject in prose is functionally the
+      same false-positive class as a comment mentioning it, and a real
+      short single-line literal (a subprocess arg, a log/error message)
+      is never why a multi-sentence docstring is long.
 
     Returns an empty set (never an error) for a language `iter_identifiers`
     does not support, or a file that fails to parse -- this is a nudge,
@@ -439,6 +526,9 @@ def _scope_plausibility_file_words(path: Path) -> frozenset[str]:
             text = source[node.start_byte : node.end_byte].decode(
                 "utf-8", errors="replace"
             )
+            # frob:ticket T-2192
+            if "\n" in text:
+                return  # multi-line literal -- almost always a docstring
             for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(text):
                 words.update(_split_scope_plausibility_words(match.group(0)))
             return
