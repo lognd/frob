@@ -3361,7 +3361,12 @@ def _public_top_level_defs(source: str) -> dict[str, int]:
 
 
 # frob:ticket T-2114
-def _frob_directive_block(lines: list[str], def_lineno: int) -> list[str]:
+# frob:ticket T-2201
+def _frob_directive_block(
+    lines: list[str],
+    def_lineno: int,
+    genuine_comment_lines: frozenset[int] | None = None,
+) -> list[str]:
     """Every contiguous `#`-prefixed line immediately above `lines[def_
     lineno - 1]` (1-indexed, matching `ast`'s own `lineno` convention),
     stopping at the first blank or non-comment line -- the exact
@@ -3369,35 +3374,83 @@ def _frob_directive_block(lines: list[str], def_lineno: int) -> list[str]:
     directives already use throughout this codebase (directly above the
     `def`/`class` line, no intervening blank line, per `frob fmt`'s own
     canonicalization). Empty if `def_lineno` is out of range or nothing
-    precedes it."""
+    precedes it.
+
+    T-2201: a line that merely LOOKS like a comment (`.strip().startswith
+    ("#")`) is not necessarily one -- a multi-line string literal (a
+    docstring belonging to an earlier statement, or any other triple-
+    quoted string) can contain a line that starts with `#` in its own
+    right, and that line sits at a real 1-based line number identical to
+    a genuine comment's. When `genuine_comment_lines` is given (1-based
+    line numbers `frob.tickets._land._genuine_comment_lines` places
+    inside a real grammar COMMENT node, the same T-2183 machinery
+    `_directive_ticket_ids_in_diff` already uses for the identical
+    question), the walk stops the instant it reaches a `#`-looking line
+    that is NOT in that set -- exactly like reaching a blank/non-comment
+    line, since a directive block is grammar-comment lines only. `None`
+    (the default) preserves the old text-only behavior for callers that
+    have not resolved a comment-line set."""
     if def_lineno < 2 or def_lineno > len(lines) + 1:
         return []
     block: list[str] = []
     idx = def_lineno - 2  # 0-indexed line immediately above the def
     while idx >= 0 and lines[idx].strip().startswith("#"):
+        if genuine_comment_lines is not None and (idx + 1) not in genuine_comment_lines:
+            break
         block.append(lines[idx])
         idx -= 1
     return block
 
 
 # frob:ticket T-2114
+# frob:ticket T-2201
+#: T-2201: the doc/test-edge families this gate demands, as a data table
+#: instead of a hand-written boolean pair per family -- T-1907 gated the
+#: `ty` family on its own bespoke path, T-2114 then hardcoded a SECOND,
+#: near-identical `has_doc`/`has_tests` pair for COV001/TEST001, and the
+#: ticket that added this table exists specifically so a THIRD family
+#: (any future `frob:waive RULE-ID`-shaped edge this same diff-scoped
+#: gate should demand) is a one-line append here, not a third copy of
+#: the same two-line pattern. `label` is the human-readable family name
+#: used in the refusal message; `directive` is the `frob:` directive
+#: prefix that alone satisfies the family; `waive_rule` is the
+#: `frob:waive <RULE-ID>` id that also satisfies it.
+_DOC_TEST_EDGE_FAMILIES: tuple[tuple[str, str, str], ...] = (
+    ("frob:doc", "frob:doc", "COV001"),
+    ("frob:tests", "frob:tests", "TEST001"),
+)
+
+
 def _new_public_symbols_missing_doc_or_test_edge(
     worktree: Path, merge_base: str, touched_paths: frozenset[str]
-) -> list[tuple[str, str, int, bool, bool]]:
-    """Every (file, name, lineno, missing_doc, missing_tests) for a PUBLIC
-    top-level symbol that is NEW in this diff (absent by name from the
-    SAME file at `merge_base` -- a name-based diff, not a hunk-span one,
-    so it is exact regardless of how git chose to break the hunks up) and
-    whose immediately-preceding comment block (`_frob_directive_block`)
-    carries no `frob:doc`/`frob:tests` directive line and no matching
-    `frob:waive COV001`/`frob:waive TEST001` line either.
+) -> list[tuple[str, str, int, list[str]]]:
+    """Every (file, name, lineno, missing_families) for a PUBLIC top-level
+    symbol that is NEW in this diff (absent by name from the SAME file at
+    `merge_base` -- a name-based diff, not a hunk-span one, so it is exact
+    regardless of how git chose to break the hunks up) and whose
+    immediately-preceding comment block (`_frob_directive_block`) is
+    missing one or more of `_DOC_TEST_EDGE_FAMILIES`'s directive/waive
+    pair -- `missing_families` names each missing family's `label`, in
+    `_DOC_TEST_EDGE_FAMILIES` order.
 
     This is the diff-derived, bounded check T-2114 asks for: two small
     `ast.parse` calls per touched `.py` file (current worktree content,
     and the SAME file's content at `merge_base` via `git show`), never a
     full-repo `GraphSnapshot`/`coverage_gate` build -- the ~208s cost
-    T-1684 deliberately took off the land critical path stays off it."""
-    findings: list[tuple[str, str, int, bool, bool]] = []
+    T-1684 deliberately took off the land critical path stays off it.
+
+    T-2201: the candidate block's lines are further filtered to only
+    those `frob.tickets._land._genuine_comment_lines` places inside a
+    real grammar COMMENT node of the CURRENT worktree file -- a `frob:`-
+    looking line inside a docstring/string literal that merely happens to
+    start with `#` and sit directly above the def no longer satisfies
+    this gate (the exact substring-matching gap T-2183 already fixed for
+    the passenger-ticket check; this reuses the same machinery rather
+    than inventing a second answer to "is this line a genuine
+    directive?")."""
+    from frob.tickets._land import _genuine_comment_lines
+
+    findings: list[tuple[str, str, int, list[str]]] = []
     for rel_path in sorted(touched_paths):
         if not rel_path.endswith(".py"):
             continue
@@ -3418,15 +3471,20 @@ def _new_public_symbols_missing_doc_or_test_edge(
         if old.is_ok and old.danger_ok.returncode == 0:
             old_names = set(_public_top_level_defs(old.danger_ok.stdout))
         lines = source.splitlines()
+        genuine_lines = _genuine_comment_lines(worktree, None, rel_path)
         for name, lineno in sorted(new_defs.items(), key=lambda kv: kv[1]):
             if name in old_names:
                 continue
-            block = _frob_directive_block(lines, lineno)
+            block = _frob_directive_block(lines, lineno, genuine_lines)
             block_text = "\n".join(block)
-            has_doc = "frob:doc" in block_text or "frob:waive COV001" in block_text
-            has_tests = "frob:tests" in block_text or "frob:waive TEST001" in block_text
-            if not has_doc or not has_tests:
-                findings.append((rel_path, name, lineno, not has_doc, not has_tests))
+            missing = [
+                label
+                for label, directive, waive_rule in _DOC_TEST_EDGE_FAMILIES
+                if directive not in block_text
+                and f"frob:waive {waive_rule}" not in block_text
+            ]
+            if missing:
+                findings.append((rel_path, name, lineno, missing))
     return findings
 
 
@@ -3465,12 +3523,8 @@ def _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
     )
     if not findings:
         return
-    for rel_path, name, lineno, missing_doc, missing_tests in findings:
-        missing = ", ".join(
-            r
-            for r, m in (("frob:doc", missing_doc), ("frob:tests", missing_tests))
-            if m
-        )
+    for rel_path, name, lineno, missing_families in findings:
+        missing = ", ".join(missing_families)
         _log.error(
             "ticket land: %s refused -- %s:%d new public symbol %r has no "
             "%s edge (T-2114: this family is not relaxed by the rapid "

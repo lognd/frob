@@ -612,6 +612,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
 
 
 # frob:ticket T-2114
+# frob:ticket T-2201
 class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
     """`_assert_new_public_symbols_have_doc_and_test_edge_pre_land`
     (T-2114): generalizes T-1907's touched-set shape from the type family
@@ -677,6 +678,41 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
         _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
             repo, "T-2114", frozenset({"src/feature.py"})
         )  # must not raise
+
+    # frob:ticket T-2201
+    def test_a_directive_looking_line_inside_a_docstring_does_not_satisfy_the_gate(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_directive_looking_line_inside_a_docstring_does_not_satisfy_the_gate  # noqa: E501
+        # T-2201's DESIGNATED REPRO (BUG002): the old check did a plain
+        # substring test over whatever "#"-prefixed-looking lines sit
+        # directly above the def -- including a line that only LOOKS like
+        # a comment because it happens to start with "#" while actually
+        # being part of a preceding multi-line string literal's own
+        # content. This constant's own text has the shape of the two
+        # required directives, sitting immediately above
+        # brand_new_public_function, that is NOT a grammar comment at all
+        # -- it is string content. The gate must still refuse (no GENUINE
+        # doc/tests edge exists).
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land,
+        )
+
+        new_file = repo / "src" / "fake_directive.py"
+        new_file.write_text(
+            '_X = """\n'
+            "# frob:doc docs/modules/example.md#brand-new-public-function\n"
+            '# frob:tests tests/test_example.py::test_brand_new_public_function"""\n'
+            "def brand_new_public_function():\n"
+            "    return 1\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+                repo, "T-2201", frozenset({"src/fake_directive.py"})
+            )
+        assert exc_info.value.code == 1
 
     def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_empty_touched_set_is_a_no_op  # noqa: E501
