@@ -16,6 +16,7 @@ scope:
 - src/frob/tickets/_models.py
 - scripts/verify_lands.py
 - docs/guides/coordinator-scripts.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -23,6 +24,12 @@ scope_changes:
   glob: docs/guides/coordinator-scripts.md
   reason: verify_lands.py's frob:doc target -- this ticket changes its argument interface,
     so the doc must move with it
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: the land path gains a persisted land-commit field; the landing module doc
+    documents that path
   actor: logan
   at: '2026-08-16'
 designated_repro_test: null
