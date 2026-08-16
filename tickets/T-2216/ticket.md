@@ -12,9 +12,30 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/_setters.py
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_setters.py
+  reason: Coordinator scope error caught by T-2177's own plausibility warning, which
+    fired on filing. The block verb is _block at src/frob/app/ticket_runner/_lifecycle.py:1128
+    -- its own comment calls it 'the ONE CLI verb that appends to an EXISTING ticket's
+    blocked_by post-creation'. src/frob/tickets/_setters.py does not implement it;
+    I picked that file from its module name, which is the exact T-2157/T-2173/T-2189
+    shape the warning names.
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: Coordinator scope error caught by T-2177's own plausibility warning, which
+    fired on filing. The block verb is _block at src/frob/app/ticket_runner/_lifecycle.py:1128
+    -- its own comment calls it 'the ONE CLI verb that appends to an EXISTING ticket's
+    blocked_by post-creation'. src/frob/tickets/_setters.py does not implement it;
+    I picked that file from its module name, which is the exact T-2157/T-2173/T-2189
+    shape the warning names.
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 threat: null
 component: null
