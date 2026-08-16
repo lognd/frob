@@ -16,7 +16,7 @@ import io
 import json
 import subprocess
 import sys
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -730,12 +730,14 @@ class TestPrintLandStatus:
         )
         monkeypatch.setattr(fleet_status, "host_load", lambda: (19.5, 10 * 1024 * 1024))
         monkeypatch.setattr(fleet_status, "leases", lambda: [{"ticket_id": "T-1"}])
+        monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 1)
         fleet_status._print_land_status()
         out = capsys.readouterr().out
         assert "LANDS IN FLIGHT: 1" in out
         assert "T-1234" in out and "elapsed=300s" in out and "cpu=270s" in out
         assert "LAND LOCK: held, live holder pid(s)=[100]" in out
-        assert "LOAD 19.5" in out and "MEM 10.0GB avail" in out and "1 lease(s)" in out
+        assert "LOAD 19.5" in out and "MEM 10.0GB avail" in out
+        assert "1 live lease(s) (1 total)" in out
 
     def test_prints_stale_lock_when_no_live_holder(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
@@ -760,6 +762,162 @@ class TestPrintLandStatus:
         assert "LANDS IN FLIGHT: 0" in out
         assert "stale" in out.lower()
         assert "LOAD: unknown" in out
+
+    # frob:ticket T-2222
+    def test_guidance_line_uses_live_count_not_raw_count(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2222 acceptance [2]: the concurrency guidance clause's own
+        number is the LIVE count, never `len(leases())` -- 6 raw leases
+        with only 4 live must print '4 live lease(s) (6 total)', not
+        '6 lease(s)' (the measured incident: a coordinator held dispatch
+        believing 6 leases meant 6 live agents)."""
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
+        monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [])
+        monkeypatch.setattr(fleet_status, "host_load", lambda: (1.0, 1024 * 1024))
+        monkeypatch.setattr(
+            fleet_status, "leases", lambda: [{"ticket_id": f"T-{i}"} for i in range(6)]
+        )
+        monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 4)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        assert "4 live lease(s) (6 total)" in out
+        assert "6 lease(s) --" not in out
+
+
+class TestLeaseClassification:
+    """`fleet_status.lease_classification` / `live_lease_count` (T-2222)."""
+
+    def _record(self, tmp_path: Path, **overrides: object) -> dict:
+        worktree = tmp_path / "wt"
+        worktree.mkdir(exist_ok=True)
+        record: dict = {
+            "ticket_id": "T-9001",
+            "worktree": str(worktree),
+            "scope": ["src/frob/**"],
+            "branch": "t-9001",
+            "recorded_at": datetime.now(UTC).isoformat(),
+        }
+        record.update(overrides)
+        return record
+
+    def test_live_lease_stays_live(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The must-still-pass control: a genuinely live lease (worktree
+        exists, ticket in-progress on main, well within TTL) MUST STILL
+        report 'live' -- a fix that marks everything reclaimable would
+        satisfy every other test here and be catastrophic (T-2222
+        acceptance [4])."""
+        record = self._record(tmp_path)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "in-progress", "scope": [], "blocked_by": []},
+        )
+        assert fleet_status.lease_classification(record) == "live"
+        assert fleet_status.live_lease_count([record]) == 1
+
+    def test_holder_dead_is_reclaimable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Past TTL with no live process cwd'd into the worktree ->
+        reclaimable (T-1382's own real shape: `holder-dead`)."""
+        stale_recorded = (
+            datetime.now(UTC).timestamp() - fleet_status._LEASE_TTL_SECONDS - 3600
+        )
+        record = self._record(
+            tmp_path,
+            recorded_at=datetime.fromtimestamp(stale_recorded, tz=UTC).isoformat(),
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "in-progress", "scope": [], "blocked_by": []},
+        )
+        monkeypatch.setattr(
+            fleet_status, "_scan_for_live_worktree_process", lambda path: None
+        )
+        assert fleet_status.lease_classification(record) == "reclaimable"
+        assert fleet_status.live_lease_count([record]) == 0
+
+    def test_ticket_terminal_is_reclaimable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ticket whose `main` state is `done`/`dropped` can never
+        legitimately still hold a lease -- reclaimable regardless of TTL
+        or worktree liveness."""
+        record = self._record(tmp_path)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "done", "scope": [], "blocked_by": []},
+        )
+        assert fleet_status.lease_classification(record) == "reclaimable"
+
+    def test_path_gone_is_reclaimable(self, tmp_path: Path) -> None:
+        """A recorded worktree path that no longer exists on disk at all
+        is reclaimable -- the cheapest, most-common shape, checked first
+        (no `ticket_frontmatter_on_main` call needed at all)."""
+        record = {
+            "ticket_id": "T-9002",
+            "worktree": str(tmp_path / "gone"),
+            "recorded_at": datetime.now(UTC).isoformat(),
+        }
+        assert fleet_status.lease_classification(record) == "reclaimable"
+
+    def test_root_worktree_is_structurally_unreclaimable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2222 acceptance [3]: a lease whose `worktree` resolves to
+        THIS repo's own root reports `'root-resident'` -- derived from
+        comparing the record's own `worktree` field against the resolved
+        repo root (`REPO`), never a ticket-id allowlist (T-1686's real
+        shape: 53 processes cwd'd into the shared root at once, which
+        would otherwise read as 'live' forever). A root-resident lease
+        does NOT count toward `live_lease_count` either -- it was never a
+        real dispatched agent."""
+        monkeypatch.setattr(fleet_status, "REPO", tmp_path)
+        record = self._record(tmp_path, worktree=str(tmp_path))
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "in-progress", "scope": [], "blocked_by": []},
+        )
+        assert fleet_status.lease_classification(record) == "root-resident"
+        assert fleet_status.live_lease_count([record]) == 0
+
+    def test_classification_is_strictly_read_only(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2222 acceptance [5]: classifying a batch of leases (including
+        reclaimable and root-resident ones) never releases, modifies, or
+        deletes anything -- `Path.unlink` is monkeypatched to raise if
+        called at all, and both classification calls must still complete
+        without hitting it."""
+
+        def _fail_if_called(self: Path) -> None:  # pragma: no cover - guard
+            raise AssertionError(
+                "lease_classification/live_lease_count must never delete "
+                "or modify a lease file"
+            )
+
+        monkeypatch.setattr(Path, "unlink", _fail_if_called)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "in-progress", "scope": [], "blocked_by": []},
+        )
+        monkeypatch.setattr(fleet_status, "REPO", tmp_path / "not-the-repo-root")
+        live_record = self._record(tmp_path)
+        gone_record = {
+            "ticket_id": "T-9003",
+            "worktree": str(tmp_path / "does-not-exist"),
+            "recorded_at": datetime.now(UTC).isoformat(),
+        }
+        assert fleet_status.lease_classification(live_record) == "live"
+        assert fleet_status.lease_classification(gone_record) == "reclaimable"
+        assert fleet_status.live_lease_count([live_record, gone_record]) == 1
 
 
 class TestHostLoad:
@@ -1182,8 +1340,28 @@ class TestPrintFleetReport:
         assert out.index("ROOT") < out.index("QUARANTINE") < out.index("LEASES")
         assert out.index("LEASES") < out.index("WORKTREES")
         assert "DIRTY" in out and " M x.py" in out
-        assert "T-2114 -> t-2114" in out
-        assert "one" in out
+
+    # frob:ticket T-2222
+    def test_leases_section_shows_classification_per_lease(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2222: each LEASES row prints its own `lease_classification`
+        verdict, and the section header shows the LIVE count alongside
+        the raw total -- a reclaimable lease (path-gone here) never reads
+        indistinguishably from a live one."""
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
+        monkeypatch.setattr(
+            fleet_status,
+            "leases",
+            lambda: [{"ticket_id": "T-2114", "worktree": "/does/not/exist"}],
+        )
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        fleet_status._print_fleet_report([], idle_seconds=1200)
+        out = capsys.readouterr().out
+        assert "LEASES 1 (0 live)" in out
+        assert "T-2114 -> exist  [reclaimable]" in out
 
 
 def _write_ticket(

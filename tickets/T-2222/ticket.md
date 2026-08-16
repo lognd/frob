@@ -2,7 +2,7 @@
 id: T-2222
 title: fleet_status reports a raw lease COUNT with concurrency guidance attached,
   so reclaimable and root-residual leases read as live agents (6 leases = 4 agents)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,25 +14,38 @@ runs_last: false
 scope:
 - scripts/fleet_status.py
 - docs/guides/coordinator-scripts.md
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_holder_dead_is_reclaimable
+- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_guidance_line_uses_live_count_not_raw_count
+- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_root_worktree_is_structurally_unreclaimable
+- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_live_lease_stays_live
+- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_classification_is_strictly_read_only
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_holder_dead_is_reclaimable
 acceptance:
 - text: 'The report distinguishes a reclaimable lease from a live one (fails today:
     leases() returns undifferentiated records)'
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_holder_dead_is_reclaimable
 - text: The concurrency guidance clause is computed from the LIVE count, not the raw
     file count
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_guidance_line_uses_live_count_not_raw_count
 - text: A lease whose worktree IS the repo root is reported as structurally unreclaimable,
     derived from the record's worktree vs resolved root -- never a ticket-id allowlist
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_root_worktree_is_structurally_unreclaimable
 - text: A genuinely live lease MUST STILL report as live (must-still-pass control
     against a fix that marks everything reclaimable)
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_live_lease_stays_live
 - text: 'The report remains strictly read-only: it never releases, modifies, or deletes
     a lease'
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_classification_is_strictly_read_only
 threat: null
 component: null
 anchor: false

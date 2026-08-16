@@ -27,11 +27,12 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import os
 import re
 import subprocess
 import time
 from collections.abc import Sequence
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 try:
@@ -227,6 +228,159 @@ def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
                 item = item[1:-1]
             block.append(item)
     return {"state": state, "scope": scope, "blocked_by": blocked_by}
+
+
+# frob:doc docs/guides/coordinator-scripts.md#lease-classification-constants
+# frob:ticket T-2222
+#: Mirrors `frob.tickets._leases.LEASE_TTL_SECONDS` (6 hours) exactly --
+#: duplicated here in plain form rather than imported (this script's own
+#: "no `frob` import" contract, module docstring / T-2222's own scope
+#: note) so a lease's own age is judged by the SAME horizon the authoritative
+#: `frob.tickets._leases.is_lease_ttl_expired` uses, not a second, silently
+#: divergent threshold.
+_LEASE_TTL_SECONDS = 6 * 60 * 60
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_lease_age_seconds
+# frob:ticket T-2222
+def _lease_age_seconds(record: dict, *, now: datetime | None = None) -> float | None:
+    """Seconds elapsed since `record["recorded_at"]`, or `None` if that
+    field is missing/unparseable as ISO-8601 (defensive -- a lease file is
+    peer-writable, T-0780, mirroring `frob.tickets._leases.lease_age_
+    seconds`'s own contract exactly). `now` is injectable for tests."""
+    recorded_at = record.get("recorded_at")
+    if not isinstance(recorded_at, str):
+        return None
+    try:
+        recorded = datetime.fromisoformat(recorded_at)
+    except ValueError:
+        return None
+    if recorded.tzinfo is None:
+        recorded = recorded.replace(tzinfo=UTC)
+    current = now if now is not None else datetime.now(UTC)
+    return (current - recorded).total_seconds()
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_scan_for_live_worktree_process
+# frob:ticket T-2222
+def _scan_for_live_worktree_process(
+    path: Path, proc: Path = Path("/proc")
+) -> int | None:
+    """The first live pid whose `/proc/<pid>/cwd` resolves to `path`, or
+    `None` if none does -- mirrors `frob.tickets._leases.scan_for_live_
+    worktree_process`'s own `/proc` walk exactly (same primitive
+    `land_lock_holder_pids` above already uses for a different question,
+    'who holds `land.lock` open' vs this function's 'is anything cwd'd
+    into this worktree'). `/proc` missing, an unreadable pid, or simply no
+    match all return `None`, never a refusal by themselves -- an inability
+    to scan must never itself become 'proven dead' (same posture as the
+    authoritative implementation this mirrors)."""
+    if not proc.is_dir():
+        return None
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return None
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return None
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            cwd = Path(os.readlink(f"/proc/{entry.name}/cwd")).resolve()
+        except OSError:
+            continue
+        if cwd == resolved:
+            return int(entry.name)
+    return None
+
+
+# frob:doc docs/guides/coordinator-scripts.md#lease_classification
+# frob:ticket T-2222
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLeaseClassification.test_live_lease_stays\
+# _live
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLeaseClassification.test_holder_dead_is_r\
+# eclaimable
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLeaseClassification.test_ticket_terminal_\
+# is_reclaimable
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLeaseClassification.test_path_gone_is_rec\
+# laimable
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLeaseClassification.test_root_worktree_is\
+# _structurally_unreclaimable
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLeaseClassification.test_classification_i\
+# s_strictly_read_only
+def lease_classification(record: dict) -> str:
+    """T-2222: classify one held lease record as `"live"`, `"reclaimable"`,
+    or `"root-resident"` -- the missing distinction `leases()` never made,
+    which let a raw file COUNT read as a live-agent count (measured: 6
+    leases, only 4 live agents; T-1382 was reclaimable via holder-dead,
+    T-1686 is a permanent root-resident residue, T-2007's own accepted-
+    permanent-residue finding).
+
+    Mirrors `frob.tickets._leases.lease_staleness_reason`'s own ordering
+    (path-gone/ticket-gone/ticket-terminal/holder-dead -> reclaimable),
+    checked cheapest-first, duplicated here in plain form rather than
+    imported per this script's "no `frob` import" contract, plus one
+    addition (acceptance [3]): a `worktree` that resolves to THIS repo's
+    own root reports `"root-resident"`, derived from comparing the
+    record's own field against the resolved repo root, NEVER a ticket-id
+    allowlist -- a live shell is routinely cwd'd into the shared root
+    (T-1686: 53 processes at once), so the ordinary liveness scan would
+    read it as permanently live; it is never reclaimable but also never
+    counted as a real dispatched AGENT. `"live"` is everything else, and
+    is the ONLY bucket a concurrency count should be computed from
+    (acceptance [2])."""
+    worktree = record.get("worktree", "")
+    wt_path = Path(worktree) if worktree else None
+    if wt_path is None or not wt_path.exists():
+        return "reclaimable"  # path-gone
+
+    ticket_id = record.get("ticket_id", "")
+    main_info = ticket_frontmatter_on_main(ticket_id) if ticket_id else None
+    if main_info is None:
+        return "reclaimable"  # ticket-gone
+    if main_info["state"] in ("done", "dropped"):
+        return "reclaimable"  # ticket-terminal
+
+    try:
+        is_root = wt_path.resolve() == REPO.resolve()
+    except OSError:
+        is_root = False
+    if is_root:
+        return "root-resident"
+
+    age = _lease_age_seconds(record)
+    if (
+        age is not None
+        and age > _LEASE_TTL_SECONDS
+        and _scan_for_live_worktree_process(wt_path) is None
+    ):
+        return "reclaimable"  # holder-dead
+
+    return "live"
+
+
+# frob:doc docs/guides/coordinator-scripts.md#live_lease_count
+# frob:ticket T-2222
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLeaseClassification.test_live_lease_stays\
+# _live
+def live_lease_count(held: Sequence[dict]) -> int:
+    """How many of `held` (`leases()`'s own records) classify as `"live"`
+    (`lease_classification`) -- the number a concurrency GUIDANCE clause
+    must be computed from, never `len(held)` (T-2222 acceptance [2]:
+    `leases()`'s raw count silently includes reclaimable and root-resident
+    entries, which is exactly how '6 leases' read as '4 live agents' in
+    the measured incident this ticket fixes)."""
+    return sum(1 for record in held if lease_classification(record) == "live")
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_matches_any_scope_glob
@@ -1182,18 +1336,23 @@ def _print_ticket_readiness(readiness: dict) -> bool:
 
 # frob:doc docs/guides/coordinator-scripts.md#_land_status_lines
 # frob:ticket T-2180
+# frob:ticket T-2222
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_prints_invocations_a\
 # nd_live_lock_holder
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_prints_stale_lock_wh\
 # en_no_live_holder
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_guidance_line_uses_l\
+# ive_count_not_raw_count
 def _land_status_lines(
     invocations: list[dict],
     holder_pids: list[int],
     lock_exists: bool,
     load: tuple[float, int] | None,
     held_lease_count: int,
+    live_lease_count_: int,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -1202,7 +1361,17 @@ def _land_status_lines(
     `invocations` are `land_invocations`'s own dicts (ticket id, pids,
     elapsed, cpu). `holder_pids`/`lock_exists` distinguish a live-held
     lock from a stale one from a free one. `load` is `host_load`'s
-    `(1-minute load average, MemAvailable kb)`, or `None` when unknown."""
+    `(1-minute load average, MemAvailable kb)`, or `None` when unknown.
+
+    T-2222: `held_lease_count` (the raw `len(leases())`) and `live_lease_
+    count_` (`live_lease_count(leases())`, T-2222's own live-vs-reclaimable
+    classification) are BOTH shown, but the concurrency GUIDANCE clause is
+    computed from `live_lease_count_` alone -- the measured incident this
+    fixes: '6 lease(s) -- guidance is 3-4 agent concurrent' read as 6 live
+    agents when only 4 were (two were reclaimable/root-resident), and the
+    coordinator held dispatch on that overstated number. The trailing
+    underscore on the parameter avoids shadowing the module-level
+    `live_lease_count` function of the same name."""
     lines = [f"LANDS IN FLIGHT: {len(invocations)}"]
     for inv in invocations:
         # T-2193: land_invocations() drops any row it cannot parse a
@@ -1230,27 +1399,28 @@ def _land_status_lines(
         mem_available_gb = mem_available_kb / (1024 * 1024)
         lines.append(
             f"LOAD {load_1min:.1f}  MEM {mem_available_gb:.1f}GB avail  "
-            f"{held_lease_count} lease(s) -- guidance is "
-            f"{_AGENT_CAP_GUIDANCE} concurrent"
+            f"{live_lease_count_} live lease(s) ({held_lease_count} total) "
+            f"-- guidance is {_AGENT_CAP_GUIDANCE} concurrent"
         )
     return lines
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_print_land_status
 # frob:ticket T-2180
+# frob:ticket T-2222
 def _print_land_status() -> None:
     """Print the LANDS section: distinct `land_invocations` (T-2180's own
     fix for the ~4x process-line overcount), each with its pids, elapsed
     time, and CPU time, followed by `land.lock` holder liveness from
     `land_lock_holder_pids`'s `/proc` scan, followed by a LOAD line
-    (`host_load`'s 1-minute load average and `MemAvailable`, alongside
-    the held-lease count) against this host's recorded 3-4 concurrent
-    agent operational guidance. Printed unconditionally inside
-    `_print_fleet_report`, in the standing report a coordinator already
-    runs before every dispatch and every land -- acceptance [4]'s own
-    'automatic over commands' requirement: `frob ticket wave --agents N`
-    already computes this kind of thing and gets skipped because it is a
-    separate command a coordinator has to remember to run. The LOAD line
+    (`host_load`'s 1-minute load average and `MemAvailable`, alongside the
+    live-vs-total held-lease counts, T-2222) against this host's recorded
+    3-4 concurrent agent operational guidance. Printed unconditionally
+    inside `_print_fleet_report`, in the standing report a coordinator
+    already runs before every dispatch and every land -- acceptance [4]'s
+    own 'automatic over commands' requirement: `frob ticket wave --agents
+    N` already computes this kind of thing and gets skipped because it is
+    a separate command a coordinator has to remember to run. The LOAD line
     was added alongside the other two because it reads the same process-
     table-adjacent state and answers the same standing question this
     section already exists to answer ('is it safe to dispatch another
@@ -1262,8 +1432,14 @@ def _print_land_status() -> None:
     holder_pids = land_lock_holder_pids(REPO)
     lock_path = REPO / ".frob" / "land.lock"
     load = host_load()
+    held = leases()
     for line in _land_status_lines(
-        invocations, holder_pids, lock_path.exists(), load, len(leases())
+        invocations,
+        holder_pids,
+        lock_path.exists(),
+        load,
+        len(held),
+        live_lease_count(held),
     ):
         print(line)
 
@@ -1272,9 +1448,13 @@ def _print_land_status() -> None:
 # frob:ticket T-2172
 # frob:ticket T-2180
 # frob:ticket T-2182
+# frob:ticket T-2222
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_prints_all_four_sec\
 # tions
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_leases_section_show\
+# s_classification_per_lease
 def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     """Print the ROOT/LANDS/QUARANTINE/LEASES/WORKTREES sections `main`
     used to print inline -- split out (ARCH001/ARCH103, T-2172) as the
@@ -1288,7 +1468,15 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     added the TICKET ROT section right after LANDS, for the same reason:
     a coordinator already reads this report before every dispatch, and
     ticket rot is exactly the kind of "forgot we have a stack of things"
-    signal that belongs where dispatch decisions are actually made."""
+    signal that belongs where dispatch decisions are actually made.
+
+    T-2222: the LEASES section now prints each record's own `lease_
+    classification` (`"live"`/`"reclaimable"`/`"root-resident"`) next to
+    it, and the section header itself carries both the raw count and the
+    live count -- a lease that reads as reclaimable or root-resident is
+    never silently indistinguishable from a live agent's own lease here,
+    the same fix `_land_status_lines`'s LOAD line above already applies
+    to the concurrency guidance clause."""
     print(f"ROOT {'DIRTY -- do not dispatch' if dirt else 'CLEAN'}")
     for line in dirt:
         print(f"  {line}")
@@ -1312,10 +1500,12 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
         print("QUARANTINE clear")
 
     held = leases()
-    print(f"LEASES {len(held)}")
+    live_count = live_lease_count(held)
+    print(f"LEASES {len(held)} ({live_count} live)")
     for record in held:
         name = Path(record.get("worktree", "?")).name
-        print(f"  {record.get('ticket_id')} -> {name}")
+        classification = lease_classification(record)
+        print(f"  {record.get('ticket_id')} -> {name}  [{classification}]")
 
     print("WORKTREES")
     for name, age, idle in worktrees(idle_seconds):

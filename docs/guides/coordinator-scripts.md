@@ -180,6 +180,54 @@ redo a scope-narrowing it had already done on its own branch.
 `ticket_readiness` below is what actually compares this against the
 live lease.
 
+### lease-classification-constants
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#lease-classification-constants -->
+
+`_LEASE_TTL_SECONDS` mirrors `frob.tickets._leases.LEASE_TTL_SECONDS`
+(6 hours) exactly, duplicated in plain form (this script's own no-`frob`-
+import contract) rather than imported.
+
+### `_lease_age_seconds`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_lease_age_seconds -->
+
+Seconds elapsed since a lease record's own `recorded_at` field, or `None`
+if unparseable -- mirrors `frob.tickets._leases.lease_age_seconds`.
+
+### `_scan_for_live_worktree_process`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_scan_for_live_worktree_process -->
+
+The first live pid whose `/proc/<pid>/cwd` resolves to a given worktree
+path, or `None` -- mirrors `frob.tickets._leases.scan_for_live_worktree_
+process`'s own `/proc` walk (a distinct question from `land_lock_holder_
+pids` above: "is anything cwd'd here" vs "who holds `land.lock` open").
+
+### `lease_classification`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#lease_classification -->
+
+T-2222: classifies one held lease record as `"live"`, `"reclaimable"`, or
+`"root-resident"` -- the missing distinction that let a raw lease file
+COUNT read as a live-agent count (measured: 6 leases, only 4 live
+agents). Mirrors `frob.tickets._leases.lease_staleness_reason`'s own four
+shapes (path-gone, ticket-gone, ticket-terminal, holder-dead) plus one
+addition: a lease whose `worktree` resolves to this repo's own root
+reports `"root-resident"` -- structurally unreclaimable (a live
+coordinator/agent shell is routinely cwd'd into the shared root, so the
+ordinary liveness scan would read it as permanently live) but also never
+counted as a real dispatched agent. Derived entirely from the record's
+own fields and `main`'s ticket state -- never a ticket-id allowlist.
+
+### `live_lease_count`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#live_lease_count -->
+
+How many of a list of held lease records classify as `"live"` -- the
+number a concurrency guidance clause must be computed from, never
+`len(leases())`.
+
 ### `_matches_any_scope_glob`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_matches_any_scope_glob -->
@@ -346,7 +394,11 @@ on every busy host. Returns `None` (never a fabricated zero) when either
 T-2180 (ARCH103 split, same precedent as `_ticket_readiness_lines`).
 Renders the LANDS/LAND LOCK/LOAD block as plain text lines from
 already-computed inputs -- the pure-compute half, no `print` call, so
-`_print_land_status` stays I/O-only.
+`_print_land_status` stays I/O-only. T-2222: the LOAD line's own
+concurrency guidance clause is computed from the LIVE lease count
+(`live_lease_count`), never the raw `len(leases())` -- both are shown
+(`"N live lease(s) (M total)"`) so a reclaimable/root-resident lease is
+never silently read as a live agent.
 
 ### `_print_land_status`
 
@@ -354,12 +406,13 @@ already-computed inputs -- the pure-compute half, no `print` call, so
 
 T-2180. Prints the LANDS section: `land_invocations` (ticket id, pids,
 elapsed, cpu), `land.lock` holder liveness, and a LOAD line
-(`host_load`'s load average and available memory, plus the held-lease
-count) against this host's recorded 3-4 concurrent agent operational
-guidance. Printed unconditionally inside `_print_fleet_report`, in the
-standing report a coordinator already runs -- not behind a separate
-command (the "automatic over commands" rule). Six concurrent agents
-against the documented cap went unnoticed on this host until someone
+(`host_load`'s load average and available memory, plus the live/total
+held-lease counts, T-2222) against this host's recorded 3-4 concurrent
+agent operational guidance. Printed unconditionally inside
+`_print_fleet_report`, in the standing report a coordinator already
+runs -- not behind a separate command (the "automatic over commands"
+rule). Six concurrent agents against the documented cap went unnoticed
+on this host until someone
 checked `ps`/`free` by hand; this line is where that check now lives.
 
 ### `_rot_day_thresholds`
@@ -440,7 +493,10 @@ and `idle_seconds` as arguments -- the other half of `main`'s ARCH001/
 ARCH103 decomposition, alongside `_print_ticket_readiness` above. T-2180
 added the LANDS section (`_print_land_status`) between ROOT and
 QUARANTINE; T-2182 added TICKET ROT (`_print_ticket_rot`) right after
-LANDS.
+LANDS. T-2222: the LEASES section header now shows the live count
+alongside the raw total, and each row prints its own `lease_
+classification` verdict (`live`/`reclaimable`/`root-resident`) next to
+the ticket id and worktree name.
 
 ### `_print_all_ticket_readiness`
 

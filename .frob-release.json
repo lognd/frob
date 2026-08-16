@@ -150,7 +150,9 @@
     "scripts/fleet_status.py::land_invocations": "f5b4744b924325a8d546977ff238b26bfc909d6d43080c4d56ae5534ed400a1d",
     "scripts/fleet_status.py::land_lock_holder_pids": "7100394000219b61dfe5628ad7fbb50a9ca78b481d9cea2e352a3cc4b4b92528",
     "scripts/fleet_status.py::land_process_rows": "2adb84815ae24044d67c01cae590a1b708bb1ac3353edee5b13ad0a6df562ce1",
+    "scripts/fleet_status.py::lease_classification": "1a2d96081fe96ce8f4a7e6df3783d9fafb4ea0871ed6ff43c47cc0eab1c83167",
     "scripts/fleet_status.py::leases": "37d17c7eccb22b1aa2078e0fcfe9b1e670fd0cc7b89af4c3b2379fecbfa93544",
+    "scripts/fleet_status.py::live_lease_count": "ed3e0148c99bc8711355d5f1b987b861df4f5b36ab67b6b5e6138cb0231b4955",
     "scripts/fleet_status.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "scripts/fleet_status.py::quarantine_state": "b83fb4a44381d70b72cd11ecbbfd2d76f8e32212b093b7380eb4d12a55e5c72d",
     "scripts/fleet_status.py::root_dirt": "37e0dbca57009139c2690e28bab8a4bc1c437b07db4940bc0499574dc0cb4ba7",
@@ -2310,5 +2312,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.473.0"
+  "version": "0.474.0"
 }

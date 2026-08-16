@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.474.0] - unreleased
+
+- T-2222: fleet_status reports a raw lease COUNT with concurrency guidance attached, so reclaimable and root-residual leases read as live agents (6 leases = 4 agents)
+
 ## [0.473.0] - unreleased
 
 - T-2224: Via-less grants on fail-closed capability kinds (exec/eval/install-hook/ffi) are WARN-only, never enforced
