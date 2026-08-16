@@ -1,5 +1,5 @@
 ---
-id: T-draft-385de2c7
+id: T-2188
 title: callgraph.py's build_call_graph/build_reference_graph/build_ordered_call_graph
   resolve cross-file private candidates by bare short name, unverified against imports
   -- same T-2156 mechanism, three unfixed consumers (COV006, DEAD001, PROTO001-005)
