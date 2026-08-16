@@ -2,7 +2,7 @@
 id: T-2227
 title: 'A spinning agent is invisible: a branch of ledger-only commits with uncommitted
   source reads as healthy on every liveness signal (90min lost)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -134,3 +134,6 @@ is worth stating out loud rather than discovering again: if the implementer
 finds the file wants splitting first, say so -- T-2213 already covers
 splitting `ticket_readiness`, whose 80-line body is also a live ARCH001
 finding in the current floor.
+
+## Drop reason
+- 2026-08-16: PREMISE FALSIFIED by the subject agent's own testimony, before any implementer time was spent. I filed this claiming T-2215's agent spun for 90min on ledger churn. It did not: each of the 9 ledger commits followed a DISTINCT named gate finding it had just fixed (COV002 -> frob:ticket comments, SCOPE001 -> scope add, DUP002 -> merge duplicate tests, WIRE001 -> permanent waiver, TEST016/TEST018 -> a real 4th test class after its evidence killed 0/2 and 0/3 mutants). That is productive iteration, not a loop. Both of my proposed signals are wrong: (1) repeated 'Done report' commits are frob ticket done-report's OWN re-render after each fix, not the agent re-declaring done; (2) 'ledger-only commits + uncommitted source' is the NORMAL shape of an agent iterating through close-gate findings before committing -- T-2215 closed successfully and is landing now. A detector built to this spec would flag exactly this healthy agent, which acceptance criterion 2 forbids. No measured instance of a real spin exists, and I will not keep a ticket whose evidence I misread. The genuine lesson (recent-commit != progress) is real but I have no measured case, and filing on a hypothesis violates the evidence bar I hold agents to.
