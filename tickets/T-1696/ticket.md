@@ -109,6 +109,24 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 designated_repro_test: null
+acceptance:
+- text: 'SCOPE IS INSUFFICIENT AS FILED -- measured, do not re-derive. An implementer
+    rejected this via ''frob explore xref ProfileName'' (semantic call-graph resolution,
+    not grep) and found live ProfileName/effective_profile branches in SIX files outside
+    the declared scope of src/frob/tickets/_profile.py: src/frob/tickets/_land.py:2684
+    and :2835, src/frob/app/ticket_runner/_land_cmd.py:3440, src/frob/tickets/_evidence.py:307,
+    src/frob/app/ticket_runner/_close_cmd.py:454, and src/frob/verify/_backpressure.py:179
+    and :181. The ticket''s own acceptance demands ''no land-pipeline module branches
+    on ProfileName'', which is unachievable without touching those files. Widen scope
+    to include them before the next dispatch.'
+  evidence: []
+- text: Dispatch this only when src/frob/app/ticket_runner/_land_cmd.py and src/frob/tickets/_land.py
+    are BOTH unleased -- the widened scope covers the two busiest files in the repo,
+    so it will collide with almost any concurrent land-path work. Check with 'python3
+    scripts/fleet_status.py --ticket T-1696' first; it now reports SCOPE DIVERGES
+    and gates dispatchable on lease conflicts, blocked_by edges and existence (T-2196,
+    landed 0ab334af19d6).
+  evidence: []
 threat: null
 component: verification
 labels:
