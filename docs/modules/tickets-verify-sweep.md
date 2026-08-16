@@ -626,6 +626,26 @@ what to file:
   lines -- "cannot attribute" must never suppress a real regression's own
   ticket.
 
+**T-2208: filing now disposes, in the same operation.** Before T-2208,
+`_file_regression_ticket` raised quarantine (T-1791, above) for a red
+batch and filed a regression ticket naming it, but never called
+`clear_quarantine` -- a human had to hand-restate the exact fact the
+system already knew via `frob verify dispose --file-ticket
+F=T-XXXX`, once per red batch, and deferred landing stayed off
+fleet-wide until they did. `_auto_dispose_filed_findings`, called right
+after the ticket commits, disposes exactly the `(rule_id, file)` pairs
+the just-filed ticket covers (`unfiled_pairs`) as `("filed",
+regression_id)` -- the identical disposition shape and `clear_quarantine`
+call `frob verify dispose --file-ticket` itself makes, so the WARNING-
+level "CLEARED" audit log is indistinguishable from a manual disposal.
+`clear_quarantine`'s own contract is atomic (refuses to write anything
+unless EVERY currently-raised finding is disposed), so a batch where some
+findings attribute to a DIFFERENT already-open ticket this call never
+touched leaves quarantine fully raised -- an undisposed finding with no
+tracking ticket is exactly what quarantine exists to surface, and this
+call auto-disposing it just because it happened to run would reopen the
+hole T-1693 closed.
+
 **What this leaf does NOT do.** The bisect leaf T-1686's own design names
 as the handoff for UNATTRIBUTED findings ("tier 3: bisect only the
 residue tier 2 cannot attribute") is not built yet -- an unattributed

@@ -1381,7 +1381,93 @@ def _file_regression_ticket(
         return None
     regression_id = created.danger_ok.id
     _commit_regression_ticket(root, regression_id, attribution_label)
+    _auto_dispose_filed_findings(root, unfiled_pairs, regression_id)
     return regression_id
+
+
+# frob:ticket T-2208
+# frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_disposes_findings_the_ticket_covers  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_leaves_quarantine_raised_when_other_findings_remain_undisposed  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_no_quarantine_raised_is_a_silent_no_op  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_clear_failure_is_logged_not_raised  # noqa: E501
+def _auto_dispose_filed_findings(
+    root: Path, unfiled_pairs: list[tuple[str, str]], regression_id: str
+) -> None:
+    """T-2208: dispose, with `--file-ticket` semantics, exactly the
+    quarantined findings this sweep just filed `regression_id` for --
+    the same operation `_file_regression_ticket`'s caller used to have
+    to hand-restate via `frob verify dispose --file-ticket F=T-XXXX`
+    after every single red batch (8 manual disposals in one session,
+    each blocking the fleet's deferred landing until done).
+
+    Only findings whose `(rule_id, file)` is in `unfiled_pairs` -- i.e.
+    the exact set `regression_id` was just filed to cover -- are
+    disposed here, each as `("filed", regression_id)`, matching
+    `frob verify dispose --file-ticket`'s own disposition shape exactly
+    (`_collect_dispositions` in `frob.app.verify_runner` builds the
+    identical tuple). Every OTHER currently-raised finding (attributed
+    to a different, already-open ticket that this call never touched)
+    is left alone -- `clear_quarantine` itself then refuses the clear
+    with `QuarantineError.FindingsNotDisposed` if any such finding
+    remains, which is the correct outcome, not a bug to work around:
+    an undisposed finding with no tracking ticket is exactly what
+    quarantine exists to surface, and disposing it here just because
+    THIS call happened to run would reopen the hole T-1693 closed.
+    `clear_quarantine` logs its own CLEARED/refusal at WARNING/ERROR
+    (`frob.verify._quarantine`'s own docstring), so a successful
+    auto-dispose here is indistinguishable in the log from a manual
+    `frob verify dispose --file-ticket` -- the audit trail this
+    ticket's own acceptance criteria require stays unchanged."""
+    from frob.verify._quarantine import clear_quarantine, load_quarantine
+
+    loaded = load_quarantine(root)
+    if loaded.is_err:
+        _log.warning(
+            "rapid sweep: %s: could not auto-dispose against %s -- "
+            "quarantine unreadable (%s); a human must run `frob verify "
+            "dispose --file-ticket` by hand",
+            regression_id,
+            root,
+            loaded.danger_err,
+        )
+        return
+    record = loaded.danger_ok
+    if record is None or record.cleared_at is not None:
+        # Nothing raised (e.g. the empty-queue/cold-noise branches of
+        # `_raise_quarantine_for_red_batch` skipped the raise entirely)
+        # -- nothing to dispose, this is the routine case, not an error.
+        return
+
+    covered = set(unfiled_pairs)
+    dispositions = {
+        (f.rule_id, f.file, f.line): ("filed", regression_id)
+        for f in record.findings
+        if (f.rule_id, f.file) in covered and not f.disposition
+    }
+    if not dispositions:
+        # Every finding this ticket covers was already disposed (a race
+        # with a concurrent manual dispose) or none of the raised
+        # findings matched `unfiled_pairs` (e.g. all dropped as
+        # cold-worktree noise before the raise) -- nothing to do.
+        return
+
+    cleared = clear_quarantine(
+        root,
+        dispositions=dispositions,
+        reason=f"auto-filed by rapid sweep as {regression_id}",
+        actor="rapid-sweep",
+    )
+    if cleared.is_err:
+        _log.info(
+            "rapid sweep: %s: auto-dispose did not clear quarantine (%s) "
+            "-- %d finding(s) it covers were marked filed, but other "
+            "currently-raised finding(s) remain undisposed; deferred "
+            "landing stays off until a human disposes those via `frob "
+            "verify dispose`",
+            regression_id,
+            cleared.danger_err,
+            len(dispositions),
+        )
 
 
 #: T-1841: `_commit_regression_ticket`'s retry budget for a commit that

@@ -1877,7 +1877,13 @@ class TestRaiseQuarantineForRedBatch:
         )
         assert filed is not None
 
-        assert is_quarantined(tmp_path).danger_ok is True
+        # T-2208: the regression ticket this call filed covers BOTH
+        # pairs, so the auto-dispose that follows filing clears the
+        # quarantine it just raised in the same operation -- the raise
+        # itself (this test's own T-1791 subject) is still verified via
+        # the record's own content, just post-clear rather than
+        # is_quarantined() staying True.
+        assert is_quarantined(tmp_path).danger_ok is False
         record = load_quarantine(tmp_path)
         assert record.is_ok
         assert record.danger_ok is not None
@@ -1886,6 +1892,8 @@ class TestRaiseQuarantineForRedBatch:
             ("RULE1", "a.py"),
             ("RULE2", "b.py"),
         }
+        assert all(f.disposition == "filed" for f in record.danger_ok.findings)
+        assert all(f.disposition_ref == filed for f in record.danger_ok.findings)
 
     # frob:ticket T-1791
     def test_empty_queue_logs_and_skips_the_raise(self, tmp_path: Path) -> None:
@@ -2035,12 +2043,16 @@ class TestRaiseQuarantineForRedBatch:
             frozenset({("unresolved-import", "a.py")}),
         )
         assert filed is not None
-        assert is_quarantined(tmp_path).danger_ok is True
+        # T-2208: this pair is fully covered by the ticket just filed,
+        # so auto-dispose clears the quarantine the raise (this test's
+        # own T-1847 subject) put up.
+        assert is_quarantined(tmp_path).danger_ok is False
         record = load_quarantine(tmp_path)
         assert record.danger_ok is not None
         assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
             ("unresolved-import", "a.py"),
         }
+        assert all(f.disposition == "filed" for f in record.danger_ok.findings)
 
     # frob:ticket T-1847
     def test_warm_tree_recheck_never_drops_an_attributed_finding(
@@ -2101,6 +2113,164 @@ class TestRaiseQuarantineForRedBatch:
         assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
             ("unresolved-import", "a.py"),
         }
+
+
+# frob:ticket T-2208
+class TestAutoDisposeFiledFindings:
+    """T-2208: filing a regression ticket for a quarantined finding must
+    dispose that finding, with `--file-ticket` semantics, in the same
+    operation -- never leave a human to hand-restate the fact via `frob
+    verify dispose --file-ticket` after every red batch."""
+
+    # frob:ticket T-2208
+    def test_disposes_findings_the_ticket_covers(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_disposes_findings_the_ticket_covers  # noqa: E501
+        from frob.verify import record_intent
+        from frob.verify._quarantine import is_quarantined, load_quarantine
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-9000",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("RULE1", "a.py")}),
+        )
+        assert filed is not None
+
+        # This is the ticket's own MUST-fail-against-main assertion:
+        # before T-2208, filing a regression ticket never disposed the
+        # quarantine record it was filed for, so quarantine stayed
+        # raised until a human ran `frob verify dispose` by hand.
+        assert is_quarantined(tmp_path).danger_ok is False
+        record = load_quarantine(tmp_path)
+        assert record.is_ok
+        assert record.danger_ok is not None
+        (finding,) = record.danger_ok.findings
+        assert finding.disposition == "filed"
+        assert finding.disposition_ref == filed
+
+    # frob:ticket T-2208
+    def test_leaves_quarantine_raised_when_other_findings_remain_undisposed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_leaves_quarantine_raised_when_other_findings_remain_undisposed  # noqa: E501
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import record_intent
+        from frob.verify._quarantine import is_quarantined, load_quarantine
+
+        owner = _seed_ticket(tmp_path)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        import frob.verify._attribution as attribution_mod
+
+        monkeypatch.setattr(
+            attribution_mod,
+            "_load_snapshot_and_call_graph",
+            lambda root: (snapshot, CallGraph(calls={})),
+        )
+        # RULE1/a.py attributes to the already-open `owner` ticket
+        # (never filed by this call); RULE2/b.py is genuinely new and
+        # gets filed. `clear_quarantine`'s own contract is atomic --
+        # it writes NOTHING unless every currently-raised finding is
+        # disposed -- so quarantine stays raised with EVERY finding
+        # still undisposed, not just RULE1/a.py: auto-disposing RULE2
+        # in isolation here (leaving RULE1/a.py behind) would still be
+        # a partial-clear side effect this ticket's own acceptance
+        # criteria rule out, and the atomic all-or-nothing shape means
+        # that partial state can never even be persisted.
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
+        )
+        assert filed is not None
+        assert is_quarantined(tmp_path).danger_ok is True
+        record = load_quarantine(tmp_path)
+        assert record.danger_ok is not None
+        assert {f.disposition for f in record.danger_ok.findings} == {""}
+
+    # frob:ticket T-2208
+    # frob:waive DUP001 reason="100% similar to \
+    # TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise by \
+    # construction -- both exercise the SAME no-queue/no-raise precondition, one \
+    # asserting the raise never fires, the other (this one) asserting the NEW T-2208 \
+    # auto-dispose call downstream of it is a no-op when there was nothing to dispose \
+    # in the first place; a shared helper would hide which capability each test is \
+    # pinning"
+    def test_no_quarantine_raised_is_a_silent_no_op(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_no_quarantine_raised_is_a_silent_no_op  # noqa: E501
+        from frob.verify._quarantine import is_quarantined
+
+        # No verify queue -- `_raise_quarantine_for_red_batch` never
+        # raises anything, so there is nothing to auto-dispose.
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-2208
+    # frob:waive DUP001 reason="95% similar to \
+    # TestRaiseQuarantineForRedBatch.test_raise_failure_is_logged_not_raised by \
+    # construction -- same fail-soft shape (a quarantine-module write failing must be \
+    # logged and swallowed, never raised), applied to the OTHER quarantine write this \
+    # ticket adds (clear_quarantine, not raise_quarantine); collapsing the two would \
+    # obscure which call each test pins down"
+    def test_clear_failure_is_logged_not_raised(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_clear_failure_is_logged_not_raised  # noqa: E501
+        from typani.result import Err
+
+        from frob.verify import _quarantine as quarantine_mod
+        from frob.verify import record_intent
+        from frob.verify._quarantine import QuarantineError
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-9000",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        monkeypatch.setattr(
+            quarantine_mod,
+            "clear_quarantine",
+            lambda root, **kw: Err(QuarantineError.NotQuarantined),
+        )
+        # Must not raise or otherwise fail the caller -- the filed
+        # ticket is still the durable record even if the auto-dispose
+        # write itself fails for some reason.
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
 
 
 # frob:ticket T-1983
