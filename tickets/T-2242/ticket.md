@@ -17,6 +17,7 @@ scope:
 - docs/modules/release.md
 - docs/commands/release.md
 - tests/test_release.py
+- tests/unit/test_release_stamp_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -40,6 +41,15 @@ scope_changes:
   glob: tests/test_release.py
   reason: existing release module functions cite tests/test_release.py as their frob:tests
     evidence home; new publish verb's own tests belong in the same file
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/unit/test_release_stamp_guard.py
+  reason: another existing test-evidence target cited by release/__init__.py symbols;
+    adding cheaply-available closure hits, stopping here -- release/__init__.py is
+    a monolithic single-file module so full closure would require pulling in gates/__init__.py
+    (RE001/RE002 gate code, genuinely out of this leaf's blast radius); documented
+    as a residual caveat in the ticket body rather than chased further
   actor: logan
   at: '2026-08-16'
 designated_repro_test: null
