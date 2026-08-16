@@ -6772,9 +6772,7 @@ class TestRootAssetDirGate:
         _git_init(tmp_path)
         assert root_asset_dir_gate(tmp_path) == ()
 
-    def test_directory_referenced_in_pyproject_is_silent(
-        self, tmp_path: Path
-    ) -> None:
+    def test_directory_referenced_in_pyproject_is_silent(self, tmp_path: Path) -> None:
         """Check (b): a repo-root directory named in `pyproject.toml`'s
         own text is not flagged."""
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
@@ -6879,7 +6877,9 @@ class TestEnvVarDocGate:
         """Check (a), constant-name form: the T-1610-established
         allowance -- documented by the Python constant's own name instead
         of the literal env-var string."""
-        _write(tmp_path, "src/frob/x.py", '_ARTIFACT_CACHE_ENV = "FROB_ARTIFACT_CACHE"\n')
+        _write(
+            tmp_path, "src/frob/x.py", '_ARTIFACT_CACHE_ENV = "FROB_ARTIFACT_CACHE"\n'
+        )
         _write(
             tmp_path,
             "docs/config.md",
@@ -6908,9 +6908,7 @@ class TestEnvVarDocGate:
         assert kept == ()
         assert len(waived) == 1
 
-    def test_non_frob_env_prefixed_constants_are_ignored(
-        self, tmp_path: Path
-    ) -> None:
+    def test_non_frob_env_prefixed_constants_are_ignored(self, tmp_path: Path) -> None:
         """A constant assigned some OTHER string entirely is not this
         gate's concern -- only `FROB_*`-prefixed literal values count."""
         _write(tmp_path, "src/frob/x.py", '_OTHER = "SOME_OTHER_VALUE"\n')
@@ -15939,6 +15937,69 @@ class TestTick006PhantomFiling:
         )
         violations = tickets_gate(tmp_path, self._queue(ticket))
         assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests \
+    # tests/test_gates.py::TestTick006PhantomFiling.test_prose_quoting_another_tickets_criterion_does_not_fire  # noqa: E501
+    def test_prose_quoting_another_tickets_criterion_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2243, the measured T-2226/T-2238 incident reproduced exactly
+        (archaeology: `git show 3a688f28b:tickets/T-2226/done-report.md`,
+        confirmed against the real `T-2238` phantom ticket's own quoted
+        excerpt). A genuine `Filed T-draft-...` claim sits in plain prose
+        earlier in the SAME sentence/list item as an ASCII-double-quoted
+        clause that echoes a DIFFERENT ticket's own acceptance-criterion
+        text, which happens to name a THIRD, unrelated id
+        (`T-draft-0bd874ac`) that resolves to nothing. Before this fix,
+        the 300-char claim window swept that unrelated id in as a second
+        phantom "filed" claim -- MUST FAIL FIRST, this is the repro."""
+        ticket = _ticket(
+            ticket_id="T-0013",
+            body=(
+                "## Done report\n\n"
+                "1. Running the backfill against this repo's REAL "
+                "T-2195/T-2197 ledger data in THIS environment refuses "
+                "rather than relocating, correctly, by design. This is "
+                'ALSO why 2 of the ticket\'s "4 COV004" findings are '
+                "purely environmental. Filed T-draft-76b5731f (high) "
+                "for the .gitattributes glob fix; acceptance [3] there "
+                "is \"T-2226's two still-unresolved T-draft-0bd874ac "
+                "records are re-attempted and confirmed relocated once "
+                'this lands".\n'
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick006 = [v for v in violations if v.rule == "TICK006"]
+        # The genuine claim (T-draft-76b5731f) still fires ...
+        assert any("T-draft-76b5731f" in v.message for v in tick006)
+        # ... but the quoted-prose id never becomes a second phantom.
+        assert not any("T-draft-0bd874ac" in v.message for v in tick006)
+
+    # frob:tests \
+    # tests/test_gates.py::TestTick006PhantomFiling.test_genuine_dangling_citation_outside_any_quote_still_fires  # noqa: E501
+    def test_genuine_dangling_citation_outside_any_quote_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2243 MUST-STILL-PASS CONTROL: a genuine dangling citation
+        that is NOT inside any quoted/code/blockquote range must still
+        trigger TICK006 -- the T-2243 fix narrows WHICH ids count as
+        claims, it must never stop detecting a real one. Two ids appear
+        near "filed" here (mirroring the T-2226 shape) and NEITHER is
+        quoted -- both must fire, proving the fix did not silently widen
+        into a blanket "skip everything after the first id" rule."""
+        ticket = _ticket(
+            ticket_id="T-0014",
+            body=(
+                "## Done report\n\n"
+                "Filed T-draft-aaaaaaaa (high) for the first issue, and "
+                "separately filed T-draft-bbbbbbbb (medium) for the "
+                "second, unrelated issue found while investigating.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick006 = [v for v in violations if v.rule == "TICK006"]
+        assert any("T-draft-aaaaaaaa" in v.message for v in tick006)
+        assert any("T-draft-bbbbbbbb" in v.message for v in tick006)
 
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_backtick_styled_id_in_a_real_claim_still_fires  # noqa: E501
     def test_backtick_styled_id_in_a_real_claim_still_fires(

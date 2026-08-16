@@ -2,7 +2,7 @@
 id: T-2243
 title: TICK006's Tier-A auto-fix treats a ticket id mentioned in Done-report PROSE
   as a citation and auto-files a junk ticket -- 5 occurrences, 3 still queued
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,23 +13,94 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fix_engine.py
+- src/frob/gates/_tickets_gate.py
+- src/frob/gates/_mutation_evidence.py
+- tests/test_gates.py
+- tests/test_gates_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: 'Measured: TICK006''s citation EXTRACTION (_tick006_phantom_ids/_tick006_done_report_text)
+    lives in _tickets_gate.py, not _fix_engine.py (which only consumes the extracted
+    ids). The declared repro (T-2226''s real Done report text, archaeologically confirmed
+    via git show 3a688f28b:tickets/T-2226/done-report.md and the resulting T-2238
+    body''s exact quoted excerpt) shows the false positive is NOT a code-span/blockquote/fence
+    case T-2218''s existing _quoted_char_ranges already covers -- it is an ASCII double-quoted
+    clause inside a plain paragraph list item. Extending the SHARED _quoted_char_ranges
+    primitive (home: _mutation_evidence.py, T-2218) to also recognize matched double-quote
+    spans is the single reuse point for both its existing BUG003 consumer and this
+    ticket''s TICK006 consumer, per the ticket''s own ''one home for one rule'' directive.'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: 'Measured: TICK006''s citation EXTRACTION (_tick006_phantom_ids/_tick006_done_report_text)
+    lives in _tickets_gate.py, not _fix_engine.py (which only consumes the extracted
+    ids). The declared repro (T-2226''s real Done report text, archaeologically confirmed
+    via git show 3a688f28b:tickets/T-2226/done-report.md and the resulting T-2238
+    body''s exact quoted excerpt) shows the false positive is NOT a code-span/blockquote/fence
+    case T-2218''s existing _quoted_char_ranges already covers -- it is an ASCII double-quoted
+    clause inside a plain paragraph list item. Extending the SHARED _quoted_char_ranges
+    primitive (home: _mutation_evidence.py, T-2218) to also recognize matched double-quote
+    spans is the single reuse point for both its existing BUG003 consumer and this
+    ticket''s TICK006 consumer, per the ticket''s own ''one home for one rule'' directive.'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'Measured: TICK006''s citation EXTRACTION (_tick006_phantom_ids/_tick006_done_report_text)
+    lives in _tickets_gate.py, not _fix_engine.py (which only consumes the extracted
+    ids). The declared repro (T-2226''s real Done report text, archaeologically confirmed
+    via git show 3a688f28b:tickets/T-2226/done-report.md and the resulting T-2238
+    body''s exact quoted excerpt) shows the false positive is NOT a code-span/blockquote/fence
+    case T-2218''s existing _quoted_char_ranges already covers -- it is an ASCII double-quoted
+    clause inside a plain paragraph list item. Extending the SHARED _quoted_char_ranges
+    primitive (home: _mutation_evidence.py, T-2218) to also recognize matched double-quote
+    spans is the single reuse point for both its existing BUG003 consumer and this
+    ticket''s TICK006 consumer, per the ticket''s own ''one home for one rule'' directive.'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: 'Measured: TICK006''s citation EXTRACTION (_tick006_phantom_ids/_tick006_done_report_text)
+    lives in _tickets_gate.py, not _fix_engine.py (which only consumes the extracted
+    ids). The declared repro (T-2226''s real Done report text, archaeologically confirmed
+    via git show 3a688f28b:tickets/T-2226/done-report.md and the resulting T-2238
+    body''s exact quoted excerpt) shows the false positive is NOT a code-span/blockquote/fence
+    case T-2218''s existing _quoted_char_ranges already covers -- it is an ASCII double-quoted
+    clause inside a plain paragraph list item. Extending the SHARED _quoted_char_ranges
+    primitive (home: _mutation_evidence.py, T-2218) to also recognize matched double-quote
+    spans is the single reuse point for both its existing BUG003 consumer and this
+    ticket''s TICK006 consumer, per the ticket''s own ''one home for one rule'' directive.'
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_gates.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
+- tests/test_gates.py::TestTick006PhantomFiling::test_genuine_dangling_citation_outside_any_quote_still_fires
+- tests/test_gates.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
+- tests/test_gates_mutation_evidence.py::TestQuotedRanges::test_double_quoted_span_quoted
 designated_repro_test: null
 acceptance:
 - text: 'A Done report whose PROSE mentions an unresolvable ticket id does not trigger
     a phantom filing (fixture: T-2226''s real Done report text, known to have produced
     T-2238)'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
 - text: 'MUST-STILL-PASS: a genuine dangling citation still triggers TICK006 and still
     auto-files its recovery ticket'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTick006PhantomFiling::test_genuine_dangling_citation_outside_any_quote_still_fires
 - text: An id inside a fenced block, inline code span, or blockquote is treated as
     prose, consistent with T-2218's landed semantics
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
 - text: Classification derives from parsed markdown structure, never indentation or
     surrounding-word heuristics
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
+  - tests/test_gates_mutation_evidence.py::TestQuotedRanges::test_double_quoted_span_quoted
 threat: null
 component: null
 anchor: false

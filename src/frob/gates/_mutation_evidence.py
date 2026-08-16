@@ -278,7 +278,48 @@ _NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"
 _MUST_STILL_PASS_RE = re.compile(r"frob:must-still-pass\s+(\S+)")
 
 
+# frob:ticket T-2243
+def _quoted_span_ranges(
+    inline_text: bytes, exclude: list[tuple[int, int]]
+) -> list[tuple[int, int]]:
+    """Byte-offset ranges of `inline_text` (already-parsed markdown_inline
+    source, one `inline` block's worth) delimited by a MATCHED pair of
+    ASCII double-quote (`"`) bytes -- an inline echo of another
+    document's/criterion's own words, the sentence-level counterpart to a
+    block-level `> ` blockquote (T-2243). `_quoted_char_ranges` already
+    treats a blockquote as QUOTED rather than DECLARED; a Done report
+    routinely quotes another ticket's acceptance-criterion prose inline
+    (`` acceptance [3] there is "T-2226's two still-unresolved
+    T-draft-... records are re-attempted..." ``) without promoting it to
+    a full blockquote -- the measured T-2226/T-2238 incident this ticket
+    fixes. `exclude` is `_quoted_char_ranges`' own already-found
+    `code_span` byte ranges (relative to `inline_text`) -- a `"` inside a
+    code span is literal text of that span, already quoted for a
+    different reason, and must never seed or close a pairing here (a
+    stray quote inside `` `a "quoted" example` `` must not leak a
+    pairing out past the span's own end).
+
+    A straightforward LEFT-TO-RIGHT SEQUENTIAL PAIRING (1st with 2nd, 3rd
+    with 4th, ...), scanning `"` byte OFFSETS only -- never the
+    directive/id text itself, so this is a delimiter-structure parse, not
+    a lexical match on the citation. An ODD total count of non-excluded
+    `"` bytes leaves the trailing one unmatched and produces no range
+    from it (conservative: an unclosed quote never quotes everything
+    after it to the end of the paragraph)."""
+    positions = [
+        i
+        for i, byte in enumerate(inline_text)
+        if byte == 0x22  # b'"'
+        and not any(start <= i < end for start, end in exclude)
+    ]
+    ranges: list[tuple[int, int]] = []
+    for open_pos, close_pos in zip(positions[0::2], positions[1::2], strict=False):
+        ranges.append((open_pos, close_pos + 1))
+    return ranges
+
+
 # frob:ticket T-2218
+# frob:ticket T-2243
 # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_fenced_quoted
 # frob:tests \
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_inline_span_quoted
@@ -288,15 +329,21 @@ _MUST_STILL_PASS_RE = re.compile(r"frob:must-still-pass\s+(\S+)")
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_indented_quoted
 # frob:tests \
 # tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_plain_text_not_quoted
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_double_quoted_span_quoted
 def _quoted_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
     """Character-offset ranges of `body` (a ticket's markdown body text)
     that markdown QUOTES rather than DECLARES: a fenced code block, an
-    indented code block, a blockquote, or an inline code span (T-2218).
-    A directive-looking string inside any of these ranges is being shown
-    as an EXAMPLE, not asserted as the ticket's own live directive --
-    the exact ambiguity `tickets/T-2215/ticket.md:56`'s own prose
-    ('a `frob:waive BUG003 reason="..."` body-text directive') measured
-    against `_BUG002_WAIVER_RE` and self-waived.
+    indented code block, a blockquote, an inline code span (T-2218), or a
+    matched pair of ASCII double-quote characters within a paragraph
+    (`_quoted_span_ranges`, T-2243). A directive-looking string inside
+    any of these ranges is being shown as an EXAMPLE, not asserted as the
+    ticket's own live directive -- the exact ambiguity `tickets/T-2215/
+    ticket.md:56`'s own prose ('a `frob:waive BUG003 reason="..."`
+    body-text directive') measured against `_BUG002_WAIVER_RE` and
+    self-waived, and the T-2243 incident where a Done report's own prose
+    inline-quoted ANOTHER ticket's acceptance-criterion text (containing
+    an unrelated id) without wrapping it in a full blockquote.
 
     Deliberately grammar-based (`tree_sitter_language_pack`'s `markdown`
     + `markdown_inline` grammars, the same loading mechanism `frob.lang`
@@ -327,12 +374,44 @@ def _quoted_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
     decode` slice -- this repo's own ASCII-only convention (CLAUDE.md)
     means the two coincide in practice, but this stays correct even if
     a ticket body ever contains non-ASCII text."""
+    all_ranges, _double_quote_only = _quoted_and_double_quote_char_ranges(body)
+    return all_ranges
+
+
+# frob:ticket T-2243
+def _double_quote_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
+    """The STRICT SUBSET of `_quoted_char_ranges(body)` produced by a
+    matched ASCII double-quote pair alone (T-2243) -- excludes fenced/
+    indented code, blockquote, and inline-code-span ranges. TICK006's own
+    id-side check (`frob.gates._tickets_gate._tick006_phantom_ids`) needs
+    exactly this narrower set, not the full union `_quoted_char_ranges`
+    returns: T-1700 already established that an id styled in `` `backtick
+    code` `` right after plain-prose "Filed:" is a real, checkable claim
+    (`tests/test_gates.py::TestTick006PhantomFiling::
+    test_backtick_styled_id_in_a_real_claim_still_fires`) -- applying the
+    FULL `_quoted_char_ranges` set (which also excludes code spans) to
+    the id's own offset would silently regress that exact precedent.
+    Only a double-quoted id is new T-2243 prose-not-citation territory;
+    a code-spanned id was already a settled, tested, opposite case."""
+    _all, double_quote_only = _quoted_and_double_quote_char_ranges(body)
+    return double_quote_only
+
+
+def _quoted_and_double_quote_char_ranges(
+    body: str,
+) -> tuple[tuple[tuple[int, int], ...], tuple[tuple[int, int], ...]]:
+    """The shared walk `_quoted_char_ranges` and `_double_quote_char_
+    ranges` both need, run once: `(every_quoted_range, double_quote_only_
+    ranges)`, both character-offset, both from the SAME parse (T-2243;
+    avoids parsing `body` twice for two callers wanting overlapping but
+    distinct subsets)."""
     from tree_sitter_language_pack import get_parser
 
     body_bytes = body.encode("utf-8")
     block_tree = get_parser("markdown").parse(body_bytes)
     inline_parser = get_parser("markdown_inline")
     byte_ranges: list[tuple[int, int]] = []
+    double_quote_byte_ranges: list[tuple[int, int]] = []
 
     def walk_block(node) -> None:  # noqa: ANN001
         if node.type in ("fenced_code_block", "indented_code_block", "block_quote"):
@@ -341,17 +420,27 @@ def _quoted_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
         if node.type == "inline":
             inline_text = body_bytes[node.start_byte : node.end_byte]
             inline_tree = inline_parser.parse(inline_text)
+            local_code_spans: list[tuple[int, int]] = []
 
             def walk_inline(inline_node, base: int) -> None:  # noqa: ANN001
                 if inline_node.type == "code_span":
-                    byte_ranges.append(
-                        (base + inline_node.start_byte, base + inline_node.end_byte)
+                    span = (
+                        base + inline_node.start_byte,
+                        base + inline_node.end_byte,
+                    )
+                    byte_ranges.append(span)
+                    local_code_spans.append(
+                        (inline_node.start_byte, inline_node.end_byte)
                     )
                     return
                 for child in inline_node.children:
                     walk_inline(child, base)
 
             walk_inline(inline_tree.root_node, node.start_byte)
+            for s, e in _quoted_span_ranges(inline_text, local_code_spans):
+                span = (node.start_byte + s, node.start_byte + e)
+                byte_ranges.append(span)
+                double_quote_byte_ranges.append(span)
             return
         for child in node.children:
             walk_block(child)
@@ -361,7 +450,10 @@ def _quoted_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
     def byte_to_char(offset: int) -> int:
         return len(body_bytes[:offset].decode("utf-8"))
 
-    return tuple((byte_to_char(s), byte_to_char(e)) for s, e in byte_ranges)
+    return (
+        tuple((byte_to_char(s), byte_to_char(e)) for s, e in byte_ranges),
+        tuple((byte_to_char(s), byte_to_char(e)) for s, e in double_quote_byte_ranges),
+    )
 
 
 def _is_quoted(pos: int, quoted_ranges: tuple[tuple[int, int], ...]) -> bool:

@@ -30,8 +30,12 @@ from pathlib import Path
 
 from typani.result import Result
 
-from frob.gates._markdown_scan import strip_code_spans
 from frob.gates._models import Severity, Violation
+from frob.gates._mutation_evidence import (
+    _double_quote_char_ranges,
+    _is_quoted,
+    _quoted_char_ranges,
+)
 from frob.logging import get_logger
 from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids
 from frob.tickets._models import Priority, TicketError
@@ -504,6 +508,7 @@ def _tick006_done_report_text(body: str) -> str:
 
 # frob:ticket T-0726
 # frob:ticket T-1700
+# frob:ticket T-2243
 def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
     """Every ticket id affirmatively claimed as filed somewhere in
     `done_report_text` -- i.e. following an unnegated occurrence of the
@@ -516,45 +521,52 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
     "no ticket filed", "never filed") are skipped per T-0726's Description
     -- see `_TICK006_NEGATION_RE`.
 
-    T-1700: a "filed" occurrence whose OWN match falls inside a fenced or
-    inline code span (`frob.gates._markdown_scan.strip_code_spans`, the
-    same helper DOC011 uses for the identical reason) is skipped entirely,
-    the same way an explicit negation is -- a Done report routinely
-    MENTIONS the filing-claim grammar itself inside `` `backticks` `` to
-    illustrate a sibling gate's own behavior (the T-1700 incident:
-    `` `Filed: T-0104` `` inside one code span, explaining that DOC011
-    correctly ignores it, was misread as a real claim). Deliberately
-    narrower than blanking every code span in the whole text: an id that
-    is ITSELF backtick-styled while "filed" stays plain prose (`Filed:
-    ` + `` `T-draft-deadbeef` ``, a real and common Done-report style) is
-    still a genuine claim and must still fire -- only a "filed" trigger
-    word that is itself inside a span is illustrative, not the id near
-    it. `_code_span_mask` below answers "is this offset inside a span",
-    built once per call rather than per-occurrence."""
-    span_mask = _code_span_mask(done_report_text)
+    The "filed" trigger word's own match is checked against
+    `frob.gates._mutation_evidence._quoted_char_ranges`/`_is_quoted`
+    (T-2243, replacing T-1700's narrower `_code_span_mask`/
+    `strip_code_spans`, which only ever covered fenced/inline code): a
+    fenced/indented code block, a blockquote, or an inline code span all
+    mean "filed" itself is being QUOTED (illustrating the grammar, not
+    asserting a claim), not DECLARED. This is the SAME shared primitive
+    T-2218 landed for `frob.gates._mutation_evidence`'s BUG003 citation
+    extraction -- reused here rather than reimplemented, per this
+    ticket's own "two homes for one rule" (T-1966) directive.
+
+    Each CANDIDATE ID's own match is checked separately, against the
+    NARROWER `_double_quote_char_ranges` subset only (T-2243) -- matched
+    ASCII double-quote pairs, never fenced/inline-code/blockquote ranges.
+    This fixes the measured T-2226/T-2238 incident: `` Filed
+    T-draft-76b5731f (high) for the .gitattributes glob fix; acceptance
+    [3] there is "T-2226's two still-unresolved T-draft-0bd874ac records
+    are re-attempted..." `` -- "filed" sits in plain prose (correctly
+    still fires, so `T-draft-76b5731f` is still a genuine claim), but
+    `T-draft-0bd874ac` falls inside the ASCII-double-quoted clause
+    quoting a DIFFERENT ticket's own acceptance-criterion text and must
+    not be read as a second, independent filing claim. Using the FULL
+    `_quoted_char_ranges` set (code spans included) for the id check
+    instead would regress T-1700's own settled precedent that an id
+    styled in `` `backtick code` `` right after plain-prose "Filed:" is
+    still a real, checkable claim (`tests/test_gates.py::
+    TestTick006PhantomFiling::
+    test_backtick_styled_id_in_a_real_claim_still_fires`) -- only a
+    double-quoted id is new prose-not-citation territory; a code-spanned
+    id was already a settled, opposite case."""
+    quoted_ranges = _quoted_char_ranges(done_report_text)
+    double_quote_ranges = _double_quote_char_ranges(done_report_text)
     seen: dict[str, None] = {}
     for occurrence in re.finditer(r"\bfiled\b", done_report_text, re.I):
         start = occurrence.start()
-        if span_mask[start]:
+        if _is_quoted(start, quoted_ranges):
             continue
         pre = done_report_text[max(0, start - _TICK006_NEGATION_WINDOW) : start]
         if _TICK006_NEGATION_RE.search(pre):
             continue
         window = done_report_text[start : start + _TICK006_CLAIM_WINDOW]
-        for tid in _TICK006_ID_RE.findall(window):
-            seen.setdefault(tid, None)
+        for match in _TICK006_ID_RE.finditer(window):
+            if _is_quoted(start + match.start(), double_quote_ranges):
+                continue
+            seen.setdefault(match.group(), None)
     return tuple(seen)
-
-
-def _code_span_mask(text: str) -> list[bool]:
-    """`True` at every offset of `text` that `strip_code_spans` would blank
-    (fenced or inline code) -- a per-offset "is this inside a code span"
-    lookup, built by diffing the stripped text against the original one
-    character at a time (`strip_code_spans` guarantees identical length
-    and newline positions, so a straight index-by-index compare is exact,
-    never an approximation)."""
-    stripped = strip_code_spans(text)
-    return [orig != blanked for orig, blanked in zip(text, stripped, strict=True)]
 
 
 # frob:ticket T-0929

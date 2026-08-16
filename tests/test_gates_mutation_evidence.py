@@ -265,6 +265,46 @@ class TestQuotedRanges:
         needle = body.index("frob:waive")
         assert not any(start <= needle < end for start, end in ranges)
 
+    def test_double_quoted_span_quoted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_double_quoted_span_quoted  # noqa: E501
+        """T-2243: a matched ASCII double-quote pair in plain paragraph
+        prose (no blockquote, no code) is QUOTED -- the sentence-level
+        counterpart to `test_blockquote_quoted` above, added for the
+        measured T-2226/T-2238 incident's own text shape."""
+        from frob.gates._mutation_evidence import _quoted_char_ranges
+
+        body = (
+            "Filed T-0001 for the fix; acceptance [3] there is "
+            '"discussing T-draft-deadbeef here, not filing it".\n'
+        )
+        ranges = _quoted_char_ranges(body)
+        needle = body.index("T-draft-deadbeef")
+        assert any(start <= needle < end for start, end in ranges)
+        # The genuine citation just before the quoted clause is NOT
+        # itself inside any quoted range.
+        genuine = body.index("T-0001")
+        assert not any(start <= genuine < end for start, end in ranges)
+
+    def test_quote_inside_code_span_never_seeds_a_pairing(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_quote_inside_code_span_never_seeds_a_pairing  # noqa: E501
+        """T-2243: a stray `"` byte inside a code span must never pair
+        with a LATER, unrelated `"` outside the span -- `_quoted_span_
+        ranges` excludes code-span byte ranges before pairing, so a
+        code-span quote can neither open nor close a paragraph-level
+        pairing."""
+        from frob.gates._mutation_evidence import _quoted_char_ranges
+
+        body = (
+            'see `a "quoted" example` then T-draft-deadbeef plain, then "real quote".\n'  # noqa: E501
+        )
+        ranges = _quoted_char_ranges(body)
+        # The id sitting between the code span and the later real quoted
+        # pair must NOT be swept in by a stray pairing across the span.
+        needle = body.index("T-draft-deadbeef")
+        assert not any(start <= needle < end for start, end in ranges)
+        real_quote = body.index("real quote")
+        assert any(start <= real_quote < end for start, end in ranges)
+
 
 class TestBug002Waiver:
     def test_reason_present_suppresses(self) -> None:
