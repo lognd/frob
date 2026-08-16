@@ -12,7 +12,6 @@ sprint: null
 runs_last: false
 scope:
 - design/frob.strata
-- src/frob/strata/**
 - docs/strata/kernel.md
 - docs/strata/selfconform.md
 - src/frob/vet/_capability.py
@@ -20,6 +19,7 @@ scope:
 - src/frob/vet/_capability_scan.py
 - src/frob/vet/_capability_modes.py
 - tests/unit/strata/test_selfconform.py
+- tickets/T-1623/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -103,6 +103,24 @@ scope_changes:
     alongside other agents.
   actor: logan
   at: '2026-08-08'
+- op: remove
+  glob: src/frob/strata/**
+  reason: T-1623 is 4/4 done (T-1628, T-1629, T-2223, T-2224 all landed); the epic
+    itself holds no code of its own. Narrowing the 72-file package glob to its own
+    ledger file so it can be started and closed without taking a broad lease it will
+    never use -- the documented epic-lease-leak remedy. Its children's scopes carried
+    the real files and are already landed and verified.
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tickets/T-1623/ticket.md
+  reason: T-1623 is 4/4 done (T-1628, T-1629, T-2223, T-2224 all landed); the epic
+    itself holds no code of its own. Narrowing the 72-file package glob to its own
+    ledger file so it can be started and closed without taking a broad lease it will
+    never use -- the documented epic-lease-leak remedy. Its children's scopes carried
+    the real files and are already landed and verified.
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 threat: null
 component: null
