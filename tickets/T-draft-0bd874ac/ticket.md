@@ -38,6 +38,10 @@ attachments:
   caption: 'widened to CRITICAL: relative imports fail too, zero cross-file resolution
     repo-wide, T-2156 re-verification needed'
   sha256: 52c8a76d9827cda441c2e95fe3f97685dca9e7dd5405bda6ca19cdb510165dc6
+- path: T-draft-0bd874ac/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
+  caption: independently confirmed frob cycle vacuous on src-layout; widened acceptance
+    criteria and fix-guidance (no src/ lexical special-case)
+  sha256: cb8f524a05591cd2b69401bdf42a00cafa2a5a6be873b0678ea2d05da318c51a
 threat: null
 component: null
 anchor: false
