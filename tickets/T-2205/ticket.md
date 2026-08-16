@@ -2,7 +2,7 @@
 id: T-2205
 title: 'verify_imports has zero consumers now that its blocker landed: T-2188 shipped
   the opt-in, T-2195 fixed the primitive, and nothing tracks turning it on for COV006/DEAD001/PROTO001-005'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-16'
