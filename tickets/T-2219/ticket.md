@@ -2,7 +2,7 @@
 id: T-2219
 title: 'verify_imports=True call-graph gap: transitive re-export chain + call-site
   collision/attribution (residue of T-2211)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,9 +13,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/graph/callgraph.py
+- tests/test_graph.py
+evidence_scope:
+- tests/test_graph.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_graph.py
+  reason: repro + must-still-pass controls for multi-hop re-export reachability fix
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_graph.py::TestVerifyImportsTransitiveReachability::test_reference_graph_resolves_a_two_hop_reexport_chain
+- tests/test_graph.py::TestVerifyImportsTransitiveReachability::test_call_graph_resolves_a_two_hop_reexport_chain
+- tests/test_graph.py::TestVerifyImportsTransitiveReachability::test_unrelated_file_two_hops_away_still_does_not_resolve
+- tests/test_graph.py::TestVerifyImportsTransitiveReachability::test_module_scoped_attribution_stays_single_hop
+designated_repro_test: tests/test_graph.py::TestVerifyImportsTransitiveReachability::test_reference_graph_resolves_a_two_hop_reexport_chain
 threat: null
 component: null
 anchor: false

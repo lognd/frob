@@ -2578,6 +2578,135 @@ class TestBuildCallGraphVerifyImports:
         )
 
 
+# frob:ticket T-2219
+class TestVerifyImportsTransitiveReachability:
+    """T-2219 (T-2205's own residue): `verify_imports=True`'s cross-file
+    check (T-2188) was single-hop -- `caller_path`'s DIRECT import set
+    only -- which misses a genuine Python re-export chain: `caller.py`
+    imports `mid.py` directly; `mid.py` re-exports a name FROM `leaf.py`
+    (`from leaf import _foo as _foo`, a real name binding into `mid.py`'s
+    own namespace); `caller.py` accesses `mid._foo(...)`. `caller.py`
+    never imports `leaf.py` directly, so the single-hop check could not
+    see `leaf.py::_foo` is reachable at all, even though it genuinely
+    is -- the real repo shape: `frob/arch/__init__.py` calls
+    `_python.check(...)`, where `_python.py` re-exports `check` from
+    `frob/arch/_abstraction.py`. `build_call_graph`/`build_reference_
+    graph`'s `verify_imports=True` path now BFS-closes the import graph
+    (`_transitive_imports_by_path`) before the per-caller lookup;
+    `build_reference_graph_module_scoped` (T-2156's attribution-safe,
+    deliberately single-hop consumer) is UNCHANGED -- widening its
+    candidate set would reopen the cross-attribution risk that function
+    exists to close, a different consumer with a different requirement.
+    """
+
+    def test_reference_graph_resolves_a_two_hop_reexport_chain(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_reference_graph
+        from frob.graph.callgraph import build_reference_graph
+
+        _write(tmp_path, "pkg/leaf.py", "def _foo() -> None:\n    pass\n")
+        _write(
+            tmp_path,
+            "pkg/mid.py",
+            "from pkg.leaf import _foo as _foo\n",
+        )
+        _write(
+            tmp_path,
+            "pkg/caller.py",
+            "from pkg import mid\n\n\ndef user() -> None:\n    mid._foo()\n",
+        )
+        graph = build_reference_graph(
+            tmp_path,
+            ("pkg/leaf.py", "pkg/mid.py", "pkg/caller.py"),
+            verify_imports=True,
+        )
+        assert graph.calls["pkg/caller.py::user"] == ("pkg/leaf.py::_foo",)
+
+    def test_call_graph_resolves_a_two_hop_reexport_chain(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        from frob.graph.callgraph import build_call_graph
+
+        _write(tmp_path, "pkg/leaf.py", "def _foo() -> None:\n    pass\n")
+        _write(
+            tmp_path,
+            "pkg/mid.py",
+            "from pkg.leaf import _foo as _foo\n",
+        )
+        _write(
+            tmp_path,
+            "pkg/caller.py",
+            "from pkg import mid\n\n\ndef user() -> None:\n    mid._foo()\n",
+        )
+        graph = build_call_graph(
+            tmp_path,
+            ("pkg/leaf.py", "pkg/mid.py", "pkg/caller.py"),
+            verify_imports=True,
+        )
+        assert graph.calls["pkg/caller.py::user"] == ("pkg/leaf.py::_foo",)
+
+    def test_unrelated_file_two_hops_away_still_does_not_resolve(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STILL-PASS control: transitivity must not resurrect the
+        T-2156 collision. `caller.py` imports `mid.py`; `mid.py` imports
+        `leaf.py` too, but NOT via a name re-export of `_run` (`leaf.py`
+        is imported for something else entirely, and separately defines
+        its OWN, unrelated `_run`). `caller.py`'s real call is to its
+        OWN same-file `_run` -- `leaf.py::_run` must never appear, same
+        outcome as the existing single-hop
+        `test_cross_file_candidate_dropped_when_caller_does_not_import_it`
+        control, just one hop further out."""
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        from frob.graph.callgraph import build_call_graph
+
+        _write(tmp_path, "pkg/leaf.py", "def _run() -> None:\n    pass\n")
+        _write(tmp_path, "pkg/mid.py", "from pkg import leaf\n")
+        _write(
+            tmp_path,
+            "pkg/caller.py",
+            "from pkg import mid\n\n\ndef entry() -> None:\n"
+            "    _run()\n\n\n"
+            "def _run() -> None:\n    pass\n",
+        )
+        graph = build_call_graph(
+            tmp_path,
+            ("pkg/leaf.py", "pkg/mid.py", "pkg/caller.py"),
+            verify_imports=True,
+        )
+        assert graph.calls == {"pkg/caller.py::entry": ("pkg/caller.py::_run",)}
+
+    def test_module_scoped_attribution_stays_single_hop(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STILL-PASS control: `build_reference_graph_module_scoped`
+        (T-2156's attribution-safe consumer) is deliberately UNCHANGED --
+        the same two-hop re-export chain the reference-graph tests above
+        now resolve must still NOT resolve here; widening its narrower
+        candidate set is a different consumer's decision, out of this
+        ticket's scope."""
+        # frob:tests src/frob/graph/callgraph.py::build_reference_graph_module_scoped
+        from frob.graph.callgraph import build_reference_graph_module_scoped
+
+        _write(tmp_path, "pkg/leaf.py", "def _foo() -> None:\n    pass\n")
+        _write(
+            tmp_path,
+            "pkg/mid.py",
+            "from pkg.leaf import _foo as _foo\n",
+        )
+        _write(
+            tmp_path,
+            "pkg/caller.py",
+            "from pkg import mid\n\n\ndef user() -> None:\n    mid._foo()\n",
+        )
+        graph = build_reference_graph_module_scoped(
+            tmp_path, ("pkg/leaf.py", "pkg/mid.py", "pkg/caller.py")
+        )
+        assert graph.calls == {}
+
+
 # frob:ticket T-0998
 class TestScopePrivateHelperGaps:
     """`frob.graph.callgraph.scope_private_helper_gaps` (T-0998 direction

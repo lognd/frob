@@ -449,11 +449,15 @@ def build_call_graph(
         if verify_imports
         else _permissive_imports_by_path(parsed_by_path)
     )
+    named_reexports_by_path = (
+        _named_reexports_by_path(root, parsed_by_path) if verify_imports else {}
+    )
     calls = _resolve_edges(
         parsed_by_path,
         by_name,
         _called_names_from_sym,
         imports_by_path,
+        named_reexports_by_path=named_reexports_by_path,
         mark_unresolved=mark_unresolved,
         # T-0813: only `build_call_graph`'s call-token extraction has the
         # attribute-call context `_unresolved_exempt_names` needs (a
@@ -568,6 +572,9 @@ def build_reference_graph(
         if verify_imports
         else _permissive_imports_by_path(parsed_by_path)
     )
+    named_reexports_by_path = (
+        _named_reexports_by_path(root, parsed_by_path) if verify_imports else {}
+    )
     # T-0809: `mark_unresolved=False` here, deliberately -- "referenced but
     # unbound" is a much weaker/noisier signal than "called but unbound"
     # (`_referenced_names` includes every bare identifier, not just call
@@ -579,6 +586,7 @@ def build_reference_graph(
         by_name,
         _referenced_names,
         imports_by_path,
+        named_reexports_by_path=named_reexports_by_path,
         mark_unresolved=False,
     )
     return CallGraph(calls=refs)
@@ -693,6 +701,113 @@ def _local_imports_by_path(
     return result
 
 
+# frob:ticket T-2219
+def _named_reexports_by_path(
+    root: Path, parsed_by_path: Mapping[str, list]
+) -> dict[str, dict[str, str]]:
+    """`path -> {short_name: the file that name is re-exported FROM}`,
+    for python files' `from X import name` statements where `name` is a
+    genuine SYMBOL, not a submodule (T-2211's own module-vs-member
+    ambiguity: `_python_import_specifiers` emits both `X` and `X.name`
+    as candidate specifiers per imported name; `resolve_local_import`
+    resolving `X.name` to an actual file means `name` was a SUBMODULE
+    -- already handled by the existing single-hop file check, nothing
+    to add here -- while `X.name` failing to resolve, with `X` itself
+    resolving, means `name` is a symbol X's own module body defines or
+    re-exports; that pairing (`name`, X's resolved file) is exactly the
+    provenance a re-export CHAIN needs and is otherwise discarded by
+    `_local_imports_by_path`'s flatten-to-files-only result).
+
+    Deliberately narrower than a full AST walk: re-derives this from
+    the same public `frob.lang.extract_imports`/`resolve_local_import`
+    surface `_local_imports_by_path` already calls (no `frob.lang`
+    change, staying inside this ticket's own `src/frob/graph/
+    callgraph.py`-only scope) rather than threading structured
+    (module, name) pairs through the extraction layer itself."""
+    from frob.lang import extract_imports, resolve_local_import
+
+    result: dict[str, dict[str, str]] = {}
+    for path, symbols in parsed_by_path.items():
+        del symbols
+        if Path(path).suffix != ".py":
+            result[path] = {}
+            continue
+        specs = extract_imports(root / path)
+        if specs.is_err:
+            result[path] = {}
+            continue
+        file_dir = (root / path).parent
+        reexports: dict[str, str] = {}
+        for spec in specs.danger_ok:
+            if resolve_local_import(spec, "python", file_dir=file_dir, root=root):
+                continue  # resolves as a module/submodule itself -- T-2211's case
+            prefix, sep, name = spec.rpartition(".")
+            if not sep or not name:
+                continue
+            prefix_resolved = resolve_local_import(
+                prefix, "python", file_dir=file_dir, root=root
+            )
+            if prefix_resolved is not None:
+                reexports[name] = prefix_resolved
+        result[path] = reexports
+    return result
+
+
+# frob:ticket T-2219
+def _reexport_reachable(
+    name: str,
+    direct_importable: frozenset[str],
+    named_reexports_by_path: Mapping[str, Mapping[str, str]],
+) -> frozenset[str]:
+    """Files reachable for THIS specific `name`, beyond `caller_path`'s
+    own direct (one-hop) import set -- chases `named_reexports_by_path`
+    starting from each directly-imported file, T-2219's residue of
+    T-2205's own DEAD001 wiring.
+
+    Motivating case: `frob/arch/__init__.py` calls `_python.check(...)`,
+    an attribute access through `_python` (which `__init__.py` DOES
+    import directly, so `_python.py` is already in `direct_importable`)
+    resolving to a symbol `_python.py` re-exports via `from frob.arch.
+    _abstraction import (check as check, ...)` -- a genuine Python
+    re-export chain, not a coincidence: accessing `_python.check`
+    genuinely reads `frob/arch/_abstraction.py::check` at runtime,
+    because the `from ... import ... as ...` statement binds `check`
+    into `_python.py`'s own namespace. `__init__.py` never imports
+    `_abstraction.py` directly, so the pre-existing single-hop check
+    could not see this at all.
+
+    DELIBERATELY NAME-SCOPED, not a blind file-level BFS: an earlier
+    draft of this fix closed `_local_imports_by_path`'s edges
+    transitively regardless of name and failed its own must-still-pass
+    control (`TestVerifyImportsTransitiveReachability::
+    test_unrelated_file_two_hops_away_still_does_not_resolve`) -- two
+    files can be import-CONNECTED (`mid.py` does `from pkg import
+    leaf`) with NEITHER file re-exporting the specific name in question,
+    which resurrects exactly the T-2156 bare-short-name collision this
+    whole mechanism exists to close, just one hop further out. Chasing
+    `named_reexports_by_path` (keyed by the SAME `name` being resolved)
+    instead of the raw import graph keeps the fix as precise as the
+    concrete re-export idiom it targets: a hop is only added when the
+    file at that hop's own source literally re-exports `name` from
+    somewhere else, never merely because it imports some other file for
+    unrelated reasons.
+
+    `build_reference_graph_module_scoped` (T-2156's attribution-safe
+    consumer) does NOT call this -- its single-hop contract is
+    deliberately unchanged; see that function's own docstring."""
+    reachable: set[str] = set(direct_importable)
+    frontier = list(direct_importable)
+    while frontier:
+        nxt: list[str] = []
+        for hop in frontier:
+            target = named_reexports_by_path.get(hop, {}).get(name)
+            if target is not None and target not in reachable:
+                reachable.add(target)
+                nxt.append(target)
+        frontier = nxt
+    return frozenset(reachable)
+
+
 # frob:ticket T-0361
 # frob:ticket T-0841
 def _short_name_index(
@@ -739,6 +854,7 @@ def _resolve_edges(
     name_extractor,
     imports_by_path: Mapping[str, frozenset[str]],
     *,
+    named_reexports_by_path: Mapping[str, Mapping[str, str]] | None = None,
     mark_unresolved: bool = False,
     exempt_extractor=None,  # noqa: ANN001
 ) -> dict[str, tuple[str, ...]]:
@@ -796,7 +912,15 @@ def _resolve_edges(
     T-2188: `imports_by_path` is threaded through to
     `_resolve_edges_python` so cross-file candidates can be import-
     verified per caller -- see `build_call_graph`'s docstring for the
-    full rationale and the fail-closed disposition."""
+    full rationale and the fail-closed disposition.
+
+    T-2219: `named_reexports_by_path` (`_named_reexports_by_path`,
+    `None`/empty for `verify_imports=False` callers) additionally lets a
+    cross-file candidate resolve through a genuine Python re-export
+    chain one or more hops beyond `caller_path`'s own direct import set
+    -- see `_reexport_reachable`'s own docstring for the exact
+    motivating case and why this is intentionally NAME-scoped, not a
+    blind file-level BFS."""
     callers: list[str] = []
     caller_paths: list[str] = []
     names_per_caller: list[list[str]] = []
@@ -817,6 +941,7 @@ def _resolve_edges(
         exempt_per_caller,
         by_name,
         imports_by_path,
+        named_reexports_by_path=named_reexports_by_path or {},
         mark_unresolved=mark_unresolved,
     )
 
@@ -832,6 +957,7 @@ def _resolve_edges_python(
     by_name: dict[str, list[tuple[str, str, bool]]],
     imports_by_path: Mapping[str, frozenset[str]],
     *,
+    named_reexports_by_path: Mapping[str, Mapping[str, str]] | None = None,
     mark_unresolved: bool = False,
 ) -> dict[str, tuple[str, ...]]:
     """Pure-Python fallback for `_resolve_edges`'s matching loop -- the
@@ -863,8 +989,14 @@ def _resolve_edges_python(
     (it is scoped to a permissive `imports_by_path`, isolating the
     matching-loop's own native/python parity from this newer,
     Python-only import-verification layer; `_core.py` is out of this
-    ticket's own declared scope)."""
+    ticket's own declared scope).
+
+    T-2219: `named_reexports_by_path` (default `None`/empty) additionally
+    lets a cross-file candidate resolve through a re-export chain beyond
+    `caller_path`'s own direct import set -- see `_reexport_reachable`'s
+    docstring."""
     calls: dict[str, tuple[str, ...]] = {}
+    reexports = named_reexports_by_path or {}
     for caller_symref, caller_path, names, exempt in zip(
         callers, caller_paths, names_per_caller, exempt_per_caller
     ):
@@ -877,6 +1009,7 @@ def _resolve_edges_python(
             by_name,
             importable,
             mark_unresolved,
+            named_reexports_by_path=reexports,
         )
         if callees:
             calls[caller_symref] = tuple(callees)
@@ -892,20 +1025,28 @@ def _one_caller_edges(
     by_name: dict[str, list[tuple[str, str, bool]]],
     importable: frozenset[str],
     mark_unresolved: bool,
+    *,
+    named_reexports_by_path: Mapping[str, Mapping[str, str]] | None = None,
 ) -> list[str]:
     """One caller's resolved-callee list -- `_resolve_edges_python`'s
     inner per-caller loop, split out to keep that function under
     ARCH001's line budget (T-2188 added the import-filter step). A
-    candidate's own file must equal `caller_path` or sit in `importable`
-    to count; see `_resolve_edges_python`'s own docstring for the full
-    rationale."""
+    candidate's own file must equal `caller_path`, sit in `importable`,
+    or (T-2219) sit in the per-NAME re-export closure `_reexport_
+    reachable` computes from `importable` -- see that function's own
+    docstring for why this is name-scoped rather than a blind
+    file-level BFS."""
     callees: list[str] = []
     saw_unresolved = False
+    reexports = named_reexports_by_path or {}
     for name in names:
         raw_candidates = by_name.get(name, ())
+        reachable = importable
+        if reexports and any(c[1] not in importable for c in raw_candidates):
+            reachable = _reexport_reachable(name, importable, reexports)
         # frob:waive PERF003 reason="candidates are already partitioned per name via by_name; total work across all names is O(total candidates), not a cross join"  # noqa: E501
         candidates = tuple(
-            c for c in raw_candidates if c[1] == caller_path or c[1] in importable
+            c for c in raw_candidates if c[1] == caller_path or c[1] in reachable
         )
         matched_private = False
         for symref, _cand_path, is_private in candidates:
