@@ -14,7 +14,6 @@ runs_last: false
 scope:
 - src/frob/app/pyfmt_runner.py
 - tests/unit/test_pyfmt_runner.py
-- docs/commands/**
 - docs/guides/agent-playbook.md
 - docs/commands/build.md
 - tickets/T-1382/ticket.md
@@ -112,6 +111,13 @@ scope_changes:
     _cli_parsers/_misc.py and __init__.py. Documented epic-lease-leak remedy: narrow
     an umbrella epic to its ledger files so it never holds implementation scope it
     does not itself edit.'
+  actor: logan
+  at: '2026-08-16'
+- op: remove
+  glob: docs/commands/**
+  reason: 'Same: T-2242 needs docs/commands/release.md and was blocked by the parent
+    epic''s glob. The leaves declare their own doc files; the umbrella does not edit
+    them.'
   actor: logan
   at: '2026-08-16'
 designated_repro_test: null
