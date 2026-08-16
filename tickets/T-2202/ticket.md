@@ -8,7 +8,7 @@ origin: human
 created: '2026-08-16'
 priority: medium
 parent: null
-tier: ticket
+tier: epic
 sprint: null
 runs_last: false
 scope:
