@@ -18,6 +18,30 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'Measured: ''git grep verify_imports=True -- src/'' returns only a docstring
+    line (src/frob/graph/callgraph.py:397). No production caller opts in, and no open
+    ticket tracked the wiring -- T-2188 (which added the flag) and T-2195 (which fixed
+    the primitive it depends on) are both state=done. So the capability is proven,
+    unblocked, and reaches nothing. This test MUST fail against current main: at least
+    one consumer must pass verify_imports=True.'
+  evidence: []
+- text: RE-MEASURE the blast radius before wiring anything. The only numbers we have
+    -- DEAD001 46 -> 241 and COV006 30 -> 622 -- were taken while resolve_local_import
+    returned None for every intra-repo import, i.e. with zero cross-file edges resolving.
+    T-2195 (808e0c6fb3f4) changed that completely, so those figures are obsolete and
+    almost certainly wrong in both magnitude and direction. Report the new per-gate
+    delta and JUDGE each appearing/disappearing finding; a count with no per-finding
+    judgement is not evidence.
+  evidence: []
+- text: Wire consumers ONE AT A TIME with its own measurement, do not flip all three
+    together. DEAD001's failure direction is reporting LIVE symbols as dead, which
+    is silent and destructive; COV006's is marking uncovered code covered. Preserve
+    scope_private_helper_gaps' documented verify_imports=False opt-out (T-0998/T-1012
+    -- it keys on directory co-location, not import reachability). And per the epic's
+    own item 3, fail CLOSED (report UNRESOLVED, T-1664) where import resolution genuinely
+    cannot decide, rather than guessing in either direction.
+  evidence: []
 threat: null
 component: null
 anchor: false
