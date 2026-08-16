@@ -17,8 +17,12 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_dead_symbols.py
 - src/frob/gates/_protocol_summary.py
+evidence_scope:
+- tests/test_graph.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
 designated_repro_test: null
 acceptance:
 - text: 'Measured: ''git grep verify_imports=True -- src/'' returns only a docstring
@@ -27,7 +31,8 @@ acceptance:
     the primitive it depends on) are both state=done. So the capability is proven,
     unblocked, and reaches nothing. This test MUST fail against current main: at least
     one consumer must pass verify_imports=True.'
-  evidence: []
+  evidence:
+  - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
 - text: RE-MEASURE the blast radius before wiring anything. The only numbers we have
     -- DEAD001 46 -> 241 and COV006 30 -> 622 -- were taken while resolve_local_import
     returned None for every intra-repo import, i.e. with zero cross-file edges resolving.
