@@ -1960,6 +1960,8 @@
     "src/frob/tickets/_doable.py::scope_breadth_context": "4f57f3dab41cf1340fabe26b4694bb04d7dc3d5d1cf9200cb34277c9c7f84264",
     "src/frob/tickets/_doable.py::undispatched_stale": "5b02a518dd1040bd603d923b7c694e96dc89f8a9076f90f41ce9ff55d4243938",
     "src/frob/tickets/_doable.py::wave": "dc96760f83d815d992ccc27a39c6410c5e49a8ead1c6e58166d0ecd776860486",
+    "src/frob/tickets/_draft_finalize.py::AttachmentBackfillReport": "aa7695a5278c3fc27b88155d096fc30dddb5a1697ea199c31ab82d68c11b2d7a",
+    "src/frob/tickets/_draft_finalize.py::backfill_stale_draft_attachment_paths": "ff4d2f124c768025f14e54580e683a1652c71e2c9b29f7cd73d54179c2a73610",
     "src/frob/tickets/_draft_finalize.py::finalize_draft": "fabc7d8cd6074c7a259202ce067e9bc56427516fddf119086d379eea9bab5a61",
     "src/frob/tickets/_draft_finalize.py::finalize_draft_for_land": "e34824ddaf451739e9e3e6e0288db5fa1cb8cc49902160d9f29956bc9be623e5",
     "src/frob/tickets/_evidence.py::add_cmd_evidence": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
@@ -2312,5 +2314,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.474.0"
+  "version": "0.475.0"
 }

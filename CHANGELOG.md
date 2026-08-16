@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.475.0] - unreleased
+
+- T-2226: T-2199 residue: tickets promoted before the fix still record dead T-draft-* attachment paths, and no repair path exists (6 of 41 floor errors)
+
 ## [0.474.0] - unreleased
 
 - T-2222: fleet_status reports a raw lease COUNT with concurrency guidance attached, so reclaimable and root-residual leases read as live agents (6 leases = 4 agents)

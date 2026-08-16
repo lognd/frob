@@ -26,6 +26,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from pydantic import BaseModel
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -126,6 +127,115 @@ def _relocate_attachment_records(
     if write_result.is_err:
         return Err(write_result.danger_err)
     return Ok(None)
+
+
+# frob:doc docs/modules/tickets-data-storage.md#data-models
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
+class AttachmentBackfillReport(BaseModel):
+    """Outcome of `backfill_stale_draft_attachment_paths`: which
+    `<ticket_id>:<draft_id>` pairs got their attachment records relocated,
+    and which named a draft prefix `_relocate_attachment_records` could not
+    resolve (missing/corrupted file at the real id's expected path) --
+    reported, never guessed or silently dropped (T-2226 acceptance [4])."""
+
+    model_config = {}
+
+    repaired: tuple[str, ...]
+    unresolved: tuple[str, ...]
+
+
+# frob:ticket T-2226
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_leaves_a_correctly_recorded_attachment_untouched  # noqa: E501
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_reports_unresolvable_rather_than_guessing  # noqa: E501
+def backfill_stale_draft_attachment_paths(
+    root: Path,
+) -> Result[AttachmentBackfillReport, TicketError]:
+    """T-2226: repair `attachments[].path` fields left dangling by a draft
+    promotion that happened BEFORE T-2199's forward-rewrite fix landed --
+    `_relocate_attachment_records` only ever ran going forward, so a
+    ticket promoted earlier can still carry an `Attachment.path` prefixed
+    by its OLD `T-draft-<hash>` id while the file itself already lives
+    under the ticket's real id (measured on T-2195: two records still
+    read `T-draft-0bd874ac/attachments/...`, producing dead-pointer COV004
+    errors that never age out).
+
+    Deliberately REUSES `_relocate_attachment_records` (T-2199's own
+    rename+sha-reverify primitive) rather than reimplementing the same
+    rewrite a second time (T-1966's duplication class) -- the only new
+    logic here is discovering the `(old_id, new_id)` pair per ticket: for
+    every ticket in the CURRENT merged (active+archive) ledger, any
+    attachment path whose leading path segment is a draft id
+    (`is_draft_id`) other than the ticket's own current id is exactly
+    that pre-T-2199 shape, and the ticket's own id IS the correct `new_id`
+    -- no external draft-id -> real-id mapping is needed for THIS
+    sub-case, unlike doc prose (T-2226's sub-case 2), because the ticket
+    object itself already carries both ends of the mapping (the stale
+    path names the old id; `ticket.id` names the new one).
+
+    A correctly-recorded attachment (no draft-prefixed path) is never
+    inspected past the initial `is_draft_id` filter, so this cannot
+    normalize or rewrite a healthy record (T-2226 acceptance [3],
+    must-still-pass control). A pair `_relocate_attachment_records`
+    itself refuses (missing file, sha mismatch) is recorded in
+    `unresolved` and left exactly as found -- never guessed, never
+    silently dropped (T-2226 acceptance [4])."""
+    merged = _load_merged(root)
+    if merged.is_err:
+        return Err(merged.danger_err)
+    repaired: list[str] = []
+    unresolved: list[str] = []
+    for ticket_id, ticket in merged.danger_ok.items():
+        one_repaired, one_unresolved = _backfill_one_ticket(
+            root, ticket_id, ticket.attachments
+        )
+        repaired.extend(one_repaired)
+        unresolved.extend(one_unresolved)
+    return Ok(
+        AttachmentBackfillReport(repaired=tuple(repaired), unresolved=tuple(unresolved))
+    )
+
+
+def _backfill_one_ticket(
+    root: Path, ticket_id: str, attachments: tuple[Attachment, ...]
+) -> tuple[list[str], list[str]]:
+    """`backfill_stale_draft_attachment_paths`'s per-ticket body, split out
+    to keep the public entry point under ARCH001's line budget: finds
+    every stale `T-draft-*`-prefixed attachment path on `ticket_id` and
+    relocates each via `_relocate_attachment_records`, returning
+    `(repaired_pairs, unresolved_pairs)` for the caller to accumulate."""
+    stale_draft_ids = sorted(
+        {
+            attachment.path.split("/", 1)[0]
+            for attachment in attachments
+            if is_draft_id(attachment.path.split("/", 1)[0])
+            and attachment.path.split("/", 1)[0] != ticket_id
+        }
+    )
+    repaired: list[str] = []
+    unresolved: list[str] = []
+    for draft_id in stale_draft_ids:
+        relocated = _relocate_attachment_records(root, draft_id, ticket_id)
+        pair = f"{ticket_id}:{draft_id}"
+        if relocated.is_err:
+            _log.error(
+                "tickets: backfill_stale_draft_attachment_paths: %s -> %s "
+                "could not relocate (%s) -- left untouched, reported",
+                draft_id,
+                ticket_id,
+                relocated.danger_err,
+            )
+            unresolved.append(pair)
+            continue
+        _log.info(
+            "tickets: backfill_stale_draft_attachment_paths: relocated "
+            "stale pointer %s -> %s",
+            draft_id,
+            ticket_id,
+        )
+        repaired.append(pair)
+    return repaired, unresolved
 
 
 # frob:ticket T-0162
