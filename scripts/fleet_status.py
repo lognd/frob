@@ -31,7 +31,13 @@ import re
 import subprocess
 import time
 from collections.abc import Sequence
+from datetime import date
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - python <3.11 on PATH
+    tomllib = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
 # frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants
 #: Repo root, derived from this script's own location.
@@ -42,6 +48,22 @@ WORKTREES = REPO / ".claude" / "worktrees"
 # frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants
 #: Where held cross-worktree scope leases are recorded, one JSON file each.
 LEASES = REPO / ".git" / "frob-leases"
+# frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants
+#: Where the live, per-ticket ledger files live (`tickets/<id>/ticket.md`) --
+#: `tickets/archive/**` holds terminal tickets and is excluded by `rotting_
+#: tickets` below (a terminal ticket cannot be "rotting" in the queued/
+#: planned sense TICK004 measures).
+TICKETS_DIR = REPO / "tickets"
+# frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants
+#: Per-priority rot-day thresholds (T-0411's TICK004 gate), mirroring
+#: `frob.gates._tickets_gate._TICK004_DEFAULT_ROT_DAYS` -- duplicated here
+#: in plain-dict form (this script's own "no `frob` import" contract)
+#: rather than imported, since importing the `frob` package would defeat
+#: the point of a script meant to run under any interpreter on PATH.
+_ROT_DAYS_DEFAULT = {"critical": 3, "high": 7, "medium": 30, "low": 90}
+#: Priority rank for sorting rotting tickets highest-priority-first --
+#: mirrors the same ordering `frob ticket doable` (T-0411) already uses.
+_PRIORITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
 
 def _git(args: list[str], cwd: Path) -> str:
@@ -335,9 +357,7 @@ def ticket_readiness(ticket_id: str) -> dict:
     # the lease, not the ticket file" rule `scope_diverges` already
     # established, applied here to the implementation-evidence check too.
     effective_scope = lease.get("scope", []) if lease is not None else main_scope
-    worktrees_with_commits = worktrees_touching_ticket(
-        ticket_id, effective_scope or ()
-    )
+    worktrees_with_commits = worktrees_touching_ticket(ticket_id, effective_scope or ())
     state_on_main = main_info["state"] if main_info is not None else None
     dispatchable = (
         lease is None
@@ -745,6 +765,192 @@ def host_load(proc: Path = Path("/proc")) -> tuple[float, int] | None:
     return load_1min, mem_available_kb
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_rot_day_thresholds
+# frob:ticket T-2182
+def _rot_day_thresholds() -> dict[str, int]:
+    """Per-priority rot-day thresholds, from `frob.toml`'s `[tickets]`
+    table (`rot_days_critical`/`rot_days_high`/`rot_days_medium`/
+    `rot_days_low`) when present and parseable, else `_ROT_DAYS_DEFAULT`
+    -- mirrors `frob.gates._tickets_gate._tick004_rot_thresholds`'s own
+    fail-open-to-defaults shape exactly, so this script's rotting-ticket
+    count agrees with TICK004's own gate finding rather than silently
+    drifting from it. Degrades to defaults (never raises) when `tomllib`
+    is unavailable (python <3.11 on `PATH`) or `frob.toml` is missing/
+    malformed."""
+    if tomllib is None:
+        return dict(_ROT_DAYS_DEFAULT)
+    toml_path = REPO / "frob.toml"
+    if not toml_path.exists():
+        return dict(_ROT_DAYS_DEFAULT)
+    try:
+        with toml_path.open("rb") as fh:
+            table = tomllib.load(fh).get("tickets", {})
+        return {
+            priority: int(table.get(f"rot_days_{priority}", default))
+            for priority, default in _ROT_DAYS_DEFAULT.items()
+        }
+    except (OSError, ValueError, TypeError):
+        return dict(_ROT_DAYS_DEFAULT)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_file
+# frob:ticket T-2182
+def _parse_ticket_ledger_file(path: Path) -> dict | None:
+    """`{"id", "state", "priority", "tier", "created"}` parsed directly
+    from a `tickets/<id>/ticket.md` file's own YAML frontmatter -- hand-
+    parsed flat `key: value` lines (matching `ticket_frontmatter_on_main`'s
+    own "no `import yaml`" contract), reading a LOCAL file on disk rather
+    than `git show main:...` since `rotting_tickets` below reports the
+    live, uncommitted ledger state a coordinator's own dispatch decision
+    actually depends on. Returns `None` if the file is unreadable, or if
+    `id`/`state`/`priority`/`created` cannot all be parsed -- a ticket
+    this function cannot fully read is excluded from the rotting set
+    entirely rather than guessed at (a missing `tier:` line defaults to
+    `ticket`, mirroring `TicketTier`'s own default for a ledger row
+    written before tiers existed, per `frob.tickets._models`'s own
+    docstring)."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    fields: dict[str, str] = {}
+    for line in text.splitlines():
+        if line == "---":
+            continue
+        for key in ("id", "state", "priority", "tier", "created"):
+            prefix = f"{key}:"
+            if line.startswith(prefix):
+                value = line[len(prefix) :].strip()
+                if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+                    value = value[1:-1]
+                fields[key] = value
+    if not {"id", "state", "priority", "created"} <= fields.keys():
+        return None
+    return {
+        "id": fields["id"],
+        "state": fields["state"],
+        "priority": fields["priority"],
+        "tier": fields.get("tier", "ticket"),
+        "created": fields["created"],
+    }
+
+
+# frob:doc docs/guides/coordinator-scripts.md#rotting_tickets
+# frob:ticket T-2182
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestRottingTickets.test_flags_a_ticket_past_i\
+# ts_priority_threshold
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestRottingTickets.test_ignores_tickets_still\
+# _under_threshold
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestRottingTickets.test_only_queued_and_plann\
+# ed_states_are_considered
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestRottingTickets.test_distinguishes_epic_an\
+# d_story_tier_from_ticket_tier
+def rotting_tickets() -> list[dict]:
+    """Every QUEUED/PLANNED ticket under `TICKETS_DIR` (excluding
+    `tickets/archive/**`, which holds only terminal tickets) whose
+    priority-specific rot-day threshold (`_rot_day_thresholds`) has been
+    crossed since its own `created` date -- derived ENTIRELY from the
+    ledger's own structured fields (state, priority, the `created`
+    timestamp) compared against the configured thresholds, never by
+    parsing `frob check`'s rendered TICK004 diagnostic text, which is a
+    rendering that changes wording independent of this comparison
+    (acceptance [1]). Mirrors `frob.gates._tickets_gate._tick004_queue_
+    rot`'s own selection exactly (same states considered, same threshold
+    source) so this script's count agrees with the gate's own finding
+    rather than silently drifting from it.
+
+    Each entry: `id`, `priority`, `tier` ('ticket'/'story'/'epic'),
+    `state`, `age_days`, `threshold_days`. Malformed `created` dates
+    (unparseable, or a ticket file `_parse_ticket_ledger_file` could not
+    fully read) are skipped rather than guessed at."""
+    if not TICKETS_DIR.is_dir():
+        return []
+    thresholds = _rot_day_thresholds()
+    today = date.today()
+    rotting: list[dict] = []
+    for ticket_dir in sorted(p for p in TICKETS_DIR.iterdir() if p.is_dir()):
+        if ticket_dir.name == "archive":
+            continue
+        ledger_path = ticket_dir / "ticket.md"
+        if not ledger_path.is_file():
+            continue
+        parsed = _parse_ticket_ledger_file(ledger_path)
+        if parsed is None:
+            continue
+        if parsed["state"] not in ("queued", "planned"):
+            continue
+        try:
+            created = date.fromisoformat(parsed["created"])
+        except ValueError:
+            continue
+        threshold = thresholds.get(parsed["priority"])
+        if threshold is None:
+            continue
+        age_days = (today - created).days
+        if age_days <= threshold:
+            continue
+        rotting.append(
+            {
+                "id": parsed["id"],
+                "priority": parsed["priority"],
+                "tier": parsed["tier"],
+                "state": parsed["state"],
+                "age_days": age_days,
+                "threshold_days": threshold,
+            }
+        )
+    rotting.sort(key=lambda t: (_PRIORITY_RANK.get(t["priority"], 99), -t["age_days"]))
+    return rotting
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_ticket_rot
+# frob:ticket T-2182
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_splits_by_tier_under_\
+# distinct_action_headings
+def _print_ticket_rot() -> None:
+    """Print the TICKET ROT section: `rotting_tickets`'s own count, split
+    into two headings by TIER, each naming the required ACTION (acceptance
+    [3]/[4]) -- 'NEEDS DISPATCH' for `tier=ticket` (nobody dispatched it;
+    the fix IS to dispatch it) and 'NEEDS DECOMPOSITION' for `tier=epic`/
+    `tier=story` (not directly workable; 'work it' is the wrong
+    instruction for two thirds of a real measured set, T-0411/T-2182's
+    own incident: 10 of 15 rotting tickets were epics, 1 a story, only 4
+    leaf tickets -- reporting them as one undifferentiated count is
+    exactly what read as noise for a whole session). Printed
+    unconditionally inside `_print_fleet_report`, in the standing report
+    a coordinator already runs -- not behind a separate command
+    (acceptance [0]/[2]): TICK004 already fires in `frob check`'s gate
+    layer, but sat as 11 lines inside a 19-error list and was read as
+    noise there; surfacing the same structured comparison here, with the
+    action named per row, is the fix. Epics are NOT exempted (acceptance
+    [4]) -- a rotting epic is reported, just under its own heading naming
+    the different action it needs."""
+    rotting = rotting_tickets()
+    print(f"TICKET ROT: {len(rotting)}")
+    leaves = [t for t in rotting if t["tier"] == "ticket"]
+    non_leaves = [t for t in rotting if t["tier"] != "ticket"]
+    if leaves:
+        print(f"  NEEDS DISPATCH ({len(leaves)}):")
+        for t in leaves:
+            print(
+                f"    {t['id']} priority={t['priority']} state={t['state']} "
+                f"age={t['age_days']}d (threshold {t['threshold_days']}d)"
+            )
+    if non_leaves:
+        print(f"  NEEDS DECOMPOSITION ({len(non_leaves)}):")
+        for t in non_leaves:
+            print(
+                f"    {t['id']} tier={t['tier']} priority={t['priority']} "
+                f"state={t['state']} age={t['age_days']}d "
+                f"(threshold {t['threshold_days']}d)"
+            )
+
+
 # frob:doc docs/guides/coordinator-scripts.md#quarantine
 # frob:ticket T-2049
 # frob:tests \
@@ -953,6 +1159,7 @@ def _print_land_status() -> None:
 # frob:doc docs/guides/coordinator-scripts.md#_print_fleet_report
 # frob:ticket T-2172
 # frob:ticket T-2180
+# frob:ticket T-2182
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_prints_all_four_sec\
 # tions
@@ -965,12 +1172,17 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     `root_dirt()` and can reuse the result for its own exit-code
     decision. T-2180 added the LANDS section between ROOT and QUARANTINE
     -- "which lands are in flight" is exactly the kind of fleet-wide,
-    always-relevant state the other four sections already are."""
+    always-relevant state the other four sections already are. T-2182
+    added the TICKET ROT section right after LANDS, for the same reason:
+    a coordinator already reads this report before every dispatch, and
+    ticket rot is exactly the kind of "forgot we have a stack of things"
+    signal that belongs where dispatch decisions are actually made."""
     print(f"ROOT {'DIRTY -- do not dispatch' if dirt else 'CLEAN'}")
     for line in dirt:
         print(f"  {line}")
 
     _print_land_status()
+    _print_ticket_rot()
 
     state, undisposed = quarantine_state()
     if state == "raised":

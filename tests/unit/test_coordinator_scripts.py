@@ -16,6 +16,7 @@ import io
 import json
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -877,6 +878,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         assert fleet_status.main() == 0
         assert "CLEAN" in capsys.readouterr().out
@@ -889,6 +891,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         assert fleet_status.main() == 1
         out = capsys.readouterr().out
@@ -906,6 +909,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(
             fleet_status,
             "ticket_readiness",
@@ -937,6 +941,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(
             fleet_status,
             "ticket_readiness",
@@ -965,6 +970,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(
             fleet_status,
             "ticket_readiness",
@@ -1049,6 +1055,7 @@ class TestPrintFleetReport:
         own section, in that order (T-2180 added LANDS between ROOT and
         QUARANTINE)."""
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
         monkeypatch.setattr(
             fleet_status,
@@ -1065,6 +1072,153 @@ class TestPrintFleetReport:
         assert "DIRTY" in out and " M x.py" in out
         assert "T-2114 -> t-2114" in out
         assert "one" in out
+
+
+def _write_ticket(
+    tickets_dir: Path,
+    ticket_id: str,
+    *,
+    state: str = "queued",
+    priority: str = "high",
+    created: str = "2026-01-01",
+    tier: str = "ticket",
+) -> None:
+    """Write a minimal `tickets/<id>/ticket.md` fixture file with just the
+    frontmatter fields `_parse_ticket_ledger_file` reads."""
+    ticket_dir = tickets_dir / ticket_id
+    ticket_dir.mkdir(parents=True)
+    (ticket_dir / "ticket.md").write_text(
+        f"---\n"
+        f"id: {ticket_id}\n"
+        f"title: 'a title'\n"
+        f"state: {state}\n"
+        f"kind: feature\n"
+        f"created: '{created}'\n"
+        f"priority: {priority}\n"
+        f"tier: {tier}\n"
+        f"---\n",
+        encoding="utf-8",
+    )
+
+
+class TestRottingTickets:
+    """`fleet_status.rotting_tickets` (T-2182)."""
+
+    def test_flags_a_ticket_past_its_priority_threshold(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A queued CRITICAL ticket older than its own 3-day threshold is
+        reported, with age and threshold both present -- this MUST fail
+        against current main (rotting_tickets does not exist there)."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-0001", state="queued", priority="critical",
+            created="2020-01-01",
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        monkeypatch.setattr(
+            fleet_status, "_rot_day_thresholds",
+            lambda: {"critical": 3, "high": 7, "medium": 30, "low": 90},
+        )
+        rotting = fleet_status.rotting_tickets()
+        assert len(rotting) == 1
+        assert rotting[0]["id"] == "T-0001"
+        assert rotting[0]["priority"] == "critical"
+        assert rotting[0]["threshold_days"] == 3
+        assert rotting[0]["age_days"] > 3
+
+    def test_ignores_tickets_still_under_threshold(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ticket created today never rots, regardless of priority."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-0002", state="queued", priority="critical",
+            created=date.today().isoformat(),
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        assert fleet_status.rotting_tickets() == []
+
+    def test_only_queued_and_planned_states_are_considered(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An old ticket that is in-progress/done/dropped/blocked is NOT
+        rotting -- TICK004's own selection (only queued/planned) is
+        mirrored exactly, not a broader 'any old ticket' sweep."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-0003", state="in-progress", priority="critical",
+            created="2020-01-01",
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        assert fleet_status.rotting_tickets() == []
+
+    def test_distinguishes_epic_and_story_tier_from_ticket_tier(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Rotting tickets, stories, and epics are all reported (epics are
+        NOT exempted) with their own `tier` field intact, so a caller can
+        split them by required action."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-0004", state="queued", priority="critical",
+            created="2020-01-01", tier="ticket",
+        )
+        _write_ticket(
+            tickets_dir, "T-0005", state="queued", priority="critical",
+            created="2020-01-01", tier="epic",
+        )
+        _write_ticket(
+            tickets_dir, "T-0006", state="planned", priority="critical",
+            created="2020-01-01", tier="story",
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        rotting = fleet_status.rotting_tickets()
+        tiers = {t["id"]: t["tier"] for t in rotting}
+        assert tiers == {"T-0004": "ticket", "T-0005": "epic", "T-0006": "story"}
+
+
+class TestPrintTicketRot:
+    """`fleet_status._print_ticket_rot` (T-2182)."""
+
+    def test_splits_by_tier_under_distinct_action_headings(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A leaf ticket prints under 'NEEDS DISPATCH'; an epic/story
+        prints under 'NEEDS DECOMPOSITION' -- two distinct headings naming
+        the required action, never one undifferentiated count (T-0411/
+        T-2182's own incident: 10 of 15 rotting tickets were epics, only
+        4 leaf tickets, and reporting them as one count read as noise for
+        a whole session)."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-0004",
+                    "priority": "critical",
+                    "tier": "ticket",
+                    "state": "queued",
+                    "age_days": 20,
+                    "threshold_days": 3,
+                },
+                {
+                    "id": "T-0005",
+                    "priority": "critical",
+                    "tier": "epic",
+                    "state": "queued",
+                    "age_days": 20,
+                    "threshold_days": 3,
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "TICKET ROT: 2" in out
+        assert "NEEDS DISPATCH (1):" in out
+        assert "NEEDS DECOMPOSITION (1):" in out
+        assert "T-0004" in out.split("NEEDS DECOMPOSITION")[0]
+        assert "T-0005" in out.split("NEEDS DECOMPOSITION")[1]
 
 
 class TestQuarantineState:
@@ -1146,6 +1300,7 @@ class TestFleetStatusMainQuarantine:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("raised", 2))
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         fleet_status.main()
@@ -1162,6 +1317,7 @@ class TestFleetStatusMainQuarantine:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         fleet_status.main()
@@ -1177,6 +1333,7 @@ class TestFleetStatusMainQuarantine:
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("unknown", 0))
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         fleet_status.main()

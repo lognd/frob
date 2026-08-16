@@ -144,6 +144,7 @@
     "scripts/fleet_status.py::LEASES": "042d27324e9ad83fbd892f41848a4f72b3d082ac95514020931df0f4239ac15e",
     "scripts/fleet_status.py::QUARANTINE": "1eee56fa83cdf28b39310ff24f92a7536204af6f3469e16585007531dda9ac3d",
     "scripts/fleet_status.py::REPO": "359d18a5db6144166af75a63b53d2e02ae00dca50ebfa5f2a85b28394be220ff",
+    "scripts/fleet_status.py::TICKETS_DIR": "8d0fd144c7acd3cf02537492280892b8e4804ec5cebb6f5f37dedc4052bf3515",
     "scripts/fleet_status.py::WORKTREES": "a09a94d31378912f65e88d59cde886b238b023ccf5711f7db55fb506237d694d",
     "scripts/fleet_status.py::host_load": "b696f119d02df46d7140617f2cab72fb17fcb877d468507e94be930a05efd835",
     "scripts/fleet_status.py::land_invocations": "f5b4744b924325a8d546977ff238b26bfc909d6d43080c4d56ae5534ed400a1d",
@@ -153,6 +154,7 @@
     "scripts/fleet_status.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "scripts/fleet_status.py::quarantine_state": "b83fb4a44381d70b72cd11ecbbfd2d76f8e32212b093b7380eb4d12a55e5c72d",
     "scripts/fleet_status.py::root_dirt": "37e0dbca57009139c2690e28bab8a4bc1c437b07db4940bc0499574dc0cb4ba7",
+    "scripts/fleet_status.py::rotting_tickets": "502ecbc592cf2c07c5ef99808067f6164f057bcf773359d3498dafed82bded62",
     "scripts/fleet_status.py::scope_intersections": "b67295878c63f31d1541203ccd147ea07628ba5a0711883f5c35ecfb3427f188",
     "scripts/fleet_status.py::ticket_frontmatter_on_main": "a280cbebdf84c3b5d08f81f5b83f21a6ed7a403610ff2c3912bc1568e8e10c59",
     "scripts/fleet_status.py::ticket_lease": "6861440ab371976e550714539def51efe3af5c2cda725a130af33f2f7aef805c",
@@ -2304,5 +2306,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.468.0"
+  "version": "0.469.0"
 }

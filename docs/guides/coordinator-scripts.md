@@ -82,7 +82,9 @@ before either action.
 `REPO`, `WORKTREES`, and `LEASES` are the three paths every function below
 resolves relative to: the repo root (derived from this script's own file
 location, so it works regardless of the caller's cwd), the per-worktree
-checkout directory, and the cross-worktree lease directory.
+checkout directory, and the cross-worktree lease directory. `TICKETS_DIR`
+(T-2182) is the fourth: the live per-ticket ledger directory
+(`tickets/<id>/ticket.md`), read directly from disk for `rotting_tickets`.
 
 ### `root_dirt`
 
@@ -360,6 +362,55 @@ command (the "automatic over commands" rule). Six concurrent agents
 against the documented cap went unnoticed on this host until someone
 checked `ps`/`free` by hand; this line is where that check now lives.
 
+### `_rot_day_thresholds`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_rot_day_thresholds -->
+
+T-2182. Per-priority rot-day thresholds from `frob.toml`'s `[tickets]`
+table, defaulting to `_ROT_DAYS_DEFAULT` (critical=3, high=7, medium=30,
+low=90) -- mirrors `frob.gates._tickets_gate._tick004_rot_thresholds`
+exactly, duplicated in plain-dict form since importing the `frob`
+package would defeat this script's own "runs under any interpreter on
+PATH" contract.
+
+### `_parse_ticket_ledger_file`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_file -->
+
+T-2182. `{"id", "state", "priority", "tier", "created"}` hand-parsed
+directly from a `tickets/<id>/ticket.md` file on disk (never `git show
+main:...` -- the live, uncommitted ledger is what a dispatch decision
+actually depends on). `None` if the file is unreadable or any required
+field is missing.
+
+### `rotting_tickets`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#rotting_tickets -->
+
+T-2182. Every QUEUED/PLANNED ticket under `TICKETS_DIR` (excluding
+`tickets/archive/**`) whose priority-specific rot-day threshold has been
+crossed since its own `created` date -- derived entirely from the
+ledger's own structured fields compared against configured thresholds,
+never by parsing `frob check`'s rendered TICK004 text. Mirrors
+`_tick004_queue_rot`'s own selection exactly. Each entry carries `tier`
+so a caller can distinguish a rotting leaf ticket (needs dispatch) from
+a rotting epic/story (needs decomposition).
+
+### `_print_ticket_rot`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_ticket_rot -->
+
+T-2182. Prints the TICKET ROT section: `rotting_tickets`'s count, split
+under two headings naming the required action -- 'NEEDS DISPATCH' for
+`tier=ticket`, 'NEEDS DECOMPOSITION' for `tier=epic`/`tier=story`.
+Epics are NOT exempted, only reported under their own action heading
+(measured incident: 10 of 15 rotting tickets were epics, 1 a story, only
+4 leaf tickets -- one undifferentiated count told a coordinator to do
+something impossible for two thirds of the set, which is why the alarm
+read as noise for a whole session). Printed unconditionally inside
+`_print_fleet_report`; TICK004 already fires in `frob check`'s gate
+layer but sat as 11 lines inside a 19-error list there.
+
 ### `_ticket_readiness_lines`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_ticket_readiness_lines -->
@@ -383,12 +434,13 @@ neither half re-triggers the mixed-concern signal alone.
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_fleet_report -->
 
-Prints the ROOT/LANDS/QUARANTINE/LEASES/WORKTREES sections `main` used to
-print inline, taking `dirt` (already computed by `main`) and
-`idle_seconds` as arguments -- the other half of `main`'s ARCH001/
+Prints the ROOT/LANDS/TICKET ROT/QUARANTINE/LEASES/WORKTREES sections
+`main` used to print inline, taking `dirt` (already computed by `main`)
+and `idle_seconds` as arguments -- the other half of `main`'s ARCH001/
 ARCH103 decomposition, alongside `_print_ticket_readiness` above. T-2180
 added the LANDS section (`_print_land_status`) between ROOT and
-QUARANTINE.
+QUARANTINE; T-2182 added TICKET ROT (`_print_ticket_rot`) right after
+LANDS.
 
 ### `_print_all_ticket_readiness`
 
