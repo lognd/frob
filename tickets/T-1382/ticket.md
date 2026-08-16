@@ -12,12 +12,12 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- src/frob/_cli_parsers/**
 - src/frob/app/pyfmt_runner.py
 - tests/unit/test_pyfmt_runner.py
 - docs/commands/**
 - docs/guides/agent-playbook.md
 - docs/commands/build.md
+- tickets/T-1382/ticket.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/umbrella
   ticket
@@ -94,6 +94,26 @@ scope_changes:
     actually edits'
   actor: logan
   at: '2026-08-10'
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: 'T-1382 is an in-progress UMBRELLA epic whose implementation work is done
+    entirely by its leaves (T-2240 landed; T-2241/T-2242 blocked). Holding src/frob/_cli_parsers/**
+    meant the parent blocked its OWN children at frob ticket start -- T-2241 needs
+    _cli_parsers/_misc.py and __init__.py. Documented epic-lease-leak remedy: narrow
+    an umbrella epic to its ledger files so it never holds implementation scope it
+    does not itself edit.'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tickets/T-1382/ticket.md
+  reason: 'T-1382 is an in-progress UMBRELLA epic whose implementation work is done
+    entirely by its leaves (T-2240 landed; T-2241/T-2242 blocked). Holding src/frob/_cli_parsers/**
+    meant the parent blocked its OWN children at frob ticket start -- T-2241 needs
+    _cli_parsers/_misc.py and __init__.py. Documented epic-lease-leak remedy: narrow
+    an umbrella epic to its ledger files so it never holds implementation scope it
+    does not itself edit.'
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
