@@ -14,8 +14,27 @@ scope:
 - src/frob/release/**
 - scripts/bump_version.py
 - Makefile
+- docs/modules/release.md
+- docs/commands/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/release.md
+  reason: release/** module already has extensive existing doc obligations to docs/modules/release.md
+    and docs/commands/release.md; include them so this leaf's scope closes without
+    narrowing release/** itself, since the new publish verb genuinely lives alongside
+    stamp/check/sync in the same module
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/commands/release.md
+  reason: release/** module already has extensive existing doc obligations to docs/modules/release.md
+    and docs/commands/release.md; include them so this leaf's scope closes without
+    narrowing release/** itself, since the new publish verb genuinely lives alongside
+    stamp/check/sync in the same module
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a repo with no Makefile WHEN a maintainer wants to cut a release THEN
