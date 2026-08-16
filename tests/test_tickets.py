@@ -1071,6 +1071,7 @@ class TestFailCliRequeues:
 
 
 # frob:ticket T-1132
+# frob:ticket T-2216
 class TestBlockCliValidatesBy:
     """T-1132: `frob ticket block <id> --by <other>` mutates an EXISTING
     ticket's `blocked_by` via `model_copy`, which pydantic never
@@ -1127,6 +1128,64 @@ class TestBlockCliValidatesBy:
         _block(tmp_path, cfg)
         queue = load_queue(tmp_path).danger_ok
         assert queue.tickets["T-0001"].blocked_by == ("T-0042",)
+
+    # frob:ticket T-2216
+    def test_blocking_by_the_same_id_twice_does_not_duplicate_the_edge(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_block kind="unit"
+        # T-2216's DESIGNATED REPRO (BUG002): `_block` appends `--by` to
+        # `blocked_by` unconditionally via `ticket.blocked_by + (cfg.
+        # ticket_by,)` -- two successive `block` calls with the SAME `--by`
+        # (the real incident: a coordinator "restoring" an edge that was
+        # never actually lost) leave `blocked_by=(T-2211, T-2211)`, a
+        # duplicate that survives the first blocker being cleared. This
+        # test MUST fail against current main.
+        from frob.app.ticket_runner._lifecycle import _block
+
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg = AppConfig(
+            ticket_command="block",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_by="T-0042",
+        )
+        _block(tmp_path, cfg)
+        with pytest.raises(SystemExit) as exc_info:
+            _block(tmp_path, cfg)
+        assert exc_info.value.code == 1
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].blocked_by == ("T-0042",)
+
+    # frob:ticket T-2216
+    def test_blocking_by_a_different_second_id_still_appends(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_block kind="unit"
+        # MUST-STILL-PASS control: a genuinely different second blocker
+        # must still append normally -- a fix that dedupes too broadly
+        # (or refuses ANY second `block` call regardless of `--by`) would
+        # satisfy the repro above and break legitimate multi-blocker
+        # tickets, which is a worse bug than the one being fixed.
+        from frob.app.ticket_runner._lifecycle import _block
+
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg_a = AppConfig(
+            ticket_command="block",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_by="T-0042",
+        )
+        _block(tmp_path, cfg_a)
+        cfg_b = AppConfig(
+            ticket_command="block",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_by="T-0043",
+        )
+        _block(tmp_path, cfg_b)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].blocked_by == ("T-0042", "T-0043")
 
 
 # frob:ticket T-1132

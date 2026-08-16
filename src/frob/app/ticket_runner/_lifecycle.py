@@ -1155,6 +1155,35 @@ def _block(root: Path, cfg: AppConfig) -> None:
         _log.error("block failed: %s", loaded.danger_err)
         sys.exit(1)
     ticket = loaded.danger_ok
+
+    # T-2216: `_block` is the ONE CLI verb that appends to an EXISTING
+    # ticket's `blocked_by` post-creation (see this function's own T-1132
+    # comment above), and the append below was unconditional -- two
+    # successive `block` calls with the SAME `--by` (the real incident: a
+    # coordinator "restoring" an edge that was never actually lost) wrote
+    # a duplicate entry (`blocked_by=[T-2211, T-2211]`) that survives the
+    # first blocker being cleared, since `blocked_by.remove` / whatever
+    # eventually clears one blocker only removes ONE occurrence. Compared
+    # as a STRUCTURED value (`cfg.ticket_by in ticket.blocked_by`, a
+    # membership check against the already-parsed `tuple[str, ...]` this
+    # module's own field validators produced) -- never a string/lexical
+    # comparison against the rendered YAML. REFUSE rather than silently
+    # no-op: a silent idempotent skip would have let the real incident's
+    # mistaken "restore" through unnoticed a second time; refusing and
+    # naming the existing edge tells the caller immediately that nothing
+    # was lost, which is the more useful answer to "did my restore work".
+    # A genuinely DIFFERENT second `--by` is untouched by this check and
+    # still appends normally (multi-blocker tickets are legitimate).
+    if cfg.ticket_by in ticket.blocked_by:
+        _log.error(
+            "frob ticket block: %s is already blocked by %s (blocked_by=%s) "
+            "-- refusing to append a duplicate edge; nothing to do",
+            cfg.ticket_id,
+            cfg.ticket_by,
+            ticket.blocked_by,
+        )
+        sys.exit(1)
+
     updated = ticket.model_copy(
         update={"blocked_by": ticket.blocked_by + (cfg.ticket_by,)}
     )
