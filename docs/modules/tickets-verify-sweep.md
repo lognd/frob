@@ -970,6 +970,22 @@ narrative; `--actor` defaults to the OS user. A partial disposition set
 the whole clear, exactly like `clear_quarantine`'s own contract -- there
 is no "half-cleared" CLI shortcut.
 
+**`frob verify dispose --retire-unidentifiable --reason TEXT [--actor
+NAME] [--json]` (T-2217).** Wires the CONSUMER recovery verb described
+above (`retire_unidentifiable_findings`) into the CLI -- the only dispose
+mode that can clear an identity-less finding at all, since
+`--file-ticket`/`--dismiss`'s `RULE:FILE:LINE` addressing structurally
+cannot key `("", "", None)`. Mutually exclusive with
+`--file-ticket`/`--dismiss` in the same invocation (refuses outright
+rather than silently picking one): the identity-less recovery path
+targets a SHAPE, never a caller-supplied key, so combining it with one
+is always a mistake, not a valid request. Same "no half-cleared" contract
+as the ordinary path -- a well-formed, still-undisposed sibling finding
+blocks the actual clear exactly as before; only the identity-less
+record(s) are retired, and a follow-up ordinary `--file-ticket`/
+`--dismiss` call disposes the rest.
+<!-- frob:describes src/frob/app/verify_runner.py::_run_dispose -->
+
 **Live validation (2026-08-08).** This ticket's own end-to-end proof: the
 repo's `.frob/quarantine.json` was raised on an `unresolved-import`
 finding at `tests/unit/strata/test_capacity.py`, `commit_sha=None` (T-1690's

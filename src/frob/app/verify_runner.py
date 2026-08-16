@@ -431,31 +431,89 @@ def _collect_dispositions(
     return dispositions
 
 
+# frob:ticket T-2217
+# frob:tests \
+# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_\
+# rejects_combination_with_dismiss
+def _retire_unidentifiable_dispose(cfg: AppConfig, root: Path, reason: str, actor: str):  # noqa: ANN201
+    """T-2217: `--retire-unidentifiable`'s own branch of `_run_dispose`,
+    split out (ARCH001) so that function's own body stays the
+    validate-then-call sequence. `reason` is taken as an already-narrowed
+    `str` (the caller's own `--reason`-required check already ran) rather
+    than re-reading `cfg.verify_dispose_reason: str | None` here, so `ty`
+    can see the non-`None` guarantee across the function boundary.
+    Refuses (`sys.exit(1)`) if combined with `--file-ticket`/`--dismiss`
+    -- the identity-less recovery path targets a SHAPE, never a
+    caller-supplied key, so combining it with one is always a mistake.
+    Otherwise calls `frob.verify._quarantine.retire_unidentifiable_
+    findings` directly -- the CLI's own `RULE:FILE:LINE` addressing
+    (`_parse_finding_arg`) can never key an identity-less finding (empty
+    `file` is always rejected as malformed), so this is the only CLI
+    path that can reach it."""
+    from frob.verify._quarantine import retire_unidentifiable_findings
+
+    if cfg.verify_dispose_filed or cfg.verify_dispose_dismissed:
+        _log.error(
+            "verify dispose: --retire-unidentifiable cannot be combined "
+            "with --file-ticket/--dismiss -- it targets only "
+            "identity-less findings by shape (T-2207), never a "
+            "caller-supplied key; dispose well-formed findings in a "
+            "separate call"
+        )
+        sys.exit(1)
+    return retire_unidentifiable_findings(root, reason=reason, actor=actor)
+
+
+# frob:ticket T-2217
+# frob:tests \
+# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_\
+# retires_and_clears
+# frob:tests \
+# tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_\
+# still_blocks_on_a_well_formed_sibling
 def _run_dispose(cfg: AppConfig) -> None:
     """`frob verify dispose`: apply every `--file-ticket`/`--dismiss`
     disposition given and, once every currently-quarantined finding is
     disposed, clear the quarantine -- the only path that ever clears one
-    (`frob.verify._quarantine.clear_quarantine`'s own contract)."""
+    (`frob.verify._quarantine.clear_quarantine`'s own contract).
+
+    T-2217: `--retire-unidentifiable` is a separate, mutually exclusive
+    mode (`_retire_unidentifiable_dispose`) routed to `frob.verify.
+    _quarantine.retire_unidentifiable_findings` instead of `clear_
+    quarantine` -- it enforces the SAME "clear only if every finding ends
+    up disposed" rule `clear_quarantine` itself does, so a well-formed
+    undisposed sibling still returns `Err(FindingsNotDisposed)` here,
+    handled by the same generic `result.is_err` branch below, never a
+    special-cased bypass."""
     from frob.verify._quarantine import clear_quarantine
 
     root = _resolve_root(cfg)
-    if not cfg.verify_dispose_reason:
+    reason = cfg.verify_dispose_reason
+    if not reason:
         _log.error("verify dispose: --reason is required")
         sys.exit(1)
 
-    dispositions = _collect_dispositions(cfg)
-    if dispositions is None:
-        sys.exit(1)
-    if not dispositions:
-        _log.error(
-            "verify dispose: at least one --file-ticket or --dismiss is required"
-        )
-        sys.exit(1)
-
     actor = cfg.verify_dispose_actor or getpass.getuser()
-    result = clear_quarantine(
-        root, dispositions=dispositions, reason=cfg.verify_dispose_reason, actor=actor
-    )
+
+    if cfg.verify_dispose_retire_unidentifiable:
+        result = _retire_unidentifiable_dispose(cfg, root, reason, actor)
+    else:
+        dispositions = _collect_dispositions(cfg)
+        if dispositions is None:
+            sys.exit(1)
+        if not dispositions:
+            _log.error(
+                "verify dispose: at least one --file-ticket, --dismiss, or "
+                "--retire-unidentifiable is required"
+            )
+            sys.exit(1)
+        result = clear_quarantine(
+            root,
+            dispositions=dispositions,
+            reason=reason,
+            actor=actor,
+        )
+
     if result.is_err:
         _log.error("verify dispose: %s", result.danger_err)
         sys.exit(1)

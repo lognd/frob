@@ -35,8 +35,8 @@ acceptance:
     v2-mode attachment files on checkout and the T-1433 .gitattributes CRLF-suppression
     glob does not cover the v2 nested path shape, so the sha reverify this mechanism
     deliberately performs correctly refuses rather than force a write against unverifiable
-    content. Filed as T-2239 (blocking) -- not fixed under T-2226''s own
-    declared scope.'
+    content. Filed as T-2239 (blocking) -- not fixed under T-2226''s own declared
+    scope.'
   evidence:
   - tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_repairs_a_pre_t2199_stale_draft_pointer
 - text: A correctly-recorded attachment MUST STILL validate unchanged -- must-still-pass
@@ -60,8 +60,8 @@ acceptance_amendments:
     v2-mode attachment files on checkout and the T-1433 .gitattributes CRLF-suppression
     glob does not cover the v2 nested path shape, so the sha reverify this mechanism
     deliberately performs correctly refuses rather than force a write against unverifiable
-    content. Filed as T-2239 (blocking) -- not fixed under T-2226''s own
-    declared scope.'
+    content. Filed as T-2239 (blocking) -- not fixed under T-2226''s own declared
+    scope.'
   reason: 'measured live during T-2226: backfill_stale_draft_attachment_paths run
     against the real ledger refuses with WriteFailed/sha mismatch due to a pre-existing
     CRLF corruption bug unrelated to this ticket''s own logic; the original criterion
@@ -78,8 +78,8 @@ acceptance_amendments:
     history). Applying the doc edits is blocked: both target files (docs/design/gate-semantics-classification.md,
     docs/guides/coordinator-scripts.md) are under a live cross-ticket scope lease
     (T-1662, T-2222) at the time T-2226 ran -- frob ticket scope --add refused both
-    with ScopeLeaseConflict. Filed as T-2237 with both resolved mappings
-    recorded, to apply once the leases free up.'
+    with ScopeLeaseConflict. Filed as T-2237 with both resolved mappings recorded,
+    to apply once the leases free up.'
   reason: 'measured live during T-2226: frob ticket scope T-2226 --add refused both
     target doc files with ScopeLeaseConflict (T-1662, T-2222); the mappings are genuinely
     resolved (not unresolvable), only the application is blocked'
@@ -93,16 +93,16 @@ acceptance_amendments:
     history). Applying the doc edits is blocked: both target files (docs/design/gate-semantics-classification.md,
     docs/guides/coordinator-scripts.md) are under a live cross-ticket scope lease
     (T-1662, T-2222) at the time T-2226 ran -- frob ticket scope --add refused both
-    with ScopeLeaseConflict. Filed as T-2237 with both resolved mappings
-    recorded, to apply once the leases free up.'
+    with ScopeLeaseConflict. Filed as T-2237 with both resolved mappings recorded,
+    to apply once the leases free up.'
   new_text: null
   reason: 'This criterion is doc-prose archaeology, not a code-testable property --
     no pytest node id can evidence ''a draft id was resolved by reading git history''.
     The finding itself is fully recorded: both mappings resolved (T-draft-385de2c7->T-2188,
     T-draft-354a6b64->T-2172), application blocked by live leases (T-1662, T-2222)
-    on the only 2 files this criterion concerns, residue filed as T-2237
-    with the mappings preserved. Removing rather than force-binding an unrelated test
-    as fake evidence.'
+    on the only 2 files this criterion concerns, residue filed as T-2237 with the
+    mappings preserved. Removing rather than force-binding an unrelated test as fake
+    evidence.'
   actor: logan
   at: '2026-08-16'
 threat: null
@@ -134,7 +134,7 @@ budget/truncation signals in stderr, so this is a real count):
     COV004  tickets/T-2238/attachments/02-...md    (T-2195)
     COV004  tickets/T-2195/attachments/03-...md              (T-2195)
     COV004  tickets/T-2197/attachments/01-...md              (T-2197)
-    DOC011  docs/design/gate-semantics-classification.md:123 -> 'T-draft-385de2c7'
+    DOC011  docs/design/gate-semantics-classification.md:123 -> 'T-2247'
     DOC011  docs/guides/coordinator-scripts.md:467           -> 'T-draft-354a6b64'
 
 **6 of the repo's 41 errors -- about 15% of the entire error floor -- come

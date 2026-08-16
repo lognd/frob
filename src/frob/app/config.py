@@ -860,6 +860,11 @@ class AppConfig(BaseModel):
     verify_dispose_dismissed: list[str] = []
     verify_dispose_reason: str | None = None
     verify_dispose_actor: str | None = None
+    #: `frob verify dispose --retire-unidentifiable` (T-2217/T-2207):
+    #: dispose every currently-raised identity-less finding -- the only
+    #: path that can, since --file-ticket/--dismiss's RULE:FILE:LINE
+    #: addressing can never key one.
+    verify_dispose_retire_unidentifiable: bool = False
 
     # release
     release_command: str | None = None  # stamp|check

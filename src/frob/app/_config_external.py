@@ -463,6 +463,8 @@ _BOOL_FLAGS = (
     "coverage_full",
     # frob:ticket T-1697
     "verify_json",
+    # frob:ticket T-2217
+    "verify_dispose_retire_unidentifiable",
     # frob:ticket T-2004
     # Measured, real gaps -- see the _STRING_FIELDS T-2004 comment above
     # for the finding this closes. `ticket_doable_show_anchors` and

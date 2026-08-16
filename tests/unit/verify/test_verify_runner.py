@@ -8,11 +8,13 @@ import pytest
 from typani import Ok
 
 from frob.app.config import AppConfig
-from frob.app.verify_runner import _run_explain, build_status
+from frob.app.verify_runner import _run_dispose, _run_explain, build_status
 from frob.graph import CallGraph, GraphSnapshot
 from frob.verify._quarantine import (
     QuarantinedFinding,
+    QuarantineRecord,
     clear_quarantine,
+    load_quarantine,
     raise_quarantine,
 )
 from frob.verify._watermark import advance_watermark, record_intent
@@ -69,6 +71,25 @@ class TestBuildStatus:
         assert status.watermark_age_s is not None
 
 
+# frob:waive WIRE001 reason="test-only fixture helper, exercised by every test in TestDispose's retire-unidentifiable trio -- not production code to wire; follow_up points at T-2246 (WIRE002 requires a live open ticket, not because that ticket is expected to remove the waiver itself), same posture as tests/unit/verify/test_quarantine.py::_seed_stuck_store's own waiver" follow_up="T-2246"  # noqa: E501
+def _seed_identity_less_store(tmp_path: Path, *, extra: tuple = ()) -> None:
+    """T-2217: persist a quarantine record directly (bypassing
+    `raise_quarantine`, which T-2207's producer-side fix now filters an
+    identity-less finding out of before it ever reaches disk) -- mirrors
+    an already-stuck store from before that fix landed, the same fixture
+    shape `tests/unit/verify/test_quarantine.py::_seed_stuck_store` uses
+    for `retire_unidentifiable_findings`'s own tests."""
+    identity_less = QuarantinedFinding(rule_id="", file="")
+    record = QuarantineRecord(
+        raised_at="2026-01-01T00:00:00+00:00",
+        batch_commit_shas=("deadbeef",),
+        findings=(identity_less, *extra),
+    )
+    path = tmp_path / ".frob" / "quarantine.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(record.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+
 class TestDispose:
     """`clear_quarantine`, exercised the same way `frob verify dispose`
     drives it -- disposing the live unattributed finding this ticket's
@@ -113,6 +134,91 @@ class TestDispose:
         assert status is not None
         assert status.quarantine_raised is False
 
+    def test_retire_unidentifiable_flag_retires_and_clears(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::_run_dispose kind="unit"
+        """T-2217: `--retire-unidentifiable` reaches
+        `retire_unidentifiable_findings` -- the only path that can dispose
+        an identity-less finding at all, since `RULE:FILE:LINE` addressing
+        can never key `("", "", None)`."""
+        _seed_identity_less_store(tmp_path)
+        cfg = AppConfig(
+            verify_command="dispose",
+            verify_path=tmp_path,
+            verify_dispose_retire_unidentifiable=True,
+            verify_dispose_reason="T-2207 recovery: identity-less record",
+            verify_dispose_actor="T-2217 agent",
+        )
+        _run_dispose(cfg)  # returns normally -- no sys.exit on success
+
+        loaded = load_quarantine(tmp_path)
+        assert loaded.is_ok
+        record = loaded.danger_ok
+        assert record is not None
+        assert record.cleared_at is not None
+        assert record.findings[0].disposition == "dismissed"
+
+    def test_retire_unidentifiable_flag_rejects_combination_with_dismiss(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::_run_dispose kind="unit"
+        """T-2217: `--retire-unidentifiable` combined with `--dismiss`
+        refuses outright rather than silently ignoring one -- combining
+        the identity-less recovery path with a caller-supplied key is
+        never a valid request."""
+        _seed_identity_less_store(tmp_path)
+        cfg = AppConfig(
+            verify_command="dispose",
+            verify_path=tmp_path,
+            verify_dispose_retire_unidentifiable=True,
+            verify_dispose_dismissed=["unresolved-import:tests/x.py:=noise"],
+            verify_dispose_reason="attempted combination",
+            verify_dispose_actor="T-2217 agent",
+        )
+        with pytest.raises(SystemExit) as exc:
+            _run_dispose(cfg)
+        assert exc.value.code == 1
+
+        loaded = load_quarantine(tmp_path)
+        assert loaded.is_ok
+        record = loaded.danger_ok
+        assert record is not None
+        assert record.cleared_at is None
+
+    def test_retire_unidentifiable_flag_still_blocks_on_a_well_formed_sibling(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::_run_dispose kind="unit"
+        """T-2217 must-still-pass control (mirrors T-2207's own `test_
+        retire_unidentifiable_findings_still_blocks_on_a_well_formed_
+        sibling`): a well-formed, undisposed finding alongside the
+        identity-less one still blocks the actual clear -- the CLI wiring
+        must not create a bypass around that guard."""
+        _seed_identity_less_store(
+            tmp_path,
+            extra=(QuarantinedFinding(rule_id="unresolved-import", file="tests/x.py"),),
+        )
+        cfg = AppConfig(
+            verify_command="dispose",
+            verify_path=tmp_path,
+            verify_dispose_retire_unidentifiable=True,
+            verify_dispose_reason="T-2207 recovery: identity-less record",
+            verify_dispose_actor="T-2217 agent",
+        )
+        with pytest.raises(SystemExit) as exc:
+            _run_dispose(cfg)
+        assert exc.value.code == 1
+
+        loaded = load_quarantine(tmp_path)
+        assert loaded.is_ok
+        record = loaded.danger_ok
+        assert record is not None
+        assert record.cleared_at is None
+        by_rule = {f.rule_id: f for f in record.findings}
+        assert by_rule[""].disposition == "dismissed"
+        assert by_rule["unresolved-import"].disposition == ""
+
 
 # frob:ticket T-2018
 class TestRunExplainAdHocFallback:
@@ -134,9 +240,7 @@ class TestRunExplainAdHocFallback:
 
         # Reproduces the measured T-0907 precondition exactly: queue_status
         # returns the empty tuple (the OLD code's refusal trigger).
-        monkeypatch.setattr(
-            verify_runner_mod, "_resolve_root", lambda cfg: tmp_path
-        )
+        monkeypatch.setattr(verify_runner_mod, "_resolve_root", lambda cfg: tmp_path)
 
         snapshot = GraphSnapshot(
             root=str(tmp_path),
@@ -148,7 +252,9 @@ class TestRunExplainAdHocFallback:
         import frob.verify as verify_pkg
 
         monkeypatch.setattr(
-            verify_pkg, "load_attribution_context", lambda root: Ok((snapshot, call_graph))
+            verify_pkg,
+            "load_attribution_context",
+            lambda root: Ok((snapshot, call_graph)),
         )
         monkeypatch.setattr(verify_pkg, "queue_status", lambda root: Ok(()))
         monkeypatch.setattr(verify_pkg, "load_watermark", lambda root: Ok(None))

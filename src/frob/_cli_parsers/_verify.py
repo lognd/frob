@@ -65,8 +65,7 @@ def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
         action="append",
         default=[],
         metavar="RULE:FILE:LINE=REASON",
-        help="dismiss one finding with a human reason (repeatable; LINE "
-        "may be empty)",
+        help="dismiss one finding with a human reason (repeatable; LINE may be empty)",
     )
     dispose_p.add_argument(
         "--reason",
@@ -79,4 +78,15 @@ def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
         dest="verify_dispose_actor",
         metavar="NAME",
         help="who/what is clearing this quarantine (default: $USER)",
+    )
+    # frob:ticket T-2217
+    dispose_p.add_argument(
+        "--retire-unidentifiable",
+        dest="verify_dispose_retire_unidentifiable",
+        action="store_true",
+        help="retire every currently-raised finding with an empty identity "
+        "(T-2207) -- the RULE:FILE:LINE addressing --file-ticket/--dismiss "
+        "use can never key one, so this is the only way to dispose it; "
+        "mutually exclusive with --file-ticket/--dismiss, and a "
+        "well-formed sibling still blocks the actual clear",
     )

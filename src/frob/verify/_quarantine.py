@@ -482,7 +482,7 @@ def _dispose_one(
 # frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_still_blocks_on_a_well_formed_sibling kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_refuses_when_none_present kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_refuses_when_not_raised kind="unit"  # noqa: E501
-# frob:waive WIRE001 reason="the new T-2207 recovery verb; not yet wired to the CLI because src/frob/app/verify_runner.py is outside this ticket's scope" follow_up="T-2217"  # noqa: E501
+# frob:tests tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_retires_and_clears kind="unit"  # noqa: E501
 def retire_unidentifiable_findings(
     root: Path,
     *,

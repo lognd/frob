@@ -41,7 +41,7 @@ committed the fix separately (b73efb702). `--designate-repro` against
    once this lands".
 
 2. The 2 DOC011 dangling-`T-draft-*` doc citations: both mappings ARE
-   resolved (T-draft-385de2c7 -> T-2188, T-draft-354a6b64 -> T-2172; see
+   resolved (T-2247 -> T-2188, T-draft-354a6b64 -> T-2172; see
    the filed ticket for the exact git-archaeology evidence -- no live
    promote-mapping artifact exists anywhere in this repo, contrary to
    this ticket's assumption; the mapping had to be reconstructed from

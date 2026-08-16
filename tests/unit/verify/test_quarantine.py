@@ -17,7 +17,7 @@ from frob.verify._quarantine import (
 
 
 # frob:ticket T-2207
-# frob:waive WIRE001 reason="test-only helper, exercised by every test in TestIdentityLessFindingRecovery -- not production code to wire" follow_up="T-2217"  # noqa: E501
+# frob:waive WIRE001 reason="test-only helper, exercised by every test in TestIdentityLessFindingRecovery -- not production code to wire; follow_up points at T-2246 (WIRE002 requires a live open ticket, not because that ticket is expected to remove the waiver itself)" follow_up="T-2246"  # noqa: E501
 def _seed_stuck_store(tmp_path: Path, *, extra: tuple = ()) -> QuarantinedFinding:
     """Persist a quarantine record directly (bypassing `raise_quarantine`,
     which after T-2207's producer fix filters an identity-less finding
@@ -69,7 +69,9 @@ class TestIsQuarantined:
     def test_true_while_raised(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::is_quarantined kind="unit"
         raised = raise_quarantine(
-            tmp_path, batch_commit_shas=("deadbeef",), findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),)
+            tmp_path,
+            batch_commit_shas=("deadbeef",),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
         )
         assert raised.is_ok
         result = is_quarantined(tmp_path)
@@ -103,7 +105,9 @@ class TestRaiseQuarantine:
     def test_raises_and_persists(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
         result = raise_quarantine(
-            tmp_path, batch_commit_shas=("abc123",), findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),)
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
         )
         assert result.is_ok
         record = result.danger_ok
@@ -125,7 +129,9 @@ class TestRaiseQuarantine:
         # call (simulating a brand-new process) must see the same raised
         # state, never an in-memory-only flag.
         assert raise_quarantine(
-            tmp_path, batch_commit_shas=("abc123",), findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),)
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
         ).is_ok
         reloaded = load_quarantine(tmp_path)
         assert reloaded.is_ok
@@ -165,9 +171,7 @@ class TestRaiseQuarantine:
         result = raise_quarantine(
             tmp_path,
             batch_commit_shas=("abc123",),
-            findings=(
-                QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),
-            ),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
         )
         assert result.is_ok
         assert is_quarantined(tmp_path).danger_ok is True
@@ -210,7 +214,9 @@ class TestClearQuarantine:
     def test_refuses_when_a_finding_is_undisposed(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
         assert raise_quarantine(
-            tmp_path, batch_commit_shas=("abc123",), findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),)
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
         ).is_ok
         result = clear_quarantine(
             tmp_path, dispositions={}, reason="tried anyway", actor="test"
@@ -259,7 +265,9 @@ class TestClearQuarantine:
         # simply re-loading the store repeatedly (simulating however many
         # subsequent green batch runs happened) with no clear call.
         assert raise_quarantine(
-            tmp_path, batch_commit_shas=("abc123",), findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),)
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
         ).is_ok
         for _ in range(5):
             assert is_quarantined(tmp_path).danger_ok is True
