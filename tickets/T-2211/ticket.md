@@ -1,5 +1,5 @@
 ---
-id: T-draft-ac219333
+id: T-2211
 title: resolve_local_import drops imported NAMES for 'from X import submodule', breaking
   verify_imports for the common package-submodule idiom
 state: queued

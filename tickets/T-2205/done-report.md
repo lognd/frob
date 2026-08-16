@@ -46,14 +46,14 @@ PROTO001-005 share the identical primitive, so wiring them would hit the
 same defect; not attempted, per the "stop and report rather than wire
 the rest" instruction.
 
-Filed T-draft-ac219333 (blocking, scope src/frob/lang/_extract.py,
+Filed T-2211 (blocking, scope src/frob/lang/_extract.py,
 src/frob/lang/_nodes.py, src/frob/graph/callgraph.py -- all outside
 T-2205's own scope) with the full repro. T-2205 is blocked by
-T-draft-ac219333 rather than closed done; the DEAD001 wiring edit was
+T-2211 rather than closed done; the DEAD001 wiring edit was
 made, measured, judged unsound, and reverted -- no wiring change ships
 from this ticket. `git status`/`git diff` against main show zero
 production code changes; only the ticket ledger (this ticket's own
-transitions, T-draft-ac219333's filing, and the block edge) is new.
+transitions, T-2211's filing, and the block edge) is new.
 
 Changed: none (production code) -- src/frob/gates/_dead_symbols.py was
 edited, measured, and reverted to its pre-ticket state; tickets.md only.
@@ -62,7 +62,7 @@ test_build_reference_graph_catches_dispatch_table_entry (--accepts 0;
 this is an investigation ticket with no new production surface of its
 own -- the existing build_reference_graph test is the closest bound
 evidence per playbook section 5's docs/investigation-ticket precedent).
-Filed: T-draft-ac219333 (blocking follow-up bug, renumbers at land).
+Filed: T-2211 (blocking follow-up bug, renumbers at land).
 Gates: no gate-affecting production change to check; `frob check --only
 gates-fast --ticket T-2205` not meaningfully applicable to a reverted
 diff.
@@ -70,7 +70,7 @@ diff.
 ### Changed
 ```
  tickets/T-2205/ticket.md           | 11 ++++-
- tickets/T-draft-ac219333/ticket.md | 90 ++++++++++++++++++++++++++++++++++++++
+ tickets/T-2211/ticket.md | 90 ++++++++++++++++++++++++++++++++++++++
  2 files changed, 99 insertions(+), 2 deletions(-)
 ```
 
