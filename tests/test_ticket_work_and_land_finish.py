@@ -611,6 +611,151 @@ class TestAssertTouchedFilesTypeCheckPreLand:
         assert loaded_main.danger_ok[tid].state != TicketState.DONE
 
 
+# frob:ticket T-2114
+class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
+    """`_assert_new_public_symbols_have_doc_and_test_edge_pre_land`
+    (T-2114): generalizes T-1907's touched-set shape from the type family
+    to the doc/test-edge families -- a rapid-profile land that introduces
+    a new public top-level symbol with no `frob:doc`/`frob:tests` edge
+    used to publish it anyway, red until the DEFERRED post-land sweep
+    eventually caught it against an already-published commit."""
+
+    def test_a_new_public_symbol_with_no_edges_refuses_the_land(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_new_public_symbol_with_no_edges_refuses_the_land  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land,
+        )
+
+        new_file = repo / "src" / "undocumented.py"
+        new_file.write_text("def brand_new_public_function():\n    return 1\n")
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+                repo, "T-2114", frozenset({"src/undocumented.py"})
+            )
+        assert exc_info.value.code == 1
+
+    def test_a_new_public_symbol_with_both_edges_does_not_refuse(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_new_public_symbol_with_both_edges_does_not_refuse  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land,
+        )
+
+        new_file = repo / "src" / "documented.py"
+        new_file.write_text(
+            "# frob:doc docs/modules/example.md#brand-new-public-function\n"
+            "# frob:tests tests/test_example.py::test_brand_new_public_function\n"
+            "def brand_new_public_function():\n"
+            "    return 1\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+            repo, "T-2114", frozenset({"src/documented.py"})
+        )  # must not raise
+
+    def test_an_unrelated_land_touching_no_new_public_symbols_is_unaffected(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_an_unrelated_land_touching_no_new_public_symbols_is_unaffected  # noqa: E501
+        # `repo`'s own fixture file (src/feature.py) already exists at the
+        # merge-base -- editing its BODY (not adding a new top-level
+        # public symbol) must never refuse, matching this check's own
+        # name-based "new" definition, not a hunk-span one.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land,
+        )
+
+        (repo / "src" / "feature.py").write_text("# landed feature, edited\n")
+        _run(["git", "add", "-A"], repo)
+
+        _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+            repo, "T-2114", frozenset({"src/feature.py"})
+        )  # must not raise
+
+    def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_empty_touched_set_is_a_no_op  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land,
+        )
+
+        _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+            repo, "T-2114", frozenset()
+        )  # must not raise
+        _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+            repo, "T-2114", None
+        )  # must not raise
+
+    # frob:ticket T-2114
+    def test_cli_land_end_to_end_refuses_a_worktree_with_a_new_undocumented_symbol(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_cli_land_end_to_end_refuses_a_worktree_with_a_new_undocumented_symbol  # noqa: E501
+        # T-2114's DESIGNATED REPRO (BUG002), mirroring T-1907's own
+        # `test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error`
+        # precedent exactly: this calls `_land`, the CLI entrypoint that
+        # exists at BOTH revisions, end to end against a worktree whose
+        # own diff introduces a new public top-level symbol with no
+        # frob:doc/frob:tests edge. At the parent commit (no guard wired
+        # into `_land_core_prepare`), this land PROCEEDS -- the exact gap
+        # this ticket measured, a new public symbol landing clean, red
+        # only once the deferred post-land sweep eventually catches it
+        # against an already-published commit. At this fix, it REFUSES
+        # with `SystemExit(1)` before ever reaching the merge.
+        created = new_ticket(repo, _spec("Land with a new undocumented symbol"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        work_cfg = AppConfig(
+            ticket_command="work", ticket_id=tid, ticket_foreground=True
+        )
+        _work(repo, work_cfg)
+        worktree = _default_work_worktree(repo, tid)
+
+        (worktree / "src" / "undocumented.py").write_text(
+            "def brand_new_public_function():\n    return 1\n"
+        )
+        (worktree / "tests").mkdir(exist_ok=True)
+        (worktree / "tests" / "test_ok.py").write_text(
+            "def test_ok():\n    assert True\n"
+        )
+        loaded = load_all(worktree)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_ok.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(worktree, ticket).is_ok
+        _run(["git", "add", "-A"], worktree)
+        _run(
+            ["git", "commit", "-q", "-m", "wt: undocumented.py + done report"],
+            worktree,
+        )
+
+        land_cfg = AppConfig(
+            ticket_command="land",
+            ticket_id=tid,
+            ticket_worktree=worktree,
+            ticket_dry_run=False,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _land(repo, land_cfg)
+        assert exc_info.value.code == 1
+        # The land must genuinely not have merged: main's own tip is
+        # unchanged (no commit for this ticket landed onto it).
+        loaded_main = load_all(repo)
+        assert loaded_main.is_ok
+        assert loaded_main.danger_ok[tid].state != TicketState.DONE
+
+
 # frob:ticket T-1907
 class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
     """T-1907 proposal (2): a Done report with no `### Captured claims`

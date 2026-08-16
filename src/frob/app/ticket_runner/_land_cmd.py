@@ -8,6 +8,7 @@ dispatch, tests that monkeypatch these names) keeps working."""
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import sys
@@ -3198,6 +3199,174 @@ def _assert_touched_files_type_check_pre_land(
     sys.exit(1)
 
 
+# frob:ticket T-2114
+def _is_generated_or_test_path(worktree: Path, rel_path: str) -> bool:
+    """`True` if `rel_path` is test code (doc/test-edge obligations do not
+    apply -- mirrors `frob.gates.__init__._is_test_path`'s own convention,
+    reimplemented here rather than imported cross-module since it is a
+    3-line check) or carries a recognized generated-file marker
+    (`frob.graph._generated.is_generated_source`, T-0234 -- nobody hand-
+    documents machine-generated code)."""
+    from pathlib import PurePosixPath
+
+    parts = PurePosixPath(rel_path).parts
+    name = PurePosixPath(rel_path).name
+    if "tests" in parts or name.startswith("test_") or name.endswith("_test.py"):
+        return True
+    from frob.graph._generated import is_generated_source
+
+    return is_generated_source(worktree, rel_path)
+
+
+# frob:ticket T-2114
+def _public_top_level_defs(source: str) -> dict[str, int]:
+    """Name -> 1-indexed def/class line number for every PUBLIC (does not
+    start with `_`) top-level `def`/`async def`/`class` in `source`, or
+    `{}` if `source` does not parse as Python at all (a syntax error is
+    someone else's problem to catch -- this check degrades to a no-op,
+    never a crash, matching every other touched-set guard's fail-open
+    posture in this module).
+
+    Deliberately TOP-LEVEL ONLY, not a full symbol walk: a small, cheap,
+    diff-scoped check (T-2114 generalizes T-1907's touched-file shape, not
+    the full repo-wide `coverage_gate`/`GraphSnapshot` COV001/TEST001
+    machinery, which the deferred rapid sweep still runs and which this is
+    not meant to replace) -- nested/private helpers are exactly the shape
+    the deferred sweep is still relied on to eventually catch."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return {}
+    defs: dict[str, int] = {}
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+            if not node.name.startswith("_"):
+                defs[node.name] = node.lineno
+    return defs
+
+
+# frob:ticket T-2114
+def _frob_directive_block(lines: list[str], def_lineno: int) -> list[str]:
+    """Every contiguous `#`-prefixed line immediately above `lines[def_
+    lineno - 1]` (1-indexed, matching `ast`'s own `lineno` convention),
+    stopping at the first blank or non-comment line -- the exact
+    convention `frob:doc`/`frob:tests`/`frob:ticket`/`frob:waive`
+    directives already use throughout this codebase (directly above the
+    `def`/`class` line, no intervening blank line, per `frob fmt`'s own
+    canonicalization). Empty if `def_lineno` is out of range or nothing
+    precedes it."""
+    if def_lineno < 2 or def_lineno > len(lines) + 1:
+        return []
+    block: list[str] = []
+    idx = def_lineno - 2  # 0-indexed line immediately above the def
+    while idx >= 0 and lines[idx].strip().startswith("#"):
+        block.append(lines[idx])
+        idx -= 1
+    return block
+
+
+# frob:ticket T-2114
+def _new_public_symbols_missing_doc_or_test_edge(
+    worktree: Path, merge_base: str, touched_paths: frozenset[str]
+) -> list[tuple[str, str, int, bool, bool]]:
+    """Every (file, name, lineno, missing_doc, missing_tests) for a PUBLIC
+    top-level symbol that is NEW in this diff (absent by name from the
+    SAME file at `merge_base` -- a name-based diff, not a hunk-span one,
+    so it is exact regardless of how git chose to break the hunks up) and
+    whose immediately-preceding comment block (`_frob_directive_block`)
+    carries no `frob:doc`/`frob:tests` directive line and no matching
+    `frob:waive COV001`/`frob:waive TEST001` line either.
+
+    This is the diff-derived, bounded check T-2114 asks for: two small
+    `ast.parse` calls per touched `.py` file (current worktree content,
+    and the SAME file's content at `merge_base` via `git show`), never a
+    full-repo `GraphSnapshot`/`coverage_gate` build -- the ~208s cost
+    T-1684 deliberately took off the land critical path stays off it."""
+    findings: list[tuple[str, str, int, bool, bool]] = []
+    for rel_path in sorted(touched_paths):
+        if not rel_path.endswith(".py"):
+            continue
+        full = worktree / rel_path
+        if not full.is_file():
+            continue
+        if _is_generated_or_test_path(worktree, rel_path):
+            continue
+        try:
+            source = full.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        new_defs = _public_top_level_defs(source)
+        if not new_defs:
+            continue
+        old = run_argv(["git", "-C", str(worktree), "show", f"{merge_base}:{rel_path}"])
+        old_names: set[str] = set()
+        if old.is_ok and old.danger_ok.returncode == 0:
+            old_names = set(_public_top_level_defs(old.danger_ok.stdout))
+        lines = source.splitlines()
+        for name, lineno in sorted(new_defs.items(), key=lambda kv: kv[1]):
+            if name in old_names:
+                continue
+            block = _frob_directive_block(lines, lineno)
+            block_text = "\n".join(block)
+            has_doc = "frob:doc" in block_text or "frob:waive COV001" in block_text
+            has_tests = "frob:tests" in block_text or "frob:waive TEST001" in block_text
+            if not has_doc or not has_tests:
+                findings.append((rel_path, name, lineno, not has_doc, not has_tests))
+    return findings
+
+
+# frob:ticket T-2114
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_new_public_symbol_with_no_edges_refuses_the_land  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_new_public_symbol_with_both_edges_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_an_unrelated_land_touching_no_new_public_symbols_is_unaffected  # noqa: E501
+def _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """T-2114: generalizes T-1907's touched-set shape from the `ty`/type
+    family to the doc/test-edge families (COV001/TEST001) -- refuse the
+    land when THIS ticket's own diff introduces a new public top-level
+    symbol with no `frob:doc` and/or `frob:tests` directive above it.
+    Unconditional across every profile including `rapid`, called
+    immediately alongside `_assert_touched_files_type_check_pre_land` in
+    `_land_core_prepare`, for the identical reason: under rapid, the
+    deferred post-land sweep (T-1684) is the only thing that currently
+    catches this, and it catches it only AFTER the commit already
+    published with a red floor -- exactly the T-1907 gap ("UNKNOWN read
+    as CLEAN"), previously fixed for the type family alone.
+
+    An empty touched `.py` set, or a `git show` at `merge_base` that fails
+    (a brand-new repo with no merge-base, a detached-HEAD oddity), is a
+    no-op -- matching every other touched-set guard's degrade-to-no-op
+    posture in this module when the diff itself is unmeasurable."""
+    if not touched_paths:
+        return
+    diff_result = working_diff(worktree, "main")
+    if diff_result.is_err:
+        return
+    merge_base = diff_result.danger_ok.base
+    findings = _new_public_symbols_missing_doc_or_test_edge(
+        worktree, merge_base, touched_paths
+    )
+    if not findings:
+        return
+    for rel_path, name, lineno, missing_doc, missing_tests in findings:
+        missing = ", ".join(
+            [r for r, m in (("frob:doc", missing_doc), ("frob:tests", missing_tests)) if m]
+        )
+        _log.error(
+            "ticket land: %s refused -- %s:%d new public symbol %r has no "
+            "%s edge (T-2114: this family is not relaxed by the rapid "
+            "profile); add it above the def, or add a `frob:waive` with a "
+            "reason if it genuinely does not apply",
+            ticket_id,
+            rel_path,
+            lineno,
+            name,
+            missing,
+        )
+    sys.exit(1)
+
+
 # frob:ticket T-1593
 # frob:ticket T-1692
 # frob:ticket T-1845
@@ -3212,7 +3381,10 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     T-1907: also runs `_assert_touched_files_type_check_pre_land`
     immediately after the T-1175 absorption step, UNCONDITIONALLY (every
     profile, including rapid) -- the minimum pre-land gate the rapid
-    profile may not relax, per T-1907's own required fix (1)."""
+    profile may not relax, per T-1907's own required fix (1). T-2114:
+    `_assert_new_public_symbols_have_doc_and_test_edge_pre_land` runs
+    right after it, generalizing the same "not relaxed by rapid" posture
+    from the type family to the doc/test-edge families."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
@@ -3223,8 +3395,12 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     _absorb_pre_land_fixes(worktree, cfg.ticket_id)
 
     # frob:ticket T-1907
-    _assert_touched_files_type_check_pre_land(
-        worktree, cfg.ticket_id, _land_touched_paths(worktree, cfg.ticket_id)
+    touched_paths = _land_touched_paths(worktree, cfg.ticket_id)
+    _assert_touched_files_type_check_pre_land(worktree, cfg.ticket_id, touched_paths)
+
+    # frob:ticket T-2114
+    _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+        worktree, cfg.ticket_id, touched_paths
     )
 
     root = _resolve_land_root(root, worktree, cfg.ticket_id)
