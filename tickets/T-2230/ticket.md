@@ -2,7 +2,7 @@
 id: T-2230
 title: 'T-2193 residue: must_still_pass_violations is not re-exported from frob.gates,
   so a landed call site deep-imports the private submodule'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,22 +13,52 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/__init__.py
+- src/frob/tickets/_land.py
+- tests/test_gates.py
+- tests/unit/test_ticket_land_bug003_t2215.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'criterion 3: update the landed deep-import call site to the new package-surface
+    re-export, per the ticket''s own explicit choice'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_gates.py
+  reason: repro + must-still-pass controls for the new frob.gates re-export
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/unit/test_ticket_land_bug003_t2215.py
+  reason: call-site import-path change (deep-import to package surface) requires updating
+    these tests' mock.patch targets, a direct consequence of criterion 3's own fix
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_gates.py::TestMutationEvidencePackageReexports::test_must_still_pass_violations_importable_from_package
+- tests/test_gates.py::TestMutationEvidencePackageReexports::test_existing_sibling_reexports_still_resolve
+- tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring::test_land_succeeds_when_gate_reports_clean
+- tests/test_gates.py::TestMutationEvidencePackageReexports::test_no_private_helper_becomes_importable
+designated_repro_test: tests/test_gates.py::TestMutationEvidencePackageReexports::test_must_still_pass_violations_importable_from_package
 acceptance:
 - text: Importing must_still_pass_violations from frob.gates (the package) succeeds;
     fails today with ImportError
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestMutationEvidencePackageReexports::test_must_still_pass_violations_importable_from_package
 - text: The existing five re-exports still resolve unchanged -- must-still-pass control
     against a rewritten import block dropping one
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestMutationEvidencePackageReexports::test_existing_sibling_reexports_still_resolve
 - text: The landed deep-import call site is updated to the package surface, or an
     explicit reason is given; state which
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring::test_land_succeeds_when_gate_reports_clean
 - text: No private helper from _mutation_evidence becomes publicly importable as a
     side effect; name the surface before and after
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestMutationEvidencePackageReexports::test_no_private_helper_becomes_importable
 threat: null
 component: null
 anchor: false

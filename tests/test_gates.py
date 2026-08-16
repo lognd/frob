@@ -259,6 +259,70 @@ _WIDGET_PY = '''class Widget:
 '''
 
 
+# frob:ticket T-2230
+class TestMutationEvidencePackageReexports:
+    """T-2230: `frob.gates`'s package `__init__` re-exports five names
+    from the private `frob.gates._mutation_evidence` submodule
+    (BugReproOutcome, bug_repro_outcome_at_ref, bug_repro_violations,
+    designated_repro_test, mutation_evidence_violations) -- BUG002's own
+    gate family. `must_still_pass_violations` (BUG003, T-2193, wired
+    into land/close by T-2215) was an asymmetric omission: nothing
+    distinguishes it from its siblings, and its absence forced a landed
+    call site (`frob.tickets._land`) to deep-import the private
+    submodule instead of the package surface."""
+
+    def test_must_still_pass_violations_importable_from_package(self) -> None:
+        # frob:tests tests/test_gates.py::TestMutationEvidencePackageReexports.test_must_still_pass_violations_importable_from_package  # noqa: E501
+        """MUST FAIL FIRST: raises ImportError against pre-fix
+        `frob.gates.__init__`, which re-exports its four siblings but
+        not this one."""
+        from frob.gates import must_still_pass_violations
+
+        assert callable(must_still_pass_violations)
+
+    def test_existing_sibling_reexports_still_resolve(self) -> None:
+        # frob:tests tests/test_gates.py::TestMutationEvidencePackageReexports.test_existing_sibling_reexports_still_resolve  # noqa: E501
+        """MUST-STILL-PASS control: the five pre-existing re-exports must
+        keep resolving unchanged -- a rewritten/reordered import block
+        that silently dropped one would satisfy the criterion above
+        while breaking real consumers of this package surface."""
+        from frob.gates import (
+            BugReproOutcome,
+            bug_repro_outcome_at_ref,
+            bug_repro_violations,
+            designated_repro_test,
+            mutation_evidence_violations,
+        )
+
+        assert BugReproOutcome is not None
+        for obj in (
+            bug_repro_outcome_at_ref,
+            bug_repro_violations,
+            designated_repro_test,
+            mutation_evidence_violations,
+        ):
+            assert callable(obj)
+
+    def test_no_private_helper_becomes_importable(self) -> None:
+        # frob:tests tests/test_gates.py::TestMutationEvidencePackageReexports.test_no_private_helper_becomes_importable  # noqa: E501
+        """Criterion 4: adding the ONE missing re-export must not widen
+        the public surface beyond it -- `_mutation_evidence`'s own
+        private regexes/helpers (including the ones T-2218 touched) stay
+        unreachable from the `frob.gates` package."""
+        import frob.gates as gates_pkg
+
+        for private_name in (
+            "_bug002_waiver_reason",
+            "_no_behavior_change_reason",
+            "_must_still_pass_controls",
+            "_quoted_char_ranges",
+            "_BUG002_WAIVER_RE",
+            "_NO_BEHAVIOR_CHANGE_RE",
+            "_MUST_STILL_PASS_RE",
+        ):
+            assert not hasattr(gates_pkg, private_name)
+
+
 class TestDriftGate:
     def test_drift001_stale_ack_has_remedy(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/a.py", _WIDGET_PY)

@@ -2783,13 +2783,13 @@ def _must_still_pass_land_violations(
     logged at WARNING, never silently dropped, mirroring
     `_mutation_evidence_synchronous`'s own `--skip-mutation-evidence`
     logging posture for BUG002/TEST016."""
-    # T-2218: `must_still_pass_violations` is not re-exported from
-    # `frob.gates`'s package `__init__` (an omission in T-2193's own
-    # land -- `bug_repro_violations`/`mutation_evidence_violations` both
-    # are) -- import directly from its owning submodule rather than
-    # widen this ticket's scope to `frob/gates/__init__.py` to fix that
-    # separately-filed gap.
-    from frob.gates._mutation_evidence import must_still_pass_violations
+    # T-2230: `must_still_pass_violations` is now re-exported from the
+    # `frob.gates` package surface (was a deep import into the private
+    # `_mutation_evidence` submodule, an asymmetric omission alongside
+    # `bug_repro_violations`/`mutation_evidence_violations` T-2193's own
+    # land left unfixed -- see T-2230's Done report for the measured
+    # gap).
+    from frob.gates import must_still_pass_violations
 
     violations = must_still_pass_violations(root, ticket, base_ref)
     if not violations:

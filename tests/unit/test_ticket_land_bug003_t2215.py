@@ -123,7 +123,7 @@ class TestMustStillPassWiring:
         from frob.tickets._land import _must_still_pass_land_violations
 
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence.must_still_pass_violations",
+            "frob.gates.must_still_pass_violations",
             lambda root, ticket, base_ref: (),
         )
         ticket = _make_ticket(body=body)
@@ -141,7 +141,7 @@ class TestMustStillPassWiring:
         from frob.tickets._land import _must_still_pass_land_violations
 
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence.must_still_pass_violations",
+            "frob.gates.must_still_pass_violations",
             lambda root, ticket, base_ref: (_sample_violation(),),
         )
         ticket = _make_ticket(
@@ -161,7 +161,7 @@ class TestMustStillPassWiring:
         from frob.tickets._land import _must_still_pass_land_violations
 
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence.must_still_pass_violations",
+            "frob.gates.must_still_pass_violations",
             lambda root, ticket, base_ref: (_sample_violation(),),
         )
         ticket = _make_ticket(
@@ -205,7 +205,7 @@ class TestMustStillPassCombinesWithBug002:
             "frob.gates.bug_repro_violations", lambda root, ticket, base_ref: ()
         )
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence.must_still_pass_violations",
+            "frob.gates.must_still_pass_violations",
             lambda root, ticket, base_ref: (_sample_violation(),),
         )
         monkeypatch.setattr(
@@ -234,7 +234,7 @@ class TestMustStillPassCombinesWithBug002:
             "frob.gates.bug_repro_violations", lambda root, ticket, base_ref: ()
         )
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence.must_still_pass_violations",
+            "frob.gates.must_still_pass_violations",
             lambda root, ticket, base_ref: (_sample_violation(),),
         )
         ticket = _make_ticket(
@@ -265,7 +265,7 @@ class TestMustStillPassCombinesWithBug002:
             "frob.gates.bug_repro_violations", lambda root, ticket, base_ref: ()
         )
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence.must_still_pass_violations",
+            "frob.gates.must_still_pass_violations",
             lambda root, ticket, base_ref: (_sample_violation(),),
         )
         ticket = _make_ticket(

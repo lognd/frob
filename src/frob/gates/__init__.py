@@ -161,6 +161,7 @@ from frob.gates._mutation_evidence import (
     bug_repro_outcome_at_ref,
     bug_repro_violations,
     designated_repro_test,
+    must_still_pass_violations,
     mutation_evidence_violations,
 )
 from frob.gates._negexist import negexist001_gate
@@ -7749,6 +7750,7 @@ __all__ = [
     "bug_repro_outcome_at_ref",
     "BugReproOutcome",
     "designated_repro_test",
+    "must_still_pass_violations",
     "compliance_gate",
     "cve_fingerprint_scan_gate",
     "debt_gate",
