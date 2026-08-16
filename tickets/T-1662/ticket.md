@@ -11,7 +11,7 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- docs/design/semantic-not-lexical.md
+- docs/design/gate-semantics-classification.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -69,6 +69,20 @@ scope_changes:
     to each descendant.
   actor: logan
   at: '2026-08-08'
+- op: remove
+  glob: docs/design/semantic-not-lexical.md
+  reason: T-1662's declared scope names a file that was never created; the real deliverable
+    from its children (all done) is docs/design/gate-semantics-classification.md (T-1663)
+    -- fixing the stale scope pointer, not the epic's content
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/design/gate-semantics-classification.md
+  reason: T-1662's declared scope names a file that was never created; the real deliverable
+    from its children (all done) is docs/design/gate-semantics-classification.md (T-1663)
+    -- fixing the stale scope pointer, not the epic's content
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 threat: null
 component: null
