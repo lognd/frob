@@ -33,6 +33,11 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 designated_repro_test: null
+attachments:
+- path: T-draft-0bd874ac/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
+  caption: 'widened to CRITICAL: relative imports fail too, zero cross-file resolution
+    repo-wide, T-2156 re-verification needed'
+  sha256: 52c8a76d9827cda441c2e95fe3f97685dca9e7dd5405bda6ca19cdb510165dc6
 threat: null
 component: null
 anchor: false
