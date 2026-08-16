@@ -9129,6 +9129,49 @@ class TestLandPlan:
         assert draft.id in loaded
         assert loaded[draft.id].id.startswith("T-draft-")
 
+    # frob:ticket T-2189
+    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_tick_gate_dirty_still_fully_unwinds  # noqa: E501
+    def test_dry_run_tick_gate_dirty_still_fully_unwinds(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        """T-2189: DESIGNATED REPRO. Pre-fix, `_land_plan_locked`'s
+        `PlanTickGateDirty` branch called `_land_plan_unwind_after_merge`
+        with no knowledge of `dry_run` at all -- it always ran T-1522's
+        stop-at-the-merge-commit policy, correct for a REAL land but not
+        for a `--dry-run` one. A real incident: `frob ticket land --plan
+        --dry-run` against a worktree whose merge succeeds but whose
+        `check_ticks()` reports dirty reported `PlanTickGateDirty` and
+        claimed a full unwind, while root's tip had actually moved to a
+        real merge commit -- a mutation from a call that promised none,
+        with the draft-finalize step never reached because the dirty
+        check fired first. This must leave root's tip fully unmoved,
+        exactly like the non-dirty dry-run path
+        (`test_dry_run_unwinds_the_merge` above) and the durable-merge
+        REAL-land path (`test_tick_gate_dirty_unwinds_finalize_but_keeps_
+        the_durable_merge` above) must stay unchanged by this fix."""
+        from frob.tickets._land import land_plan
+
+        worktree = _make_design_worktree(repo, tmp_path)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        draft = new_ticket(worktree, _spec("A dry-run-dirty draft")).danger_ok
+        _commit_all(worktree, "docs: add new.md + file draft")
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = land_plan(repo, worktree, dry_run=True, check_ticks=lambda: False)
+        assert result.is_err
+        assert result.danger_err is LandError.PlanTickGateDirty
+        # root's tip is COMPLETELY unmoved -- no merge commit, no
+        # finalize commit, nothing reachable from root's HEAD that this
+        # dry run produced.
+        post_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert post_sha == pre_sha
+        assert not (repo / "docs" / "new.md").exists()
+        # No draft was finalized -- it is still a draft, and it is not
+        # present on root at all (the merge itself was fully reverted).
+        loaded = load_all(repo).danger_ok
+        assert draft.id not in loaded
+
     # frob:ticket T-1269
     # frob:tests tests/test_ticket_land.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
     def test_cli_dispatches_to_land_plan_and_reports(
