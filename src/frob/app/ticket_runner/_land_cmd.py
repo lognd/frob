@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import ast
 import json
-import re
 import sys
 import time
 from collections.abc import Callable
@@ -2766,56 +2765,170 @@ def _land_pre_commit_sweep_fn(
     return sweep
 
 
-# frob:ticket T-1269
-def _land_plan_check_ticks_fn(root: Path):  # noqa: ANN201
-    """Build a zero-arg `check_ticks` closure for `land_plan` (T-1269):
-    spawns `frob check --only tickets` in `root` (post-merge) and returns
-    whether `gate:TICK`'s own line reports 0 errors -- `None` (unmeasurable,
-    `land_plan` treats this as "skip", never as "dirty") if the spawn is
-    refused/fails or the line cannot be found, matching the same
-    unmeasured-is-not-a-value posture `_check_gates_summary_fn` already
-    uses for the identical failure mode."""
-    tick_line_re = re.compile(r"gate:TICK\s+(\d+)\s+errors?")
+# frob:ticket T-2198
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+def _land_plan_tick_findings(
+    root: Path, *, cwd: Path | None = None
+) -> frozenset[tuple[str, str]] | None:
+    """Spawn `frob check --only tickets --json` (interpreter resolved from
+    `root`, working directory `cwd` or `root` itself if unset) and recover
+    the `(rule_id, file)` TICK-gate error-finding identity set via
+    `_parse_error_findings_from_stdout` (T-2198) -- structured JSON, never
+    a regex over rendered CLI text (the second T-2198 defect: the old
+    `tick_line_re = re.compile(r"gate:TICK\\s+(\\d+)\\s+errors?")` parsed
+    human-facing output, so a wording/column change silently flipped the
+    result to `None`, read by `land_plan` as "skip", never loudly). `None`
+    means unmeasurable (refused spawn, timeout, unparsable output) --
+    never a false empty-set claim, matching every other T-0846/T-0850
+    unmeasured-is-not-zero convention in this module.
+
+    `cwd` (T-2198): a `frob check` spawn is not read-only against the tree
+    it runs in -- it can write scratch/lock artifacts (observed: a bare
+    `pyproject.toml`-only fixture picked up a stray `uv.lock` write from
+    the spawn itself). The POST-merge call (inside `land_plan`, after its
+    own dirty check) safely runs against `root` directly because
+    `land_plan`'s existing unwind path already cleans up anything a
+    `check_ticks()` spawn leaves behind. The PRE-merge baseline call
+    (`_land_plan_pre_merge_tick_baseline`, run from `_land_plan_cmd`
+    BEFORE `land_plan`'s own dirty check) has no such safety net, so it
+    passes a detached snapshot-worktree `cwd` instead -- see that
+    function's docstring."""
+    from frob.app import ticket_runner as _ticket_runner
+
+    guarded = _ticket_runner.guarded_subprocess_run(
+        [
+            _python_for_tree(root),
+            "-m",
+            "frob",
+            "check",
+            "--only",
+            "tickets",
+            "--json",
+        ],
+        cwd=cwd if cwd is not None else root,
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+    if guarded.is_err:
+        _log.warning(
+            "ticket land --plan: `frob check --only tickets --json` "
+            "refused to spawn (%s) -- TICK-gate re-check skipped",
+            ProcessGuardError.ExecDisabled,
+        )
+        return None
+    result = guarded.danger_ok
+    return _parse_error_findings_from_stdout(
+        "<plan>", result.stdout, result.returncode
+    )
+
+
+# frob:ticket T-2198
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+def _land_plan_pre_merge_tick_baseline(
+    root: Path,
+) -> frozenset[tuple[str, str]] | None:
+    """Capture the pre-merge TICK-gate finding-identity baseline for
+    `_land_plan_cmd` (T-2198), called BEFORE `land_plan` does anything --
+    before its own dirty check, before the merge. Scans a detached
+    snapshot worktree at `root`'s current `HEAD` (T-1463's existing
+    `_spawn_baseline_snapshot_worktree` primitive, the SAME one
+    `_capture_pre_land_baseline` already uses for `land()`'s own post-land
+    sweep) rather than `root` directly, so the scan's own scratch-artifact
+    side effects (see `_land_plan_tick_findings`'s `cwd` docstring) cannot
+    dirty `root` and trip `land_plan`'s dirty-checkout refusal before the
+    merge even starts. Falls back to scanning `root` directly if the
+    snapshot worktree cannot be created for any reason -- the pre-T-2198
+    call shape, strictly better than not measuring a baseline at all."""
+    rev = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
+    if rev.is_err or rev.danger_ok.returncode != 0:
+        return _land_plan_tick_findings(root)
+    sha = rev.danger_ok.stdout.strip()
+    snapshot = _spawn_baseline_snapshot_worktree(root, sha)
+    if snapshot is None:
+        return _land_plan_tick_findings(root)
+    try:
+        return _land_plan_tick_findings(root, cwd=snapshot)
+    finally:
+        _remove_baseline_snapshot_worktree(root, snapshot)
+
+
+# frob:ticket T-2198
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
+def _land_plan_check_ticks_fn(
+    root: Path, baseline: frozenset[tuple[str, str]] | None
+):  # noqa: ANN201
+    """Build a zero-arg `check_ticks` closure for `land_plan` (T-2198,
+    replacing T-1269's global-count version): compares a POST-merge
+    `_land_plan_tick_findings(root)` scan against `baseline` -- the
+    IDENTICAL scan taken BEFORE the merge, by `_land_plan_cmd` -- and
+    reports dirty only when the merge introduced TICK-gate error findings
+    ATTRIBUTABLE to the landing worktree's own diff, i.e. present after
+    the merge but absent before it. Pre-existing findings (T-2198's
+    measured case: 9 TICK004 rotting-epic alarms, all `tier=epic`,
+    15-20 days old, wholly unrelated to a ledger-only worktree) survive
+    the diff unchanged in `baseline` and never block the land -- exactly
+    T-2198's circularity fix: `--plan` is the sanctioned path for
+    ledger-only work, decomposing a rotting epic into leaves IS
+    ledger-only work, and a global TICK004 count used to block the only
+    action that would clear it.
+
+    `None` (unmeasurable, `land_plan` treats this as "skip", never as
+    "dirty") whenever EITHER side of the comparison could not be
+    measured -- a diff against an unmeasured baseline is not a smaller
+    answer, it is a different question (same T-1703 posture
+    `_parse_error_findings_from_json` already documents)."""
 
     def check_ticks() -> bool | None:
-        from frob.app import ticket_runner as _ticket_runner
-
-        guarded = _ticket_runner.guarded_subprocess_run(
-            [_python_for_tree(root), "-m", "frob", "check", "--only", "tickets"],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            timeout=600,
-            check=False,
-        )
-        if guarded.is_err:
+        if baseline is None:
             _log.warning(
-                "ticket land --plan: `frob check --only tickets` refused to "
-                "spawn (%s) -- TICK-gate re-check skipped",
-                ProcessGuardError.ExecDisabled,
+                "ticket land --plan: pre-merge TICK-gate baseline was "
+                "unmeasurable -- TICK-gate re-check skipped"
             )
             return None
-        match = tick_line_re.search(guarded.danger_ok.stdout)
-        if match is None:
+        post = _land_plan_tick_findings(root)
+        if post is None:
             _log.warning(
-                "ticket land --plan: could not parse a gate:TICK line from "
-                "`frob check --only tickets` output -- TICK-gate re-check "
+                "ticket land --plan: post-merge `frob check --only "
+                "tickets --json` was unmeasurable -- TICK-gate re-check "
                 "skipped"
             )
             return None
-        return int(match.group(1)) == 0
+        new_findings = post - baseline
+        if new_findings:
+            _log.warning(
+                "ticket land --plan: TICK-gate re-check found %d new "
+                "error finding(s) not present before the merge: %s",
+                len(new_findings),
+                sorted(new_findings),
+            )
+        return not new_findings
 
     return check_ticks
 
 
 # frob:ticket T-1269
+# frob:ticket T-2198
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
 def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land --plan --worktree PATH [--dry-run]` (T-1269): land
     a design-phase worktree via `frob.tickets.land_plan` -- merge, finalize
     every incoming draft id, TICK-gate re-check, atomic commit -- reporting
     every field of the resulting `LandPlanReport` (or the `Err` + remedy
     already logged by `land_plan` itself) before exiting non-zero on
-    failure."""
+    failure.
+
+    T-2198: the TICK-gate re-check is now ATTRIBUTION-based, not a global
+    zero-count. `_land_plan_tick_findings(root)` is called HERE, before
+    `land_plan` performs its own merge, to capture the pre-merge TICK
+    finding-identity baseline (root's state as it stood before this
+    worktree's changes landed) -- `_land_plan_check_ticks_fn` diffs
+    `land_plan`'s own post-merge scan against exactly this baseline, so
+    pre-existing findings (e.g. an unrelated rotting epic) never block a
+    ledger-only land that did not cause them."""
     from frob.tickets._land import land_plan
 
     if cfg.ticket_worktree is None:
@@ -2823,11 +2936,13 @@ def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
     worktree = cfg.ticket_worktree
 
+    pre_merge_tick_baseline = _land_plan_pre_merge_tick_baseline(root)
+
     result = land_plan(
         root,
         worktree,
         dry_run=cfg.ticket_dry_run,
-        check_ticks=_land_plan_check_ticks_fn(root),
+        check_ticks=_land_plan_check_ticks_fn(root, pre_merge_tick_baseline),
     )
     if result.is_err:
         _log.error("ticket land --plan failed: %s", result.danger_err)
@@ -3316,6 +3431,7 @@ def _new_public_symbols_missing_doc_or_test_edge(
 
 
 # frob:ticket T-2114
+# frob:ticket T-2198
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_new_public_symbol_with_no_edges_refuses_the_land  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_a_new_public_symbol_with_both_edges_does_not_refuse  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges.test_an_unrelated_land_touching_no_new_public_symbols_is_unaffected  # noqa: E501
@@ -3351,7 +3467,9 @@ def _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
         return
     for rel_path, name, lineno, missing_doc, missing_tests in findings:
         missing = ", ".join(
-            [r for r, m in (("frob:doc", missing_doc), ("frob:tests", missing_tests)) if m]
+            r
+            for r, m in (("frob:doc", missing_doc), ("frob:tests", missing_tests))
+            if m
         )
         _log.error(
             "ticket land: %s refused -- %s:%d new public symbol %r has no "

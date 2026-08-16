@@ -9007,6 +9007,7 @@ def _make_design_worktree(
 
 
 # frob:ticket T-1269
+# frob:ticket T-2198
 class TestLandPlan:
     """T-1269: `frob ticket land --plan` -- atomic design-phase land with
     automatic draft finalization. Real git subprocesses/worktrees,
@@ -9195,6 +9196,94 @@ class TestLandPlan:
             _land(repo, cfg)
         assert any("landed onto" in rec.message for rec in caplog.records)
         assert (repo / "docs" / "new.md").exists()
+
+    # frob:ticket T-2198
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+    def test_pre_existing_tick004_does_not_block_ledger_only_plan_land(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        """T-2198: DESIGNATED REPRO. Pre-fix, `_land_plan_check_ticks_fn`
+        gated `--plan` on `frob check --only tickets`'s GLOBAL error count
+        being zero -- so an unrelated, pre-existing rotting-epic TICK004
+        alarm (measured in this repo's own history: 9 of them, all
+        `tier=epic`, 15-20 days old) refused a purely ledger-only land
+        (128 insertions, one new ticket file, zero source files) with
+        `PlanTickGateDirty`, even though decomposing that rotting epic
+        into leaves is itself ledger-only work `--plan` exists to carry.
+        This test seeds exactly that shape -- one already-rotten CRITICAL
+        ticket on `main`, unrelated to the landing worktree's own
+        ledger-only draft -- and MUST FAIL against pre-fix `main`."""
+        from datetime import timedelta
+
+        from frob.tickets._models import Priority, Ticket, TicketKind
+
+        # `repo` has no `pyproject.toml`/root-level `.py` sentinel, so a
+        # real `frob check` spawn against it reports `unknown-project-
+        # type` (CHECK001) before the `tickets` gate family ever runs --
+        # this designated repro needs a REAL `gate:TICK` evaluation, so
+        # give it one.
+        (repo / "pyproject.toml").write_text('[project]\nname = "x"\nversion = "0.0.0"\n')
+        _commit_all(repo, "chore: add pyproject.toml so frob check can dispatch")
+
+        # A pre-existing, already-rotten ticket on `root` -- CRITICAL
+        # priority rots at 3 days (escalates to ERROR severity past 2x =
+        # 6 days); 10 days old guarantees a TICK004 ERROR finding, wholly
+        # unrelated to anything the landing worktree touches.
+        rotten = Ticket(
+            id="T-9001",
+            title="A pre-existing rotting epic, unrelated to this land",
+            state=TicketState.QUEUED,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date.today() - timedelta(days=10),
+            priority=Priority.CRITICAL,
+        )
+        assert write_ticket(repo, rotten).is_ok
+        _commit_all(repo, "chore(tickets): seed a pre-existing rotting epic")
+
+        # A purely ledger-only worktree: one new draft ticket, zero
+        # source files -- the T-2197 shape the ticket's Description
+        # measured being refused.
+        worktree = _make_design_worktree(repo, tmp_path)
+        draft = new_ticket(
+            worktree,
+            _spec("A ledger-only draft, unrelated to the rotten ticket"),
+        ).danger_ok
+        # `new_ticket` already auto-commits the ledger write -- no
+        # separate commit needed (unlike the docs-file fixtures elsewhere
+        # in this class).
+
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._land_cmd import _land
+
+        cfg = AppConfig(
+            ticket_command="land",
+            ticket_land_plan=True,
+            ticket_worktree=worktree,
+            ticket_path=repo,
+        )
+        # T-2198: this MUST succeed -- the landing worktree's own diff
+        # (one new draft ticket, zero source files) did not cause the
+        # pre-existing TICK004 finding, so --plan must not refuse on its
+        # account. Pre-fix, `_land_plan_check_ticks_fn` gated on the
+        # GLOBAL TICK-gate count and `_land_plan_cmd` called `sys.exit(1)`
+        # here -- this assertion is the designated repro.
+        try:
+            _land(repo, cfg)
+        except SystemExit as exc:
+            pytest.fail(
+                "T-2198: --plan refused a ledger-only land (sys.exit"
+                f"({exc.code})) solely because of an UNRELATED "
+                "pre-existing TICK004 rotting-epic alarm on main -- "
+                "attribution, not a global count, is the fix"
+            )
+        loaded = load_all(repo).danger_ok
+        assert draft.id not in loaded
+        assert any(
+            t.title == "A ledger-only draft, unrelated to the rotten ticket"
+            for t in loaded.values()
+        )
 
 
 # frob:ticket T-1495
